@@ -97,14 +97,6 @@ func NewEndpoint(
 		ipValidator}).Auction), nil
 }
 
-// type ImpExtValidationError struct {
-// 	msg string
-// }
-
-// func (e *ImpExtValidationError) Error() string {
-// 	return e.msg
-// }
-
 type endpointDeps struct {
 	ex                        exchange.Exchange
 	paramsValidator           openrtb_ext.BidderParamValidator
