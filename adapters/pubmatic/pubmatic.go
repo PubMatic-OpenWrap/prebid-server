@@ -687,4 +687,3 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters
 	}
 	return bidder, nil
 }
-
