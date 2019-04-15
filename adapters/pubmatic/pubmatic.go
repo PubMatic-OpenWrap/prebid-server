@@ -99,8 +99,8 @@ const (
 )
 
 func PrepareLogMessage(tID, pubId, adUnitId, bidID, details string, args ...interface{}) string {
-	return fmt.Sprintf("[PUBMATIC] ReqID [%s] PubID [%s] AdUnit [%s] BidID [%s] %s \n",
-		tID, pubId, adUnitId, bidID, details)
+	return fmt.Sprintf("%s ReqID [%s] PubID [%s] AdUnit [%s] BidID [%s] %s \n",
+		PUBMATIC, tID, pubId, adUnitId, bidID, details)
 }
 
 func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder *pbs.PBSBidder) (pbs.PBSBidSlice, error) {
@@ -108,7 +108,7 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 	pbReq, err := adapters.MakeOpenRTBGeneric(req, bidder, a.Name(), mediaTypes)
 
 	if err != nil {
-		logf("[PUBMATIC] Failed to make ortb request for request id [%s] \n", pbReq.ID)
+		logf("%s Failed to make ortb request for request id [%s] \n", PUBMATIC, pbReq.ID)
 		return nil, err
 	}
 
@@ -117,8 +117,8 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 	pubId := ""
 	wrapExt := ""
 	if len(bidder.AdUnits) > MAX_IMPRESSIONS_PUBMATIC {
-		logf("[PUBMATIC] First %d impressions will be considered from request tid %s\n",
-			MAX_IMPRESSIONS_PUBMATIC, pbReq.ID)
+		logf("%s First %d impressions will be considered from request tid %s\n",
+			PUBMATIC, MAX_IMPRESSIONS_PUBMATIC, pbReq.ID)
 	}
 
 	for i, unit := range bidder.AdUnits {
@@ -338,10 +338,8 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 			pbid.CreativeMediaType = string(mediaType)
 
 			bids = append(bids, &pbid)
-			/*
-				logf("[PUBMATIC] Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
-					pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
-			*/
+			logf("%s Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
+				PUBMATIC, pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
 		}
 	}
 
@@ -353,6 +351,11 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	wrapExt := ""
 	pubID := ""
+
+	cookies, err := getCookiesFromRequest(request)
+	if err != nil {
+		errs = append(errs, err)
+	}
 
 	for i := 0; i < len(request.Imp); i++ {
 		err := parseImpressionObject(&request.Imp[i], &wrapExt, &pubID)
@@ -405,6 +408,9 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json;charset=utf-8")
 	headers.Add("Accept", "application/json")
+	for _, line := range cookies {
+		headers.Add("Cookie", line)
+	}
 
 	return []*adapters.RequestData{{
 		Method:  "POST",
