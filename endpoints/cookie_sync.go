@@ -167,7 +167,7 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 			}
 			csResp.BidderStatus = append(csResp.BidderStatus, newSync)
 		} else {
-			glog.Errorf("Failed to get usersync info for %s: %v", bidder, err)
+			glog.Errorf("Failed to get usersync info for %s: %v", newBidder, err)
 		}
 	}
 
