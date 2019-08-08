@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
