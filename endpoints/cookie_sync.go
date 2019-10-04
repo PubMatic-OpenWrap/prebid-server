@@ -175,8 +175,9 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		bidder := parsedReq.Bidders[i]
 		syncInfo, err := deps.syncers[openrtb_ext.BidderName(bidder)].GetUsersyncInfo(privacyPolicy)
 		if err == nil {
+			//For secure = true
 			if secParam == "1" && newBidder == "pubmatic" {
-				syncInfo.URL += "%26sec%3D1"
+				syncInfo.URL += "%26sec%3D1%26"
 			}
 
 			newSync := &usersync.CookieSyncBidders{
