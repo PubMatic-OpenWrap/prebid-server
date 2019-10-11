@@ -203,6 +203,9 @@ func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCooki
 		}
 		currSize = len([]byte(httpCookie.String()))
 	}
+	/*else if strings.HasPrefix(refererHeader, "https") {
+		httpCookie.Secure = true
+	}*/
 
 	var uidsCookieStr string
 	var sameSiteCookie *http.Cookie
