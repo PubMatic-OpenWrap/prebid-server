@@ -36,16 +36,6 @@ func NewSetUIDEndpoint(cfg config.HostCookie, syncers map[openrtb_ext.BidderName
 
 	return httprouter.Handle(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
-		glog.Info("************ In NewSetUIDEndpoint")
-		glog.Info("************ Request: %v", r)
-		glog.Info("************ r.Proto: %v", r.Proto)
-		glog.Info("************ r.RequestURI: %v", r.RequestURI)
-		glog.Info("************ r.URL: %s", r.URL)
-		glog.Info("************ r.URL.Scheme: %s", r.URL.Scheme)
-		glog.Info("************ r.Header: %s", r.Header)
-		glog.Info("************ r.TLS: %s", r.TLS)
-		glog.Info("************ r.RemoteAddr: %s", r.RemoteAddr)
-
 		so := analytics.SetUIDObject{
 			Status: http.StatusOK,
 			Errors: make([]error, 0),
