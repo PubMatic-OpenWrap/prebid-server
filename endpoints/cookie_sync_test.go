@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"text/template"
@@ -265,6 +266,23 @@ func parseSyncs(t *testing.T, response []byte) map[string]string {
 		}
 	}, "bidder_status")
 	return syncs
+}
+
+func isSetSecParam(sync_url string) bool {
+	u, err := url.Parse(sync_url)
+	if err != nil {
+		return false
+	}
+	q := u.Query()
+	predirect := q.Get("predirect")
+
+	u2, err := url.Parse(predirect)
+	if err != nil {
+		return false
+	}
+	q2 := u2.Query()
+	isSet := q2.Get("sec") == "1"
+	return isSet
 }
 
 func mockPermissions(allowHost bool, allowedBidders map[openrtb_ext.BidderName]usersync.Usersyncer) gdpr.Permissions {
