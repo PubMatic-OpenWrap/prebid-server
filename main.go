@@ -59,7 +59,7 @@ func serve(revision string, cfg *config.Configuration) error {
 	currencyConverterTickerTask := task.NewTickerTask(fetchingInterval, currencyConverter)
 	currencyConverterTickerTask.Start()
 
-	r, err := router.New(cfg, currencyConverter)
+	_, err := router.New(cfg, currencyConverter)
 	if err != nil {
 		return err
 	}

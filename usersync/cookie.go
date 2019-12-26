@@ -217,6 +217,9 @@ func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCooki
 			Path:    "/",
 			Secure:  true,
 		}
+		if secParam == "1" {
+			sameSiteCookie.Secure = true
+		}
 		sameSiteCookieStr := sameSiteCookie.String()
 		sameSiteCookieStr += SameSiteAttribute
 		w.Header().Add("Set-Cookie", sameSiteCookieStr)

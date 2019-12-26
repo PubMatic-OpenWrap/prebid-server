@@ -242,14 +242,14 @@ func cookieSyncStatus(syncCount int) string {
 func setSecureParam(usersync_url string) (string, error) {
 	u1, err := url.Parse(usersync_url)
 	if err != nil {
-		glog.Errorf("Error while setting secure flag, failed to parse usersync url: %v",err)
+		glog.Errorf("Error while setting secure flag, failed to parse usersync url: %v", err)
 		return "", err
 	}
 
 	q1 := u1.Query()
 	u2, err := url.Parse(q1.Get("predirect"))
 	if err != nil {
-		glog.Errorf("Error while setting secure flag, failed to parse predirect param: %v",err)
+		glog.Errorf("Error while setting secure flag, failed to parse predirect param: %v", err)
 		return "", err
 	}
 

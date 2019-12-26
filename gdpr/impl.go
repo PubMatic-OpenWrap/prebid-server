@@ -10,8 +10,6 @@ import (
 	"github.com/prebid/go-gdpr/vendorconsent"
 	tcf2 "github.com/prebid/go-gdpr/vendorconsent/tcf2"
 	"github.com/prebid/go-gdpr/vendorlist"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
 // This file implements GDPR permissions for the app.

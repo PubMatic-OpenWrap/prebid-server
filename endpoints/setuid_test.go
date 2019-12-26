@@ -3,13 +3,10 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"regexp"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
