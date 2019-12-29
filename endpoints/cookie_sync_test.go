@@ -25,7 +25,7 @@ import (
 )
 
 func TestCookieSyncNoCookies(t *testing.T) {
-	rr := doPost(`{"bidders":["appnexus", "audienceNetwork", "random"]}`, nil, true, syncersForTest())
+	rr := doPost(`{"bidders":["appnexus", "audienceNetwork", "random"]}`, nil, true, syncersForTest(), false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	syncs := parseSyncs(t, rr.Body.Bytes())
@@ -35,7 +35,7 @@ func TestCookieSyncNoCookies(t *testing.T) {
 }
 
 func TestGDPRPreventsCookie(t *testing.T) {
-	rr := doPost(`{"bidders":["appnexus", "pubmatic"]}`, nil, false, syncersForTest())
+	rr := doPost(`{"bidders":["appnexus", "pubmatic"]}`, nil, false, syncersForTest(), false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Empty(t, parseSyncs(t, rr.Body.Bytes()))
@@ -53,7 +53,7 @@ func TestGDPRPreventsBidders(t *testing.T) {
 }
 
 func TestGDPRIgnoredIfZero(t *testing.T) {
-	rr := doPost(`{"gdpr":0,"bidders":["appnexus", "pubmatic"]}`, nil, false, nil)
+	rr := doPost(`{"gdpr":0,"bidders":["appnexus", "pubmatic"]}`, nil, false, nil, false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	syncs := parseSyncs(t, rr.Body.Bytes())
@@ -63,7 +63,7 @@ func TestGDPRIgnoredIfZero(t *testing.T) {
 }
 
 func TestGDPRConsentRequired(t *testing.T) {
-	rr := doPost(`{"gdpr":1,"bidders":["appnexus", "pubmatic"]}`, nil, false, nil)
+	rr := doPost(`{"gdpr":1,"bidders":["appnexus", "pubmatic"]}`, nil, false, nil, false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "text/plain; charset=utf-8")
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Equal(t, "gdpr_consent is required if gdpr=1\n", rr.Body.String())
@@ -128,7 +128,7 @@ func TestCookieSyncHasCookies(t *testing.T) {
 	rr := doPost(`{"bidders":["appnexus", "audienceNetwork", "random"]}`, map[string]string{
 		"adnxs":           "1234",
 		"audienceNetwork": "2345",
-	}, true, syncersForTest())
+	}, true, syncersForTest(), false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Empty(t, parseSyncs(t, rr.Body.Bytes()))
@@ -137,7 +137,7 @@ func TestCookieSyncHasCookies(t *testing.T) {
 
 // Make sure that an empty bidders array returns no syncs
 func TestCookieSyncEmptyBidders(t *testing.T) {
-	rr := doPost(`{"bidders": []}`, nil, true, syncersForTest())
+	rr := doPost(`{"bidders": []}`, nil, true, syncersForTest(), false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Empty(t, parseSyncs(t, rr.Body.Bytes()))
@@ -146,7 +146,7 @@ func TestCookieSyncEmptyBidders(t *testing.T) {
 
 // Make sure that all syncs are returned if "bidders" isn't a key
 func TestCookieSyncNoBidders(t *testing.T) {
-	rr := doPost("{}", nil, true, syncersForTest())
+	rr := doPost("{}", nil, true, syncersForTest(), false, false, false)
 	assert.Equal(t, rr.Header().Get("Content-Type"), "application/json; charset=utf-8")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.ElementsMatch(t, []string{"appnexus", "audienceNetwork", "pubmatic"}, parseSyncs(t, rr.Body.Bytes()))
@@ -164,7 +164,7 @@ func TestCookieSyncNoCookiesBrokenGDPR(t *testing.T) {
 }
 
 func TestCookieSyncWithLimit(t *testing.T) {
-	rr := doPost(`{"limit":2}`, nil, true, syncersForTest())
+	rr := doPost(`{"limit":2}`, nil, true, syncersForTest(), false, false, false)
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Len(t, parseSyncs(t, rr.Body.Bytes()), 2, "usersyncs")
 	assert.Equal(t, "no_cookie", parseStatus(t, rr.Body.Bytes()))
@@ -172,7 +172,7 @@ func TestCookieSyncWithLimit(t *testing.T) {
 
 func TestCookieSyncWithLargeLimit(t *testing.T) {
 	syncers := syncersForTest()
-	rr := doPost(`{"limit":1000}`, nil, true, syncers)
+	rr := doPost(`{"limit":1000}`, nil, true, syncers, false, false, false)
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Len(t, parseSyncs(t, rr.Body.Bytes()), len(syncers), "usersyncs")
 	assert.Equal(t, "no_cookie", parseStatus(t, rr.Body.Bytes()))
@@ -187,7 +187,7 @@ func doConfigurablePost(body string, existingSyncs map[string]string, gdprHostCo
 	router := httprouter.New()
 	router.POST("/cookie_sync", endpoint)
 	req, _ := http.NewRequest("POST", "/cookie_sync", strings.NewReader(body))
-	/*if addSecParam {
+	if addSecParam {
 		q := req.URL.Query()
 		q.Add("sec", "1")
 		req.URL.RawQuery = q.Encode()
@@ -196,7 +196,7 @@ func doConfigurablePost(body string, existingSyncs map[string]string, gdprHostCo
 		req.Header.Set("Referer", "http://unit-test.com")
 	} else if addHttpsRefererHeader {
 		req.Header.Set("Referer", "https://unit-test.com")
-	}*/
+	}
 	if len(existingSyncs) > 0 {
 
 		pcs := usersync.NewPBSCookie()
