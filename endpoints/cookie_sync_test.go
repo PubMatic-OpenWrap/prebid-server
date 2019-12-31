@@ -117,7 +117,7 @@ func TestCCPA(t *testing.T) {
 	for _, test := range testCases {
 		gdpr := config.GDPR{DefaultValue: "0"}
 		ccpa := config.CCPA{Enforce: test.enforceCCPA}
-		rr := doConfigurablePost(test.requestBody, nil, true, syncersForTest(), gdpr, ccpa)
+		rr := doConfigurablePost(test.requestBody, nil, true, syncersForTest(), gdpr, ccpa, false, false, false)
 		assert.Equal(t, http.StatusOK, rr.Code, test.description+":httpResponseCode")
 		assert.ElementsMatch(t, test.expectedSyncs, parseSyncs(t, rr.Body.Bytes()), test.description+":syncs")
 		assert.Equal(t, "no_cookie", parseStatus(t, rr.Body.Bytes()), test.description+":status")
@@ -232,9 +232,9 @@ func parseStatus(t *testing.T, responseBody []byte) string {
 	return val
 }
 
-func parseSyncs(t *testing.T, response []byte) map[string]string {
+func parseSyncs(t *testing.T, response []byte) []string {
 	t.Helper()
-	var syncs map[string]string = make(map[string]string)
+	var syncs []string
 	jsonparser.ArrayEach(response, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if dataType != jsonparser.Object {
 			t.Errorf("response.bidder_status contained unexpected element of type %v.", dataType)
@@ -242,18 +242,7 @@ func parseSyncs(t *testing.T, response []byte) map[string]string {
 		if val, err := jsonparser.GetString(value, "bidder"); err != nil {
 			t.Errorf("response.bidder_status[?].bidder was not a string. Value was %s", string(value))
 		} else {
-			usersyncObj, _, _, err := jsonparser.Get(value, "usersync")
-			if err != nil {
-				syncs[val] = ""
-			} else {
-				usrsync_url, err := jsonparser.GetString(usersyncObj, "url")
-				if err != nil {
-					syncs[val] = ""
-				} else {
-					syncs[val] = usrsync_url
-				}
-			}
-			//syncs = append(syncs, val)
+			syncs = append(syncs, val)
 		}
 	}, "bidder_status")
 	return syncs
