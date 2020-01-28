@@ -167,9 +167,10 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 			secParam := r.URL.Query().Get("sec")
 			refererHeader := r.Header.Get("Referer")
 			if secParam == "1" || strings.HasPrefix(refererHeader, "https") {
-				syncInfo.URL = setSecureParam(syncInfo.URL, true)
-			} else {
-				syncInfo.URL = setSecureParam(syncInfo.URL, false)
+				urlWithSecParam, err := setSecureParam(syncInfo.URL)
+				if err == nil {
+					syncInfo.URL = urlWithSecParam
+				}
 			}
 
 			newSync := &usersync.CookieSyncBidders{
@@ -237,13 +238,29 @@ func cookieSyncStatus(syncCount int) string {
 	return "ok"
 }
 
-func setSecureParam(userSyncUrl string, isSecure bool) string {
-	var secParam = "0"
-	if isSecure {
-		secParam = "1"
+func setSecureParam(usersync_url string) (string, error) {
+	u1, err := url.Parse(usersync_url)
+	if err != nil {
+		glog.Errorf("Error while setting secure flag, failed to parse usersync url: %v", err)
+		return "", err
 	}
-	syncURL := secureFlagRegex.ReplaceAllString(userSyncUrl, secParam)
-	return syncURL
+
+	q1 := u1.Query()
+	u2, err := url.Parse(q1.Get("predirect"))
+	if err != nil {
+		glog.Errorf("Error while setting secure flag, failed to parse predirect param: %v", err)
+		return "", err
+	}
+
+	q2 := u2.Query()
+
+	q2.Set("sec", "1")
+
+	u2.RawQuery = q2.Encode()
+	q1.Set("predirect", u2.String())
+	u1.RawQuery = q1.Encode()
+
+	return u1.String(), nil
 }
 
 type CookieSyncReq cookieSyncRequest
