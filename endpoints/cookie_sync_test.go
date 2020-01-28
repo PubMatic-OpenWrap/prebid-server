@@ -275,20 +275,13 @@ func parseSyncsForSecureFlag(t *testing.T, response []byte) map[string]string {
 	return syncs
 }
 
-func isSetSecParam(sync_url string) bool {
-	u, err := url.Parse(sync_url)
+func isSetSecParam(syncUrl string) bool {
+	u, err := url.Parse(syncUrl)
 	if err != nil {
 		return false
 	}
 	q := u.Query()
-	predirect := q.Get("predirect")
-
-	u2, err := url.Parse(predirect)
-	if err != nil {
-		return false
-	}
-	q2 := u2.Query()
-	isSet := q2.Get("sec") == "1"
+	isSet := q.Get("sec") == "1"
 	return isSet
 }
 
