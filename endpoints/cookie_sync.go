@@ -159,18 +159,21 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		Status:       cookieSyncStatus(userSyncCookie.LiveSyncCount()),
 		BidderStatus: make([]*usersync.CookieSyncBidders, 0, len(parsedReq.Bidders)),
 	}
+
+	//For secure = true flag on cookie
+	secParam := r.URL.Query().Get("sec")
+	refererHeader := r.Header.Get("Referer")
+	setSecureFlag := false
+	if secParam == "1" || strings.HasPrefix(refererHeader, "https") {
+		setSecureFlag = true
+	}
+
 	for i := 0; i < len(parsedReq.Bidders); i++ {
 		bidder := parsedReq.Bidders[i]
 		syncInfo, err := deps.syncers[openrtb_ext.BidderName(bidder)].GetUsersyncInfo(privacyPolicy)
 		if err == nil {
-			//For secure = true flag on cookie
-			secParam := r.URL.Query().Get("sec")
-			refererHeader := r.Header.Get("Referer")
-			if secParam == "1" || strings.HasPrefix(refererHeader, "https") {
-				syncInfo.URL = setSecureParam(syncInfo.URL, true)
-			} else {
-				syncInfo.URL = setSecureParam(syncInfo.URL, false)
-			}
+
+			syncInfo.URL = setSecureParam(syncInfo.URL, setSecureFlag)
 
 			newSync := &usersync.CookieSyncBidders{
 				BidderCode:   bidder,
