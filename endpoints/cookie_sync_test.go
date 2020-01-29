@@ -248,20 +248,40 @@ func parseSyncs(t *testing.T, response []byte) []string {
 	return syncs
 }
 
-func isSetSecParam(sync_url string) bool {
-	u, err := url.Parse(sync_url)
+func parseSyncsForSecureFlag(t *testing.T, response []byte) map[string]string {
+	t.Helper()
+	var syncs map[string]string = make(map[string]string)
+	jsonparser.ArrayEach(response, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if dataType != jsonparser.Object {
+			t.Errorf("response.bidder_status contained unexpected element of type %v.", dataType)
+		}
+		if val, err := jsonparser.GetString(value, "bidder"); err != nil {
+			t.Errorf("response.bidder_status[?].bidder was not a string. Value was %s", string(value))
+		} else {
+			usersyncObj, _, _, err := jsonparser.Get(value, "usersync")
+			if err != nil {
+				syncs[val] = ""
+			} else {
+				usrsync_url, err := jsonparser.GetString(usersyncObj, "url")
+				if err != nil {
+					syncs[val] = ""
+				} else {
+					syncs[val] = usrsync_url
+				}
+			}
+			//syncs = append(syncs, val)
+		}
+	}, "bidder_status")
+	return syncs
+}
+
+func isSetSecParam(syncUrl string) bool {
+	u, err := url.Parse(syncUrl)
 	if err != nil {
 		return false
 	}
 	q := u.Query()
-	predirect := q.Get("predirect")
-
-	u2, err := url.Parse(predirect)
-	if err != nil {
-		return false
-	}
-	q2 := u2.Query()
-	isSet := q2.Get("sec") == "1"
+	isSet := q.Get("sec") == "1"
 	return isSet
 }
 
