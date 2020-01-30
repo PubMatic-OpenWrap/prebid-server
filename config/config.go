@@ -87,6 +87,7 @@ type Configuration struct {
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500
+const SETUID_ENDPOINT = "/setuid?sec={SecParam}&"
 
 type HTTPClient struct {
 	MaxConnsPerHost     int `mapstructure:"max_connections_per_host"`
