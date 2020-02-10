@@ -456,3 +456,20 @@ func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*
 
 	return &timeoutReq, nil
 }
+
+func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*adapters.RequestData, []error) {
+	// Note, facebook creates one request per imp, so all these requests will only have one imp in them
+	auction_id, err := jsonparser.GetString(req.Body, "imp", "[0]", "id")
+	if err != nil {
+		return &adapters.RequestData{}, []error{err}
+	}
+
+	uri := fmt.Sprintf("https://www.facebook.com/audiencenetwork/nurl/?partner=%s&app=%s&auction=%s&ortb_loss_code=2", fa.platformID, fa.platformID, auction_id)
+	timeoutReq := adapters.RequestData{
+		Method:  "GET",
+		Uri:     uri,
+		Body:    nil,
+		Headers: http.Header{},
+	}
+	return &timeoutReq, nil
+}
