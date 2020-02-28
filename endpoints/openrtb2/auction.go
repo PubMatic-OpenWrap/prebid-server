@@ -13,6 +13,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb/native"
+	nativeRequests "github.com/PubMatic-OpenWrap/openrtb/native/request"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
