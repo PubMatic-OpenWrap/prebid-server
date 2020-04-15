@@ -72,3 +72,31 @@ func serve(revision string, cfg *config.Configuration) error {
 	r.Shutdown()
 	return nil
 }
+
+func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
+	return router.OrtbAuctionEndpointWrapper(w, r)
+}
+
+func VideoAuction(w http.ResponseWriter, r *http.Request) error {
+	return router.OrtbAuctionEndpointWrapper(w, r)
+}
+
+func Auction(w http.ResponseWriter, r *http.Request) {
+	router.AuctionWrapper(w, r)
+}
+
+func GetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.GetUIDSWrapper(w, r)
+}
+
+func SetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.SetUIDSWrapper(w, r)
+}
+
+func CookieSync(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	router.CookieSync(w, r)
+}
+
+func SyncerMap() map[openrtb_ext.BidderName]usersync.Usersyncer {
+	return router.SyncerMap()
+}
