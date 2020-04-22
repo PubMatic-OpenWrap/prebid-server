@@ -458,18 +458,39 @@ func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*
 }
 
 func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*adapters.RequestData, []error) {
-	// Note, facebook creates one request per imp, so all these requests will only have one imp in them
-	auction_id, err := jsonparser.GetString(req.Body, "imp", "[0]", "id")
+	var (
+		rID   string
+		pubID string
+		err   error
+	)
+
+	// Note, the facebook adserver can only handle single impression requests, so we have to split multi-imp requests into
+	// multiple request. In order to ensure that every split request has a unique ID, the split request IDs are set to the
+	// corresponding imp's ID
+	rID, err = jsonparser.GetString(req.Body, "id")
 	if err != nil {
 		return &adapters.RequestData{}, []error{err}
 	}
 
-	uri := fmt.Sprintf("https://www.facebook.com/audiencenetwork/nurl/?partner=%s&app=%s&auction=%s&ortb_loss_code=2", fa.platformID, fa.platformID, auction_id)
+	// The publisher ID is either in the app object or the site object, depending on the supply of the request so we need
+	// to check both
+	pubID, err = jsonparser.GetString(req.Body, "app", "publisher", "id")
+	if err != nil {
+		pubID, err = jsonparser.GetString(req.Body, "site", "publisher", "id")
+		if err != nil {
+			return &adapters.RequestData{}, []error{
+				errors.New("path [app|site].publisher.id not found in the request"),
+			}
+		}
+	}
+
+	uri := fmt.Sprintf("https://www.facebook.com/audiencenetwork/nurl/?partner=%s&app=%s&auction=%s&ortb_loss_code=2", fa.platformID, pubID, rID)
 	timeoutReq := adapters.RequestData{
 		Method:  "GET",
 		Uri:     uri,
 		Body:    nil,
 		Headers: http.Header{},
 	}
+
 	return &timeoutReq, nil
 }
