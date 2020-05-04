@@ -636,7 +636,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				BidType:  bidType,
 				BidVideo: impVideo,
 			})
-
 		}
 	}
 	return bidResponse, errs
