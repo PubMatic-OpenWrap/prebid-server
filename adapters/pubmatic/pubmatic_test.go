@@ -808,3 +808,48 @@ func TestOpenRTBBidRequest_UnsupportedMediaTypeWithValidMediaType(t *testing.T) 
 		t.Fatalf("Unexpected number of HTTP requests. Got %d. Expected %d", len(reqs), 1)
 	}
 }
+
+func TestGetMapFromJSON(t *testing.T) {
+	ext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	extMap := getMapFromJSON(ext)
+	if extMap == nil {
+		t.Errorf("it should be converted in extMap")
+	}
+}
+
+func TestGetMapFromJSONWithInvalidJSON(t *testing.T) {
+	ext := json.RawMessage("{\"buyid\":\"testBuyId\"}}}}")
+	extMap := getMapFromJSON(ext)
+	if extMap != nil {
+		t.Errorf("it should be converted in extMap")
+	}
+}
+
+func TestCopySBExtToBidExtWithBidExt(t *testing.T) {
+	sbext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(sbext, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
+	}
+}
+
+func TestCopySBExtToBidExtWithNoBidExt(t *testing.T) {
+	sbext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(sbext, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
+	}
+}
+
+func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(nil, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
+	}
+}
