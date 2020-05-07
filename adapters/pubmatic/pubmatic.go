@@ -615,6 +615,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 	var errs []error
 	for _, sb := range bidResp.SeatBid {
+		targets := getTargetingKeys(sb.Ext)
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
