@@ -101,6 +101,10 @@ func (p *permissionsImpl) normalizeGDPR(gdprSignal Signal) Signal {
 	return SignalYes
 }
 
+func (p *permissionsImpl) AMPException() bool {
+	return p.cfg.AMPException
+}
+
 func (p *permissionsImpl) allowSync(ctx context.Context, vendorID uint16, consent string) (bool, error) {
 
 	if consent == "" {
@@ -282,4 +286,8 @@ func (a AlwaysFail) BidderSyncAllowed(ctx context.Context, bidder openrtb_ext.Bi
 
 func (a AlwaysFail) PersonalInfoAllowed(ctx context.Context, bidder openrtb_ext.BidderName, PublisherID string, gdprSignal Signal, consent string, weakVendorEnforcement bool) (bool, bool, bool, error) {
 	return false, false, false, nil
+}
+
+func (a AlwaysAllow) AMPException() bool {
+	return false
 }
