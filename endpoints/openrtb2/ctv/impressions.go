@@ -239,7 +239,7 @@ func computeTimeLeastValue(time int64, leastTimeRequiredByEachSlot int64) int64 
 
 		// case:  check if slots are looking for time < leastFactor
 		// UOE-5268
-		if leastTimeRequiredByEachSlot < leastFactor {
+		if leastTimeRequiredByEachSlot > 0 && leastTimeRequiredByEachSlot < leastFactor {
 			time = leastTimeRequiredByEachSlot
 		}
 	}
