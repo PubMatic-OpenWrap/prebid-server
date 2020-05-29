@@ -296,18 +296,29 @@ func (pod *VideoAdPod) ValidateAdPodDurations(minDuration, maxDuration, maxExten
 		err = append(err, errInvalidAdPodDuration)
 	}
 
-	//adpod.adminduration*adpod.minads should be greater than or equal to video.minduration
-	if nil != pod.MinAds && nil != pod.MinDuration {
-		if minDuration <= int64((*pod.MinDuration) * (*pod.MinAds)) {
-			err = append(err, errInvalidMinDurationRange)
+	if pod.MaxDuration != nil && pod.MaxAds != nil {
+		if minDuration < int64((*pod.MaxDuration) * (*pod.MaxAds)) && int64((*pod.MaxDuration) * (*pod.MaxAds)) < maxDuration {
+			err = append(err, errInvalidMinDurationRange) //TODO: Change error message
 		}
 	}
 
-	//adpod.admaxduration*adpod.maxads should be less than or equal to video.maxduration + video.maxextended
-	if maxExtended > 0 && nil != pod.MinAds && nil != pod.MinDuration {
-		if (maxDuration + maxExtended) >= int64((*pod.MinAds) * (*pod.MinDuration)) {
-			err = append(err, errInvalidMaxDurationRange)
+	if pod.MaxDuration != nil && pod.MinAds != nil {
+		if minDuration < int64((*pod.MaxDuration) * (*pod.MinAds)) && int64((*pod.MaxDuration) * (*pod.MinAds)) < maxDuration {
+			err = append(err, errInvalidMinDurationRange) //TODO: Change error message
 		}
 	}
+
+	if pod.MinDuration != nil && pod.MinAds != nil {
+		if minDuration < int64((*pod.MinDuration) * (*pod.MinAds)) && int64((*pod.MinDuration) * (*pod.MinAds)) < maxDuration {
+			err = append(err, errInvalidMinDurationRange) //TODO: Change error message
+		}
+	}
+
+	if pod.MinDuration != nil && pod.MaxAds != nil {
+		if minDuration < int64((*pod.MinDuration) * (*pod.MaxAds)) && int64((*pod.MinDuration) * (*pod.MaxAds)) < maxDuration {
+			err = append(err, errInvalidMinDurationRange) //TODO: Change error message
+		}
+	}
+
 	return
 }
