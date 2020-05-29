@@ -236,23 +236,14 @@ func computeTimeLeastValue(time int64, leastTimeRequiredByEachSlot int64) int64 
 	leastFactor := multipleOf
 	if leastFactor < time {
 		time = leastFactor
-
-		// case:  check if slots are looking for time < leastFactor
-		// UOE-5268
-		if leastTimeRequiredByEachSlot < leastFactor {
-			time = leastTimeRequiredByEachSlot
-		}
 	}
 
-<<<<<<< HEAD
 	// case:  check if slots are looking for time < leastFactor
 	// UOE-5268
 	if leastTimeRequiredByEachSlot > 0 && leastTimeRequiredByEachSlot < time {
 		time = leastTimeRequiredByEachSlot
 	}
 
-=======
->>>>>>> ci
 	return time
 }
 
