@@ -1,4 +1,7 @@
-package ctv
+// Package impressions provides various algorithms to get the number of impressions
+// along with minimum and maximum duration of each impression.
+// It uses Ad pod request for it
+package impressions
 
 import (
 	"testing"
@@ -525,13 +528,15 @@ var impressionsTests = []struct {
 
 func TestGetImpressionsA1(t *testing.T) {
 	for _, impTest := range impressionsTests {
+		if impTest.scenario != "TC51" {
+			continue
+		}
 		t.Run(impTest.scenario, func(t *testing.T) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
 			// cfg, _ := getImpressions(p.podMinDuration, p.podMaxDuration, p.vPod)
 			cfg := newImpGenA1(p.podMinDuration, p.podMaxDuration, p.vPod)
 			imps := cfg.Get()
 			expected := impTest.out
-
 			// assert.Equal(t, expected.impressionCount, len(pod.Slots), "Expected impression count = %v . But Found %v", expectedImpressionCount, len(pod.Slots))
 			assert.Equal(t, expected.freeTime, cfg.freeTime, "Expected Free Time = %v . But Found %v", expected.freeTime, cfg.freeTime)
 			assert.Equal(t, expected.closedMinDuration, cfg.podMinDuration, "Expected closedMinDuration= %v . But Found %v", expected.closedMinDuration, cfg.podMinDuration)
@@ -539,6 +544,7 @@ func TestGetImpressionsA1(t *testing.T) {
 			assert.Equal(t, expected.closedSlotMinDuration, cfg.slotMinDuration, "Expected closedSlotMinDuration= %v . But Found %v", expected.closedSlotMinDuration, cfg.slotMinDuration)
 			assert.Equal(t, expected.closedSlotMaxDuration, cfg.slotMaxDuration, "Expected closedSlotMinDuration= %v . But Found %v", expected.closedSlotMaxDuration, cfg.slotMaxDuration)
 			assert.Equal(t, expected.output, imps, "2darray mismatch")
+			assert.Equal(t, Algorithm1, cfg.Algorithm())
 		})
 	}
 }

@@ -1,4 +1,7 @@
-package ctv
+// Package impressions provides various algorithms to get the number of impressions
+// along with minimum and maximum duration of each impression.
+// It uses Ad pod request for it
+package impressions
 
 import (
 	"fmt"
@@ -20,6 +23,7 @@ func TestGetImpressionsA2(t *testing.T) {
 
 	gen := newImpGenA2(60, 90, p)
 	fmt.Println(gen.Get())
+	fmt.Println(gen.Algorithm())
 }
 
 func BenchmarkGetImpressionsA2(b *testing.B) {

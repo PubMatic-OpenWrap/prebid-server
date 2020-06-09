@@ -1,4 +1,7 @@
-package ctv
+// Package impressions provides various algorithms to get the number of impressions
+// along with minimum and maximum duration of each impression.
+// It uses Ad pod request for it
+package impressions
 
 import (
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -33,7 +36,7 @@ func newVideoAdPod(p openrtb_ext.VideoAdPod, minAds, maxAds int) openrtb_ext.Vid
 }
 
 // Get ...
-func (c config) Get() [][2]int64 {
+func (c *config) Get() [][2]int64 {
 	imps := make([][2]int64, 0)
 	impsChan := make(chan [][2]int64, len(c.generator))
 	for i := 0; i < len(c.generator); i++ {
@@ -47,4 +50,9 @@ func get(cfg adPodConfig, c chan [][2]int64) {
 	imps := cfg.Get()
 	print("Impressions = %v\n", imps)
 	c <- imps
+}
+
+// Algorithm returns Algorithm2
+func (cfg config) Algorithm() int {
+	return Algorithm2
 }
