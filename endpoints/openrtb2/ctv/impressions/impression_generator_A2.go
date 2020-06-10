@@ -4,6 +4,7 @@
 package impressions
 
 import (
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
@@ -14,18 +15,23 @@ type config struct {
 
 func newImpGenA2(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod) config {
 	generator := make([]adPodConfig, 0)
-	// step 1
-	generator = append(generator, newImpGenA1(podMinDuration, podMaxDuration, p))
+	// step 1 - same as Algorithm1
+	generator = append(generator, initGenerator(podMinDuration, podMaxDuration, p, *p.MinAds, *p.MaxAds))
 	// step 2 - pod duration = pod max, no of ads = max ads
-	generator = append(generator, newImpGenA1(podMaxDuration, podMaxDuration, newVideoAdPod(p, *p.MaxAds, *p.MaxAds)))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MaxAds, *p.MaxAds))
 	// step 3 - pod duration = pod max, no of ads = min ads
-	generator = append(generator, newImpGenA1(podMaxDuration, podMaxDuration, newVideoAdPod(p, *p.MinAds, *p.MinAds)))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MinAds, *p.MinAds))
 	// step 4 - pod duration = pod min, no of ads = max  ads
-	generator = append(generator, newImpGenA1(podMinDuration, podMinDuration, newVideoAdPod(p, *p.MaxAds, *p.MaxAds)))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MaxAds, *p.MaxAds))
 	// step 5 - pod duration = pod min, no of ads = min  ads
-	generator = append(generator, newImpGenA1(podMinDuration, podMinDuration, newVideoAdPod(p, *p.MinAds, *p.MinAds)))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MinAds, *p.MinAds))
 
 	return config{generator: generator}
+}
+
+func initGenerator(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod, minAds, maxAds int) adPodConfig {
+	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, newVideoAdPod(p, minAds, maxAds), multipleOf)
+	return config
 }
 
 func newVideoAdPod(p openrtb_ext.VideoAdPod, minAds, maxAds int) openrtb_ext.VideoAdPod {
@@ -46,13 +52,13 @@ func (c *config) Get() [][2]int64 {
 	return imps
 }
 
-func get(cfg adPodConfig, c chan [][2]int64) {
-	imps := cfg.Get()
-	print("Impressions = %v\n", imps)
-	c <- imps
+func get(c adPodConfig, ch chan [][2]int64) {
+	imps := c.Get()
+	ctv.Logf("Impressions = %v\n", imps)
+	ch <- imps
 }
 
 // Algorithm returns Algorithm2
-func (cfg config) Algorithm() int {
+func (c config) Algorithm() int {
 	return Algorithm2
 }
