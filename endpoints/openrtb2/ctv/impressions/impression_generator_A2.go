@@ -11,6 +11,17 @@ import (
 type config struct {
 	IImpressions
 	generator []adPodConfig
+	// maxExpectedDurationMap contains key = min , max duration, value = no of impressions
+	// this map avoids the unwanted repeatations of impressions generated
+	//   Example,
+	//   Step 1 : {{2, 17}, {15, 15}, {15, 15}, {10, 10}, {10, 10}, {10, 10}}
+	//   Step 2 : {{2, 17}, {15, 15}, {15, 15}, {10, 10}, {10, 10}, {10, 10}}
+	//   Step 3 : {{25, 25}, {25, 25}, {2, 22}, {5, 5}}
+	//   Step 4 : {{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}}
+	//   Step 5 : {{15, 15}, {15, 15}, {15, 15}, {15, 15}}
+	//   Optimized Output : {{2, 17}, {15, 15},{15, 15},{15, 15},{15, 15},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{25, 25}, {25, 25},{2, 22}, {5, 5}}
+	//   This map will contains : {2, 17} = 1, {15, 15} = 4, {10, 10} = 6, {25, 25} = 2, {2, 22} = 1, {5, 5} =1
+	maxExpectedDurationMap map[[2]int]int
 }
 
 func newImpGenA2(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod) config {
