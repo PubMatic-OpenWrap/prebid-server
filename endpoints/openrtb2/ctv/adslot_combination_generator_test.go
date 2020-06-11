@@ -1,6 +1,7 @@
 package ctv
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -132,6 +133,7 @@ func TestPodDurationCombinationGenerator(t *testing.T) {
 	for _, test := range testBidResponseMaxDurations {
 
 		t.Run(test.scenario, func(t *testing.T) {
+			// fmt.Println("Testcase = ", test.scenario)
 			c := new(PodDurationCombination)
 			//log.Printf("Input = %v", test.responseMaxDurations)
 
@@ -139,7 +141,7 @@ func TestPodDurationCombinationGenerator(t *testing.T) {
 			config.MinAds = &test.minAds
 			config.MaxAds = &test.maxAds
 
-			c.Init(uint64(test.podMinDuration), uint64(test.podMaxDuration), config, test.responseMaxDurations)
+			c.Init(uint64(test.podMinDuration), uint64(test.podMaxDuration), config, test.responseMaxDurations, MaxToMin)
 			expectedOutput := c.searchAll()
 			// determine expected size of expected output
 			// subtract invalid combinations size
@@ -152,9 +154,9 @@ func TestPodDurationCombinationGenerator(t *testing.T) {
 				if comb == nil || len(comb) == 0 {
 					break
 				}
-				print("%v", comb)
+				Logf("%v", comb)
 				//fmt.Print("count = ", c.currentCombinationCount, " :: ", comb, "\n")
-				//fmt.Println("e = ", (expectedOutput)[cnt], "\t : a = ", comb)
+				fmt.Println("e = ", (expectedOutput)[cnt], "\t : a = ", comb)
 				val := make([]uint64, len(comb))
 				copy(val, comb)
 				actualOutput[cnt] = val
@@ -182,12 +184,12 @@ func TestPodDurationCombinationGenerator(t *testing.T) {
 			assert.Equal(t, expectedOutput, actualOutput)
 			assert.ElementsMatch(t, expectedOutput, actualOutput)
 
-			print("config = %v", test)
-			print("Total combinations generated = %v", c.stats.currentCombinationCount)
-			print("Total valid combinations  = %v", c.stats.validCombinationCount)
-			print("Total repeated combinations  = %v", c.stats.repeatationsCount)
-			print("Total outofrange combinations  = %v", c.stats.outOfRangeCount)
-			print("Total combinations expected = %v", c.stats.totalExpectedCombinations)
+			Logf("config = %v", test)
+			Logf("Total combinations generated = %v", c.stats.currentCombinationCount)
+			Logf("Total valid combinations  = %v", c.stats.validCombinationCount)
+			Logf("Total repeated combinations  = %v", c.stats.repeatationsCount)
+			Logf("Total outofrange combinations  = %v", c.stats.outOfRangeCount)
+			Logf("Total combinations expected = %v", c.stats.totalExpectedCombinations)
 		})
 	}
 }

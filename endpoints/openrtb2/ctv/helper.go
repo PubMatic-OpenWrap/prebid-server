@@ -48,10 +48,11 @@ func GetUniqueBidID(bidID string, id int) string {
 	return fmt.Sprintf(CTVUniqueBidIDFormat, id, bidID)
 }
 
-func Logf(msg string, args ...interface{}) {
+var Logf = func(msg string, args ...interface{}) {
 	if glog.V(3) {
 		glog.Infof(msg, args...)
 	}
+	//fmt.Printf(msg+"\n", args...)
 }
 
 func JLogf(msg string, obj interface{}) {
