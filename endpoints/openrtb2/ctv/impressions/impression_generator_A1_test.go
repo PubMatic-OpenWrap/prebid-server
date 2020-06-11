@@ -541,7 +541,7 @@ func TestGetImpressionsA1(t *testing.T) {
 			assert.Equal(t, expected.closedSlotMinDuration, cfg.slotMinDuration, "Expected closedSlotMinDuration= %v . But Found %v", expected.closedSlotMinDuration, cfg.slotMinDuration)
 			assert.Equal(t, expected.closedSlotMaxDuration, cfg.slotMaxDuration, "Expected closedSlotMinDuration= %v . But Found %v", expected.closedSlotMaxDuration, cfg.slotMaxDuration)
 			assert.Equal(t, expected.output, imps, "2darray mismatch")
-			assert.Equal(t, Algorithm1, cfg.Algorithm())
+			assert.Equal(t, MaximizeForDuration, cfg.Algorithm())
 		})
 	}
 }

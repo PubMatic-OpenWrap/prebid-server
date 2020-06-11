@@ -11,16 +11,18 @@ import (
 )
 
 const (
-	// Algorithm1 tends towards Ad Pod Maximum Duration, Ad Slot Maximum Duration
+	// MaximizeForDuration algorithm tends towards Ad Pod Maximum Duration, Ad Slot Maximum Duration
 	// and Maximum number of Ads. Accordingly it computes the number of impressions
-	Algorithm1 = iota
-	// Algorithm2 computes number of impressions using following  steps
-	//  1. Passes input configuration as it is (Equivalent of Algorithm1)
+	MaximizeForDuration = iota
+	// OptimizeForFillRate algorithm ensures all possible impression breaks are plotted by considering
+	// minimum as well as maxmimum durations and ads received in the ad pod request.
+	// It computes number of impressions with following steps
+	//  1. Passes input configuration as it is (Equivalent of MaximizeForDuration algorithm)
 	//	2. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = max ads
 	//	3. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = min ads
 	//	4. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = max ads
 	//	5. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = min ads
-	Algorithm2
+	OptimizeForFillRate
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
@@ -38,13 +40,13 @@ type IImpressions interface {
 // based on input algorithm type
 func NewImpressions(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, algorithm int) (IImpressions, error) {
 	switch algorithm {
-	case Algorithm1:
-		ctv.Logf("Selected 'Algorithm1' ")
+	case MaximizeForDuration:
+		ctv.Logf("Selected 'MaximizeForDuration' ")
 		g := newImpGenA1(podMinDuration, podMaxDuration, vPod)
 		return &g, nil
 
-	case Algorithm2:
-		ctv.Logf("Selected 'Algorithm2' ")
+	case OptimizeForFillRate:
+		ctv.Logf("Selected 'OptimizeForFillRate' ")
 		g := newImpGenA2(podMinDuration, podMaxDuration, vPod)
 		return &g, nil
 	}

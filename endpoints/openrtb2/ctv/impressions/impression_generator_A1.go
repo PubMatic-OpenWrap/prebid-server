@@ -22,7 +22,7 @@ func newImpGenA1(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdP
 	return config
 }
 
-// Algorithm returns Algorithm1
+// Algorithm returns MaximizeForDuration
 func (config adPodConfig) Algorithm() int {
-	return Algorithm1
+	return MaximizeForDuration
 }

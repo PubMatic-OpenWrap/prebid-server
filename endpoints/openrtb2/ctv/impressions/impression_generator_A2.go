@@ -69,7 +69,7 @@ func get(c adPodConfig, ch chan [][2]int64) {
 	ch <- imps
 }
 
-// Algorithm returns Algorithm2
+// Algorithm returns OptimizeForFillRate
 func (c config) Algorithm() int {
-	return Algorithm2
+	return OptimizeForFillRate
 }
