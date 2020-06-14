@@ -1,13 +1,9 @@
-// Package impressions provides various algorithms to get the number of impressions
-// along with minimum and maximum duration of each impression.
-// It uses Ad pod request for it
 package impressions
 
 import (
 	"sort"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -176,9 +172,6 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
-		// if impTest.scenario != "TC5" {
-		// 	continue
-		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
 			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
@@ -212,6 +205,16 @@ func TestGetImpressionsA2(t *testing.T) {
 			// also verify merged output
 			assert.Equal(t, sortOutput(expectedMergedOutput), sortOutput(a2.Get()))
 		})
+	}
+}
+
+func BenchmarkGetImpressionsA2(b *testing.B) {
+	for _, impTest := range impressionsTestsA2 {
+		for i := 0; i < b.N; i++ {
+			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
+			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
+			a2.Get()
+		}
 	}
 }
 
@@ -260,20 +263,4 @@ func appendOptimized(slice [][2]int64, elems [][2]int64) [][2]int64 {
 		}
 	}
 	return optimized
-}
-
-func BenchmarkGetImpressionsA2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		p := openrtb_ext.VideoAdPod{}
-		p.MinDuration = new(int)
-		*p.MinDuration = 20
-		p.MaxDuration = new(int)
-		*p.MaxDuration = 45
-		p.MinAds = new(int)
-		*p.MinAds = 2
-		p.MaxAds = new(int)
-		*p.MaxAds = 10
-
-		newMinMaxAlgorithm(60, 90, p)
-	}
 }

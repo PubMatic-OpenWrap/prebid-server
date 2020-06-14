@@ -1,6 +1,3 @@
-// Package impressions provides various algorithms to get the number of impressions
-// along with minimum and maximum duration of each impression.
-// It uses Ad pod request for it
 package impressions
 
 import (
