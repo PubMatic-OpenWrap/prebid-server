@@ -4,6 +4,7 @@
 package impressions
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -151,6 +152,19 @@ var impressionsTestsA2 = []struct {
 		step5: [][2]int64{{15, 15}, {15, 15}, {15, 15}, {15, 15}},
 	}},
 
+	{scenario: "TC_2_to_6_ads_of_15_to_45_sec", in: []int{60, 90, 15, 45, 2, 6}, out: expectedOutputA2{
+		// 60, 90, 15, 45, 2, 6
+		step1: [][2]int64{{15, 15}, {15, 15}, {15, 15}, {15, 15}, {15, 15}, {15, 15}},
+		// 90, 90, 15, 45, 6, 6
+		step2: [][2]int64{{15, 15}, {15, 15}, {15, 15}, {15, 15}, {15, 15}, {15, 15}},
+		// 90, 90, 15, 45, 2, 2
+		step3: [][2]int64{{45, 45}, {45, 45}},
+		// 60, 60, 15, 45, 6, 6
+		step4: [][2]int64{},
+		// 60, 60, 15, 45, 2, 2
+		step5: [][2]int64{{30, 30}, {30, 30}},
+	}},
+
 	// {scenario: "TC6", in: []int{}, out: expectedOutputA2{
 	// 	step1: [][2]int64{},
 	// 	step2: [][2]int64{},
@@ -162,40 +176,90 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
+		// if impTest.scenario != "TC5" {
+		// 	continue
+		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
-			a2 := newImpGenA2(p.podMinDuration, p.podMaxDuration, p.vPod)
+			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
 			expectedMergedOutput := make([][2]int64, 0)
 			// explictly looping in order to check result of individual generator
 			for step, gen := range a2.generator {
 				switch step {
 				case 0: // algo1 equaivalent
 					assert.Equal(t, impTest.out.step1, gen.Get())
-					expectedMergedOutput = append(expectedMergedOutput, impTest.out.step1...)
+					expectedMergedOutput = appendOptimized(expectedMergedOutput, impTest.out.step1)
 					break
 				case 1: // pod duration = pod max duration, no of ads = maxads
 					assert.Equal(t, impTest.out.step2, gen.Get())
-					expectedMergedOutput = append(expectedMergedOutput, impTest.out.step2...)
+					expectedMergedOutput = appendOptimized(expectedMergedOutput, impTest.out.step2)
 					break
 				case 2: // pod duration = pod max duration, no of ads = minads
 					assert.Equal(t, impTest.out.step3, gen.Get())
-					expectedMergedOutput = append(expectedMergedOutput, impTest.out.step3...)
+					expectedMergedOutput = appendOptimized(expectedMergedOutput, impTest.out.step3)
 					break
 				case 3: // pod duration = pod min duration, no of ads = maxads
 					assert.Equal(t, impTest.out.step4, gen.Get())
-					expectedMergedOutput = append(expectedMergedOutput, impTest.out.step4...)
+					expectedMergedOutput = appendOptimized(expectedMergedOutput, impTest.out.step4)
 					break
 				case 4: // pod duration = pod min duration, no of ads = minads
 					assert.Equal(t, impTest.out.step5, gen.Get())
-					expectedMergedOutput = append(expectedMergedOutput, impTest.out.step5...)
+					expectedMergedOutput = appendOptimized(expectedMergedOutput, impTest.out.step5)
 					break
 				}
 
 			}
 			// also verify merged output
-			assert.Equal(t, expectedMergedOutput, a2.Get())
+			assert.Equal(t, sortOutput(expectedMergedOutput), sortOutput(a2.Get()))
 		})
 	}
+}
+
+func sortOutput(imps [][2]int64) [][2]int64 {
+	sort.Slice(imps, func(i, j int) bool {
+		return imps[i][1] < imps[j][1]
+	})
+	return imps
+}
+
+func appendOptimized(slice [][2]int64, elems [][2]int64) [][2]int64 {
+	m := make(map[string]int, 0)
+	keys := make([]string, 0)
+	for _, sel := range slice {
+		k := getKey(sel)
+		m[k]++
+		keys = append(keys, k)
+	}
+	elemsmap := make(map[string]int, 0)
+	for _, ele := range elems {
+		elemsmap[getKey(ele)]++
+	}
+
+	for k := range elemsmap {
+		if elemsmap[k] > m[k] {
+			m[k] = elemsmap[k]
+		}
+
+		keyPresent := false
+		for _, kl := range keys {
+			if kl == k {
+				keyPresent = true
+				break
+			}
+		}
+
+		if !keyPresent {
+			keys = append(keys, k)
+		}
+	}
+
+	optimized := make([][2]int64, 0)
+	for k, v := range m {
+		for i := 1; i <= v; i++ {
+			optimized = append(optimized, getImpression(k))
+		}
+	}
+	return optimized
 }
 
 func BenchmarkGetImpressionsA2(b *testing.B) {
@@ -210,6 +274,6 @@ func BenchmarkGetImpressionsA2(b *testing.B) {
 		p.MaxAds = new(int)
 		*p.MaxAds = 10
 
-		newImpGenA2(60, 90, p)
+		newMinMaxAlgorithm(60, 90, p)
 	}
 }

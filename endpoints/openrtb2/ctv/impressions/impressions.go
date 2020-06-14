@@ -4,17 +4,21 @@
 package impressions
 
 import (
-	"errors"
-
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
+// Algorithm indicates type of algorithms supported
+// Currently it supports
+//	1. MaximizeForDuration
+//  2. MinMaxAlgorithm
+type Algorithm int
+
 const (
 	// MaximizeForDuration algorithm tends towards Ad Pod Maximum Duration, Ad Slot Maximum Duration
 	// and Maximum number of Ads. Accordingly it computes the number of impressions
-	MaximizeForDuration = iota
-	// OptimizeForFillRate algorithm ensures all possible impression breaks are plotted by considering
+	MaximizeForDuration Algorithm = iota
+	// MinMaxAlgorithm algorithm ensures all possible impression breaks are plotted by considering
 	// minimum as well as maxmimum durations and ads received in the ad pod request.
 	// It computes number of impressions with following steps
 	//  1. Passes input configuration as it is (Equivalent of MaximizeForDuration algorithm)
@@ -22,7 +26,7 @@ const (
 	//	3. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = min ads
 	//	4. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = max ads
 	//	5. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = min ads
-	OptimizeForFillRate
+	MinMaxAlgorithm Algorithm = iota
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
@@ -33,22 +37,32 @@ var multipleOf = int64(5)
 // IImpressions ...
 type IImpressions interface {
 	Get() [][2]int64
-	Algorithm() int // returns algorithm used for computing number of impressions
+	Algorithm() Algorithm // returns algorithm used for computing number of impressions
 }
 
 // NewImpressions generate object of impression generator
 // based on input algorithm type
-func NewImpressions(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, algorithm int) (IImpressions, error) {
+// if invalid algorithm type is passed, it returns default algorithm which will compute
+// impressions based on minimum ad slot duration
+func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.VideoAdPod, algorithm Algorithm) IImpressions {
 	switch algorithm {
 	case MaximizeForDuration:
 		ctv.Logf("Selected 'MaximizeForDuration' ")
-		g := newImpGenA1(podMinDuration, podMaxDuration, vPod)
-		return &g, nil
+		g := newMaximizeForDuration(podMinDuration, podMaxDuration, *vPod)
+		return &g
 
-	case OptimizeForFillRate:
-		ctv.Logf("Selected 'OptimizeForFillRate' ")
-		g := newImpGenA2(podMinDuration, podMaxDuration, vPod)
-		return &g, nil
+	case MinMaxAlgorithm:
+		ctv.Logf("Selected 'MinMaxAlgorithm' ")
+		g := newMinMaxAlgorithm(podMinDuration, podMaxDuration, *vPod)
+		return &g
 	}
-	return nil, errors.New("Invalid algorithm value")
+
+	// return default algorithm with slot durations set to minimum slot duration
+	defaultGenerator := newConfig(podMinDuration, podMinDuration, openrtb_ext.VideoAdPod{
+		MinAds:      vPod.MinAds,
+		MaxAds:      vPod.MaxAds,
+		MinDuration: vPod.MinDuration,
+		MaxDuration: vPod.MinDuration, // sending slot minduration as max duration
+	})
+	return &defaultGenerator
 }

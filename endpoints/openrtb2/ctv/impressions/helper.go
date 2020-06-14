@@ -7,47 +7,69 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
-func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) adPodConfig {
-	config := adPodConfig{}
-
-	config.requestedPodMinDuration = podMinDuration
-	config.requestedPodMaxDuration = podMaxDuration
-
-	config.requestedSlotMinDuration = int64(*vPod.MinDuration)
-	config.requestedSlotMaxDuration = int64(*vPod.MaxDuration)
-
-	// init as if multiple of 1
-	config.podMinDuration = config.requestedPodMinDuration
-	config.podMaxDuration = config.requestedPodMaxDuration
-	config.slotMinDuration = config.requestedSlotMinDuration
-	config.slotMaxDuration = config.requestedSlotMaxDuration
-
-	config.minAds = int64(*vPod.MinAds)
-	config.maxAds = int64(*vPod.MaxAds)
+//  newConfig initializes the generator instance
+func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) generator {
+	config := generator{}
 	config.totalSlotTime = new(int64)
+	// configure requested pod
+	config.requested = pod{
+		podMinDuration:  podMinDuration,
+		podMaxDuration:  podMaxDuration,
+		slotMinDuration: int64(*vPod.MinDuration),
+		slotMaxDuration: int64(*vPod.MaxDuration),
+		minAds:          int64(*vPod.MinAds),
+		maxAds:          int64(*vPod.MaxAds),
+	}
+
+	// configure internal pod (FOR INTERNAL USE ONLY)
+	// this pod is used for internal computation
+	// and contains modified values of podMinDuration, podMaxDuration
+	// slotMinDuration and slotMaxDuration in multiples of multipleOf factor
+	// This function will by deault intialize this pod with same values
+	// as of requestedPod
+	// There is another function newConfigWithMultipleOf, which computes and assigns
+	// values to this object
+	config.internal = pod{
+		podMinDuration:  config.requested.podMinDuration,
+		podMaxDuration:  config.requested.podMaxDuration,
+		slotMinDuration: config.requested.slotMinDuration,
+		slotMaxDuration: config.requested.slotMaxDuration,
+		minAds:          config.requested.minAds,
+		maxAds:          config.requested.maxAds,
+	}
 	return config
 }
 
-func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, multipleOf int64) adPodConfig {
+// newConfigWithMultipleOf initializes the generator instance
+// it internally calls newConfig to obtain the generator instance
+// then it computes closed to factor basedon 'multipleOf' parameter value
+// and accordingly determines the Pod Min/Max and Slot Min/Max values for internal
+// computation only.
+func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, multipleOf int64) generator {
 	config := newConfig(podMinDuration, podMaxDuration, vPod)
-	if config.requestedPodMinDuration == config.requestedPodMaxDuration {
+
+	// override the values of internalPod
+	// config.internal
+
+	if config.requested.podMinDuration == config.requested.podMaxDuration {
 		/*TestCase 16*/
-		ctv.Logf("requestedPodMinDuration = requestedPodMaxDuration = %v\n", config.requestedPodMinDuration)
-		config.podMinDuration = config.requestedPodMinDuration
-		config.podMaxDuration = config.podMinDuration
+		ctv.Logf("requested.podMinDuration = requested.podMaxDuration = %v\n", config.requested.podMinDuration)
+		config.internal.podMinDuration = config.requested.podMinDuration
+		config.internal.podMaxDuration = config.requested.podMaxDuration
 	} else {
-		config.podMinDuration = getClosetFactorForMinDuration(config.requestedPodMinDuration, multipleOf)
-		config.podMaxDuration = getClosetFactorForMaxDuration(config.requestedPodMaxDuration, multipleOf)
+		config.internal.podMinDuration = getClosetFactorForMinDuration(config.requested.podMinDuration, multipleOf)
+		config.internal.podMaxDuration = getClosetFactorForMaxDuration(config.requested.podMaxDuration, multipleOf)
 	}
 
-	if config.requestedSlotMinDuration == config.requestedSlotMaxDuration {
+	// if config.requestedSlotMinDuration == config.requestedSlotMaxDuration {
+	if config.requested.slotMinDuration == config.requested.slotMaxDuration {
 		/*TestCase 30*/
-		ctv.Logf("requestedSlotMinDuration = requestedSlotMaxDuration = %v\n", config.requestedPodMinDuration)
-		config.slotMinDuration = config.requestedSlotMinDuration
-		config.slotMaxDuration = config.slotMinDuration
+		ctv.Logf("requested.SlotMinDuration = requested.SlotMaxDuration = %v\n", config.requested.slotMinDuration)
+		config.internal.slotMinDuration = config.requested.slotMinDuration
+		config.internal.slotMaxDuration = config.requested.slotMaxDuration
 	} else {
-		config.slotMinDuration = getClosetFactorForMinDuration(int64(config.requestedSlotMinDuration), multipleOf)
-		config.slotMaxDuration = getClosetFactorForMaxDuration(int64(config.requestedSlotMaxDuration), multipleOf)
+		config.internal.slotMinDuration = getClosetFactorForMinDuration(int64(config.requested.slotMinDuration), multipleOf)
+		config.internal.slotMaxDuration = getClosetFactorForMaxDuration(int64(config.requested.slotMaxDuration), multipleOf)
 	}
 	return config
 }
@@ -71,10 +93,6 @@ func getClosetFactorForMinDuration(MinDuration int64, multipleOf int64) int64 {
 
 	if closedMinDuration == 0 {
 		return multipleOf
-	}
-
-	if closedMinDuration == MinDuration {
-		return MinDuration
 	}
 
 	if closedMinDuration < MinDuration {
