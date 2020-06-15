@@ -26,7 +26,7 @@ type config struct {
 	//   Step 5 : {{15, 15}, {15, 15}, {15, 15}, {15, 15}}
 	//   Optimized Output : {{2, 17}, {15, 15},{15, 15},{15, 15},{15, 15},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{25, 25}, {25, 25},{2, 22}, {5, 5}}
 	//   This map will contains : {2, 17} = 1, {15, 15} = 4, {10, 10} = 6, {25, 25} = 2, {2, 22} = 1, {5, 5} =1
-	maxExpectedDurationMap map[string][2]*int
+	maxExpectedDurationMap map[string][2]int
 }
 
 // newMinMaxAlgorithm constructs instance of MinMaxAlgorithm
@@ -63,11 +63,11 @@ func newVideoAdPod(p openrtb_ext.VideoAdPod, minAds, maxAds int) openrtb_ext.Vid
 // Get ...
 func (c *config) Get() [][2]int64 {
 	imps := make([][2]int64, 0)
-	var wg sync.WaitGroup // ensures each step generating impressions is finished
+	wg := new(sync.WaitGroup) // ensures each step generating impressions is finished
 	impsChan := make(chan [][2]int64, len(c.generator))
 	for i := 0; i < len(c.generator); i++ {
 		wg.Add(1)
-		go get(c.generator[i], impsChan, func() { wg.Done() })
+		go get(c.generator[i], impsChan, wg)
 	}
 
 	// ensure impressions channel is closed
@@ -77,11 +77,11 @@ func (c *config) Get() [][2]int64 {
 		wg.Wait()
 	}()
 
-	c.maxExpectedDurationMap = make(map[string][2]*int, 0)
+	c.maxExpectedDurationMap = make(map[string][2]int, 0)
 	for impressions := range impsChan {
 		for index, impression := range impressions {
 			impKey := getKey(impression)
-			optimizeRepeatations(c, impKey, index+1 == len(impressions))
+			setMaximumRepeatations(c, impKey, index+1 == len(impressions))
 		}
 	}
 
@@ -103,32 +103,28 @@ func getImpression(key string) [2]int64 {
 	return [2]int64{int64(minDuration), int64(maxDuration)}
 }
 
-// optimizeRepeatations avoids unwanted repeatations of impression object. Using following logic
+// setMaximumRepeatations avoids unwanted repeatations of impression object. Using following logic
 // maxExpectedDurationMap value contains 2 types of storage
-//  1. value[0] - represents main storage where final repeataions are stored
-//  2. value[1] - locate storage used by each impression object to add more repeatations if required
+//  1. value[0] - represents current counter where final repeataions are stored
+//  2. value[1] - local storage used by each impression object to add more repeatations if required
 // impKey - key used to obtained already added repeatations for given impression
-// updateMainStorage - if true and if current local storage value  > repeatations then repeations will be
-// updated as main storage
-func optimizeRepeatations(c *config, impKey string, updateMainStorage bool) {
-	// update temporary storage of each impression
+// updateCurrentCounter - if true and if current local storage value  > repeatations then repeations will be
+// updated as current counter
+func setMaximumRepeatations(c *config, impKey string, updateCurrentCounter bool) {
+	// update maxCounter of each impression
 	value := c.maxExpectedDurationMap[impKey]
-	if nil == value[0] && nil == value[1] {
-		value[0] = new(int)
-		value[1] = new(int)
-		c.maxExpectedDurationMap[impKey] = value
-	}
-
-	*value[1]++ // update tempoary storage
-	// if val(temporary storage)  > actual store then consider temporary value as actual value
-	if updateMainStorage {
+	value[1]++ // increment max counter (contains no of repeatations for given iteration)
+	c.maxExpectedDurationMap[impKey] = value
+	// if val(maxCounter)  > actual store then consider temporary value as actual value
+	if updateCurrentCounter {
 		for k := range c.maxExpectedDurationMap {
 			val := c.maxExpectedDurationMap[k]
-			if *val[1] > *val[0] {
-				*val[0] = *val[1]
+			if val[1] > val[0] {
+				val[0] = val[1]
 			}
-			// clear temporary storage
-			*val[1] = 0
+			// clear maxCounter
+			val[1] = 0
+			c.maxExpectedDurationMap[k] = val // reassign
 		}
 	}
 
@@ -143,13 +139,13 @@ func getKey(impression [2]int64) string {
 // getRepeations returns number of repeatations at that time that this algorithm will
 // return w.r.t. input impressionKey
 func (c config) getRepeations(impressionKey string) int {
-	return *c.maxExpectedDurationMap[impressionKey][0]
+	return c.maxExpectedDurationMap[impressionKey][0]
 }
 
 // get is internal function that actually computes the number of impressions
 // based on configrations present in c
-func get(c generator, ch chan [][2]int64, onExit func()) {
-	defer onExit()
+func get(c generator, ch chan [][2]int64, wg *sync.WaitGroup) {
+	defer wg.Done()
 	imps := c.Get()
 	ctv.Logf("A2 Impressions = %v\n", imps)
 	ch <- imps

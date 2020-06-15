@@ -26,7 +26,7 @@ const (
 	//	3. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = min ads
 	//	4. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = max ads
 	//	5. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = min ads
-	MinMaxAlgorithm Algorithm = iota
+	MinMaxAlgorithm
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation

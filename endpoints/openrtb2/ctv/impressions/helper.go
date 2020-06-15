@@ -57,8 +57,8 @@ func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_
 		config.internal.podMinDuration = config.requested.podMinDuration
 		config.internal.podMaxDuration = config.requested.podMaxDuration
 	} else {
-		config.internal.podMinDuration = getClosetFactorForMinDuration(config.requested.podMinDuration, multipleOf)
-		config.internal.podMaxDuration = getClosetFactorForMaxDuration(config.requested.podMaxDuration, multipleOf)
+		config.internal.podMinDuration = getClosestFactorForMinDuration(config.requested.podMinDuration, multipleOf)
+		config.internal.podMaxDuration = getClosestFactorForMaxDuration(config.requested.podMaxDuration, multipleOf)
 	}
 
 	// if config.requestedSlotMinDuration == config.requestedSlotMaxDuration {
@@ -68,8 +68,8 @@ func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_
 		config.internal.slotMinDuration = config.requested.slotMinDuration
 		config.internal.slotMaxDuration = config.requested.slotMaxDuration
 	} else {
-		config.internal.slotMinDuration = getClosetFactorForMinDuration(int64(config.requested.slotMinDuration), multipleOf)
-		config.internal.slotMaxDuration = getClosetFactorForMaxDuration(int64(config.requested.slotMaxDuration), multipleOf)
+		config.internal.slotMinDuration = getClosestFactorForMinDuration(int64(config.requested.slotMinDuration), multipleOf)
+		config.internal.slotMaxDuration = getClosestFactorForMaxDuration(int64(config.requested.slotMaxDuration), multipleOf)
 	}
 	return config
 }
@@ -79,17 +79,17 @@ func isMultipleOf(num, multipleOf int64) bool {
 	return math.Mod(float64(num), float64(multipleOf)) == 0
 }
 
-// Returns closet factor for num, with  respect  input multipleOf
-//  Example: Closet Factor of 9, in multiples of 5 is '10'
-func getClosetFactor(num, multipleOf int64) int64 {
+// Returns closest factor for num, with  respect  input multipleOf
+//  Example: Closest Factor of 9, in multiples of 5 is '10'
+func getClosestFactor(num, multipleOf int64) int64 {
 	return int64(math.Round(float64(num)/float64(multipleOf)) * float64(multipleOf))
 }
 
-// Returns closetfactor of MinDuration, with  respect to multipleOf
+// Returns closestfactor of MinDuration, with  respect to multipleOf
 // If computed factor < MinDuration then it will ensure and return
 // close factor >=  MinDuration
-func getClosetFactorForMinDuration(MinDuration int64, multipleOf int64) int64 {
-	closedMinDuration := getClosetFactor(MinDuration, multipleOf)
+func getClosestFactorForMinDuration(MinDuration int64, multipleOf int64) int64 {
+	closedMinDuration := getClosestFactor(MinDuration, multipleOf)
 
 	if closedMinDuration == 0 {
 		return multipleOf
@@ -102,16 +102,16 @@ func getClosetFactorForMinDuration(MinDuration int64, multipleOf int64) int64 {
 	return closedMinDuration
 }
 
-// Returns closetfactor of maxduration, with  respect to multipleOf
+// Returns closestfactor of maxduration, with  respect to multipleOf
 // If computed factor > maxduration then it will ensure and return
 // close factor <=  maxduration
-func getClosetFactorForMaxDuration(maxduration, multipleOf int64) int64 {
-	closedMaxDuration := getClosetFactor(maxduration, multipleOf)
+func getClosestFactorForMaxDuration(maxduration, multipleOf int64) int64 {
+	closedMaxDuration := getClosestFactor(maxduration, multipleOf)
 	if closedMaxDuration == maxduration {
 		return maxduration
 	}
 
-	// set closet maxduration closed to masduration
+	// set closest maxduration closed to masduration
 	for i := closedMaxDuration; i <= maxduration; {
 		if closedMaxDuration < maxduration {
 			closedMaxDuration = i + multipleOf

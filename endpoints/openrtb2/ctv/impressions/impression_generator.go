@@ -35,17 +35,6 @@ type pod struct {
 //  1. Dimension 1 - Represents the minimum duration of an impression
 //  2. Dimension 2 - Represents the maximum duration of an impression
 func (config *generator) Get() [][2]int64 {
-	return config.getImpressions()
-}
-
-// getImpressions Returns the generator and number of Ad Slots/Impression  that input Ad Pod can have.
-// It also returs Minimum and  Maximum duration. Dimension 1, represents Minimum duration. Dimension 2, represents Maximum Duration
-// for each Ad Slot.
-// Minimum Duratiuon can contain either RequestedSlotMinDuration or Duration computed by algorithm for the Ad Slot
-// Maximum Duration only contains Duration computed by algorithm for the Ad Slot
-// podMinDuration - Minimum duration of Pod, podMaxDuration Maximum duration of Pod, vPod Video Pod Object
-func (config *generator) getImpressions() [][2]int64 {
-
 	ctv.Logf("Pod Config with Internal Computation (using multiples of %v) = %+v\n", multipleOf, config)
 	totalAds := computeTotalAds(*config)
 	timeForEachSlot := computeTimeForEachAdSlot(*config, totalAds)
@@ -169,7 +158,7 @@ func computeTimeForEachAdSlot(cfg generator, totalAds int64) int64 {
 		// get close to value of multiple
 		// here we muse get either cfg.SlotMinDuration or cfg.SlotMaxDuration
 		// these values are already pre-computed in multiples of given number
-		timeForEachSlot = getClosetFactor(timeForEachSlot, multipleOf)
+		timeForEachSlot = getClosestFactor(timeForEachSlot, multipleOf)
 		ctv.Logf("Computed closet factor %v, in multiples of %v for timeForEachSlot\n", timeForEachSlot, multipleOf)
 	}
 	ctv.Logf("Computed Final timeForEachSlot = %v  [%v <= %v <= %v]\n", timeForEachSlot, cfg.requested.slotMinDuration, timeForEachSlot, cfg.requested.slotMaxDuration)
