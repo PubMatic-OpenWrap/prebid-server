@@ -599,14 +599,7 @@ func NewAppNexusBidder(client *http.Client, endpoint, platformID string) *AppNex
 
 	// Load custom options for our adapter (currently just a lookup table to convert appnexus => iab categories)
 	var catmap map[string]string
-	var fileUri string
-	if client == nil {
-		// This is for tests
-		fileUri = "./static/adapter/appnexus/opts.json"
-	} else {
-		fileUri = "./home/http/GO_SERVER/dmhbserver/static/adapter/appnexus/opts.json"
-	}
-	opts, err := ioutil.ReadFile(fileUri)
+	opts, err := ioutil.ReadFile("./static/adapter/appnexus/opts.json")
 	if err == nil {
 		var adapterOptions appnexusAdapterOptions
 
