@@ -208,15 +208,6 @@ func fact(no uint64) big.Int {
 	return *mult
 }
 
-<<<<<<< HEAD
-=======
-// wrapper around print function
-func print(format string, v ...interface{}) {
-	// log.Printf(format, v...)
-	Logf(format, v)
-}
-
->>>>>>> ci
 //searchAll - searches all valid combinations
 // valid combinations are those which satisifies following
 // 1. sum of duration is within range of pod min and max values
