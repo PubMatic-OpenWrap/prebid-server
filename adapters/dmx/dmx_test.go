@@ -2,12 +2,12 @@ package dmx
 
 import (
 	"encoding/json"
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"strings"
 	"testing"
 
-	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
 )
 
 var (

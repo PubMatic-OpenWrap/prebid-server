@@ -2,12 +2,12 @@ package adtarget
 
 import (
 	"fmt"
-	"github.com/prebid/prebid-server/privacy/ccpa"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
 	"testing"
 	"text/template"
 
-	"github.com/prebid/prebid-server/privacy"
-	"github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
 	"github.com/stretchr/testify/assert"
 )
 

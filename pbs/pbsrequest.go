@@ -10,16 +10,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prebid/prebid-server/cache"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/prebid"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/PubMatic-OpenWrap/prebid-server/cache"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/prebid"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/blang/semver"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb"
 	"golang.org/x/net/publicsuffix"
 )
 

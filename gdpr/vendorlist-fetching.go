@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/golang/glog"
 	"github.com/prebid/go-gdpr/api"
 	"github.com/prebid/go-gdpr/vendorlist"
 	"github.com/prebid/go-gdpr/vendorlist2"
-	"github.com/prebid/prebid-server/config"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -22,7 +22,7 @@ type saveVendors func(uint16, api.VendorList)
 
 // This file provides the vendorlist-fetching function for Prebid Server.
 //
-// For more info, see https://github.com/prebid/prebid-server/issues/504
+// For more info, see https://github.com/PubMatic-OpenWrap/prebid-server/issues/504
 //
 // Nothing in this file is exported. Public APIs can be found in gdpr.go
 

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
 )
 
 func TestJsonSamples(t *testing.T) {

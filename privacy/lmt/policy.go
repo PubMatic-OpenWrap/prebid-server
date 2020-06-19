@@ -1,7 +1,7 @@
 package lmt
 
 import (
-	"github.com/mxmCherry/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb"
 )
 
 const (

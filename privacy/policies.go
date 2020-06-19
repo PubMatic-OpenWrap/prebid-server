@@ -1,10 +1,10 @@
 package privacy
 
 import (
-	"github.com/mxmCherry/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb"
 
-	"github.com/prebid/prebid-server/privacy/ccpa"
-	"github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
 )
 
 // Policies represents the privacy regulations for an OpenRTB bid request.

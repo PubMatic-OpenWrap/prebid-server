@@ -9,5 +9,5 @@ As seen in the JSON response from \{your PBS server\}\/bidder\/params [(example)
 
 The appIds parameter is for requesting a mix of banner and video. It has two parameters, "banner", and "video" for the appIds of two appropriately configured exchanges on the platform. The appIds parameter can be sent with just one of its two parameters and it will behave like the appId parameter.
 
-If the request includes an appId configured for a video response, the videoResponseType parameter can be defined as "nurl", "adm" or "both". These will apply to all video returned. If it is not defined, the response type will be a nurl. The definitions for "nurl" vs. "adm" are here: (https://github.com/mxmCherry/openrtb/blob/master/openrtb2/bid.go).
+If the request includes an appId configured for a video response, the videoResponseType parameter can be defined as "nurl", "adm" or "both". These will apply to all video returned. If it is not defined, the response type will be a nurl. The definitions for "nurl" vs. "adm" are here: (https://github.com/PubMatic-OpenWrap/openrtb/blob/master/openrtb2/bid.go).
 

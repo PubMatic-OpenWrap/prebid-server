@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/privacy/ccpa"
-	"github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

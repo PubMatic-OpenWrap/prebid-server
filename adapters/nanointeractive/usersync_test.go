@@ -1,12 +1,12 @@
 package nanointeractive
 
 import (
-	"github.com/prebid/prebid-server/privacy/ccpa"
-	"github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
 	"testing"
 	"text/template"
 
-	"github.com/prebid/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
 	"github.com/stretchr/testify/assert"
 )
 
