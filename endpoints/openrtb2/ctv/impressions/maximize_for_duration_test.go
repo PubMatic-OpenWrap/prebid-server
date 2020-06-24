@@ -164,12 +164,12 @@ var impressionsTests = []struct {
 		closedSlotMinDuration: 5,
 		closedSlotMaxDuration: 5,
 	}},
-	{scenario: "TC15", in: []int{30, 60, 5, 9, 1, 5}, out: Expected{
+	{scenario: "TC15", in: []int{25, 60, 5, 9, 1, 5}, out: Expected{
 		impressionCount: 5,
 		freeTime:        15,
 		output:          [][2]int64{{5, 9}, {5, 9}, {5, 9}, {5, 9}, {5, 9}},
 
-		closedMinDuration:     30,
+		closedMinDuration:     25,
 		closedMaxDuration:     60,
 		closedSlotMinDuration: 5,
 		closedSlotMaxDuration: 5,
@@ -525,10 +525,13 @@ var impressionsTests = []struct {
 
 func TestGetImpressionsA1(t *testing.T) {
 	for _, impTest := range impressionsTests {
+		if impTest.scenario != "TC16" {
+			continue
+		}
 		t.Run(impTest.scenario, func(t *testing.T) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
 			// cfg, _ := getImpressions(p.podMinDuration, p.podMaxDuration, p.vPod)
-			cfg := newMaximizeForDuration(p.podMinDuration, p.podMaxDuration, p.vPod)
+			cfg := newMaximizeForDuration(p.podMinDuration, p.podMaxDuration, p.vPod, 1)
 			imps := cfg.Get()
 			expected := impTest.out
 			// assert.Equal(t, expected.impressionCount, len(pod.Slots), "Expected impression count = %v . But Found %v", expectedImpressionCount, len(pod.Slots))
@@ -549,7 +552,7 @@ func BenchmarkGetImpressions(b *testing.B) {
 		b.Run(impTest.scenario, func(b *testing.B) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
 			for n := 0; n < b.N; n++ {
-				cfg := newMaximizeForDuration(p.podMinDuration, p.podMaxDuration, p.vPod)
+				cfg := newMaximizeForDuration(p.podMinDuration, p.podMaxDuration, p.vPod, 1)
 				cfg.Get()
 			}
 		})

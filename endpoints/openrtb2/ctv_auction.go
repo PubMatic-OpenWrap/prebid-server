@@ -415,7 +415,7 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 
 //getAdPodImpsConfigs will return number of impressions configurations within adpod
 func getAdPodImpsConfigs(imp *openrtb.Imp, adpod *openrtb_ext.VideoAdPod) []*ctv.ImpAdPodConfig {
-	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, impressions.MinMaxAlgorithm)
+	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, impressions.MinMaxAlgorithm, 1)
 	impRanges := impGen.Get()
 	config := make([]*ctv.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {

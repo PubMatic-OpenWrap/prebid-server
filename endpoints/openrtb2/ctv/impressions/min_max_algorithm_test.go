@@ -174,7 +174,7 @@ func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
 		t.Run(impTest.scenario, func(t *testing.T) {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
-			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
+			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod, 1)
 			expectedMergedOutput := make([][2]int64, 0)
 			// explictly looping in order to check result of individual generator
 			for step, gen := range a2.generator {
@@ -212,7 +212,7 @@ func BenchmarkGetImpressionsA2(b *testing.B) {
 	for _, impTest := range impressionsTestsA2 {
 		for i := 0; i < b.N; i++ {
 			p := newTestPod(int64(impTest.in[0]), int64(impTest.in[1]), impTest.in[2], impTest.in[3], impTest.in[4], impTest.in[5])
-			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
+			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod, 1)
 			a2.Get()
 		}
 	}

@@ -10,13 +10,22 @@ import (
 type generator struct {
 	IImpressions
 	Slots             [][2]int64 // Holds Minimum and Maximum duration (in seconds) for each Ad Slot. Length indicates total number of Ad Slots/ Impressions for given Ad Pod
-	totalSlotTime     *int64     // Total Sum of all Ad Slot durations (in seconds)
+	totalSlotMaxTime  *int64     // Total Sum of all Ad Slot Max durations (in seconds)
+	totalSlotMinTime  *int64     // Total Sum of all Ad Slot Min durations (in seconds)
 	freeTime          int64      // Remaining Time (in seconds) not allocated. It is compared with RequestedPodMaxDuration
 	slotsWithZeroTime *int64     // Indicates number of slots with zero time (starting from 1).
 	// requested holds all the requested information received
 	requested pod
 	// internal  holds the value closed to original value and multiples of X.
 	internal pod
+
+	// indicates how minduration should be populated for each impression break
+	// NOTE: This is only gets honoured when pod min duration != pod max duration
+	// i.e. range of pod duration is given
+	//
+	// true  - use config.requested.slotMinDuration as minDuration
+	// false - user computed maxDuration as minDuration
+	setMinDurationFromRequest bool
 }
 
 // pod for internal computation
@@ -35,6 +44,7 @@ type pod struct {
 //  1. Dimension 1 - Represents the minimum duration of an impression
 //  2. Dimension 2 - Represents the maximum duration of an impression
 func (config *generator) Get() [][2]int64 {
+	ctv.Logf("Using minDurationPolicy = %v ", config.setMinDurationFromRequest)
 	ctv.Logf("Pod Config with Internal Computation (using multiples of %v) = %+v\n", multipleOf, config)
 	totalAds := computeTotalAds(*config)
 	timeForEachSlot := computeTimeForEachAdSlot(*config, totalAds)
@@ -48,7 +58,7 @@ func (config *generator) Get() [][2]int64 {
 	ctv.Logf("Started allocating durations to each Ad Slot / Impression\n")
 	fillZeroSlotsOnPriority := true
 	noOfZeroSlotsFilledByLastRun := int64(0)
-	*config.totalSlotTime = 0
+	*config.totalSlotMaxTime = 0
 	for time < config.requested.podMaxDuration {
 		adjustedTime, slotsFull := config.addTime(timeForEachSlot, fillZeroSlotsOnPriority)
 		time += adjustedTime
@@ -80,7 +90,7 @@ func (config *generator) Get() [][2]int64 {
 		ctv.Logf("TO STATS SERVER : Free Time not allocated %v sec", config.freeTime)
 	}
 
-	ctv.Logf("\nTotal Impressions = %v, Total Allocated Time = %v sec (out of %v sec, Max Pod Duration)\n%v", len(config.Slots), *config.totalSlotTime, config.requested.podMaxDuration, config.Slots)
+	ctv.Logf("\nTotal Impressions = %v, Total Allocated Time = %v sec (out of %v sec, Max Pod Duration)\n%v", len(config.Slots), *config.totalSlotMaxTime, config.requested.podMaxDuration, config.Slots)
 	return config.Slots
 }
 
@@ -194,7 +204,7 @@ func computeTimeLeastValue(time int64, leastTimeRequiredByEachSlot int64) int64 
 //  1. Verifies if 2D slice containing Min duration and Max duration values are non-zero
 //  2. Idenfies the Ad Slots / Impressions with either Min Duration or Max Duration or both
 //     having zero value and removes it from 2D slice
-//  3. Ensures  Minimum Pod duration <= TotalSlotTime <= Maximum Pod Duration
+//  3. Ensures  Minimum Pod duration <= TotalSlotMaxTime <= Maximum Pod Duration
 // if  any validation fails it removes all the alloated slots and  makes is of size 0
 // and sets the freeTime value as RequestedPodMaxDuration
 func (config *generator) validateSlots() {
@@ -205,24 +215,21 @@ func (config *generator) validateSlots() {
 		return
 	}
 
-	returnEmptySlots := false
+	hasError := false
 
 	// check slot with 0 values
 	// remove them from config.Slots
 	emptySlotCount := 0
 	for index, slot := range config.Slots {
+		*config.totalSlotMinTime += slot[0]
 		if slot[0] == 0 || slot[1] == 0 {
 			ctv.Logf("WARNING:Slot[%v][%v] is having 0 duration\n", index, slot)
 			emptySlotCount++
 			continue
 		}
 
-		// check slot boundaries
-		if slot[1] < config.requested.slotMinDuration || slot[1] > config.requested.slotMaxDuration {
-			ctv.Logf("ERROR: Slot%v Duration %v sec is out of either requested.slotMinDuration (%v) or requested.slotMaxDuration (%v)\n", index, slot[1], config.requested.slotMinDuration, config.requested.slotMaxDuration)
-			returnEmptySlots = true
-			break
-		}
+		// check slot min and max duration
+		hasError = !isValidSlotDuration(*config, slot[0], index, "Min") || !isValidSlotDuration(*config, slot[1], index, "Max")
 	}
 
 	// remove empty slot
@@ -239,26 +246,16 @@ func (config *generator) validateSlots() {
 		ctv.Logf("Removed %v empty slots\n", emptySlotCount)
 	}
 
+	// check number of slots are within range of requested minAds and maxAds
 	if int64(len(config.Slots)) < config.requested.minAds || int64(len(config.Slots)) > config.requested.maxAds {
 		ctv.Logf("ERROR: slotSize %v is either less than Min Ads (%v) or greater than Max Ads (%v)\n", len(config.Slots), config.requested.minAds, config.requested.maxAds)
-		returnEmptySlots = true
+		hasError = true
 	}
 
-	// ensure if min pod duration = max pod duration
-	// config.TotalSlotTime = pod duration
-	if config.requested.podMinDuration == config.requested.podMaxDuration && *config.totalSlotTime != config.requested.podMaxDuration {
-		ctv.Logf("ERROR: Total Slot Duration %v sec is not matching with Total Pod Duration %v sec\n", *config.totalSlotTime, config.requested.podMaxDuration)
-		returnEmptySlots = true
-	}
+	// validate total of slot min and max duration
+	hasError = hasError || !isValidTotalSlotTime(*config, *config.totalSlotMinTime, "Min") || !isValidTotalSlotTime(*config, *config.totalSlotMaxTime, "Max")
 
-	// ensure slot duration lies between requested min pod duration and  requested max pod duration
-	// Testcase #15
-	if *config.totalSlotTime < config.requested.podMinDuration || *config.totalSlotTime > config.requested.podMaxDuration {
-		ctv.Logf("ERROR: Total Slot Duration %v sec is either less than Requested Pod Min Duration (%v sec) or greater than Requested  Pod Max Duration (%v sec)\n", *config.totalSlotTime, config.requested.podMinDuration, config.requested.podMaxDuration)
-		returnEmptySlots = true
-	}
-
-	if returnEmptySlots {
+	if hasError {
 		config.Slots = emptySlots
 		config.freeTime = config.requested.podMaxDuration
 	}
@@ -290,18 +287,18 @@ func (config generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority b
 		// 2. if adding new time  to slot0 not exeeding config.SlotMaxDuration
 		// 3. if sum(slot time) +  timeForEachSlot  <= config.RequestedPodMaxDuration
 		canAdjustTime := (slot[1]+timeForEachSlot) <= config.requested.slotMaxDuration && (slot[1]+timeForEachSlot) >= config.requested.slotMinDuration
-		totalSlotTimeWithNewTimeLessThanRequestedPodMaxDuration := *config.totalSlotTime+timeForEachSlot <= config.requested.podMaxDuration
+		totalSlotMaxTimeWithNewTimeLessThanRequestedPodMaxDuration := *config.totalSlotMaxTime+timeForEachSlot <= config.requested.podMaxDuration
 
 		// if fillZeroSlotsOnPriority= true ensure current slot value =  0
 		allowCurrentSlot := !fillZeroSlotsOnPriority || (fillZeroSlotsOnPriority && slot[1] == 0)
-		if slot[1] <= config.internal.slotMaxDuration && canAdjustTime && totalSlotTimeWithNewTimeLessThanRequestedPodMaxDuration && allowCurrentSlot {
+		if slot[1] <= config.internal.slotMaxDuration && canAdjustTime && totalSlotMaxTimeWithNewTimeLessThanRequestedPodMaxDuration && allowCurrentSlot {
 			slot[0] += timeForEachSlot
 
 			// if we are adjusting the free time which will match up with config.RequestedPodMaxDuration
 			// then set config.SlotMinDuration as min value for this slot
 			// TestCase #16
-			//if timeForEachSlot == maxPodDurationMatchUpTime {
-			if timeForEachSlot < multipleOf {
+			// UOE-5379 : config.setMinDurationFromRequest
+			if timeForEachSlot < multipleOf || config.setMinDurationFromRequest {
 				// override existing value of slot[0] here
 				slot[0] = config.requested.slotMinDuration
 			}
@@ -313,7 +310,7 @@ func (config generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority b
 			}
 
 			slot[1] += timeForEachSlot
-			*config.totalSlotTime += timeForEachSlot
+			*config.totalSlotMaxTime += timeForEachSlot
 			time += timeForEachSlot
 			ctv.Logf("Slot %v = Added %v sec (New Time = %v)\n", ad, timeForEachSlot, slot[1])
 		}
@@ -337,4 +334,35 @@ func (config generator) shouldAdjustSlotWithZeroDuration() bool {
 		return true
 	}
 	return false
+}
+
+// isValidSlotDuration ensures duration value is within requested slot min and max duration
+// returns true of duration is valid. false otherwise
+func isValidSlotDuration(config generator, slotDuration int64, index int, fieldType string) bool {
+	if slotDuration < config.requested.slotMinDuration || slotDuration > config.requested.slotMaxDuration {
+		ctv.Logf("ERROR: Slot%v %v Duration %v sec is out of either requested.slotMinDuration (%v) or requested.slotMaxDuration (%v)\n", index, fieldType, slotDuration, config.requested.slotMinDuration, config.requested.slotMaxDuration)
+		return false
+	}
+	return true
+}
+
+// isValidTotalSlotTime ensures totalSlotTime is within range of Pod Min Duration and Pod Max Duration
+// in case PodMinDuration = PodMaxDuration then it checks totalSlotTime = PodMaxDuration
+// returns true if totalSlotTime lies between min/max pod durations or equal to pod duration.
+// false otherwise
+func isValidTotalSlotTime(config generator, totalSlotTime int64, fieldType string) bool {
+	// ensure if min pod duration = max pod duration
+	// totalSlotTime = pod duration
+	if config.requested.podMinDuration == config.requested.podMaxDuration && totalSlotTime != config.requested.podMaxDuration {
+		ctv.Logf("ERROR: Total Slot %v Duration %v sec is not matching with Total Pod Duration %v sec\n", fieldType, totalSlotTime, config.requested.podMaxDuration)
+		return false
+	}
+
+	// ensure slot duration lies between requested min pod duration and  requested max pod duration
+	// Testcase #15
+	if totalSlotTime < config.requested.podMinDuration || totalSlotTime > config.requested.podMaxDuration {
+		ctv.Logf("ERROR: Total Slot %v Duration %v sec is either less than Requested Pod Min Duration (%v sec) or greater than Requested  Pod Max Duration (%v sec)\n", fieldType, totalSlotTime, config.requested.podMinDuration, config.requested.podMaxDuration)
+		return false
+	}
+	return true
 }

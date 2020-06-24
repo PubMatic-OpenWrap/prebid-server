@@ -7,8 +7,8 @@ import (
 
 // newMaximizeForDuration Constucts the generator object from openrtb_ext.VideoAdPod
 // It computes durations for Ad Slot and Ad Pod in multiple of X
-func newMaximizeForDuration(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) generator {
-	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, vPod, multipleOf)
+func newMaximizeForDuration(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, minDurationPolicy int) generator {
+	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, vPod, multipleOf, minDurationPolicy)
 
 	ctv.Logf("Computed podMinDuration = %v in multiples of %v (requestedPodMinDuration = %v)\n", config.internal.podMinDuration, multipleOf, config.requested.podMinDuration)
 	ctv.Logf("Computed podMaxDuration = %v in multiples of %v (requestedPodMaxDuration = %v)\n", config.internal.podMaxDuration, multipleOf, config.requested.podMaxDuration)

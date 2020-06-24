@@ -8,9 +8,17 @@ import (
 )
 
 //  newConfig initializes the generator instance
-func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) generator {
+func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, minDurationPolicy int) generator {
 	config := generator{}
-	config.totalSlotTime = new(int64)
+	config.totalSlotMaxTime = new(int64)
+	config.totalSlotMinTime = new(int64)
+
+	// determine minDurationPolicy
+	// 0 - set config.requested.slotMinDuration
+	// 1 - set impression level maxDuration as minDuration
+	// allow to set request level slot minduration
+	// only when requested pod duration has range
+	config.setMinDurationFromRequest = minDurationPolicy == 0 && podMinDuration != podMaxDuration
 	// configure requested pod
 	config.requested = pod{
 		podMinDuration:  podMinDuration,
@@ -45,8 +53,8 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod
 // then it computes closed to factor basedon 'multipleOf' parameter value
 // and accordingly determines the Pod Min/Max and Slot Min/Max values for internal
 // computation only.
-func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, multipleOf int64) generator {
-	config := newConfig(podMinDuration, podMaxDuration, vPod)
+func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, multipleOf int64, minDurationPolicy int) generator {
+	config := newConfig(podMinDuration, podMaxDuration, vPod, minDurationPolicy)
 
 	// override the values of internalPod
 	// config.internal

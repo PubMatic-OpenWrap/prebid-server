@@ -44,16 +44,16 @@ type IImpressions interface {
 // based on input algorithm type
 // if invalid algorithm type is passed, it returns default algorithm which will compute
 // impressions based on minimum ad slot duration
-func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.VideoAdPod, algorithm Algorithm) IImpressions {
+func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.VideoAdPod, algorithm Algorithm, minDurationPolicy int) IImpressions {
 	switch algorithm {
 	case MaximizeForDuration:
 		ctv.Logf("Selected 'MaximizeForDuration'")
-		g := newMaximizeForDuration(podMinDuration, podMaxDuration, *vPod)
+		g := newMaximizeForDuration(podMinDuration, podMaxDuration, *vPod, minDurationPolicy)
 		return &g
 
 	case MinMaxAlgorithm:
 		ctv.Logf("Selected 'MinMaxAlgorithm'")
-		g := newMinMaxAlgorithm(podMinDuration, podMaxDuration, *vPod)
+		g := newMinMaxAlgorithm(podMinDuration, podMaxDuration, *vPod, minDurationPolicy)
 		return &g
 	}
 
@@ -64,6 +64,6 @@ func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.Vide
 		MaxAds:      vPod.MaxAds,
 		MinDuration: vPod.MinDuration,
 		MaxDuration: vPod.MinDuration, // sending slot minduration as max duration
-	})
+	}, minDurationPolicy)
 	return &defaultGenerator
 }

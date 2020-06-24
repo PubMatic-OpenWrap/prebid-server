@@ -32,24 +32,24 @@ type config struct {
 // newMinMaxAlgorithm constructs instance of MinMaxAlgorithm
 // It computes durations for Ad Slot and Ad Pod in multiple of X
 // it also considers minimum configurations present in the request
-func newMinMaxAlgorithm(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod) config {
+func newMinMaxAlgorithm(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod, minDurationPolicy int) config {
 	generator := make([]generator, 0)
 	// step 1 - same as Algorithm1
-	generator = append(generator, initGenerator(podMinDuration, podMaxDuration, p, *p.MinAds, *p.MaxAds))
+	generator = append(generator, initGenerator(podMinDuration, podMaxDuration, p, *p.MinAds, *p.MaxAds, minDurationPolicy))
 	// step 2 - pod duration = pod max, no of ads = max ads
-	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MaxAds, *p.MaxAds))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MaxAds, *p.MaxAds, minDurationPolicy))
 	// step 3 - pod duration = pod max, no of ads = min ads
-	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MinAds, *p.MinAds))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MinAds, *p.MinAds, minDurationPolicy))
 	// step 4 - pod duration = pod min, no of ads = max  ads
-	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MaxAds, *p.MaxAds))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MaxAds, *p.MaxAds, minDurationPolicy))
 	// step 5 - pod duration = pod min, no of ads = min  ads
-	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MinAds, *p.MinAds))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MinAds, *p.MinAds, minDurationPolicy))
 
 	return config{generator: generator}
 }
 
-func initGenerator(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod, minAds, maxAds int) generator {
-	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, newVideoAdPod(p, minAds, maxAds), multipleOf)
+func initGenerator(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod, minAds, maxAds int, minDurationPolicy int) generator {
+	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, newVideoAdPod(p, minAds, maxAds), multipleOf, minDurationPolicy)
 	return config
 }
 
