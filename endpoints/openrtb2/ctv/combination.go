@@ -15,7 +15,6 @@ type Combination struct {
 	data      []int
 	generator PodDurationCombination
 	config    *openrtb_ext.VideoAdPod
-	order     int // order of combination generator
 }
 
 // NewCombination ... Generates on demand valid combinations
@@ -31,7 +30,7 @@ func NewCombination(buckets BidsBuckets, podMinDuration, podMaxDuration uint64, 
 	for duration, bids := range buckets {
 		durationBidsCnts = append(durationBidsCnts, [2]uint64{uint64(duration), uint64(len(bids))})
 	}
-	generator.Init(podMinDuration, podMaxDuration, config, durationBidsCnts, MaxToMin)
+	generator.Init(podMinDuration, podMaxDuration, config, durationBidsCnts)
 	return &Combination{
 		generator: *generator,
 		config:    config,
@@ -50,13 +49,3 @@ func (c *Combination) Get() []int {
 	}
 	return nextCombInt
 }
-
-const (
-	// MinToMax tells combination generator to generate combinations
-	// starting from Min Ads to Max Ads
-	MinToMax = iota
-
-	// MaxToMin tells combination generator to generate combinations
-	// starting from Max Ads to Min Ads
-	MaxToMin
-)
