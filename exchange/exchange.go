@@ -86,8 +86,21 @@ func NewExchange(client *http.Client, cache prebid_cache_client.Client, cfg *con
 }
 
 func (e *exchange) HoldAuction(ctx context.Context, bidRequest *openrtb.BidRequest, usersyncs IdFetcher, labels pbsmetrics.Labels, categoriesFetcher *stored_requests.CategoryFetcher, debugLog *DebugLog) (*openrtb.BidResponse, error) {
+	debug := false
+	if bidRequest.Ext != nil {
+		var requestExt openrtb_ext.ExtRequest
+		err := json.Unmarshal(bidRequest.Ext, &requestExt)
+		if err != nil {
+			return nil, fmt.Errorf("Error decoding Request.ext : %s", err.Error())
+		}
+
+		if requestExt.Prebid.Debug == 1 {
+			debug = true
+		}
+	}
+
 	// Snapshot of resolved bid request for debug if test request
-	resolvedRequest, err := buildResolvedRequest(bidRequest)
+	resolvedRequest, err := buildResolvedRequest(bidRequest, debug)
 	if err != nil {
 		glog.Errorf("Error marshalling bid request for debug: %v", err)
 	}
@@ -146,7 +159,7 @@ func (e *exchange) HoldAuction(ctx context.Context, bidRequest *openrtb.BidReque
 	// Get currency rates conversions for the auction
 	conversions := e.currencyConverter.Rates()
 
-	adapterBids, adapterExtra, anyBidsReturned := e.getAllBids(auctionCtx, cleanRequests, aliases, bidAdjustmentFactors, blabels, conversions)
+	adapterBids, adapterExtra, anyBidsReturned := e.getAllBids(auctionCtx, cleanRequests, aliases, bidAdjustmentFactors, blabels, conversions, debug)
 
 	var auc *auction = nil
 	var bidResponseExt *openrtb_ext.ExtBidResponse = nil
@@ -177,7 +190,7 @@ func (e *exchange) HoldAuction(ctx context.Context, bidRequest *openrtb.BidReque
 			}
 
 			if debugLog != nil && debugLog.Enabled {
-				bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, bidRequest, resolvedRequest, errs)
+				bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, bidRequest, resolvedRequest, debug, errs)
 				if bidRespExtBytes, err := json.Marshal(bidResponseExt); err == nil {
 					debugLog.Data.Response = string(bidRespExtBytes)
 				} else {
@@ -202,7 +215,7 @@ func (e *exchange) HoldAuction(ctx context.Context, bidRequest *openrtb.BidReque
 	}
 
 	// Build the response
-	return e.buildBidResponse(ctx, liveAdapters, adapterBids, bidRequest, resolvedRequest, adapterExtra, auc, bidResponseExt, errs)
+	return e.buildBidResponse(ctx, liveAdapters, adapterBids, bidRequest, resolvedRequest, adapterExtra, auc, bidResponseExt, debug, errs)
 }
 
 type DealTierInfo struct {
@@ -293,7 +306,7 @@ func (e *exchange) makeAuctionContext(ctx context.Context, needsCache bool) (auc
 }
 
 // This piece sends all the requests to the bidder adapters and gathers the results.
-func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext.BidderName]*openrtb.BidRequest, aliases map[string]string, bidAdjustments map[string]float64, blabels map[openrtb_ext.BidderName]*pbsmetrics.AdapterLabels, conversions currencies.Conversions) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, map[openrtb_ext.BidderName]*seatResponseExtra, bool) {
+func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext.BidderName]*openrtb.BidRequest, aliases map[string]string, bidAdjustments map[string]float64, blabels map[openrtb_ext.BidderName]*pbsmetrics.AdapterLabels, conversions currencies.Conversions, debug bool) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, map[openrtb_ext.BidderName]*seatResponseExtra, bool) {
 	// Set up pointers to the bid results
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid, len(cleanRequests))
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(cleanRequests))
@@ -323,7 +336,7 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 			}
 			var reqInfo adapters.ExtraRequestInfo
 			reqInfo.PbsEntryPoint = bidlabels.RType
-			bids, err := e.adapterMap[coreBidder].requestBid(ctx, request, aName, adjustmentFactor, conversions, &reqInfo)
+			bids, err := e.adapterMap[coreBidder].requestBid(ctx, request, aName, adjustmentFactor, conversions, &reqInfo, debug)
 
 			// Add in time reporting
 			elapsed := time.Since(start)
@@ -442,7 +455,7 @@ func errsToBidderErrors(errs []error) []openrtb_ext.ExtBidderError {
 }
 
 // This piece takes all the bids supplied by the adapters and crafts an openRTB response to send back to the requester
-func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, bidRequest *openrtb.BidRequest, resolvedRequest json.RawMessage, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, errList []error) (*openrtb.BidResponse, error) {
+func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, bidRequest *openrtb.BidRequest, resolvedRequest json.RawMessage, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, debug bool, errList []error) (*openrtb.BidResponse, error) {
 	bidResponse := new(openrtb.BidResponse)
 
 	bidResponse.ID = bidRequest.ID
@@ -466,7 +479,7 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	bidResponse.SeatBid = seatBids
 
 	if bidResponseExt == nil {
-		bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, bidRequest, resolvedRequest, errList)
+		bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, bidRequest, resolvedRequest, debug, errList)
 	}
 	buffer := &bytes.Buffer{}
 	enc := json.NewEncoder(buffer)
@@ -653,13 +666,13 @@ func getPrimaryAdServer(adServerId int) (string, error) {
 }
 
 // Extract all the data from the SeatBids and build the ExtBidResponse
-func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, req *openrtb.BidRequest, resolvedRequest json.RawMessage, errList []error) *openrtb_ext.ExtBidResponse {
+func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, req *openrtb.BidRequest, resolvedRequest json.RawMessage, debug bool, errList []error) *openrtb_ext.ExtBidResponse {
 	bidResponseExt := &openrtb_ext.ExtBidResponse{
 		Errors:               make(map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderError, len(adapterBids)),
 		ResponseTimeMillis:   make(map[openrtb_ext.BidderName]int, len(adapterBids)),
 		RequestTimeoutMillis: req.TMax,
 	}
-	if req.Test == 1 {
+	if debug {
 		bidResponseExt.Debug = &openrtb_ext.ExtResponseDebug{
 			HttpCalls: make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall),
 		}
@@ -670,7 +683,7 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*pb
 
 	for bidderName, responseExtra := range adapterExtra {
 
-		if req.Test == 1 {
+		if debug {
 			bidResponseExt.Debug.HttpCalls[bidderName] = responseExtra.HttpCalls
 		}
 		// Only make an entry for bidder errors if the bidder reported any.
@@ -772,8 +785,8 @@ func (e *exchange) getBidCacheInfo(bid *pbsOrtbBid, auc *auction) (openrtb_ext.E
 }
 
 // Returns a snapshot of resolved bid request for debug if test field is set in the incomming request
-func buildResolvedRequest(bidRequest *openrtb.BidRequest) (json.RawMessage, error) {
-	if bidRequest.Test == 1 {
+func buildResolvedRequest(bidRequest *openrtb.BidRequest, debug bool) (json.RawMessage, error) {
+	if debug {
 		return json.Marshal(bidRequest)
 	}
 	return nil, nil

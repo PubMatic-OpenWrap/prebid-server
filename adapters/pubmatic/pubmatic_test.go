@@ -66,7 +66,7 @@ func DummyPubMaticServer(w http.ResponseWriter, r *http.Request) {
 	var bids []openrtb.Bid
 
 	for i, imp := range breq.Imp {
-		bids = append(bids, openrtb.Bid{
+		bid := openrtb.Bid{
 			ID:     fmt.Sprintf("SeatID_%d", i),
 			ImpID:  imp.ID,
 			Price:  float64(int(rand.Float64()*1000)) / 100,
@@ -76,7 +76,9 @@ func DummyPubMaticServer(w http.ResponseWriter, r *http.Request) {
 			W:      *imp.Banner.W,
 			H:      *imp.Banner.H,
 			DealID: fmt.Sprintf("DealID_%d", i),
-		})
+		}
+
+		bids = append(bids, bid)
 	}
 	resp.SeatBid[0].Bid = bids
 
@@ -658,7 +660,7 @@ func TestPubmaticSampleRequest(t *testing.T) {
 	pc.TrySync("pubmatic", "12345")
 	fakewriter := httptest.NewRecorder()
 
-	pc.SetCookieOnResponse(fakewriter, false, &config.HostCookie{Domain: ""}, 90*24*time.Hour)
+	pc.SetCookieOnResponse(fakewriter, false, "", &config.HostCookie{Domain: ""}, 90*24*time.Hour)
 	httpReq.Header.Add("Cookie", fakewriter.Header().Get("Set-Cookie"))
 
 	cacheClient, _ := dummycache.New()
@@ -716,5 +718,73 @@ func TestGetBidTypeForUnsupportedCode(t *testing.T) {
 	actualBidTypeValue := getBidType(extrm)
 	if actualBidTypeValue != openrtb_ext.BidTypeBanner {
 		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeBanner, actualBidTypeValue)
+	}
+}
+
+func TestGetAdServerTargetingForEmptyExt(t *testing.T) {
+	ext := json.RawMessage(`{}`)
+	targets := getTargetingKeys(ext)
+	// banner is the default bid type when no bidType key is present in the bid.ext
+	if targets != nil && targets["hb_buyid_pubmatic"] != "" {
+		t.Errorf("It should not contained AdserverTageting")
+	}
+}
+
+func TestGetAdServerTargetingForValidExt(t *testing.T) {
+	ext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	targets := getTargetingKeys(ext)
+	// banner is the default bid type when no bidType key is present in the bid.ext
+	if targets == nil {
+		t.Error("It should have targets")
+		t.FailNow()
+	}
+	if targets != nil && targets["hb_buyid_pubmatic"] != "testBuyId" {
+		t.Error("It should have testBuyId as targeting")
+		t.FailNow()
+	}
+}
+
+func TestGetMapFromJSON(t *testing.T) {
+	ext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	extMap := getMapFromJSON(ext)
+	if extMap == nil {
+		t.Errorf("it should be converted in extMap")
+	}
+}
+
+func TestGetMapFromJSONWithInvalidJSON(t *testing.T) {
+	ext := json.RawMessage("{\"buyid\":\"testBuyId\"}}}}")
+	extMap := getMapFromJSON(ext)
+	if extMap != nil {
+		t.Errorf("it should be converted in extMap")
+	}
+}
+
+func TestCopySBExtToBidExtWithBidExt(t *testing.T) {
+	sbext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(sbext, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
+	}
+}
+
+func TestCopySBExtToBidExtWithNoBidExt(t *testing.T) {
+	sbext := json.RawMessage("{\"buyid\":\"testBuyId\"}")
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(sbext, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
+	}
+}
+
+func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
+	bidext := json.RawMessage("{\"dspId\":\"9\"}")
+	// expectedbid := json.RawMessage("{\"dspId\":\"9\",\"buyid\":\"testBuyId\"}")
+	bidextnew := copySBExtToBidExt(nil, bidext)
+	if bidextnew == nil {
+		t.Errorf("it should not be nil")
 	}
 }

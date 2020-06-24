@@ -22,6 +22,9 @@ import (
 
 const MAX_IMPRESSIONS_PUBMATIC = 30
 const bidTypeExtKey = "BidType"
+const PUBMATIC = "[PUBMATIC]"
+const buyId = "buyid"
+const buyIdTargetingKey = "hb_buyid_pubmatic"
 
 type PubmaticAdapter struct {
 	http *adapters.HTTPAdapter
@@ -61,8 +64,8 @@ const (
 )
 
 func PrepareLogMessage(tID, pubId, adUnitId, bidID, details string, args ...interface{}) string {
-	return fmt.Sprintf("[PUBMATIC] ReqID [%s] PubID [%s] AdUnit [%s] BidID [%s] %s \n",
-		tID, pubId, adUnitId, bidID, details)
+	return fmt.Sprintf("%s ReqID [%s] PubID [%s] AdUnit [%s] BidID [%s] %s \n",
+		PUBMATIC, tID, pubId, adUnitId, bidID, details)
 }
 
 func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder *pbs.PBSBidder) (pbs.PBSBidSlice, error) {
@@ -70,7 +73,7 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 	pbReq, err := adapters.MakeOpenRTBGeneric(req, bidder, a.Name(), mediaTypes)
 
 	if err != nil {
-		logf("[PUBMATIC] Failed to make ortb request for request id [%s] \n", pbReq.ID)
+		logf("%s Failed to make ortb request for request id [%s] \n", PUBMATIC, pbReq.ID)
 		return nil, err
 	}
 
@@ -79,8 +82,8 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 	pubId := ""
 	wrapExt := ""
 	if len(bidder.AdUnits) > MAX_IMPRESSIONS_PUBMATIC {
-		logf("[PUBMATIC] First %d impressions will be considered from request tid %s\n",
-			MAX_IMPRESSIONS_PUBMATIC, pbReq.ID)
+		logf("%s First %d impressions will be considered from request tid %s\n",
+			PUBMATIC, MAX_IMPRESSIONS_PUBMATIC, pbReq.ID)
 	}
 
 	for i, unit := range bidder.AdUnits {
@@ -291,15 +294,84 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 
 			mediaType := getBidType(bid.Ext)
 			pbid.CreativeMediaType = string(mediaType)
-
 			bids = append(bids, &pbid)
-			logf("[PUBMATIC] Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
-				pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
+			logf("%s Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
+				PUBMATIC, pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
 		}
 	}
 
 	return bids, nil
 }
+
+func getBidderParam(request *openrtb.BidRequest, key string) ([]byte, error) {
+	var reqExt openrtb_ext.ExtRequest
+	if len(request.Ext) <= 0 {
+		return nil, nil
+	}
+	err := json.Unmarshal(request.Ext, &reqExt)
+	if err != nil {
+		err := fmt.Errorf("%s Error unmarshalling request.ext: %v", PUBMATIC, string(request.Ext))
+		return nil, err
+	}
+
+	if reqExt.Prebid.BidderParams == nil {
+		return nil, nil
+	}
+
+	bidderParams, ok := reqExt.Prebid.BidderParams.(map[string]interface{})
+	if !ok {
+		err := fmt.Errorf("%s Error retrieving request.ext.prebid.ext: %v", PUBMATIC, reqExt.Prebid.BidderParams)
+		return nil, err
+	}
+
+	iface, ok := bidderParams[key]
+	if !ok {
+		return nil, nil
+	}
+
+	bytes, err := json.Marshal(iface)
+	if err != nil {
+		err := fmt.Errorf("%s Error retrieving '%s' from request.ext.prebid.ext: %v", PUBMATIC, key, bidderParams)
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
+func getCookiesFromRequest(request *openrtb.BidRequest) ([]string, error) {
+	cbytes, err := getBidderParam(request, "Cookie")
+	if err != nil {
+		return nil, err
+	}
+
+	if cbytes == nil {
+		return nil, nil
+	}
+
+	var cookies []string
+	err = json.Unmarshal(cbytes, &cookies)
+	if err != nil {
+		err := fmt.Errorf("%s Error unmarshalling retrieving cookies from request.ext.prebid.ext: %v", PUBMATIC, string(cbytes))
+		return nil, err
+	}
+
+	return cookies, nil
+}
+
+/*func (a *PubmaticAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	// convert mxmcherry.openrtb.BidRequest object to PubMatic-OpenWrap.openrtb.BidRequest object
+	var newRequest *owortb.BidRequest
+	reqBytes, err := json.Marshal(request)
+	if reqBytes, err = json.Marshal(request); err == nil {
+		if err = json.Unmarshal(reqBytes, &newRequest); err == nil {
+			return a.internalMakeRequests(newRequest, reqInfo)
+		}
+	}
+	errs := make([]error, 0, 1)
+	err1 := fmt.Errorf("%s Error occurred while parsing the request", PUBMATIC)
+	errs = append(errs, err1)
+	return nil, errs
+}*/
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	errs := make([]error, 0, len(request.Imp))
@@ -307,6 +379,11 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *ada
 	var err error
 	wrapExt := ""
 	pubID := ""
+
+	cookies, err := getCookiesFromRequest(request)
+	if err != nil {
+		errs = append(errs, err)
+	}
 
 	for i := 0; i < len(request.Imp); i++ {
 		err = parseImpressionObject(&request.Imp[i], &wrapExt, &pubID)
@@ -345,6 +422,45 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *ada
 		request.App = &appCopy
 	}
 
+	// move user.ext.eids to user.eids
+	if request.User != nil && request.User.Ext != nil {
+		var userExt *openrtb_ext.ExtUser
+		if err = json.Unmarshal(request.User.Ext, &userExt); err == nil {
+			if userExt != nil && userExt.Eids != nil {
+				var eidArr []openrtb.Eid
+				for _, eid := range userExt.Eids {
+					//var newEid openrtb.Eid
+					newEid := &openrtb.Eid{
+						ID:     eid.ID,
+						Source: eid.Source,
+						Ext:    eid.Ext,
+					}
+					var uidArr []openrtb.Uid
+					for _, uid := range eid.Uids {
+						newUID := &openrtb.Uid{
+							ID:    uid.ID,
+							AType: uid.AType,
+							Ext:   uid.Ext,
+						}
+						uidArr = append(uidArr, *newUID)
+					}
+					newEid.Uids = uidArr
+					eidArr = append(eidArr, *newEid)
+				}
+				request.User.Eids = eidArr
+				userExt.Eids = nil
+				updatedUserExt, err1 := json.Marshal(userExt)
+				if err1 == nil {
+					request.User.Ext = updatedUserExt
+				}
+			}
+		}
+	}
+
+	//adding hack to support DNT, since hbopenbid does not support lmt
+	if request.Device != nil && request.Device.Lmt != nil && *request.Device.Lmt != 0 {
+		request.Device.DNT = request.Device.Lmt
+	}
 	thisURI := a.URI
 
 	// If all the requests are invalid, Call to adaptor is skipped
@@ -361,6 +477,10 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *ada
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json;charset=utf-8")
 	headers.Add("Accept", "application/json")
+	for _, line := range cookies {
+		headers.Add("Cookie", line)
+	}
+
 	return []*adapters.RequestData{{
 		Method:  "POST",
 		Uri:     thisURI,
@@ -547,13 +667,16 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 
 	var errs []error
 	for _, sb := range bidResp.SeatBid {
+		targets := getTargetingKeys(sb.Ext)
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
+			// Copy SeatBid Ext to Bid.Ext
+			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:     &bid,
-				BidType: getBidType(bid.Ext),
+				Bid:        &bid,
+				BidType:    getBidType(bid.Ext),
+				BidTargets: targets,
 			})
-
 		}
 	}
 	return bidResponse, errs
@@ -608,4 +731,45 @@ func NewPubmaticBidder(client *http.Client, uri string) *PubmaticAdapter {
 		http: a,
 		URI:  uri,
 	}
+}
+
+func getTargetingKeys(bidExt json.RawMessage) map[string]string {
+	targets := map[string]string{}
+	if bidExt != nil {
+		bidExtMap := make(map[string]interface{})
+		err := json.Unmarshal(bidExt, &bidExtMap)
+		if err == nil && bidExtMap[buyId] != nil {
+			targets[buyIdTargetingKey] = string(bidExtMap[buyId].(string))
+		}
+	}
+	return targets
+}
+
+func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMessage {
+	if sbExt != nil {
+		sbExtMap := getMapFromJSON(sbExt)
+		bidExtMap := make(map[string]interface{})
+		if bidExt != nil {
+			bidExtMap = getMapFromJSON(bidExt)
+		}
+		if bidExtMap != nil && sbExtMap != nil {
+			if sbExtMap[buyId] != nil && bidExtMap[buyId] == nil {
+				bidExtMap[buyId] = sbExtMap[buyId]
+			}
+		}
+		byteAra, _ := json.Marshal(bidExtMap)
+		return json.RawMessage(byteAra)
+	}
+	return bidExt
+}
+
+func getMapFromJSON(ext json.RawMessage) map[string]interface{} {
+	if ext != nil {
+		extMap := make(map[string]interface{})
+		err := json.Unmarshal(ext, &extMap)
+		if err == nil {
+			return extMap
+		}
+	}
+	return nil
 }

@@ -68,7 +68,7 @@ func TestSingleBidder(t *testing.T) {
 	}
 	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{})
 	currencyConverter := currencies.NewRateConverterDefault()
-	seatBid, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{})
+	seatBid, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, false)
 
 	// Make sure the goodSingleBidder was called with the expected arguments.
 	if bidderImpl.httpResponse == nil {
@@ -156,7 +156,7 @@ func TestMultiBidder(t *testing.T) {
 	}
 	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{})
 	currencyConverter := currencies.NewRateConverterDefault()
-	seatBid, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{})
+	seatBid, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, false)
 
 	if seatBid == nil {
 		t.Fatalf("SeatBid should exist, because bids exist.")
@@ -525,6 +525,7 @@ func TestMultiCurrencies(t *testing.T) {
 			1,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
+			false,
 		)
 
 		// Verify:
@@ -669,6 +670,7 @@ func TestMultiCurrencies_RateConverterNotSet(t *testing.T) {
 			1,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
+			false,
 		)
 
 		// Verify:
@@ -841,6 +843,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			1,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
+			false,
 		)
 
 		// Verify:
@@ -953,6 +956,7 @@ func TestServerCallDebugging(t *testing.T) {
 		1.0,
 		currencyConverter.Rates(),
 		&adapters.ExtraRequestInfo{},
+		true,
 	)
 
 	if len(bids.httpCalls) != 1 {
@@ -1063,6 +1067,7 @@ func TestMobileNativeTypes(t *testing.T) {
 			1.0,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
+			false,
 		)
 
 		var actualValue string
@@ -1076,7 +1081,7 @@ func TestMobileNativeTypes(t *testing.T) {
 func TestErrorReporting(t *testing.T) {
 	bidder := adaptBidder(&bidRejector{}, nil, &config.Configuration{}, &metricsConfig.DummyMetricsEngine{})
 	currencyConverter := currencies.NewRateConverterDefault()
-	bids, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{})
+	bids, errs := bidder.requestBid(context.Background(), &openrtb.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, false)
 	if bids != nil {
 		t.Errorf("There should be no seatbid if no http requests are returned.")
 	}

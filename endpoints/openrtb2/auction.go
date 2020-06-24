@@ -735,6 +735,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 
 	/* Process all the bidder exts in the request */
 	disabledBidders := []string{}
+	validationFailedBidders := []string{}
 	for bidder, ext := range bidderExts {
 		if bidder != openrtb_ext.PrebidExtKey {
 			coreBidder := bidder
@@ -743,7 +744,10 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 			}
 			if bidderName, isValid := deps.bidderMap[coreBidder]; isValid {
 				if err := deps.paramsValidator.Validate(bidderName, ext); err != nil {
-					return []error{fmt.Errorf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)}
+					validationFailedBidders = append(validationFailedBidders, bidder)
+					msg := fmt.Sprintf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)
+					glog.Errorf("BidderSchemaValidationError: %s", msg)
+					errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 				}
 			} else {
 				if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
@@ -761,16 +765,23 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 		for _, bidder := range disabledBidders {
 			delete(bidderExts, bidder)
 		}
-		extJSON, err := json.Marshal(bidderExts)
-		if err != nil {
-			return []error{err}
-		}
-		imp.Ext = extJSON
 	}
+
+	if len(validationFailedBidders) > 0 {
+		for _, bidder := range validationFailedBidders {
+			delete(bidderExts, bidder)
+		}
+	}
+
+	extJSON, err := json.Marshal(bidderExts)
+	if err != nil {
+		return []error{err}
+	}
+	imp.Ext = extJSON
 
 	// TODO #713 Fix this here
 	if len(bidderExts) < 1 {
-		errL = append(errL, fmt.Errorf("request.imp[%d].ext must contain at least one bidder", impIndex))
+		errL = append(errL, fmt.Errorf("request.imp[%d].ext must contain at least one bidder with valid parameters", impIndex))
 		return errL
 	}
 

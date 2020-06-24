@@ -47,7 +47,7 @@ type adaptedBidder interface {
 	//
 	// Any errors will be user-facing in the API.
 	// Error messages should help publishers understand what might account for "bad" bids.
-	requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo) (*pbsOrtbSeatBid, []error)
+	requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo, debug bool) (*pbsOrtbSeatBid, []error)
 }
 
 // pbsOrtbBid is a Bid returned by an adaptedBidder.
@@ -103,7 +103,7 @@ type bidderAdapter struct {
 	me          pbsmetrics.MetricsEngine
 }
 
-func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo) (*pbsOrtbSeatBid, []error) {
+func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo, debug bool) (*pbsOrtbSeatBid, []error) {
 	reqData, errs := bidder.Bidder.MakeRequests(request, reqInfo)
 
 	if len(reqData) == 0 {
@@ -139,7 +139,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb.Bi
 	for i := 0; i < len(reqData); i++ {
 		httpInfo := <-responseChannel
 		// If this is a test bid, capture debugging info from the requests.
-		if request.Test == 1 {
+		if debug {
 			seatBid.httpCalls = append(seatBid.httpCalls, makeExt(httpInfo))
 		}
 
@@ -197,6 +197,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb.Bi
 							bid:          bidResponse.Bids[i].Bid,
 							bidType:      bidResponse.Bids[i].BidType,
 							bidVideo:     bidResponse.Bids[i].BidVideo,
+							bidTargets:   bidResponse.Bids[i].BidTargets,
 							dealPriority: bidResponse.Bids[i].DealPriority,
 						})
 					}
