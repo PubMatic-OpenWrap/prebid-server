@@ -691,3 +691,11 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters
 	}
 	return bidder, nil
 }
+
+func head(s []string) string {
+	if len(s) == 0 {
+		return ""
+	}
+
+	return s[0]
+}
