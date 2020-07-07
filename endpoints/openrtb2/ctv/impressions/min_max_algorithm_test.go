@@ -468,12 +468,8 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
-		// if impTest.scenario != "TC40" {
-		// 	continue
-		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			in := testdata.Input[impTest.scenario]
-			fmt.Println("Scenario = ", in)
 			p := newTestPod(int64(in[0]), int64(in[1]), in[2], in[3], in[4], in[5])
 			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
 			expectedMergedOutput := make([][2]int64, 0)
@@ -505,7 +501,9 @@ func TestGetImpressionsA2(t *testing.T) {
 			}
 			// also verify merged output
 			expectedMergedOutput = testdata.Scenario[impTest.scenario].MinMaxAlgorithm
-			assert.Equal(t, sortOutput(expectedMergedOutput), sortOutput(a2.Get()))
+			out := sortOutput(a2.Get())
+			fmt.Println(out)
+			assert.Equal(t, sortOutput(expectedMergedOutput), out)
 		})
 	}
 }

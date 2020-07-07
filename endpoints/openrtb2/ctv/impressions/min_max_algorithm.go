@@ -2,6 +2,7 @@ package impressions
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -170,21 +171,18 @@ func (c config) Algorithm() Algorithm {
 
 func computeMinDuration(c config, impressions [][2]int64, start int, end int) {
 	r := c.requested
-	// 5/2 => q = 2 , r = 1
-	quotient := r.podMinDuration / r.minAds
-	rem := r.podMinDuration % r.minAds
-	minDuration := quotient + rem
+	// 5/2 => q = 2 , r = 1 =>  2.5 => 3
+	minDuration := int64(math.Round(float64(r.podMinDuration) / float64(r.minAds)))
 	for i := start; i < end; i++ {
 		impression := &impressions[i]
 		// ensure imp duration boundaries
 		// if boundaries are not honoured keep min duration which is computed as is
 		if minDuration >= r.slotMinDuration && minDuration <= impression[MaxDuration] {
-			// set quotient as min duration
 			// override previous value
 			impression[MinDuration] = minDuration
 		} else {
 			// boundaries are not matching keep min value as is
-			ctv.Logf("False : quotient (%v) >= r.slotMinDuration (%v)  &&  quotient (%v)  <= impression[MaxDuration] (%v)", quotient, r.slotMinDuration, minDuration, impression[MaxDuration])
+			ctv.Logf("False : minDuration (%v) >= r.slotMinDuration (%v)  &&  minDuration (%v)  <= impression[MaxDuration] (%v)", minDuration, r.slotMinDuration, minDuration, impression[MaxDuration])
 			ctv.Logf("Hence, setting request level slot minduration (%v) ", r.slotMinDuration)
 			impression[MinDuration] = r.slotMinDuration
 		}
