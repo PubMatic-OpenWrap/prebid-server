@@ -676,10 +676,10 @@ func TestPubmaticSampleRequest(t *testing.T) {
 }
 
 func TestGetBidTypeVideo(t *testing.T) {
-	pubmaticExt := pubmaticBidExt{
-		BidType: 1,
-	}
-	actualBidTypeValue := getBidType(&pubmaticExt)
+	pubmaticExt := new(pubmaticBidExt)
+	pubmaticExt.BidType = new(int)
+	*pubmaticExt.BidType = 1
+	actualBidTypeValue := getBidType(pubmaticExt)
 	if actualBidTypeValue != openrtb_ext.BidTypeVideo {
 		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeVideo, actualBidTypeValue)
 	}
@@ -695,30 +695,30 @@ func TestGetBidTypeForMissingBidTypeExt(t *testing.T) {
 }
 
 func TestGetBidTypeBanner(t *testing.T) {
-	pubmaticExt := pubmaticBidExt{
-		BidType: 0,
-	}
-	actualBidTypeValue := getBidType(&pubmaticExt)
+	pubmaticExt := new(pubmaticBidExt)
+	pubmaticExt.BidType = new(int)
+	*pubmaticExt.BidType = 0
+	actualBidTypeValue := getBidType(pubmaticExt)
 	if actualBidTypeValue != openrtb_ext.BidTypeBanner {
 		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeBanner, actualBidTypeValue)
 	}
 }
 
 func TestGetBidTypeNative(t *testing.T) {
-	pubmaticExt := pubmaticBidExt{
-		BidType: 2,
-	}
-	actualBidTypeValue := getBidType(&pubmaticExt)
+	pubmaticExt := new(pubmaticBidExt)
+	pubmaticExt.BidType = new(int)
+	*pubmaticExt.BidType = 2
+	actualBidTypeValue := getBidType(pubmaticExt)
 	if actualBidTypeValue != openrtb_ext.BidTypeNative {
 		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeNative, actualBidTypeValue)
 	}
 }
 
 func TestGetBidTypeForUnsupportedCode(t *testing.T) {
-	pubmaticExt := pubmaticBidExt{
-		BidType: 99,
-	}
-	actualBidTypeValue := getBidType(&pubmaticExt)
+	pubmaticExt := new(pubmaticBidExt)
+	pubmaticExt.BidType = new(int)
+	*pubmaticExt.BidType = 99
+	actualBidTypeValue := getBidType(pubmaticExt)
 	if actualBidTypeValue != openrtb_ext.BidTypeBanner {
 		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeBanner, actualBidTypeValue)
 	}

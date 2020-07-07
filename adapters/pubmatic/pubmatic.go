@@ -51,12 +51,12 @@ type pubmaticParams struct {
 }
 
 type pubmaticBidExtVideo struct {
-	Duration int `json:"duration"`
+	Duration *int `json:"duration,omitempty"`
 }
 
 type pubmaticBidExt struct {
-	BidType           int                 `json:"BidType"`
-	VideoCreativeInfo pubmaticBidExtVideo `json:"video"`
+	BidType           *int                 `json:"BidType,omitempty"`
+	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 }
 
 const (
@@ -687,11 +687,13 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{
 				PrimaryCategory: head(bid.Cat),
 			}
-			var bidExt pubmaticBidExt
+			var bidExt *pubmaticBidExt
 			bidType := openrtb_ext.BidTypeBanner
-			if err := json.Unmarshal(bid.Ext, &bidExt); err == nil {
-				impVideo.Duration = bidExt.VideoCreativeInfo.Duration
-				bidType = getBidType(&bidExt)
+			if err := json.Unmarshal(bid.Ext, &bidExt); err == nil && bidExt != nil {
+				if bidExt.VideoCreativeInfo != nil && bidExt.VideoCreativeInfo.Duration != nil {
+					impVideo.Duration = *bidExt.VideoCreativeInfo.Duration
+				}
+				bidType = getBidType(bidExt)
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
@@ -709,8 +711,8 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
 	// setting "banner" as the default bid type
 	bidType := openrtb_ext.BidTypeBanner
-	if bidExt != nil {
-		switch bidExt.BidType {
+	if bidExt != nil && bidExt.BidType != nil {
+		switch *bidExt.BidType {
 		case 0:
 			bidType = openrtb_ext.BidTypeBanner
 		case 1:
