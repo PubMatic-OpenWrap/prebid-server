@@ -1,7 +1,6 @@
 package ctv
 
 import (
-	"log"
 	"math/big"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -207,11 +206,6 @@ func fact(no uint64) big.Int {
 	mult := bigNo.Mul(&bigNo, &fact)
 
 	return *mult
-}
-
-// wrapper around print function
-func print(format string, v ...interface{}) {
-	log.Printf(format, v...)
 }
 
 //searchAll - searches all valid combinations
