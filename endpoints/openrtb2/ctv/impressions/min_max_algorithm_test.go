@@ -1,6 +1,7 @@
 package impressions
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -240,6 +241,182 @@ var impressionsTestsA2 = []struct {
 		step4: [][2]int64{},
 		step5: [][2]int64{{2, 3}, {2, 2}},
 	}},
+	{scenario: "TC29", out: expectedOutputA2{
+		step1: [][2]int64{{25, 25}, {20, 20}, {20, 20}},
+		step2: [][2]int64{{25, 25}, {20, 20}, {20, 20}},
+		step3: [][2]int64{{35, 35}, {30, 30}},
+		step4: [][2]int64{},
+		step5: [][2]int64{{2, 3}, {2, 2}},
+	}},
+	{scenario: "TC30", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC31", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC32", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC33", out: expectedOutputA2{
+		step1: [][2]int64{{30, 42}, {35, 35}, {35, 35}, {35, 35}},
+		step2: [][2]int64{},
+		step3: [][2]int64{{30, 42}, {35, 35}, {35, 35}, {35, 35}},
+		step4: [][2]int64{},
+		step5: [][2]int64{{30, 42}, {35, 35}, {35, 35}, {35, 35}},
+	}},
+	{scenario: "TC34", out: expectedOutputA2{
+		step1: [][2]int64{{30, 30}, {30, 30}, {30, 30}},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC35", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC36", out: expectedOutputA2{
+		step1: [][2]int64{{45, 45}, {45, 45}},
+		step2: [][2]int64{},
+		step3: [][2]int64{{45, 45}, {45, 45}},
+		step4: [][2]int64{},
+		step5: [][2]int64{{45, 45}, {45, 45}},
+	}},
+	{scenario: "TC37", out: expectedOutputA2{
+		step1: [][2]int64{{25, 25}, {20, 20}},
+		step2: [][2]int64{},
+		step3: [][2]int64{{25, 25}, {20, 20}},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC38", out: expectedOutputA2{
+		step1: [][2]int64{{25, 25}, {25, 25}, {20, 20}, {20, 20}},
+		step2: [][2]int64{},
+		step3: [][2]int64{{45, 45}, {45, 45}},
+		step4: [][2]int64{},
+		step5: [][2]int64{{45, 45}, {45, 45}},
+	}},
+	{scenario: "TC39", out: expectedOutputA2{
+		step1: [][2]int64{{25, 25}, {25, 25}, {20, 20}, {20, 20}},
+		step2: [][2]int64{},
+		step3: [][2]int64{{45, 45}, {45, 45}},
+		step4: [][2]int64{},
+		step5: [][2]int64{{30, 30}, {30, 30}},
+	}},
+	{scenario: "TC40", out: expectedOutputA2{
+		step1: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}},
+		step2: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}},
+		step3: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}},
+		step4: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}},
+		step5: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}},
+	}},
+	{scenario: "TC41", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}},
+		step5: [][2]int64{{10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {10, 10}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}, {5, 5}},
+	}},
+	{scenario: "TC42", out: expectedOutputA2{
+		step1: [][2]int64{{1, 1}},
+		step2: [][2]int64{{1, 1}},
+		step3: [][2]int64{{1, 1}},
+		step4: [][2]int64{{1, 1}},
+		step5: [][2]int64{{1, 1}},
+	}},
+	{scenario: "TC43", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC44", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC45", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC46", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC47", out: expectedOutputA2{
+		step1: [][2]int64{{6, 6}},
+		step2: [][2]int64{{6, 6}},
+		step3: [][2]int64{{6, 6}},
+		step4: [][2]int64{{6, 6}},
+		step5: [][2]int64{{6, 6}},
+	}},
+	{scenario: "TC48", out: expectedOutputA2{
+		step1: [][2]int64{{6, 6}, {6, 6}},
+		step2: [][2]int64{{6, 6}, {6, 6}},
+		step3: [][2]int64{},
+		step4: [][2]int64{{6, 6}, {6, 6}},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC49", out: expectedOutputA2{
+		step1: [][2]int64{},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC50", out: expectedOutputA2{
+		step1: [][2]int64{{1, 1}},
+		step2: [][2]int64{{1, 1}},
+		step3: [][2]int64{{1, 1}},
+		step4: [][2]int64{{1, 1}},
+		step5: [][2]int64{{1, 1}},
+	}},
+	{scenario: "TC51", out: expectedOutputA2{
+		step1: [][2]int64{{13, 13}, {13, 13}, {13, 13}},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC52", out: expectedOutputA2{
+		step1: [][2]int64{{12, 18}, {12, 18}, {12, 18}, {12, 18}},
+		step2: [][2]int64{{12, 18}, {12, 18}, {12, 18}, {12, 18}},
+		step3: [][2]int64{},
+		step4: [][2]int64{{12, 18}, {12, 18}, {12, 17}, {15, 15}},
+		step5: [][2]int64{},
+	}},
+	{scenario: "TC53", out: expectedOutputA2{
+		step1: [][2]int64{{20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {1, 6}},
+		step2: [][2]int64{{20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {1, 6}},
+		step3: [][2]int64{},
+		step4: [][2]int64{{20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {1, 6}},
+		step5: [][2]int64{},
+	}},
+
 	// {scenario: "TC1" , out: expectedOutputA2{
 	// 	step1: [][2]int64{},
 	// 	step2: [][2]int64{},
@@ -291,11 +468,12 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
-		// if impTest.scenario != "TC16" {
+		// if impTest.scenario != "TC40" {
 		// 	continue
 		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			in := testdata.Input[impTest.scenario]
+			fmt.Println("Scenario = ", in)
 			p := newTestPod(int64(in[0]), int64(in[1]), in[2], in[3], in[4], in[5])
 			a2 := newMinMaxAlgorithm(p.podMinDuration, p.podMaxDuration, p.vPod)
 			expectedMergedOutput := make([][2]int64, 0)

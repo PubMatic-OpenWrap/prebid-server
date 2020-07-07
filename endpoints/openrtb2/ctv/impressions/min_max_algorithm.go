@@ -169,55 +169,24 @@ func (c config) Algorithm() Algorithm {
 }
 
 func computeMinDuration(c config, impressions [][2]int64, start int, end int) {
-	noOfImps := int64(end - start)
 	r := c.requested
 	// 5/2 => q = 2 , r = 1
-	quotient := r.podMinDuration / noOfImps
-	rem := r.podMinDuration % noOfImps
+	quotient := r.podMinDuration / r.minAds
+	rem := r.podMinDuration % r.minAds
+	minDuration := quotient + rem
 	for i := start; i < end; i++ {
 		impression := &impressions[i]
-		//for _, impression := range impressions {
 		// ensure imp duration boundaries
 		// if boundaries are not honoured keep min duration which is computed as is
-		if quotient >= r.slotMinDuration && quotient <= impression[MaxDuration] {
+		if minDuration >= r.slotMinDuration && minDuration <= impression[MaxDuration] {
 			// set quotient as min duration
 			// override previous value
-			impression[MinDuration] = quotient
+			impression[MinDuration] = minDuration
 		} else {
 			// boundaries are not matching keep min value as is
-			ctv.Logf("False : quotient (%v) >= r.slotMinDuration (%v)  &&  quotient (%v)  <= impression[MaxDuration] (%v)", quotient, r.slotMinDuration, quotient, impression[MaxDuration])
+			ctv.Logf("False : quotient (%v) >= r.slotMinDuration (%v)  &&  quotient (%v)  <= impression[MaxDuration] (%v)", quotient, r.slotMinDuration, minDuration, impression[MaxDuration])
+			ctv.Logf("Hence, setting request level slot minduration (%v) ", r.slotMinDuration)
+			impression[MinDuration] = r.slotMinDuration
 		}
-		// try to adjust remainder in given impression object
-		if rem > 0 {
-			minDurationWithRem := impression[MinDuration] + rem
-			if minDurationWithRem >= r.slotMinDuration && minDurationWithRem <= impression[MaxDuration] {
-				impression[MinDuration] += rem
-			} else {
-				// remainer is not adjusted
-				handleRemainder(rem, c, impressions, start, end)
-			}
-		}
-	}
-}
-
-func handleRemainder(rem int64, c config, impressions [][2]int64, start int, end int) {
-
-	if rem == 0 {
-		return
-	}
-	noOfImps := int64(end - start)
-	r := c.requested
-	q := rem / noOfImps
-	if q > 0 {
-		for _, impression := range impressions {
-			newDuration := impression[MinDuration] + q
-			if newDuration >= r.slotMinDuration && newDuration <= impression[MaxDuration] {
-				impression[MinDuration] += q
-			} else {
-				ctv.Logf("%v sec is not adjusted by Imp %v", q, impression)
-			}
-		}
-
-		handleRemainder(rem%noOfImps, c, impressions, start, end)
 	}
 }
