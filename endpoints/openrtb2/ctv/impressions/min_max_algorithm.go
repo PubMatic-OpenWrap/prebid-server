@@ -27,6 +27,7 @@ type config struct {
 	//   Optimized Output : {{2, 17}, {15, 15},{15, 15},{15, 15},{15, 15},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{10, 10},{25, 25}, {25, 25},{2, 22}, {5, 5}}
 	//   This map will contains : {2, 17} = 1, {15, 15} = 4, {10, 10} = 6, {25, 25} = 2, {2, 22} = 1, {5, 5} =1
 	maxExpectedDurationMap map[string][2]int
+	requested              pod
 }
 
 // newMinMaxAlgorithm constructs instance of MinMaxAlgorithm
@@ -45,7 +46,7 @@ func newMinMaxAlgorithm(podMinDuration, podMaxDuration int64, p openrtb_ext.Vide
 	// step 5 - pod duration = pod min, no of ads = min  ads
 	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MinAds, *p.MinAds))
 
-	return config{generator: generator}
+	return config{generator: generator, requested: generator[0].requested}
 }
 
 func initGenerator(podMinDuration, podMaxDuration int64, p openrtb_ext.VideoAdPod, minAds, maxAds int) generator {
@@ -78,18 +79,29 @@ func (c *config) Get() [][2]int64 {
 	}()
 
 	c.maxExpectedDurationMap = make(map[string][2]int, 0)
+	ctv.Logf("Step wise breakup ")
 	for impressions := range impsChan {
 		for index, impression := range impressions {
 			impKey := getKey(impression)
 			setMaximumRepeatations(c, impKey, index+1 == len(impressions))
 		}
+		ctv.Logf("%v", impressions)
 	}
 
 	// for impressions array
+	indexOffset := 0
 	for impKey := range c.maxExpectedDurationMap {
-		for i := 1; i <= c.getRepeations(impKey); i++ {
+		totalRepeations := c.getRepeations(impKey)
+		for repeation := 1; repeation <= totalRepeations; repeation++ {
 			imps = append(imps, getImpression(impKey))
 		}
+		// if exact pod duration is provided then do not compute
+		// min duration. Instead expect min duration same as max duration
+		// It must be set by underneath algorithm
+		if c.requested.podMinDuration != c.requested.podMaxDuration {
+			computeMinDuration(*c, imps[:], indexOffset, indexOffset+totalRepeations)
+		}
+		indexOffset += totalRepeations
 	}
 	return imps
 }
@@ -98,8 +110,8 @@ func (c *config) Get() [][2]int64 {
 // from input impression key
 func getImpression(key string) [2]int64 {
 	decodedKey := strings.Split(key, keyDelim)
-	minDuration, _ := strconv.Atoi(decodedKey[0])
-	maxDuration, _ := strconv.Atoi(decodedKey[1])
+	minDuration, _ := strconv.Atoi(decodedKey[MinDuration])
+	maxDuration, _ := strconv.Atoi(decodedKey[MaxDuration])
 	return [2]int64{int64(minDuration), int64(maxDuration)}
 }
 
@@ -133,7 +145,7 @@ func setMaximumRepeatations(c *config, impKey string, updateCurrentCounter bool)
 // getKey returns the key used for refering values of maxExpectedDurationMap
 // key is computed based on input impression object having min and max durations
 func getKey(impression [2]int64) string {
-	return fmt.Sprintf("%v%v%v", impression[0], keyDelim, impression[1])
+	return fmt.Sprintf("%v%v%v", impression[MinDuration], keyDelim, impression[MaxDuration])
 }
 
 // getRepeations returns number of repeatations at that time that this algorithm will
@@ -154,4 +166,58 @@ func get(c generator, ch chan [][2]int64, wg *sync.WaitGroup) {
 // Algorithm returns MinMaxAlgorithm
 func (c config) Algorithm() Algorithm {
 	return MinMaxAlgorithm
+}
+
+func computeMinDuration(c config, impressions [][2]int64, start int, end int) {
+	noOfImps := int64(end - start)
+	r := c.requested
+	// 5/2 => q = 2 , r = 1
+	quotient := r.podMinDuration / noOfImps
+	rem := r.podMinDuration % noOfImps
+	for i := start; i < end; i++ {
+		impression := &impressions[i]
+		//for _, impression := range impressions {
+		// ensure imp duration boundaries
+		// if boundaries are not honoured keep min duration which is computed as is
+		if quotient >= r.slotMinDuration && quotient <= impression[MaxDuration] {
+			// set quotient as min duration
+			// override previous value
+			impression[MinDuration] = quotient
+		} else {
+			// boundaries are not matching keep min value as is
+			ctv.Logf("False : quotient (%v) >= r.slotMinDuration (%v)  &&  quotient (%v)  <= impression[MaxDuration] (%v)", quotient, r.slotMinDuration, quotient, impression[MaxDuration])
+		}
+		// try to adjust remainder in given impression object
+		if rem > 0 {
+			minDurationWithRem := impression[MinDuration] + rem
+			if minDurationWithRem >= r.slotMinDuration && minDurationWithRem <= impression[MaxDuration] {
+				impression[MinDuration] += rem
+			} else {
+				// remainer is not adjusted
+				handleRemainder(rem, c, impressions, start, end)
+			}
+		}
+	}
+}
+
+func handleRemainder(rem int64, c config, impressions [][2]int64, start int, end int) {
+
+	if rem == 0 {
+		return
+	}
+	noOfImps := int64(end - start)
+	r := c.requested
+	q := rem / noOfImps
+	if q > 0 {
+		for _, impression := range impressions {
+			newDuration := impression[MinDuration] + q
+			if newDuration >= r.slotMinDuration && newDuration <= impression[MaxDuration] {
+				impression[MinDuration] += q
+			} else {
+				ctv.Logf("%v sec is not adjusted by Imp %v", q, impression)
+			}
+		}
+
+		handleRemainder(rem%noOfImps, c, impressions, start, end)
+	}
 }
