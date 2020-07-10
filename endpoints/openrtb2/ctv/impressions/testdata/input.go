@@ -54,7 +54,3 @@ var Input = map[string][]int{
 	"TC52": {68, 72, 12, 18, 2, 4},
 	"TC53": {126, 126, 1, 20, 1, 7},
 }
-
-var Input2 = map[string][]int{
-	"TC2": {1, 90, 11, 15, 2, 8},
-}

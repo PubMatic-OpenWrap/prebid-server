@@ -1,7 +1,6 @@
 package impressions
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -502,7 +501,7 @@ func TestGetImpressionsA2(t *testing.T) {
 			// also verify merged output
 			expectedMergedOutput = testdata.Scenario[impTest.scenario].MinMaxAlgorithm
 			out := sortOutput(a2.Get())
-			fmt.Println(out)
+			//fmt.Println(out)
 			assert.Equal(t, sortOutput(expectedMergedOutput), out)
 		})
 	}

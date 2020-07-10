@@ -1,7 +1,6 @@
 package impressions
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/impressions/testdata"
@@ -382,11 +381,6 @@ var impressionsTests = []struct {
 	}},
 }
 
-func TestMe(t *testing.T) {
-	for _, i := range impressionsTests {
-		fmt.Println("\"" + i.scenario + "\"")
-	}
-}
 func TestGetImpressionsA1(t *testing.T) {
 	for _, impTest := range impressionsTests {
 		t.Run(impTest.scenario, func(t *testing.T) {

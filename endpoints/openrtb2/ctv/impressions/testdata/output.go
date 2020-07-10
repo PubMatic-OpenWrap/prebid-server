@@ -138,7 +138,7 @@ var Scenario = map[string]eout{
 		MinMaxAlgorithm:     [][2]int64{{30, 30}, {30, 30}, {30, 30}},
 	},
 	"TC35": {
-		MaximizeForDuration: [][2]int64{{30, 30}, {30, 30}, {30, 30}},
+		MaximizeForDuration: [][2]int64{},
 		MinMaxAlgorithm:     [][2]int64{},
 	},
 	"TC36": {
