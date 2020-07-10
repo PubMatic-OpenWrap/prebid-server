@@ -17,7 +17,11 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
+<<<<<<< HEAD
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/impressions"
+=======
+	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+>>>>>>> ci
 	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
@@ -77,6 +81,8 @@ func NewCTVEndpoint(
 			defRequest,
 			defReqJSON,
 			bidderMap,
+			nil,
+			nil,
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -118,7 +124,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	//Parse ORTB Request and do Standard Validation
 	request, errL = deps.parseRequest(r)
-	if fatalError(errL) && writeError(errL, w, &deps.labels) {
+	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
 
@@ -237,7 +243,7 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb.BidRequest, usersyncs 
 		return &openrtb.BidResponse{ID: request.ID}, nil
 	}
 
-	return deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories)
+	return deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories, nil)
 }
 
 /********************* BidRequest Processing *********************/
