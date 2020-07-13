@@ -208,7 +208,13 @@ func fact(no uint64) big.Int {
 	return *mult
 }
 
-// searchAll - searches all valid combinations
+// wrapper around print function
+func print(format string, v ...interface{}) {
+	// log.Printf(format, v...)
+	Logf(format, v)
+}
+
+//searchAll - searches all valid combinations
 // valid combinations are those which satisifies following
 // 1. sum of duration is within range of pod min and max values
 // 2. Each duration within combination honours number of ads value given in the request
