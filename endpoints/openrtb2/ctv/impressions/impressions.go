@@ -67,3 +67,15 @@ func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.Vide
 	})
 	return &defaultGenerator
 }
+
+// Duration indicates the position
+// where the required min or max duration value can be found
+// within given impression object
+type Duration int
+
+const (
+	// MinDuration represents index value where we can get minimum duration of given impression object
+	MinDuration Duration = iota
+	// MaxDuration represents index value where we can get maximum duration of given impression object
+	MaxDuration
+)
