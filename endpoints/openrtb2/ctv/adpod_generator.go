@@ -6,6 +6,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/combination"
 )
 
 /********************* AdPodGenerator Functions *********************/
@@ -34,7 +35,7 @@ type AdPodGenerator struct {
 	request  *openrtb.BidRequest
 	impIndex int
 	buckets  BidsBuckets
-	comb     ICombination
+	comb     combination.ICombination
 	adpod    *openrtb_ext.VideoAdPod
 }
 

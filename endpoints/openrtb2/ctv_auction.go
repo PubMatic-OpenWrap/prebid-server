@@ -17,6 +17,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/impressions"
 	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -600,7 +601,7 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() ctv.AdPodBids {
 			buckets := ctv.GetDurationWiseBidsBucket(bid.Bids[:])
 
 			//combination generator
-			comb := ctv.NewCombination(
+			comb := combination.NewCombination(
 				buckets,
 				uint64(deps.request.Imp[index].Video.MinDuration),
 				uint64(deps.request.Imp[index].Video.MaxDuration),
