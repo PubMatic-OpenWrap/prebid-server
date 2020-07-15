@@ -3,7 +3,7 @@ package impressions
 import (
 	"math"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
@@ -53,7 +53,7 @@ func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_
 
 	if config.requested.podMinDuration == config.requested.podMaxDuration {
 		/*TestCase 16*/
-		ctv.Logf("requested.podMinDuration = requested.podMaxDuration = %v\n", config.requested.podMinDuration)
+		util.Logf("requested.podMinDuration = requested.podMaxDuration = %v\n", config.requested.podMinDuration)
 		config.internal.podMinDuration = config.requested.podMinDuration
 		config.internal.podMaxDuration = config.requested.podMaxDuration
 	} else {
@@ -64,7 +64,7 @@ func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_
 	// if config.requestedSlotMinDuration == config.requestedSlotMaxDuration {
 	if config.requested.slotMinDuration == config.requested.slotMaxDuration {
 		/*TestCase 30*/
-		ctv.Logf("requested.SlotMinDuration = requested.SlotMaxDuration = %v\n", config.requested.slotMinDuration)
+		util.Logf("requested.SlotMinDuration = requested.SlotMaxDuration = %v\n", config.requested.slotMinDuration)
 		config.internal.slotMinDuration = config.requested.slotMinDuration
 		config.internal.slotMaxDuration = config.requested.slotMaxDuration
 	} else {

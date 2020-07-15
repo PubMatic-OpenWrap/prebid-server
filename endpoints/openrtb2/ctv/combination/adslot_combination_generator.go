@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	//"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
+	common "github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
@@ -212,7 +213,7 @@ func fact(no uint64) big.Int {
 // wrapper around print function
 func print(format string, v ...interface{}) {
 	// log.Printf(format, v...)
-	Logf(format, v)
+	common.Logf(format, v)
 }
 
 //searchAll - searches all valid combinations

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	//"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -221,11 +221,11 @@ func validator(t *testing.T, c *generator) {
 	assert.Equal(t, expectedOutput, actualOutput)
 	assert.ElementsMatch(t, expectedOutput, actualOutput)
 
-	Logf("Total combinations generated = %v", c.stats.currentCombinationCount)
-	Logf("Total valid combinations  = %v", c.stats.validCombinationCount)
-	Logf("Total repeated combinations  = %v", c.stats.repeatationsCount)
-	Logf("Total outofrange combinations  = %v", c.stats.outOfRangeCount)
-	Logf("Total combinations expected = %v", c.stats.totalExpectedCombinations)
+	util.Logf("Total combinations generated = %v", c.stats.currentCombinationCount)
+	util.Logf("Total valid combinations  = %v", c.stats.validCombinationCount)
+	util.Logf("Total repeated combinations  = %v", c.stats.repeatationsCount)
+	util.Logf("Total outofrange combinations  = %v", c.stats.outOfRangeCount)
+	util.Logf("Total combinations expected = %v", c.stats.totalExpectedCombinations)
 }
 
 func readExpectedOutput() map[string][][]int {
