@@ -684,6 +684,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 			bid := sb.Bid[i]
 			// Copy SeatBid Ext to Bid.Ext
 			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
+
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
@@ -792,4 +793,12 @@ func getMapFromJSON(ext json.RawMessage) map[string]interface{} {
 		}
 	}
 	return nil
+}
+
+func head(s []string) string {
+	if len(s) == 0 {
+		return ""
+	}
+
+	return s[0]
 }
