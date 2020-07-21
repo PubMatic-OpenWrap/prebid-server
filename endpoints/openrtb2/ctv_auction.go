@@ -18,6 +18,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/impressions"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/monitor"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -44,6 +45,9 @@ type ctvEndpointDeps struct {
 	ctx    context.Context
 	labels pbsmetrics.Labels
 }
+
+// monitor configurations
+var impGenMonitor = monitor.New("a1_max")
 
 //NewCTVEndpoint new ctv endpoint object
 func NewCTVEndpoint(
@@ -418,8 +422,12 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 
 //getAdPodImpsConfigs will return number of impressions configurations within adpod
 func getAdPodImpsConfigs(imp *openrtb.Imp, adpod *openrtb_ext.VideoAdPod) []*ctv.ImpAdPodConfig {
+	// monitor
+	start := time.Now()
+	defer impGenMonitor.MeasureExecutionTime(start)
 	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, impressions.MinMaxAlgorithm)
 	impRanges := impGen.Get()
+	impGenMonitor.Scenario(strconv.Itoa(len(impRanges)) + " Impressions")
 	config := make([]*ctv.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {
 		config[i] = &ctv.ImpAdPodConfig{
