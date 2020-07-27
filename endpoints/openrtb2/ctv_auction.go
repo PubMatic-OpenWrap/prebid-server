@@ -420,12 +420,14 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb.Imp, adpod *openrtb_ext.VideoAdPod) []*ctv.ImpAdPodConfig {
 	selectedAlgorithm := impressions.MinMaxAlgorithm
 	labels := pbsmetrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
-	start := time.Now()
+
 	// monitor
-	defer deps.metricsEngine.RecordPodImpGenTime(labels, start)
+	start := time.Now()
 	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, selectedAlgorithm)
 	impRanges := impGen.Get()
 	*labels.NoOfImpressions = len(impRanges)
+	deps.metricsEngine.RecordPodImpGenTime(labels, start)
+
 	config := make([]*ctv.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {
 		config[i] = &ctv.ImpAdPodConfig{

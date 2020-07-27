@@ -79,7 +79,7 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 	}
 
 	labels := pbsmetrics.PodLabels{
-		AlgorithmName:    "comb_gen",
+		AlgorithmName:    string(CombinationGeneratorV1),
 		NoOfCombinations: new(int),
 	}
 	// defer o.met.RecordPodCombGenTime(labels, start)
@@ -96,10 +96,13 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 			if responseCount == totalRequest {
 				// monitor
 				labels := pbsmetrics.PodLabels{
-					AlgorithmName:    "comp_exclusion",
+					AlgorithmName:    string(CompetitiveExclusionV1),
 					NoOfResponseBids: new(int),
 				}
-				*labels.NoOfResponseBids = len(o.buckets)
+				*labels.NoOfResponseBids = 0
+				for _, ads := range o.buckets {
+					*labels.NoOfResponseBids += len(ads)
+				}
 				o.met.RecordPodCompititveExclusionTime(labels, start)
 				isTimedOutORReceivedAllResponses = true
 			}
