@@ -6,6 +6,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
 )
 
 /********************* AdPodGenerator Functions *********************/
@@ -36,16 +37,18 @@ type AdPodGenerator struct {
 	buckets  BidsBuckets
 	comb     ICombination
 	adpod    *openrtb_ext.VideoAdPod
+	met      pbsmetrics.MetricsEngine
 }
 
 //NewAdPodGenerator will generate adpod based on configuration
-func NewAdPodGenerator(request *openrtb.BidRequest, impIndex int, buckets BidsBuckets, comb ICombination, adpod *openrtb_ext.VideoAdPod) *AdPodGenerator {
+func NewAdPodGenerator(request *openrtb.BidRequest, impIndex int, buckets BidsBuckets, comb ICombination, adpod *openrtb_ext.VideoAdPod, met pbsmetrics.MetricsEngine) *AdPodGenerator {
 	return &AdPodGenerator{
 		request:  request,
 		impIndex: impIndex,
 		buckets:  buckets,
 		comb:     comb,
 		adpod:    adpod,
+		met:      met,
 	}
 }
 
@@ -62,6 +65,9 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 	timeout := 50 * time.Millisecond
 	ticker := time.NewTicker(timeout)
 
+	// monitor combination generator execution time
+	start := time.Now()
+
 	for totalRequest < maxRequests {
 		durations := o.comb.Get()
 		if len(durations) == 0 {
@@ -72,6 +78,14 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 		go o.getUniqueBids(responseCh, durations)
 	}
 
+	labels := pbsmetrics.PodLabels{
+		AlgorithmName:    "comb_gen",
+		NoOfCombinations: new(int),
+	}
+	// defer o.met.RecordPodCombGenTime(labels, start)
+	*labels.NoOfCombinations = totalRequest
+	o.met.RecordPodCombGenTime(labels, start)
+
 	for totalRequest > 0 && !isTimedOutORReceivedAllResponses {
 		select {
 		case hbc := <-responseCh:
@@ -80,6 +94,13 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 				results = append(results, hbc)
 			}
 			if responseCount == totalRequest {
+				// monitor
+				labels := pbsmetrics.PodLabels{
+					AlgorithmName:    "comp_exclusion",
+					NoOfResponseBids: new(int),
+				}
+				*labels.NoOfResponseBids = totalRequest
+				o.met.RecordPodCompititveExclusionTime(labels, start)
 				isTimedOutORReceivedAllResponses = true
 			}
 		case <-ticker.C:
