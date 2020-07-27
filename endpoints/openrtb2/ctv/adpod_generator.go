@@ -99,7 +99,7 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 					AlgorithmName:    "comp_exclusion",
 					NoOfResponseBids: new(int),
 				}
-				*labels.NoOfResponseBids = totalRequest
+				*labels.NoOfResponseBids = len(o.buckets)
 				o.met.RecordPodCompititveExclusionTime(labels, start)
 				isTimedOutORReceivedAllResponses = true
 			}

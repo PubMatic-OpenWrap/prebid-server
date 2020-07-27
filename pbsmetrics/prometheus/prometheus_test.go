@@ -944,6 +944,65 @@ func TestTimeoutNotifications(t *testing.T) {
 
 }
 
+func TestRecordPodAlgorithmTime(t *testing.T) {
+
+	type testCaseInput struct {
+		algorithmType string
+		input         int
+		testCase      func(m *Metrics, input int, t time.Time) (*prometheus.HistogramVec, pbsmetrics.PodLabels)
+	}
+
+	testCases := []testCaseInput{
+		{
+			algorithmType: "impression_generator",
+			input:         4,
+			testCase: func(m *Metrics, input int, t time.Time) (*prometheus.HistogramVec, pbsmetrics.PodLabels) {
+				l := pbsmetrics.PodLabels{
+					AlgorithmName:   "some_imp_algorithm",
+					NoOfImpressions: new(int),
+				}
+				*l.NoOfImpressions = input // assume impressions are created by algorithm
+				m.RecordPodImpGenTime(l, t)
+				return m.podImpGenTimer, l // return impgen timer
+			},
+		},
+		{
+			algorithmType: "combination_generator",
+			input:         5,
+			testCase: func(m *Metrics, input int, t time.Time) (*prometheus.HistogramVec, pbsmetrics.PodLabels) {
+				l := pbsmetrics.PodLabels{
+					AlgorithmName:    "some_comb_algorithm",
+					NoOfCombinations: new(int),
+				}
+				*l.NoOfCombinations = input // assume total combinations are generated
+				m.RecordPodCombGenTime(l, t)
+				return m.podCombGenTimer, l // return combgen timer
+			},
+		},
+		{
+			algorithmType: "competitive_exclusion",
+			input:         8,
+			testCase: func(m *Metrics, input int, t time.Time) (*prometheus.HistogramVec, pbsmetrics.PodLabels) {
+				l := pbsmetrics.PodLabels{
+					AlgorithmName:    "some_competitive_excl_algo",
+					NoOfResponseBids: new(int),
+				}
+				*l.NoOfResponseBids = input // assume number of response bids received
+				m.RecordPodCompititveExclusionTime(l, t)
+				return m.podCompExclTimer, l // return comp excl timer
+			},
+		},
+	}
+
+	m := createMetricsForTesting()
+	for _, test := range testCases {
+		timer, labels := test.testCase(m, test.input, time.Now())
+		result := getHistogramFromHistogramVec(timer, "algorithm", labels.AlgorithmName)
+		assert.Equal(t, test.input, result.GetSampleCount(), labels.AlgorithmName+":count")
+	}
+
+}
+
 func assertCounterValue(t *testing.T, description, name string, counter prometheus.Counter, expected float64) {
 	m := dto.Metric{}
 	counter.Write(&m)
