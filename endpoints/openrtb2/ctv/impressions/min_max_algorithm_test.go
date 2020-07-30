@@ -475,9 +475,6 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
-		// if impTest.scenario != "TC55" {
-		// 	continue
-		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			in := testdata.Input[impTest.scenario]
 			p := newTestPod(int64(in[0]), int64(in[1]), in[2], in[3], in[4], in[5])
