@@ -10,8 +10,8 @@ import (
 func newMaximizeForDuration(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) generator {
 	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, vPod, multipleOf)
 
-	util.Logf("Computed podMinDuration = %v in multiples of %v (requestedPodMinDuration = %v)\n", config.internal.podMinDuration, multipleOf, config.requested.podMinDuration)
-	util.Logf("Computed podMaxDuration = %v in multiples of %v (requestedPodMaxDuration = %v)\n", config.internal.podMaxDuration, multipleOf, config.requested.podMaxDuration)
+	util.Logf("Computed podMinDuration = %v in multiples of %v (requestedPodMinDuration = %v)\n", config.requested.podMinDuration, multipleOf, config.requested.podMinDuration)
+	util.Logf("Computed podMaxDuration = %v in multiples of %v (requestedPodMaxDuration = %v)\n", config.requested.podMaxDuration, multipleOf, config.requested.podMaxDuration)
 	util.Logf("Computed slotMinDuration = %v in multiples of %v (requestedSlotMinDuration = %v)\n", config.internal.slotMinDuration, multipleOf, config.requested.slotMinDuration)
 	util.Logf("Computed slotMaxDuration = %v in multiples of %v (requestedSlotMaxDuration = %v)\n", config.internal.slotMaxDuration, multipleOf, *vPod.MaxDuration)
 	util.Logf("Requested minAds = %v\n", config.requested.minAds)

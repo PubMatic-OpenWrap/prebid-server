@@ -21,21 +21,16 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod
 		maxAds:          int64(*vPod.MaxAds),
 	}
 
-	// configure internal pod (FOR INTERNAL USE ONLY)
-	// this pod is used for internal computation
-	// and contains modified values of podMinDuration, podMaxDuration
+	// configure internal object (FOR INTERNAL USE ONLY)
+	// this  is used for internal computation and may contains modified values of
 	// slotMinDuration and slotMaxDuration in multiples of multipleOf factor
 	// This function will by deault intialize this pod with same values
 	// as of requestedPod
 	// There is another function newConfigWithMultipleOf, which computes and assigns
 	// values to this object
-	config.internal = pod{
-		podMinDuration:  config.requested.podMinDuration,
-		podMaxDuration:  config.requested.podMaxDuration,
+	config.internal = internal{
 		slotMinDuration: config.requested.slotMinDuration,
 		slotMaxDuration: config.requested.slotMaxDuration,
-		minAds:          config.requested.minAds,
-		maxAds:          config.requested.maxAds,
 	}
 	return config
 }
@@ -48,20 +43,8 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod
 func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod, multipleOf int64) generator {
 	config := newConfig(podMinDuration, podMaxDuration, vPod)
 
-	// override the values of internalPod
-	// config.internal
-
-	if config.requested.podMinDuration == config.requested.podMaxDuration {
-		/*TestCase 16*/
-		util.Logf("requested.podMinDuration = requested.podMaxDuration = %v\n", config.requested.podMinDuration)
-		config.internal.podMinDuration = config.requested.podMinDuration
-		config.internal.podMaxDuration = config.requested.podMaxDuration
-	} else {
-		config.internal.podMinDuration = getClosestFactorForMinDuration(config.requested.podMinDuration, multipleOf)
-		config.internal.podMaxDuration = getClosestFactorForMaxDuration(config.requested.podMaxDuration, multipleOf)
-	}
-
-	// if config.requestedSlotMinDuration == config.requestedSlotMaxDuration {
+	// try to compute slot level min and max duration values in multiple of
+	// given number. If computed values are overlapping then prefer requested
 	if config.requested.slotMinDuration == config.requested.slotMaxDuration {
 		/*TestCase 30*/
 		util.Logf("requested.SlotMinDuration = requested.SlotMaxDuration = %v\n", config.requested.slotMinDuration)
@@ -70,6 +53,16 @@ func newConfigWithMultipleOf(podMinDuration, podMaxDuration int64, vPod openrtb_
 	} else {
 		config.internal.slotMinDuration = getClosestFactorForMinDuration(int64(config.requested.slotMinDuration), multipleOf)
 		config.internal.slotMaxDuration = getClosestFactorForMaxDuration(int64(config.requested.slotMaxDuration), multipleOf)
+		config.internal.slotDurationComputed = true
+		if config.internal.slotMinDuration > config.internal.slotMaxDuration {
+			// computed slot min duration > computed slot max duration
+			// avoid overlap and prefer requested values
+			config.internal.slotMinDuration = config.requested.slotMinDuration
+			config.internal.slotMaxDuration = config.requested.slotMaxDuration
+			// update marker indicated slot duation values are not computed
+			// this required by algorithm in computeTimeForEachAdSlot function
+			config.internal.slotDurationComputed = false
+		}
 	}
 	return config
 }

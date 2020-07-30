@@ -415,6 +415,14 @@ var impressionsTestsA2 = []struct {
 		step4: [][2]int64{{20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {20, 20}, {1, 6}},
 		step5: [][2]int64{},
 	}},
+	// {1, 74, 12, 12, 1, 6}
+	{scenario: "TC55", out: expectedOutputA2{
+		step1: [][2]int64{{12, 12}, {12, 12}, {12, 12}, {12, 12}, {12, 12}, {12, 12}},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{},
+		step5: [][2]int64{},
+	}},
 
 	// {scenario: "TC1" , out: expectedOutputA2{
 	// 	step1: [][2]int64{},
@@ -467,6 +475,9 @@ var impressionsTestsA2 = []struct {
 
 func TestGetImpressionsA2(t *testing.T) {
 	for _, impTest := range impressionsTestsA2 {
+		// if impTest.scenario != "TC55" {
+		// 	continue
+		// }
 		t.Run(impTest.scenario, func(t *testing.T) {
 			in := testdata.Input[impTest.scenario]
 			p := newTestPod(int64(in[0]), int64(in[1]), in[2], in[3], in[4], in[5])
