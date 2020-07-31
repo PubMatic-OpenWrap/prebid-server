@@ -143,11 +143,11 @@ func BenchmarkPodDurationCombinationGenerator(b *testing.B) {
 //  1 2 3 4
 func TestMinToMaxCombinationGenerator(t *testing.T) {
 	for _, test := range testBidResponseMaxDurations {
-		if test.scenario != "TC1-Single_Value" {
-			continue
-		}
-		eOut := readExpectedOutput()
-		fmt.Println(eOut)
+		// if test.scenario != "TC1-Single_Value" {
+		// 	continue
+		// }
+		// eOut := readExpectedOutput()
+		// fmt.Println(eOut)
 		t.Run(test.scenario, func(t *testing.T) {
 			c := new(generator)
 			config := new(openrtb_ext.VideoAdPod)
