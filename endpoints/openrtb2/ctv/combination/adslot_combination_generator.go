@@ -3,8 +3,6 @@ package combination
 import (
 	"math/big"
 
-	//"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv"
-	common "github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
@@ -88,8 +86,8 @@ func (c *generator) Init(podMinDuration, podMaxDuration uint64, config *openrtb_
 	c.stats.totalExpectedCombinations = compute(c, c.maxAds, true)
 	subtractUnwantedRepeatations(c)
 	// c.combinations = make([][]uint64, c.totalExpectedCombinations)
-	// ctv.Logf("Allow Repeatation = %v", c.allowRepetitationsForEligibleDurations)
-	// ctv.Logf("Total possible combinations (without validations) = %v ", c.totalExpectedCombinations)
+	// util.Logf("Allow Repeatation = %v", c.allowRepetitationsForEligibleDurations)
+	// util.Logf("Total possible combinations (without validations) = %v ", c.totalExpectedCombinations)
 
 	/// new states
 	c.state.start = uint64(0)
@@ -130,7 +128,7 @@ func isValidCombination(c *generator, combination []uint64) bool {
 		currentRepeationCnt := repeationMap[duration]
 		noOfAdsPresent := c.slotDurationAdMap[duration]
 		if currentRepeationCnt > noOfAdsPresent {
-			//ctv.Logf("count = %v :: Discarding combination '%v' as only '%v' ad is present for duration %v", c.stats.currentCombinationCount, combination, noOfAdsPresent, duration)
+			//util.Logf("count = %v :: Discarding combination '%v' as only '%v' ad is present for duration %v", c.stats.currentCombinationCount, combination, noOfAdsPresent, duration)
 			c.stats.repeatationsCount++
 			return false
 		}
@@ -141,7 +139,7 @@ func isValidCombination(c *generator, combination []uint64) bool {
 
 	if !(totalAdDuration >= c.podMinDuration && totalAdDuration <= c.podMaxDuration) {
 		// totalAdDuration is not within range of Pod min and max duration
-		//ctv.Logf("count = %v :: Discarding combination '%v' as either total Ad duration (%v) < %v (Pod min duration) or > %v (Pod Max duration)", c.stats.currentCombinationCount, combination, totalAdDuration, c.podMinDuration, c.podMaxDuration)
+		//util.Logf("count = %v :: Discarding combination '%v' as either total Ad duration (%v) < %v (Pod min duration) or > %v (Pod Max duration)", c.stats.currentCombinationCount, combination, totalAdDuration, c.podMinDuration, c.podMaxDuration)
 		c.stats.outOfRangeCount++
 		return false
 	}
@@ -181,7 +179,7 @@ func compute(c *generator, noOfAds uint64, recursion bool) uint64 {
 	noOfCombinations = nmrt.Div(&nmrt, d3)
 	// store pure combination with repeatation in combinationCountMap
 	c.combinationCountMap[r] = noOfCombinations.Uint64()
-	//ctv.Logf("%v", noOfCombinations)
+	//util.Logf("%v", noOfCombinations)
 	if recursion {
 
 		// add only if it  is  withing limit of c.minads
@@ -210,12 +208,6 @@ func fact(no uint64) big.Int {
 	return *mult
 }
 
-// wrapper around print function
-func print(format string, v ...interface{}) {
-	// log.Printf(format, v...)
-	common.Logf(format, v)
-}
-
 //searchAll - searches all valid combinations
 // valid combinations are those which satisifies following
 // 1. sum of duration is within range of pod min and max values
@@ -238,8 +230,8 @@ func (c *generator) searchAll() [][]uint64 {
 			c.search(data, start, index, r, false, 0)
 		}
 	}
-	// ctv.Logf("Total combinations generated = %v", c.currentCombinationCount)
-	// ctv.Logf("Total combinations expected = %v", c.totalExpectedCombinations)
+	// util.Logf("Total combinations generated = %v", c.currentCombinationCount)
+	// util.Logf("Total combinations expected = %v", c.totalExpectedCombinations)
 	// result := make([][]uint64, c.totalExpectedCombinations)
 	result := make([][]uint64, c.stats.validCombinationCount)
 	copy(result, c.combinations)
@@ -310,7 +302,7 @@ func (c *generator) search(data []uint64, start, index, r uint64, lazyLoad bool,
 			c.combinations = append(c.combinations, data1)
 			c.stats.currentCombinationCount++
 		}
-		//ctv.Logf("%v", data1)
+		//util.Logf("%v", data1)
 		c.state.valueUpdated = true
 		return data1
 
