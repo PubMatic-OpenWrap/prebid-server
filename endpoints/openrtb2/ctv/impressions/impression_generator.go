@@ -15,8 +15,9 @@ type generator struct {
 	slotsWithZeroTime *int64     // Indicates number of slots with zero time (starting from 1).
 	// requested holds all the requested information received
 	requested pod
-	// internal  holds the value closed to original value and multiples of X.
-	internal pod
+	// internal holds the slot duration values closed to original value and multiples of X.
+	// It helps in plotting impressions with duration values in multiples of given number
+	internal internal
 }
 
 // pod for internal computation
@@ -28,6 +29,15 @@ type pod struct {
 	slotMaxDuration int64
 	podMinDuration  int64
 	podMaxDuration  int64
+}
+
+// internal (FOR INTERNAL USE ONLY) holds the computed values slot min and max duration
+// in multiples of given number. It also holds slotDurationComputed flag
+// if slotDurationComputed = false, it means values computed were overlapping
+type internal struct {
+	slotMinDuration      int64
+	slotMaxDuration      int64
+	slotDurationComputed bool
 }
 
 // Get returns the number of Ad Slots/Impression  that input Ad Pod can have.
@@ -90,8 +100,8 @@ func computeTotalAds(cfg generator) int64 {
 		util.Logf("Either cfg.slotMaxDuration or cfg.slotMinDuration or both are <= 0. Hence, totalAds = 0")
 		return 0
 	}
-	minAds := cfg.internal.podMaxDuration / cfg.internal.slotMaxDuration
-	maxAds := cfg.internal.podMaxDuration / cfg.internal.slotMinDuration
+	minAds := cfg.requested.podMaxDuration / cfg.internal.slotMaxDuration
+	maxAds := cfg.requested.podMaxDuration / cfg.internal.slotMinDuration
 
 	util.Logf("Computed minAds = %v , maxAds = %v\n", minAds, maxAds)
 
@@ -119,9 +129,9 @@ func computeTimeForEachAdSlot(cfg generator, totalAds int64) int64 {
 		util.Logf("totalAds = 0, Hence timeForEachSlot = 0")
 		return 0
 	}
-	timeForEachSlot := cfg.internal.podMaxDuration / totalAds
+	timeForEachSlot := cfg.requested.podMaxDuration / totalAds
 
-	util.Logf("Computed timeForEachSlot = %v (podMaxDuration/totalAds) (%v/%v)\n", timeForEachSlot, cfg.internal.podMaxDuration, totalAds)
+	util.Logf("Computed timeForEachSlot = %v (podMaxDuration/totalAds) (%v/%v)\n", timeForEachSlot, cfg.requested.podMaxDuration, totalAds)
 
 	if timeForEachSlot < cfg.internal.slotMinDuration {
 		timeForEachSlot = cfg.internal.slotMinDuration
@@ -141,20 +151,18 @@ func computeTimeForEachAdSlot(cfg generator, totalAds int64) int64 {
 		return timeForEachSlot
 	}
 
-	// Case I- adjusted timeForEachSlot may be pushed to and fro by
-	// slot min and max duration (multiples of given number)
 	// Case II - timeForEachSlot*totalAds > podmaxduration
 	// In such case prefer to return cfg.podMaxDuration / totalAds
 	// In such case timeForEachSlot no necessarily to be multiples of given number
-	if timeForEachSlot < cfg.internal.slotMinDuration || timeForEachSlot > cfg.internal.slotMaxDuration || (timeForEachSlot*totalAds) > cfg.requested.podMaxDuration {
-		util.Logf("timeForEachSlot (%v) < cfg.internal.slotMinDuration (%v) || timeForEachSlot (%v) > cfg.internal.slotMaxDuration (%v) || timeForEachSlot*totalAds (%v) > cfg.requested.podMaxDuration (%v) ", timeForEachSlot, cfg.internal.slotMinDuration, timeForEachSlot, cfg.internal.slotMaxDuration, timeForEachSlot*totalAds, cfg.requested.podMaxDuration)
+	if (timeForEachSlot * totalAds) > cfg.requested.podMaxDuration {
+		util.Logf("timeForEachSlot*totalAds (%v) > cfg.requested.podMaxDuration (%v) ", timeForEachSlot*totalAds, cfg.requested.podMaxDuration)
 		util.Logf("Hence, not computing multiples of %v value.", multipleOf)
 		// need that division again
-		return cfg.internal.podMaxDuration / totalAds
+		return cfg.requested.podMaxDuration / totalAds
 	}
 
 	// ensure timeForEachSlot is multipleof given number
-	if !isMultipleOf(timeForEachSlot, multipleOf) {
+	if cfg.internal.slotDurationComputed && !isMultipleOf(timeForEachSlot, multipleOf) {
 		// get close to value of multiple
 		// here we muse get either cfg.SlotMinDuration or cfg.SlotMaxDuration
 		// these values are already pre-computed in multiples of given number
