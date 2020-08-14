@@ -203,16 +203,16 @@ func (me *MultiMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, s
 }
 
 // RecordPodCombGenTime as a noop
-func (me *MultiMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, startTime time.Time) {
+func (me *MultiMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordPodCombGenTime(labels, startTime)
+		thisME.RecordPodCombGenTime(labels, elapsedTime)
 	}
 }
 
 // RecordPodCompititveExclusionTime as a noop
-func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, startTime time.Time) {
+func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordPodCompititveExclusionTime(labels, startTime)
+		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
 	}
 }
 
@@ -300,9 +300,9 @@ func (me *DummyMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, s
 }
 
 // RecordPodCombGenTime as a noop
-func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, start time.Time) {
+func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 }
 
 // RecordPodCompititveExclusionTime as a noop
-func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, startTime time.Time) {
+func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 }

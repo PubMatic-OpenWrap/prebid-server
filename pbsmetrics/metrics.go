@@ -297,14 +297,14 @@ type MetricsEngine interface {
 	// RecordPodCombGenTime records number of combinations generated and time taken
 	// by underneath algorithm to generate them
 	// labels accept name of the algorithm and no of combinations generated
-	// startTime indicates the time at which algorithm started
+	// elapsedTime indicates the time taken by combination generator to compute all requested combinations
 	// This function will take care of computing the elpased time
-	RecordPodCombGenTime(labels PodLabels, statTime time.Time)
+	RecordPodCombGenTime(labels PodLabels, elapsedTime time.Duration)
 
 	// RecordPodCompititveExclusionTime records time take by competitive exclusion
 	// to compute the final Ad pod Response.
 	// labels accept name of the algorithm and no of combinations evaluated, total bids
-	// startTime indicates the time at which algorithm started
+	// elapsedTime indicates the time taken by competitive exclusion to form final ad pod response using combinations and exclusion algorithm
 	// This function will take care of computing the elpased time
-	RecordPodCompititveExclusionTime(labels PodLabels, startTime time.Time)
+	RecordPodCompititveExclusionTime(labels PodLabels, elapsedTime time.Duration)
 }
