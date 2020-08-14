@@ -2,6 +2,7 @@ package ctv
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
@@ -20,13 +21,15 @@ type filteredBid struct {
 	reasonCode FilterReasonCode
 }
 type highestCombination struct {
-	bids          []*Bid
-	bidIDs        []string
-	durations     []int
-	price         float64
-	categoryScore map[string]int
-	domainScore   map[string]int
-	filteredBids  map[string]*filteredBid
+	bids              []*Bid
+	bidIDs            []string
+	durations         []int
+	price             float64
+	categoryScore     map[string]int
+	domainScore       map[string]int
+	filteredBids      map[string]*filteredBid
+	timeTakenCompExcl time.Duration // time taken by comp excl
+	timeTakenCombGen  time.Duration // time taken by combination generator
 }
 
 //AdPodGenerator AdPodGenerator
@@ -55,56 +58,79 @@ func NewAdPodGenerator(request *openrtb.BidRequest, impIndex int, buckets BidsBu
 //GetAdPodBids will return Adpod based on configurations
 func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 	defer TimeTrack(time.Now(), fmt.Sprintf("Tid:%v ImpId:%v adpodgenerator", o.request.ID, o.request.Imp[o.impIndex].ID))
-	isTimedOutORReceivedAllResponses := false
-	responseCount := 0
-	totalRequest := 0
-	maxRequests := 5
-	responseCh := make(chan *highestCombination, maxRequests)
-	var results []*highestCombination
 
-	timeout := 50 * time.Millisecond
+	results := o.getAdPodBids(10 * time.Millisecond)
+	adpodBid := o.getMaxAdPodBid(results)
+
+	return adpodBid
+}
+
+func (o *AdPodGenerator) cleanup(wg *sync.WaitGroup, responseCh chan *highestCombination) {
+	defer func() {
+		close(responseCh)
+		for extra := range responseCh {
+			if nil != extra {
+				Logf("Tid:%v ImpId:%v Delayed Response Durations:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, extra.durations, extra.bidIDs)
+			}
+		}
+	}()
+	wg.Wait()
+}
+
+func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombination {
+	start := time.Now()
+	defer TimeTrack(start, fmt.Sprintf("Tid:%v ImpId:%v getAdPodBids", o.request.ID, o.request.Imp[o.impIndex].ID))
+
+	maxRoutines := 3
+	isTimedOutORReceivedAllResponses := false
+	results := []*highestCombination{}
+	responseCh := make(chan *highestCombination, maxRoutines)
+	wg := new(sync.WaitGroup) // ensures each step generating impressions is finished
+	lock := sync.Mutex{}
 	ticker := time.NewTicker(timeout)
 
-	// monitor combination generator execution time
-	start := time.Now()
+	combinationCount := 0
+	for i := 0; i < maxRoutines; i++ {
+		wg.Add(1)
+		go func() {
+			for !isTimedOutORReceivedAllResponses {
+				combGenStartTime := time.Now()
+				lock.Lock()
+				durations := o.comb.Get()
+				lock.Unlock()
+				combGenElapsedTime := time.Since(combGenStartTime)
 
-	for totalRequest < maxRequests {
-		durations := o.comb.Get()
-		if len(durations) == 0 {
-			break
-		}
-
-		totalRequest++
-		go o.getUniqueBids(responseCh, durations)
-	}
-
-	labels := pbsmetrics.PodLabels{
-		AlgorithmName:    string(CombinationGeneratorV1),
-		NoOfCombinations: new(int),
-	}
-	// defer o.met.RecordPodCombGenTime(labels, start)
-	*labels.NoOfCombinations = totalRequest
-	o.met.RecordPodCombGenTime(labels, start)
-
-	for totalRequest > 0 && !isTimedOutORReceivedAllResponses {
-		select {
-		case hbc := <-responseCh:
-			responseCount++
-			if nil != hbc {
-				results = append(results, hbc)
+				if len(durations) == 0 {
+					break
+				}
+				hbc := o.getUniqueBids(durations)
+				hbc.timeTakenCombGen = combGenElapsedTime
+				responseCh <- hbc
+				Logf("Tid:%v GetUniqueBids Durations:%v Price:%v Time:%v Bids:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.timeTakenCompExcl, hbc.bidIDs[:])
 			}
-			if responseCount == totalRequest {
-				// monitor
-				labels := pbsmetrics.PodLabels{
-					AlgorithmName:    string(CompetitiveExclusionV1),
-					NoOfResponseBids: new(int),
-				}
-				*labels.NoOfResponseBids = 0
-				for _, ads := range o.buckets {
-					*labels.NoOfResponseBids += len(ads)
-				}
-				o.met.RecordPodCompititveExclusionTime(labels, start)
+			wg.Done()
+		}()
+	}
+
+	// ensure impressions channel is closed
+	// when all go routines are executed
+	go o.cleanup(wg, responseCh)
+
+	totalTimeByCombGen := int64(0)
+	totalTimeByCompExcl := int64(0)
+	for !isTimedOutORReceivedAllResponses {
+		select {
+		case hbc, ok := <-responseCh:
+
+			if false == ok {
 				isTimedOutORReceivedAllResponses = true
+				break
+			}
+			if nil != hbc {
+				combinationCount++
+				totalTimeByCombGen += int64(hbc.timeTakenCombGen)
+				totalTimeByCompExcl += int64(hbc.timeTakenCompExcl)
+				results = append(results, hbc)
 			}
 		case <-ticker.C:
 			isTimedOutORReceivedAllResponses = true
@@ -113,8 +139,28 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 	}
 
 	defer ticker.Stop()
-	defer o.cleanupResponseChannel(responseCh, totalRequest-responseCount)
 
+	labels := pbsmetrics.PodLabels{
+		AlgorithmName:    string(CombinationGeneratorV1),
+		NoOfCombinations: new(int),
+	}
+	*labels.NoOfCombinations = combinationCount
+	o.met.RecordPodCombGenTime(labels, time.Duration(totalTimeByCombGen))
+
+	compExclLabels := pbsmetrics.PodLabels{
+		AlgorithmName:    string(CompetitiveExclusionV1),
+		NoOfResponseBids: new(int),
+	}
+	*compExclLabels.NoOfResponseBids = 0
+	for _, ads := range o.buckets {
+		*compExclLabels.NoOfResponseBids += len(ads)
+	}
+	o.met.RecordPodCompititveExclusionTime(compExclLabels, time.Duration(totalTimeByCompExcl))
+
+	return results[:]
+}
+
+func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *AdPodBid {
 	if 0 == len(results) {
 		Logf("Tid:%v ImpId:%v NoBid", o.request.ID, o.request.Imp[o.impIndex].ID)
 		return nil
@@ -128,9 +174,15 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 				rc.bid.FilterReasonCode = rc.reasonCode
 			}
 		}
-		if len(result.bids) != 0 || nil == maxResult || maxResult.price < result.price {
+
+		if len(result.bidIDs) > 0 && (nil == maxResult || maxResult.price < result.price) {
 			maxResult = result
 		}
+	}
+
+	if nil == maxResult {
+		Logf("Tid:%v ImpId:%v All Combination Filtered in Ad Exclusion", o.request.ID, o.request.Imp[o.impIndex].ID)
+		return nil
 	}
 
 	adpodBid := &AdPodBid{
@@ -150,23 +202,17 @@ func (o *AdPodGenerator) GetAdPodBids() *AdPodBid {
 		adpodBid.Cat = append(adpodBid.Cat, cat)
 	}
 
-	Logf("Tid:%v ImpId:%v Selected Durations:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, maxResult.durations[:], maxResult.bidIDs[:])
+	Logf("Tid:%v ImpId:%v Selected Durations:%v Price:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, maxResult.durations[:], maxResult.price, maxResult.bidIDs[:])
+
 	return adpodBid
 }
 
-func (o *AdPodGenerator) cleanupResponseChannel(responseCh <-chan *highestCombination, responseCount int) {
-	for responseCount > 0 {
-		extra := <-responseCh
-		Logf("Tid:%v ImpId:%v Delayed Response Durations:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, extra.durations, extra.bidIDs)
-		responseCount--
-	}
-}
-
-func (o *AdPodGenerator) getUniqueBids(responseCh chan<- *highestCombination, durationSequence []int) {
-	defer TimeTrack(time.Now(), fmt.Sprintf("Tid:%v ImpId:%v getUniqueBids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, durationSequence))
-
+func (o *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombination {
+	startTime := time.Now()
 	data := [][]*Bid{}
 	combinations := []int{}
+
+	defer TimeTrack(startTime, fmt.Sprintf("Tid:%v ImpId:%v getUniqueBids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, durationSequence))
 
 	uniqueDuration := 0
 	for index, duration := range durationSequence {
@@ -180,7 +226,9 @@ func (o *AdPodGenerator) getUniqueBids(responseCh chan<- *highestCombination, du
 	}
 	hbc := findUniqueCombinations(data[:], combinations[:], *o.adpod.IABCategoryExclusionPercent, *o.adpod.AdvertiserExclusionPercent)
 	hbc.durations = durationSequence[:]
-	responseCh <- hbc
+	hbc.timeTakenCompExcl = time.Since(startTime)
+
+	return hbc
 }
 
 func findUniqueCombinations(data [][]*Bid, combination []int, maxCategoryScore, maxDomainScore int) *highestCombination {
