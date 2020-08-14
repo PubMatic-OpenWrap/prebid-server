@@ -195,27 +195,6 @@ func (me *MultiMetricsEngine) RecordTimeoutNotice(success bool) {
 	}
 }
 
-// RecordPodImpGenTime across all engines
-func (me *MultiMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, startTime time.Time) {
-	for _, thisME := range *me {
-		thisME.RecordPodImpGenTime(labels, startTime)
-	}
-}
-
-// RecordPodCombGenTime as a noop
-func (me *MultiMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
-	for _, thisME := range *me {
-		thisME.RecordPodCombGenTime(labels, elapsedTime)
-	}
-}
-
-// RecordPodCompititveExclusionTime as a noop
-func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
-	for _, thisME := range *me {
-		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
-	}
-}
-
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
 
@@ -293,16 +272,4 @@ func (me *DummyMetricsEngine) RecordRequestQueueTime(success bool, requestType p
 
 // RecordTimeoutNotice as a noop
 func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
-}
-
-// RecordPodImpGenTime as a noop
-func (me *DummyMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, start time.Time) {
-}
-
-// RecordPodCombGenTime as a noop
-func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
-}
-
-// RecordPodCompititveExclusionTime as a noop
-func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 }
