@@ -556,6 +556,16 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		}
 	}
 
+	if bidderExt.Prebid != nil && bidderExt.Prebid.SKAdnetwork != nil {
+		if impExt == "" {
+			impExt = fmt.Sprintf(`"%s":%s`, skAdnetworkKey, string(bidderExt.Prebid.SKAdnetwork))
+		} else {
+			impExt = fmt.Sprintf(`%s,"%s":%s`, impExt, skAdnetworkKey, string(bidderExt.Prebid.SKAdnetwork))
+		}
+	}
+	if len(impExt) != 0 {
+		imp.Ext = json.RawMessage([]byte(fmt.Sprintf(`{%s}`, impExt)))
+	}
 	return nil
 
 }
