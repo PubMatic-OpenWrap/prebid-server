@@ -260,6 +260,7 @@ func getDealTiers(bidRequest *openrtb.BidRequest) map[string]*BidderDealTier {
 
 	for _, imp := range bidRequest.Imp {
 		var bidderDealTier BidderDealTier
+		fmt.Println(string(imp.Ext))
 		err := json.Unmarshal(imp.Ext, &bidderDealTier.DealInfo)
 		if err != nil {
 			continue

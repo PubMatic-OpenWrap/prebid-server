@@ -25,7 +25,7 @@ import (
 // See issue #559
 var Rev string
 
-const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/"
+const schemaDirectory = "/usr/local/src/ssheaderbidding/static/"
 
 /*
 func init() {
@@ -48,9 +48,9 @@ func main() {
 */
 
 func InitPrebidServer(configFile string) {
-	//init contents	
+	//init contents
 	rand.Seed(time.Now().UnixNano())
-	
+
 	//main contents
 	cfg, err := loadConfig(configFile)
 	if err != nil {
@@ -75,6 +75,7 @@ func loadConfig(configFileName string) (*config.Configuration, error) {
 
 func serve(revision string, cfg *config.Configuration) error {
 	fetchingInterval := time.Duration(cfg.CurrencyConverter.FetchIntervalSeconds) * time.Second
+	cfg.CurrencyConverter.FetchURL = "http://localhost/latest.json"
 	currencyConverter := currencies.NewRateConverter(&http.Client{}, cfg.CurrencyConverter.FetchURL, fetchingInterval)
 
 	_, err := router.New(cfg, currencyConverter)

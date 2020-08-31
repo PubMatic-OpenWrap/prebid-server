@@ -102,6 +102,10 @@ func TestBuildCacheString(t *testing.T) {
 func TestCacheJSON(t *testing.T) {
 	if specFiles, err := ioutil.ReadDir("./cachetest"); err == nil {
 		for _, specFile := range specFiles {
+
+			if specFile.Name() != "multibid.json" {
+				continue
+			}
 			fileName := "./cachetest/" + specFile.Name()
 			fileDisplayName := "exchange/cachetest/" + specFile.Name()
 			specData, err := loadCacheSpec(fileName)

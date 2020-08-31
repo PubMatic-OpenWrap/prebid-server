@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -700,11 +702,17 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 				bidType = getBidType(bidExt)
 			}
 
+			//https://golang.cafe/blog/golang-random-number-generator.html
+			rand.Seed(time.Now().UnixNano())
+			min := 0
+			max := 10
+
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:        &bid,
-				BidType:    bidType,
-				BidVideo:   impVideo,
-				BidTargets: targets,
+				Bid:          &bid,
+				BidType:      bidType,
+				BidVideo:     impVideo,
+				BidTargets:   targets,
+				DealPriority: rand.Intn(max-min+1) + min,
 			})
 		}
 	}
