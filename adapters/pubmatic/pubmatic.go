@@ -57,6 +57,12 @@ type pubmaticParams struct {
 	Keywords    map[string]string `json:"keywords,omitempty"`
 }
 
+type pubmaticWrapperExt struct {
+	ProfileID    int    `json:"profile,omitempty"`
+	VersionID    int    `json:"version,omitempty"`
+	WrapperImpID string `json:"wiid,omitempty"`
+}
+
 type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
@@ -352,6 +358,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	wrapExt := ""
 	pubID := ""
+	wrapperExtSet := false
 
 	cookies, err := getCookiesFromRequest(request)
 	if err != nil {
@@ -507,13 +514,12 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 	}
 
 	// Parse Wrapper Extension only once per request
-	if *wrapExt == "" && len(pubmaticExt.WrapExt) != 0 {
-		var wrapExtMap map[string]int
-		err := json.Unmarshal([]byte(pubmaticExt.WrapExt), &wrapExtMap)
+	if !*wrapperExtSet && len(pubmaticExt.WrapExt) != 0 {
+		err := json.Unmarshal([]byte(pubmaticExt.WrapExt), &wrapExt)
 		if err != nil {
 			return fmt.Errorf("Error in Wrapper Parameters = %v  for ImpID = %v WrapperExt = %v", err.Error(), imp.ID, string(pubmaticExt.WrapExt))
 		}
-		*wrapExt = string(pubmaticExt.WrapExt)
+		*wrapperExtSet = true
 	}
 
 	if err := validateAdSlot(strings.TrimSpace(pubmaticExt.AdSlot), imp); err != nil {
