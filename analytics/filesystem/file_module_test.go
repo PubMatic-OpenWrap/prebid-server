@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"github.com/prebid/prebid-server/config"
 	"net/http"
 	"os"
 	"strings"
