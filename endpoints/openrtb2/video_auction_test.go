@@ -1286,6 +1286,30 @@ func mockDepsAppendBidderNames(t *testing.T, ex *mockExchangeAppendBidderNames) 
 	return deps
 }
 
+func mockDepsAppendBidderNames(t *testing.T, ex *mockExchangeAppendBidderNames) *endpointDeps {
+	theMetrics := pbsmetrics.NewMetrics(metrics.NewRegistry(), openrtb_ext.BidderList(), config.DisabledMetrics{})
+	deps := &endpointDeps{
+		ex,
+		newParamsValidator(t),
+		&mockVideoStoredReqFetcher{},
+		&mockVideoStoredReqFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		&config.Configuration{MaxRequestSize: maxSize},
+		theMetrics,
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		false,
+		[]byte{},
+		openrtb_ext.BidderMap,
+		ex.cache,
+		regexp.MustCompile(`[<>]`),
+		hardcodedResponseIPValidator{response: true},
+	}
+
+	return deps
+}
+
 func mockDepsNoBids(t *testing.T, ex *mockExchangeVideoNoBids) *endpointDeps {
 	edep := &endpointDeps{
 		ex,
@@ -1381,6 +1405,42 @@ func (m *mockExchangeAppendBidderNames) HoldAuction(ctx context.Context, r excha
 		SeatBid: []openrtb2.SeatBid{{
 			Seat: "appnexus",
 			Bid: []openrtb2.Bid{
+				{ID: "01", ImpID: "1_0", Ext: ext},
+				{ID: "02", ImpID: "1_1", Ext: ext},
+				{ID: "03", ImpID: "1_2", Ext: ext},
+				{ID: "04", ImpID: "1_3", Ext: ext},
+				{ID: "05", ImpID: "2_0", Ext: ext},
+				{ID: "06", ImpID: "2_1", Ext: ext},
+				{ID: "07", ImpID: "2_2", Ext: ext},
+				{ID: "08", ImpID: "3_0", Ext: ext},
+				{ID: "09", ImpID: "3_1", Ext: ext},
+				{ID: "10", ImpID: "3_2", Ext: ext},
+				{ID: "11", ImpID: "3_3", Ext: ext},
+				{ID: "12", ImpID: "3_5", Ext: ext},
+				{ID: "13", ImpID: "4_0", Ext: ext},
+				{ID: "14", ImpID: "5_0", Ext: ext},
+				{ID: "15", ImpID: "5_1", Ext: ext},
+				{ID: "16", ImpID: "5_2", Ext: ext},
+			},
+		}},
+	}, nil
+}
+
+type mockExchangeAppendBidderNames struct {
+	lastRequest *openrtb.BidRequest
+	cache       *mockCacheClient
+}
+
+func (m *mockExchangeAppendBidderNames) HoldAuction(ctx context.Context, bidRequest *openrtb.BidRequest, ids exchange.IdFetcher, labels pbsmetrics.Labels, account *config.Account, categoriesFetcher *stored_requests.CategoryFetcher, debugLog *exchange.DebugLog) (*openrtb.BidResponse, error) {
+	m.lastRequest = bidRequest
+	if debugLog != nil && debugLog.Enabled {
+		m.cache.called = true
+	}
+	ext := []byte(`{"prebid":{"targeting":{"hb_bidder_appnexus":"appnexus","hb_pb_appnexus":"20.00","hb_pb_cat_dur_appnex":"20.00_395_30s_appnexus","hb_size":"1x1", "hb_uuid_appnexus":"837ea3b7-5598-4958-8c45-8e9ef2bf7cc1"},"type":"video"},"bidder":{"appnexus":{"brand_id":1,"auction_id":7840037870526938650,"bidder_id":2,"bid_ad_type":1,"creative_info":{"video":{"duration":30,"mimes":["video\/mp4"]}}}}}`)
+	return &openrtb.BidResponse{
+		SeatBid: []openrtb.SeatBid{{
+			Seat: "appnexus",
+			Bid: []openrtb.Bid{
 				{ID: "01", ImpID: "1_0", Ext: ext},
 				{ID: "02", ImpID: "1_1", Ext: ext},
 				{ID: "03", ImpID: "1_2", Ext: ext},
