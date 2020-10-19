@@ -712,7 +712,6 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb.BidResponse) (data 
 					bid.Ext = raw
 				}
 			}
-
 		}
 	}
 
