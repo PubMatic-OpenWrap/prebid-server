@@ -711,12 +711,6 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb.BidResponse) (data 
 				if nil == err {
 					bid.Ext = raw
 				}
-
-				//OTT-42 add deal tier satisfied to enable logging
-				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.FormatBool(bid.DealTierSatisfied)), "prebid", "dealtiersatisfied")
-				if nil == err {
-					bid.Ext = raw
-				}
 			}
 
 		}
