@@ -284,6 +284,7 @@ func validateAndNormalizeDealTier(impDeal *DealTier) bool {
 
 func updateHbPbCatDur(bid *pbsOrtbBid, dealTierInfo *DealTierInfo, bidCategory map[string]string) {
 	if bid.dealPriority >= dealTierInfo.MinDealTier {
+		bid.dealTierSatisfied = true
 		prefixTier := fmt.Sprintf("%s%d_", dealTierInfo.Prefix, bid.dealPriority)
 
 		if oldCatDur, ok := bidCategory[bid.bid.ID]; ok {
@@ -292,7 +293,6 @@ func updateHbPbCatDur(bid *pbsOrtbBid, dealTierInfo *DealTierInfo, bidCategory m
 
 			newCatDur := strings.Join(oldCatDurSplit, "")
 			bidCategory[bid.bid.ID] = newCatDur
-			bid.dealTierSatisfied = true
 		}
 	}
 }
@@ -743,6 +743,7 @@ func (e *exchange) makeSeatBid(adapterBid *pbsOrtbSeatBid, adapter openrtb_ext.B
 func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, auc *auction) ([]openrtb.Bid, []error) {
 	bids := make([]openrtb.Bid, 0, len(Bids))
 	errList := make([]error, 0, 1)
+	bidIDColisionMap := make(map[string]int, len(Bids))
 	for _, thisBid := range Bids {
 		bidExt := &openrtb_ext.ExtBid{
 			Bidder: thisBid.bid.Ext,
@@ -765,6 +766,13 @@ func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, a
 		} else {
 			bids = append(bids, *thisBid.bid)
 			bids[len(bids)-1].Ext = ext
+		}
+		// check bid.id collision
+		if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
+			bidIDColisionMap[thisBid.bid.ID]++
+			glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(adapter))
+		} else {
+			bidIDColisionMap[thisBid.bid.ID] = 1
 		}
 	}
 	return bids, errList
