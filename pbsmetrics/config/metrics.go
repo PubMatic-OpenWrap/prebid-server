@@ -195,6 +195,27 @@ func (me *MultiMetricsEngine) RecordTimeoutNotice(success bool) {
 	}
 }
 
+// RecordPodImpGenTime across all engines
+func (me *MultiMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, startTime time.Time) {
+	for _, thisME := range *me {
+		thisME.RecordPodImpGenTime(labels, startTime)
+	}
+}
+
+// RecordPodCombGenTime as a noop
+func (me *MultiMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCombGenTime(labels, elapsedTime)
+	}
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
+	}
+}
+
 // RecordAdapterDuplicateBidID across all engines
 func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 	for _, thisME := range *me {
@@ -281,6 +302,18 @@ func (me *DummyMetricsEngine) RecordRequestQueueTime(success bool, requestType p
 func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
 }
 
+// RecordPodImpGenTime as a noop
+func (me *DummyMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, start time.Time) {
+}
+
+// RecordPodCombGenTime as a noop
+func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+}
+
 // RecordAdapterDuplicateBidID as a noop
-func (m *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 }
