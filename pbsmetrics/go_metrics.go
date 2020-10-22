@@ -553,6 +553,10 @@ func (me *Metrics) RecordRequestQueueTime(success bool, requestType RequestType,
 
 }
 
+// RecordAdapterDuplicateBidID as noop
+func (me *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
 func (me *Metrics) RecordTimeoutNotice(success bool) {
 	if success {
 		me.TimeoutNotificationSuccess.Mark(1)

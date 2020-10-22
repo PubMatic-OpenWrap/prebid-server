@@ -276,4 +276,8 @@ type MetricsEngine interface {
 	RecordPrebidCacheRequestTime(success bool, length time.Duration)
 	RecordRequestQueueTime(success bool, requestType RequestType, length time.Duration)
 	RecordTimeoutNotice(sucess bool)
+
+	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+	// gives the bid response with multiple bids containing  same bid.ID
+	RecordAdapterDuplicateBidID(adaptor string, collisions int)
 }

@@ -31,14 +31,15 @@ type Metrics struct {
 	timeout_notifications        *prometheus.CounterVec
 
 	// Adapter Metrics
-	adapterBids          *prometheus.CounterVec
-	adapterCookieSync    *prometheus.CounterVec
-	adapterErrors        *prometheus.CounterVec
-	adapterPanics        *prometheus.CounterVec
-	adapterPrices        *prometheus.HistogramVec
-	adapterRequests      *prometheus.CounterVec
-	adapterRequestsTimer *prometheus.HistogramVec
-	adapterUserSync      *prometheus.CounterVec
+	adapterBids           *prometheus.CounterVec
+	adapterCookieSync     *prometheus.CounterVec
+	adapterErrors         *prometheus.CounterVec
+	adapterPanics         *prometheus.CounterVec
+	adapterPrices         *prometheus.HistogramVec
+	adapterRequests       *prometheus.CounterVec
+	adapterRequestsTimer  *prometheus.HistogramVec
+	adapterUserSync       *prometheus.CounterVec
+	adapterDupliateBidIDs *prometheus.CounterVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -210,6 +211,11 @@ func NewMetrics(cfg config.PrometheusMetrics) *Metrics {
 		"Seconds request was waiting in queue",
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
+
+	metrics.adapterDupliateBidIDs = newCounter(cfg, metrics.Registry,
+		"duplicate_bid_ids",
+		"Number of collisions observed for given adaptor",
+		[]string{adapterLabel})
 
 	preloadLabelValues(&metrics)
 
@@ -419,5 +425,15 @@ func (m *Metrics) RecordTimeoutNotice(success bool) {
 		m.timeout_notifications.With(prometheus.Labels{
 			successLabel: requestFailed,
 		}).Inc()
+	}
+}
+
+// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+// gives the bid response with multiple bids containing  same bid.ID
+func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	if collisions > 1 {
+		m.adapterDupliateBidIDs.With(prometheus.Labels{
+			adapterLabel: adaptor,
+		}).Add(float64(collisions))
 	}
 }

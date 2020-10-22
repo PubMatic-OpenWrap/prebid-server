@@ -944,6 +944,28 @@ func TestTimeoutNotifications(t *testing.T) {
 
 }
 
+func TestAdapterDuplicateBidIDCounter(t *testing.T) {
+	m := createMetricsForTesting()
+
+	testCases := []struct {
+		scenario        string
+		collisions      int
+		expectedCounter int
+	}{
+		{scenario: "invalid collision value", collisions: -1, expectedCounter: 0},
+		{scenario: "no collision", collisions: 0, expectedCounter: 0},
+		{scenario: "one collision", collisions: 1, expectedCounter: 0},
+		{scenario: "multiple collisions", collisions: 2, expectedCounter: 1}, // when 2 collisions it counter will be 1
+	}
+
+	for _, testcase := range testCases {
+		m.RecordAdapterDuplicateBidID("some-adaptor", testcase.collisions)
+		assertCounterVecValue(t, testcase.scenario, testcase.scenario, m.adapterDupliateBidIDs, float64(testcase.expectedCounter), prometheus.Labels{
+			adapterLabel: "some-adaptor",
+		})
+	}
+}
+
 func assertCounterValue(t *testing.T, description, name string, counter prometheus.Counter, expected float64) {
 	m := dto.Metric{}
 	counter.Write(&m)
