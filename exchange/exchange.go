@@ -771,6 +771,7 @@ func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, a
 		if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
 			bidIDColisionMap[thisBid.bid.ID]++
 			glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(adapter))
+			e.me.RecordAdapterDuplicateBidID(string(adapter), bidIDColisionMap[thisBid.bid.ID])
 		} else {
 			bidIDColisionMap[thisBid.bid.ID] = 1
 		}

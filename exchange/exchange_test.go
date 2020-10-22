@@ -1633,45 +1633,6 @@ func TestUpdateHbPbCatDur(t *testing.T) {
 	}
 }
 
-func TestDuplicateBidId(t *testing.T) {
-	respStatus := 200
-	respBody := "{\"bid\":false}"
-	server := httptest.NewServer(mockHandler(respStatus, "getBody", respBody))
-	defer server.Close()
-
-	knownAdapters := openrtb_ext.BidderList()
-
-	cfg := &config.Configuration{
-		CacheURL: config.Cache{
-			ExpectedTimeMillis: 20,
-		},
-		Adapters: blankAdapterConfig(openrtb_ext.BidderList()),
-	}
-
-	e := NewExchange(server.Client(), nil, cfg, pbsmetrics.NewMetrics(metrics.NewRegistry(), knownAdapters, config.DisabledMetrics{}), adapters.ParseBidderInfos(cfg.Adapters, "../static/bidder-info", openrtb_ext.BidderList()), gdpr.AlwaysAllow{}, currencies.NewRateConverterDefault()).(*exchange)
-
-	// testcase 1
-
-	bids := []*pbsOrtbBid{}
-	bids = append(bids, &pbsOrtbBid{bid: &openrtb.Bid{
-		ID: "same_bid_id",
-	}})
-	bids = append(bids, &pbsOrtbBid{bid: &openrtb.Bid{
-		ID: "same_bid_id",
-	}})
-	e.makeBid(bids, "some-adaptor", nil)
-
-	// testcase 2
-	bids = []*pbsOrtbBid{}
-	bids = append(bids, &pbsOrtbBid{bid: &openrtb.Bid{
-		ID: "same_bid_id",
-	}})
-	bids = append(bids, &pbsOrtbBid{bid: &openrtb.Bid{
-		ID: "same_bid_id_1",
-	}})
-	e.makeBid(bids, "some-adaptor", nil)
-}
-
 type exchangeSpec struct {
 	IncomingRequest  exchangeRequest        `json:"incomingRequest"`
 	OutgoingRequests map[string]*bidderSpec `json:"outgoingRequests"`
