@@ -521,6 +521,6 @@ func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 	if collisions > 1 {
 		m.adapterDupliateBidIDs.With(prometheus.Labels{
 			adapterLabel: adaptor,
-		}).Add(float64(collisions))
+		}).Add(float64(collisions)) // 9 + 9  
 	}
 }

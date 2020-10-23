@@ -743,6 +743,18 @@ func (e *exchange) makeSeatBid(adapterBid *pbsOrtbSeatBid, adapter openrtb_ext.B
 func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, auc *auction) ([]openrtb.Bid, []error) {
 	bids := make([]openrtb.Bid, 0, len(Bids))
 	errList := make([]error, 0, 1)
+
+	// appnx
+	// id123 - 4    1
+	// id456 - 2
+	
+
+	// id123 - 4    2
+	// id456 - 2  
+
+
+	// 10
+
 	bidIDColisionMap := make(map[string]int, len(Bids))
 	for _, thisBid := range Bids {
 		bidExt := &openrtb_ext.ExtBid{
