@@ -1,0 +1,11 @@
+{
+  "imp": true,
+  "ext": {
+    "appnexus": {
+      "placementId": 12883451
+    },
+    "pubmatic" :{
+      "dealTier": {"minDealTier": 5, "prefix": "pbmtdeal"}
+    }
+  }
+}

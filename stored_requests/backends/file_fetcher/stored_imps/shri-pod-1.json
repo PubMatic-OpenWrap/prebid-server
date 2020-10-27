@@ -1,0 +1,19 @@
+{
+  "id": "some-impression-id",
+  "banner": {
+    "format": [
+      {
+        "w": 300,
+        "h": 250
+      }
+    ]
+  },
+  "ext": {
+    "appnexus": {
+      "placementId": 12883451
+    },
+    "pubmatic" :{
+      "dealTier": {"minDealTier": 5, "prefix": "pbmtdeal"}
+    }
+  }
+}

@@ -559,8 +559,11 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 
 	var errs []error
 	for _, sb := range bidResp.SeatBid {
+		catCnt := 0
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
+			catCnt++
+			bid.Cat = []string{"IAB-" + strconv.Itoa(i) + "-" + strconv.Itoa(catCnt)}
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
@@ -575,10 +578,12 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb.BidRequest, external
 				}
 				bidType = getBidType(bidExt)
 			}
+			bidType = openrtb_ext.BidTypeVideo
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:      &bid,
-				BidType:  bidType,
-				BidVideo: impVideo,
+				Bid:          &bid,
+				BidType:      bidType,
+				BidVideo:     impVideo,
+				DealPriority: 6,	
 			})
 
 		}

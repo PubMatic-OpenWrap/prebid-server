@@ -1,0 +1,20 @@
+{
+    "id": "shri-80ce30c53c16e6ede735f123ef6e32361bfc7b22",
+    "banner": {
+      "format": [
+        {
+          "w": 300,
+          "h": 250
+        },
+        {
+          "w": 300,
+          "h": 600
+        }
+      ]
+    },
+    "ext": {
+      "appnexus": {
+        "placementId": 12883451
+      }
+    }
+  }

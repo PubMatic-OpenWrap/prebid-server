@@ -221,6 +221,16 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	bidReq.Site = nil
+	bidReq.App = &openrtb.App{
+		Bundle: "com.pubmatic.openbid.app",
+		Name:   "OpenWrapperSample",
+		Publisher: &openrtb.Publisher{
+			ID: "5890",
+		},
+		StoreURL: "https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?mt=8",
+		Ver:      "1.0",
+	}
 	bidReq.Imp = imps
 	bidReq.ID = "bid_id" //TODO: look at prebid.js
 
@@ -229,6 +239,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 
 	errL = deps.validateRequest(bidReq)
 	if errortypes.ContainsFatalError(errL) {
+
 		handleError(&labels, w, errL, &vo, &debugLog)
 		return
 	}
@@ -431,6 +442,8 @@ func (deps *endpointDeps) loadStoredImp(storedImpId string) (openrtb.Imp, []erro
 	if err := json.Unmarshal(imp[storedImpId], &impr); err != nil {
 		return impr, []error{err}
 	}
+	impr.Instl = 1
+	impr.Ext = []byte("{\"pubmatic\" : { \"dealTier\": {\"minDealTier\": 5, \"prefix\": \"pbmtdeal\"},  \"publisherId\" : \"5890\", \"adSlot\" : \"/15671365/MG_VideoAdUnit\", \"wrapper\" : { \"profile\" : 2460, \"version\" : 1}}}")
 	return impr, nil
 }
 

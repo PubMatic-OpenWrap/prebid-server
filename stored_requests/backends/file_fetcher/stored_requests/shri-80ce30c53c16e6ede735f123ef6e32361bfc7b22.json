@@ -1,0 +1,68 @@
+{
+  "storedrequestid": "shri-80ce30c53c16e6ede735f123ef6e32361bfc7b22",
+  "podconfig": {
+    "durationrangesec": [
+      15,
+      30
+    ],
+    "pods": [
+      {
+        "podid": 1,
+        "adpoddurationsec": 60,
+        "configid": "fba10607-0c12-43d1-ad07-b8a513bc75d6"
+      },
+      {
+        "podid": 2,
+        "adpoddurationsec": 60,
+        "configid": "8b452b41-2681-4a20-9086-6f16ffad7773"
+      }
+    ]
+  },
+  "site": {
+    "page": "http://www.foobar.com/1234.html"
+  },
+  "user": {
+    "yob": 1982,
+    "gender": "M",
+    "buyeruids": {
+      "appnexus": "unique_id_an"
+    },
+    "gdpr": {
+      "consentrequired": false,
+      "consentstring": ""
+    }
+  },
+  "device": {
+    "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2",
+    "ip": "123.145.167.10",
+    "devicetype": 1,
+    "ifa": "AA000DFE74168477C70D291f574D344790E0BB11"
+  },
+  "includebrandcategory": {
+    "primaryadserver": 1
+  },
+  "video": {
+    "w": 640,
+    "h": 480,
+    "mimes": [
+      "video/mp4"
+    ],
+    "protocols": [
+      2,
+      3
+    ]
+  },
+  "content": {
+    "episode": 6,
+    "title": "episodeName",
+    "series": "TvName",
+    "season": "season3",
+    "len": 900,
+    "livestream": 0
+  },
+  "ext": {
+    "prebid": {
+     "supportdeals" : true
+    }
+  }
+}

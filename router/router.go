@@ -6,12 +6,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/prebid/prebid-server/endpoints/events"
 
 	"github.com/prebid/prebid-server/pbsmetrics"
 
