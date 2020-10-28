@@ -145,14 +145,14 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 	defer ticker.Stop()
 
 	labels := pbsmetrics.PodLabels{
-		AlgorithmName:    string(CombinationGeneratorV1),
+		AlgorithmName:    string(constant.CombinationGeneratorV1),
 		NoOfCombinations: new(int),
 	}
 	*labels.NoOfCombinations = combinationCount
 	o.met.RecordPodCombGenTime(labels, time.Duration(totalTimeByCombGen))
 
 	compExclLabels := pbsmetrics.PodLabels{
-		AlgorithmName:    string(CompetitiveExclusionV1),
+		AlgorithmName:    string(constant.CompetitiveExclusionV1),
 		NoOfResponseBids: new(int),
 	}
 	*compExclLabels.NoOfResponseBids = 0
