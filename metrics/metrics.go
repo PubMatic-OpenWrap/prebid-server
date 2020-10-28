@@ -34,6 +34,15 @@ type ImpLabels struct {
 	NativeImps bool
 }
 
+// PodLabels defines metric labels describing algorithm type
+// and other labels as per scenario
+type PodLabels struct {
+	AlgorithmName    string // AlgorithmName which is used for generating impressions
+	NoOfImpressions  *int   // NoOfImpressions represents number of impressions generated
+	NoOfCombinations *int   // NoOfCombinations represents number of combinations generated
+	NoOfResponseBids *int   // NoOfResponseBids represents number of bids responded (including bids with similar duration)
+}
+
 // RequestLabels defines metric labels describing the result of a network request.
 type RequestLabels struct {
 	RequestStatus RequestStatus

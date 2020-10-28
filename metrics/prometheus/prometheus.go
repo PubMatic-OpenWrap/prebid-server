@@ -362,6 +362,28 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
 
+	// adpod specific metrics
+	metrics.podImpGenTimer = newHistogram(cfg, metrics.Registry,
+		"impr_gen",
+		"Time taken by Ad Pod Impression Generator in seconds", []string{podAlgorithm, podNoOfImpressions},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		// 100 µS, 200 µS, 300 µS, 400 µS, 500 µS,  600 µS,
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCombGenTimer = newHistogram(cfg, metrics.Registry,
+		"comb_gen",
+		"Time taken by Ad Pod Combination Generator in seconds", []string{podAlgorithm, podTotalCombinations},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCompExclTimer = newHistogram(cfg, metrics.Registry,
+		"comp_excl",
+		"Time taken by Ad Pod Compititve Exclusion in seconds", []string{podAlgorithm, podNoOfResponseBids},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 	preloadLabelValues(&metrics)
 
 	return &metrics
