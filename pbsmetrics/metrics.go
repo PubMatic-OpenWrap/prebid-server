@@ -311,4 +311,8 @@ type MetricsEngine interface {
 	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 	// gives the bid response with multiple bids containing  same bid.ID
 	RecordAdapterDuplicateBidID(adaptor string, collisions int)
+
+	// RecordRequestHavingDuplicateBidID keeps track off how many request got bid.id collision
+	// detected
+	RecordRequestHavingDuplicateBidID()
 }

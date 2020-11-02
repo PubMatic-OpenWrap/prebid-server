@@ -315,6 +315,7 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(cleanRequests))
 	chBids := make(chan *bidResponseWrapper, len(cleanRequests))
 	bidsFound := false
+	bidIDsCollisions := false
 
 	for bidderName, req := range cleanRequests {
 		// Here we actually call the adapters and collect the bids.
@@ -383,10 +384,37 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
+			bidIDsCollisions = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
 	}
 
+	// request cnt
+	if bidIDsCollisions {
+		// RecordRequestHavingDuplicateBidID
+		e.me.RecordRequestHavingDuplicateBidID()
+	}
+
 	return adapterBids, adapterExtra, bidsFound
+}
+
+// recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
+// it returns true if collosion(s) is/are detected in any of the bidder's bids
+func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
+	bidIDCollisionFound := false
+	for bidder, bid := range adapterBids {
+		bidIDColisionMap := make(map[string]int, len(adapterBids[bidder].bids))
+		for _, thisBid := range bid.bids {
+			if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
+				bidIDCollisionFound = true
+				bidIDColisionMap[thisBid.bid.ID]++
+				glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(bidder))
+				metricsEngine.RecordAdapterDuplicateBidID(string(bidder), 1)
+			} else {
+				bidIDColisionMap[thisBid.bid.ID] = 1
+			}
+		}
+	}
+	return bidIDCollisionFound
 }
 
 func (e *exchange) recoverSafely(cleanRequests map[openrtb_ext.BidderName]*openrtb.BidRequest, inner func(openrtb_ext.BidderName, openrtb_ext.BidderName, *openrtb.BidRequest, *pbsmetrics.AdapterLabels, currencies.Conversions), chBids chan *bidResponseWrapper) func(openrtb_ext.BidderName, openrtb_ext.BidderName, *openrtb.BidRequest, *pbsmetrics.AdapterLabels, currencies.Conversions) {
@@ -743,19 +771,6 @@ func (e *exchange) makeSeatBid(adapterBid *pbsOrtbSeatBid, adapter openrtb_ext.B
 func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, auc *auction) ([]openrtb.Bid, []error) {
 	bids := make([]openrtb.Bid, 0, len(Bids))
 	errList := make([]error, 0, 1)
-
-	// appnx
-	// id123 - 4    1
-	// id456 - 2
-	
-
-	// id123 - 4    2
-	// id456 - 2  
-
-
-	// 10
-
-	bidIDColisionMap := make(map[string]int, len(Bids))
 	for _, thisBid := range Bids {
 		bidExt := &openrtb_ext.ExtBid{
 			Bidder: thisBid.bid.Ext,
@@ -779,14 +794,7 @@ func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, a
 			bids = append(bids, *thisBid.bid)
 			bids[len(bids)-1].Ext = ext
 		}
-		// check bid.id collision
-		if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
-			bidIDColisionMap[thisBid.bid.ID]++
-			glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(adapter))
-			e.me.RecordAdapterDuplicateBidID(string(adapter), bidIDColisionMap[thisBid.bid.ID])
-		} else {
-			bidIDColisionMap[thisBid.bid.ID] = 1
-		}
+
 	}
 	return bids, errList
 }

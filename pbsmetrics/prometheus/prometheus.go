@@ -15,31 +15,32 @@ type Metrics struct {
 	Registry *prometheus.Registry
 
 	// General Metrics
-	connectionsClosed            prometheus.Counter
-	connectionsError             *prometheus.CounterVec
-	connectionsOpened            prometheus.Counter
-	cookieSync                   prometheus.Counter
-	impressions                  *prometheus.CounterVec
-	impressionsLegacy            prometheus.Counter
-	prebidCacheWriteTimer        *prometheus.HistogramVec
-	requests                     *prometheus.CounterVec
-	requestsTimer                *prometheus.HistogramVec
-	requestsQueueTimer           *prometheus.HistogramVec
-	requestsWithoutCookie        *prometheus.CounterVec
-	storedImpressionsCacheResult *prometheus.CounterVec
-	storedRequestCacheResult     *prometheus.CounterVec
-	timeout_notifications        *prometheus.CounterVec
+	connectionsClosed             prometheus.Counter
+	connectionsError              *prometheus.CounterVec
+	connectionsOpened             prometheus.Counter
+	cookieSync                    prometheus.Counter
+	impressions                   *prometheus.CounterVec
+	impressionsLegacy             prometheus.Counter
+	prebidCacheWriteTimer         *prometheus.HistogramVec
+	requests                      *prometheus.CounterVec
+	requestsTimer                 *prometheus.HistogramVec
+	requestsQueueTimer            *prometheus.HistogramVec
+	requestsWithoutCookie         *prometheus.CounterVec
+	storedImpressionsCacheResult  *prometheus.CounterVec
+	storedRequestCacheResult      *prometheus.CounterVec
+	timeout_notifications         *prometheus.CounterVec
+	requestsDuplicateBidIDCounter prometheus.Counter // sum of total bid collisions at bidder level for given request
 
 	// Adapter Metrics
-	adapterBids           *prometheus.CounterVec
-	adapterCookieSync     *prometheus.CounterVec
-	adapterErrors         *prometheus.CounterVec
-	adapterPanics         *prometheus.CounterVec
-	adapterPrices         *prometheus.HistogramVec
-	adapterRequests       *prometheus.CounterVec
-	adapterRequestsTimer  *prometheus.HistogramVec
-	adapterUserSync       *prometheus.CounterVec
-	adapterDupliateBidIDs *prometheus.CounterVec
+	adapterBids                 *prometheus.CounterVec
+	adapterCookieSync           *prometheus.CounterVec
+	adapterErrors               *prometheus.CounterVec
+	adapterPanics               *prometheus.CounterVec
+	adapterPrices               *prometheus.HistogramVec
+	adapterRequests             *prometheus.CounterVec
+	adapterRequestsTimer        *prometheus.HistogramVec
+	adapterUserSync             *prometheus.CounterVec
+	adapterDupliateBidIDCounter *prometheus.CounterVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -234,10 +235,14 @@ func NewMetrics(cfg config.PrometheusMetrics) *Metrics {
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
 
-	metrics.adapterDupliateBidIDs = newCounter(cfg, metrics.Registry,
+	metrics.adapterDupliateBidIDCounter = newCounter(cfg, metrics.Registry,
 		"duplicate_bid_ids",
 		"Number of collisions observed for given adaptor",
 		[]string{adapterLabel})
+
+	metrics.requestsDuplicateBidIDCounter = newCounterWithoutLabels(cfg, metrics.Registry,
+		"requests_having_duplicate_bid_ids",
+		"Count of number of request where bid collision is detected.")
 
 	// adpod specific metrics
 	metrics.podImpGenTimer = newHistogram(cfg, metrics.Registry,
@@ -517,10 +522,16 @@ func (m *Metrics) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, 
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 // gives the bid response with multiple bids containing  same bid.ID
+// ensure collisions value is greater than 1. This function will not give any error
+// if collisions = 1 is passed
 func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
-	if collisions > 1 {
-		m.adapterDupliateBidIDs.With(prometheus.Labels{
-			adapterLabel: adaptor,
-		}).Add(float64(collisions)) // 9 + 9  
-	}
+	m.adapterDupliateBidIDCounter.With(prometheus.Labels{
+		adapterLabel: adaptor,
+	}).Add(float64(collisions))
+}
+
+// RecordRequestHavingDuplicateBidID keeps count of request when duplicate bid.id is
+// detected in partner's response
+func (m *Metrics) RecordRequestHavingDuplicateBidID() {
+	m.requestsDuplicateBidIDCounter.Inc()
 }
