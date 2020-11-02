@@ -195,6 +195,20 @@ func (me *MultiMetricsEngine) RecordTimeoutNotice(success bool) {
 	}
 }
 
+// RecordAdapterDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterDuplicateBidID(adaptor, collisions)
+	}
+}
+
+// RecordRequestHavingDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordRequestHavingDuplicateBidID() {
+	for _, thisME := range *me {
+		thisME.RecordRequestHavingDuplicateBidID()
+	}
+}
+
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
 
@@ -272,4 +286,12 @@ func (me *DummyMetricsEngine) RecordRequestQueueTime(success bool, requestType p
 
 // RecordTimeoutNotice as a noop
 func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
+}
+
+// RecordAdapterDuplicateBidID as a noop
+func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+// RecordRequestHavingDuplicateBidID as a noop
+func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
 }

@@ -562,6 +562,14 @@ func (me *Metrics) RecordTimeoutNotice(success bool) {
 	return
 }
 
+// RecordAdapterDuplicateBidID as noop
+func (me *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+// RecordRequestHavingDuplicateBidID as noop
+func (me *Metrics) RecordRequestHavingDuplicateBidID() {
+}
+
 func doMark(bidder openrtb_ext.BidderName, meters map[openrtb_ext.BidderName]metrics.Meter) {
 	met, ok := meters[bidder]
 	if ok {
