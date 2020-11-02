@@ -938,6 +938,7 @@ func TestCategoryMapping(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -975,7 +976,7 @@ func TestCategoryMapping(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, requestExt, adapterBids, categoriesFetcher, targData)
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -994,6 +995,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -1030,7 +1032,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, requestExt, adapterBids, categoriesFetcher, targData)
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -1049,6 +1051,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -1082,7 +1085,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, requestExt, adapterBids, categoriesFetcher, targData)
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -1131,6 +1134,7 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	}
 
 	translateCategories := false
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(&translateCategories)
 
 	targData := &targetData{
@@ -1164,7 +1168,7 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, requestExt, adapterBids, categoriesFetcher, targData)
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -1182,6 +1186,7 @@ func TestCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -1230,7 +1235,7 @@ func TestCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, requestExt, adapterBids, categoriesFetcher, targData)
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 2, len(rejections), "There should be 2 bid rejection messages")
@@ -1337,11 +1342,12 @@ func TestBidRejectionErrors(t *testing.T) {
 			innerBids = append(innerBids, &currentBid)
 		}
 
+		bidRequest := &openrtb.BidRequest{}
 		seatBid := pbsOrtbSeatBid{innerBids, "USD", nil, nil}
 
 		adapterBids[bidderName] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, test.reqExt, adapterBids, categoriesFetcher, targData)
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, bidRequest, test.reqExt, adapterBids, categoriesFetcher, targData)
 
 		if len(test.expectedCatDur) > 0 {
 			// Bid deduplication case
