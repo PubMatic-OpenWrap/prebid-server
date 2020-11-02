@@ -969,50 +969,46 @@ func TestRecordPodCompetitiveExclusionTime(t *testing.T) {
 	})
 }
 
-// TestDuplicateBidIDCounters checks RecordAdapterDuplicateBidID and RecordRequestDuplicateBidID
-func TestDuplicateBidIDCounters(t *testing.T) {
+// TestRecordRequestDuplicateBidID checks RecordRequestDuplicateBidID
+func TestRecordRequestDuplicateBidID(t *testing.T) {
 	m := createMetricsForTesting()
-	type bidderCollisions = map[string]int
+	m.RecordRequestHavingDuplicateBidID()
+	// verify total no of requests which detected collision
+	assertCounterValue(t, "request cnt having duplicate bid.id", "request cnt having duplicate bid.id", m.requestsDuplicateBidIDCounter, float64(1))
+}
+
+// TestRecordAdapterDuplicateBidID checks RecordAdapterDuplicateBidID
+func TestRecordAdapterDuplicateBidID(t *testing.T) {
+	type collisions struct {
+		simulate int // no of bids to be simulate with same bid.id
+		expect   int // no of collisions expected to be recorded by metrics engine for given bidder
+	}
+	type bidderCollisions = map[string]collisions
 	testCases := []struct {
 		scenario         string
 		bidderCollisions bidderCollisions // represents no of collisions detected for bid.id at bidder level for given request
+		expectCollisions int
 	}{
-		{scenario: "invalid collision value", bidderCollisions: map[string]int{"bidder-1": -1}},
-		{scenario: "no collision", bidderCollisions: map[string]int{"bidder-1": 0}},
-		{scenario: "one collision", bidderCollisions: map[string]int{"bidder-1": 1}},
-		{scenario: "multiple collisions", bidderCollisions: map[string]int{"bidder-1": 2}}, // when 2 collisions it counter will be 1
-		{scenario: "multiple bidders", bidderCollisions: map[string]int{"bidder-1": 2, "bidder-2": 4}},
-		{scenario: "multiple bidders with bidder-1 no collision", bidderCollisions: map[string]int{"bidder-1": 1, "bidder-2": 4}},
+		{scenario: "invalid collision value", bidderCollisions: map[string]collisions{"bidder-1": {simulate: -1, expect: 0}}},
+		{scenario: "no collision", bidderCollisions: map[string]collisions{"bidder-1": {simulate: 0, expect: 0}}},
+		{scenario: "one collision", bidderCollisions: map[string]collisions{"bidder-1": {simulate: 1, expect: 1}}},
+		{scenario: "multiple collisions", bidderCollisions: map[string]collisions{"bidder-1": {simulate: 2, expect: 2}}},
+		{scenario: "multiple bidders", bidderCollisions: map[string]collisions{"bidder-1": {simulate: 2, expect: 2}, "bidder-2": {simulate: 4, expect: 4}}},
+		{scenario: "multiple bidders with bidder-1 no collision", bidderCollisions: map[string]collisions{"bidder-1": {simulate: 0, expect: 0},
+			"bidder-2": {simulate: 4, expect: 4}}},
 	}
-	// expected request count when collision was detected
-	expectedRequestCntWhereCollisionDetected := 3
-
-	bidderCumulativeCollisions := make(map[string]int)
 
 	for _, testcase := range testCases {
-		hasCollisions := false
+		m := createMetricsForTesting()
 		for bidder, collisions := range testcase.bidderCollisions {
-			m.RecordAdapterDuplicateBidID(bidder, collisions)
-			// keep track of last collision counts capture for the given bidder
-			expectedBidderLevelCollisions := float64(bidderCumulativeCollisions[bidder])
-			// expect bidder level collision value > 1 from metrics
-			if collisions > 1 {
-				bidderCumulativeCollisions[bidder] += collisions
-				expectedBidderLevelCollisions = float64(bidderCumulativeCollisions[bidder])
-				hasCollisions = true
+			for collision := 1; collision <= collisions.simulate; collision++ {
+				m.RecordAdapterDuplicateBidID(bidder, 1)
 			}
-			assertCounterVecValue(t, testcase.scenario, testcase.scenario, m.adapterDupliateBidIDCounter, expectedBidderLevelCollisions, prometheus.Labels{
+			assertCounterVecValue(t, testcase.scenario, testcase.scenario, m.adapterDuplicateBidIDCounter, float64(collisions.expect), prometheus.Labels{
 				adapterLabel: bidder,
 			})
 		}
-
-		if hasCollisions {
-			m.RecordRequestHavingDuplicateBidID()
-		}
 	}
-
-	// verify total no of requests which detected collision
-	assertCounterValue(t, "request cnt having duplicate bid.id", "request cnt having duplicate bid.id", m.requestsDuplicateBidIDCounter, float64(expectedRequestCntWhereCollisionDetected))
 }
 
 func testAlgorithmMetrics(t *testing.T, input int, f func(m *Metrics) dto.Histogram) {

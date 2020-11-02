@@ -32,15 +32,15 @@ type Metrics struct {
 	requestsDuplicateBidIDCounter prometheus.Counter // sum of total bid collisions at bidder level for given request
 
 	// Adapter Metrics
-	adapterBids                 *prometheus.CounterVec
-	adapterCookieSync           *prometheus.CounterVec
-	adapterErrors               *prometheus.CounterVec
-	adapterPanics               *prometheus.CounterVec
-	adapterPrices               *prometheus.HistogramVec
-	adapterRequests             *prometheus.CounterVec
-	adapterRequestsTimer        *prometheus.HistogramVec
-	adapterUserSync             *prometheus.CounterVec
-	adapterDupliateBidIDCounter *prometheus.CounterVec
+	adapterBids                  *prometheus.CounterVec
+	adapterCookieSync            *prometheus.CounterVec
+	adapterErrors                *prometheus.CounterVec
+	adapterPanics                *prometheus.CounterVec
+	adapterPrices                *prometheus.HistogramVec
+	adapterRequests              *prometheus.CounterVec
+	adapterRequestsTimer         *prometheus.HistogramVec
+	adapterUserSync              *prometheus.CounterVec
+	adapterDuplicateBidIDCounter *prometheus.CounterVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -235,7 +235,7 @@ func NewMetrics(cfg config.PrometheusMetrics) *Metrics {
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
 
-	metrics.adapterDupliateBidIDCounter = newCounter(cfg, metrics.Registry,
+	metrics.adapterDuplicateBidIDCounter = newCounter(cfg, metrics.Registry,
 		"duplicate_bid_ids",
 		"Number of collisions observed for given adaptor",
 		[]string{adapterLabel})
@@ -525,7 +525,7 @@ func (m *Metrics) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, 
 // ensure collisions value is greater than 1. This function will not give any error
 // if collisions = 1 is passed
 func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
-	m.adapterDupliateBidIDCounter.With(prometheus.Labels{
+	m.adapterDuplicateBidIDCounter.With(prometheus.Labels{
 		adapterLabel: adaptor,
 	}).Add(float64(collisions))
 }

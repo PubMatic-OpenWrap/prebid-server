@@ -121,3 +121,13 @@ func (me *MetricsEngineMock) RecordPodCombGenTime(labels PodLabels, elapsedTime 
 func (me *MetricsEngineMock) RecordPodCompititveExclusionTime(labels PodLabels, elapsedTime time.Duration) {
 	me.Called(labels, elapsedTime)
 }
+
+// RecordAdapterDuplicateBidID mock
+func (me *MetricsEngineMock) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	me.Called(adaptor, collisions)
+}
+
+// RecordRequestHavingDuplicateBidID mock
+func (me *MetricsEngineMock) RecordRequestHavingDuplicateBidID() {
+	me.Called()
+}

@@ -314,7 +314,7 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(cleanRequests))
 	chBids := make(chan *bidResponseWrapper, len(cleanRequests))
 	bidsFound := false
-	bidIDsCollisions := false
+	bidIDsCollision := false
 
 	for bidderName, req := range cleanRequests {
 		// Here we actually call the adapters and collect the bids.
@@ -383,12 +383,12 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
-			bidIDsCollisions = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
+			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
 	}
 
 	// request cnt
-	if bidIDsCollisions {
+	if bidIDsCollision {
 		// RecordRequestHavingDuplicateBidID
 		e.me.RecordRequestHavingDuplicateBidID()
 	}
@@ -804,7 +804,6 @@ func (e *exchange) makeBid(Bids []*pbsOrtbBid, adapter openrtb_ext.BidderName, a
 			bids = append(bids, *thisBid.bid)
 			bids[len(bids)-1].Ext = ext
 		}
-
 	}
 	return bids, errList
 }
