@@ -29,7 +29,7 @@ type Metrics struct {
 	storedImpressionsCacheResult  *prometheus.CounterVec
 	storedRequestCacheResult      *prometheus.CounterVec
 	timeout_notifications         *prometheus.CounterVec
-	requestsDuplicateBidIDCounter prometheus.Counter // sum of total bid collisions at bidder level for given request
+	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics
 	adapterBids                  *prometheus.CounterVec
