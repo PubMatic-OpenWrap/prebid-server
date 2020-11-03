@@ -6,15 +6,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adform"
