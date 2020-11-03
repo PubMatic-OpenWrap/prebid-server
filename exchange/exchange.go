@@ -833,6 +833,9 @@ func listBiddersWithRequests(cleanRequests map[openrtb_ext.BidderName]*openrtb.B
 // it returns true if collosion(s) is/are detected in any of the bidder's bids
 func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
 	bidIDCollisionFound := false
+	if nil == adapterBids {
+		return false
+	}
 	for bidder, bid := range adapterBids {
 		bidIDColisionMap := make(map[string]int, len(adapterBids[bidder].bids))
 		for _, thisBid := range bid.bids {
