@@ -106,3 +106,13 @@ func (me *MetricsEngineMock) RecordRequestQueueTime(success bool, requestType Re
 func (me *MetricsEngineMock) RecordTimeoutNotice(success bool) {
 	me.Called(success)
 }
+
+// RecordAdapterDuplicateBidID mock
+func (me *MetricsEngineMock) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	me.Called(adaptor, collisions)
+}
+
+// RecordRequestHavingDuplicateBidID mock
+func (me *MetricsEngineMock) RecordRequestHavingDuplicateBidID() {
+	me.Called()
+}

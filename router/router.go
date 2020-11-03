@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adform"
@@ -421,4 +422,13 @@ func readDefaultRequest(defReqConfig config.DefReqConfig) (map[string]string, []
 		return aliases, defReqJSON
 	}
 	return aliases, []byte{}
+}
+
+func GetPrometheusRegistry() *prometheus.Registry {
+	mEngine, ok := g_metrics.(*metricsConf.DetailedMetricsEngine)
+	if !ok || mEngine == nil || mEngine.PrometheusMetrics == nil {
+		return nil
+	}
+
+	return mEngine.PrometheusMetrics.Registry
 }
