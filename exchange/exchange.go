@@ -392,6 +392,7 @@ func updateHbPbCatDur(bid *pbsOrtbBid, dealTier openrtb_ext.DealTier, bidCategor
 		prefixTier := fmt.Sprintf("%s%d_", dealTier.Prefix, bid.dealPriority)
 		bid.dealTierSatisfied = true
 
+		prefixTier := fmt.Sprintf("%s%d_", dealTierInfo.Prefix, bid.dealPriority)
 		if oldCatDur, ok := bidCategory[bid.bid.ID]; ok {
 			oldCatDurSplit := strings.SplitAfterN(oldCatDur, "_", 2)
 			oldCatDurSplit[0] = prefixTier
@@ -434,6 +435,7 @@ func (e *exchange) getAllBids(
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(bidderRequests))
 	chBids := make(chan *bidResponseWrapper, len(bidderRequests))
 	bidsFound := false
+	bidIDsCollision := false
 
 	for _, bidder := range bidderRequests {
 		// Here we actually call the adapters and collect the bids.
@@ -503,9 +505,13 @@ func (e *exchange) getAllBids(
 
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
+			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
 	}
-
+	if bidIDsCollision {
+		// record this request count this request if bid collision is detected
+		e.me.RecordRequestHavingDuplicateBidID()
+	}
 	return adapterBids, adapterExtra, bidsFound
 }
 
@@ -661,6 +667,11 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 	var rejections []string
 	var translateCategories = true
 
+	//Maintaining BidRequest Impression Map
+	for i := range bidRequest.Imp {
+		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
+	}
+
 	if includeBrandCategory && brandCatExt.WithCategory {
 		if brandCatExt.TranslateCategories != nil {
 			translateCategories = *brandCatExt.TranslateCategories
@@ -737,6 +748,12 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 						break
 					}
 				}
+			} else if newDur == 0 {
+				if imp, ok := impMap[bid.bid.ImpID]; ok {
+					if nil != imp.Video && imp.Video.MaxDuration > 0 {
+						newDur = int(imp.Video.MaxDuration)
+					}
+				}
 			}
 
 			var categoryDuration string
@@ -790,15 +807,17 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 							// Need to remove bid by name, not index in this case
 							removeBidById(oldSeatBid, dupe.bidID)
 						}
+						delete(res, dupe.bidID)
+					} else {
+						// Remove this bid
+						bidsToRemove = append(bidsToRemove, bidInd)
+						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
+						continue
 					}
-					delete(res, dupe.bidID)
-				} else {
-					// Remove this bid
-					bidsToRemove = append(bidsToRemove, bidInd)
-					rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
-					continue
 				}
+				dedupe[categoryDuration] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID}
 			}
+
 			res[bidID] = categoryDuration
 			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}
@@ -1075,4 +1094,27 @@ func listBiddersWithRequests(bidderRequests []BidderRequest) []openrtb_ext.Bidde
 	randomizeList(liveAdapters)
 
 	return liveAdapters
+}
+
+// recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
+// it returns true if collosion(s) is/are detected in any of the bidder's bids
+func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
+	bidIDCollisionFound := false
+	if nil == adapterBids {
+		return false
+	}
+	for bidder, bid := range adapterBids {
+		bidIDColisionMap := make(map[string]int, len(adapterBids[bidder].bids))
+		for _, thisBid := range bid.bids {
+			if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
+				bidIDCollisionFound = true
+				bidIDColisionMap[thisBid.bid.ID]++
+				glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(bidder))
+				metricsEngine.RecordAdapterDuplicateBidID(string(bidder), 1)
+			} else {
+				bidIDColisionMap[thisBid.bid.ID] = 1
+			}
+		}
+	}
+	return bidIDCollisionFound
 }

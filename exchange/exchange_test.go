@@ -2391,6 +2391,7 @@ func TestCategoryMapping(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2447,6 +2448,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2502,6 +2504,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -2584,6 +2587,7 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	}
 
 	translateCategories := false
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(&translateCategories)
 
 	targData := &targetData{
@@ -2635,6 +2639,7 @@ func TestCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := &openrtb.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{

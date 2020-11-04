@@ -362,6 +362,15 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
 
+	metrics.adapterDuplicateBidIDCounter = newCounter(cfg, metrics.Registry,
+		"duplicate_bid_ids",
+		"Number of collisions observed for given adaptor",
+		[]string{adapterLabel})
+
+	metrics.requestsDuplicateBidIDCounter = newCounterWithoutLabels(cfg, metrics.Registry,
+		"requests_having_duplicate_bid_ids",
+		"Count of number of request where bid collision is detected.")
+
 	// adpod specific metrics
 	metrics.podImpGenTimer = newHistogram(cfg, metrics.Registry,
 		"impr_gen",
@@ -384,6 +393,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		// 200 µS, 250 µS, 275 µS, 300 µS
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
 	preloadLabelValues(&metrics)
 
 	return &metrics
