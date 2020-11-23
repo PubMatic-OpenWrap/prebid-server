@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/currencies"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/router"
-	"github.com/prebid/prebid-server/server"
-	"github.com/prebid/prebid-server/util/task"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/currencies"
+	pbc "github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
+	"github.com/PubMatic-OpenWrap/prebid-server/router"
+	"github.com/PubMatic-OpenWrap/prebid-server/server"
+	"github.com/PubMatic-OpenWrap/prebid-server/util/task"
 
 	"github.com/golang/glog"
 	"github.com/spf13/viper"

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/analytics"
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/stretchr/testify/assert"
 )
 

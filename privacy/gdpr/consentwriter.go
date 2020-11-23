@@ -3,9 +3,9 @@ package gdpr
 import (
 	"encoding/json"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
-	"github.com/mxmCherry/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb"
 )
 
 // ConsentWriter implements the PolicyWriter interface for GDPR TCF.

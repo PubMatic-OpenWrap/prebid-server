@@ -1,7 +1,7 @@
 package prometheusmetrics
 
 import (
-	"github.com/prebid/prebid-server/pbsmetrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

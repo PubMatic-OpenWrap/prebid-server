@@ -1,6 +1,6 @@
 package adhese
 
-import "github.com/mxmCherry/openrtb"
+import "github.com/PubMatic-OpenWrap/openrtb"
 
 type AdheseOriginData struct {
 	Priority                  string `json:"priority"`

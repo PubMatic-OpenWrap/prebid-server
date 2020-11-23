@@ -3,7 +3,7 @@ package aja
 import (
 	"testing"
 
-	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
 )
 
 const testsBidderEndpoint = "https://localhost/bid/4"

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	metricsConfig "github.com/prebid/prebid-server/pbsmetrics/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics/config"
 )
 
 func TestNewAdapterMap(t *testing.T) {

@@ -1,7 +1,7 @@
 package ccpa
 
 import (
-	"github.com/mxmCherry/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb"
 )
 
 // ConsentWriter implements the PolicyWriter interface for CCPA.

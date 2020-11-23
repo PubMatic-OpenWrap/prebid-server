@@ -1,7 +1,7 @@
 package between
 
 import (
-	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
 	"testing"
 )
 

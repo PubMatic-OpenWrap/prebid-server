@@ -3,10 +3,10 @@ package events
 import (
 	"errors"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
