@@ -562,15 +562,20 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		}
 	}
 
-	if bidderExt.Prebid != nil && bidderExt.Prebid.SKAdnetwork != nil {
-		if impExt == "" {
-			impExt = fmt.Sprintf(`"%s":%s`, skAdnetworkKey, string(bidderExt.Prebid.SKAdnetwork))
-		} else {
-			impExt = fmt.Sprintf(`%s,"%s":%s`, impExt, skAdnetworkKey, string(bidderExt.Prebid.SKAdnetwork))
+	if bidderExt.Prebid != nil {
+		if bidderExt.Prebid.SKAdnetwork != nil {
+			impExtMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
+		}
+		if bidderExt.Prebid.IsRewardedInventory == 1 {
+			impExtMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
 		}
 	}
-	if len(impExt) != 0 {
-		imp.Ext = json.RawMessage([]byte(fmt.Sprintf(`{%s}`, impExt)))
+
+	if len(impExtMap) != 0 {
+		impExtBytes, err := json.Marshal(impExtMap)
+		if err == nil {
+			imp.Ext = json.RawMessage(impExtBytes)
+		}
 	}
 	return nil
 
