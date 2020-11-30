@@ -243,8 +243,7 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb.BidRequest, usersyncs 
 		return &openrtb.BidResponse{ID: request.ID}, nil
 	}
 
-	bidResponse, err := deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories, nil)
-	return bidResponse, err
+	return deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories, nil)
 }
 
 /********************* BidRequest Processing *********************/
