@@ -192,13 +192,15 @@ func TestGetTargeting(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		bid := new(openrtb.Bid)
-		bid.Ext = []byte(`{"prebid" : { "targeting" : ` + test.targeting + `}}`)
-		value, err := GetTargeting(test.key, openrtb_ext.BidderName(test.bidder), *bid)
-		if test.expectError {
-			assert.NotNil(t, err)
-			assert.Empty(t, value)
-		}
-		assert.Equal(t, test.expectValue, value)
+		t.Run(test.scenario, func(t *testing.T) {
+			bid := new(openrtb.Bid)
+			bid.Ext = []byte(`{"prebid" : { "targeting" : ` + test.targeting + `}}`)
+			value, err := GetTargeting(test.key, openrtb_ext.BidderName(test.bidder), *bid)
+			if test.expectError {
+				assert.NotNil(t, err)
+				assert.Empty(t, value)
+			}
+			assert.Equal(t, test.expectValue, value)
+		})
 	}
 }
