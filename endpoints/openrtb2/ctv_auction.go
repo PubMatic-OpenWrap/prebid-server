@@ -871,7 +871,7 @@ func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value strin
 		return errors.New("Invalid bid")
 	}
 
-	raw, err := jsonparser.Set(bid.Ext, []byte("\""+value+"\""), "prebid", "targeting", string(key))
+	raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Quote(value)), "prebid", "targeting", string(key))
 	if nil == err {
 		bid.Ext = raw
 	}
