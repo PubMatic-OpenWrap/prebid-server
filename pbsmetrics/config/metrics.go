@@ -238,6 +238,41 @@ func (me *MultiMetricsEngine) RecordRequestPrivacy(privacy pbsmetrics.PrivacyLab
 	}
 }
 
+// RecordAdapterDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterDuplicateBidID(adaptor, collisions)
+	}
+}
+
+// RecordRequestHavingDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordRequestHavingDuplicateBidID() {
+	for _, thisME := range *me {
+		thisME.RecordRequestHavingDuplicateBidID()
+	}
+}
+
+// RecordPodImpGenTime across all engines
+func (me *MultiMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, startTime time.Time) {
+	for _, thisME := range *me {
+		thisME.RecordPodImpGenTime(labels, startTime)
+	}
+}
+
+// RecordPodCombGenTime as a noop
+func (me *MultiMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCombGenTime(labels, elapsedTime)
+	}
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
+	}
+}
+
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
 
@@ -339,4 +374,24 @@ func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
 
 // RecordRequestPrivacy as a noop
 func (me *DummyMetricsEngine) RecordRequestPrivacy(privacy pbsmetrics.PrivacyLabels) {
+}
+
+// RecordAdapterDuplicateBidID as a noop
+func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+// RecordRequestHavingDuplicateBidID as a noop
+func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
+}
+
+// RecordPodImpGenTime as a noop
+func (me *DummyMetricsEngine) RecordPodImpGenTime(labels pbsmetrics.PodLabels, start time.Time) {
+}
+
+// RecordPodCombGenTime as a noop
+func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 }

@@ -25,6 +25,7 @@ type ExtRequestPrebid struct {
 	Targeting            *ExtRequestTargeting      `json:"targeting,omitempty"`
 	SupportDeals         bool                      `json:"supportdeals,omitempty"`
 	Debug                bool                      `json:"debug,omitempty"`
+	BidderParams         interface{}               `json:"bidderparams,omitempty"`
 
 	// NoSale specifies bidders with whom the publisher has a legal relationship where the
 	// passing of personally identifiable information doesn't constitute a sale per CCPA law.
@@ -111,6 +112,7 @@ type ExtIncludeBrandCategory struct {
 	Publisher           string `json:"publisher"`
 	WithCategory        bool   `json:"withcategory"`
 	TranslateCategories *bool  `json:"translatecategories,omitempty"`
+	SkipDedup           bool   `json:"skipdedup"`
 }
 
 // Make an unmarshaller that will set a default PriceGranularity

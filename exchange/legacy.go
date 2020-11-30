@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -89,7 +90,15 @@ func (bidder *adaptedAdapter) toLegacyRequest(req *openrtb.BidRequest) (*pbs.PBS
 	}
 
 	isDebug := false
-	if req.Test == 1 {
+	var requestExt openrtb_ext.ExtRequest
+	if req.Ext != nil {
+		err = json.Unmarshal(req.Ext, &requestExt)
+		if err != nil {
+			return nil, fmt.Errorf("Error decoding Request.ext : %s", err.Error())
+		}
+	}
+
+	if requestExt.Prebid.Debug {
 		isDebug = true
 	}
 

@@ -3,11 +3,12 @@ package conversant
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"net/http"
 )
 
 type ConversantAdapter struct {
@@ -70,7 +71,7 @@ func (c ConversantAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *ad
 }
 
 func parseCnvrParams(imp *openrtb.Imp, cnvrExt openrtb_ext.ExtImpConversant) {
-	imp.DisplayManager = "prebid-s2s"
+	imp.DisplayManager = "pubmatic-openwrap"
 	imp.DisplayManagerVer = "2.0.0"
 	imp.BidFloor = cnvrExt.BidFloor
 	imp.TagID = cnvrExt.TagID
