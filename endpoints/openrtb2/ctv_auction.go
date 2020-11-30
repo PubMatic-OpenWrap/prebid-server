@@ -243,7 +243,8 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb.BidRequest, usersyncs 
 		return &openrtb.BidResponse{ID: request.ID}, nil
 	}
 
-	return deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories, nil)
+	bidResponse, err := deps.ex.HoldAuction(deps.ctx, request, usersyncs, deps.labels, &deps.categories, nil)
+	return bidResponse, err
 }
 
 /********************* BidRequest Processing *********************/
@@ -530,6 +531,18 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb.BidResponse) {
 			originalImpID, sequenceNumber := deps.getImpressionID(bid.ImpID)
 			if sequenceNumber < 0 {
 				continue
+			}
+
+			value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+			}
+
+			value, err = util.GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
 			}
 
 			index := deps.impIndices[originalImpID]
@@ -851,4 +864,16 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	}
 	rawExt, _ := json.Marshal(bidExt)
 	return rawExt
+}
+
+func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value string) error {
+	if nil == bid {
+		return errors.New("Invalid bid")
+	}
+
+	raw, err := jsonparser.Set(bid.Ext, []byte("\""+value+"\""), "prebid", "targeting", string(key))
+	if nil == err {
+		bid.Ext = raw
+	}
+	return err
 }
