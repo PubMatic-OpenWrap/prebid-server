@@ -532,6 +532,18 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb.BidResponse) {
 				continue
 			}
 
+			value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+			}
+
+			value, err = util.GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
+			}
+
 			index := deps.impIndices[originalImpID]
 			if len(deps.impData[index].Config) == 0 {
 				//adding pure video bids
@@ -853,6 +865,7 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	return rawExt
 }
 
+
 //getAdDuration determines the duration of video ad from given bid.
 //it will try to get the actual ad duration returned by the bidder using prebid.video.duration
 //if prebid.video.duration = 0 or there is error occured in determing it then
@@ -863,4 +876,16 @@ func getAdDuration(bid openrtb.Bid, defaultDuration int64) int {
 		duration = defaultDuration
 	}
 	return int(duration)
+}
+  
+func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value string) error {
+	if nil == bid {
+		return errors.New("Invalid bid")
+	}
+
+	raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Quote(value)), "prebid", "targeting", string(key))
+	if nil == err {
+		bid.Ext = raw
+	}
+	return err
 }
