@@ -15,7 +15,7 @@ func TestGetAdDuration(t *testing.T) {
 		expect        int
 	}{
 		{"0sec ad duration", "0", 200, 200},
-		{"40sec ad duration", "30", 100, 30},
+		{"30sec ad duration", "30", 100, 30},
 		{"negative ad duration", "-30", 100, 100},
 		{"invalid ad duration", "invalid", 80, 80},
 		{"ad duration breaking bid.Ext json", `""quote""`, 50, 50},
