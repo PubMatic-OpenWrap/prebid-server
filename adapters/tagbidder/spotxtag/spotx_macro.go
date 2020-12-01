@@ -1,42 +1,34 @@
-package tagbidder
+package spotxtag
 
 import (
 	"encoding/json"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tagbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
-const (
-	spotxURL                 = `https://search.spotxchange.com/vast/2.00/85394?VPI=MP4&app[bundle]=[REPLACE_ME]&app[name]=[REPLACE_ME]&app[cat]=[REPLACE_ME]&app[domain]=[REPLACE_ME]&app[privacypolicy]=[REPLACE_ME]&app[storeurl]=[REPLACE_ME]&app[ver]=[REPLACE_ME]&cb=[REPLACE_ME]&device[devicetype]=[REPLACE_ME]&device[ifa]=[REPLACE_ME]&device[make]=[REPLACE_ME]&device[model]=[REPLACE_ME]&device[dnt]=[REPLACE_ME]&player_height=[REPLACE_ME]&player_width=[REPLACE_ME]&ip_addr=[REPLACE_ME]&device[ua]=[REPLACE_ME]]&schain=[REPLACE_ME]`
-	spotxFixedQueryParams    = ``
-	spotxVariableQueryParams = ``
-)
-
-//SpotxBidderMacro contains openrtb macros for spotx adapter
-type SpotxBidderMacro struct {
-	*BidderMacro
+//SpotxMacro contains openrtb macros for spotx adapter
+type SpotxMacro struct {
+	*tagbidder.BidderMacro
 
 	/*bidder specific extensions*/
 	ext *openrtb_ext.ExtImpSpotX
 }
 
-var spotxMapper mapper
-var spotxCustomMapper map[string]func(*SpotxBidderMacro) string
-
-//NewSpotxBidderMacro contains spotx specific parameter parsing
-func NewSpotxBidderMacro(request *openrtb.BidRequest) *SpotxBidderMacro {
-	bidder := &SpotxBidderMacro{
-		BidderMacro: NewBidderMacro(request),
+//NewSpotxMacro contains spotx specific parameter parsing
+func NewSpotxMacro() *SpotxMacro {
+	bidder := &SpotxMacro{
+		BidderMacro: tagbidder.NewBidderMacro(),
 	}
 	return bidder
 }
 
 //LoadImpression will set current imp
-func (tag *SpotxBidderMacro) LoadImpression(imp *openrtb.Imp) error {
-	tag.imp = imp
+func (tag *SpotxMacro) LoadImpression(imp *openrtb.Imp) error {
+	tag.Imp = imp
 
 	//reload ext object
 	var bidderExt adapters.ExtImpBidder
@@ -53,76 +45,28 @@ func (tag *SpotxBidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	return nil
 }
 
-//URL will set current imp
-func (tag *SpotxBidderMacro) URL() string {
-	return spotxURL
-}
-
-//Name will set current imp
-func (tag *SpotxBidderMacro) Name() string {
-	return `spotx`
-}
-
 //Custom contains definition for CacheBuster Parameter
-func (tag *SpotxBidderMacro) Custom(key string) string {
-	//First Method
-	if callback, ok := spotxCustomMapper[key]; ok {
-		return callback(tag)
-	}
-
+func (tag *SpotxMacro) Custom(key string) string {
 	//Second Method
 	switch key {
 	case `channel_id`:
 		//do processing
-		return channelID(tag)
+		return tag.ext.ChannelID
 	}
 	return ""
 }
 
 //MacroVideoAPI overriding default behaviour of MacroVideoAPI
-func (tag *SpotxBidderMacro) MacroVideoAPI(key string) string {
+func (tag *SpotxMacro) MacroVideoAPI(key string) string {
 	return "MP4"
-}
-
-func channelID(tag *SpotxBidderMacro) string {
-	return tag.ext.ChannelID
-}
-
-//Second Method of Adding Custom Macro's
-func addCustomMacro(key string, cached bool, callback func(*SpotxBidderMacro) string) {
-	spotxMapper.AddCustomMacro(key, cached)
-	spotxCustomMapper[key] = callback
-}
-
-func initSpotxMapper() {
-	spotxMapper = GetNewDefaultMapper()
-	/*
-		//updating parameter caching status
-		spotxMapper.SetCache(MacroTest, true)
-	*/
-
-	/*
-		//adding custom macros
-		//First Method
-		spotxMapper.AddCustomMacro(`ad_unit"`,false)
-
-		//Second Method
-		addCustomMacro(`channel_id`, false, channelID)
-	*/
-
-	SetBidderMapper(`spotx`, spotxMapper)
-}
-
-func init() {
-	initSpotxMapper()
 }
 
 /*
 Custom Mapper Example
-var spotxCustomMapper map[string]func(*SpotxBidderMacro) string
+var spotxCustomMapper map[string]func(*SpotxMacro) string
 
 //Second Method of Adding Custom Macro's
-func addCustomMacro(key string, cached bool, callback func(*SpotxBidderMacro) string) {
+func addCustomMacro(key string, cached bool, callback func(*SpotxMacro) string) {
 	spotxMapper.AddCustomMacro(key, cached)
 	spotxCustomMapper[key] = callback
 }
@@ -131,14 +75,14 @@ func addCustomMacro(key string, cached bool, callback func(*SpotxBidderMacro) st
 addCustomMacro(`channel_id`, false, channelID)
 
 //Custom contains definition for CacheBuster Parameter
-func (tag *SpotxBidderMacro) Custom(key string) string {
+func (tag *SpotxMacro) Custom(key string) string {
 	//First Method
 	if callback, ok := spotxCustomMapper[key]; ok {
 		return callback(tag)
 	}
 }
 
-func channelID(tag *SpotxBidderMacro) string {
+func channelID(tag *SpotxMacro) string {
 	return tag.ext.ChannelID
 }
 

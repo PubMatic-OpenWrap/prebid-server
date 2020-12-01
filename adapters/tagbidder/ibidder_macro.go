@@ -1,8 +1,12 @@
 package tagbidder
 
+import "github.com/PubMatic-OpenWrap/openrtb"
+
 //IBidderMacro interface will capture all macro definition
 type IBidderMacro interface {
-	ITagBidder
+	//Helper Function
+	InitBidRequest(request *openrtb.BidRequest)
+	LoadImpression(imp *openrtb.Imp) error
 
 	//Request
 	MacroTest(string) string

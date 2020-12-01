@@ -5,36 +5,38 @@ import "github.com/PubMatic-OpenWrap/openrtb"
 //BidderMacro default implementation
 type BidderMacro struct {
 	IBidderMacro
-	request   *openrtb.BidRequest
-	isApp     bool
-	imp       *openrtb.Imp
-	publisher *openrtb.Publisher
-	content   *openrtb.Content
+	Request   *openrtb.BidRequest
+	IsApp     bool
+	Imp       *openrtb.Imp
+	Publisher *openrtb.Publisher
+	Content   *openrtb.Content
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
-func NewBidderMacro(request *openrtb.BidRequest) *BidderMacro {
-	bidder := &BidderMacro{
-		request: request,
-	}
-	bidder.init()
-	return bidder
+func NewBidderMacro() *BidderMacro {
+	return &BidderMacro{}
 }
 
 func (tag *BidderMacro) init() {
-	if nil != tag.request.App {
-		tag.isApp = true
-		tag.publisher = tag.request.App.Publisher
-		tag.content = tag.request.App.Content
+	if nil != tag.Request.App {
+		tag.IsApp = true
+		tag.Publisher = tag.Request.App.Publisher
+		tag.Content = tag.Request.App.Content
 	} else {
-		tag.publisher = tag.request.Site.Publisher
-		tag.content = tag.request.Site.Content
+		tag.Publisher = tag.Request.Site.Publisher
+		tag.Content = tag.Request.Site.Content
 	}
+}
+
+//InitBidRequest will initialise BidRequest
+func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
+	tag.Request = request
+	tag.init()
 }
 
 //LoadImpression will set current imp
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
-	tag.imp = imp
+	tag.Imp = imp
 	return nil
 }
 

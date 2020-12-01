@@ -5,12 +5,10 @@ type macroCallBack struct {
 	callback func(IBidderMacro, string) string
 }
 
-type mapper map[string]*macroCallBack
+type Mapper map[string]*macroCallBack
 
-var bidderMapper map[string]mapper
-
-func (obj mapper) clone() mapper {
-	cloned := make(mapper, len(obj))
+func (obj Mapper) clone() Mapper {
+	cloned := make(Mapper, len(obj))
 	for k, v := range obj {
 		newCallback := *v
 		cloned[k] = &newCallback
@@ -19,18 +17,18 @@ func (obj mapper) clone() mapper {
 }
 
 //SetCache value to specific key
-func (obj *mapper) SetCache(key string, value bool) {
+func (obj *Mapper) SetCache(key string, value bool) {
 	if value, ok := (*obj)[key]; ok {
 		value.cached = true
 	}
 }
 
 //AddCustomMacro for adding custom macro whose definition will be present in IBidderMacro.Custom method
-func (obj *mapper) AddCustomMacro(key string, isCached bool) {
+func (obj *Mapper) AddCustomMacro(key string, isCached bool) {
 	(*obj)[key] = &macroCallBack{cached: isCached, callback: IBidderMacro.Custom}
 }
 
-var _defaultMapper = mapper{
+var _defaultMapper = Mapper{
 	//Request
 	MacroTest:              &macroCallBack{cached: false, callback: IBidderMacro.MacroTest},
 	MacroTimeout:           &macroCallBack{cached: false, callback: IBidderMacro.MacroTimeout},
@@ -178,17 +176,21 @@ var _defaultMapper = mapper{
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
 }
 
-//GetNewDefaultMapper will return clone of default mapper function
-func GetNewDefaultMapper() mapper {
+//GetNewDefaultMapper will return clone of default Mapper function
+func GetNewDefaultMapper() Mapper {
 	return _defaultMapper.clone()
 }
 
-//SetBidderMapper will be used by each bidder to set its respective macro mapper
-func SetBidderMapper(bidder string, bidderMap mapper) {
+/*
+var bidderMapper map[string]Mapper
+
+//SetBidderMapper will be used by each bidder to set its respective macro Mapper
+func SetBidderMapper(bidder string, bidderMap Mapper) {
 	bidderMapper[bidder] = bidderMap
 }
 
-//GetBidderMapper will return mapper of specific bidder
-func GetBidderMapper(bidder string) mapper {
+//GetBidderMapper will return Mapper of specific bidder
+func GetBidderMapper(bidder string) Mapper {
 	return bidderMapper[bidder]
 }
+*/

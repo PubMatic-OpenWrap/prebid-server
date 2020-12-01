@@ -20,15 +20,20 @@ const (
 	macroEscapeSuffixLen int    = len(macroEscapeSuffix)
 )
 
+//Flags to customize macro processing wrappers
+type Flags struct {
+	RemoveEmptyParam bool
+}
+
 //MacroProcessor struct to hold openrtb request and cache values
 type MacroProcessor struct {
 	bidder     IBidderMacro
-	mapper     mapper
+	mapper     Mapper
 	macroCache map[string]string
 }
 
 //NewMacroProcessor will process macro's of openrtb bid request
-func NewMacroProcessor(mapper mapper) *MacroProcessor {
+func NewMacroProcessor(mapper Mapper) *MacroProcessor {
 	return &MacroProcessor{
 		mapper:     mapper,
 		macroCache: make(map[string]string),
@@ -129,6 +134,40 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 	}
 	response = out.String()
 	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", in, response)
+
+	return
+}
+
+//ProcessURL : Substitute macros in input string
+func (mp *MacroProcessor) ProcessURL(uri string, flags Flags) (response string) {
+	if !flags.RemoveEmptyParam {
+		return mp.Process(uri)
+	}
+
+	url, _ := url.Parse(uri)
+
+	//Path
+	url.Path = mp.Process(url.Path)
+
+	//Values
+	var out bytes.Buffer
+	values := url.Query()
+	for k, v := range values {
+		replaced := mp.Process(v[0])
+		if len(replaced) > 0 {
+			if out.Len() > 0 {
+				out.WriteByte('&')
+			}
+			out.WriteString(k)
+			out.WriteByte('=')
+			out.WriteString(replaced)
+		}
+	}
+
+	url.RawQuery = out.String()
+	response = url.String()
+
+	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", uri, response)
 
 	return
 }
