@@ -30,6 +30,8 @@ func (a *SpotxAdapter) GetHeaders() http.Header {
 }
 
 func (a *SpotxAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	//request validation can be done here independently
+
 	return a.TagBidder.MakeRequests(
 		request, reqInfo,
 		NewSpotxMacro(),
@@ -38,6 +40,8 @@ func (a *SpotxAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapte
 }
 
 func (a *SpotxAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	//response validation can be done here independently
+
 	return nil, []error{
 		fmt.Errorf("No Bid"),
 	}

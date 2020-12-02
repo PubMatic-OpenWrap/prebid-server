@@ -45,8 +45,8 @@ func (mp *MacroProcessor) SetMacro(key, value string) {
 	mp.macroCache[key] = value
 }
 
-//GetCutsomMacroKey : Returns Custom Macro Keys
-func (mp *MacroProcessor) GetCutsomMacroKey(key string) string {
+//GetCustomMacroKey : Returns Custom Macro Keys
+func (mp *MacroProcessor) GetCustomMacroKey(key string) string {
 	return fmt.Sprintf(customMacroFormat, key)
 }
 

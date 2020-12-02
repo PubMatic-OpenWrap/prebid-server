@@ -148,3 +148,8 @@ const (
 	//Additional
 	MacroCacheBuster = `MacroCacheBuster`
 )
+
+const (
+	intBase = 10
+	comma   = `,`
+)

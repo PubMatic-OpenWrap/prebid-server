@@ -27,8 +27,10 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 
 	requestData := []*adapters.RequestData{}
 	for i := range request.Imp {
-		bidderMacro.LoadImpression(&request.Imp[i])
-
+		if err := bidderMacro.LoadImpression(&request.Imp[i]); nil != err {
+			continue
+		}
+		
 		uri := macroProcessor.ProcessURL(a.ITagBidder.GetURI(), flags)
 
 		requestData = append(requestData, &adapters.RequestData{
