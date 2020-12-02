@@ -21,7 +21,9 @@
         }
       }
     ],
-    "site": {}
+    "app": {
+      "id": "some-app-id"
+    }
   },
 
   "httpCalls": [
@@ -49,8 +51,8 @@
               }
             }
           ],
-          "site": {
-            "id": "fake-site-id"
+          "app": {
+            "id": "some-app-id"
           }
         }
       },
