@@ -1,10 +1,13 @@
 package tagbidder
 
+import "encoding/json"
+
 type macroCallBack struct {
 	cached   bool
 	callback func(IBidderMacro, string) string
 }
 
+//Mapper will map macro with its respective call back function
 type Mapper map[string]*macroCallBack
 
 func (obj Mapper) clone() Mapper {
@@ -30,23 +33,23 @@ func (obj *Mapper) AddCustomMacro(key string, isCached bool) {
 
 var _defaultMapper = Mapper{
 	//Request
-	MacroTest:              &macroCallBack{cached: false, callback: IBidderMacro.MacroTest},
-	MacroTimeout:           &macroCallBack{cached: false, callback: IBidderMacro.MacroTimeout},
-	MacroWhitelistSeat:     &macroCallBack{cached: false, callback: IBidderMacro.MacroWhitelistSeat},
-	MacroWhitelistLang:     &macroCallBack{cached: false, callback: IBidderMacro.MacroWhitelistLang},
-	MacroBlockedseat:       &macroCallBack{cached: false, callback: IBidderMacro.MacroBlockedseat},
-	MacroCurrency:          &macroCallBack{cached: false, callback: IBidderMacro.MacroCurrency},
-	MacroBlockedCategory:   &macroCallBack{cached: false, callback: IBidderMacro.MacroBlockedCategory},
-	MacroBlockedAdvertiser: &macroCallBack{cached: false, callback: IBidderMacro.MacroBlockedAdvertiser},
-	MacroBlockedApp:        &macroCallBack{cached: false, callback: IBidderMacro.MacroBlockedApp},
+	MacroTest:              &macroCallBack{cached: true, callback: IBidderMacro.MacroTest},
+	MacroTimeout:           &macroCallBack{cached: true, callback: IBidderMacro.MacroTimeout},
+	MacroWhitelistSeat:     &macroCallBack{cached: true, callback: IBidderMacro.MacroWhitelistSeat},
+	MacroWhitelistLang:     &macroCallBack{cached: true, callback: IBidderMacro.MacroWhitelistLang},
+	MacroBlockedseat:       &macroCallBack{cached: true, callback: IBidderMacro.MacroBlockedseat},
+	MacroCurrency:          &macroCallBack{cached: true, callback: IBidderMacro.MacroCurrency},
+	MacroBlockedCategory:   &macroCallBack{cached: true, callback: IBidderMacro.MacroBlockedCategory},
+	MacroBlockedAdvertiser: &macroCallBack{cached: true, callback: IBidderMacro.MacroBlockedAdvertiser},
+	MacroBlockedApp:        &macroCallBack{cached: true, callback: IBidderMacro.MacroBlockedApp},
 
 	//Source
-	MacroFD:             &macroCallBack{cached: false, callback: IBidderMacro.MacroFD},
-	MacroTransactionID:  &macroCallBack{cached: false, callback: IBidderMacro.MacroTransactionID},
-	MacroPaymentIDChain: &macroCallBack{cached: false, callback: IBidderMacro.MacroPaymentIDChain},
+	MacroFD:             &macroCallBack{cached: true, callback: IBidderMacro.MacroFD},
+	MacroTransactionID:  &macroCallBack{cached: true, callback: IBidderMacro.MacroTransactionID},
+	MacroPaymentIDChain: &macroCallBack{cached: true, callback: IBidderMacro.MacroPaymentIDChain},
 
 	//Regs
-	MacroCoppa: &macroCallBack{cached: false, callback: IBidderMacro.MacroCoppa},
+	MacroCoppa: &macroCallBack{cached: true, callback: IBidderMacro.MacroCoppa},
 
 	//Impression
 	MacroDisplayManager:        &macroCallBack{cached: false, callback: IBidderMacro.MacroDisplayManager},
@@ -83,94 +86,94 @@ var _defaultMapper = Mapper{
 	MacroVideoAPI:              &macroCallBack{cached: false, callback: IBidderMacro.MacroVideoAPI},
 
 	//Site
-	MacroSiteID:       &macroCallBack{cached: false, callback: IBidderMacro.MacroSiteID},
-	MacroSiteName:     &macroCallBack{cached: false, callback: IBidderMacro.MacroSiteName},
-	MacroSitePage:     &macroCallBack{cached: false, callback: IBidderMacro.MacroSitePage},
-	MacroSiteReferrer: &macroCallBack{cached: false, callback: IBidderMacro.MacroSiteReferrer},
-	MacroSiteSearch:   &macroCallBack{cached: false, callback: IBidderMacro.MacroSiteSearch},
-	MacroSiteMobile:   &macroCallBack{cached: false, callback: IBidderMacro.MacroSiteMobile},
+	MacroSiteID:       &macroCallBack{cached: true, callback: IBidderMacro.MacroSiteID},
+	MacroSiteName:     &macroCallBack{cached: true, callback: IBidderMacro.MacroSiteName},
+	MacroSitePage:     &macroCallBack{cached: true, callback: IBidderMacro.MacroSitePage},
+	MacroSiteReferrer: &macroCallBack{cached: true, callback: IBidderMacro.MacroSiteReferrer},
+	MacroSiteSearch:   &macroCallBack{cached: true, callback: IBidderMacro.MacroSiteSearch},
+	MacroSiteMobile:   &macroCallBack{cached: true, callback: IBidderMacro.MacroSiteMobile},
 
 	//App
-	MacroAppID:       &macroCallBack{cached: false, callback: IBidderMacro.MacroAppID},
-	MacroAppName:     &macroCallBack{cached: false, callback: IBidderMacro.MacroAppName},
-	MacroAppBundle:   &macroCallBack{cached: false, callback: IBidderMacro.MacroAppBundle},
-	MacroAppStoreURL: &macroCallBack{cached: false, callback: IBidderMacro.MacroAppStoreURL},
-	MacroAppVersion:  &macroCallBack{cached: false, callback: IBidderMacro.MacroAppVersion},
-	MacroAppPaid:     &macroCallBack{cached: false, callback: IBidderMacro.MacroAppPaid},
+	MacroAppID:       &macroCallBack{cached: true, callback: IBidderMacro.MacroAppID},
+	MacroAppName:     &macroCallBack{cached: true, callback: IBidderMacro.MacroAppName},
+	MacroAppBundle:   &macroCallBack{cached: true, callback: IBidderMacro.MacroAppBundle},
+	MacroAppStoreURL: &macroCallBack{cached: true, callback: IBidderMacro.MacroAppStoreURL},
+	MacroAppVersion:  &macroCallBack{cached: true, callback: IBidderMacro.MacroAppVersion},
+	MacroAppPaid:     &macroCallBack{cached: true, callback: IBidderMacro.MacroAppPaid},
 
 	//SiteAppCommon
-	MacroCategory:        &macroCallBack{cached: false, callback: IBidderMacro.MacroCategory},
-	MacroDomain:          &macroCallBack{cached: false, callback: IBidderMacro.MacroDomain},
-	MacroSectionCategory: &macroCallBack{cached: false, callback: IBidderMacro.MacroSectionCategory},
-	MacroPageCategory:    &macroCallBack{cached: false, callback: IBidderMacro.MacroPageCategory},
-	MacroPrivacyPolicy:   &macroCallBack{cached: false, callback: IBidderMacro.MacroPrivacyPolicy},
-	MacroKeywords:        &macroCallBack{cached: false, callback: IBidderMacro.MacroKeywords},
+	MacroCategory:        &macroCallBack{cached: true, callback: IBidderMacro.MacroCategory},
+	MacroDomain:          &macroCallBack{cached: true, callback: IBidderMacro.MacroDomain},
+	MacroSectionCategory: &macroCallBack{cached: true, callback: IBidderMacro.MacroSectionCategory},
+	MacroPageCategory:    &macroCallBack{cached: true, callback: IBidderMacro.MacroPageCategory},
+	MacroPrivacyPolicy:   &macroCallBack{cached: true, callback: IBidderMacro.MacroPrivacyPolicy},
+	MacroKeywords:        &macroCallBack{cached: true, callback: IBidderMacro.MacroKeywords},
 
 	//Publisher
-	MacroPubID:     &macroCallBack{cached: false, callback: IBidderMacro.MacroPubID},
-	MacroPubName:   &macroCallBack{cached: false, callback: IBidderMacro.MacroPubName},
-	MacroPubDomain: &macroCallBack{cached: false, callback: IBidderMacro.MacroPubDomain},
+	MacroPubID:     &macroCallBack{cached: true, callback: IBidderMacro.MacroPubID},
+	MacroPubName:   &macroCallBack{cached: true, callback: IBidderMacro.MacroPubName},
+	MacroPubDomain: &macroCallBack{cached: true, callback: IBidderMacro.MacroPubDomain},
 
 	//Content
-	MacroContentID:                &macroCallBack{cached: false, callback: IBidderMacro.MacroContentID},
-	MacroContentEpisode:           &macroCallBack{cached: false, callback: IBidderMacro.MacroContentEpisode},
-	MacroContentTitle:             &macroCallBack{cached: false, callback: IBidderMacro.MacroContentTitle},
-	MacroContentSeries:            &macroCallBack{cached: false, callback: IBidderMacro.MacroContentSeries},
-	MacroContentSeason:            &macroCallBack{cached: false, callback: IBidderMacro.MacroContentSeason},
-	MacroContentArtist:            &macroCallBack{cached: false, callback: IBidderMacro.MacroContentArtist},
-	MacroContentGenre:             &macroCallBack{cached: false, callback: IBidderMacro.MacroContentGenre},
-	MacroContentAlbum:             &macroCallBack{cached: false, callback: IBidderMacro.MacroContentAlbum},
-	MacroContentISrc:              &macroCallBack{cached: false, callback: IBidderMacro.MacroContentISrc},
-	MacroContentURL:               &macroCallBack{cached: false, callback: IBidderMacro.MacroContentURL},
-	MacroContentCategory:          &macroCallBack{cached: false, callback: IBidderMacro.MacroContentCategory},
-	MacroContentProductionQuality: &macroCallBack{cached: false, callback: IBidderMacro.MacroContentProductionQuality},
-	MacroContentVideoQuality:      &macroCallBack{cached: false, callback: IBidderMacro.MacroContentVideoQuality},
-	MacroContentContext:           &macroCallBack{cached: false, callback: IBidderMacro.MacroContentContext},
+	MacroContentID:                &macroCallBack{cached: true, callback: IBidderMacro.MacroContentID},
+	MacroContentEpisode:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentEpisode},
+	MacroContentTitle:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentTitle},
+	MacroContentSeries:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeries},
+	MacroContentSeason:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeason},
+	MacroContentArtist:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentArtist},
+	MacroContentGenre:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentGenre},
+	MacroContentAlbum:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentAlbum},
+	MacroContentISrc:              &macroCallBack{cached: true, callback: IBidderMacro.MacroContentISrc},
+	MacroContentURL:               &macroCallBack{cached: true, callback: IBidderMacro.MacroContentURL},
+	MacroContentCategory:          &macroCallBack{cached: true, callback: IBidderMacro.MacroContentCategory},
+	MacroContentProductionQuality: &macroCallBack{cached: true, callback: IBidderMacro.MacroContentProductionQuality},
+	MacroContentVideoQuality:      &macroCallBack{cached: true, callback: IBidderMacro.MacroContentVideoQuality},
+	MacroContentContext:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentContext},
 
 	//Producer
-	MacroProducerID:   &macroCallBack{cached: false, callback: IBidderMacro.MacroProducerID},
-	MacroProducerName: &macroCallBack{cached: false, callback: IBidderMacro.MacroProducerName},
+	MacroProducerID:   &macroCallBack{cached: true, callback: IBidderMacro.MacroProducerID},
+	MacroProducerName: &macroCallBack{cached: true, callback: IBidderMacro.MacroProducerName},
 
 	//Device
-	MacroUserAgent:       &macroCallBack{cached: false, callback: IBidderMacro.MacroUserAgent},
-	MacroDNT:             &macroCallBack{cached: false, callback: IBidderMacro.MacroDNT},
-	MacroLMT:             &macroCallBack{cached: false, callback: IBidderMacro.MacroLMT},
-	MacroIP:              &macroCallBack{cached: false, callback: IBidderMacro.MacroIP},
-	MacroDeviceType:      &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceType},
-	MacroMake:            &macroCallBack{cached: false, callback: IBidderMacro.MacroMake},
-	MacroModel:           &macroCallBack{cached: false, callback: IBidderMacro.MacroModel},
-	MacroDeviceOS:        &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceOS},
-	MacroDeviceOSVersion: &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceOSVersion},
-	MacroDeviceWidth:     &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceWidth},
-	MacroDeviceHeight:    &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceHeight},
-	MacroDeviceJS:        &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceJS},
-	MacroDeviceLanguage:  &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceLanguage},
-	MacroDeviceIFA:       &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceIFA},
-	MacroDeviceDIDSHA1:   &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceDIDSHA1},
-	MacroDeviceDIDMD5:    &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceDIDMD5},
-	MacroDeviceDPIDSHA1:  &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceDPIDSHA1},
-	MacroDeviceDPIDMD5:   &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceDPIDMD5},
-	MacroDeviceMACSHA1:   &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceMACSHA1},
-	MacroDeviceMACMD5:    &macroCallBack{cached: false, callback: IBidderMacro.MacroDeviceMACMD5},
+	MacroUserAgent:       &macroCallBack{cached: true, callback: IBidderMacro.MacroUserAgent},
+	MacroDNT:             &macroCallBack{cached: true, callback: IBidderMacro.MacroDNT},
+	MacroLMT:             &macroCallBack{cached: true, callback: IBidderMacro.MacroLMT},
+	MacroIP:              &macroCallBack{cached: true, callback: IBidderMacro.MacroIP},
+	MacroDeviceType:      &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceType},
+	MacroMake:            &macroCallBack{cached: true, callback: IBidderMacro.MacroMake},
+	MacroModel:           &macroCallBack{cached: true, callback: IBidderMacro.MacroModel},
+	MacroDeviceOS:        &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceOS},
+	MacroDeviceOSVersion: &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceOSVersion},
+	MacroDeviceWidth:     &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceWidth},
+	MacroDeviceHeight:    &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceHeight},
+	MacroDeviceJS:        &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceJS},
+	MacroDeviceLanguage:  &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceLanguage},
+	MacroDeviceIFA:       &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceIFA},
+	MacroDeviceDIDSHA1:   &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceDIDSHA1},
+	MacroDeviceDIDMD5:    &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceDIDMD5},
+	MacroDeviceDPIDSHA1:  &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceDPIDSHA1},
+	MacroDeviceDPIDMD5:   &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceDPIDMD5},
+	MacroDeviceMACSHA1:   &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceMACSHA1},
+	MacroDeviceMACMD5:    &macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceMACMD5},
 
 	//Geo
-	MacroLatitude:  &macroCallBack{cached: false, callback: IBidderMacro.MacroLatitude},
-	MacroLongitude: &macroCallBack{cached: false, callback: IBidderMacro.MacroLongitude},
-	MacroCountry:   &macroCallBack{cached: false, callback: IBidderMacro.MacroCountry},
-	MacroRegion:    &macroCallBack{cached: false, callback: IBidderMacro.MacroRegion},
-	MacroCity:      &macroCallBack{cached: false, callback: IBidderMacro.MacroCity},
-	MacroZip:       &macroCallBack{cached: false, callback: IBidderMacro.MacroZip},
-	MacroUTCOffset: &macroCallBack{cached: false, callback: IBidderMacro.MacroUTCOffset},
+	MacroLatitude:  &macroCallBack{cached: true, callback: IBidderMacro.MacroLatitude},
+	MacroLongitude: &macroCallBack{cached: true, callback: IBidderMacro.MacroLongitude},
+	MacroCountry:   &macroCallBack{cached: true, callback: IBidderMacro.MacroCountry},
+	MacroRegion:    &macroCallBack{cached: true, callback: IBidderMacro.MacroRegion},
+	MacroCity:      &macroCallBack{cached: true, callback: IBidderMacro.MacroCity},
+	MacroZip:       &macroCallBack{cached: true, callback: IBidderMacro.MacroZip},
+	MacroUTCOffset: &macroCallBack{cached: true, callback: IBidderMacro.MacroUTCOffset},
 
 	//User
-	MacroUserID:      &macroCallBack{cached: false, callback: IBidderMacro.MacroUserID},
-	MacroYearOfBirth: &macroCallBack{cached: false, callback: IBidderMacro.MacroYearOfBirth},
-	MacroGender:      &macroCallBack{cached: false, callback: IBidderMacro.MacroGender},
+	MacroUserID:      &macroCallBack{cached: true, callback: IBidderMacro.MacroUserID},
+	MacroYearOfBirth: &macroCallBack{cached: true, callback: IBidderMacro.MacroYearOfBirth},
+	MacroGender:      &macroCallBack{cached: true, callback: IBidderMacro.MacroGender},
 
 	//Extension
-	MacroGDPRConsent: &macroCallBack{cached: false, callback: IBidderMacro.MacroGDPRConsent},
-	MacroGDPR:        &macroCallBack{cached: false, callback: IBidderMacro.MacroGDPR},
-	MacroUSPrivacy:   &macroCallBack{cached: false, callback: IBidderMacro.MacroUSPrivacy},
+	MacroGDPRConsent: &macroCallBack{cached: true, callback: IBidderMacro.MacroGDPRConsent},
+	MacroGDPR:        &macroCallBack{cached: true, callback: IBidderMacro.MacroGDPR},
+	MacroUSPrivacy:   &macroCallBack{cached: true, callback: IBidderMacro.MacroUSPrivacy},
 
 	//Additional
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
@@ -181,11 +184,10 @@ func GetNewDefaultMapper() Mapper {
 	return _defaultMapper.clone()
 }
 
-/*
 var bidderMapper map[string]Mapper
 
-//SetBidderMapper will be used by each bidder to set its respective macro Mapper
-func SetBidderMapper(bidder string, bidderMap Mapper) {
+//RegisterBidderMapper will be used by each bidder to set its respective macro Mapper
+func RegisterBidderMapper(bidder string, bidderMap Mapper) {
 	bidderMapper[bidder] = bidderMap
 }
 
@@ -193,4 +195,37 @@ func SetBidderMapper(bidder string, bidderMap Mapper) {
 func GetBidderMapper(bidder string) Mapper {
 	return bidderMapper[bidder]
 }
-*/
+
+//MapperKey each macro mapping key definition
+type MapperKey struct {
+	Cached *bool        `json:"cached,omitempty"`
+	Type   MacroKeyType `json:"type,omitempty"`
+}
+
+//MapperJSON mapper json
+type MapperJSON struct {
+	Keys map[string]MapperKey `json:"keys,omitempty"`
+}
+
+//NewMapperFromJSON returns new Mapper from JSON details
+func NewMapperFromJSON(jsonStr string) Mapper {
+	var mapperJSON MapperJSON
+	if err := json.Unmarshal([]byte(jsonStr), &mapperJSON); nil != err {
+		return nil
+	}
+
+	newMapper := GetNewDefaultMapper()
+	for name, key := range mapperJSON.Keys {
+		switch key.Type {
+		case StandardORTBMacroKeys: /*standard keys*/
+			if nil != key.Cached {
+				newMapper.SetCache(name, *key.Cached)
+			}
+		case CustomORTBMacroKeys: /*custom*/
+			cached := (nil != key.Cached && *key.Cached)
+			newMapper.AddCustomMacro(name, cached)
+		}
+	}
+
+	return newMapper
+}

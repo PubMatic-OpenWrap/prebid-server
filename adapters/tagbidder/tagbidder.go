@@ -1,27 +1,44 @@
 package tagbidder
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 )
 
+//ITagBidder interface will be used for specific bidder to set their headers
 type ITagBidder interface {
 	GetURI() string
 	GetHeaders() http.Header
 }
 
+//TagBidder is default implementation of ITagBidder
 type TagBidder struct {
 	ITagBidder
+	bidderName string
+	flags      Flags
 }
 
-func NewTagBidder() *TagBidder {
-	return &TagBidder{}
+//NewTagBidder is an constructor for TagBidder
+func NewTagBidder(bidderName string, flags Flags) *TagBidder {
+	return &TagBidder{
+		bidderName: bidderName,
+		flags:      flags,
+	}
 }
 
-func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo, bidderMacro IBidderMacro, bidderMapper Mapper, flags Flags) ([]*adapters.RequestData, []error) {
-	macroProcessor := NewMacroProcessor(bidderMapper)
+//MakeRequests will contains default definition for processing queries
+func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	bidderMacro := GetNewBidderMacro(a.bidderName)
+	if nil == bidderMacro {
+		return nil, []error{errors.New(`invalid bidder macro defined`)}
+	}
+
+	bidderMapper := GetBidderMapper(a.bidderName)
+
+	macroProcessor := NewMacroProcessor(bidderMacro, bidderMapper)
 
 	bidderMacro.InitBidRequest(request)
 
@@ -30,8 +47,8 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 		if err := bidderMacro.LoadImpression(&request.Imp[i]); nil != err {
 			continue
 		}
-		
-		uri := macroProcessor.ProcessURL(a.ITagBidder.GetURI(), flags)
+
+		uri := macroProcessor.ProcessURL(a.ITagBidder.GetURI(), a.flags)
 
 		requestData = append(requestData, &adapters.RequestData{
 			ImpIndex: i,
@@ -42,4 +59,11 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 	}
 
 	return requestData, nil
+}
+
+//RegisterNewTagBidder will register new tag bidder
+func RegisterNewTagBidder(bidderName string, bidderMacro func() IBidderMacro, mapperJSON string) {
+	spotxMapper := NewMapperFromJSON(mapperJSON)
+	RegisterBidderMapper(bidderName, spotxMapper)
+	RegisterNewBidderMacroInitializer(bidderName, bidderMacro)
 }

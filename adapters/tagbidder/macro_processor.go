@@ -3,7 +3,6 @@ package tagbidder
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -11,12 +10,11 @@ import (
 )
 
 const (
-	macroFormatChar      byte   = '%'
-	macroFormat          string = `%%`
-	macroFormatLen       int    = len(macroFormat)
-	macroEOF             int    = -1
-	customMacroFormat    string = `%%VAR_%s%%`
+	macroPrefix          string = `{` //macro prefix can not be empty
+	macroSuffix          string = `}` //macro suffix can not be empty
 	macroEscapeSuffix    string = `_ESC`
+	macroPrefixLen       int    = len(macroPrefix)
+	macroSuffixLen       int    = len(macroSuffix)
 	macroEscapeSuffixLen int    = len(macroEscapeSuffix)
 )
 
@@ -27,16 +25,17 @@ type Flags struct {
 
 //MacroProcessor struct to hold openrtb request and cache values
 type MacroProcessor struct {
-	bidder     IBidderMacro
-	mapper     Mapper
-	macroCache map[string]string
+	bidderMacro IBidderMacro
+	mapper      Mapper
+	macroCache  map[string]string
 }
 
 //NewMacroProcessor will process macro's of openrtb bid request
-func NewMacroProcessor(mapper Mapper) *MacroProcessor {
+func NewMacroProcessor(bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor {
 	return &MacroProcessor{
-		mapper:     mapper,
-		macroCache: make(map[string]string),
+		bidderMacro: bidderMacro,
+		mapper:      mapper,
+		macroCache:  make(map[string]string),
 	}
 }
 
@@ -45,92 +44,90 @@ func (mp *MacroProcessor) SetMacro(key, value string) {
 	mp.macroCache[key] = value
 }
 
-//GetCustomMacroKey : Returns Custom Macro Keys
-func (mp *MacroProcessor) GetCustomMacroKey(key string) string {
-	return fmt.Sprintf(customMacroFormat, key)
+//processKey : returns value of key macro and status found or not
+func (mp *MacroProcessor) processKey(key string) (string, bool) {
+	if value, ok := mp.macroCache[key]; ok {
+		//found key in cache and return its value
+		return value, true
+	}
+
+	nEscaping := 0
+	tmpKey := key
+	for {
+		if valueCallback, ok := mp.mapper[tmpKey]; ok {
+			//found callback function
+			value := valueCallback.callback(mp.bidderMacro, tmpKey)
+			if len(value) > 0 {
+				if nEscaping > 0 {
+					//escaping string nEscaping times
+					value = escape(value, nEscaping)
+				}
+
+				if valueCallback.cached {
+					//cached value if its cached flag is true
+					mp.macroCache[key] = value
+				}
+			}
+			return value, true
+
+		} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
+			//escaping macro found
+			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
+			nEscaping++
+			continue
+		}
+		break
+	}
+	return "", false
 }
 
-//Process : Substitute macros in input string
-func (mp *MacroProcessor) Process(in string) (response string) {
+//ProcessString : Substitute macros in input string
+func (mp *MacroProcessor) ProcessString(in string) (response string) {
 	var out bytes.Buffer
-	pos, start, end, size, nEscaping := 0, 0, 0, len(in), 0
-	skip, found := false, false
+	pos, start, end, size := 0, 0, 0, len(in)
 
 	for pos < size {
-		if skip == false {
-			if start = strings.Index(in[pos:], macroFormat); -1 == start {
-				out.WriteString(in[pos:])
-				// Normal Exit
-				//glog.Infof("\n[EXIT=1]")
-				break
-			}
-			start = start + pos
-			out.WriteString(in[pos:start])
-		}
+		//find macro prefix index
+		if start = strings.Index(in[pos:], macroPrefix); -1 == start {
+			//[prefix_not_found] append remaining string to response
+			out.WriteString(in[pos:])
 
-		if end = strings.Index(in[start+macroFormatLen:], macroFormat); -1 == end {
-			out.WriteString(in[start:])
-			// We Found First %% and Not Found Second %% But We are in between of string
-			//glog.Infof("\n[EXIT=2]")
+			//macro prefix not found
 			break
 		}
-		end = start + end + (macroFormatLen << 1)
 
-		key := in[start:end]
-		//glog.Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
-		if value, ok := mp.macroCache[key]; ok {
-			//Found Key and Value: Replace Macro Value
-			//glog.Infof("\n<Start,End,Token,Value> : <%d,%d,%s,%s>", start, end, key, value)
-			out.WriteString(value)
-			pos = end
-			skip = false
-		} else {
-			found = false
-			nEscaping = 0
-			tmpKey := key
-			for {
-				if valueCallback, ok := mp.mapper[tmpKey]; ok {
-					// Found Callback Function for Key
-					if value := valueCallback.callback(mp.bidder, tmpKey); len(value) > 0 {
-						if nEscaping > 0 {
-							//Escaping string nEscaping times
-							value = escape(value, nEscaping)
-						}
+		//prefix index w.r.t original string
+		start = start + pos
 
-						if valueCallback.cached {
-							// Get Value and add it in macro list
-							mp.macroCache[key] = value
-						}
+		//append non macro prefix content
+		out.WriteString(in[pos:start])
 
-						// Replace it in MACRO
-						out.WriteString(value)
-						pos = end
-						skip = false
-						found = true
-						break
-					}
-				} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
-					//escaping macro found
-					tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
-					nEscaping++
-					continue
-				}
+		if (end - macroSuffixLen) <= (start + macroPrefixLen) {
+			//find macro suffix index
+			if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); -1 == end {
+				//[suffix_not_found] append remaining string to response
+				out.WriteString(in[start:])
+
+				// We Found First %% and Not Found Second %% But We are in between of string
 				break
 			}
 
-			if !found {
-				if in[start+macroFormatLen] == macroFormatChar {
-					// Next Character is % then end = start+1, and write '%' in string
-					end = start + 1
-				} else {
-					// Not Found Key as well as ValueCallback Function
-					end = end - macroFormatLen
-				}
-				out.WriteString(in[start:end])
-				pos, start = end, end
-				skip = true
-			}
+			end = start + macroPrefixLen + end + macroSuffixLen
 		}
+
+		//get actual macro key by removing macroPrefix and macroSuffix from key itself
+		key := in[start+macroPrefixLen : end-macroSuffixLen]
+
+		//process macro
+		value, found := mp.processKey(key)
+		if found {
+			out.WriteString(value)
+			pos = end
+		} else {
+			out.WriteByte(macroPrefix[0])
+			pos = start + 1
+		}
+		//glog.Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
 	}
 	response = out.String()
 	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", in, response)
@@ -141,35 +138,53 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 //ProcessURL : Substitute macros in input string
 func (mp *MacroProcessor) ProcessURL(uri string, flags Flags) (response string) {
 	if !flags.RemoveEmptyParam {
-		return mp.Process(uri)
+		return mp.ProcessString(uri)
 	}
 
 	url, _ := url.Parse(uri)
 
-	//Path
-	url.Path = mp.Process(url.Path)
+	url.Path = mp.ProcessString(url.Path)
+	url.RawQuery = mp.processURLValues(url.Query(), flags)
+	url.Fragment = mp.ProcessString(url.Fragment)
 
-	//Values
+	response = url.String()
+
+	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", uri, response)
+	return
+}
+
+//processURLValues : returns replaced macro values of url.values
+func (mp *MacroProcessor) processURLValues(values url.Values, flags Flags) (response string) {
 	var out bytes.Buffer
-	values := url.Query()
 	for k, v := range values {
-		replaced := mp.Process(v[0])
-		if len(replaced) > 0 {
+		macroKey := v[0]
+		found := false
+		value := ""
+
+		if len(macroKey) > (macroPrefixLen+macroSuffixLen) &&
+			strings.HasPrefix(macroKey, macroPrefix) &&
+			strings.HasSuffix(macroKey, macroSuffix) {
+			//Check macro key directly if present
+			newKey := macroKey[macroPrefixLen : len(macroKey)-macroSuffixLen]
+			value, found = mp.processKey(newKey)
+		}
+
+		if !found {
+			//if key is not present then process it as normal string
+			value = mp.ProcessString(macroKey)
+		}
+
+		if flags.RemoveEmptyParam == false || len(value) > 0 {
+			//append
 			if out.Len() > 0 {
 				out.WriteByte('&')
 			}
 			out.WriteString(k)
 			out.WriteByte('=')
-			out.WriteString(replaced)
+			out.WriteString(value)
 		}
 	}
-
-	url.RawQuery = out.String()
-	response = url.String()
-
-	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", uri, response)
-
-	return
+	return out.String()
 }
 
 //Dump : will print all cached macro and its values
@@ -178,6 +193,11 @@ func (mp *MacroProcessor) Dump() {
 		cacheStr, _ := json.Marshal(mp.macroCache)
 		glog.Infof("[MACRO]: Map:[%s]", string(cacheStr))
 	}
+}
+
+//GetMacroKey will return macro formatted key
+func GetMacroKey(key string) string {
+	return macroPrefix + key + macroSuffix
 }
 
 func escape(str string, n int) string {

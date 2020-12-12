@@ -155,3 +155,19 @@ type IBidderMacro interface {
 	MacroCacheBuster(string) string
 	Custom(string) string
 }
+
+var bidderMacro map[string]func() IBidderMacro
+
+//RegisterNewBidderMacroInitializer will be used by each bidder to set its respective macro IBidderMacro
+func RegisterNewBidderMacroInitializer(bidder string, macro func() IBidderMacro) {
+	bidderMacro[bidder] = macro
+}
+
+//GetNewBidderMacro will return IBidderMacro of specific bidder
+func GetNewBidderMacro(bidder string) IBidderMacro {
+	callback, ok := bidderMacro[bidder]
+	if ok {
+		return callback()
+	}
+	return nil
+}

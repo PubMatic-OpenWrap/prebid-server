@@ -19,7 +19,7 @@ type SpotxMacro struct {
 }
 
 //NewSpotxMacro contains spotx specific parameter parsing
-func NewSpotxMacro() *SpotxMacro {
+func NewSpotxMacro() tagbidder.IBidderMacro {
 	bidder := &SpotxMacro{
 		BidderMacro: tagbidder.NewBidderMacro(),
 	}

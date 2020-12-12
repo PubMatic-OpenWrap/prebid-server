@@ -76,12 +76,18 @@ func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 
 //MacroTest contains definition for Test Parameter
 func (tag *BidderMacro) MacroTest(key string) string {
-	return strconv.Itoa(int(tag.Request.Test))
+	if tag.Request.Test > 0 {
+		return strconv.Itoa(int(tag.Request.Test))
+	}
+	return ""
 }
 
 //MacroTimeout contains definition for Timeout Parameter
 func (tag *BidderMacro) MacroTimeout(key string) string {
-	return strconv.FormatInt(tag.Request.TMax, intBase)
+	if tag.Request.TMax > 0 {
+		return strconv.FormatInt(tag.Request.TMax, intBase)
+	}
+	return ""
 }
 
 //MacroWhitelistSeat contains definition for WhitelistSeat Parameter
@@ -91,7 +97,7 @@ func (tag *BidderMacro) MacroWhitelistSeat(key string) string {
 
 //MacroWhitelistLang contains definition for WhitelistLang Parameter
 func (tag *BidderMacro) MacroWhitelistLang(key string) string {
-	return strings.Join(tag.Request.WSeat, comma)
+	return strings.Join(tag.Request.WLang, comma)
 }
 
 //MacroBlockedseat contains definition for Blockedseat Parameter
@@ -169,7 +175,10 @@ func (tag *BidderMacro) MacroDisplayManagerVersion(key string) string {
 
 //MacroInterstitial contains definition for Interstitial Parameter
 func (tag *BidderMacro) MacroInterstitial(key string) string {
-	return strconv.Itoa(int(tag.Imp.Instl))
+	if tag.Imp.Instl > 0 {
+		return strconv.Itoa(int(tag.Imp.Instl))
+	}
+	return ""
 }
 
 //MacroTagID contains definition for TagID Parameter
@@ -179,7 +188,10 @@ func (tag *BidderMacro) MacroTagID(key string) string {
 
 //MacroBidFloor contains definition for BidFloor Parameter
 func (tag *BidderMacro) MacroBidFloor(key string) string {
-	return fmt.Sprintf("%g", tag.Imp.BidFloor)
+	if tag.Imp.BidFloor > 0 {
+		return fmt.Sprintf("%g", tag.Imp.BidFloor)
+	}
+	return ""
 }
 
 //MacroBidFloorCurrency contains definition for BidFloorCurrency Parameter
@@ -216,7 +228,7 @@ func (tag *BidderMacro) MacroVideoMIMES(key string) string {
 
 //MacroVideoMinimumDuration contains definition for VideoMinimumDuration Parameter
 func (tag *BidderMacro) MacroVideoMinimumDuration(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.MinDuration > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MinDuration, intBase)
 	}
 	return ""
@@ -224,7 +236,7 @@ func (tag *BidderMacro) MacroVideoMinimumDuration(key string) string {
 
 //MacroVideoMaximumDuration contains definition for VideoMaximumDuration Parameter
 func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.MaxDuration > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MaxDuration, intBase)
 	}
 	return ""
@@ -243,7 +255,7 @@ func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 
 //MacroVideoPlayerWidth contains definition for VideoPlayerWidth Parameter
 func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.W > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.W), intBase)
 	}
 	return ""
@@ -251,7 +263,7 @@ func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string {
 
 //MacroVideoPlayerHeight contains definition for VideoPlayerHeight Parameter
 func (tag *BidderMacro) MacroVideoPlayerHeight(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.H > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.H), intBase)
 	}
 	return ""
@@ -283,7 +295,7 @@ func (tag *BidderMacro) MacroVideoLinearity(key string) string {
 
 //MacroVideoSkip contains definition for VideoSkip Parameter
 func (tag *BidderMacro) MacroVideoSkip(key string) string {
-	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip {
+	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip && *tag.Imp.Video.Skip > 0 {
 		return strconv.FormatInt(int64(*tag.Imp.Video.Skip), intBase)
 	}
 	return ""
@@ -291,7 +303,7 @@ func (tag *BidderMacro) MacroVideoSkip(key string) string {
 
 //MacroVideoSkipMinimum contains definition for VideoSkipMinimum Parameter
 func (tag *BidderMacro) MacroVideoSkipMinimum(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.SkipMin > 0 {
 		return strconv.FormatInt(tag.Imp.Video.SkipMin, intBase)
 	}
 	return ""
@@ -299,7 +311,7 @@ func (tag *BidderMacro) MacroVideoSkipMinimum(key string) string {
 
 //MacroVideoSkipAfter contains definition for VideoSkipAfter Parameter
 func (tag *BidderMacro) MacroVideoSkipAfter(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.SkipAfter > 0 {
 		return strconv.FormatInt(tag.Imp.Video.SkipAfter, intBase)
 	}
 	return ""
@@ -307,7 +319,7 @@ func (tag *BidderMacro) MacroVideoSkipAfter(key string) string {
 
 //MacroVideoSequence contains definition for VideoSequence Parameter
 func (tag *BidderMacro) MacroVideoSequence(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.Sequence > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Sequence), intBase)
 	}
 	return ""
@@ -326,7 +338,7 @@ func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 
 //MacroVideoMaximumExtended contains definition for VideoMaximumExtended Parameter
 func (tag *BidderMacro) MacroVideoMaximumExtended(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.MaxExtended > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MaxExtended, intBase)
 	}
 	return ""
@@ -334,7 +346,7 @@ func (tag *BidderMacro) MacroVideoMaximumExtended(key string) string {
 
 //MacroVideoMinimumBitRate contains definition for VideoMinimumBitRate Parameter
 func (tag *BidderMacro) MacroVideoMinimumBitRate(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.MinBitRate > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.MinBitRate), intBase)
 	}
 	return ""
@@ -342,7 +354,7 @@ func (tag *BidderMacro) MacroVideoMinimumBitRate(key string) string {
 
 //MacroVideoMaximumBitRate contains definition for VideoMaximumBitRate Parameter
 func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.MaxBitRate > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.MaxBitRate), intBase)
 	}
 	return ""
@@ -350,7 +362,7 @@ func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
 
 //MacroVideoBoxing contains definition for VideoBoxing Parameter
 func (tag *BidderMacro) MacroVideoBoxing(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.BoxingAllowed), intBase)
 	}
 	return ""
@@ -441,7 +453,7 @@ func (tag *BidderMacro) MacroSiteSearch(key string) string {
 
 //MacroSiteMobile contains definition for SiteMobile Parameter
 func (tag *BidderMacro) MacroSiteMobile(key string) string {
-	if !tag.IsApp {
+	if !tag.IsApp && tag.Request.Site.Mobile > 0 {
 		return strconv.FormatInt(int64(tag.Request.Site.Mobile), intBase)
 	}
 	return ""
@@ -503,10 +515,8 @@ func (tag *BidderMacro) MacroAppPaid(key string) string {
 func (tag *BidderMacro) MacroCategory(key string) string {
 	if tag.IsApp {
 		return strings.Join(tag.Request.App.Cat, comma)
-	} else {
-		return strings.Join(tag.Request.Site.Cat, comma)
 	}
-	return ""
+	return strings.Join(tag.Request.Site.Cat, comma)
 }
 
 //MacroDomain contains definition for Domain Parameter
@@ -535,10 +545,16 @@ func (tag *BidderMacro) MacroPageCategory(key string) string {
 
 //MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
 func (tag *BidderMacro) MacroPrivacyPolicy(key string) string {
+	var value int8 = 0
 	if tag.IsApp {
-		return strconv.FormatInt(int64(tag.Request.App.PrivacyPolicy), intBase)
+		value = tag.Request.App.PrivacyPolicy
+	} else {
+		value = tag.Request.Site.PrivacyPolicy
 	}
-	return strconv.FormatInt(int64(tag.Request.Site.PrivacyPolicy), intBase)
+	if value > 0 {
+		return strconv.FormatInt(int64(value), intBase)
+	}
+	return ""
 }
 
 //MacroKeywords contains definition for Keywords Parameter
@@ -943,7 +959,7 @@ func (tag *BidderMacro) MacroUserID(key string) string {
 
 //MacroYearOfBirth contains definition for YearOfBirth Parameter
 func (tag *BidderMacro) MacroYearOfBirth(key string) string {
-	if nil != tag.Request.User {
+	if nil != tag.Request.User && tag.Request.User.Yob > 0 {
 		return strconv.FormatInt(tag.Request.User.Yob, intBase)
 	}
 	return ""

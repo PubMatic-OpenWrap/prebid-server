@@ -1,5 +1,10 @@
 package tagbidder
 
+const (
+	intBase = 10
+	comma   = `,`
+)
+
 //List of Tag Bidder Macros
 const (
 	//Request
@@ -149,7 +154,11 @@ const (
 	MacroCacheBuster = `MacroCacheBuster`
 )
 
+//MacroKeyType types of macro keys
+type MacroKeyType int
+
 const (
-	intBase = 10
-	comma   = `,`
+	UnkownMacroKeys       MacroKeyType = 0
+	StandardORTBMacroKeys MacroKeyType = 1
+	CustomORTBMacroKeys   MacroKeyType = 2
 )
