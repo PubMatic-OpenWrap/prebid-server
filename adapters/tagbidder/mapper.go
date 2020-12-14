@@ -1,7 +1,5 @@
 package tagbidder
 
-import "encoding/json"
-
 type macroCallBack struct {
 	cached   bool
 	callback func(IBidderMacro, string) string
@@ -207,15 +205,10 @@ type MapperJSON struct {
 	Keys map[string]MapperKey `json:"keys,omitempty"`
 }
 
-//NewMapperFromJSON returns new Mapper from JSON details
-func NewMapperFromJSON(jsonStr string) Mapper {
-	var mapperJSON MapperJSON
-	if err := json.Unmarshal([]byte(jsonStr), &mapperJSON); nil != err {
-		return nil
-	}
-
+//NewMapperFromConfig returns new Mapper from JSON details
+func NewMapperFromConfig(config *BidderConfig) Mapper {
 	newMapper := GetNewDefaultMapper()
-	for name, key := range mapperJSON.Keys {
+	for name, key := range config.Keys {
 		switch key.Type {
 		case StandardORTBMacroKeys: /*standard keys*/
 			if nil != key.Cached {
@@ -226,6 +219,5 @@ func NewMapperFromJSON(jsonStr string) Mapper {
 			newMapper.AddCustomMacro(name, cached)
 		}
 	}
-
 	return newMapper
 }

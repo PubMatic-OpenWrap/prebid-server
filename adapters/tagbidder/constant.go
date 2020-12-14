@@ -155,10 +155,10 @@ const (
 )
 
 //MacroKeyType types of macro keys
-type MacroKeyType int
+type MacroKeyType string
 
 const (
-	UnkownMacroKeys       MacroKeyType = 0
-	StandardORTBMacroKeys MacroKeyType = 1
-	CustomORTBMacroKeys   MacroKeyType = 2
+	UnkownMacroKeys       MacroKeyType = ``
+	StandardORTBMacroKeys MacroKeyType = `standard`
+	CustomORTBMacroKeys   MacroKeyType = `custom`
 )

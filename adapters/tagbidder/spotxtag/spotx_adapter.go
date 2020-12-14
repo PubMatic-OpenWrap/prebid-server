@@ -47,5 +47,5 @@ func (a *SpotxAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalReq
 }
 
 func init() {
-	tagbidder.RegisterNewTagBidder(`spotx`, NewSpotxMacro, spotxMapperJSON)
+	tagbidder.RegisterNewTagBidder(`spotx`, NewSpotxMacro)
 }

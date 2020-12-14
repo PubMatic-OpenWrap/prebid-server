@@ -1,0 +1,29 @@
+{
+    "url": "https://search.spotxchange.com/vast/2.00/%%Channel%%?VPI=MP4&app[bundle]=%%MacroAppBundle%%&app[name]=%%MacroAppName%%&app[cat]=%%MacroCategory%%&app[domain]=%%MacroDomain%%&app[privacypolicy]=%%MacroPrivacyPolicy%%&app[storeurl]=%%MacroAppStoreURL%%&app[ver]=%%MacroAppVersion%%&cb=%%MacroCacheBuster%%&device[devicetype]=%%MacroDeviceType%%&device[ifa]=%%MacroDeviceIFA%%&device[make]=%%MacroMake%%&device[model]=%%MacroModel%%&device[dnt]=%%MacroDNT%%&player_height=%%MacroVideoPlayerHeight%%&player_width=%%MacroVideoPlayerWidth%%&ip_addr=%%MacroIP%%&device[ua]=%%MacroUserAgent%%",
+    "keys": {
+        "channel_id": {
+            "cached": false,
+            "type": "custom"
+        },
+        "ad_unit": {
+            "cached": false,
+            "type": "custom"
+        },
+        "secure": {
+            "cached": false,
+            "type": "custom"
+        },
+        "ad_volume": {
+            "cached": false,
+            "type": "custom"
+        },
+        "price_floor": {
+            "cached": false,
+            "type": "custom"
+        },
+        "hide_skin": {
+            "cached": false,
+            "type": "custom"
+        }
+    }
+}

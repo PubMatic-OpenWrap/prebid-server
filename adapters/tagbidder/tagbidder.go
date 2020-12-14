@@ -61,9 +61,15 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 	return requestData, nil
 }
 
+//MakeBids makes bids
+func (a *TagBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	//response validation can be done here independently
+	var handler ITagResponseHandler
+	handler = NewVASTTagResponseHandler()
+	return handler.MakeBids(internalRequest, externalRequest, response)
+}
+
 //RegisterNewTagBidder will register new tag bidder
-func RegisterNewTagBidder(bidderName string, bidderMacro func() IBidderMacro, mapperJSON string) {
-	spotxMapper := NewMapperFromJSON(mapperJSON)
-	RegisterBidderMapper(bidderName, spotxMapper)
+func RegisterNewTagBidder(bidderName string, bidderMacro func() IBidderMacro) {
 	RegisterNewBidderMacroInitializer(bidderName, bidderMacro)
 }
