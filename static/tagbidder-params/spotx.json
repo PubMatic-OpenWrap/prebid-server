@@ -1,29 +1,43 @@
 {
     "url": "https://search.spotxchange.com/vast/2.00/%%Channel%%?VPI=MP4&app[bundle]=%%MacroAppBundle%%&app[name]=%%MacroAppName%%&app[cat]=%%MacroCategory%%&app[domain]=%%MacroDomain%%&app[privacypolicy]=%%MacroPrivacyPolicy%%&app[storeurl]=%%MacroAppStoreURL%%&app[ver]=%%MacroAppVersion%%&cb=%%MacroCacheBuster%%&device[devicetype]=%%MacroDeviceType%%&device[ifa]=%%MacroDeviceIFA%%&device[make]=%%MacroMake%%&device[model]=%%MacroModel%%&device[dnt]=%%MacroDNT%%&player_height=%%MacroVideoPlayerHeight%%&player_width=%%MacroVideoPlayerWidth%%&ip_addr=%%MacroIP%%&device[ua]=%%MacroUserAgent%%",
+    "response": "vasttag",
+    "flags": {
+        "remove_empty": true
+    },
     "keys": {
+        "MacroVideoAPI": {
+            "value": "MP4",
+            "type": "constant"
+        },
         "channel_id": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.channel_id",
+            "type": "jsonkey"
         },
         "ad_unit": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.ad_unit",
+            "type": "jsonkey"
         },
         "secure": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.secure",
+            "type": "jsonkey"
         },
         "ad_volume": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.ad_volume",
+            "type": "jsonkey"
         },
         "price_floor": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.price_floor",
+            "type": "jsonkey"
         },
         "hide_skin": {
             "cached": false,
-            "type": "custom"
+            "value": "impext.bidder.hide_skin",
+            "type": "jsonkey"
         }
     }
 }

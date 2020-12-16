@@ -154,11 +154,22 @@ const (
 	MacroCacheBuster = `MacroCacheBuster`
 )
 
-//MacroKeyType types of macro keys
-type MacroKeyType string
+const (
+	RequestExtPrefix    = `reqext.`
+	ImpressionExtPrefix = `impext.`
+)
+
+type ResponseHandlerType string
 
 const (
-	UnkownMacroKeys       MacroKeyType = ``
-	StandardORTBMacroKeys MacroKeyType = `standard`
-	CustomORTBMacroKeys   MacroKeyType = `custom`
+	OpenRTBResponseHandlerType ResponseHandlerType = `openrtb`
+	VASTTagResponseHandlerType ResponseHandlerType = `vasttag`
+)
+
+type ValueType string
+
+const (
+	ConstantValueType ValueType = `constant`
+	JSONKeyValueType  ValueType = `jsonkey`
+	CallBackValueType ValueType = `callback`
 )

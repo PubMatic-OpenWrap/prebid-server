@@ -3,10 +3,14 @@ package tagbidder
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/buger/jsonparser"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
@@ -15,6 +19,12 @@ import (
 //BidderMacro default implementation
 type BidderMacro struct {
 	IBidderMacro
+
+	//Configuration Parameters
+	Conf       *config.Adapter
+	BidderConf *BidderConfig
+
+	//OpenRTB Specific Parameters
 	Request   *openrtb.BidRequest
 	IsApp     bool
 	HasGeo    bool
@@ -28,6 +38,16 @@ type BidderMacro struct {
 //NewBidderMacro contains definition for all openrtb macro's
 func NewBidderMacro() *BidderMacro {
 	return &BidderMacro{}
+}
+
+//NewIBidderMacro contains definition for all openrtb macro's
+func NewIBidderMacro() IBidderMacro {
+	return NewBidderMacro()
+}
+
+//RegisterDefaultBidderMacro will register new tag bidder
+func RegisterDefaultBidderMacro(bidderName openrtb_ext.BidderName) {
+	RegisterNewBidderMacro(string(bidderName), NewIBidderMacro)
 }
 
 func (tag *BidderMacro) init() {
@@ -70,6 +90,32 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	tag.Imp = imp
 	return nil
+}
+
+//SetAdapterConfig will set Adapter config
+func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
+	tag.Conf = conf
+}
+
+//SetBidderConfig will set Bidder config
+func (tag *BidderMacro) SetBidderConfig(conf *BidderConfig) {
+	tag.BidderConf = conf
+}
+
+//GetURI get URL
+func (tag *BidderMacro) GetURI() string {
+	//1. check for impression level URL
+	//2. check for bidder config level URL
+	//3. check for adapter config level URL
+	if len(tag.BidderConf.URL) > 0 {
+		return tag.BidderConf.URL
+	}
+	return tag.Conf.Endpoint
+}
+
+//GetHeaders GetHeaders
+func (tag *BidderMacro) GetHeaders() http.Header {
+	return http.Header{}
 }
 
 /********************* Request *********************/
@@ -1007,7 +1053,40 @@ func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
 }
 
-//Custom contains definition for CacheBuster Parameter
-func (tag *BidderMacro) Custom(key string) string {
+//ConstantValue contains definition for CacheBuster Parameter
+func (tag *BidderMacro) ConstantValue(key string) string {
+	if k, ok := tag.BidderConf.Keys[key]; ok {
+		return k.Value
+	}
+	return ""
+}
+
+//JSONKey contains definition for CacheBuster Parameter
+func (tag *BidderMacro) JSONKey(key string) string {
+	if k, ok := tag.BidderConf.Keys[key]; ok {
+		//get key parts
+		keys := strings.Split(k.Value, ".")
+
+		//check for request ext, imp ext
+		var ext json.RawMessage
+		switch keys[0] {
+		case RequestExtPrefix:
+			ext = tag.Request.Ext
+		case ImpressionExtPrefix:
+			ext = tag.Imp.Ext
+		}
+
+		if len(ext) > 0 && len(keys) > 1 {
+			value, jsontype, _, err := jsonparser.Get(ext, keys[1:]...)
+			if nil != err ||
+				jsontype == jsonparser.NotExist ||
+				jsontype == jsonparser.Null ||
+				jsontype == jsonparser.Object ||
+				jsontype == jsonparser.Array {
+				return ""
+			}
+			return string(value)
+		}
+	}
 	return ""
 }

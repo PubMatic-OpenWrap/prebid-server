@@ -28,7 +28,7 @@ func NewSpotxMacro() tagbidder.IBidderMacro {
 
 //LoadImpression will set current imp
 func (tag *SpotxMacro) LoadImpression(imp *openrtb.Imp) error {
-	tag.Imp = imp
+	tag.BidderMacro.LoadImpression(imp)
 
 	//reload ext object
 	var bidderExt adapters.ExtImpBidder
@@ -59,6 +59,10 @@ func (tag *SpotxMacro) Custom(key string) string {
 //MacroVideoAPI overriding default behaviour of MacroVideoAPI
 func (tag *SpotxMacro) MacroVideoAPI(key string) string {
 	return "MP4"
+}
+
+func init() {
+	tagbidder.RegisterNewBidderMacro(`spotx`, NewSpotxMacro)
 }
 
 /*

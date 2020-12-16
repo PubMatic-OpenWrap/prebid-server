@@ -7,16 +7,24 @@ import (
 	"github.com/golang/glog"
 )
 
+//Flags of each tag bidder
+type Flags struct {
+	RemoveEmptyParam bool `json:"remove_empty,omitempty"`
+}
+
 //Keys each macro mapping key definition
 type Keys struct {
-	Cached *bool        `json:"cached,omitempty"`
-	Type   MacroKeyType `json:"type,omitempty"`
+	Cached    *bool     `json:"cached,omitempty"`
+	Value     string    `json:"value,omitempty"`
+	ValueType ValueType `json:"type,omitempty"`
 }
 
 //BidderConfig mapper json
 type BidderConfig struct {
-	URL  string          `json:"url,omitempty"`
-	Keys map[string]Keys `json:"keys,omitempty"`
+	URL          string              `json:"url,omitempty"`
+	ResponseType ResponseHandlerType `json:"response,omitempty"`
+	Flags        Flags               `json:"flags,omitempty"`
+	Keys         map[string]Keys     `json:"keys,omitempty"`
 }
 
 var bidderConfig map[string]*BidderConfig
@@ -44,13 +52,12 @@ func FetchBidderConfig(confDir string, bidders []string) {
 		if err := json.Unmarshal([]byte(fileData), &bidderConfig); nil != err {
 			glog.Fatalf("error parsing json in file %s: %v", confDir+"/"+bidderString+".json", err)
 		}
+		RegisterBidderConfig(bidderString, &bidderConfig)
 
 		mapper := NewMapperFromConfig(&bidderConfig)
 		if nil == mapper {
 			glog.Fatalf("no query parameters mapper for bidder " + bidderString)
 		}
-
 		RegisterBidderMapper(bidderString, mapper)
-		RegisterBidderConfig(bidderString, &bidderConfig)
 	}
 }

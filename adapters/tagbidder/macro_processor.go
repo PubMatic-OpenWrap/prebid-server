@@ -19,9 +19,6 @@ const (
 )
 
 //Flags to customize macro processing wrappers
-type Flags struct {
-	RemoveEmptyParam bool
-}
 
 //MacroProcessor struct to hold openrtb request and cache values
 type MacroProcessor struct {
@@ -103,6 +100,7 @@ func (mp *MacroProcessor) ProcessString(in string) (response string) {
 		out.WriteString(in[pos:start])
 
 		if (end - macroSuffixLen) <= (start + macroPrefixLen) {
+			//string contains {{TEXT_{{MACRO}} -> it should replace it with{{TEXT_MACROVALUE
 			//find macro suffix index
 			if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); -1 == end {
 				//[suffix_not_found] append remaining string to response
