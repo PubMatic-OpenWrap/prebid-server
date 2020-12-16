@@ -669,6 +669,10 @@ func (me *Metrics) RecordRequestQueueTime(success bool, requestType RequestType,
 
 }
 
+// RecordAdapterVideoBidDuration as a noop
+func (me *Metrics) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int) {
+}
+
 func (me *Metrics) RecordTimeoutNotice(success bool) {
 	if success {
 		me.TimeoutNotificationSuccess.Mark(1)

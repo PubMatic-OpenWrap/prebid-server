@@ -392,6 +392,9 @@ func (e *exchange) getAllBids(
 					var cpm = float64(bid.bid.Price * 1000)
 					e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 					e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.bidType, bid.bid.AdM != "")
+					if bid.bidType == openrtb_ext.BidTypeVideo && bid.bidVideo != nil {
+						e.me.RecordAdapterVideoBidDuration(*bidlabels, bid.bidVideo.Duration)
+					}
 				}
 			}
 			chBids <- brw

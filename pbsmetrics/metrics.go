@@ -346,6 +346,8 @@ type MetricsEngine interface {
 	RecordAdapterBidReceived(labels AdapterLabels, bidType openrtb_ext.BidType, hasAdm bool)
 	RecordAdapterPrice(labels AdapterLabels, cpm float64)
 	RecordAdapterTime(labels AdapterLabels, length time.Duration)
+	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
+	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 	RecordCookieSync()
 	RecordAdapterCookieSync(adapter openrtb_ext.BidderName, gdprBlocked bool)
 	RecordUserIDSet(userLabels UserLabels) // Function should verify bidder values

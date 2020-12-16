@@ -244,6 +244,13 @@ func (me *MultiMetricsEngine) RecordRequestPrivacy(privacy pbsmetrics.PrivacyLab
 	}
 }
 
+// RecordAdapterVideoBidDuration as a noop
+func (me *MultiMetricsEngine) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterVideoBidDuration(labels, videoBidDuration)
+	}
+}
+
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
 
@@ -349,4 +356,8 @@ func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
 
 // RecordRequestPrivacy as a noop
 func (me *DummyMetricsEngine) RecordRequestPrivacy(privacy pbsmetrics.PrivacyLabels) {
+}
+
+// RecordAdapterVideoBidDuration as a noop
+func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
 }

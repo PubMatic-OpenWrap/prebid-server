@@ -140,3 +140,8 @@ func (me *MetricsEngineMock) RecordTimeoutNotice(success bool) {
 func (me *MetricsEngineMock) RecordRequestPrivacy(privacy PrivacyLabels) {
 	me.Called(privacy)
 }
+
+//RecordAdapterVideoBidDuration mock
+func (me *MetricsEngineMock) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int) {
+	me.Called(labels, videoBidDuration)
+}

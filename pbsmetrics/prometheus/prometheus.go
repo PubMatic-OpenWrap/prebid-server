@@ -59,6 +59,7 @@ type Metrics struct {
 	adapterReusedConnections  *prometheus.CounterVec
 	adapterCreatedConnections *prometheus.CounterVec
 	adapterConnectionWaitTime *prometheus.HistogramVec
+	adapterVideoBidDuration   *prometheus.HistogramVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -125,6 +126,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	cacheWriteTimeBuckets := []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1}
 	priceBuckets := []float64{250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000}
 	queuedRequestTimeBuckets := []float64{0, 1, 5, 30, 60, 120, 180, 240, 300}
+	videoBidDurationBuckets := []float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60}
 
 	metrics := Metrics{}
 	metrics.Registry = prometheus.NewRegistry()
@@ -353,6 +355,11 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Seconds request was waiting in queue",
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
+
+	metrics.adapterVideoBidDuration = newHistogramVec(cfg, metrics.Registry,
+		"adapter_vidbid_dur",
+		"Video Ad durations returned by the bidder", []string{adapterLabel},
+		videoBidDurationBuckets)
 
 	preloadLabelValues(&metrics)
 
@@ -690,4 +697,9 @@ func (m *Metrics) RecordRequestPrivacy(privacy pbsmetrics.PrivacyLabels) {
 			sourceLabel: sourceRequest,
 		}).Inc()
 	}
+}
+
+//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
+func (m *Metrics) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
+	m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
 }
