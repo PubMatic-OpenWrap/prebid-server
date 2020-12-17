@@ -393,7 +393,7 @@ func (e *exchange) getAllBids(
 					e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 					e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.bidType, bid.bid.AdM != "")
 					if bid.bidType == openrtb_ext.BidTypeVideo && bid.bidVideo != nil {
-						e.me.RecordAdapterVideoBidDuration(*bidlabels, bid.bidVideo.Duration)
+						e.me.RecordAdapterVideoBidDuration(bidderRequest.BidderLabels, bid.bidVideo.Duration)
 					}
 				}
 			}
