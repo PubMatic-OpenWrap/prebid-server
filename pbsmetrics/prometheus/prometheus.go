@@ -555,7 +555,9 @@ func (m *Metrics) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, 
 	recordAlgoTime(m.podCompExclTimer, labels, elapsedTime)
 }
 
-//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
+//RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
 func (m *Metrics) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
-	m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
+	if videoBidDuration > 0 {
+		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
+	}
 }

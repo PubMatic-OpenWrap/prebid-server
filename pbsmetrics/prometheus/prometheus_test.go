@@ -1028,20 +1028,31 @@ func TestRecordAdapterVideoBidDuration(t *testing.T) {
 			expectedSum:   map[string]int{"bidder_1": 58},
 			expectedCount: map[string]int{"bidder_1": 4},
 			expectedBuckets: map[string]map[int]int{
-				"bidder_1": {5: 1, 10: 2, 30: 3},
+				"bidder_1": {5: 1, 10: 2, 15: 3, 35: 4}, // Upper bound : cumulative number
 			},
 		},
 		{
 			description: "multiple bidders multiple ad durations",
 			bidderAdDurations: map[string][]int{
-				"bidder_1": {5, 10, 11, 32},
+				"bidder_1": {5, 10, 11, 32, 39},
 				"bidder_2": {25, 30},
 			},
-			expectedSum:   map[string]int{"bidder_1": 58, "bidder_2": 55},
-			expectedCount: map[string]int{"bidder_1": 4, "bidder_2": 2},
+			expectedSum:   map[string]int{"bidder_1": 97, "bidder_2": 55},
+			expectedCount: map[string]int{"bidder_1": 5, "bidder_2": 2},
 			expectedBuckets: map[string]map[int]int{
-				"bidder_1": {5: 1, 10: 2, 30: 3},
+				"bidder_1": {5: 1, 10: 2, 15: 3, 35: 4, 40: 5, 41: 5},
 				"bidder_2": {25: 1, 30: 2},
+			},
+		},
+		{
+			description: "bidder with 0 ad durations",
+			bidderAdDurations: map[string][]int{
+				"bidder_1": {5, 0, 0, 27},
+			},
+			expectedSum:   map[string]int{"bidder_1": 32},
+			expectedCount: map[string]int{"bidder_1": 2}, // must exclude 2 observations having 0 durations
+			expectedBuckets: map[string]map[int]int{
+				"bidder_1": {5: 1, 30: 2},
 			},
 		},
 	}
