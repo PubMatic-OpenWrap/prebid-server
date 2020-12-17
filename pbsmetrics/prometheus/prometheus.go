@@ -268,8 +268,6 @@ func NewMetrics(cfg config.PrometheusMetrics) *Metrics {
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
-	// metrics.adapterVideoBidDuration = newSummary(cfg, metrics.Registry, "adapter_vidbid_dur", "Video Ad durations returned by the bidder", []string{adapterLabel},
-	// 	map[float64]float64{1.0: 60.0})
 	metrics.adapterVideoBidDuration = newHistogram(cfg, metrics.Registry,
 		"adapter_vidbid_dur",
 		"Video Ad durations returned by the bidder", []string{adapterLabel},
@@ -314,19 +312,6 @@ func newHistogram(cfg config.PrometheusMetrics, registry *prometheus.Registry, n
 	histogram := prometheus.NewHistogramVec(opts, labels)
 	registry.MustRegister(histogram)
 	return histogram
-}
-
-func newSummary(cfg config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string, objectives map[float64]float64) *prometheus.SummaryVec {
-	opts := prometheus.SummaryOpts{
-		Namespace:  cfg.Namespace,
-		Subsystem:  cfg.Subsystem,
-		Name:       name,
-		Help:       help,
-		Objectives: objectives,
-	}
-	summary := prometheus.NewSummaryVec(opts, []string{adapterLabel})
-	registry.MustRegister(summary)
-	return summary
 }
 
 func (m *Metrics) RecordConnectionAccept(success bool) {
