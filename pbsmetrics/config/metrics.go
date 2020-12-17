@@ -336,6 +336,6 @@ func (me *DummyMetricsEngine) RecordPodCombGenTime(labels pbsmetrics.PodLabels, 
 func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 }
 
-// RecordAdapterVideoBidDuration ...
+// RecordAdapterVideoBidDuration as a noop
 func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
 }
