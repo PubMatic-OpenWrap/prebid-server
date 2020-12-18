@@ -2,6 +2,7 @@ package tagbidder
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -42,7 +43,9 @@ func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb.BidRequ
 		return nil, err[:]
 	}
 
-	return handler.vastTagToBidderResponse(internalRequest, externalRequest, response)
+	bidResponses, err := handler.vastTagToBidderResponse(internalRequest, externalRequest, response)
+	fmt.Printf("\n[V1] errors:[%v] bidresponse:[%v]", err, bidResponses)
+	return bidResponses, err
 }
 
 //ParseExtension will parse VAST XML extension object

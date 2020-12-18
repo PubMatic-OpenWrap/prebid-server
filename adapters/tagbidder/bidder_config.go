@@ -31,7 +31,7 @@ type BidderConfig struct {
 	Keys         map[string]Keys     `json:"keys,omitempty"`
 }
 
-var bidderConfig map[string]*BidderConfig
+var bidderConfig = map[string]*BidderConfig{}
 
 //RegisterBidderConfig will be used by each bidder to set its respective macro Mapper
 func RegisterBidderConfig(bidder string, config *BidderConfig) {

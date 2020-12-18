@@ -1,5 +1,5 @@
 {
-    "url": "https://search.spotxchange.com/vast/2.00/{{channel_id}}?VPI=MP4&app[bundle]={{MacroAppBundle}}&app[name]={{MacroAppName}}&app[cat]={{MacroCategory}}&app[domain]={{MacroDomain}}&app[privacypolicy]={{MacroPrivacyPolicy}}&app[storeurl]={{MacroAppStoreURL}}&app[ver]={{MacroAppVersion}}&cb={{MacroCacheBuster}}&device[devicetype]={{MacroDeviceType}}&device[ifa]={{MacroDeviceIFA}}&device[make]={{MacroMake}}&device[model]={{MacroModel}}&device[dnt]={{MacroDNT}}&player_height={{MacroVideoPlayerHeight}}&player_width={{MacroVideoPlayerWidth}}&ip_addr={{MacroIP}}&device[ua]={{MacroUserAgent}}",
+    "url": "https://search.spotxchange.com/vast/2.00/{{channel_id}}?VPI=MP4&app[bundle]={{MacroAppBundle}}&app[name]={{MacroAppName}}&app[cat]={{MacroCategory}}&app[domain]={{MacroDomain}}&app[privacypolicy]={{MacroPrivacyPolicy}}&app[storeurl]={{MacroAppStoreURL_ESC}}&app[ver]={{MacroAppVersion}}&cb={{MacroCacheBuster}}&device[devicetype]={{MacroDeviceType}}&device[ifa]={{MacroDeviceIFA}}&device[make]={{MacroMake}}&device[model]={{MacroModel}}&device[dnt]={{MacroDNT}}&player_height={{MacroVideoPlayerHeight}}&player_width={{MacroVideoPlayerWidth}}&ip_addr={{MacroIP}}&device[ua]={{MacroUserAgent_ESC}}",
     "response": "vasttag",
     "flags": {
         "remove_empty": true

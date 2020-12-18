@@ -809,7 +809,7 @@ func (tag *BidderMacro) MacroIP(key string) string {
 
 //MacroDeviceType contains definition for DeviceType Parameter
 func (tag *BidderMacro) MacroDeviceType(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request.Device && tag.Request.Device.DeviceType > 0 {
 		return strconv.FormatInt(int64(tag.Request.Device.DeviceType), intBase)
 	}
 	return ""

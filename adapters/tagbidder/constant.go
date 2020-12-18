@@ -155,8 +155,8 @@ const (
 )
 
 const (
-	RequestExtPrefix    = `reqext.`
-	ImpressionExtPrefix = `impext.`
+	RequestExtPrefix    = `reqext`
+	ImpressionExtPrefix = `impext`
 )
 
 //ResponseHandlerType list of tag based response handlers
