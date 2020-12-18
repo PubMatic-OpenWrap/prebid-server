@@ -41,6 +41,7 @@ type Metrics struct {
 	adapterRequestsTimer         *prometheus.HistogramVec
 	adapterUserSync              *prometheus.CounterVec
 	adapterDuplicateBidIDCounter *prometheus.CounterVec
+	adapterVideoBidDuration      *prometheus.HistogramVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -267,6 +268,10 @@ func NewMetrics(cfg config.PrometheusMetrics) *Metrics {
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
+	metrics.adapterVideoBidDuration = newHistogram(cfg, metrics.Registry,
+		"adapter_vidbid_dur",
+		"Video Ad durations returned by the bidder", []string{adapterLabel},
+		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60})
 	preloadLabelValues(&metrics)
 
 	return &metrics
@@ -533,4 +538,11 @@ func (m *Metrics) RecordPodCombGenTime(labels pbsmetrics.PodLabels, elapsedTime 
 // final ad pod response and time taken by underneath algorithm to generate them
 func (m *Metrics) RecordPodCompititveExclusionTime(labels pbsmetrics.PodLabels, elapsedTime time.Duration) {
 	recordAlgoTime(m.podCompExclTimer, labels, elapsedTime)
+}
+
+//RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
+func (m *Metrics) RecordAdapterVideoBidDuration(labels pbsmetrics.AdapterLabels, videoBidDuration int) {
+	if videoBidDuration > 0 {
+		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
+	}
 }
