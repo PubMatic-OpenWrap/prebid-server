@@ -167,3 +167,23 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 var getRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }
+
+// getBidDuration extracts the duration of the bid from ad element.
+// The lookup may vary from vast version provided in the input
+// returns duration in seconds or error if failed to obtained the duration
+//
+// The ad server uses the <Duration> element to denote
+// the intended playback duration for the video or audio component of the ad.
+// Time value may be in the format HH:MM:SS.mmm where .mmm indicates milliseconds.
+// Providing milliseconds is optional.
+//
+// Reference
+//
+// 1.https://iabtechlab.com/wp-content/uploads/2019/06/VAST_4.2_final_june26.pdf
+// 2.https://iabtechlab.com/wp-content/uploads/2018/11/VAST4.1-final-Nov-8-2018.pdf
+// 3.https://iabtechlab.com/wp-content/uploads/2016/05/VAST4.0_Updated_April_2016.pdf
+// 4.https://iabtechlab.com/wp-content/uploads/2016/04/VASTv3_0.pdf
+func getBidDuration(version string, ad *etree.Element) (float32, error) {
+
+	return 0, nil
+}
