@@ -159,6 +159,7 @@ const (
 	ImpressionExtPrefix = `impext.`
 )
 
+//ResponseHandlerType list of tag based response handlers
 type ResponseHandlerType string
 
 const (
@@ -166,10 +167,11 @@ const (
 	VASTTagResponseHandlerType ResponseHandlerType = `vasttag`
 )
 
-type ValueType string
+//MacroValueType list of values allowed for macro's
+type MacroValueType string
 
 const (
-	ConstantValueType ValueType = `constant`
-	JSONKeyValueType  ValueType = `jsonkey`
-	CallBackValueType ValueType = `callback`
+	ConstantValueType MacroValueType = `constant`
+	JSONKeyValueType  MacroValueType = `jsonkey`
+	CallBackValueType MacroValueType = `callback`
 )

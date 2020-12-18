@@ -66,8 +66,8 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/somoaudience"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sonobi"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sovrn"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/spotx"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/synacormedia"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tagbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tappx"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/telaria"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/triplelift"
@@ -150,13 +150,14 @@ func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapter
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Password,
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Tracker),
 
-		openrtb_ext.BidderSharethrough:     sharethrough.NewSharethroughBidder(cfg.Adapters[string(openrtb_ext.BidderSharethrough)].Endpoint),
-		openrtb_ext.BidderSmartRTB:         smartrtb.NewSmartRTBBidder(cfg.Adapters[string(openrtb_ext.BidderSmartRTB)].Endpoint),
-		openrtb_ext.BidderSomoaudience:     somoaudience.NewSomoaudienceBidder(cfg.Adapters[string(openrtb_ext.BidderSomoaudience)].Endpoint),
-		openrtb_ext.BidderSonobi:           sonobi.NewSonobiBidder(client, cfg.Adapters[string(openrtb_ext.BidderSonobi)].Endpoint),
-		openrtb_ext.BidderSovrn:            sovrn.NewSovrnBidder(client, cfg.Adapters[string(openrtb_ext.BidderSovrn)].Endpoint),
-		openrtb_ext.BidderSynacormedia:     synacormedia.NewSynacorMediaBidder(cfg.Adapters[string(openrtb_ext.BidderSynacormedia)].Endpoint),
-		openrtb_ext.BidderSpotX:            spotx.NewSpotxBidder(cfg.Adapters[string(openrtb_ext.BidderSpotX)].Endpoint),
+		openrtb_ext.BidderSharethrough: sharethrough.NewSharethroughBidder(cfg.Adapters[string(openrtb_ext.BidderSharethrough)].Endpoint),
+		openrtb_ext.BidderSmartRTB:     smartrtb.NewSmartRTBBidder(cfg.Adapters[string(openrtb_ext.BidderSmartRTB)].Endpoint),
+		openrtb_ext.BidderSomoaudience: somoaudience.NewSomoaudienceBidder(cfg.Adapters[string(openrtb_ext.BidderSomoaudience)].Endpoint),
+		openrtb_ext.BidderSonobi:       sonobi.NewSonobiBidder(client, cfg.Adapters[string(openrtb_ext.BidderSonobi)].Endpoint),
+		openrtb_ext.BidderSovrn:        sovrn.NewSovrnBidder(client, cfg.Adapters[string(openrtb_ext.BidderSovrn)].Endpoint),
+		openrtb_ext.BidderSynacormedia: synacormedia.NewSynacorMediaBidder(cfg.Adapters[string(openrtb_ext.BidderSynacormedia)].Endpoint),
+		//openrtb_ext.BidderSpotX:            spotx.NewSpotxBidder(cfg.Adapters[string(openrtb_ext.BidderSpotX)].Endpoint),
+		openrtb_ext.BidderSpotX:            tagbidder.NewTestTagBidder(openrtb_ext.BidderSpotX, cfg.Adapters[string(openrtb_ext.BidderSpotX)]),
 		openrtb_ext.BidderTappx:            tappx.NewTappxBidder(client, cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderTappx))].Endpoint),
 		openrtb_ext.BidderTelaria:          telaria.NewTelariaBidder(cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderTelaria))].Endpoint),
 		openrtb_ext.BidderTriplelift:       triplelift.NewTripleliftBidder(client, cfg.Adapters[string(openrtb_ext.BidderTriplelift)].Endpoint),

@@ -167,16 +167,16 @@ type IBidderMacro interface {
 	JSONKey(string) string
 }
 
-var bidderMacro map[string]func() IBidderMacro
+var bidderMacroMap = map[string]func() IBidderMacro{}
 
 //RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
 func RegisterNewBidderMacro(bidder string, macro func() IBidderMacro) {
-	bidderMacro[bidder] = macro
+	bidderMacroMap[bidder] = macro
 }
 
 //GetNewBidderMacro will return IBidderMacro of specific bidder
 func GetNewBidderMacro(bidder string) (IBidderMacro, error) {
-	callback, ok := bidderMacro[bidder]
+	callback, ok := bidderMacroMap[bidder]
 	if ok {
 		return callback(), nil
 	}

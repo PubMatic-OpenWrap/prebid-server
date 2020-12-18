@@ -30,6 +30,19 @@ func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) (*Ta
 	return obj, nil
 }
 
+//NewTestTagBidder is an constructor for TagBidder
+func NewTestTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *TagBidder {
+	obj := &TagBidder{
+		bidderName:    string(bidderName),
+		adapterConfig: &config,
+		bidderConfig:  GetBidderConfig(string(bidderName)),
+	}
+	if nil == obj.bidderConfig {
+		return nil
+	}
+	return obj
+}
+
 //MakeRequests will contains default definition for processing queries
 func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	bidderMacro, err := GetNewBidderMacro(a.bidderName)

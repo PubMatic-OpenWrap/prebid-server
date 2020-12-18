@@ -1,6 +1,6 @@
 package tagbidder
 
-var bidderMapper map[string]Mapper
+var bidderMapper = map[string]Mapper{}
 
 //RegisterBidderMapper will be used by each bidder to set its respective macro Mapper
 func RegisterBidderMapper(bidder string, bidderMap Mapper) {
