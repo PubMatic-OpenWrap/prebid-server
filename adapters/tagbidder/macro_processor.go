@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	macroPrefix          string = `{` //macro prefix can not be empty
-	macroSuffix          string = `}` //macro suffix can not be empty
+	macroPrefix          string = `{{` //macro prefix can not be empty
+	macroSuffix          string = `}}` //macro suffix can not be empty
 	macroEscapeSuffix    string = `_ESC`
 	macroPrefixLen       int    = len(macroPrefix)
 	macroSuffixLen       int    = len(macroSuffix)
