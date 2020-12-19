@@ -43,39 +43,45 @@ func (mp *MacroProcessor) SetMacro(key, value string) {
 
 //processKey : returns value of key macro and status found or not
 func (mp *MacroProcessor) processKey(key string) (string, bool) {
-	if value, ok := mp.macroCache[key]; ok {
-		//found key in cache and return its value
-		return value, true
-	}
-
+	var valueCallback *macroCallBack
+	var value string
 	nEscaping := 0
 	tmpKey := key
+	found := false
+
 	for {
-		if valueCallback, ok := mp.mapper[tmpKey]; ok {
-			//found callback function
-			value := valueCallback.callback(mp.bidderMacro, tmpKey)
-			if len(value) > 0 {
-				if nEscaping > 0 {
-					//escaping string nEscaping times
-					value = escape(value, nEscaping)
-				}
-
-				if valueCallback.cached {
-					//cached value if its cached flag is true
-					mp.macroCache[key] = value
-				}
+		value, found = mp.macroCache[tmpKey]
+		if false == found {
+			valueCallback, found = mp.mapper[tmpKey]
+			if found {
+				//found callback function
+				value = valueCallback.callback(mp.bidderMacro, tmpKey)
+				break
+			} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
+				//escaping macro found
+				tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
+				nEscaping++
+				continue
 			}
-			return value, true
-
-		} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
-			//escaping macro found
-			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
-			nEscaping++
-			continue
 		}
 		break
 	}
-	return "", false
+
+	if found {
+		if len(value) > 0 {
+			if nEscaping > 0 {
+				//escaping string nEscaping times
+				value = escape(value, nEscaping)
+			}
+
+			if nil != valueCallback && valueCallback.cached {
+				//cached value if its cached flag is true
+				mp.macroCache[key] = value
+			}
+		}
+	}
+
+	return value, found
 }
 
 //ProcessString : Substitute macros in input string
