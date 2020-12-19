@@ -124,6 +124,11 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		typedBid.Bid.AdM = string(response.Body)
 	}
 
+	//if bid.CrID is not set in ParseExtension
+	if len(typedBid.Bid.CrID) == 0 {
+		typedBid.Bid.CrID = getCreativeID(adElement)
+	}
+
 	return bidResponse, nil
 }
 
@@ -162,6 +167,10 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 	}
 
 	return priceValue, currency, true
+}
+
+func getCreativeID(ad *etree.Element) string {
+	return getRandomID()
 }
 
 var getRandomID = func() string {
