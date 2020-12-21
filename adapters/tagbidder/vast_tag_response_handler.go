@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/PubMatic-OpenWrap/openrtb"
@@ -168,7 +170,7 @@ var getRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }
 
-// getBidDuration extracts the duration of the bid from ad element.
+// getBidDuration extracts the duration of the bid from creativeTag element.
 // The lookup may vary from vast version provided in the input
 // returns duration in seconds or error if failed to obtained the duration
 //
@@ -183,6 +185,47 @@ var getRandomID = func() string {
 // 2.https://iabtechlab.com/wp-content/uploads/2018/11/VAST4.1-final-Nov-8-2018.pdf
 // 3.https://iabtechlab.com/wp-content/uploads/2016/05/VAST4.0_Updated_April_2016.pdf
 // 4.https://iabtechlab.com/wp-content/uploads/2016/04/VASTv3_0.pdf
-func getBidDuration(version string, ad *etree.Element) (float32, error) {
-	return 0, nil
+func getBidDuration(version string, creativeTag *etree.Element) (float32, error) {
+	node := creativeTag.FindElement("./Linear/Duration")
+	duration := node.Text() //  HH:MM:SS.mmm (hours:minutes:seconds.milliseconds)
+
+	// https://stackoverflow.com/questions/47067211/parsing-hhmmss-time-from-stopwatch-in-go
+	// 12:39:34.847
+	// 12h39m34s847ms
+
+	// \d{1,2}:\d{1,2}:\d{1,2}(.\d)?
+	//pattern := `^(\d{1,2}):(\d{1,2}):(\d{1,2})(\.\d+)?$`
+	// pattern := `^(\d{1,2}):(\d{1,2}):(\d{1,2})\.(?<=\.)\d{1,}+$`
+	pattern := `^(\d{1,2}):(\d{1,2}):(\d{1,2})(\.?)(\d{1,})?$`
+	// check if milliseconds is provided
+	re := regexp.MustCompile(pattern)
+	match := re.FindStringSubmatch(duration)
+
+	fmt.Println("input = ", match[0])
+	fmt.Println("hour = ", match[1])
+	fmt.Println("min = ", match[2])
+	fmt.Println("sec = ", match[3])
+	fmt.Println("millis = ", match[5])
+	repl := "${1}h${2}m${3}s"
+	if match[5] != "" {
+		repl += "${5}ms"
+	}
+	duration = re.ReplaceAllString(duration, repl)
+
+	// strings.Contains(duration, ".")
+	// duration = strings.Replace(duration, ":", "h", 1)
+	// duration = strings.Replace(duration, ":", "m", 1)
+	// duration = strings.Replace(duration, ".", "s", 1)
+	// durationArray := strings.Split(duration, "s")
+	// if len(durationArray) > 1 && durationArray[1] != "" { // milliseconds is provided hence adding ms unit
+	// 	duration += "ms"
+	// }
+	dur, err := time.ParseDuration(duration)
+	fmt.Println(dur)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	result := float32(dur.Seconds())
+	fmt.Println(result)
+	return result, err
 }
