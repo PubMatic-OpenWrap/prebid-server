@@ -45,6 +45,7 @@ type Metrics struct {
 	privacyCOPPA                  *prometheus.CounterVec
 	privacyLMT                    *prometheus.CounterVec
 	privacyTCF                    *prometheus.CounterVec
+	timeout_notifications         *prometheus.CounterVec
 	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics

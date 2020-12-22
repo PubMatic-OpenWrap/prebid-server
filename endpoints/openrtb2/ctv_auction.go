@@ -196,6 +196,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	response, err = deps.holdAuction(request, usersyncs, account)
+
 	ao.Request = request
 	ao.Response = response
 	if err != nil || nil == response {
