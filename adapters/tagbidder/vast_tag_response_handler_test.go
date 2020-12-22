@@ -143,3 +143,12 @@ func TestGetDurationInSeconds(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkGetDuration(b *testing.B) {
+	doc := etree.NewDocument()
+	doc.ReadFromString(`<Creative sequence="1"> <Linear> <Duration>0:0:56.3</Duration> </Linear> </Creative>`)
+	creative := doc.FindElement("/Creative")
+	for n := 0; n < b.N; n++ {
+		getDuration(creative)
+	}
+}
