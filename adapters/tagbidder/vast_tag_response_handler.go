@@ -183,7 +183,7 @@ var getRandomID = func() string {
 // getDuration extracts the duration of the bid from input creative of Linear type.
 // The lookup may vary from vast version provided in the input
 // returns duration in seconds or error if failed to obtained the duration.
-// If multple Linear tags are present, only first one will be used
+// If multple Linear tags are present, onlyfirst one will be used
 //
 // It will lookup for duration only in case of creative type is Linear.
 // If creative type other than Linear then this function will return error
@@ -211,7 +211,7 @@ func getDuration(creative *etree.Element) (float64, error) {
 		return 0, errors.New("Invalid Duration")
 	}
 	duration := node.Text()
-	pattern := `^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d+))?$`
+	pattern := `^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`
 	// check if milliseconds is provided
 	re := regexp.MustCompile(pattern)
 	match := re.FindStringSubmatch(duration)
@@ -226,7 +226,7 @@ func getDuration(creative *etree.Element) (float64, error) {
 	duration = re.ReplaceAllString(duration, repl)
 	dur, err := time.ParseDuration(duration)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	return dur.Seconds(), err
 }
