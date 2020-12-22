@@ -35,7 +35,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 				internalRequest: &openrtb.BidRequest{
 					ID: `request_id_1`,
 					Imp: []openrtb.Imp{
-						openrtb.Imp{
+						{
 							ID: `imp_id_1`,
 						},
 					},
@@ -50,7 +50,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 			want: want{
 				bidderResponse: &adapters.BidderResponse{
 					Bids: []*adapters.TypedBid{
-						&adapters.TypedBid{
+						{
 							Bid: &openrtb.Bid{
 								ID:    `1234`,
 								ImpID: `imp_id_1`,
@@ -152,5 +152,40 @@ func BenchmarkGetDuration(b *testing.B) {
 	creative := doc.FindElement("/Creative")
 	for n := 0; n < b.N; n++ {
 		getDuration(creative)
+	}
+}
+
+func TestGetCreativeId(t *testing.T) {
+	type args struct {
+		creativeTag string // ad element
+	}
+	type want struct {
+		id string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{name: "creative tag with id", want: want{id: "233ff44"}, args: args{creativeTag: `<Creative id="233ff44"></Creative>`}},
+		{name: "creative tag without id", want: want{id: ""}, args: args{creativeTag: `<Creative></Creative>`}},
+		{name: "no creative tag", want: want{id: ""}, args: args{creativeTag: ""}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := etree.NewDocument()
+			doc.ReadFromString(tt.args.creativeTag)
+			id := getCreativeID(doc.FindElement("./Creative"))
+			assert.Equal(t, tt.want.id, id)
+		})
+	}
+}
+
+func BenchmarkGetCreativeID(b *testing.B) {
+	doc := etree.NewDocument()
+	doc.ReadFromString(`<Creative id="132324eerr">  </Creative>`)
+	creative := doc.FindElement("/Creative")
+	for n := 0; n < b.N; n++ {
+		getCreativeID(creative)
 	}
 }

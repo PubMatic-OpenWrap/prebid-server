@@ -89,6 +89,8 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	creatives := adElement.FindElements("Creatives/Creative")
 	if nil != creatives {
 		for _, creative := range creatives {
+			// get creative id
+			typedBid.Bid.CrID = getCreativeID(creative)
 			// get duration. Ignore errors
 			dur, _ := getDuration(creative)
 			typedBid.BidVideo.Duration = int(dur) // prebid expects int value
@@ -229,4 +231,12 @@ func getDuration(creative *etree.Element) (float64, error) {
 		return 0, err
 	}
 	return dur.Seconds(), err
+}
+
+//getCreativeID looks for ID inside input creative tag
+func getCreativeID(creative *etree.Element) string {
+	if nil == creative {
+		return ""
+	}
+	return creative.SelectAttrValue("id", "")
 }
