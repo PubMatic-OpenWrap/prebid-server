@@ -25,7 +25,7 @@ import (
 // See issue #559
 var Rev string
 
-const schemaDirectory = "/usr/local/src/ssheaderbidding/static/"
+const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/"
 
 /*
 func init() {
@@ -100,7 +100,7 @@ func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
 	return router.OrtbAuctionEndpointWrapper(w, r)
 }
 
-func VideoAuction(w http.ResponseWriter, r *http.Request) error {
+var VideoAuction = func(w http.ResponseWriter, r *http.Request) error {
 	return router.VideoAuctionEndpointWrapper(w, r)
 }
 
