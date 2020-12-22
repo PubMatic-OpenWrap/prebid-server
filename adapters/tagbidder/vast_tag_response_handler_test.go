@@ -116,7 +116,7 @@ func TestGetDurationInSeconds(t *testing.T) {
 		{name: "duration = 56.445 (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>56.445</Duration> </Linear> </Creative>`}},
 		{name: "duration = a:b:c.d (no numbers)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>a:b:c.d</Duration> </Linear> </Creative>`}},
 
-		// tag validations tess
+		// tag validations tests
 		{name: "Linear Creative no duration", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative><Linear><Linear></Creative>`}},
 		{name: "Companion Creative no duration", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative><CompanionAds></CompanionAds></Creative>`}},
 		{name: "Non-Linear Creative no duration", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative><NonLinearAds></NonLinearAds></Creative>`}},
