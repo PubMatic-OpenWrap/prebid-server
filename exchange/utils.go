@@ -252,7 +252,10 @@ func splitBidRequest(req *openrtb.BidRequest,
 		} else {
 			blabels[coreBidder].CookieFlag = pbsmetrics.CookieFlagYes
 		}
+
 		reqCopy.Imp = imps
+		prepareSource(&reqCopy, bidder, sChainsByBidder)
+		
 		if len(bidderExt) != 0 {
 			bidderName := openrtb_ext.BidderName(bidder)
 			if bidderParams, ok := bidderExt[string(bidderName)]; ok {
@@ -261,13 +264,12 @@ func splitBidRequest(req *openrtb.BidRequest,
 				requestExt.Prebid.BidderParams = nil
 			}
 
-			if reqCopy.Ext, err = json.Marshal(&requestExt); err != nil {
+			if reqCopy.Ext, err = getExtJson(req, requestExt); err != nil {
 				return nil, []error{err}
 			}
+		} else {
+			reqCopy.Ext = reqExt
 		}
-
-		prepareSource(&reqCopy, bidder, sChainsByBidder)
-		reqCopy.Ext = reqExt
 
 		requestsByBidder[openrtb_ext.BidderName(bidder)] = &reqCopy
 	}
