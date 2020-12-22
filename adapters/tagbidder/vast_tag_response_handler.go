@@ -180,9 +180,10 @@ var getRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }
 
-// getDurationInSeconds extracts the duration of the bid from creativeTag element.
+// getDuration extracts the duration of the bid from input creative of Linear type.
 // The lookup may vary from vast version provided in the input
-// returns duration in seconds or error if failed to obtained the duration
+// returns duration in seconds or error if failed to obtained the duration.
+// If multple Linear tags are present, only first one will be used
 //
 // It will lookup for duration only in case of creative type is Linear.
 // If creative type other than Linear then this function will return error

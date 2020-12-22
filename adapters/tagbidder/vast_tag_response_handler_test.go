@@ -81,15 +81,17 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 }
 
 //TestGetDurationInSeconds ...
-//hh:mm:ss.mmm => 3:40:43.5 => 3 hours, 40 minuts, 43 seconds and 5 milliseconds
+// hh:mm:ss.mmm => 3:40:43.5 => 3 hours, 40 minutes, 43 seconds and 5 milliseconds
+// => 3*60*60 + 40*60 + 43 + 5*0.001 => 10800 + 2400 + 43 + 0.005 => 13243.005
 func TestGetDurationInSeconds(t *testing.T) {
 	type args struct {
 		version     string // vast version
 		creativeTag string // ad element
 	}
 	type want struct {
-		duration float64 // seconds  (will converted from string with format as  HH:MM:SS.mmm)
-		err      error
+		duration    float64 // seconds  (will converted from string with format as  HH:MM:SS.mmm)
+		durationInt int
+		err         error
 	}
 	tests := []struct {
 		name string
@@ -97,13 +99,16 @@ func TestGetDurationInSeconds(t *testing.T) {
 		want want
 	}{
 		// duration validation tests
-		{name: "duration 00:00:25 (= 25 seconds)", want: want{duration: 25}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:25</Duration> </Linear> </Creative>`}},
+		{name: "duration 00:00:25 (= 25 seconds)", want: want{duration: 25, durationInt: 25}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:25</Duration> </Linear> </Creative>`}},
 		{name: "duration 00:00:-25 (= -25 seconds)", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:-25</Duration> </Linear> </Creative>`}},
-		{name: "duration 00:01:08 (1 min 8 seconds = 68 seconds)", want: want{duration: 68}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:01:08</Duration> </Linear> </Creative>`}},
-		{name: "duration 02:13:12 (2 hrs 13 min  12 seconds) = 7992 seconds)", want: want{duration: 7992}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>02:13:12</Duration> </Linear> </Creative>`}},
-		{name: "invalid duration 3:13:900 (3 hrs 13 min  900 seconds) = ?? )", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:13:900</Duration> </Linear> </Creative>`}},
+		{name: "duration 00:01:08 (1 min 8 seconds = 68 seconds)", want: want{duration: 68, durationInt: 68}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:01:08</Duration> </Linear> </Creative>`}},
+		{name: "duration 02:13:12 (2 hrs 13 min  12 seconds) = 7992 seconds)", want: want{duration: 7992, durationInt: 7992}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>02:13:12</Duration> </Linear> </Creative>`}},
+		{name: "duration 3:40:43.5 (3 hrs 40 min  43 seconds 5 ms) = 6043.005 seconds (int -> 6043 seconds))", want: want{duration: 13243.005, durationInt: 13243}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:40:43.5</Duration> </Linear> </Creative>`}},
+		{name: "invalid duration 3:13:900 (3 hrs 13 min  900 seconds) = Invalid seconds )", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:13:900</Duration> </Linear> </Creative>`}},
 		{name: "invalid duration 3:13:34:44 (3 hrs 13 min 34 seconds :44=invalid) = ?? )", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:13:34:44</Duration> </Linear> </Creative>`}},
-		{name: "duration = 0:0:45.038 , with milliseconds duration (0 hrs 0 min 45 seconds and 038 millseconds) = 45.038 seconds )", want: want{duration: 45.038}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:45.038</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:45.038 , with milliseconds duration (0 hrs 0 min 45 seconds and 038 millseconds) = 45.038 seconds (int -> 45 seconds) )", want: want{duration: 45.038, durationInt: 45}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:45.038</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:48.50  = 48.050 seconds (int -> 48 seconds))", want: want{duration: 48.050, durationInt: 48}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:48.50</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:28.59  = 28.059 seconds  (int -> 28 seconds))", want: want{duration: 28.059, durationInt: 28}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:28.59</Duration> </Linear> </InLine> </Creative>`}},
 		{name: "duration = 56 (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>56</Duration> </Linear> </Creative>`}},
 		{name: "duration = :56 (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>:56</Duration> </Linear> </Creative>`}},
 		{name: "duration = :56: (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{version: "2.0", creativeTag: `<Creative sequence="1"> <Linear> <Duration>:56:</Duration> </Linear> </Creative>`}},
@@ -119,20 +124,22 @@ func TestGetDurationInSeconds(t *testing.T) {
 		{name: "Nil Creative tag", want: want{err: errors.New("Invalid Creative")}, args: args{creativeTag: ""}},
 
 		// multiple linear tags in creative
-		{name: "Multiple Linear Ads within Creative", want: want{duration: 25}, args: args{creativeTag: `<Creative><Linear><Duration>0:0:25<Duration></Linear><Linear><Duration>0:0:30<Duration></Linear></Creative>`}},
+		{name: "Multiple Linear Ads within Creative", want: want{duration: 25, durationInt: 25}, args: args{creativeTag: `<Creative><Linear><Duration>0:0:25<Duration></Linear><Linear><Duration>0:0:30<Duration></Linear></Creative>`}},
 		// Case sensitivity check - passing DURATION (vast is case-sensitive as per https://vastvalidator.iabtechlab.com/dash)
 		{name: "<DURATION> all caps", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative><Linear><DURATION>0:0:10</Duration></Linear></Creative>`}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// if tt.name != "<DURATION> all caps" {
-			// 	return
-			// }
 			doc := etree.NewDocument()
 			doc.ReadFromString(tt.args.creativeTag)
 			dur, err := getDuration(doc.FindElement("./Creative"))
 			assert.Equal(t, tt.want.duration, dur)
+			assert.Equal(t, tt.want.durationInt, int(dur))
 			assert.Equal(t, tt.want.err, err)
+			// if error expects 0 value for duration
+			if nil != err {
+				assert.Equal(t, 0.0, dur)
+			}
 		})
 	}
 }
