@@ -1483,6 +1483,76 @@ func TestRecordPodCompetitiveExclusionTime(t *testing.T) {
 	})
 }
 
+func TestRecordAdapterVideoBidDuration(t *testing.T) {
+
+	testCases := []struct {
+		description       string
+		bidderAdDurations map[string][]int
+		expectedSum       map[string]int
+		expectedCount     map[string]int
+		expectedBuckets   map[string]map[int]int // cumulative
+	}{
+		{
+			description: "single bidder multiple ad durations",
+			bidderAdDurations: map[string][]int{
+				"bidder_1": {5, 10, 11, 32},
+			},
+			expectedSum:   map[string]int{"bidder_1": 58},
+			expectedCount: map[string]int{"bidder_1": 4},
+			expectedBuckets: map[string]map[int]int{
+				"bidder_1": {5: 1, 10: 2, 15: 3, 35: 4}, // Upper bound : cumulative number
+			},
+		},
+		{
+			description: "multiple bidders multiple ad durations",
+			bidderAdDurations: map[string][]int{
+				"bidder_1": {5, 10, 11, 32, 39},
+				"bidder_2": {25, 30},
+			},
+			expectedSum:   map[string]int{"bidder_1": 97, "bidder_2": 55},
+			expectedCount: map[string]int{"bidder_1": 5, "bidder_2": 2},
+			expectedBuckets: map[string]map[int]int{
+				"bidder_1": {5: 1, 10: 2, 15: 3, 35: 4, 40: 5, 41: 5},
+				"bidder_2": {25: 1, 30: 2},
+			},
+		},
+		{
+			description: "bidder with 0 ad durations",
+			bidderAdDurations: map[string][]int{
+				"bidder_1": {5, 0, 0, 27},
+			},
+			expectedSum:   map[string]int{"bidder_1": 32},
+			expectedCount: map[string]int{"bidder_1": 2}, // must exclude 2 observations having 0 durations
+			expectedBuckets: map[string]map[int]int{
+				"bidder_1": {5: 1, 30: 2},
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			m := createMetricsForTesting()
+			for adapterName, adDurations := range test.bidderAdDurations {
+				for _, adDuration := range adDurations {
+					m.RecordAdapterVideoBidDuration(pbsmetrics.AdapterLabels{
+						Adapter: openrtb_ext.BidderName(adapterName),
+					}, adDuration)
+				}
+				result := getHistogramFromHistogramVec(m.adapterVideoBidDuration, adapterLabel, adapterName)
+				for _, bucket := range result.GetBucket() {
+					cnt, ok := test.expectedBuckets[adapterName][int(bucket.GetUpperBound())]
+					if ok {
+						assert.Equal(t, uint64(cnt), bucket.GetCumulativeCount())
+					}
+				}
+				expectedCount := test.expectedCount[adapterName]
+				expectedSum := test.expectedSum[adapterName]
+				assertHistogram(t, "adapter_vidbid_dur", result, uint64(expectedCount), float64(expectedSum))
+			}
+		})
+	}
+}
+
 func testAlgorithmMetrics(t *testing.T, input int, f func(m *Metrics) dto.Histogram) {
 	// test input
 	adRequests := 2
