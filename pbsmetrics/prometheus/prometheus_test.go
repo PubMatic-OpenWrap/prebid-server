@@ -1,7 +1,6 @@
 package prometheusmetrics
 
 import (
-  
 	"fmt"
 
 	"strconv"

@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-
-	// "math/rand"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -298,7 +296,6 @@ func updateHbPbCatDur(bid *pbsOrtbBid, dealTier openrtb_ext.DealTier, bidCategor
 		prefixTier := fmt.Sprintf("%s%d_", dealTier.Prefix, bid.dealPriority)
 		bid.dealTierSatisfied = true
 
-		prefixTier := fmt.Sprintf("%s%d_", dealTierInfo.Prefix, bid.dealPriority)
 		if oldCatDur, ok := bidCategory[bid.bid.ID]; ok {
 			oldCatDurSplit := strings.SplitAfterN(oldCatDur, "_", 2)
 			oldCatDurSplit[0] = prefixTier
@@ -402,11 +399,6 @@ func (e *exchange) getAllBids(ctx context.Context, cleanRequests map[openrtb_ext
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
 			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
-		}
-
-		if bidIDsCollision {
-			// record this request count this request if bid collision is detected
-			e.me.RecordRequestHavingDuplicateBidID()
 		}
 
 	}
@@ -526,7 +518,6 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 }
 
 func applyCategoryMapping(ctx context.Context, bidRequest *openrtb.BidRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
-
 	res := make(map[string]string)
 
 	type bidDedupe struct {
@@ -652,7 +643,7 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb.BidRequest, r
 				categoryDuration = fmt.Sprintf("%s_%ds", pb, newDur)
 				dupeKey = categoryDuration
 			}
-      
+
 			if appendBidderNames {
 				categoryDuration = fmt.Sprintf("%s_%s", categoryDuration, bidderName.String())
 			}
@@ -677,7 +668,6 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb.BidRequest, r
 					}
 
 					if dupeBidPrice < currBidPrice {
-
 						if dupe.bidderName == bidderName {
 							// An older bid from the current bidder
 							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
@@ -702,7 +692,6 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb.BidRequest, r
 				}
 				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
-
 			res[bidID] = categoryDuration
 		}
 

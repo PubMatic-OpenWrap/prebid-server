@@ -255,7 +255,7 @@ func splitBidRequest(req *openrtb.BidRequest,
 
 		reqCopy.Imp = imps
 		prepareSource(&reqCopy, bidder, sChainsByBidder)
-		
+
 		if len(bidderExt) != 0 {
 			bidderName := openrtb_ext.BidderName(bidder)
 			if bidderParams, ok := bidderExt[string(bidderName)]; ok {
