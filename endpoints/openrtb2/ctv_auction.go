@@ -884,7 +884,6 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	return rawExt
 }
 
-
 //getAdDuration determines the duration of video ad from given bid.
 //it will try to get the actual ad duration returned by the bidder using prebid.video.duration
 //if prebid.video.duration = 0 or there is error occured in determing it then
@@ -896,7 +895,7 @@ func getAdDuration(bid openrtb.Bid, defaultDuration int64) int {
 	}
 	return int(duration)
 }
-  
+
 func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value string) error {
 	if nil == bid {
 		return errors.New("Invalid bid")
