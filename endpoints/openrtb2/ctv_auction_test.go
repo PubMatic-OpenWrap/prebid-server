@@ -3,6 +3,7 @@ package openrtb2
 import (
 	"encoding/json"
   "testing"
+  
 	"github.com/PubMatic-OpenWrap/openrtb"
   "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
