@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buger/jsonparser"
-
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
@@ -36,18 +35,8 @@ type BidderMacro struct {
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
-func NewBidderMacro() *BidderMacro {
+func NewBidderMacro() IBidderMacro {
 	return &BidderMacro{}
-}
-
-//NewIBidderMacro contains definition for all openrtb macro's
-func NewIBidderMacro() IBidderMacro {
-	return NewBidderMacro()
-}
-
-//RegisterDefaultBidderMacro will register new tag bidder
-func RegisterDefaultBidderMacro(bidderName openrtb_ext.BidderName) {
-	RegisterNewBidderMacro(string(bidderName), NewIBidderMacro)
 }
 
 func (tag *BidderMacro) init() {
@@ -90,6 +79,21 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	tag.Imp = imp
 	return nil
+}
+
+//GetBidderKeys will set bidder level keys
+func (tag *BidderMacro) GetBidderKeys() map[string]string {
+	var bidderExt adapters.ExtImpBidder
+	if err := json.Unmarshal(tag.Imp.Ext, &bidderExt); err != nil {
+		return nil
+	}
+
+	ext := map[string]interface{}{}
+	if err := json.Unmarshal(bidderExt.Bidder, &ext); err != nil {
+		return nil
+	}
+
+	return normalizeJSON(ext)
 }
 
 //SetAdapterConfig will set Adapter config
@@ -146,8 +150,8 @@ func (tag *BidderMacro) MacroWhitelistLang(key string) string {
 	return strings.Join(tag.Request.WLang, comma)
 }
 
-//MacroBlockedseat contains definition for Blockedseat Parameter
-func (tag *BidderMacro) MacroBlockedseat(key string) string {
+//MacroBlockedSeat contains definition for Blockedseat Parameter
+func (tag *BidderMacro) MacroBlockedSeat(key string) string {
 	return strings.Join(tag.Request.BSeat, comma)
 }
 
@@ -1051,42 +1055,4 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
-}
-
-//ConstantValue contains definition for CacheBuster Parameter
-func (tag *BidderMacro) ConstantValue(key string) string {
-	if k, ok := tag.BidderConf.Keys[key]; ok {
-		return k.Value
-	}
-	return ""
-}
-
-//JSONKey contains definition for CacheBuster Parameter
-func (tag *BidderMacro) JSONKey(key string) string {
-	if k, ok := tag.BidderConf.Keys[key]; ok {
-		//get key parts
-		keys := strings.Split(k.Value, ".")
-
-		//check for request ext, imp ext
-		var ext json.RawMessage
-		switch keys[0] {
-		case RequestExtPrefix:
-			ext = tag.Request.Ext
-		case ImpressionExtPrefix:
-			ext = tag.Imp.Ext
-		}
-
-		if len(ext) > 0 && len(keys) > 1 {
-			value, jsontype, _, err := jsonparser.Get(ext, keys[1:]...)
-			if nil != err ||
-				jsontype == jsonparser.NotExist ||
-				jsontype == jsonparser.Null ||
-				jsontype == jsonparser.Object ||
-				jsontype == jsonparser.Array {
-				return ""
-			}
-			return string(value)
-		}
-	}
-	return ""
 }

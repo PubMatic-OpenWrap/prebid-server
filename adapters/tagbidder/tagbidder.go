@@ -2,6 +2,7 @@ package tagbidder
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -50,7 +51,8 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 		return nil, []error{err}
 	}
 
-	bidderMapper := GetBidderMapper(a.bidderName)
+	//bidderMapper := GetBidderMapper(a.bidderName)
+	bidderMapper := GetNewDefaultMapper()
 	if nil == bidderMapper {
 		return nil, []error{errors.New(`missing bidder mapper`)}
 	}
@@ -67,6 +69,11 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 		if err := bidderMacro.LoadImpression(&request.Imp[i]); nil != err {
 			continue
 		}
+
+		//Setting Bidder Level Keys
+		bidderKeys := bidderMacro.GetBidderKeys()
+		macroProcessor.SetBidderKeys(bidderKeys)
+		fmt.Printf("\n[V2] Bidder Keys:%v", bidderKeys)
 
 		uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), a.bidderConfig.Flags)
 

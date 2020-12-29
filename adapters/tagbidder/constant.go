@@ -8,155 +8,150 @@ const (
 //List of Tag Bidder Macros
 const (
 	//Request
-	MacroTest              = `MacroTest`
-	MacroTimeout           = `MacroTimeout`
-	MacroWhitelistSeat     = `MacroWhitelistSeat`
-	MacroWhitelistLang     = `MacroWhitelistLang`
-	MacroBlockedseat       = `MacroBlockedseat`
-	MacroCurrency          = `MacroCurrency`
-	MacroBlockedCategory   = `MacroBlockedCategory`
-	MacroBlockedAdvertiser = `MacroBlockedAdvertiser`
-	MacroBlockedApp        = `MacroBlockedApp`
+	MacroTest              = `test`
+	MacroTimeout           = `timeout`
+	MacroWhitelistSeat     = `wseat`
+	MacroWhitelistLang     = `wlang`
+	MacroBlockedSeat       = `bseat`
+	MacroCurrency          = `cur`
+	MacroBlockedCategory   = `bcat`
+	MacroBlockedAdvertiser = `badv`
+	MacroBlockedApp        = `bapp`
 
 	//Source
-	MacroFD             = `MacroFD`
-	MacroTransactionID  = `MacroTransactionID`
-	MacroPaymentIDChain = `MacroPaymentIDChain`
+	MacroFD             = `fd`
+	MacroTransactionID  = `tid`
+	MacroPaymentIDChain = `pchain`
 
 	//Regs
-	MacroCoppa = `MacroCoppa`
+	MacroCoppa = `coppa`
 
 	//Impression
-	MacroDisplayManager        = `MacroDisplayManager`
-	MacroDisplayManagerVersion = `MacroDisplayManagerVersion`
-	MacroInterstitial          = `MacroInterstitial`
-	MacroTagID                 = `MacroTagID`
-	MacroBidFloor              = `MacroBidFloor`
-	MacroBidFloorCurrency      = `MacroBidFloorCurrency`
-	MacroSecure                = `MacroSecure`
-	MacroPMP                   = `MacroPMP`
+	MacroDisplayManager        = `displaymanager`
+	MacroDisplayManagerVersion = `displaymanagerver`
+	MacroInterstitial          = `instl`
+	MacroTagID                 = `tagid`
+	MacroBidFloor              = `bidfloor`
+	MacroBidFloorCurrency      = `bidfloorcur`
+	MacroSecure                = `secure`
+	MacroPMP                   = `pmp`
 
 	//Video
-	MacroVideoMIMES            = `MacroVideoMIMES`
-	MacroVideoMinimumDuration  = `MacroVideoMinimumDuration`
-	MacroVideoMaximumDuration  = `MacroVideoMaximumDuration`
-	MacroVideoProtocols        = `MacroVideoProtocols`
-	MacroVideoPlayerWidth      = `MacroVideoPlayerWidth`
-	MacroVideoPlayerHeight     = `MacroVideoPlayerHeight`
-	MacroVideoStartDelay       = `MacroVideoStartDelay`
-	MacroVideoPlacement        = `MacroVideoPlacement`
-	MacroVideoLinearity        = `MacroVideoLinearity`
-	MacroVideoSkip             = `MacroVideoSkip`
-	MacroVideoSkipMinimum      = `MacroVideoSkipMinimum`
-	MacroVideoSkipAfter        = `MacroVideoSkipAfter`
-	MacroVideoSequence         = `MacroVideoSequence`
-	MacroVideoBlockedAttribute = `MacroVideoBlockedAttribute`
-	MacroVideoMaximumExtended  = `MacroVideoMaximumExtended`
-	MacroVideoMinimumBitRate   = `MacroVideoMinimumBitRate`
-	MacroVideoMaximumBitRate   = `MacroVideoMaximumBitRate`
-	MacroVideoBoxing           = `MacroVideoBoxing`
-	MacroVideoPlaybackMethod   = `MacroVideoPlaybackMethod`
-	MacroVideoDelivery         = `MacroVideoDelivery`
-	MacroVideoPosition         = `MacroVideoPosition`
-	MacroVideoAPI              = `MacroVideoAPI`
+	MacroVideoMIMES            = `mimes`
+	MacroVideoMinimumDuration  = `minduration`
+	MacroVideoMaximumDuration  = `maxduration`
+	MacroVideoProtocols        = `protocols`
+	MacroVideoPlayerWidth      = `playerwidth`
+	MacroVideoPlayerHeight     = `playerheight`
+	MacroVideoStartDelay       = `startdelay`
+	MacroVideoPlacement        = `placement`
+	MacroVideoLinearity        = `linearity`
+	MacroVideoSkip             = `skip`
+	MacroVideoSkipMinimum      = `skipmin`
+	MacroVideoSkipAfter        = `skipafter`
+	MacroVideoSequence         = `sequence`
+	MacroVideoBlockedAttribute = `battr`
+	MacroVideoMaximumExtended  = `maxextend`
+	MacroVideoMinimumBitRate   = `minbitrate`
+	MacroVideoMaximumBitRate   = `maxbitrate`
+	MacroVideoBoxing           = `boxingallowed`
+	MacroVideoPlaybackMethod   = `playbackmethod`
+	MacroVideoDelivery         = `delivery`
+	MacroVideoPosition         = `position`
+	MacroVideoAPI              = `api`
 
 	//Site
-	MacroSiteID       = `MacroSiteID`
-	MacroSiteName     = `MacroSiteName`
-	MacroSitePage     = `MacroSitePage`
-	MacroSiteReferrer = `MacroSiteReferrer`
-	MacroSiteSearch   = `MacroSiteSearch`
-	MacroSiteMobile   = `MacroSiteMobile`
+	MacroSiteID       = `siteid`
+	MacroSiteName     = `sitename`
+	MacroSitePage     = `page`
+	MacroSiteReferrer = `ref`
+	MacroSiteSearch   = `search`
+	MacroSiteMobile   = `mobile`
 
 	//App
-	MacroAppID       = `MacroAppID`
-	MacroAppName     = `MacroAppName`
-	MacroAppBundle   = `MacroAppBundle`
-	MacroAppStoreURL = `MacroAppStoreURL`
-	MacroAppVersion  = `MacroAppVersion`
-	MacroAppPaid     = `MacroAppPaid`
+	MacroAppID       = `appid`
+	MacroAppName     = `appname`
+	MacroAppBundle   = `bundle`
+	MacroAppStoreURL = `storeurl`
+	MacroAppVersion  = `appver`
+	MacroAppPaid     = `paid`
 
 	//SiteAppCommon
-	MacroCategory        = `MacroCategory`
-	MacroDomain          = `MacroDomain`
-	MacroSectionCategory = `MacroSectionCategory`
-	MacroPageCategory    = `MacroPageCategory`
-	MacroPrivacyPolicy   = `MacroPrivacyPolicy`
-	MacroKeywords        = `MacroKeywords`
+	MacroCategory        = `cat`
+	MacroDomain          = `domain`
+	MacroSectionCategory = `sectioncat`
+	MacroPageCategory    = `pagecat`
+	MacroPrivacyPolicy   = `privacypolicy`
+	MacroKeywords        = `keywords`
 
 	//Publisher
-	MacroPubID     = `MacroPubID`
-	MacroPubName   = `MacroPubName`
-	MacroPubDomain = `MacroPubDomain`
+	MacroPubID     = `pubid`
+	MacroPubName   = `pubname`
+	MacroPubDomain = `pubdomain`
 
 	//Content
-	MacroContentID                = `MacroContentID`
-	MacroContentEpisode           = `MacroContentEpisode`
-	MacroContentTitle             = `MacroContentTitle`
-	MacroContentSeries            = `MacroContentSeries`
-	MacroContentSeason            = `MacroContentSeason`
-	MacroContentArtist            = `MacroContentArtist`
-	MacroContentGenre             = `MacroContentGenre`
-	MacroContentAlbum             = `MacroContentAlbum`
-	MacroContentISrc              = `MacroContentISrc`
-	MacroContentURL               = `MacroContentURL`
-	MacroContentCategory          = `MacroContentCategory`
-	MacroContentProductionQuality = `MacroContentProductionQuality`
-	MacroContentVideoQuality      = `MacroContentVideoQuality`
-	MacroContentContext           = `MacroContentContext`
+	MacroContentID                = `contentid`
+	MacroContentEpisode           = `episode`
+	MacroContentTitle             = `title`
+	MacroContentSeries            = `series`
+	MacroContentSeason            = `season`
+	MacroContentArtist            = `artist`
+	MacroContentGenre             = `genre`
+	MacroContentAlbum             = `album`
+	MacroContentISrc              = `isrc`
+	MacroContentURL               = `contenturl`
+	MacroContentCategory          = `contentcat`
+	MacroContentProductionQuality = `contentprodq`
+	MacroContentVideoQuality      = `contentvideoquality`
+	MacroContentContext           = `context`
 
 	//Producer
-	MacroProducerID   = `MacroProducerID`
-	MacroProducerName = `MacroProducerName`
+	MacroProducerID   = `prodid`
+	MacroProducerName = `prodname`
 
 	//Device
-	MacroUserAgent       = `MacroUserAgent`
-	MacroDNT             = `MacroDNT`
-	MacroLMT             = `MacroLMT`
-	MacroIP              = `MacroIP`
-	MacroDeviceType      = `MacroDeviceType`
-	MacroMake            = `MacroMake`
-	MacroModel           = `MacroModel`
-	MacroDeviceOS        = `MacroDeviceOS`
-	MacroDeviceOSVersion = `MacroDeviceOSVersion`
-	MacroDeviceWidth     = `MacroDeviceWidth`
-	MacroDeviceHeight    = `MacroDeviceHeight`
-	MacroDeviceJS        = `MacroDeviceJS`
-	MacroDeviceLanguage  = `MacroDeviceLanguage`
-	MacroDeviceIFA       = `MacroDeviceIFA`
-	MacroDeviceDIDSHA1   = `MacroDeviceDIDSHA1`
-	MacroDeviceDIDMD5    = `MacroDeviceDIDMD5`
-	MacroDeviceDPIDSHA1  = `MacroDeviceDPIDSHA1`
-	MacroDeviceDPIDMD5   = `MacroDeviceDPIDMD5`
-	MacroDeviceMACSHA1   = `MacroDeviceMACSHA1`
-	MacroDeviceMACMD5    = `MacroDeviceMACMD5`
+	MacroUserAgent       = `useragent`
+	MacroDNT             = `dnt`
+	MacroLMT             = `lmt`
+	MacroIP              = `ip`
+	MacroDeviceType      = `devicetype`
+	MacroMake            = `make`
+	MacroModel           = `model`
+	MacroDeviceOS        = `os`
+	MacroDeviceOSVersion = `osv`
+	MacroDeviceWidth     = `devicewidth`
+	MacroDeviceHeight    = `deviceheight`
+	MacroDeviceJS        = `js`
+	MacroDeviceLanguage  = `lang`
+	MacroDeviceIFA       = `ifa`
+	MacroDeviceDIDSHA1   = `didsha1`
+	MacroDeviceDIDMD5    = `didmd5`
+	MacroDeviceDPIDSHA1  = `dpidsha1`
+	MacroDeviceDPIDMD5   = `dpidmd5`
+	MacroDeviceMACSHA1   = `macsha1`
+	MacroDeviceMACMD5    = `macmd5`
 
 	//Geo
-	MacroLatitude  = `MacroLatitude`
-	MacroLongitude = `MacroLongitude`
-	MacroCountry   = `MacroCountry`
-	MacroRegion    = `MacroRegion`
-	MacroCity      = `MacroCity`
-	MacroZip       = `MacroZip`
-	MacroUTCOffset = `MacroUTCOffset`
+	MacroLatitude  = `lat`
+	MacroLongitude = `long`
+	MacroCountry   = `country`
+	MacroRegion    = `region`
+	MacroCity      = `city`
+	MacroZip       = `aip`
+	MacroUTCOffset = `utcoffset`
 
 	//User
-	MacroUserID      = `MacroUserID`
-	MacroYearOfBirth = `MacroYearOfBirth`
-	MacroGender      = `MacroGender`
+	MacroUserID      = `uid`
+	MacroYearOfBirth = `yob`
+	MacroGender      = `gender`
 
 	//Extension
-	MacroGDPRConsent = `MacroGDPRConsent`
-	MacroGDPR        = `MacroGDPR`
-	MacroUSPrivacy   = `MacroUSPrivacy`
+	MacroGDPRConsent = `consent`
+	MacroGDPR        = `gdpr`
+	MacroUSPrivacy   = `usprivacy`
 
 	//Additional
-	MacroCacheBuster = `MacroCacheBuster`
-)
-
-const (
-	RequestExtPrefix    = `reqext`
-	ImpressionExtPrefix = `impext`
+	MacroCacheBuster = `cachebuster`
 )
 
 //ResponseHandlerType list of tag based response handlers
@@ -165,13 +160,4 @@ type ResponseHandlerType string
 const (
 	OpenRTBResponseHandlerType ResponseHandlerType = `openrtb`
 	VASTTagResponseHandlerType ResponseHandlerType = `vasttag`
-)
-
-//MacroValueType list of values allowed for macro's
-type MacroValueType string
-
-const (
-	ConstantValueType MacroValueType = `constant`
-	JSONKeyValueType  MacroValueType = `jsonkey`
-	CallBackValueType MacroValueType = `callback`
 )

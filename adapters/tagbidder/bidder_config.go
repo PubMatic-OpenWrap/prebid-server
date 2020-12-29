@@ -16,19 +16,11 @@ type Flags struct {
 	RemoveEmptyParam bool `json:"remove_empty,omitempty"`
 }
 
-//Keys each macro mapping key definition
-type Keys struct {
-	Cached    *bool          `json:"cached,omitempty"`
-	Value     string         `json:"value,omitempty"`
-	ValueType MacroValueType `json:"type,omitempty"`
-}
-
 //BidderConfig mapper json
 type BidderConfig struct {
 	URL          string              `json:"url,omitempty"`
 	ResponseType ResponseHandlerType `json:"response,omitempty"`
 	Flags        Flags               `json:"flags,omitempty"`
-	Keys         map[string]Keys     `json:"keys,omitempty"`
 }
 
 var bidderConfig = map[string]*BidderConfig{}
@@ -76,15 +68,8 @@ func InitTagBidderConfig(schemaDirectory string, tagBidderMap map[string]openrtb
 			glog.Fatalf("error parsing json in file %s: %v", schemaDirectory+"/"+bidderName+".json", err)
 		}
 
-		//reading its tag parameter mapper from config
-		mapper := NewMapperFromConfig(&bidderConfig)
-		if nil == mapper {
-			glog.Fatalf("no query parameters mapper for bidder " + bidderName)
-		}
-
 		//register tag bidder configurations
 		RegisterBidderConfig(bidderName, &bidderConfig)
-		RegisterBidderMapper(bidderName, mapper)
 	}
 	return nil
 }
