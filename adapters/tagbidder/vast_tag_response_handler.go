@@ -15,6 +15,8 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
+var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)
+
 //IVASTTagResponseHandler to parse VAST Tag
 type IVASTTagResponseHandler interface {
 	ITagResponseHandler
@@ -213,10 +215,8 @@ func getDuration(creative *etree.Element) (float64, error) {
 		return 0, errors.New("Invalid Duration")
 	}
 	duration := node.Text()
-	pattern := `^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`
 	// check if milliseconds is provided
-	re := regexp.MustCompile(pattern)
-	match := re.FindStringSubmatch(duration)
+	match := durationRegExp.FindStringSubmatch(duration)
 	if nil == match {
 		return 0, errors.New("Invalid Duration")
 	}
@@ -225,7 +225,7 @@ func getDuration(creative *etree.Element) (float64, error) {
 	if "" != ms {
 		repl += "${5}ms"
 	}
-	duration = re.ReplaceAllString(duration, repl)
+	duration = durationRegExp.ReplaceAllString(duration, repl)
 	dur, err := time.ParseDuration(duration)
 	if err != nil {
 		return 0, err
@@ -238,5 +238,5 @@ func getCreativeID(creative *etree.Element) string {
 	if nil == creative {
 		return ""
 	}
-	return creative.SelectAttrValue("id", "")
+	return creative.SelectAttrValue("id", getRandomID())
 }

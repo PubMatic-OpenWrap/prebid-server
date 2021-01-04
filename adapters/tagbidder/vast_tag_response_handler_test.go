@@ -168,13 +168,14 @@ func TestGetCreativeId(t *testing.T) {
 		want want
 	}{
 		{name: "creative tag with id", want: want{id: "233ff44"}, args: args{creativeTag: `<Creative id="233ff44"></Creative>`}},
-		{name: "creative tag without id", want: want{id: ""}, args: args{creativeTag: `<Creative></Creative>`}},
+		{name: "creative tag without id", want: want{id: "1818"}, args: args{creativeTag: `<Creative></Creative>`}},
 		{name: "no creative tag", want: want{id: ""}, args: args{creativeTag: ""}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc := etree.NewDocument()
 			doc.ReadFromString(tt.args.creativeTag)
+			getRandomID = func() string { return tt.want.id }
 			id := getCreativeID(doc.FindElement("./Creative"))
 			assert.Equal(t, tt.want.id, id)
 		})
