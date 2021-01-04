@@ -56,6 +56,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 								ImpID: `imp_id_1`,
 								Price: 0.05,
 								AdM:   `<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
+								CrID:  "cr_1234",
 							},
 							BidType:  openrtb_ext.BidTypeVideo,
 							BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
@@ -168,14 +169,13 @@ func TestGetCreativeId(t *testing.T) {
 		want want
 	}{
 		{name: "creative tag with id", want: want{id: "233ff44"}, args: args{creativeTag: `<Creative id="233ff44"></Creative>`}},
-		{name: "creative tag without id", want: want{id: "1818"}, args: args{creativeTag: `<Creative></Creative>`}},
+		{name: "creative tag without id", want: want{id: ""}, args: args{creativeTag: `<Creative></Creative>`}},
 		{name: "no creative tag", want: want{id: ""}, args: args{creativeTag: ""}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc := etree.NewDocument()
 			doc.ReadFromString(tt.args.creativeTag)
-			getRandomID = func() string { return tt.want.id }
 			id := getCreativeID(doc.FindElement("./Creative"))
 			assert.Equal(t, tt.want.id, id)
 		})

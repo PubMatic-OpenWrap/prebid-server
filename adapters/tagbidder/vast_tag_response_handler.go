@@ -99,6 +99,11 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		}
 	}
 
+	// generate random creative id if not present
+	if "" == typedBid.Bid.CrID {
+		typedBid.Bid.CrID = "cr_" + getRandomID()
+	}
+
 	bidResponse := &adapters.BidderResponse{
 		Bids:     []*adapters.TypedBid{typedBid},
 		Currency: `USD`, //TODO: Need to check how to get currency value
@@ -238,5 +243,5 @@ func getCreativeID(creative *etree.Element) string {
 	if nil == creative {
 		return ""
 	}
-	return creative.SelectAttrValue("id", getRandomID())
+	return creative.SelectAttrValue("id", "")
 }
