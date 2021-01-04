@@ -2,7 +2,6 @@ package tagbidder
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -25,6 +24,7 @@ type MacroProcessor struct {
 	bidderMacro IBidderMacro
 	mapper      Mapper
 	macroCache  map[string]string
+	bidderKeys  map[string]string
 }
 
 //NewMacroProcessor will process macro's of openrtb bid request
@@ -36,9 +36,14 @@ func NewMacroProcessor(bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor 
 	}
 }
 
-//SetMacro : Adding Custom Macro Manually
+//SetMacro Adding Custom Macro Manually
 func (mp *MacroProcessor) SetMacro(key, value string) {
 	mp.macroCache[key] = value
+}
+
+//SetBidderKeys will flush and set bidder specific keys
+func (mp *MacroProcessor) SetBidderKeys(keys map[string]string) {
+	mp.bidderKeys = keys
 }
 
 //processKey : returns value of key macro and status found or not
@@ -50,19 +55,28 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 	found := false
 
 	for {
-		value, found = mp.macroCache[tmpKey]
-		if false == found {
-			valueCallback, found = mp.mapper[tmpKey]
-			if found {
-				//found callback function
-				value = valueCallback.callback(mp.bidderMacro, tmpKey)
+		//Search in macro cache
+		if value, found = mp.macroCache[tmpKey]; found {
+			break
+		}
+
+		//Search for bidder keys
+		if nil != mp.bidderKeys {
+			if value, found = mp.bidderKeys[tmpKey]; found {
 				break
-			} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
-				//escaping macro found
-				tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
-				nEscaping++
-				continue
 			}
+		}
+
+		valueCallback, found = mp.mapper[tmpKey]
+		if found {
+			//found callback function
+			value = valueCallback.callback(mp.bidderMacro, tmpKey)
+			break
+		} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
+			//escaping macro found
+			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
+			nEscaping++
+			continue
 		}
 		break
 	}
@@ -189,14 +203,6 @@ func (mp *MacroProcessor) processURLValues(values url.Values, flags Flags) (resp
 		}
 	}
 	return out.String()
-}
-
-//Dump : will print all cached macro and its values
-func (mp *MacroProcessor) Dump() {
-	if glog.V(3) {
-		cacheStr, _ := json.Marshal(mp.macroCache)
-		glog.Infof("[MACRO]: Map:[%s]", string(cacheStr))
-	}
 }
 
 //GetMacroKey will return macro formatted key

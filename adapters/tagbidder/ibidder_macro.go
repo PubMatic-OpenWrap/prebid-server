@@ -13,6 +13,7 @@ type IBidderMacro interface {
 	//Helper Function
 	InitBidRequest(request *openrtb.BidRequest)
 	LoadImpression(imp *openrtb.Imp) error
+	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
 	SetBidderConfig(*BidderConfig)
 	GetURI() string
@@ -23,7 +24,7 @@ type IBidderMacro interface {
 	MacroTimeout(string) string
 	MacroWhitelistSeat(string) string
 	MacroWhitelistLang(string) string
-	MacroBlockedseat(string) string
+	MacroBlockedSeat(string) string
 	MacroCurrency(string) string
 	MacroBlockedCategory(string) string
 	MacroBlockedAdvertiser(string) string
@@ -163,8 +164,6 @@ type IBidderMacro interface {
 
 	//Additional
 	MacroCacheBuster(string) string
-	ConstantValue(string) string
-	JSONKey(string) string
 }
 
 var bidderMacroMap = map[string]func() IBidderMacro{}
@@ -181,4 +180,8 @@ func GetNewBidderMacro(bidder string) (IBidderMacro, error) {
 		return callback(), nil
 	}
 	return nil, errors.New(`missing bidder macro`)
+}
+
+func init() {
+	RegisterNewBidderMacro(`spotx`, NewBidderMacro)
 }

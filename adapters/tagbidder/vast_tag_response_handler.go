@@ -3,7 +3,6 @@ package tagbidder
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -188,14 +187,6 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 	}
 
 	return priceValue, currency, true
-}
-
-func getCreativeID(ad *etree.Element) string {
-	return getRandomID()
-}
-
-var getRandomID = func() string {
-	return strconv.FormatInt(rand.Int63(), intBase)
 }
 
 // getDuration extracts the duration of the bid from input creative of Linear type.

@@ -1,43 +1,7 @@
 {
-    "url": "https://search.spotxchange.com/vast/2.00/{{channel_id}}?VPI=MP4&app[bundle]={{MacroAppBundle}}&app[name]={{MacroAppName}}&app[cat]={{MacroCategory}}&app[domain]={{MacroDomain}}&app[privacypolicy]={{MacroPrivacyPolicy}}&app[storeurl]={{MacroAppStoreURL_ESC}}&app[ver]={{MacroAppVersion}}&cb={{MacroCacheBuster}}&device[devicetype]={{MacroDeviceType}}&device[ifa]={{MacroDeviceIFA}}&device[make]={{MacroMake}}&device[model]={{MacroModel}}&device[dnt]={{MacroDNT}}&player_height={{MacroVideoPlayerHeight}}&player_width={{MacroVideoPlayerWidth}}&ip_addr={{MacroIP}}&device[ua]={{MacroUserAgent_ESC}}",
+    "url": "https://search.spotxchange.com/vast/2.00/{{channel_id}}?VPI=MP4&app[bundle]={{bundle}}&app[name]={{appname}}&app[cat]={{cat}}&app[domain]={{domain}}&app[privacypolicy]={{privacypolicy}}&app[storeurl]={{storeurl_ESC}}&app[ver]={{appver}}&cb={{cachebuster}}&device[devicetype]={{devicetype}}&device[ifa]={{ifa}}&device[make]={{make}}&device[model]={{model}}&device[dnt]={{dnt}}&player_height={{playerheight}}&player_width={{playerwidth}}&ip_addr={{ip}}&device[ua]={{useragent_ESC}}",
     "response": "vasttag",
     "flags": {
         "remove_empty": true
-    },
-    "keys": {
-        "MacroVideoAPI": {
-            "value": "MP4",
-            "type": "constant"
-        },
-        "channel_id": {
-            "cached": false,
-            "value": "impext.bidder.channel_id",
-            "type": "jsonkey"
-        },
-        "ad_unit": {
-            "cached": false,
-            "value": "impext.bidder.ad_unit",
-            "type": "jsonkey"
-        },
-        "secure": {
-            "cached": false,
-            "value": "impext.bidder.secure",
-            "type": "jsonkey"
-        },
-        "ad_volume": {
-            "cached": false,
-            "value": "impext.bidder.ad_volume",
-            "type": "jsonkey"
-        },
-        "price_floor": {
-            "cached": false,
-            "value": "impext.bidder.price_floor",
-            "type": "jsonkey"
-        },
-        "hide_skin": {
-            "cached": false,
-            "value": "impext.bidder.hide_skin",
-            "type": "jsonkey"
-        }
     }
 }
