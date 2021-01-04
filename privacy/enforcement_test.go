@@ -267,8 +267,8 @@ func TestApply(t *testing.T) {
 		test.enforcement.apply(req, test.ampGDPRException, m)
 
 		m.AssertExpectations(t)
-		assert.Same(t, replacedDevice, req.Device, "Device")
-		assert.Same(t, replacedUser, req.User, "User")
+		assert.Equal(t, replacedDevice, req.Device, "Device")
+		assert.Equal(t, replacedUser, req.User, "User")
 	}
 }
 

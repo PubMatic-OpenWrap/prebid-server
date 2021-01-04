@@ -130,10 +130,11 @@ type ResponseData struct {
 
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
-	Method  string
-	Uri     string
-	Body    []byte
-	Headers http.Header
+	ImpIndex int
+	Method   string
+	Uri      string
+	Body     []byte
+	Headers  http.Header
 }
 
 // ExtImpBidder can be used by Bidders to unmarshal any request.imp[i].ext.

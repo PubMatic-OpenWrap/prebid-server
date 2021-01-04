@@ -29,6 +29,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/pulsepoint"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/rubicon"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sovrn"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tagbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	analyticsConf "github.com/PubMatic-OpenWrap/prebid-server/analytics/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/cache"
@@ -192,6 +193,7 @@ func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r 
 
 	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
+	const tagBidderSchemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/tagbidder-params"
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -246,6 +248,11 @@ func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r 
 	g_paramsValidator, err = openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
+	}
+
+	err = tagbidder.InitTagBidderConfig(tagBidderSchemaDirectory, openrtb_ext.TagBidderMap)
+	if err != nil {
+		glog.Fatalf("Failed to create the tag bidder config. %v", err)
 	}
 
 	p, _ := filepath.Abs(infoDirectory)
