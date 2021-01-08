@@ -191,6 +191,7 @@ func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r 
 
 	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
+	const tagBidderSchemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/tagbidder-params"
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -244,7 +245,12 @@ func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r 
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
 	}
-
+	/*
+		err = tagbidder.InitTagBidderConfig(tagBidderSchemaDirectory, openrtb_ext.TagBidderMap)
+		if err != nil {
+			glog.Fatalf("Failed to create the tag bidder config. %v", err)
+		}
+	*/
 	p, _ := filepath.Abs(infoDirectory)
 	bidderInfos := adapters.ParseBidderInfos(cfg.Adapters, p, openrtb_ext.BidderList())
 

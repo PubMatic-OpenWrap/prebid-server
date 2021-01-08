@@ -309,7 +309,6 @@ func (me *DummyMetricsEngine) RecordRequestQueueTime(success bool, requestType p
 func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
 }
 
-
 // RecordAdapterDuplicateBidID as a noop
 func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 }
