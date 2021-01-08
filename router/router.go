@@ -26,7 +26,6 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/pulsepoint"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/rubicon"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sovrn"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tagbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	analyticsConf "github.com/PubMatic-OpenWrap/prebid-server/analytics/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/cache"
@@ -246,12 +245,12 @@ func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r 
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
 	}
-
-	err = tagbidder.InitTagBidderConfig(tagBidderSchemaDirectory, openrtb_ext.TagBidderMap)
-	if err != nil {
-		glog.Fatalf("Failed to create the tag bidder config. %v", err)
-	}
-
+	/*
+		err = tagbidder.InitTagBidderConfig(tagBidderSchemaDirectory, openrtb_ext.TagBidderMap)
+		if err != nil {
+			glog.Fatalf("Failed to create the tag bidder config. %v", err)
+		}
+	*/
 	p, _ := filepath.Abs(infoDirectory)
 	bidderInfos := adapters.ParseBidderInfos(cfg.Adapters, p, openrtb_ext.BidderList())
 
