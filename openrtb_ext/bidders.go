@@ -216,10 +216,12 @@ var BidderMap = map[string]BidderName{
 	"zeroclickfraud":    BidderZeroClickFraud,
 }
 
+/*
 //TagBidderMap contains list of tag based bidders
 var TagBidderMap = map[string]BidderName{
 	"spotx": BidderSpotX,
 }
+*/
 
 // BidderList returns the values of the BidderMap
 func BidderList() []BidderName {

@@ -8,6 +8,11 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 )
 
+//Flags of each tag bidder
+type Flags struct {
+	RemoveEmptyParam bool `json:"remove_empty,omitempty"`
+}
+
 //IBidderMacro interface will capture all macro definition
 type IBidderMacro interface {
 	//Helper Function
@@ -15,7 +20,7 @@ type IBidderMacro interface {
 	LoadImpression(imp *openrtb.Imp) error
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
-	SetBidderConfig(*BidderConfig)
+	//SetBidderConfig(*BidderConfig)
 	GetURI() string
 	GetHeaders() http.Header
 

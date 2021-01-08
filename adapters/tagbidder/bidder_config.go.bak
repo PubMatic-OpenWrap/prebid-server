@@ -11,11 +11,6 @@ import (
 	"github.com/golang/glog"
 )
 
-//Flags of each tag bidder
-type Flags struct {
-	RemoveEmptyParam bool `json:"remove_empty,omitempty"`
-}
-
 //BidderConfig mapper json
 type BidderConfig struct {
 	URL          string              `json:"url,omitempty"`
