@@ -20,8 +20,8 @@ type BidderMacro struct {
 	IBidderMacro
 
 	//Configuration Parameters
-	Conf       *config.Adapter
-	BidderConf *BidderConfig
+	Conf *config.Adapter
+	//BidderConf *BidderConfig
 
 	//OpenRTB Specific Parameters
 	Request   *openrtb.BidRequest
@@ -101,19 +101,23 @@ func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
 	tag.Conf = conf
 }
 
+/*
 //SetBidderConfig will set Bidder config
 func (tag *BidderMacro) SetBidderConfig(conf *BidderConfig) {
 	tag.BidderConf = conf
 }
+*/
 
 //GetURI get URL
 func (tag *BidderMacro) GetURI() string {
 	//1. check for impression level URL
 	//2. check for bidder config level URL
 	//3. check for adapter config level URL
-	if len(tag.BidderConf.URL) > 0 {
-		return tag.BidderConf.URL
-	}
+	/*
+		if nil != tag.BidderConf && len(tag.BidderConf.URL) > 0 {
+			return tag.BidderConf.URL
+		}
+	*/
 	return tag.Conf.Endpoint
 }
 
