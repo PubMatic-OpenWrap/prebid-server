@@ -84,6 +84,7 @@ const (
 	BidderSovrn            BidderName = "sovrn"
 	BidderSpotX            BidderName = "spotx"
 	BidderSynacormedia     BidderName = "synacormedia"
+	BidderVASTBidder       BidderName = "vastbidder"
 	BidderTappx            BidderName = "tappx"
 	BidderTelaria          BidderName = "telaria"
 	BidderTriplelift       BidderName = "triplelift"
@@ -164,6 +165,7 @@ var BidderMap = map[string]BidderName{
 	"sovrn":             BidderSovrn,
 	"spotx":             BidderSpotX,
 	"synacormedia":      BidderSynacormedia,
+	"vastbidder":        BidderVASTBidder,
 	"tappx":             BidderTappx,
 	"telaria":           BidderTelaria,
 	"triplelift":        BidderTriplelift,
