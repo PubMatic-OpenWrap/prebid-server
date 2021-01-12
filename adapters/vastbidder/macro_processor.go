@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 import (
 	"bytes"

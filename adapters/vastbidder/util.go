@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func objectArrayToString(len int, separator string, cb func(i int) string) string {
+func ObjectArrayToString(len int, separator string, cb func(i int) string) string {
 	if 0 == len {
 		return ""
 	}
@@ -42,12 +42,12 @@ func normalizeObject(prefix string, out map[string]string, obj map[string]interf
 	}
 }
 
-func normalizeJSON(obj map[string]interface{}) map[string]string {
+func NormalizeJSON(obj map[string]interface{}) map[string]string {
 	out := map[string]string{}
 	normalizeObject("", out, obj)
 	return out
 }
 
-var getRandomID = func() string {
+var GetRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }

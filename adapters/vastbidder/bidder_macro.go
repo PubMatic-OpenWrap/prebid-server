@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 import (
 	"encoding/json"
@@ -21,17 +21,17 @@ type BidderMacro struct {
 
 	//Configuration Parameters
 	Conf *config.Adapter
-	//BidderConf *BidderConfig
 
 	//OpenRTB Specific Parameters
-	Request   *openrtb.BidRequest
-	IsApp     bool
-	HasGeo    bool
-	Imp       *openrtb.Imp
-	Publisher *openrtb.Publisher
-	Content   *openrtb.Content
-	UserExt   *openrtb_ext.ExtUser
-	RegsExt   *openrtb_ext.ExtRegs
+	Request      *openrtb.BidRequest
+	IsApp        bool
+	HasGeo       bool
+	Imp          *openrtb.Imp
+	ImpBidderExt map[string]interface{}
+	Publisher    *openrtb.Publisher
+	Content      *openrtb.Content
+	UserExt      *openrtb_ext.ExtUser
+	RegsExt      *openrtb_ext.ExtRegs
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
@@ -78,22 +78,23 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 //LoadImpression will set current imp
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	tag.Imp = imp
+
+	var bidderExt adapters.ExtImpBidder
+	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
+		return err
+	}
+
+	tag.ImpBidderExt = map[string]interface{}{}
+	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 //GetBidderKeys will set bidder level keys
 func (tag *BidderMacro) GetBidderKeys() map[string]string {
-	var bidderExt adapters.ExtImpBidder
-	if err := json.Unmarshal(tag.Imp.Ext, &bidderExt); err != nil {
-		return nil
-	}
-
-	ext := map[string]interface{}{}
-	if err := json.Unmarshal(bidderExt.Bidder, &ext); err != nil {
-		return nil
-	}
-
-	return normalizeJSON(ext)
+	return NormalizeJSON(tag.ImpBidderExt)
 }
 
 //SetAdapterConfig will set Adapter config
@@ -101,23 +102,17 @@ func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
 	tag.Conf = conf
 }
 
-/*
-//SetBidderConfig will set Bidder config
-func (tag *BidderMacro) SetBidderConfig(conf *BidderConfig) {
-	tag.BidderConf = conf
-}
-*/
-
 //GetURI get URL
 func (tag *BidderMacro) GetURI() string {
-	//1. check for impression level URL
-	//2. check for bidder config level URL
-	//3. check for adapter config level URL
-	/*
-		if nil != tag.BidderConf && len(tag.BidderConf.URL) > 0 {
-			return tag.BidderConf.URL
+
+	//check for URI at impression level
+	if nil != tag.ImpBidderExt {
+		if value, ok := tag.ImpBidderExt["url"]; ok {
+			return value.(string)
 		}
-	*/
+	}
+
+	//check for URI at config level
 	return tag.Conf.Endpoint
 }
 
@@ -300,7 +295,7 @@ func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
 func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Protocols
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -383,7 +378,7 @@ func (tag *BidderMacro) MacroVideoSequence(key string) string {
 func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.BAttr
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -426,7 +421,7 @@ func (tag *BidderMacro) MacroVideoBoxing(key string) string {
 func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.PlaybackMethod
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -437,7 +432,7 @@ func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 func (tag *BidderMacro) MacroVideoDelivery(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Delivery
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -456,7 +451,7 @@ func (tag *BidderMacro) MacroVideoPosition(key string) string {
 func (tag *BidderMacro) MacroVideoAPI(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.API
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}

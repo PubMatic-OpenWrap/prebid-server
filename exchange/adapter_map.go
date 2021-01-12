@@ -67,7 +67,6 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sonobi"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/sovrn"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/synacormedia"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tagbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/tappx"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/telaria"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/triplelift"
@@ -75,6 +74,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/ucfunnel"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/unruly"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/valueimpression"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/verizonmedia"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/visx"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vrtcal"
@@ -157,7 +157,8 @@ func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapter
 		openrtb_ext.BidderSovrn:        sovrn.NewSovrnBidder(client, cfg.Adapters[string(openrtb_ext.BidderSovrn)].Endpoint),
 		openrtb_ext.BidderSynacormedia: synacormedia.NewSynacorMediaBidder(cfg.Adapters[string(openrtb_ext.BidderSynacormedia)].Endpoint),
 		//openrtb_ext.BidderSpotX:            spotx.NewSpotxBidder(cfg.Adapters[string(openrtb_ext.BidderSpotX)].Endpoint),
-		openrtb_ext.BidderSpotX:            tagbidder.NewTestTagBidder(openrtb_ext.BidderSpotX, cfg.Adapters[string(openrtb_ext.BidderSpotX)]),
+		openrtb_ext.BidderSpotX:            vastbidder.NewTagBidder(openrtb_ext.BidderSpotX, cfg.Adapters[string(openrtb_ext.BidderSpotX)]),
+		openrtb_ext.BidderVASTBidder:       vastbidder.NewTagBidder(openrtb_ext.BidderVASTBidder, cfg.Adapters[string(openrtb_ext.BidderVASTBidder)]),
 		openrtb_ext.BidderTappx:            tappx.NewTappxBidder(client, cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderTappx))].Endpoint),
 		openrtb_ext.BidderTelaria:          telaria.NewTelariaBidder(cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderTelaria))].Endpoint),
 		openrtb_ext.BidderTriplelift:       triplelift.NewTripleliftBidder(client, cfg.Adapters[string(openrtb_ext.BidderTriplelift)].Endpoint),

@@ -1,8 +1,8 @@
-package tagbidder
+package vastbidder
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -20,6 +20,7 @@ var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)
 type IVASTTagResponseHandler interface {
 	ITagResponseHandler
 	ParseExtension(version string, tag *etree.Element, bid *adapters.TypedBid) []error
+	GetStaticPrice(ext json.RawMessage) float64
 }
 
 //VASTTagResponseHandler to parse VAST Tag
@@ -47,8 +48,30 @@ func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb.BidRequ
 	}
 
 	bidResponses, err := handler.vastTagToBidderResponse(internalRequest, externalRequest, response)
-	fmt.Printf("\n[V1] errors:[%v] bidresponse:[%v]", err, bidResponses)
 	return bidResponses, err
+}
+
+//GetStaticPrice will read pricing value from imp.ext.bidder.price
+func (handler *VASTTagResponseHandler) GetStaticPrice(ext json.RawMessage) float64 {
+	if len(ext) > 0 {
+		var obj = map[string]interface{}{}
+		if err := json.Unmarshal(ext, &obj); nil != err {
+			return 0
+		}
+
+		value, ok := obj["price"]
+		if !ok {
+			return 0
+		}
+
+		price, ok := value.(float64)
+		if !ok {
+			return 0
+		}
+
+		return price
+	}
+	return 0
 }
 
 //ParseExtension will parse VAST XML extension object
@@ -100,7 +123,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 
 	// generate random creative id if not present
 	if "" == typedBid.Bid.CrID {
-		typedBid.Bid.CrID = "cr_" + getRandomID()
+		typedBid.Bid.CrID = "cr_" + GetRandomID()
 	}
 
 	bidResponse := &adapters.BidderResponse{
@@ -120,8 +143,11 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	if typedBid.Bid.Price <= 0 {
 		price, currency, ok := getPricingDetails(version, adElement)
 		if !ok {
-			errs = append(errs, errors.New("Bid Price Not Present"))
-			return nil, errs[:]
+			price = handler.GetStaticPrice(internalRequest.Imp[externalRequest.ImpIndex].Ext)
+			if price <= 0 {
+				errs = append(errs, errors.New("Bid Price Not Present"))
+				return nil, errs[:]
+			}
 		}
 		typedBid.Bid.Price = price
 		if len(currency) > 0 {
@@ -131,7 +157,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 
 	//if bid.id is not set in ParseExtension
 	if len(typedBid.Bid.ID) == 0 {
-		typedBid.Bid.ID = getRandomID()
+		typedBid.Bid.ID = GetRandomID()
 	}
 
 	//if bid.impid is not set in ParseExtension
@@ -166,10 +192,10 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 	var currency string
 	var node *etree.Element
 
-	if `3.0` == version {
-		node = ad.FindElement(`./Pricing`)
-	} else if `2.0` == version {
+	if `2.0` == version {
 		node = ad.FindElement(`./Extensions/Extension/Price`)
+	} else {
+		node = ad.FindElement(`./Pricing`)
 	}
 
 	if nil == node {

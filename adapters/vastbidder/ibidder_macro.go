@@ -1,8 +1,9 @@
-package tagbidder
+package vastbidder
 
 import (
-	"errors"
 	"net/http"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
@@ -20,7 +21,6 @@ type IBidderMacro interface {
 	LoadImpression(imp *openrtb.Imp) error
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
-	//SetBidderConfig(*BidderConfig)
 	GetURI() string
 	GetHeaders() http.Header
 
@@ -171,22 +171,18 @@ type IBidderMacro interface {
 	MacroCacheBuster(string) string
 }
 
-var bidderMacroMap = map[string]func() IBidderMacro{}
+var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}
 
 //RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
-func RegisterNewBidderMacro(bidder string, macro func() IBidderMacro) {
+func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro func() IBidderMacro) {
 	bidderMacroMap[bidder] = macro
 }
 
 //GetNewBidderMacro will return IBidderMacro of specific bidder
-func GetNewBidderMacro(bidder string) (IBidderMacro, error) {
+func GetNewBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro {
 	callback, ok := bidderMacroMap[bidder]
 	if ok {
-		return callback(), nil
+		return callback()
 	}
-	return nil, errors.New(`missing bidder macro`)
-}
-
-func init() {
-	RegisterNewBidderMacro(`spotx`, NewBidderMacro)
+	return NewBidderMacro()
 }
