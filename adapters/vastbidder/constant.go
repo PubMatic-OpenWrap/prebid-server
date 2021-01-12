@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 const (
 	intBase = 10
@@ -152,12 +152,4 @@ const (
 
 	//Additional
 	MacroCacheBuster = `cachebuster`
-)
-
-//ResponseHandlerType list of tag based response handlers
-type ResponseHandlerType string
-
-const (
-	OpenRTBResponseHandlerType ResponseHandlerType = `openrtb`
-	VASTTagResponseHandlerType ResponseHandlerType = `vasttag`
 )

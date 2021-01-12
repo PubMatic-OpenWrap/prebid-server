@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Tag Bidder Base Adapter",
+  "description": "A schema which validates params accepted by the VAST tag bidders",
+
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string"
+    },
+    "price": {
+      "type": "integer"
+    },
+    "parser": {
+      "type": "string"
+    }
+  },
+  "required": ["url"]
+}

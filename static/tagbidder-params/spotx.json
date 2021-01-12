@@ -1,7 +1,0 @@
-{
-    "url": "https://search.spotxchange.com/vast/2.00/{{channel_id}}?VPI=MP4&app[bundle]={{bundle}}&app[name]={{appname}}&app[cat]={{cat}}&app[domain]={{domain}}&app[privacypolicy]={{privacypolicy}}&app[storeurl]={{storeurl_ESC}}&app[ver]={{appver}}&cb={{cachebuster}}&device[devicetype]={{devicetype}}&device[ifa]={{ifa}}&device[make]={{make}}&device[model]={{model}}&device[dnt]={{dnt}}&player_height={{playerheight}}&player_width={{playerwidth}}&ip_addr={{ip}}&device[ua]={{useragent_ESC}}",
-    "response": "vasttag",
-    "flags": {
-        "remove_empty": true
-    }
-}

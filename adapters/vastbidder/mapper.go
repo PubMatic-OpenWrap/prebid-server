@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 type macroCallBack struct {
 	cached   bool
@@ -165,7 +165,7 @@ var _defaultMapper = Mapper{
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
 }
 
-//GetNewDefaultMapper will return clone of default Mapper function
-func GetNewDefaultMapper() Mapper {
+//GetDefaultMapper will return clone of default Mapper function
+func GetDefaultMapper() Mapper {
 	return _defaultMapper.clone()
 }
