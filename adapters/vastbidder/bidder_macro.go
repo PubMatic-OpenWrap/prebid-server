@@ -32,6 +32,9 @@ type BidderMacro struct {
 	Content      *openrtb.Content
 	UserExt      *openrtb_ext.ExtUser
 	RegsExt      *openrtb_ext.ExtRegs
+
+	// Impression level Request Headers
+	impReqHeaders http.Header
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
@@ -75,7 +78,7 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 	tag.init()
 }
 
-//LoadImpression will set current imp
+//LoadImpression will set current imp and populate default headers
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	tag.Imp = imp
 
@@ -88,7 +91,7 @@ func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
 		return err
 	}
-
+	setDefaultHeaders(tag)
 	return nil
 }
 
@@ -119,6 +122,24 @@ func (tag *BidderMacro) GetURI() string {
 //GetHeaders GetHeaders
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
+}
+
+func getAllHeaders(tag *BidderMacro) http.Header {
+	setDefaultHeaders(tag)
+	customHeaders := tag.IBidderMacro.GetHeaders()
+	if nil != customHeaders {
+		for k, v := range customHeaders {
+			// custom header may contains default header key with value
+			// giving priority to explicit value set
+			if nil != v {
+				tag.impReqHeaders.Set(k, v[0])
+				for i := 1; i < len(v); i++ {
+					tag.impReqHeaders.Add(k, v[i])
+				}
+			}
+		}
+	}
+	return tag.impReqHeaders
 }
 
 /********************* Request *********************/
@@ -1054,4 +1075,49 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}
+
+// getDefaultHeaders returns following headers based on VAST protocol version
+//  X-device-IP; end users IP address, per VAST 4.x
+//  X-Forwarded-For; end users IP address, prior VAST versions
+//  X-Device-User-Agent; End users user agent, per VAST 4.x
+//  User-Agent; End users user agent, prior VAST versions
+//  X-Device-Referer; Referer value from the original request, per VAST 4.x
+//  X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
+func setDefaultHeaders(tag *BidderMacro) {
+	// openrtb2. auction.go setDeviceImplicitly
+	// already populates OpenRTB bid request based on http request headers
+	// reusing the same information to set these headers
+	headers := http.Header{}
+	if nil == tag.Request {
+		return
+	}
+	ip := tag.MacroIP("")
+	userAgent := tag.MacroUserAgent("")
+	referer := ""
+	if nil != tag.Request.Site {
+		referer = tag.MacroSitePage("")
+	}
+	language := ""
+	if nil != tag.Request.Device {
+		language = tag.MacroDeviceLanguage("")
+	}
+	if "" != ip {
+		headers.Set("X-device-Ip", ip)
+		headers.Set("X-Forwarded-For", ip)
+	}
+	if "" != userAgent {
+		headers.Set("X-Device-User-Agent", userAgent)
+		headers.Set("User-Agent", userAgent)
+	}
+	if "" != referer {
+		// referer may not be avaialble in case of App
+		headers.Set("X-Device-Referer", referer)
+	}
+	if "" != language {
+		headers.Set("X-Device-Accept-Language", language)
+	}
+	if len(headers) > 0 {
+		tag.impReqHeaders = headers
+	}
 }

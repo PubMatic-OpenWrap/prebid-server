@@ -38,6 +38,9 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 		//uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), a.bidderConfig.Flags)
 		uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), Flags{RemoveEmptyParam: true})
 
+		// append custom headers if any
+		bidderMacro.GetAllHeaders()
+
 		requestData = append(requestData, &adapters.RequestData{
 			ImpIndex: i,
 			Method:   `GET`,

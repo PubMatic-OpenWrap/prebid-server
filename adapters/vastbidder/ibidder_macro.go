@@ -23,6 +23,8 @@ type IBidderMacro interface {
 	SetAdapterConfig(*config.Adapter)
 	GetURI() string
 	GetHeaders() http.Header
+	//getHeaders returns default and custom heades
+	GetAllHeaders() http.Header
 
 	//Request
 	MacroTest(string) string
