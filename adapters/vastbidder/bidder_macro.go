@@ -124,9 +124,9 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-func getAllHeaders(tag *BidderMacro) http.Header {
+func (tag *BidderMacro) getAllHeaders() http.Header {
 	setDefaultHeaders(tag)
-	customHeaders := tag.IBidderMacro.GetHeaders()
+	customHeaders := tag.GetHeaders()
 	if nil != customHeaders {
 		for k, v := range customHeaders {
 			// custom header may contains default header key with value
