@@ -39,7 +39,9 @@ type BidderMacro struct {
 
 //NewBidderMacro contains definition for all openrtb macro's
 func NewBidderMacro() IBidderMacro {
-	return &BidderMacro{}
+	obj := &BidderMacro{}
+	obj.IBidderMacro = obj
+	return obj
 }
 
 func (tag *BidderMacro) init() {
