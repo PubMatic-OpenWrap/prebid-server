@@ -1080,7 +1080,7 @@ func setDefaultHeaders(tag *BidderMacro) {
 	hasVast4 := false
 	hasPriorVastVersions := false
 
-	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols {
+	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols && len(tag.Imp.Video.Protocols) > 0 {
 		for _, protocol := range tag.Imp.Video.Protocols {
 			hasVast4 = hasVast4 || (protocol == openrtb.ProtocolVAST40 || protocol == openrtb.ProtocolVAST40Wrapper)
 			hasPriorVastVersions = hasPriorVastVersions || protocol <= openrtb.ProtocolVAST30Wrapper
@@ -1121,9 +1121,7 @@ func setDefaultHeaders(tag *BidderMacro) {
 	if "" != language && hasVast4 {
 		headers.Set("X-Device-Accept-Language", language)
 	}
-	if len(headers) > 0 {
-		tag.impReqHeaders = headers
-	}
+	tag.impReqHeaders = headers
 }
 
 //getAllHeaders combines default and custom headers and returns common list
