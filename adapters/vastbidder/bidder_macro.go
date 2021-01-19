@@ -91,7 +91,6 @@ func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
 		return err
 	}
-	setDefaultHeaders(tag)
 	return nil
 }
 
@@ -119,27 +118,10 @@ func (tag *BidderMacro) GetURI() string {
 	return tag.Conf.Endpoint
 }
 
-//GetHeaders GetHeaders
+//GetHeaders returns list of custom request headers
+//Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
-}
-
-func (tag *BidderMacro) getAllHeaders() http.Header {
-	setDefaultHeaders(tag)
-	customHeaders := tag.GetHeaders()
-	if nil != customHeaders {
-		for k, v := range customHeaders {
-			// custom header may contains default header key with value
-			// giving priority to explicit value set
-			if nil != v {
-				tag.impReqHeaders.Set(k, v[0])
-				for i := 1; i < len(v); i++ {
-					tag.impReqHeaders.Add(k, v[i])
-				}
-			}
-		}
-	}
-	return tag.impReqHeaders
 }
 
 /********************* Request *********************/
@@ -1095,6 +1077,20 @@ func setDefaultHeaders(tag *BidderMacro) {
 	ip := tag.MacroIP("")
 	userAgent := tag.MacroUserAgent("")
 	referer := ""
+	hasVast4 := false
+	hasPriorVastVersions := false
+
+	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols {
+		for _, protocol := range tag.Imp.Video.Protocols {
+			hasVast4 = hasVast4 || (protocol == openrtb.ProtocolVAST40 || protocol == openrtb.ProtocolVAST40Wrapper)
+			hasPriorVastVersions = hasPriorVastVersions || protocol <= openrtb.ProtocolVAST30Wrapper
+		}
+	} else {
+		// not able to detect protocols. set all headers
+		hasVast4 = true
+		hasPriorVastVersions = true
+	}
+
 	if nil != tag.Request.Site {
 		referer = tag.MacroSitePage("")
 	}
@@ -1103,21 +1099,49 @@ func setDefaultHeaders(tag *BidderMacro) {
 		language = tag.MacroDeviceLanguage("")
 	}
 	if "" != ip {
-		headers.Set("X-device-Ip", ip)
-		headers.Set("X-Forwarded-For", ip)
+		if hasVast4 {
+			headers.Set("X-device-Ip", ip)
+		}
+		if hasPriorVastVersions {
+			headers.Set("X-Forwarded-For", ip)
+		}
 	}
 	if "" != userAgent {
-		headers.Set("X-Device-User-Agent", userAgent)
-		headers.Set("User-Agent", userAgent)
+		if hasVast4 {
+			headers.Set("X-Device-User-Agent", userAgent)
+		}
+		if hasPriorVastVersions {
+			headers.Set("User-Agent", userAgent)
+		}
 	}
-	if "" != referer {
+	if "" != referer && hasVast4 {
 		// referer may not be avaialble in case of App
 		headers.Set("X-Device-Referer", referer)
 	}
-	if "" != language {
+	if "" != language && hasVast4 {
 		headers.Set("X-Device-Accept-Language", language)
 	}
 	if len(headers) > 0 {
 		tag.impReqHeaders = headers
 	}
+}
+
+//getAllHeaders combines default and custom headers and returns common list
+//It internally calls GetHeaders() method for obtaining list of custom headers
+func (tag *BidderMacro) getAllHeaders() http.Header {
+	setDefaultHeaders(tag)
+	customHeaders := tag.IBidderMacro.GetHeaders()
+	if nil != customHeaders {
+		for k, v := range customHeaders {
+			// custom header may contains default header key with value
+			// in such case custom value will be prefered
+			if nil != v && len(v) > 0 {
+				tag.impReqHeaders.Set(k, v[0])
+				for i := 1; i < len(v); i++ {
+					tag.impReqHeaders.Add(k, v[i])
+				}
+			}
+		}
+	}
+	return tag.impReqHeaders
 }
