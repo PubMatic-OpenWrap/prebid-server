@@ -120,11 +120,11 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						filteredBids: map[string]*filteredBid{
-							`bid-1`: &filteredBid{bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-1`}}, reasonCode: constant.CTVRCCategoryExclusion},
-							`bid-2`: &filteredBid{bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-2`}}, reasonCode: constant.CTVRCCategoryExclusion},
-							`bid-3`: &filteredBid{bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-3`}}, reasonCode: constant.CTVRCCategoryExclusion},
+							`bid-1`: {bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-1`}}, reasonCode: constant.CTVRCCategoryExclusion},
+							`bid-2`: {bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-2`}}, reasonCode: constant.CTVRCCategoryExclusion},
+							`bid-3`: {bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-3`}}, reasonCode: constant.CTVRCCategoryExclusion},
 						},
 					},
 				},
@@ -139,11 +139,11 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-1`}},
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-2`}},
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-3`}},
+							{Bid: &openrtb.Bid{ID: `bid-1`}},
+							{Bid: &openrtb.Bid{ID: `bid-2`}},
+							{Bid: &openrtb.Bid{ID: `bid-3`}},
 						},
 						bidIDs:    []string{`bid-1`, `bid-2`, `bid-3`},
 						price:     20,
@@ -157,16 +157,16 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 							`domain-2`: 1,
 						},
 						filteredBids: map[string]*filteredBid{
-							`bid-4`: &filteredBid{bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-4`}}, reasonCode: constant.CTVRCCategoryExclusion},
+							`bid-4`: {bid: &types.Bid{Bid: &openrtb.Bid{ID: `bid-4`}}, reasonCode: constant.CTVRCCategoryExclusion},
 						},
 					},
 				},
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-1`}},
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-2`}},
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-3`}},
+					{Bid: &openrtb.Bid{ID: `bid-1`}},
+					{Bid: &openrtb.Bid{ID: `bid-2`}},
+					{Bid: &openrtb.Bid{ID: `bid-3`}},
 				},
 				Cat:     []string{`cat-1`, `cat-2`},
 				ADomain: []string{`domain-1`, `domain-2`},
@@ -181,33 +181,33 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-11`}},
+							{Bid: &openrtb.Bid{ID: `bid-11`}},
 						},
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 0,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+							{Bid: &openrtb.Bid{ID: `bid-21`}},
 						},
 						bidIDs:    []string{`bid-21`},
 						price:     20,
 						nDealBids: 0,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+							{Bid: &openrtb.Bid{ID: `bid-31`}},
 						},
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 0,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-41`}},
+							{Bid: &openrtb.Bid{ID: `bid-41`}},
 						},
 						bidIDs:    []string{`bid-41`},
 						price:     15,
@@ -217,7 +217,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+					{Bid: &openrtb.Bid{ID: `bid-21`}},
 				},
 				Cat:     []string{},
 				ADomain: []string{},
@@ -232,33 +232,33 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-11`}},
+							{Bid: &openrtb.Bid{ID: `bid-11`}},
 						},
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 1,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+							{Bid: &openrtb.Bid{ID: `bid-21`}},
 						},
 						bidIDs:    []string{`bid-21`},
 						price:     20,
 						nDealBids: 1,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+							{Bid: &openrtb.Bid{ID: `bid-31`}},
 						},
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 1,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-41`}},
+							{Bid: &openrtb.Bid{ID: `bid-41`}},
 						},
 						bidIDs:    []string{`bid-41`},
 						price:     15,
@@ -268,7 +268,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+					{Bid: &openrtb.Bid{ID: `bid-21`}},
 				},
 				Cat:     []string{},
 				ADomain: []string{},
@@ -283,33 +283,33 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-11`}},
+							{Bid: &openrtb.Bid{ID: `bid-11`}},
 						},
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 2,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+							{Bid: &openrtb.Bid{ID: `bid-21`}},
 						},
 						bidIDs:    []string{`bid-21`},
 						price:     20,
 						nDealBids: 1,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+							{Bid: &openrtb.Bid{ID: `bid-31`}},
 						},
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 3,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-41`}},
+							{Bid: &openrtb.Bid{ID: `bid-41`}},
 						},
 						bidIDs:    []string{`bid-41`},
 						price:     15,
@@ -319,7 +319,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+					{Bid: &openrtb.Bid{ID: `bid-31`}},
 				},
 				Cat:     []string{},
 				ADomain: []string{},
@@ -334,33 +334,33 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: []*highestCombination{
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-11`}},
+							{Bid: &openrtb.Bid{ID: `bid-11`}},
 						},
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 2,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-21`}},
+							{Bid: &openrtb.Bid{ID: `bid-21`}},
 						},
 						bidIDs:    []string{`bid-21`},
 						price:     20,
 						nDealBids: 0,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+							{Bid: &openrtb.Bid{ID: `bid-31`}},
 						},
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 3,
 					},
-					&highestCombination{
+					{
 						bids: []*types.Bid{
-							&types.Bid{Bid: &openrtb.Bid{ID: `bid-41`}},
+							{Bid: &openrtb.Bid{ID: `bid-41`}},
 						},
 						bidIDs:    []string{`bid-41`},
 						price:     15,
@@ -370,7 +370,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
-					&types.Bid{Bid: &openrtb.Bid{ID: `bid-31`}},
+					{Bid: &openrtb.Bid{ID: `bid-31`}},
 				},
 				Cat:     []string{},
 				ADomain: []string{},

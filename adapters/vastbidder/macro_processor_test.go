@@ -24,7 +24,7 @@ func TestMacroProcessor_ProcessString(t *testing.T) {
 
 	sampleBidRequest := &openrtb.BidRequest{
 		Imp: []openrtb.Imp{
-			openrtb.Imp{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroValues[MacroTagID]},
 		},
 		Site: &openrtb.Site{
 			Publisher: &openrtb.Publisher{
@@ -161,7 +161,7 @@ func TestMacroProcessor_processKey(t *testing.T) {
 
 	sampleBidRequest := &openrtb.BidRequest{
 		Imp: []openrtb.Imp{
-			openrtb.Imp{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroValues[MacroTagID]},
 		},
 		Site: &openrtb.Site{
 			Publisher: &openrtb.Publisher{
@@ -314,7 +314,7 @@ func TestMacroProcessor_processURLValues(t *testing.T) {
 
 	sampleBidRequest := &openrtb.BidRequest{
 		Imp: []openrtb.Imp{
-			openrtb.Imp{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroValues[MacroTagID]},
 		},
 		Site: &openrtb.Site{
 			Publisher: &openrtb.Publisher{
@@ -433,7 +433,7 @@ func TestMacroProcessor_processURLValuesEscapingKeys(t *testing.T) {
 
 	sampleBidRequest := &openrtb.BidRequest{
 		Imp: []openrtb.Imp{
-			openrtb.Imp{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroValues[MacroTagID]},
 		},
 		Site: &openrtb.Site{
 			Publisher: &openrtb.Publisher{
@@ -505,7 +505,7 @@ func TestMacroProcessor_ProcessURL(t *testing.T) {
 
 	sampleBidRequest := &openrtb.BidRequest{
 		Imp: []openrtb.Imp{
-			openrtb.Imp{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroValues[MacroTagID]},
 		},
 		Site: &openrtb.Site{
 			ID: testMacroValues[MacroSiteID],
