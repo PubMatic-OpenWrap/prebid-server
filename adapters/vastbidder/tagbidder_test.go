@@ -42,7 +42,7 @@ func TestMakeRequests(t *testing.T) {
 						Page: "http://test.com/",
 					},
 					Imp: []openrtb.Imp{
-						openrtb.Imp{ // vast 2.0
+						{ // vast 2.0
 							ID: "vast_2_0_imp_req",
 							Video: &openrtb.Video{
 								Protocols: []openrtb.Protocol{
@@ -51,7 +51,7 @@ func TestMakeRequests(t *testing.T) {
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
-						openrtb.Imp{
+						{
 							ID: "vast_4_0_imp_req",
 							Video: &openrtb.Video{ // vast 4.0
 								Protocols: []openrtb.Protocol{
@@ -60,7 +60,7 @@ func TestMakeRequests(t *testing.T) {
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
-						openrtb.Imp{
+						{
 							ID: "vast_2_0_4_0_wrapper_imp_req",
 							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
 								Protocols: []openrtb.Protocol{
@@ -70,7 +70,7 @@ func TestMakeRequests(t *testing.T) {
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
-						openrtb.Imp{
+						{
 							ID: "other_non_vast_protocol",
 							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
 								Protocols: []openrtb.Protocol{
@@ -79,7 +79,7 @@ func TestMakeRequests(t *testing.T) {
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
-						openrtb.Imp{
+						{
 							ID: "no_protocol_field_set",
 							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
 								Protocols: []openrtb.Protocol{},
@@ -91,19 +91,19 @@ func TestMakeRequests(t *testing.T) {
 			},
 			want: want{
 				impIDReqHeaderMap: map[string]http.Header{
-					"vast_2_0_imp_req": http.Header{
+					"vast_2_0_imp_req": {
 						"X-Forwarded-For":  []string{"1.1.1.1"},
 						"User-Agent":       []string{"user-agent"},
 						"My-Custom-Header": []string{"custom-value"},
 					},
-					"vast_4_0_imp_req": http.Header{
+					"vast_4_0_imp_req": {
 						"X-Device-Ip":              []string{"1.1.1.1"},
 						"X-Device-User-Agent":      []string{"user-agent"},
 						"X-Device-Referer":         []string{"http://test.com/"},
 						"X-Device-Accept-Language": []string{"en"},
 						"My-Custom-Header":         []string{"custom-value"},
 					},
-					"vast_2_0_4_0_wrapper_imp_req": http.Header{
+					"vast_2_0_4_0_wrapper_imp_req": {
 						"X-Device-Ip":              []string{"1.1.1.1"},
 						"X-Forwarded-For":          []string{"1.1.1.1"},
 						"X-Device-User-Agent":      []string{"user-agent"},
@@ -112,10 +112,10 @@ func TestMakeRequests(t *testing.T) {
 						"X-Device-Accept-Language": []string{"en"},
 						"My-Custom-Header":         []string{"custom-value"},
 					},
-					"other_non_vast_protocol": http.Header{
+					"other_non_vast_protocol": {
 						"My-Custom-Header": []string{"custom-value"},
 					}, // no default headers expected
-					"no_protocol_field_set": http.Header{ // set all default headers
+					"no_protocol_field_set": { // set all default headers
 						"X-Device-Ip":              []string{"1.1.1.1"},
 						"X-Forwarded-For":          []string{"1.1.1.1"},
 						"X-Device-User-Agent":      []string{"user-agent"},

@@ -56,7 +56,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 			name: "no headers set",
 			args: args{req: &openrtb.BidRequest{}},
 			want: want{
-				headers: nil,
+				headers: http.Header{},
 			},
 		}, {
 			name: "vast 4 protocol",
@@ -71,7 +71,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 						Page: "http://test.com/",
 					},
 					Imp: []openrtb.Imp{
-						openrtb.Imp{
+						{
 							Video: &openrtb.Video{
 								Protocols: []openrtb.Protocol{
 									openrtb.ProtocolVAST40,
@@ -103,7 +103,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 						Page: "http://test.com/",
 					},
 					Imp: []openrtb.Imp{
-						openrtb.Imp{
+						{
 							Video: &openrtb.Video{
 								Protocols: []openrtb.Protocol{
 									openrtb.ProtocolVAST20,
