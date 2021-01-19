@@ -121,6 +121,15 @@ type IBidderMacro interface {
 	MacroContentProductionQuality(string) string
 	MacroContentVideoQuality(string) string
 	MacroContentContext(string) string
+	MacroContentContentRating(string) string
+	MacroContentUserRating(string) string
+	MacroContentQAGMediaRating(string) string
+	MacroContentKeywords(string) string
+	MacroContentLiveStream(string) string
+	MacroContentSourceRelationship(string) string
+	MacroContentLength(string) string
+	MacroContentLanguage(string) string
+	MacroContentEmbeddable(string) string
 
 	//Producer
 	MacroProducerID(string) string
