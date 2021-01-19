@@ -5,13 +5,10 @@ import (
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/etree"
-
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
