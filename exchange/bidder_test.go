@@ -874,6 +874,9 @@ func TestBadRequestLogging(t *testing.T) {
 	if ext.Status != 0 {
 		t.Errorf("The Status code should be 0. Got %d", ext.Status)
 	}
+	if nil != ext.RequestHeaders || len(ext.RequestHeaders) > 0 {
+		t.Errorf("The request headers should be empty. Got %s", ext.RequestHeaders)
+	}
 }
 
 // TestBadResponseLogging makes sure that openrtb_ext works properly if we don't get a sensible HTTP response.
@@ -882,6 +885,9 @@ func TestBadResponseLogging(t *testing.T) {
 		request: &adapters.RequestData{
 			Uri:  "test.com",
 			Body: []byte("request body"),
+			Headers: http.Header{
+				"header-1": []string{"value-1"},
+			},
 		},
 		err: errors.New("Bad response"),
 	}
@@ -898,6 +904,7 @@ func TestBadResponseLogging(t *testing.T) {
 	if ext.Status != 0 {
 		t.Errorf("The Status code should be 0. Got %d", ext.Status)
 	}
+	assert.Equal(t, info.request.Headers, http.Header(ext.RequestHeaders), "The request headers should be \"header-1:value-1\"")
 }
 
 // TestSuccessfulResponseLogging makes sure that openrtb_ext works properly if the HTTP request is successful.
@@ -906,6 +913,9 @@ func TestSuccessfulResponseLogging(t *testing.T) {
 		request: &adapters.RequestData{
 			Uri:  "test.com",
 			Body: []byte("request body"),
+			Headers: http.Header{
+				"header-1": []string{"value-1", "value-2"},
+			},
 		},
 		response: &adapters.ResponseData{
 			StatusCode: 200,
@@ -925,6 +935,9 @@ func TestSuccessfulResponseLogging(t *testing.T) {
 	if ext.Status != info.response.StatusCode {
 		t.Errorf("The Status code should be 0. Got %d", ext.Status)
 	}
+
+	assert.Equal(t, info.request.Headers, http.Header(ext.RequestHeaders), "The request headers should be \"%s\". Got %s", info.request.Headers, ext.RequestHeaders)
+
 }
 
 // TestServerCallDebugging makes sure that we log the server calls made by the Bidder on test bids.
