@@ -947,9 +947,7 @@ func TestSuccessfulResponseLogging(t *testing.T) {
 	if ext.Status != info.response.StatusCode {
 		t.Errorf("The Status code should be 0. Got %d", ext.Status)
 	}
-
 	assert.Equal(t, info.request.Headers, http.Header(ext.RequestHeaders), "The request headers should be \"%s\". Got %s", info.request.Headers, ext.RequestHeaders)
-
 }
 
 func TestMobileNativeTypes(t *testing.T) {
