@@ -80,7 +80,7 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 	tag.init()
 }
 
-//LoadImpression will set current imp and populate default headers
+//LoadImpression will set current imp
 func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	tag.Imp = imp
 
