@@ -333,7 +333,7 @@ func (tag *BidderMacro) MacroVideoStartDelay(key string) string {
 
 //MacroVideoPlacement contains definition for VideoPlacement Parameter
 func (tag *BidderMacro) MacroVideoPlacement(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.Placement > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Placement), intBase)
 	}
 	return ""
@@ -341,7 +341,7 @@ func (tag *BidderMacro) MacroVideoPlacement(key string) string {
 
 //MacroVideoLinearity contains definition for VideoLinearity Parameter
 func (tag *BidderMacro) MacroVideoLinearity(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.Linearity > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Linearity), intBase)
 	}
 	return ""
@@ -349,7 +349,7 @@ func (tag *BidderMacro) MacroVideoLinearity(key string) string {
 
 //MacroVideoSkip contains definition for VideoSkip Parameter
 func (tag *BidderMacro) MacroVideoSkip(key string) string {
-	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip && *tag.Imp.Video.Skip > 0 {
+	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip {
 		return strconv.FormatInt(int64(*tag.Imp.Video.Skip), intBase)
 	}
 	return ""
@@ -557,7 +557,7 @@ func (tag *BidderMacro) MacroAppVersion(key string) string {
 
 //MacroAppPaid contains definition for AppPaid Parameter
 func (tag *BidderMacro) MacroAppPaid(key string) string {
-	if tag.IsApp {
+	if tag.IsApp && tag.Request.App.Paid != 0 {
 		return strconv.FormatInt(int64(tag.Request.App.Paid), intBase)
 	}
 	return ""
@@ -576,9 +576,9 @@ func (tag *BidderMacro) MacroCategory(key string) string {
 //MacroDomain contains definition for Domain Parameter
 func (tag *BidderMacro) MacroDomain(key string) string {
 	if tag.IsApp {
-		return strings.Join(tag.Request.App.Cat, comma)
+		return tag.Request.App.Domain
 	}
-	return strings.Join(tag.Request.Site.Cat, comma)
+	return tag.Request.Site.Domain
 }
 
 //MacroSectionCategory contains definition for SectionCategory Parameter
@@ -753,8 +753,80 @@ func (tag *BidderMacro) MacroContentVideoQuality(key string) string {
 
 //MacroContentContext contains definition for ContentContext Parameter
 func (tag *BidderMacro) MacroContentContext(key string) string {
-	if nil != tag.Content {
+	if nil != tag.Content && tag.Content.Context > 0 {
 		return strconv.FormatInt(int64(tag.Content.Context), intBase)
+	}
+	return ""
+}
+
+//MacroContentContentRating contains definition for ContentContentRating Parameter
+func (tag *BidderMacro) MacroContentContentRating(key string) string {
+	if nil != tag.Content {
+		return tag.Content.ContentRating
+	}
+	return ""
+}
+
+//MacroContentUserRating contains definition for ContentUserRating Parameter
+func (tag *BidderMacro) MacroContentUserRating(key string) string {
+	if nil != tag.Content {
+		return tag.Content.UserRating
+	}
+	return ""
+}
+
+//MacroContentQAGMediaRating contains definition for ContentQAGMediaRating Parameter
+func (tag *BidderMacro) MacroContentQAGMediaRating(key string) string {
+	if nil != tag.Content && tag.Content.QAGMediaRating > 0 {
+		return strconv.FormatInt(int64(tag.Content.QAGMediaRating), intBase)
+	}
+	return ""
+}
+
+//MacroContentKeywords contains definition for ContentKeywords Parameter
+func (tag *BidderMacro) MacroContentKeywords(key string) string {
+	if nil != tag.Content {
+		return tag.Content.Keywords
+	}
+	return ""
+}
+
+//MacroContentLiveStream contains definition for ContentLiveStream Parameter
+func (tag *BidderMacro) MacroContentLiveStream(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.LiveStream), intBase)
+	}
+	return ""
+}
+
+//MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
+func (tag *BidderMacro) MacroContentSourceRelationship(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.SourceRelationship), intBase)
+	}
+	return ""
+}
+
+//MacroContentLength contains definition for ContentLength Parameter
+func (tag *BidderMacro) MacroContentLength(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.Len), intBase)
+	}
+	return ""
+}
+
+//MacroContentLanguage contains definition for ContentLanguage Parameter
+func (tag *BidderMacro) MacroContentLanguage(key string) string {
+	if nil != tag.Content {
+		return tag.Content.Language
+	}
+	return ""
+}
+
+//MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
+func (tag *BidderMacro) MacroContentEmbeddable(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.Embeddable), intBase)
 	}
 	return ""
 }

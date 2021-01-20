@@ -121,11 +121,6 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		}
 	}
 
-	// generate random creative id if not present
-	if "" == typedBid.Bid.CrID {
-		typedBid.Bid.CrID = "cr_" + GetRandomID()
-	}
-
 	bidResponse := &adapters.BidderResponse{
 		Bids:     []*adapters.TypedBid{typedBid},
 		Currency: `USD`, //TODO: Need to check how to get currency value
@@ -172,7 +167,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 
 	//if bid.CrID is not set in ParseExtension
 	if len(typedBid.Bid.CrID) == 0 {
-		typedBid.Bid.CrID = getCreativeID(adElement)
+		typedBid.Bid.CrID = "cr_" + GetRandomID()
 	}
 
 	return bidResponse, nil
