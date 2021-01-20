@@ -876,7 +876,7 @@ func getAdDuration(bid openrtb.Bid, defaultDuration int64) int {
 	}
 	return int(duration)
 }
-  
+
 func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value string) error {
 	if nil == bid {
 		return errors.New("Invalid bid")
