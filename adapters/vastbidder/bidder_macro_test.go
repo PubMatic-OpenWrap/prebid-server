@@ -51,7 +51,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 			name: "nil bid request",
 			args: args{req: nil},
 			want: want{
-				headers: nil,
+				headers: http.Header{},
 			},
 		},
 		{
@@ -122,17 +122,51 @@ func TestSetDefaultHeaders(t *testing.T) {
 					"User-Agent":      []string{"user-agent"},
 				},
 			},
+		}, {
+			name: "vast 4.0 and 4.0 wrapper",
+			args: args{
+				req: &openrtb.BidRequest{
+					Device: &openrtb.Device{
+						IP:       "1.1.1.1",
+						UA:       "user-agent",
+						Language: "en",
+					},
+					Site: &openrtb.Site{
+						Page: "http://test.com/",
+					},
+					Imp: []openrtb.Imp{
+						{
+							Video: &openrtb.Video{
+								Protocols: []openrtb.Protocol{
+									openrtb.ProtocolVAST40,
+									openrtb.ProtocolVAST40Wrapper,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				headers: http.Header{
+					"X-Device-Ip":              []string{"1.1.1.1"},
+					"X-Device-User-Agent":      []string{"user-agent"},
+					"X-Device-Referer":         []string{"http://test.com/"},
+					"X-Device-Accept-Language": []string{"en"},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tag := new(BidderMacro)
+			tag.IBidderMacro = tag
+			tag.IsApp = false
 			tag.Request = tt.args.req
 			if nil != tt.args.req && nil != tt.args.req.Imp && len(tt.args.req.Imp) > 0 {
 				tag.Imp = &tt.args.req.Imp[0]
 			}
 			setDefaultHeaders(tag)
-			assert.Equal(t, tt.want.headers, tag.impReqHeaders)
+			assert.Equal(t, tt.want.headers, tag.ImpReqHeaders)
 		})
 	}
 }

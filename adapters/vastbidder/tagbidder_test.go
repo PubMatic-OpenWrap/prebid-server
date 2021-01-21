@@ -72,7 +72,7 @@ func TestMakeRequests(t *testing.T) {
 						},
 						{
 							ID: "other_non_vast_protocol",
-							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
+							Video: &openrtb.Video{ // DAAST 1.0
 								Protocols: []openrtb.Protocol{
 									openrtb.ProtocolDAAST10,
 								},
