@@ -1,5 +1,7 @@
 package vastbidder
 
+import "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+
 type macroCallBack struct {
 	cached   bool
 	callback func(IBidderMacro, string) string
@@ -177,4 +179,9 @@ var _defaultMapper = Mapper{
 //GetDefaultMapper will return clone of default Mapper function
 func GetDefaultMapper() Mapper {
 	return _defaultMapper.clone()
+}
+
+//GetBidderMapper will return bidder specific mapper function
+func GetBidderMapper(bidderName openrtb_ext.BidderName) Mapper {
+	return GetDefaultMapper()
 }

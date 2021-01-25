@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
 )
 
@@ -98,8 +99,8 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 	return value, found
 }
 
-//ProcessString : Substitute macros in input string
-func (mp *MacroProcessor) ProcessString(in string) (response string) {
+//Process : Substitute macros in input string
+func (mp *MacroProcessor) Process(in string, flags Flags) (response string) {
 	var out bytes.Buffer
 	pos, start, end, size := 0, 0, 0, len(in)
 
@@ -156,14 +157,14 @@ func (mp *MacroProcessor) ProcessString(in string) (response string) {
 //ProcessURL : Substitute macros in input string
 func (mp *MacroProcessor) ProcessURL(uri string, flags Flags) (response string) {
 	if !flags.RemoveEmptyParam {
-		return mp.ProcessString(uri)
+		return mp.Process(uri, flags)
 	}
 
 	url, _ := url.Parse(uri)
 
-	url.Path = mp.ProcessString(url.Path)
+	url.Path = mp.Process(url.Path, flags)
 	url.RawQuery = mp.processURLValues(url.Query(), flags)
-	url.Fragment = mp.ProcessString(url.Fragment)
+	url.Fragment = mp.Process(url.Fragment, flags)
 
 	response = url.String()
 
@@ -189,7 +190,7 @@ func (mp *MacroProcessor) processURLValues(values url.Values, flags Flags) (resp
 
 		if !found {
 			//if key is not present then process it as normal string
-			value = mp.ProcessString(macroKey)
+			value = mp.Process(macroKey, flags)
 		}
 
 		if flags.RemoveEmptyParam == false || len(value) > 0 {
@@ -215,4 +216,9 @@ func escape(str string, n int) string {
 		str = url.QueryEscape(str)
 	}
 	return str[:]
+}
+
+//GetBidderMacroProcessor will return IMacroProcessor of specific bidder
+func GetBidderMacroProcessor(bidder openrtb_ext.BidderName, bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor {
+	return NewMacroProcessor(bidderMacro, mapper)
 }

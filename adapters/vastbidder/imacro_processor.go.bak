@@ -1,0 +1,33 @@
+package vastbidder
+
+import "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+
+//Flags of each tag bidder
+type Flags struct {
+	RemoveEmptyParam bool `json:"remove_empty,omitempty"`
+}
+
+//IMacroProcessor common interface which used for replacing macro's
+type IMacroProcessor interface {
+	SetMacro(key, value string)
+	SetBidderKeys(keys map[string]string)
+	Process(string string, flags Flags) (response string)
+}
+
+type macroProcessorInitFunc func(IBidderMacro, Mapper) IMacroProcessor
+
+var macroProcessorMap = map[openrtb_ext.BidderName]macroProcessorInitFunc{}
+
+//RegisterNewMacroProcessor will be used by each bidder to set its respective macroprocessor
+func RegisterNewMacroProcessor(bidder openrtb_ext.BidderName, processor macroProcessorInitFunc) {
+	macroProcessorMap[bidder] = processor
+}
+
+//GetNewMacroProcessor will return IMacroProcessor of specific bidder
+func GetNewMacroProcessor(bidder openrtb_ext.BidderName, bidderMacro IBidderMacro, mapper Mapper) IMacroProcessor {
+	callback, ok := macroProcessorMap[bidder]
+	if ok {
+		return callback(bidderMacro, mapper)
+	}
+	return NewMacroProcessor(bidderMacro, mapper)
+}

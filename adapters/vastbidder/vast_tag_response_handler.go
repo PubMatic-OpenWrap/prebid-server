@@ -30,7 +30,9 @@ type VASTTagResponseHandler struct {
 
 //NewVASTTagResponseHandler returns new object
 func NewVASTTagResponseHandler() *VASTTagResponseHandler {
-	return &VASTTagResponseHandler{}
+	obj := &VASTTagResponseHandler{}
+	obj.IVASTTagResponseHandler = obj
+	return obj
 }
 
 //Validate will return bids

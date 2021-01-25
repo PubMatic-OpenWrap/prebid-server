@@ -16,37 +16,8 @@ type TagBidder struct {
 
 //MakeRequests will contains default definition for processing queries
 func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	bidderMacro := GetNewBidderMacro(a.bidderName)
-	bidderMapper := GetDefaultMapper()
-	macroProcessor := NewMacroProcessor(bidderMacro, bidderMapper)
-
-	//Setting config parameters
-	//bidderMacro.SetBidderConfig(a.bidderConfig)
-	bidderMacro.SetAdapterConfig(a.adapterConfig)
-	bidderMacro.InitBidRequest(request)
-
-	requestData := []*adapters.RequestData{}
-	for i := range request.Imp {
-		if err := bidderMacro.LoadImpression(&request.Imp[i]); nil != err {
-			continue
-		}
-
-		//Setting Bidder Level Keys
-		bidderKeys := bidderMacro.GetBidderKeys()
-		macroProcessor.SetBidderKeys(bidderKeys)
-
-		//uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), a.bidderConfig.Flags)
-		uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), Flags{RemoveEmptyParam: true})
-
-		requestData = append(requestData, &adapters.RequestData{
-			ImpIndex: i,
-			Method:   `GET`,
-			Uri:      uri,
-			Headers:  bidderMacro.GetHeaders(),
-		})
-	}
-
-	return requestData, nil
+	handler := GetTagRequestHandler(a.bidderName, a.adapterConfig)
+	return handler.MakeRequests(request, reqInfo)
 }
 
 //MakeBids makes bids

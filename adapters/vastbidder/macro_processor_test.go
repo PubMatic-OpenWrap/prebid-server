@@ -144,7 +144,7 @@ func TestMacroProcessor_ProcessString(t *testing.T) {
 			bidderMacro.InitBidRequest(sampleBidRequest)
 			bidderMacro.LoadImpression(&sampleBidRequest.Imp[0])
 
-			gotResponse := mp.ProcessString(tt.in)
+			gotResponse := mp.Process(tt.in, Flags{})
 			assert.Equal(t, tt.expected, gotResponse)
 		})
 	}

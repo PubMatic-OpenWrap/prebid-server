@@ -180,15 +180,17 @@ type IBidderMacro interface {
 	MacroCacheBuster(string) string
 }
 
-var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}
+type bidderMacroInitFunc func() IBidderMacro
+
+var bidderMacroMap = map[openrtb_ext.BidderName]bidderMacroInitFunc{}
 
 //RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
-func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro func() IBidderMacro) {
+func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro bidderMacroInitFunc) {
 	bidderMacroMap[bidder] = macro
 }
 
-//GetNewBidderMacro will return IBidderMacro of specific bidder
-func GetNewBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro {
+//GetBidderMacro will return IBidderMacro of specific bidder
+func GetBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro {
 	callback, ok := bidderMacroMap[bidder]
 	if ok {
 		return callback()
