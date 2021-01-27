@@ -1168,26 +1168,18 @@ func setDefaultHeaders(tag *BidderMacro) {
 		expectedVastTags = 3
 	}
 
-	switch expectedVastTags {
-	case 2:
+	if expectedVastTags == 1 || expectedVastTags == 3 {
+		// vast prior to version 3 headers
+		setHeaders(headers, "X-Forwarded-For", ip)
+		setHeaders(headers, "User-Agent", userAgent)
+	}
+
+	if expectedVastTags == 2 || expectedVastTags == 3 {
 		// vast 4 specific headers
 		setHeaders(headers, "X-device-Ip", ip)
 		setHeaders(headers, "X-Device-User-Agent", userAgent)
 		setHeaders(headers, "X-Device-Referer", referer)
 		setHeaders(headers, "X-Device-Accept-Language", language)
-	case 1:
-		// vast prior to version 3 headers
-		setHeaders(headers, "X-Forwarded-For", ip)
-		setHeaders(headers, "User-Agent", userAgent)
-	case 3:
-		// vast 4 specific headers
-		setHeaders(headers, "X-device-Ip", ip)
-		setHeaders(headers, "X-Device-User-Agent", userAgent)
-		setHeaders(headers, "X-Device-Referer", referer)
-		setHeaders(headers, "X-Device-Accept-Language", language)
-		// vast prior to version 3 headers
-		setHeaders(headers, "X-Forwarded-For", ip)
-		setHeaders(headers, "User-Agent", userAgent)
 	}
 	tag.ImpReqHeaders = headers
 }

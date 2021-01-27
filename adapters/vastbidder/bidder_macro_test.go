@@ -155,6 +155,41 @@ func TestSetDefaultHeaders(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "vast 2.0 and 4.0",
+			args: args{
+				req: &openrtb.BidRequest{
+					Device: &openrtb.Device{
+						IP:       "1.1.1.1",
+						UA:       "user-agent",
+						Language: "en",
+					},
+					Site: &openrtb.Site{
+						Page: "http://test.com/",
+					},
+					Imp: []openrtb.Imp{
+						{
+							Video: &openrtb.Video{
+								Protocols: []openrtb.Protocol{
+									openrtb.ProtocolVAST40,
+									openrtb.ProtocolVAST20Wrapper,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				headers: http.Header{
+					"X-Device-Ip":              []string{"1.1.1.1"},
+					"X-Forwarded-For":          []string{"1.1.1.1"},
+					"X-Device-User-Agent":      []string{"user-agent"},
+					"User-Agent":               []string{"user-agent"},
+					"X-Device-Referer":         []string{"http://test.com/"},
+					"X-Device-Accept-Language": []string{"en"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
