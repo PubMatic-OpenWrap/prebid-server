@@ -142,7 +142,7 @@ const (
 
 	//Geo
 	MacroLatitude  = `lat`
-	MacroLongitude = `long`
+	MacroLongitude = `lon`
 	MacroCountry   = `country`
 	MacroRegion    = `region`
 	MacroCity      = `city`
