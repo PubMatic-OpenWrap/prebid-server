@@ -32,6 +32,9 @@ type BidderMacro struct {
 	Content      *openrtb.Content
 	UserExt      *openrtb_ext.ExtUser
 	RegsExt      *openrtb_ext.ExtRegs
+
+	// Impression level Request Headers
+	ImpReqHeaders http.Header
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
@@ -90,7 +93,6 @@ func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
 	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -118,7 +120,8 @@ func (tag *BidderMacro) GetURI() string {
 	return tag.Conf.Endpoint
 }
 
-//GetHeaders GetHeaders
+//GetHeaders returns list of custom request headers
+//Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
@@ -480,7 +483,7 @@ func (tag *BidderMacro) MacroSiteName(key string) string {
 
 //MacroSitePage contains definition for SitePage Parameter
 func (tag *BidderMacro) MacroSitePage(key string) string {
-	if !tag.IsApp {
+	if !tag.IsApp && nil != tag.Request && nil != tag.Request.Site {
 		return tag.Request.Site.Page
 	}
 	return ""
@@ -850,7 +853,7 @@ func (tag *BidderMacro) MacroProducerName(key string) string {
 
 //MacroUserAgent contains definition for UserAgent Parameter
 func (tag *BidderMacro) MacroUserAgent(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.UA
 	}
 	return ""
@@ -874,7 +877,7 @@ func (tag *BidderMacro) MacroLMT(key string) string {
 
 //MacroIP contains definition for IP Parameter
 func (tag *BidderMacro) MacroIP(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		if len(tag.Request.Device.IP) > 0 {
 			return tag.Request.Device.IP
 		} else if len(tag.Request.Device.IPv6) > 0 {
@@ -950,7 +953,7 @@ func (tag *BidderMacro) MacroDeviceJS(key string) string {
 
 //MacroDeviceLanguage contains definition for DeviceLanguage Parameter
 func (tag *BidderMacro) MacroDeviceLanguage(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.Language
 	}
 	return ""
@@ -1128,4 +1131,81 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}
+
+/********************* Request Headers *********************/
+
+// setDefaultHeaders sets following default headers based on VAST protocol version
+//  X-device-IP; end users IP address, per VAST 4.x
+//  X-Forwarded-For; end users IP address, prior VAST versions
+//  X-Device-User-Agent; End users user agent, per VAST 4.x
+//  User-Agent; End users user agent, prior VAST versions
+//  X-Device-Referer; Referer value from the original request, per VAST 4.x
+//  X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
+func setDefaultHeaders(tag *BidderMacro) {
+	// openrtb2. auction.go setDeviceImplicitly
+	// already populates OpenRTB bid request based on http request headers
+	// reusing the same information to set these headers via Macro* methods
+	headers := http.Header{}
+	ip := tag.IBidderMacro.MacroIP("")
+	userAgent := tag.IBidderMacro.MacroUserAgent("")
+	referer := tag.IBidderMacro.MacroSitePage("")
+	language := tag.IBidderMacro.MacroDeviceLanguage("")
+
+	// 1 - vast 1 - 3 expected, 2 - vast 4 expected
+	expectedVastTags := 0
+	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols && len(tag.Imp.Video.Protocols) > 0 {
+		for _, protocol := range tag.Imp.Video.Protocols {
+			if protocol == openrtb.ProtocolVAST40 || protocol == openrtb.ProtocolVAST40Wrapper {
+				expectedVastTags |= 1 << 1
+			}
+			if protocol <= openrtb.ProtocolVAST30Wrapper {
+				expectedVastTags |= 1 << 0
+			}
+		}
+	} else {
+		// not able to detect protocols. set all headers
+		expectedVastTags = 3
+	}
+
+	if expectedVastTags == 1 || expectedVastTags == 3 {
+		// vast prior to version 3 headers
+		setHeaders(headers, "X-Forwarded-For", ip)
+		setHeaders(headers, "User-Agent", userAgent)
+	}
+
+	if expectedVastTags == 2 || expectedVastTags == 3 {
+		// vast 4 specific headers
+		setHeaders(headers, "X-device-Ip", ip)
+		setHeaders(headers, "X-Device-User-Agent", userAgent)
+		setHeaders(headers, "X-Device-Referer", referer)
+		setHeaders(headers, "X-Device-Accept-Language", language)
+	}
+	tag.ImpReqHeaders = headers
+}
+
+func setHeaders(headers http.Header, key, value string) {
+	if "" != value {
+		headers.Set(key, value)
+	}
+}
+
+//getAllHeaders combines default and custom headers and returns common list
+//It internally calls GetHeaders() method for obtaining list of custom headers
+func (tag *BidderMacro) getAllHeaders() http.Header {
+	setDefaultHeaders(tag)
+	customHeaders := tag.IBidderMacro.GetHeaders()
+	if nil != customHeaders {
+		for k, v := range customHeaders {
+			// custom header may contains default header key with value
+			// in such case custom value will be prefered
+			if nil != v && len(v) > 0 {
+				tag.ImpReqHeaders.Set(k, v[0])
+				for i := 1; i < len(v); i++ {
+					tag.ImpReqHeaders.Add(k, v[i])
+				}
+			}
+		}
+	}
+	return tag.ImpReqHeaders
 }
