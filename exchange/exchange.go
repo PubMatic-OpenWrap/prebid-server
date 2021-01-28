@@ -15,8 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	uuid "github.com/gofrs/uuid"
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -919,4 +921,68 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 		}
 	}
 	return bidIDCollisionFound
+}
+
+func adjustDomain(domain string) (string, error) {
+	if strings.Index(domain, "http") == -1 {
+		domain = fmt.Sprintf("http://%s", domain)
+	}
+
+	url, err := url.Parse(domain)
+	if nil == err {
+		return publicsuffix.EffectiveTLDPlusOne(url.Host)
+	}
+	return "", err
+}
+
+func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, adapterMap map[openrtb_ext.BidderName]adaptedBidder) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+	rejections := []string{}
+	for bidderName, seatBid := range seatBids {
+		adptedBidder := adapterMap[bidderName]
+		bidder, isBidder := adptedBidder.(*bidderAdapter)
+		// apply advertiser blocking only if bidder is tagbidder
+		if isBidder {
+			_, isTagBidder := bidder.Bidder.(*vastbidder.TagBidder)
+			if isTagBidder && len(bidRequest.BAdv) > 0 {
+				for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
+					// for bidIndex, bid := range seatBid.bids {
+					bid := seatBid.bids[bidIndex]
+					// rejectedBids := []int{} // stores index of bid
+					if nil != bid.bid.ADomain {
+						for _, bAdv := range bidRequest.BAdv {
+							for _, adomain := range bid.bid.ADomain {
+								if bAdvTLD, err := adjustDomain(bAdv); nil == err {
+									if aDomainTLD, err := adjustDomain(adomain); nil == err {
+										// fmt.Println(bAdvTLD)
+										// fmt.Println(aDomainTLD)
+										if aDomainTLD == bAdvTLD {
+											// reject the bid. bid belongs to blocked advertisers list
+											seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
+											rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid belongs to blocked advertiser '%s'", bAdv))
+										}
+									}
+								}
+							}
+						}
+					}
+
+					// // remove rejected bid
+					// if len(rejectedBids) == len(seatBid.bids) {
+					// 	// remove entie seat bid
+					// 	seatBid.bids = nil
+					// } else {
+					// 	sort.Ints(rejectedBids)
+					// 	bids := seatBid.bids
+					// 	for i := len(rejectedBids) - 1; i >= 0; i-- {
+					// 		remInd := rejectedBids[i]
+					// 		bids = append(bids[:remInd], bids[remInd+1:]...)
+					// 	}
+					// 	seatBid.bids = bids
+					// }
+
+				}
+			}
+		}
+	}
+	return seatBids, rejections
 }
