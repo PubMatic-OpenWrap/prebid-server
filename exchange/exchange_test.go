@@ -2586,6 +2586,23 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 		},
 		{
 			name: "Badv_is_not_present", // expect no advertiser blocking
+			args: args{
+				advBlockReq: &openrtb.BidRequest{BAdv: nil},
+				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+					newTestTagAdapter("tab_bidder_1"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+							{bid: &openrtb.Bid{ID: "bid_2_adapter_1"}},
+						},
+					},
+				},
+			},
+			want: want{
+				rejectedBidIds: []string{}, // no bid rejection expected
+				validBidCountPerSeat: map[string]int{
+					"tab_bidder_1": 2,
+				},
+			},
 		},
 		{
 			name: "adomain_is_not_present_but_Badv_is_set", // reject bids without adomain as badv is set
@@ -2854,7 +2871,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fmt.Println(tt.name)
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			adapterMap := make(map[openrtb_ext.BidderName]adaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
@@ -2907,7 +2923,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 }
 
-func TestAdjustDomain(t *testing.T) {
+func TestNormalizeDomain(t *testing.T) {
 	type args struct {
 		domain string
 	}
@@ -2929,14 +2945,14 @@ func TestAdjustDomain(t *testing.T) {
 		{name: "trim_domain", args: args{domain: " trim.me?k=v    "}, want: want{domain: "trim.me"}},
 		{name: "trim_domain_with_http_in_it", args: args{domain: " http://trim.me?k=v    "}, want: want{domain: "trim.me"}},
 		{name: "https://www.something.a.com/my/page?k=1", args: args{domain: "https://www.something.a.com/my/page?k=1"}, want: want{domain: "something.a.com"}},
+		{name: "wWW.something.a.com", args: args{domain: "wWW.something.a.com"}, want: want{domain: "something.a.com"}},
+		{name: "2_times_www", args: args{domain: "www.something.www.a.com"}, want: want{domain: "something.www.a.com"}},
+		{name: "consecutive_www", args: args{domain: "www.www.something.a.com"}, want: want{domain: "www.something.a.com"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// if tt.name != "trim_domain_with_http_in_it" {
-			// 	return
-			// }
-			adjustedDomain, err := adjustDomain(tt.args.domain)
+			adjustedDomain, err := normalizeDomain(tt.args.domain)
 			actualErr := "nil"
 			expectedErr := "nil"
 			if nil != err {

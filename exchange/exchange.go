@@ -18,7 +18,6 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	uuid "github.com/gofrs/uuid"
-	"golang.org/x/net/publicsuffix"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -929,18 +928,20 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 	return bidIDCollisionFound
 }
 
-//adjustDomain returns tld+1 of the given domain
+//normalizeDomain validates, normalizes and returns valid domain or error if failed to validate
 //checks if domain starts with http by lowercasing entire domain
 //if not it prepends it before domain. This is required for obtaining the url
-//using url.parse method. if it able to parse url successfully it will then
-//find tld+1 of the given domain
-func adjustDomain(domain string) (string, error) {
+//using url.parse method. on successfull url parsing, it will replace first occurance of www.
+//from the domain
+func normalizeDomain(domain string) (string, error) {
+	domain = strings.Trim(domain, " ")
 	if strings.Index(domain, "http") == -1 {
 		domain = fmt.Sprintf("http://%s", strings.ToLower(domain))
 	}
-	url, err := url.Parse(strings.Trim(domain, " "))
+	url, err := url.Parse(domain)
 	if nil == err && url.Host != "" {
-		return publicsuffix.EffectiveTLDPlusOne(url.Host)
+		// return publicsuffix.EffectiveTLDPlusOne(url.Host)
+		return strings.Replace(url.Host, "www.", "", 1), nil
 	}
 	return "", err
 }
@@ -960,17 +961,17 @@ func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrt
 				for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
 					bid := seatBid.bids[bidIndex]
 					for _, bAdv := range bidRequest.BAdv {
-						bAdvTLD, err := adjustDomain(bAdv) // compute once
+						bAdv, err := normalizeDomain(bAdv) // compute once
 						bidRejected := false
 						if nil == err {
 							aDomains := bid.bid.ADomain
 							if nil == aDomains {
 								aDomains = []string{""} // provision to enable rejecting of bids when req.badv is set
 							}
-							for _, adomain := range aDomains {
-								if aDomainTLD, err := adjustDomain(adomain); nil == err {
+							for _, d := range aDomains {
+								if aDomain, err := normalizeDomain(d); nil == err {
 									// reject bids if adomain is requested to block or BAdv is set but aDomain is empty
-									if aDomainTLD == bAdvTLD || (len(bAdvTLD) > 0 && len(aDomainTLD) == 0) {
+									if aDomain == bAdv || (len(bAdv) > 0 && len(aDomain) == 0) {
 										// reject the bid. bid belongs to blocked advertisers list
 										seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
 										rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid belongs to blocked advertiser '%s'", bAdv))
