@@ -158,6 +158,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var cacheErrs []error
 	if anyBidsReturned {
 
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids, e.adapterMap)
+		// add advertiser blocking specific errors
+		for _, message := range rejections {
+			errs = append(errs, errors.New(message))
+		}
+
 		var bidCategory map[string]string
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
@@ -923,63 +929,61 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 	return bidIDCollisionFound
 }
 
+//adjustDomain returns tld+1 of the given domain
+//checks if domain starts with http by lowercasing entire domain
+//if not it prepends it before domain. This is required for obtaining the url
+//using url.parse method. if it able to parse url successfully it will then
+//find tld+1 of the given domain
 func adjustDomain(domain string) (string, error) {
 	if strings.Index(domain, "http") == -1 {
-		domain = fmt.Sprintf("http://%s", domain)
+		domain = fmt.Sprintf("http://%s", strings.ToLower(domain))
 	}
-
-	url, err := url.Parse(domain)
-	if nil == err {
+	url, err := url.Parse(strings.Trim(domain, " "))
+	if nil == err && url.Host != "" {
 		return publicsuffix.EffectiveTLDPlusOne(url.Host)
 	}
 	return "", err
 }
 
+//applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
+//the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
+//it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
 func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, adapterMap map[openrtb_ext.BidderName]adaptedBidder) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	rejections := []string{}
 	for bidderName, seatBid := range seatBids {
 		adptedBidder := adapterMap[bidderName]
-		bidder, isBidder := adptedBidder.(*bidderAdapter)
-		// apply advertiser blocking only if bidder is tagbidder
+		bidder, isBidder := adptedBidder.(*bidderAdapter) // should be non-legacy bidder
 		if isBidder {
+			// apply advertiser blocking only if bidder is tagbidder
 			_, isTagBidder := bidder.Bidder.(*vastbidder.TagBidder)
 			if isTagBidder && len(bidRequest.BAdv) > 0 {
 				for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
-					// for bidIndex, bid := range seatBid.bids {
 					bid := seatBid.bids[bidIndex]
-					// rejectedBids := []int{} // stores index of bid
-					if nil != bid.bid.ADomain {
-						for _, bAdv := range bidRequest.BAdv {
-							for _, adomain := range bid.bid.ADomain {
-								if bAdvTLD, err := adjustDomain(bAdv); nil == err {
-									if aDomainTLD, err := adjustDomain(adomain); nil == err {
-										// fmt.Println(bAdvTLD)
-										// fmt.Println(aDomainTLD)
-										if aDomainTLD == bAdvTLD {
-											// reject the bid. bid belongs to blocked advertisers list
-											seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
-											rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid belongs to blocked advertiser '%s'", bAdv))
-										}
+					for _, bAdv := range bidRequest.BAdv {
+						bAdvTLD, err := adjustDomain(bAdv) // compute once
+						bidRejected := false
+						if nil == err {
+							aDomains := bid.bid.ADomain
+							if nil == aDomains {
+								aDomains = []string{""} // provision to enable rejecting of bids when req.badv is set
+							}
+							for _, adomain := range aDomains {
+								if aDomainTLD, err := adjustDomain(adomain); nil == err {
+									// reject bids if adomain is requested to block or BAdv is set but aDomain is empty
+									if aDomainTLD == bAdvTLD || (len(bAdvTLD) > 0 && len(aDomainTLD) == 0) {
+										// reject the bid. bid belongs to blocked advertisers list
+										seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
+										rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid belongs to blocked advertiser '%s'", bAdv))
+										bidRejected = true
+										break // bid is rejected due to advertiser blocked. No need to check further domains
 									}
 								}
 							}
 						}
+						if bidRejected {
+							break // bid rejected. skip looping over further bAdv values
+						}
 					}
-
-					// // remove rejected bid
-					// if len(rejectedBids) == len(seatBid.bids) {
-					// 	// remove entie seat bid
-					// 	seatBid.bids = nil
-					// } else {
-					// 	sort.Ints(rejectedBids)
-					// 	bids := seatBid.bids
-					// 	for i := len(rejectedBids) - 1; i >= 0; i-- {
-					// 		remInd := rejectedBids[i]
-					// 		bids = append(bids[:remInd], bids[remInd+1:]...)
-					// 	}
-					// 	seatBid.bids = bids
-					// }
-
 				}
 			}
 		}
