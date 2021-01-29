@@ -2854,9 +2854,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name != "ad_domains_normalized_and_checked" {
-				return
-			}
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			adapterMap := make(map[openrtb_ext.BidderName]adaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
