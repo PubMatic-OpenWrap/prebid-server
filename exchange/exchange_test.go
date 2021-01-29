@@ -2704,7 +2704,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			},
 			want: want{
 				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
-				validBidCountPerSeat: map[string]int{"my_adapter": 0},
+				validBidCountPerSeat: map[string]int{"my_adapter": 1},
 			},
 		}, {
 			name: "multiple_badv",
@@ -2854,6 +2854,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			fmt.Println(tt.name)
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			adapterMap := make(map[openrtb_ext.BidderName]adaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
