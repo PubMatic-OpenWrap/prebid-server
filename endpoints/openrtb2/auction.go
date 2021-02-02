@@ -126,6 +126,15 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	req, errL := deps.parseRequest(r)
 
+	for _, err := range errL {
+		errType := errortypes.DecodeError(err)
+		if errType == errortypes.BidderFailedSchemaValidationErrorCode {
+			bidderSchemaValidationErr := err.(*errortypes.BidderFailedSchemaValidation)
+			glog.Errorf("BidderSchemaValidationError: Bidder: %s, Error: %s",
+				bidderSchemaValidationErr.BidderName, bidderSchemaValidationErr.Message)
+		}
+	}
+
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &labels) {
 		return
 	}
@@ -801,7 +810,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 					validationFailedBidders = append(validationFailedBidders, bidder)
 					msg := fmt.Sprintf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)
 					glog.Errorf("BidderSchemaValidationError: %s", msg)
-					errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
+					errL = append(errL, &errortypes.BidderFailedSchemaValidation{BidderName: bidderName, Message: msg})
 				}
 			} else {
 				if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {

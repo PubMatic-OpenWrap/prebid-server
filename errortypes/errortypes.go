@@ -1,5 +1,7 @@
 package errortypes
 
+import "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+
 // Timeout should be used to flag that a bidder failed to return a response because the PBS timeout timer
 // expired before a result was received.
 //
@@ -203,7 +205,8 @@ func (err *InvalidPrivacyConsent) Severity() Severity {
 // when the bidder parameters fail the schema validation, we want to
 // continue processing the request and still return an error message.
 type BidderFailedSchemaValidation struct {
-	Message string
+	BidderName openrtb_ext.BidderName
+	Message    string
 }
 
 func (err *BidderFailedSchemaValidation) Error() string {
@@ -216,4 +219,12 @@ func (err *BidderFailedSchemaValidation) Code() int {
 
 func (err *BidderFailedSchemaValidation) Severity() Severity {
 	return SeverityWarning
+}
+
+// DecodeError provides the error code for an error, as defined above
+func DecodeError(err error) int {
+	if ce, ok := err.(Coder); ok {
+		return ce.Code()
+	}
+	return UnknownErrorCode
 }
