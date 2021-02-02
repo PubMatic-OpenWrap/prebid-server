@@ -2872,12 +2872,19 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
+			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
+			getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder { return tagBidders }
 			adapterMap := make(map[openrtb_ext.BidderName]adaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
 				adapterMap[adaptor.BidderName] = adaptor
+				if tagBidder, ok := adaptor.Bidder.(*vastbidder.TagBidder); ok {
+					tagBidders[adaptor.BidderName] = tagBidder
+				}
 				seatBids[adaptor.BidderName] = sbids
 			}
-			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, adapterMap)
+
+			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
+			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids)
 
 			for bidder, sBid := range seatBids {
 				// verify only eligible bids are returned
@@ -2948,6 +2955,8 @@ func TestNormalizeDomain(t *testing.T) {
 		{name: "wWW.something.a.com", args: args{domain: "wWW.something.a.com"}, want: want{domain: "something.a.com"}},
 		{name: "2_times_www", args: args{domain: "www.something.www.a.com"}, want: want{domain: "something.www.a.com"}},
 		{name: "consecutive_www", args: args{domain: "www.www.something.a.com"}, want: want{domain: "www.something.a.com"}},
+		{name: "abchttp.com", args: args{domain: "abchttp.com"}, want: want{domain: "abchttp.com"}},
+		{name: "HTTP://CAPS.com", args: args{domain: "HTTP://CAPS.com"}, want: want{domain: "caps.com"}},
 	}
 
 	for _, tt := range tests {
