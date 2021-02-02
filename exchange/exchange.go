@@ -951,9 +951,11 @@ func normalizeDomain(domain string) (string, error) {
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
 func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, adapterMap map[openrtb_ext.BidderName]adaptedBidder) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	rejections := []string{}
-	for bidderName, seatBid := range seatBids {
-		adptedBidder := adapterMap[bidderName]
-		bidder, isBidder := adptedBidder.(*bidderAdapter) // should be non-legacy bidder
+	for bidderName, seatBid := range seatBids { // exchange.validatedBidder
+		b := adapterMap[bidderName]
+		b1, isBidder := b.(*validatedBidder) // should be non-legacy bidder
+		b2, isBidder := b1.bidder.(*bidderAdapter)
+		bidder, isBidder := b2.Bidder.(*adapters.InfoAwareBidder)
 		if isBidder {
 			// apply advertiser blocking only if bidder is tagbidder
 			_, isTagBidder := bidder.Bidder.(*vastbidder.TagBidder)
