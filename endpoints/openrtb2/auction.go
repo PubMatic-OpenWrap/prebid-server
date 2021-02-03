@@ -126,12 +126,14 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	req, errL := deps.parseRequest(r)
 
+	schemaValidationFailedBidderL := make(map[string]string)
 	for _, err := range errL {
 		errType := errortypes.DecodeError(err)
 		if errType == errortypes.BidderFailedSchemaValidationErrorCode {
 			bidderSchemaValidationErr := err.(*errortypes.BidderFailedSchemaValidation)
 			glog.Errorf("BidderSchemaValidationError: Bidder: %s, Error: %s",
 				bidderSchemaValidationErr.BidderName, bidderSchemaValidationErr.Message)
+			schemaValidationFailedBidderL[bidderSchemaValidationErr.BidderName] = bidderSchemaValidationErr.Message
 		}
 	}
 
@@ -180,6 +182,8 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	//updateResponseWithSchemaValidationErrors(response, schemaValidationFailedBidderL)
+
 	ao.Request = req
 	ao.Response = response
 	ao.Account = account
@@ -206,6 +210,27 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	if err := enc.Encode(response); err != nil {
 		labels.RequestStatus = pbsmetrics.RequestStatusNetworkErr
 		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/auction Failed to send response: %v", err))
+	}
+}
+
+func updateResponseWithSchemaValidationErrors(response *openrtb.BidResponse, schemaValidationFailedBidderL map[string]string) {
+	bidderSeatBidMap := make(map[string]openrtb.SeatBid)
+	for _, sb := range response.SeatBid {
+		bidderSeatBidMap[sb.Seat] = sb
+	}
+
+	for bidderName, _ := range schemaValidationFailedBidderL {
+		sb, seatBidPresent := bidderSeatBidMap[bidderName]
+		if seatBidPresent {
+			//json.Unmarshal(sb.Ext, openrtb.Bid{})
+		} else {
+			sb.Bid = make([]openrtb.Bid, 0)
+			bid := openrtb.Bid{
+				Ext: nil,
+			}
+
+			sb.Bid = append(sb.Bid, bid)
+		}
 	}
 }
 
@@ -810,7 +835,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 					validationFailedBidders = append(validationFailedBidders, bidder)
 					msg := fmt.Sprintf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)
 					glog.Errorf("BidderSchemaValidationError: %s", msg)
-					errL = append(errL, &errortypes.BidderFailedSchemaValidation{BidderName: bidderName, Message: msg})
+					errL = append(errL, &errortypes.BidderFailedSchemaValidation{BidderName: bidderName.String(), Message: msg})
 				}
 			} else {
 				if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
