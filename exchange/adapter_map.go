@@ -176,6 +176,7 @@ func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapter
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Username,
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Password,
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Tracker),
+
 		openrtb_ext.BidderSharethrough:  sharethrough.NewSharethroughBidder(cfg.Adapters[string(openrtb_ext.BidderSharethrough)].Endpoint),
 		openrtb_ext.BidderSilverMob:     silvermob.NewSilverMobBidder(cfg.Adapters[string(openrtb_ext.BidderSilverMob)].Endpoint),
 		openrtb_ext.BidderSmaato:        smaato.NewSmaatoBidder(cfg.Adapters[string(openrtb_ext.BidderSmaato)].Endpoint),
