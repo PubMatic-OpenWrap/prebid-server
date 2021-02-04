@@ -156,7 +156,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var cacheErrs []error
 	if anyBidsReturned {
 
-		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids)
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids, aliases)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -939,7 +939,6 @@ func normalizeDomain(domain string) (string, error) {
 	}
 	url, err := url.Parse(domain)
 	if nil == err && url.Host != "" {
-		// return publicsuffix.EffectiveTLDPlusOne(url.Host)
 		return strings.Replace(url.Host, "www.", "", 1), nil
 	}
 	return "", err
@@ -948,16 +947,10 @@ func normalizeDomain(domain string) (string, error) {
 //applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 //the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, alias map[string]string) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	rejections := []string{}
 	for bidderName, seatBid := range seatBids { // exchange.validatedBidder
-		// b := adapterMap[bidderName]
-		// b1, isBidder := b.(*validatedBidder) // should be non-legacy bidder
-		// b2, isBidder := b1.bidder.(*bidderAdapter)
-		// bidder, isBidder := b2.Bidder.(*adapters.InfoAwareBidder)
-		// if isBidder {
-		// apply advertiser blocking only if bidder is tagbidder
-		_, isTagBidder := getTagBidders()[bidderName]
+		_, isTagBidder := getTagBidders()[resolveBidder(string(bidderName), alias)]
 		if isTagBidder && len(bidRequest.BAdv) > 0 {
 			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
 				bid := seatBid.bids[bidIndex]
@@ -971,11 +964,43 @@ func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrt
 						}
 						for _, d := range aDomains {
 							if aDomain, err := normalizeDomain(d); nil == err {
+
+								// compare
+								rejectBid := false
+								if len(aDomain) == 0 && len(bAdv) > 0 {
+									// adomain is blank and bAdv is set, reject the bid
+									rejectBid = true
+								} else {
+
+									bAdvArr := strings.Split(bAdv, ".")
+									aDomainArr := strings.Split(aDomain, ".")
+									ldif := len(bAdvArr) - len(aDomainArr)
+									i := len(bAdvArr) - 1
+									j := len(aDomainArr) - 1
+									matchCount := 0
+									for ; i >= 0; i-- {
+										if j >= 0 && bAdvArr[i] == aDomainArr[j] {
+											matchCount++
+										}
+										j--
+									}
+
+									// ldif = 0 : len(aDomainArr) == len(bAdvArr)  OR
+									// ldif < 0 : len(aDomainArr) > len(bAdvArr)
+									//			   aDomain can be subdomain of bAdv if
+									// matchCount == len(bAdvArr) : number of matches = len(bAdvArr)
+									if ldif <= 0 && matchCount == len(bAdvArr) {
+										// badv and adomain value is matching
+										// reject the bid
+										rejectBid = true
+									}
+
+								}
 								// reject bids if adomain is requested to block or BAdv is set but aDomain is empty
-								if aDomain == bAdv || (len(bAdv) > 0 && len(aDomain) == 0) {
+								if rejectBid {
 									// reject the bid. bid belongs to blocked advertisers list
 									seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
-									rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid belongs to blocked advertiser '%s'", bAdv))
+									rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
 									bidRejected = true
 									break // bid is rejected due to advertiser blocked. No need to check further domains
 								}
@@ -988,7 +1013,6 @@ func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrt
 				}
 			}
 		}
-		// }
 	}
 	return seatBids, rejections
 }

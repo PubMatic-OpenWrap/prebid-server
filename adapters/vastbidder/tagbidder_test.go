@@ -80,6 +80,7 @@ func TestMakeRequests(t *testing.T) {
 							Ext: []byte(`{"bidder" :{}}`),
 						},
 						{
+
 							ID: "no_protocol_field_set",
 							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
 								Protocols: []openrtb.Protocol{},
