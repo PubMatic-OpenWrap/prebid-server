@@ -17,6 +17,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	uuid "github.com/gofrs/uuid"
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
@@ -934,6 +935,11 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 //from the domain
 func normalizeDomain(domain string) (string, error) {
 	domain = strings.Trim(strings.ToLower(domain), " ")
+	// not checking if it belongs to icann
+	suffix, _ := publicsuffix.PublicSuffix(domain)
+	if domain != "" && suffix == domain { // input is publicsuffix
+		return "", errors.New("domain [" + domain + "] is public suffix")
+	}
 	if !strings.HasPrefix(domain, "http") {
 		domain = fmt.Sprintf("http://%s", domain)
 	}
@@ -949,61 +955,69 @@ func normalizeDomain(domain string) (string, error) {
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
 func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, alias map[string]string) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	rejections := []string{}
+	//TODO compute here - normalizeDomain(bAdv)
+	nBadvs := []string{}
+	if nil != bidRequest.BAdv {
+		for _, domain := range bidRequest.BAdv {
+			nDomain, err := normalizeDomain(domain)
+			if nil == err && nDomain != "" {
+				nBadvs = append(nBadvs, nDomain)
+			}
+		}
+	}
+
 	for bidderName, seatBid := range seatBids { // exchange.validatedBidder
 		_, isTagBidder := getTagBidders()[resolveBidder(string(bidderName), alias)]
-		if isTagBidder && len(bidRequest.BAdv) > 0 {
+		if isTagBidder && len(nBadvs) > 0 {
 			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
 				bid := seatBid.bids[bidIndex]
-				for _, bAdv := range bidRequest.BAdv {
-					bAdv, err := normalizeDomain(bAdv) // compute once
+				for _, bAdv := range nBadvs {
 					bidRejected := false
-					if nil == err {
-						aDomains := bid.bid.ADomain
-						if nil == aDomains {
-							aDomains = []string{""} // provision to enable rejecting of bids when req.badv is set
-						}
-						for _, d := range aDomains {
-							if aDomain, err := normalizeDomain(d); nil == err {
+					aDomains := bid.bid.ADomain
+					if nil == aDomains {
+						aDomains = []string{""} // provision to enable rejecting of bids when req.badv is set
+					}
+					for _, d := range aDomains {
+						if aDomain, err := normalizeDomain(d); nil == err {
 
-								// compare
-								rejectBid := false
-								if len(aDomain) == 0 && len(bAdv) > 0 {
-									// adomain is blank and bAdv is set, reject the bid
+							// compare
+							rejectBid := false
+							if len(aDomain) == 0 && len(bAdv) > 0 {
+								// adomain is blank and bAdv is set, reject the bid
+								rejectBid = true
+							} else {
+
+								bAdvArr := strings.Split(bAdv, ".")
+								aDomainArr := strings.Split(aDomain, ".")
+								ldif := len(bAdvArr) - len(aDomainArr)
+								i := len(bAdvArr) - 1
+								j := len(aDomainArr) - 1
+								matchCount := 0
+								for ; i >= 0; i-- {
+									if j >= 0 && bAdvArr[i] == aDomainArr[j] {
+										matchCount++
+									}
+									j--
+								}
+
+								// ldif = 0 : len(aDomainArr) == len(bAdvArr)  OR
+								// ldif < 0 : len(aDomainArr) > len(bAdvArr)
+								//			   aDomain can be subdomain of bAdv if
+								// matchCount == len(bAdvArr) : number of matches = len(bAdvArr)
+								if ldif <= 0 && matchCount == len(bAdvArr) {
+									// badv and adomain value is matching
+									// reject the bid
 									rejectBid = true
-								} else {
-
-									bAdvArr := strings.Split(bAdv, ".")
-									aDomainArr := strings.Split(aDomain, ".")
-									ldif := len(bAdvArr) - len(aDomainArr)
-									i := len(bAdvArr) - 1
-									j := len(aDomainArr) - 1
-									matchCount := 0
-									for ; i >= 0; i-- {
-										if j >= 0 && bAdvArr[i] == aDomainArr[j] {
-											matchCount++
-										}
-										j--
-									}
-
-									// ldif = 0 : len(aDomainArr) == len(bAdvArr)  OR
-									// ldif < 0 : len(aDomainArr) > len(bAdvArr)
-									//			   aDomain can be subdomain of bAdv if
-									// matchCount == len(bAdvArr) : number of matches = len(bAdvArr)
-									if ldif <= 0 && matchCount == len(bAdvArr) {
-										// badv and adomain value is matching
-										// reject the bid
-										rejectBid = true
-									}
-
 								}
-								// reject bids if adomain is requested to block or BAdv is set but aDomain is empty
-								if rejectBid {
-									// reject the bid. bid belongs to blocked advertisers list
-									seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
-									rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
-									bidRejected = true
-									break // bid is rejected due to advertiser blocked. No need to check further domains
-								}
+
+							}
+							// reject bids if adomain is requested to block or BAdv is set but aDomain is empty
+							if rejectBid {
+								// reject the bid. bid belongs to blocked advertisers list
+								seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
+								rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
+								bidRejected = true
+								break // bid is rejected due to advertiser blocked. No need to check further domains
 							}
 						}
 					}

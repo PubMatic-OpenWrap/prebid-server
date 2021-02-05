@@ -2889,32 +2889,49 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 		}, {
-			name: "only_domain_test",
+			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"edu"}},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
 						bids: []*pbsOrtbBid{
-							{bid: &openrtb.Bid{ADomain: []string{"school.edu"}, ID: "reject_bid_school.edu"}},
-							{bid: &openrtb.Bid{ADomain: []string{"edu"}, ID: "reject_bid_edu"}},
-							{bid: &openrtb.Bid{ADomain: []string{"..edu"}, ID: "reject_bid_..edu"}},
+							{bid: &openrtb.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
+							{bid: &openrtb.Bid{ADomain: []string{"edu"}, ID: "keep_bid_edu"}},
+							{bid: &openrtb.Bid{ADomain: []string{"..edu"}, ID: "keep_bid_..edu"}},
 						},
 					},
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"reject_bid_school.edu", "reject_bid_edu", "reject_bid_..edu"},
+				rejectedBidIds: []string{},
 				validBidCountPerSeat: map[string]int{
-					"tag_bidder": 0,
+					"tag_bidder": 3,
+				},
+			},
+		},
+		{
+			name: "public_suffix_in_badv",
+			args: args{
+				advBlockReq: &openrtb.BidRequest{BAdv: []string{"co.in"}}, // co.in is valid public suffix
+				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+					newTestTagAdapter("tag_bidder"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
+							{bid: &openrtb.Bid{ADomain: []string{"b.com"}, ID: "allow_b.com"}},
+						},
+					},
+				},
+			},
+			want: want{
+				rejectedBidIds: []string{},
+				validBidCountPerSeat: map[string]int{
+					"tag_bidder": 2,
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// if tt.name != "only_domain_test" {
-			// 	return
-			// }
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
 			getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder { return tagBidders }
@@ -2978,7 +2995,8 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					if nil != bid.bid.ADomain {
 						for _, adomain := range bid.bid.ADomain {
 							for _, blockDomain := range tt.args.advBlockReq.BAdv {
-								if adomain == blockDomain {
+								nDomain, _ := normalizeDomain(adomain)
+								if nDomain == blockDomain {
 									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.bid.ID, adomain)
 								}
 							}
@@ -3024,6 +3042,15 @@ func TestNormalizeDomain(t *testing.T) {
 		{name: "consecutive_www", args: args{domain: "www.www.something.a.com"}, want: want{domain: "www.something.a.com"}},
 		{name: "abchttp.com", args: args{domain: "abchttp.com"}, want: want{domain: "abchttp.com"}},
 		{name: "HTTP://CAPS.com", args: args{domain: "HTTP://CAPS.com"}, want: want{domain: "caps.com"}},
+
+		// publicsuffix
+		{name: "co.in", args: args{domain: "co.in"}, want: want{domain: "", err: fmt.Errorf("domain [co.in] is public suffix")}},
+		{name: ".co.in", args: args{domain: ".co.in"}, want: want{domain: ".co.in"}},
+		{name: "amazon.co.in", args: args{domain: "amazon.co.in"}, want: want{domain: "amazon.co.in"}},
+		// we wont check if shriprasad belongs to icann
+		{name: "shriprasad", args: args{domain: "shriprasad"}, want: want{domain: "", err: fmt.Errorf("domain [shriprasad] is public suffix")}},
+		{name: ".shriprasad", args: args{domain: ".shriprasad"}, want: want{domain: ".shriprasad"}},
+		{name: "abc.shriprasad", args: args{domain: "abc.shriprasad"}, want: want{domain: "abc.shriprasad"}},
 	}
 
 	for _, tt := range tests {
