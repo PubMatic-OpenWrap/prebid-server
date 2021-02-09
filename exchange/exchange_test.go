@@ -2581,8 +2581,14 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 							},
 							{
 								bid: &openrtb.Bid{
-									ID:      "reject_ba.com",
+									ID:      "keep_ba.com",
 									ADomain: []string{"b.a.com.shri.com"},
+								},
+							},
+							{
+								bid: &openrtb.Bid{
+									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
+									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
 								},
 							},
 						},
@@ -2590,7 +2596,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"a.com_bid"},
+				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
 				validBidCountPerSeat: map[string]int{
 					"vast_tag_bidder": 3,
 				},
@@ -2944,6 +2950,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.name != "reject_bid_of_blocked_adv_from_tag_bidder" {
+				return
+			}
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
 			getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder { return tagBidders }
@@ -2959,10 +2968,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
 			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, make(map[string]string))
-
-			// for _, rej := range rejections {
-			// 	fmt.Println(rej)
-			// }
 
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
