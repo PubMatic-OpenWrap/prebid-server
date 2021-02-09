@@ -2573,6 +2573,18 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 									ADomain: []string{"b.com"},
 								},
 							},
+							{
+								bid: &openrtb.Bid{
+									ID:      "keep_ba.com",
+									ADomain: []string{"ba.com"},
+								},
+							},
+							{
+								bid: &openrtb.Bid{
+									ID:      "reject_ba.com",
+									ADomain: []string{"b.a.com.shri.com"},
+								},
+							},
 						},
 					},
 				},
@@ -2580,7 +2592,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				rejectedBidIds: []string{"a.com_bid"},
 				validBidCountPerSeat: map[string]int{
-					"vast_tag_bidder": 1,
+					"vast_tag_bidder": 3,
 				},
 			},
 		},
