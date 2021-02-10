@@ -150,6 +150,9 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		}
 	}
 
+	//getAdvertisers temporary implenmentation to make OTT-101 drop testable
+	//OTT-100 must replace this function and its integration with valid implementation
+	typedBid.Bid.ADomain = getAdvertisers(adElement)
 	//if bid.id is not set in ParseExtension
 	if len(typedBid.Bid.ID) == 0 {
 		typedBid.Bid.ID = GetRandomID()
@@ -181,6 +184,30 @@ func getAdElement(vast *etree.Element) *etree.Element {
 		return ad
 	}
 	return nil
+}
+
+//getAdvertisers temporary implenmentation to make OTT-101 drop testable
+//OTT-100 must replace this function and its integration with valid implementation
+func getAdvertisers(ad *etree.Element) []string {
+	extensions := ad.FindElements(`./Extensions/Extension/`)
+	var advertisers []string
+	for _, ext := range extensions {
+		for _, attr := range ext.Attr {
+			if attr.Key == "type" && attr.Value == "advertiser" {
+				for _, ele := range ext.ChildElements() {
+					if ele.Tag == "Advertiser" {
+						if nil == advertisers {
+							advertisers = make([]string, 0)
+						}
+						advertisers = append(advertisers, ele.Text())
+					}
+				}
+
+			}
+		}
+	}
+
+	return advertisers
 }
 
 func getPricingDetails(version string, ad *etree.Element) (float64, string, bool) {

@@ -230,6 +230,10 @@ func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapter
 	for name, bidder := range ortbBidders {
 		// Clean out any disabled bidders
 		if infos[string(name)].Status == adapters.StatusActive {
+			if _, tagBidder := bidder.(*vastbidder.TagBidder); tagBidder {
+				// keep list of tag bidders
+				tagBidders[openrtb_ext.BidderName(name)] = bidder
+			}
 			allBidders[name] = adaptBidder(adapters.EnforceBidderInfo(bidder, infos[string(name)]), client, cfg, me, name)
 		}
 	}
@@ -256,4 +260,11 @@ func DisableBidders(biddersInfo adapters.BidderInfos, disabledBidders map[string
 	}
 
 	return bidderMap
+}
+
+// tag bidders
+var tagBidders = map[openrtb_ext.BidderName]adapters.Bidder{}
+
+var getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder {
+	return tagBidders
 }
