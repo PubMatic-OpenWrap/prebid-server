@@ -15,19 +15,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/currency"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConfig "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	nativeRequests "github.com/mxmCherry/openrtb/native/request"
-	nativeResponse "github.com/mxmCherry/openrtb/native/response"
+	nativeRequests "github.com/PubMatic-OpenWrap/openrtb/native/request"
+	nativeResponse "github.com/PubMatic-OpenWrap/openrtb/native/response"
 )
 
 // TestSingleBidder makes sure that the following things work if the Bidder needs only one request.

@@ -1,7 +1,7 @@
 package between
 
 import (
-	"github.com/prebid/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"text/template"

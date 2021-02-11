@@ -15,20 +15,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
-	metricsConfig "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/stored_requests/backends/file_fetcher"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/currency"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	metricsConf "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	pbc "github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/backends/file_fetcher"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb"
 	"github.com/stretchr/testify/assert"
 	"github.com/yudai/gojsondiff"
 	"github.com/yudai/gojsondiff/formatter"
@@ -74,15 +74,15 @@ func TestNewExchange(t *testing.T) {
 // and check whether the returned request successfully prints any '&' characters as it should
 // To do so, we:
 // 	1) Write the endpoint adapter URL with an '&' character into a new config,Configuration struct
-// 	   as specified in https://github.com/prebid/prebid-server/issues/465
+// 	   as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
 // 	2) Initialize a new exchange with said configuration
 // 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs including the
-// 	   sample request as specified in https://github.com/prebid/prebid-server/issues/465
+// 	   sample request as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
 // 	4) Build a BidResponse struct using exchange.buildBidResponse(ctx.Background(), liveA... )
 // 	5) Assert we have no '&' characters in the response that exchange.buildBidResponse returns
 func TestCharacterEscape(t *testing.T) {
 	/* 1) Adapter with a '& char in its endpoint property 		*/
-	/*    https://github.com/prebid/prebid-server/issues/465	*/
+	/*    https://github.com/PubMatic-OpenWrap/prebid-server/issues/465	*/
 	cfg := &config.Configuration{
 		Adapters: make(map[string]config.Adapter, 1),
 	}
@@ -114,7 +114,7 @@ func TestCharacterEscape(t *testing.T) {
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid, 1)
 	adapterBids["appnexus"] = &pbsOrtbSeatBid{currency: "USD"}
 
-	//An openrtb.BidRequest struct as specified in https://github.com/prebid/prebid-server/issues/465
+	//An openrtb.BidRequest struct as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
 	bidRequest := &openrtb.BidRequest{
 		ID: "some-request-id",
 		Imp: []openrtb.Imp{{

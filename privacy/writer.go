@@ -1,7 +1,7 @@
 package privacy
 
 import (
-	"github.com/mxmCherry/openrtb"
+	"github.com/PubMatic-OpenWrap/openrtb"
 )
 
 // PolicyWriter mutates an OpenRTB bid request with a policy's regulatory information.

@@ -10,14 +10,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/maputil"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/util/maputil"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb"
 )
 
 var supportedBannerHeights = map[uint64]bool{

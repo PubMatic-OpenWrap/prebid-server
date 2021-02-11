@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/prebid/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/adapters/lifestreet"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/lifestreet"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
 func BuildAdapters(client *http.Client, cfg *config.Configuration, infos adapters.BidderInfos, me metrics.MetricsEngine) (map[openrtb_ext.BidderName]adaptedBidder, []error) {

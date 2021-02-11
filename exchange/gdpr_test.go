@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mxmCherry/openrtb"
-	"github.com/prebid/prebid-server/gdpr"
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
 	"github.com/stretchr/testify/assert"
 )
 

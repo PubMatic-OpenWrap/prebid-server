@@ -3,8 +3,8 @@ package invibes
 import (
 	"text/template"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 )
 
 func NewInvibesSyncer(urlTemplate *template.Template) usersync.Usersyncer {
