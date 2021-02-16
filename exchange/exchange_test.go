@@ -2950,9 +2950,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name != "reject_bid_of_blocked_adv_from_tag_bidder" {
-				return
-			}
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
 			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
 			getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder { return tagBidders }
