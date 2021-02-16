@@ -72,7 +72,7 @@ func (c ConversantAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *ad
 }
 
 func parseCnvrParams(imp *openrtb.Imp, cnvrExt openrtb_ext.ExtImpConversant) {
-	imp.DisplayManager = "prebid-s2s"
+	imp.DisplayManager = "pubmatic-openwrap"
 	imp.DisplayManagerVer = "2.0.0"
 	imp.BidFloor = cnvrExt.BidFloor
 	imp.TagID = cnvrExt.TagID

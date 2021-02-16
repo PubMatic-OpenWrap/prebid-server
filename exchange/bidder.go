@@ -228,6 +228,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb.Bi
 							bid:          bidResponse.Bids[i].Bid,
 							bidType:      bidResponse.Bids[i].BidType,
 							bidVideo:     bidResponse.Bids[i].BidVideo,
+							bidTargets:   bidResponse.Bids[i].BidTargets,
 							dealPriority: bidResponse.Bids[i].DealPriority,
 						})
 					}

@@ -62,6 +62,20 @@ type Metrics struct {
 	PrivacyLMTRequest        metrics.Meter
 	PrivacyTCFRequestVersion map[TCFVersionValue]metrics.Meter
 
+	// Ad Pod Metrics
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	podImpGenTimer metrics.Timer
+
+	// podImpGenTimer indicates time taken by combination generator
+	// algorithm to generate combination based on bid response and ad pod request
+	podCombGenTimer metrics.Timer
+
+	// podCompExclTimer indicates time taken by compititve exclusion
+	// algorithm to generate final pod response based on bid response and ad pod request
+	podCompExclTimer metrics.Timer
+
 	AdapterMetrics map[openrtb_ext.BidderName]*AdapterMetrics
 	// Don't export accountMetrics because we need helper functions here to insure its properly populated dynamically
 	accountMetrics        map[string]*accountMetrics
@@ -702,6 +716,30 @@ func (me *Metrics) RecordRequestPrivacy(privacy PrivacyLabels) {
 		me.PrivacyLMTRequest.Mark(1)
 	}
 	return
+}
+
+// RecordAdapterDuplicateBidID as noop
+func (me *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+// RecordRequestHavingDuplicateBidID as noop
+func (me *Metrics) RecordRequestHavingDuplicateBidID() {
+}
+
+// RecordPodImpGenTime as a noop
+func (me *Metrics) RecordPodImpGenTime(labels PodLabels, startTime time.Time) {
+}
+
+// RecordPodCombGenTime as a noop
+func (me *Metrics) RecordPodCombGenTime(labels PodLabels, elapsedTime time.Duration) {
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *Metrics) RecordPodCompititveExclusionTime(labels PodLabels, elapsedTime time.Duration) {
+}
+
+// RecordAdapterVideoBidDuration as a noop
+func (me *Metrics) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int) {
 }
 
 func doMark(bidder openrtb_ext.BidderName, meters map[openrtb_ext.BidderName]metrics.Meter) {

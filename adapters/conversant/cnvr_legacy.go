@@ -93,7 +93,7 @@ func (a *ConversantLegacyAdapter) Call(ctx context.Context, req *pbs.PBSRequest,
 
 		// Fill in additional impression info
 
-		imp.DisplayManager = "prebid-s2s"
+		imp.DisplayManager = "pubmatic-openwrap"
 		imp.DisplayManagerVer = "1.0.1"
 		imp.BidFloor = params.BidFloor
 		imp.TagID = params.TagID

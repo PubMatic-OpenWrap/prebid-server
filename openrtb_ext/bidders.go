@@ -120,6 +120,7 @@ const (
 	BidderSomoaudience     BidderName = "somoaudience"
 	BidderSonobi           BidderName = "sonobi"
 	BidderSovrn            BidderName = "sovrn"
+	BidderSpotX            BidderName = "spotx"
 	BidderSynacormedia     BidderName = "synacormedia"
 	BidderTappx            BidderName = "tappx"
 	BidderTelaria          BidderName = "telaria"
@@ -221,6 +222,7 @@ func CoreBidderNames() []BidderName {
 		BidderSomoaudience,
 		BidderSonobi,
 		BidderSovrn,
+		BidderSpotX,
 		BidderSynacormedia,
 		BidderTappx,
 		BidderTelaria,

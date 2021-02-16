@@ -335,6 +335,10 @@ func (deps *endpointDeps) validateRequest(req *openrtb.BidRequest) []error {
 		if err := deps.validateEidPermissions(bidExt, aliases); err != nil {
 			return []error{err}
 		}
+
+		if err := validateSChains(bidExt); err != nil {
+			return []error{err}
+		}
 	}
 
 	if (req.Site == nil && req.App == nil) || (req.Site != nil && req.App != nil) {
@@ -847,6 +851,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 
 	/* Process all the bidder exts in the request */
 	disabledBidders := []string{}
+	validationFailedBidders := []string{}
 	otherExtElements := 0
 	for bidder, ext := range bidderExts {
 		if isBidderToValidate(bidder) {
@@ -856,7 +861,10 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 			}
 			if bidderName, isValid := deps.bidderMap[coreBidder]; isValid {
 				if err := deps.paramsValidator.Validate(bidderName, ext); err != nil {
-					return []error{fmt.Errorf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)}
+					validationFailedBidders = append(validationFailedBidders, bidder)
+					msg := fmt.Sprintf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)
+					glog.Errorf("BidderSchemaValidationError: %s", msg)
+					errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 				}
 			} else {
 				if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
@@ -876,6 +884,15 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb.Imp, aliases map[string]st
 		for _, bidder := range disabledBidders {
 			delete(bidderExts, bidder)
 		}
+	}
+
+	if len(validationFailedBidders) > 0 {
+		for _, bidder := range validationFailedBidders {
+			delete(bidderExts, bidder)
+		}
+	}
+
+	if len(disabledBidders) > 0 || len(validationFailedBidders) > 0 {
 		extJSON, err := json.Marshal(bidderExts)
 		if err != nil {
 			return []error{err}
