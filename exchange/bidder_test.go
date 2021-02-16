@@ -1385,6 +1385,33 @@ func wrapWithBidderInfo(bidder adapters.Bidder) adapters.Bidder {
 			},
 		},
 	}
+	}
+
+	var loggerBuffer bytes.Buffer
+	logger := func(msg string, args ...interface{}) {
+		loggerBuffer.WriteString(fmt.Sprintf(fmt.Sprintln(msg), args...))
+	}
+
+	bidderAdapter.doRequestImpl(ctx, &bidRequest, logger)
+
+	// Wait a little longer than the 205ms mock server sleep.
+	time.Sleep(210 * time.Millisecond)
+
+	logExpected := "TimeoutNotification: error:(context deadline exceeded) body:\n"
+	logActual := loggerBuffer.String()
+	assert.EqualValues(t, logExpected, logActual)
+}
+
+func wrapWithBidderInfo(bidder adapters.Bidder) adapters.Bidder {
+	bidderInfo := adapters.BidderInfo{
+		Status: adapters.StatusActive,
+		Capabilities: &adapters.CapabilitiesInfo{
+			App: &adapters.PlatformInfo{
+				MediaTypes: []openrtb_ext.BidType{openrtb_ext.BidTypeBanner},
+			},
+		},
+	}
+>>>>>>> master
 	return adapters.EnforceBidderInfo(bidder, bidderInfo)
 }
 
