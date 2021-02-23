@@ -2,6 +2,8 @@ package vastbidder
 
 import (
 	"errors"
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/etree"
@@ -185,5 +187,190 @@ func BenchmarkGetCreativeID(b *testing.B) {
 	creative := doc.FindElement("/Creative")
 	for n := 0; n < b.N; n++ {
 		getCreativeID(creative)
+	}
+}
+
+func TestGetAdvertisers(t *testing.T) {
+	tt := []struct {
+		name     string
+		vastStr  string
+		expected []string
+	}{
+		{
+			name: "vast_4_with_advertiser",
+			vastStr: `<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+      							<Advertiser>www.iabtechlab.com</Advertiser>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{"www.iabtechlab.com"},
+		},
+		{
+			name: "vast_4_without_advertiser",
+			vastStr: `<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+		{
+			name: "vast_4_with_empty_advertiser",
+			vastStr: `<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Advertiser></Advertiser>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+		{
+			name: "vast_2_with_single_advertiser",
+			vastStr: `<VAST version="2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser>google.com</Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{"google.com"},
+		},
+		{
+			name: "vast_2_with_two_advertiser",
+			vastStr: `<VAST version="2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser>google.com</Advertiser>
+									</Extension>
+									<Extension type="advertiser">
+										<Advertiser>facebook.com</Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{"google.com", "facebook.com"},
+		},
+		{
+			name: "vast_2_with_no_advertiser",
+			vastStr: `<VAST version="2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+		{
+			name: "vast_2_with_epmty_advertiser",
+			vastStr: `<VAST version="2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser></Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+		{
+			name: "vast_3_with_single_advertiser",
+			vastStr: `<VAST version="3.1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser>google.com</Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{"google.com"},
+		},
+		{
+			name: "vast_3_with_two_advertiser",
+			vastStr: `<VAST version="3.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser>google.com</Advertiser>
+									</Extension>
+									<Extension type="advertiser">
+										<Advertiser>facebook.com</Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{"google.com", "facebook.com"},
+		},
+		{
+			name: "vast_3_with_no_advertiser",
+			vastStr: `<VAST version="3.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+		{
+			name: "vast_3_with_epmty_advertiser",
+			vastStr: `<VAST version="3.1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">
+  						<Ad id="20001" sequence="1" >
+    						<InLine>
+								<Extensions>
+									<Extension type="advertiser">
+										<Advertiser></Advertiser>
+									</Extension>
+								</Extensions>
+    						</InLine>
+  						</Ad>
+					  </VAST>`,
+			expected: []string{},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+
+			doc := etree.NewDocument()
+			if err := doc.ReadFromString(tc.vastStr); err != nil {
+				t.Errorf("Failed to create etree doc from string %+v", err)
+			}
+
+			vastDoc := doc.FindElement("./VAST")
+			vastVer := vastDoc.SelectAttrValue(`version`, `2.0`)
+
+			ad := getAdElement(vastDoc)
+
+			result := getAdvertisers(vastVer, ad)
+
+			sort.Strings(result)
+			sort.Strings(tc.expected)
+
+			if !assert.Equal(t, len(tc.expected), len(result), fmt.Sprintf("Expected slice length - %+v \nResult slice length - %+v", len(tc.expected), len(result))) {
+				return
+			}
+
+			for i, expected := range tc.expected {
+				assert.Equal(t, expected, result[i], fmt.Sprintf("Element mismatch at position %d.\nExpected - %s\nActual - %s", i, expected, result[i]))
+			}
+		})
 	}
 }

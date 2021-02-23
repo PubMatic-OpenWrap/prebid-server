@@ -3,9 +3,11 @@ package vastbidder
 import (
 	"encoding/json"
 	"errors"
+	"github.com/golang/glog"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/etree"
@@ -150,9 +152,8 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		}
 	}
 
-	//getAdvertisers temporary implenmentation to make OTT-101 drop testable
-	//OTT-100 must replace this function and its integration with valid implementation
-	typedBid.Bid.ADomain = getAdvertisers(adElement)
+	typedBid.Bid.ADomain = getAdvertisers(version, adElement)
+
 	//if bid.id is not set in ParseExtension
 	if len(typedBid.Bid.ID) == 0 {
 		typedBid.Bid.ID = GetRandomID()
@@ -186,27 +187,43 @@ func getAdElement(vast *etree.Element) *etree.Element {
 	return nil
 }
 
-//getAdvertisers temporary implenmentation to make OTT-101 drop testable
-//OTT-100 must replace this function and its integration with valid implementation
-func getAdvertisers(ad *etree.Element) []string {
-	extensions := ad.FindElements(`./Extensions/Extension/`)
-	var advertisers []string
-	for _, ext := range extensions {
-		for _, attr := range ext.Attr {
-			if attr.Key == "type" && attr.Value == "advertiser" {
-				for _, ele := range ext.ChildElements() {
-					if ele.Tag == "Advertiser" {
-						if nil == advertisers {
-							advertisers = make([]string, 0)
-						}
-						advertisers = append(advertisers, ele.Text())
-					}
-				}
-
-			}
-		}
+func getAdvertisers(vastVer string, ad *etree.Element) []string {
+	version, err := strconv.ParseFloat(vastVer, 64)
+	if err != nil {
+		version = 2.0
 	}
 
+	advertisers := make([]string, 0)
+
+	switch int(version) {
+	case 2, 3:
+		for _, ext := range ad.FindElements(`./Extensions/Extension/`) {
+			for _, attr := range ext.Attr {
+				if attr.Key == "type" && attr.Value == "advertiser" {
+					for _, ele := range ext.ChildElements() {
+						if ele.Tag == "Advertiser" {
+							if strings.TrimSpace(ele.Text()) != "" {
+								advertisers = append(advertisers, ele.Text())
+							}
+						}
+					}
+				}
+			}
+		}
+	case 4:
+		if ad.FindElement("./Advertiser") != nil {
+			adv := strings.TrimSpace(ad.FindElement("./Advertiser").Text())
+			if adv != "" {
+				advertisers = append(advertisers, adv)
+			}
+		}
+	default:
+		glog.V(3).Infof("Handle getAdvertisers for VAST version %d", int(version))
+	}
+
+	if len(advertisers) == 0 {
+		return nil
+	}
 	return advertisers
 }
 
