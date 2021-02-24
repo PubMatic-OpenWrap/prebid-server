@@ -35,7 +35,6 @@ func NewSetUIDEndpoint(cfg config.HostCookie, syncers map[openrtb_ext.BidderName
 	}
 
 	return httprouter.Handle(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
 		so := analytics.SetUIDObject{
 			Status: http.StatusOK,
 			Errors: make([]error, 0),
@@ -97,9 +96,7 @@ func NewSetUIDEndpoint(cfg config.HostCookie, syncers map[openrtb_ext.BidderName
 		}
 
 		setSiteCookie := siteCookieCheck(r.UserAgent())
-
-		secParam := r.URL.Query().Get("sec")
-		pc.SetCookieOnResponse(w, setSiteCookie, secParam, &cfg, cookieTTL)
+		pc.SetCookieOnResponse(w, setSiteCookie, &cfg, cookieTTL)
 	})
 }
 

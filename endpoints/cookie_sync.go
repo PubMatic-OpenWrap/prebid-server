@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
-
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
@@ -24,9 +17,11 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strconv"
 )
-
-var secureFlagRegex = regexp.MustCompile(`(%7B|{)SecParam(%7D|})`)
 
 func NewCookieSyncEndpoint(syncers map[openrtb_ext.BidderName]usersync.Usersyncer, cfg *config.Configuration, syncPermissions gdpr.Permissions, metrics pbsmetrics.MetricsEngine, pbsAnalytics analytics.PBSAnalyticsModule) httprouter.Handle {
 	deps := &cookieSyncDeps{
@@ -52,7 +47,6 @@ type cookieSyncDeps struct {
 }
 
 func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
 	//CookieSyncObject makes a log of requests and responses to  /cookie_sync endpoint
 	co := analytics.CookieSyncObject{
 		Status:       http.StatusOK,
@@ -148,14 +142,6 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		BidderStatus: make([]*usersync.CookieSyncBidders, 0, len(parsedReq.Bidders)),
 	}
 
-	//For secure = true flag on cookie
-	secParam := r.URL.Query().Get("sec")
-	refererHeader := r.Header.Get("Referer")
-	setSecureFlag := false
-	if secParam == "1" || strings.HasPrefix(refererHeader, "https") {
-		setSecureFlag = true
-	}
-
 	for i := 0; i < len(parsedReq.Bidders); i++ {
 		bidder := parsedReq.Bidders[i]
 
@@ -167,9 +153,6 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		}
 		syncInfo, err := deps.syncers[openrtb_ext.BidderName(newBidder)].GetUsersyncInfo(privacyPolicy)
 		if err == nil {
-
-			syncInfo.URL = setSecureParam(syncInfo.URL, setSecureFlag)
-
 			newSync := &usersync.CookieSyncBidders{
 				BidderCode:   bidder,
 				NoCookie:     true,
@@ -233,15 +216,6 @@ func cookieSyncStatus(syncCount int) string {
 		return "no_cookie"
 	}
 	return "ok"
-}
-
-func setSecureParam(userSyncUrl string, isSecure bool) string {
-	var secParam = "0"
-	if isSecure {
-		secParam = "1"
-	}
-	syncURL := secureFlagRegex.ReplaceAllString(userSyncUrl, secParam)
-	return syncURL
 }
 
 type CookieSyncReq cookieSyncRequest
