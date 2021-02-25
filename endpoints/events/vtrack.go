@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
+	"github.com/mxmCherry/openrtb"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -266,6 +267,33 @@ func isAllowVastForBidder(bidder string, bidderInfos *config.BidderInfos, allowU
 // getAccountId extracts an account id from an HTTP Request
 func getAccountId(httpRequest *http.Request) string {
 	return httpRequest.URL.Query().Get(AccountParameter)
+}
+
+func InjectVideoEventTrackers(externalUrl, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64) (string, bool) {
+	eventTrackingUrl := GetVideoEventTracking(externalUrl, bid, bidder, accountID, timestamp)
+	return vast + eventTrackingUrl, false
+}
+
+// updates the underline VAST by injecting video event trackers
+func GetVideoEventTracking(externalUrl string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64) string {
+
+	// event := analytics.TrackingEventRequest{}
+
+	// pubId, 						- Company Specific
+	// profileId,					- Company Specific
+	// profileVersion,				- Company Specific
+	// timestamp - arg
+	// partnername - arg
+	// advertisername - bid.ADomain
+	// pub domain  					 bidReq
+	// platform,				     bidreq
+	// ad format					 bid.Adm
+	// wrapper impression id		- Company Specific
+	// ad sequence	- will need
+	// ad count,	[ADCOUNT]
+	// cache bust - [CACHEBUSTER]
+	//trackingUrl := "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&e=3&advertiser_id=[ADERVERTISER_NAME]&sURL=[PUB_DOMAIN]&pfi=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[AD_SEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]"
+	return ""
 }
 
 // ModifyVastXmlString rewrites and returns the string vastXML and a flag indicating if it was modified

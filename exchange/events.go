@@ -23,6 +23,25 @@ type eventTracking struct {
 	externalURL        string
 }
 
+func InjectVastEventTracker() {
+	    for each bid :=range [] {
+	      for each eventType in [firstQuartile, midpoint, thirdQuartile, and complete] {
+	              macroMap =  callBackFuntion(eventType, bidRequest, bidResponse)
+	             if nil != macroMap && len(macroMap)  0 {
+	                 // replace macro
+	                 // inject inside VAST
+	             }
+	      }
+	    }
+	  }
+	 
+	  function callBackFuntion(eventType, bidRequest, bidResponse) {
+	          m = map
+	          if eventType = "firstQuartile"
+	                  m["VIDEO_EVENT_ID"] = "1"
+	          return m
+	 }
+
 // getEventTracking creates an eventTracking object from the different configuration sources
 func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
@@ -63,6 +82,11 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	}
 	vastXML := makeVAST(bid)
 	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bid.ID, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
+		bid.AdM = newVastXML
+	}
+
+	// inject video event trackers
+	if newVastXML, ok := events.InjectVideoEventTrackers(ev.externalURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
 		bid.AdM = newVastXML
 	}
 }

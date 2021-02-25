@@ -36,3 +36,7 @@ type EventRequest struct {
 	Bidder    string         `json:"bidder,omitempty"`
 	Timestamp int64          `json:"timestamp,omitempty"`
 }
+
+type TrackingEventRequest struct {
+	EventID int
+}
