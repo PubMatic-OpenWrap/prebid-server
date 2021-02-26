@@ -4,6 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/PubMatic-OpenWrap/openrtb"
 	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
@@ -13,12 +21,6 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"sort"
-	"strings"
-	"time"
 )
 
 const (
@@ -297,4 +299,27 @@ func contains(s []string, e string) bool {
 
 	i := sort.SearchStrings(s, e)
 	return i < len(s) && s[i] == e
+}
+
+func InjectVideoEventTrackers(externalUrl, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) (string, bool) {
+	eventTrackingUrl := GetVideoEventTracking(externalUrl, bid, bidder, accountID, timestamp, req)
+	return vast + eventTrackingUrl, false
+}
+
+// updates the underline VAST by injecting video event trackers
+func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest) string {
+	macros := EventTrackerMacros("firstquartile", bid, req)
+
+	if nil != macros && len(macros) > 0 {
+		for macro, v := range macros {
+			trackerURL = strings.ReplaceAll(trackerURL, macro, v)
+		}
+	}
+	return trackerURL
+}
+
+//EventTrackerMacros returns map of macros with required values
+//Used by Event Tracker injector
+var EventTrackerMacros = func(eventType string, bid *openrtb.Bid, req *openrtb.BidRequest) map[string]string {
+	return nil
 }

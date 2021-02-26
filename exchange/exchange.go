@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/events"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 	uuid "github.com/gofrs/uuid"
 
@@ -168,6 +169,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 				errs = append(errs, errors.New(message))
 			}
 		}
+
+		// part of 0.148
+		//adapterBids = evTracking.modifyBidsForEvents(adapterBids)
+		adapterBids = modifyBidsForEvents(adapterBids, r.BidRequest)
 
 		if targData != nil {
 			// A non-nil auction is only needed if targeting is active. (It is used below this block to extract cache keys)
@@ -919,4 +924,44 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 		}
 	}
 	return bidIDCollisionFound
+}
+
+// part of exchange/events.go 0.148.0 prebid-tag
+
+//modifyBidsForEvents
+//This temporary provision till our fork is not updated with https://github.com/prebid/prebid-server/commits/0.148.0
+func /*(ev *eventTracking)*/ modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb.BidRequest) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
+	for bidderName, seatBid := range seatBids {
+		// modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
+		for _, pbsBid := range seatBid.bids {
+			// if modifyingVastXMLAllowed {
+			// ev.modifyBidVAST(pbsBid, bidderName)
+			modifyBidVAST(pbsBid, bidderName, req)
+			// }
+			// pbsBid.bidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
+		}
+	}
+	return seatBids
+}
+
+// modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
+func /*(ev *eventTracking)*/ modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest) {
+	bid := pbsBid.bid
+	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
+		return
+	}
+	vastXML := makeVAST(bid)
+	// if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bid.ID, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
+	// 	bid.AdM = newVastXML
+	// }
+
+	// inject video event trackers
+	// if newVastXML, ok := events.InjectVideoEventTrackers(ev.externalURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
+
+	trackerURL := ""
+	accountID := "0"
+	auctionTimestampMs := int64(0)
+	if newVastXML, ok := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), accountID, auctionTimestampMs, req); ok {
+		bid.AdM = newVastXML
+	}
 }

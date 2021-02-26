@@ -190,8 +190,8 @@ type Router struct {
 
 func New(cfg *config.Configuration, rateConvertor *currencies.RateConverter) (r *Router, err error) {
 
-	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
-	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
+	const schemaDirectory = "/usr/local/src/ssheaderbidding/static/bidder-params"
+	const infoDirectory = "/usr/local/src/ssheaderbidding/static/bidder-info"
 
 	r = &Router{
 		Router: httprouter.New(),
