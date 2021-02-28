@@ -11,6 +11,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/macros"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
@@ -1135,3 +1136,5 @@ func isValidCookieSize(maxCookieSize int) error {
 	}
 	return nil
 }
+
+var TrackerMacros func(openrtb.BidRequest, openrtb.BidResponse) map[string]string

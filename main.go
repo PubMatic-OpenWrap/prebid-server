@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/currencies"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
@@ -47,7 +48,8 @@ func main() {
 }
 */
 
-func InitPrebidServer(configFile string) {
+func InitPrebidServer(configFile string, cb func(openrtb.BidRequest, openrtb.BidResponse) map[string]string) {
+	config.TrackerMacros = cb
 	//init contents
 	rand.Seed(time.Now().UnixNano())
 

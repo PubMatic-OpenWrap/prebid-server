@@ -947,7 +947,9 @@ func /*(ev *eventTracking)*/ modifyBidsForEvents(seatBids map[openrtb_ext.Bidder
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
 func /*(ev *eventTracking)*/ modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest) {
 	bid := pbsBid.bid
-	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
+	// TBD: check with QA if SSP transaltor has fixe the bug to return video type
+	// right now we getting banner
+	if /* pbsBid.bidType != openrtb_ext.BidTypeVideo || */ len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
 	vastXML := makeVAST(bid)

@@ -19,6 +19,9 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+
+	//"github.com/beevik/etree"
+	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 )
@@ -27,6 +30,15 @@ const (
 	AccountParameter   = "a"
 	ImpressionCloseTag = "</Impression>"
 	ImpressionOpenTag  = "<Impression>"
+)
+
+// standard VAST macros
+// https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-adcount
+const (
+	VASTAdTypeMacro    = "[ADTYPE]"
+	VASTAppBundleMacro = "[APPBUNDLE]"
+	VASTDomainMacro    = "[DOMAIN]"
+	VASTPageURLMacro   = "[PAGEURL]"
 )
 
 type vtrackEndpoint struct {
@@ -302,24 +314,60 @@ func contains(s []string, e string) bool {
 }
 
 func InjectVideoEventTrackers(externalUrl, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) (string, bool) {
-	eventTrackingUrl := GetVideoEventTracking(externalUrl, bid, bidder, accountID, timestamp, req)
-	return vast + eventTrackingUrl, false
+	doc := etree.NewDocument()
+	err := doc.ReadFromString(vast)
+	eventTrackingURL := GetVideoEventTracking(externalUrl, bid, bidder, accountID, timestamp, req, doc)
+	fmt.Println(err)
+	linearCreatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear/")
+
+	for _, creative := range linearCreatives {
+		trackingEvents := creative.SelectElement("TrackingEvents")
+		if nil == trackingEvents {
+			trackingEvents = creative.CreateElement("TrackingEvents")
+		}
+		trackingEle := trackingEvents.CreateElement("Tracking")
+		trackingEle.CreateAttr("event", "firstQuartile")
+		trackingEle.SetText(eventTrackingURL)
+	}
+
+	out, err := doc.WriteToString()
+	hasErr := false
+	if nil != err {
+		fmt.Println(err)
+		hasErr = true
+	}
+	bid.AdM = out
+	return out, hasErr
 }
 
 // updates the underline VAST by injecting video event trackers
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest) string {
-	macros := EventTrackerMacros("firstquartile", bid, req)
-
+func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) string {
+	macros := make(map[string]string)
+	if nil != config.TrackerMacros {
+		macros = config.TrackerMacros(openrtb.BidRequest{}, openrtb.BidResponse{})
+	}
 	if nil != macros && len(macros) > 0 {
+		//trackerURL = "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&crId=[CREATIVE_IDENTIFIER]&ier=[ERRORCODE]&e=3&adv=[ADERVERTISER_NAME]&orig=[PUB_DOMAIN]&dvc.plt=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]"
 		for macro, v := range macros {
-			trackerURL = strings.ReplaceAll(trackerURL, macro, v)
+			replaceMacro(trackerURL, macro, v)
 		}
+
+		// replace standard macros
+		trackerURL = strings.ReplaceAll(trackerURL, VASTAdTypeMacro, "")
+		if nil != req.App {
+			replaceMacro(trackerURL, VASTAppBundleMacro, req.App.Bundle)
+		}
+		if nil != req.Site {
+			replaceMacro(trackerURL, VASTDomainMacro, req.Site.Domain)
+			replaceMacro(trackerURL, VASTPageURLMacro, req.Site.Page)
+		}
+
 	}
 	return trackerURL
 }
 
-//EventTrackerMacros returns map of macros with required values
-//Used by Event Tracker injector
-var EventTrackerMacros = func(eventType string, bid *openrtb.Bid, req *openrtb.BidRequest) map[string]string {
-	return nil
+func replaceMacro(trackerURL, macro, value string) {
+	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.Trim(value, " ")) > 0 {
+		trackerURL = strings.ReplaceAll(trackerURL, macro, value)
+	}
 }
