@@ -20,8 +20,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 
-	//"github.com/beevik/etree"
-	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/beevik/etree"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 )

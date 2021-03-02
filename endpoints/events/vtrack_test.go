@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/beevik/etree"
 	"github.com/stretchr/testify/assert"
 )
 
