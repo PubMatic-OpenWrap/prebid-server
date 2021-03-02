@@ -652,7 +652,7 @@ func NewAppNexusBidder(client *http.Client, endpoint, platformID string) *AppNex
 		// This is for tests
 		fileUri = "./static/adapter/appnexus/opts.json"
 	} else {
-		fileUri = "./usr/local/src/ssheaderbidding/static/adapter/appnexus/opts.json"
+		fileUri = "./home/http/GO_SERVER/dmhbserver/static/adapter/appnexus/opts.json"
 	}
 	opts, err := ioutil.ReadFile(fileUri)
 	if err == nil {
