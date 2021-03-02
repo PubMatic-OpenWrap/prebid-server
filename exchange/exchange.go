@@ -62,6 +62,7 @@ type exchange struct {
 	UsersyncIfAmbiguous bool
 	privacyConfig       config.Privacy
 	categoriesFetcher   stored_requests.CategoryFetcher
+	trakerURL           string
 }
 
 // Container to pass out response ext data from the GetAllBids goroutines back into the main thread
@@ -95,6 +96,7 @@ func NewExchange(client *http.Client, cache prebid_cache_client.Client, cfg *con
 		LMT:  cfg.LMT,
 	}
 	e.categoriesFetcher = categoriesFetcher
+	e.trakerURL = cfg.TrackerURL
 	return e
 }
 
@@ -172,7 +174,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 		// part of 0.148
 		//adapterBids = evTracking.modifyBidsForEvents(adapterBids)
-		adapterBids = modifyBidsForEvents(adapterBids, r.BidRequest)
+		adapterBids = modifyBidsForEvents(adapterBids, r.BidRequest, e.trakerURL)
 
 		if targData != nil {
 			// A non-nil auction is only needed if targeting is active. (It is used below this block to extract cache keys)
@@ -930,13 +932,13 @@ func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapte
 
 //modifyBidsForEvents
 //This temporary provision till our fork is not updated with https://github.com/prebid/prebid-server/commits/0.148.0
-func /*(ev *eventTracking)*/ modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb.BidRequest) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
+func /*(ev *eventTracking)*/ modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
 		// modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.bids {
 			// if modifyingVastXMLAllowed {
 			// ev.modifyBidVAST(pbsBid, bidderName)
-			modifyBidVAST(pbsBid, bidderName, req)
+			modifyBidVAST(pbsBid, bidderName, req, trackerURL)
 			// }
 			// pbsBid.bidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
 		}
@@ -945,7 +947,7 @@ func /*(ev *eventTracking)*/ modifyBidsForEvents(seatBids map[openrtb_ext.Bidder
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func /*(ev *eventTracking)*/ modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest) {
+func /*(ev *eventTracking)*/ modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
 	// TBD: check with QA if SSP transaltor has fixe the bug to return video type
 	// right now we getting banner
@@ -960,10 +962,9 @@ func /*(ev *eventTracking)*/ modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrt
 	// inject video event trackers
 	// if newVastXML, ok := events.InjectVideoEventTrackers(ev.externalURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
 
-	trackerURL := ""
 	accountID := "0"
 	auctionTimestampMs := int64(0)
 	if newVastXML, ok := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), accountID, auctionTimestampMs, req); ok {
-		bid.AdM = newVastXML
+		bid.AdM = string(newVastXML)
 	}
 }

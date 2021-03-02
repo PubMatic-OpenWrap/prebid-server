@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
@@ -24,76 +25,6 @@ const (
 	vastXmlWithImpressionWithContent    = "<VAST version=\"3.0\"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[adm2]]></VASTAdTagURI><Impression>content</Impression><Creatives></Creatives></Wrapper></Ad></VAST>"
 	vastXmlWithImpressionWithoutContent = "<VAST version=\"3.0\"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[adm2]]></VASTAdTagURI><Impression></Impression><Creatives></Creatives></Wrapper></Ad></VAST>"
 	vastXmlWithoutImpression            = "<VAST version=\"3.0\"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[adm2]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>"
-
-	vastXmlWith2Creatives = `<VAST version="3.0">
-    <Ad id="20004">
-        <InLine>
-            <AdSystem version="4.0">iabtechlab</AdSystem>
-
-            <AdTitle>
-                <![CDATA[VAST 4.0 Pilot - Scenario 5]]>
-            </AdTitle>
-            <Description>
-                <![CDATA[This is sample companion ad tag with Linear ad tag. This tag while showing video ad on the player, will show a companion ad beside the player where it can be fitted. At most 3 companion ads can be placed. Modify accordingly to see your own content.]]>
-            </Description>
-
-            <Pricing model="cpm" currency="USD">
-                <![CDATA[ 25.00 ]]>
-            </Pricing>
-
-            <Error>http://example.com/error</Error>
-            <Impression id="Impression-ID">http://example.com/track/impression</Impression>
-
-            <Creatives>
-                <Creative id="5480" sequence="1">
-                    <CompanionAds>
-                        <Companion id="1232" width="300" height="250" assetWidth="250" assetHeight="200" expandedWidth="350" expandedHeight="250">
-                               <StaticResource creativeType="image/png">
-                                <![CDATA[https://www.iab.com/wp-content/uploads/2014/09/iab-tech-lab-6-644x290.png]]>
-                                </StaticResource>
-                                <CompanionClickThrough>
-                                    <![CDATA[https://iabtechlab.com]]>
-                                </CompanionClickThrough>
-                        </Companion>
-                    </CompanionAds>
-                </Creative>
-                <Creative id="5480" sequence="1">
-                    <Linear>
-                        <Duration>00:00:16</Duration>
-                        <TrackingEvents>
-                            <Tracking event="start">http://example.com/tracking/start</Tracking>
-                            <Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking>
-                            <Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
-                            <Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
-                            <Tracking event="complete">http://example.com/tracking/complete</Tracking>
-                            <Tracking event="progress" offset="00:00:10">http://example.com/tracking/progress-10</Tracking>
-                        </TrackingEvents>
-
-                        <VideoClicks>
-                            <ClickTracking id="blog">
-                                <![CDATA[https://iabtechlab.com]]>
-                            </ClickTracking>
-                        </VideoClicks>
-
-                        <MediaFiles>
-                            <MediaFile id="5241" delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" minBitrate="360" maxBitrate="1080" scalable="1" maintainAspectRatio="1" codec="0">
-                                <![CDATA[https://iab-publicfiles.s3.amazonaws.com/vast/VAST-4.0-Short-Intro.mp4]]>
-                            </MediaFile>
-                        </MediaFiles>
-                    </Linear>
-                </Creative>
-
-            </Creatives>
-            <Extensions>
-                <Extension type="iab-Count">
-                    <total_available>
-                        <![CDATA[ 2 ]]>
-                    </total_available>
-                </Extension>
-            </Extensions>
-        </InLine>
-    </Ad>
-</VAST>`
 )
 
 // Mock pbs cache client
@@ -709,11 +640,6 @@ func TestVastUrlShouldReturnExpectedUrl(t *testing.T) {
 	assert.Equal(t, "http://external-url/event?t=imp&b=bidId&a=accountId&bidder=bidder&f=b&ts=1000", url, "Invalid vast url")
 }
 
-func TestInjectVideoEventTrackers(t *testing.T) {
-	vast, _ := InjectVideoEventTrackers("", vastXmlWith2Creatives, &openrtb.Bid{}, "testbidder", "", int64(5), &openrtb.BidRequest{})
-	fmt.Printf(vast)
-}
-
 func getValidVTrackRequestBody(withImpression bool, withContent bool) (string, error) {
 	d, e := getVTrackRequestData(withImpression, withContent)
 
@@ -766,4 +692,442 @@ func getVTrackRequestData(wi bool, wic bool) (db []byte, e error) {
 	}
 
 	return data.Bytes(), e
+}
+
+func TestInjectVideoEventTrackers(t *testing.T) {
+	type args struct {
+		externalURL string
+		bid         *openrtb.Bid
+		req         *openrtb.BidRequest
+		callBack    func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string
+	}
+	type want struct {
+		vast string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "linear_creative",
+			args: args{
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				callBack: func(event string, req *openrtb.BidRequest, res openrtb.BidResponse) map[string]string {
+					companyEventIDMap := map[string]string{
+						"midpoint":      "1003",
+						"firstQuartile": "1004",
+						"thirdQuartile": "1005",
+						"complete":      "1006",
+					}
+					return map[string]string{
+						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
+					}
+				},
+				bid: &openrtb.Bid{
+					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
+				<Linear>                      
+					<TrackingEvents>
+						<Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking>
+						<Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
+						<Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
+						<Tracking event="complete">http://example.com/tracking/complete</Tracking>
+					</TrackingEvents>
+				</Linear>
+			</Creative></Creatives></InLine></Ad></VAST>`,
+				},
+				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+			},
+			want: want{
+				vast: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
+								<Linear>                      
+									<TrackingEvents>
+										<Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking>
+										<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?eventId=1004&appbundle=abc]]></Tracking>
+										<Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
+										<Tracking event="midpoint"><![CDATA[http://company.tracker.com?eventId=1003&appbundle=abc]]></Tracking>
+										<Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
+										<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?eventId=1005&appbundle=abc]]></Tracking>
+										<Tracking event="complete">http://example.com/tracking/complete</Tracking>
+										<Tracking event="complete"><![CDATA[http://company.tracker.com?eventId=1006&appbundle=abc]]></Tracking>
+									</TrackingEvents>
+								</Linear>
+							</Creative></Creatives></InLine></Ad></VAST>`,
+			},
+		},
+		{
+			name: "non_linear_creative",
+			args: args{
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				callBack: func(event string, req *openrtb.BidRequest, res openrtb.BidResponse) map[string]string {
+					companyEventIDMap := map[string]string{
+						"midpoint":      "1003",
+						"firstQuartile": "1004",
+						"thirdQuartile": "1005",
+						"complete":      "1006",
+					}
+					return map[string]string{
+						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
+					}
+				},
+				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
+				<NonLinear>                      
+				</NonLinear>
+			</Creative></Creatives></InLine></Ad></VAST>`,
+				},
+				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+			},
+			want: want{
+				vast: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
+								<Linear>                      
+									<TrackingEvents>
+										<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?eventId=1004&appbundle=abc]]></Tracking>
+										<Tracking event="midpoint"><![CDATA[http://company.tracker.com?eventId=1003&appbundle=abc]]></Tracking>
+										<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?eventId=1005&appbundle=abc]]></Tracking>
+										<Tracking event="complete"><![CDATA[http://company.tracker.com?eventId=1006&appbundle=abc]]></Tracking>
+									</TrackingEvents>
+								</Linear>
+							</Creative></Creatives></InLine></Ad></VAST>`,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// if tc.name != "non_linear_creative" {
+			// 	return
+			// }
+			vast := ""
+			if nil != tc.args.bid {
+				vast = tc.args.bid.AdM // original vast
+			}
+			if nil == tc.args.callBack {
+				config.TrackerMacros = nil
+			} else {
+				config.TrackerMacros = tc.args.callBack
+			}
+			accountID := ""
+			timestamp := int64(0)
+			biddername := "test_bidder"
+			injectedVast, _ := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, accountID, timestamp, tc.args.req)
+
+			expectedTrackingEvents := etree.NewDocument()
+			actualTrackingEvents := etree.NewDocument()
+			// fmt.Println(string(injectedVast))
+			err := expectedTrackingEvents.ReadFromString(tc.want.vast)
+			if nil != err {
+				assert.Fail(t, err.Error())
+			}
+			err = actualTrackingEvents.ReadFromBytes(injectedVast)
+			if nil != err {
+				assert.Fail(t, err.Error())
+			}
+			expect := expectedTrackingEvents.FindElements("VAST/Ad/InLine/Creatives/Creative/*/TrackingEvents/Tracking")
+			actual := actualTrackingEvents.FindElements("VAST/Ad/InLine/Creatives/Creative/*/TrackingEvents/Tracking")
+
+			for _, expectedEle := range expect {
+				eevent := expectedEle.SelectAttr("event").Value
+				expectedURL := expectedEle.Text()
+				if !strings.HasPrefix(expectedURL, "<![CDATA[") {
+					expectedURL = fmt.Sprintf("<![CDATA[%v]]>", expectedURL)
+				}
+				// fmt.Println("E event = ", expectedEle.SelectAttr("event").Value, ", url = ", expectedURL)
+				// check in actual if url is present for above ele
+				eventFound := false
+				for _, actualEle := range actual {
+					actualURL := strings.Trim(actualEle.Text(), " ")
+					if !strings.HasPrefix(actualURL, "<![CDATA[") {
+						actualURL = fmt.Sprintf("<![CDATA[%v]]>", actualURL)
+					}
+					// fmt.Println("A event = ", actualEle.SelectAttr("event").Value, ", url = ", actualURL)
+
+					if actualEle.SelectAttr("event").Value == eevent && actualURL == expectedURL {
+						eventFound = true
+						break
+					}
+				}
+				if !eventFound {
+					assert.Failf(t, "Expected event '%v' and url '%v' not found", eevent, expectedURL)
+				}
+			}
+
+		})
+	}
+}
+
+func TestGetVideoEventTracking(t *testing.T) {
+	type args struct {
+		trackerURL string
+		bid        *openrtb.Bid
+		bidder     string
+		accountId  string
+		timestamp  int64
+		req        *openrtb.BidRequest
+		doc        *etree.Document
+		callBack   func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string
+	}
+	type want struct {
+		trackerURL map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "valid_scenario",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				bid:        &openrtb.Bid{
+					// AdM: vastXMLWith2Creatives,
+				},
+				req: &openrtb.BidRequest{
+					App: &openrtb.App{
+						Bundle: "someappbundle",
+					},
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=someappbundle",
+					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=someappbundle",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=someappbundle",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=someappbundle"},
+			},
+		},
+		{
+			name: "no_macro_value", // expect no replacement
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				bid:        &openrtb.Bid{},
+				req: &openrtb.BidRequest{
+					App: &openrtb.App{}, // no app bundle value
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=[APPBUNDLE]",
+					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=[APPBUNDLE]",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=[APPBUNDLE]",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=[APPBUNDLE]"},
+			},
+		},
+		{
+			name: "replace_using_callback_fuction",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[company_custom_macro]",
+				callBack: func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string {
+					return map[string]string{
+						"[company_custom_macro]": "macro_value",
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&param1=macro_value",
+					"midpoint":      "http://company.tracker.com?eventId=4&param1=macro_value",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=macro_value",
+					"complete":      "http://company.tracker.com?eventId=6&param1=macro_value"},
+			},
+		}, {
+			name: "prefer_company_value_for_standard_macro",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				callBack: func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string {
+					return map[string]string{
+						"[APPBUNDLE]": "my_custom_value", // expect this value for macro
+					}
+				},
+				req: &openrtb.BidRequest{
+					App: &openrtb.App{
+						Bundle: "myapp", // do not expect this value
+					},
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=my_custom_value",
+					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=my_custom_value",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=my_custom_value",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=my_custom_value"},
+			},
+		}, {
+			name: "multireplace_macro",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]&parameter2=[APPBUNDLE]",
+				req: &openrtb.BidRequest{
+					App: &openrtb.App{
+						Bundle: "myapp123",
+					},
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=myapp123&parameter2=myapp123",
+					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=myapp123&parameter2=myapp123",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=myapp123&parameter2=myapp123",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=myapp123&parameter2=myapp123"},
+			},
+		},
+		{
+			name: "callback_with_macro_without_prefix_and_suffix",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
+				callBack: func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string {
+					return map[string]string{
+						"CUSTOM_MACRO": "my_custom_value", // invalid macro syntax missing [ and ]
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
+					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
+			},
+		},
+		{
+			name: "callback_with_empty_macro",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
+				callBack: func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string {
+					return map[string]string{
+						"": "my_custom_value", // invalid macro .. its empty
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
+					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
+			},
+		},
+		{
+			name: "macro_is_case_sensitive",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
+				callBack: func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string {
+					return map[string]string{
+						"[custom_MACRO]": "my_custom_value", // case sensitivity fail w.r.t. trackerURL
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
+					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
+			},
+		},
+		{
+			name: "company_specific_event_id_for_EVENT_ID_macro",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]",
+				callBack: func(event string, req *openrtb.BidRequest, response openrtb.BidResponse) map[string]string {
+					companyEventIDMap := map[string]string{
+						"midpoint":      "1003",
+						"firstQuartile": "1004",
+						"thirdQuartile": "1005",
+						"complete":      "1006",
+					}
+					return map[string]string{
+						"[EVENT_ID]": companyEventIDMap[event],
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=1004",
+					"midpoint":      "http://company.tracker.com?eventId=1003",
+					"thirdQuartile": "http://company.tracker.com?eventId=1005",
+					"complete":      "http://company.tracker.com?eventId=1006"},
+			},
+		},
+		{
+			name: "company_specific_event_id_macro",
+			args: args{
+				trackerURL: "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]",
+				callBack: func(event string, req *openrtb.BidRequest, response openrtb.BidResponse) map[string]string {
+					companyEventIDMap := map[string]string{
+						"midpoint":      "1003",
+						"firstQuartile": "1004",
+						"thirdQuartile": "1005",
+						"complete":      "1006",
+					}
+					return map[string]string{
+						"[COMPANY_EVENT_ID]": companyEventIDMap[event],
+					}
+				},
+			},
+			want: want{
+				trackerURL: map[string]string{
+					"firstQuartile": "http://company.tracker.com?eventId=1004",
+					"midpoint":      "http://company.tracker.com?eventId=1003",
+					"thirdQuartile": "http://company.tracker.com?eventId=1005",
+					"complete":      "http://company.tracker.com?eventId=1006"},
+			},
+		},
+		// prefer company defined event id
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// if tc.name != "company_specific_event_id_macro" {
+			// 	return
+			// }
+			// assign callback function if present
+			if nil == tc.args.callBack {
+				config.TrackerMacros = nil
+			} else {
+				config.TrackerMacros = tc.args.callBack
+			}
+			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc)
+			assert.Equal(t, tc.want.trackerURL, eventURLMap)
+		})
+	}
+}
+
+func TestReplaceMacro(t *testing.T) {
+	type args struct {
+		trackerURL string
+		macro      string
+		value      string
+	}
+	type want struct {
+		trackerURL string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{name: "empty_tracker_url", args: args{trackerURL: "", macro: "[TEST]", value: "testme"}, want: want{trackerURL: ""}},
+		{name: "tracker_url_with_macro", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=testme"}},
+		{name: "tracker_url_with_invalid_macro", args: args{trackerURL: "http://something.com?test=TEST]", macro: "[TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=TEST]"}},
+		{name: "tracker_url_with_repeating_macro", args: args{trackerURL: "http://something.com?test=[TEST]&test1=[TEST]", macro: "[TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=testme&test1=testme"}},
+		{name: "empty_macro", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		{name: "macro_without_[", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		{name: "macro_without_]", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		{name: "empty_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: ""}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		{name: "nested_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "[TEST][TEST]"}, want: want{trackerURL: "http://something.com?test=[TEST][TEST]"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			trackerURL := replaceMacro(tc.args.trackerURL, tc.args.macro, tc.args.value)
+			// encodedExpectedURL := ""
+			// if "" != tc.want.trackerURL {
+			// 	//url encode values
+			// 	uri, err := url.ParseRequestURI(tc.want.trackerURL)
+			// 	encodedExpectedURL = uri.Host + "?" + uri.Query().Encode()
+			// 	if nil != err {
+			// 		assert.Fail(t, err.Error())
+			// 	}
+			// }
+			assert.Equal(t, tc.want.trackerURL, trackerURL)
+		})
+	}
+
 }

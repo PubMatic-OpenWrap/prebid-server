@@ -48,7 +48,7 @@ func main() {
 }
 */
 
-func InitPrebidServer(configFile string, cb func(openrtb.BidRequest, openrtb.BidResponse) map[string]string) {
+func InitPrebidServer(configFile string, cb func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string) {
 	config.TrackerMacros = cb
 	//init contents
 	rand.Seed(time.Now().UnixNano())

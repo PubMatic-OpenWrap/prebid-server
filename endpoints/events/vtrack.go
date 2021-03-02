@@ -39,6 +39,7 @@ const (
 	VASTAppBundleMacro = "[APPBUNDLE]"
 	VASTDomainMacro    = "[DOMAIN]"
 	VASTPageURLMacro   = "[PAGEURL]"
+	PBSEventIDMacro    = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
 )
 
 type vtrackEndpoint struct {
@@ -313,61 +314,92 @@ func contains(s []string, e string) bool {
 	return i < len(s) && s[i] == e
 }
 
-func InjectVideoEventTrackers(externalUrl, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) (string, bool) {
+//InjectVideoEventTrackers injections the video tracking events
+func InjectVideoEventTrackers(trackerURL, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vast)
-	eventTrackingURL := GetVideoEventTracking(externalUrl, bid, bidder, accountID, timestamp, req, doc)
-	fmt.Println(err)
-	linearCreatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear/")
-
-	for _, creative := range linearCreatives {
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, req, doc)
+	// Find Creatives of Linear and NonLinear Type
+	// Injecting Tracking Events for Companion is not supported here
+	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
+	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear")...)
+	for _, creative := range creatives {
 		trackingEvents := creative.SelectElement("TrackingEvents")
 		if nil == trackingEvents {
 			trackingEvents = creative.CreateElement("TrackingEvents")
+			creative.AddChild(trackingEvents)
 		}
-		trackingEle := trackingEvents.CreateElement("Tracking")
-		trackingEle.CreateAttr("event", "firstQuartile")
-		trackingEle.SetText(eventTrackingURL)
+		// Inject
+		for event, url := range eventURLMap {
+			trackingEle := trackingEvents.CreateElement("Tracking")
+			trackingEle.CreateAttr("event", event)
+			// trackingEle.SetText(fmt.Sprintf("<![CDATA[%s]]>", url))
+			trackingEle.SetText(fmt.Sprintf("%s", url))
+		}
 	}
-
-	out, err := doc.WriteToString()
+	out, err := doc.WriteToBytes()
 	hasErr := false
 	if nil != err {
-		fmt.Println(err)
+		glog.Errorf("%v", err.Error())
 		hasErr = true
 	}
-	bid.AdM = out
-	return out, hasErr
+	return out, !hasErr
 }
 
-// updates the underline VAST by injecting video event trackers
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) string {
-	macros := make(map[string]string)
-	if nil != config.TrackerMacros {
-		macros = config.TrackerMacros(openrtb.BidRequest{}, openrtb.BidResponse{})
+// GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
+// By default PBS will expect [EVENT_ID] macro in trackerURL to inject event information
+// [EVENT_ID] will be injected with one of the following values
+//   3 - firstQuartile
+//   4 - midpoint
+//   5 - thirdQuartile
+//   6 - complete
+// If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
+// and ensure that your macro is part of trackerURL configuration
+func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
+	defaultEventIDMap := map[string]string{
+		"firstQuartile": "3",
+		"midpoint":      "4",
+		"thirdQuartile": "5",
+		"complete":      "6",
 	}
-	if nil != macros && len(macros) > 0 {
-		//trackerURL = "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&crId=[CREATIVE_IDENTIFIER]&ier=[ERRORCODE]&e=3&adv=[ADERVERTISER_NAME]&orig=[PUB_DOMAIN]&dvc.plt=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]"
-		for macro, v := range macros {
-			replaceMacro(trackerURL, macro, v)
-		}
 
+	eventURLMap := make(map[string]string)
+
+	for _, event := range []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"} {
+		eventURL := trackerURL
+		macros := make(map[string]string)
+		if nil != config.TrackerMacros {
+			macros = config.TrackerMacros(event, req, openrtb.BidResponse{})
+		}
+		if nil != macros && len(macros) > 0 {
+			//trackerURL = "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&crId=[CREATIVE_IDENTIFIER]&ier=[ERRORCODE]&e=3&adv=[ADERVERTISER_NAME]&orig=[PUB_DOMAIN]&dvc.plt=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]"
+			for macro, v := range macros {
+				eventURL = replaceMacro(eventURL, macro, v)
+			}
+		}
 		// replace standard macros
-		trackerURL = strings.ReplaceAll(trackerURL, VASTAdTypeMacro, "")
-		if nil != req.App {
-			replaceMacro(trackerURL, VASTAppBundleMacro, req.App.Bundle)
+		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, "")
+		if nil != req && nil != req.App {
+			eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
 		}
-		if nil != req.Site {
-			replaceMacro(trackerURL, VASTDomainMacro, req.Site.Domain)
-			replaceMacro(trackerURL, VASTPageURLMacro, req.Site.Page)
+		if nil != req && nil != req.Site {
+			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.Site.Domain)
+			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
 		}
 
+		// replace [EVENT_ID] macro with PBS defined event ID
+		eventURL = replaceMacro(eventURL, PBSEventIDMacro, defaultEventIDMap[event])
+		eventURLMap[event] = eventURL
+	}
+	return eventURLMap
+}
+
+func replaceMacro(trackerURL, macro, value string) string {
+	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.Trim(value, " ")) > 0 {
+		// value = url.QueryEscape(value)
+		trackerURL = strings.ReplaceAll(trackerURL, macro, value)
+	} else {
+		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
 	return trackerURL
-}
-
-func replaceMacro(trackerURL, macro, value string) {
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.Trim(value, " ")) > 0 {
-		trackerURL = strings.ReplaceAll(trackerURL, macro, value)
-	}
 }
