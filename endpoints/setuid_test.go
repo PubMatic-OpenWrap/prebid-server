@@ -376,7 +376,7 @@ func assertHasSyncs(t *testing.T, testCase string, resp *httptest.ResponseRecord
 	}
 }
 
-func makeRequest(uri string, existingSyncs map[string]string, addSecParam bool) *http.Request {
+func makeRequest(uri string, existingSyncs map[string]string) *http.Request {
 	request := httptest.NewRequest("GET", uri, nil)
 	if len(existingSyncs) > 0 {
 		pbsCookie := usersync.NewPBSCookie()
@@ -384,11 +384,6 @@ func makeRequest(uri string, existingSyncs map[string]string, addSecParam bool) 
 			pbsCookie.TrySync(family, value)
 		}
 		addCookie(request, pbsCookie)
-	}
-	if addSecParam {
-		q := request.URL.Query()
-		q.Add("sec", "1")
-		request.URL.RawQuery = q.Encode()
 	}
 	return request
 }

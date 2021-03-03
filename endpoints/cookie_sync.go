@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
-
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
@@ -24,15 +17,10 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/privacy"
-	"github.com/prebid/prebid-server/privacy/ccpa"
-	gdprPrivacy "github.com/prebid/prebid-server/privacy/gdpr"
-	"github.com/prebid/prebid-server/usersync"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strconv"
 )
 
 func NewCookieSyncEndpoint(
@@ -181,21 +169,10 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		BidderStatus: make([]*usersync.CookieSyncBidders, 0, len(parsedReq.Bidders)),
 	}
 
-	//For secure = true flag on cookie
-	secParam := r.URL.Query().Get("sec")
-	refererHeader := r.Header.Get("Referer")
-	setSecureFlag := false
-	if secParam == "1" || strings.HasPrefix(refererHeader, "https") {
-		setSecureFlag = true
-	}
-
 	for i := 0; i < len(parsedReq.Bidders); i++ {
 		bidder := parsedReq.Bidders[i]
 		syncInfo, err := deps.syncers[openrtb_ext.BidderName(bidder)].GetUsersyncInfo(privacyPolicy)
 		if err == nil {
-
-			syncInfo.URL = setSecureParam(syncInfo.URL, setSecureFlag)
-
 			newSync := &usersync.CookieSyncBidders{
 				BidderCode:   bidder,
 				NoCookie:     true,
@@ -259,15 +236,6 @@ func cookieSyncStatus(syncCount int) string {
 		return "no_cookie"
 	}
 	return "ok"
-}
-
-func setSecureParam(userSyncUrl string, isSecure bool) string {
-	var secParam = "0"
-	if isSecure {
-		secParam = "1"
-	}
-	syncURL := secureFlagRegex.ReplaceAllString(userSyncUrl, secParam)
-	return syncURL
 }
 
 type CookieSyncReq cookieSyncRequest
