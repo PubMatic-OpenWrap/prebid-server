@@ -175,8 +175,10 @@ func (cookie *PBSCookie) GetId(bidderName openrtb_ext.BidderName) (id string, ex
 }
 
 // SetCookieOnResponse is a shortcut for "ToHTTPCookie(); cookie.setDomain(domain); setCookie(w, cookie)"
-func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCookie bool, secParam string, cfg *config.HostCookie, ttl time.Duration) {
+func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCookie bool, cfg *config.HostCookie, ttl time.Duration) {
 	httpCookie := cookie.ToHTTPCookie(ttl)
+	httpCookie.Secure = true
+
 	var domain string = cfg.Domain
 
 	if domain != "" {
@@ -202,11 +204,6 @@ func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCooki
 		currSize = len([]byte(httpCookie.String()))
 	}
 
-	// Set the secure flag to 'uids' cookie; using sec query param for backward compatibility
-	if secParam == "1" {
-		httpCookie.Secure = true
-	}
-
 	var uidsCookieStr string
 	var sameSiteCookie *http.Cookie
 	if setSiteCookie {
@@ -219,10 +216,9 @@ func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCooki
 			Value:   SameSiteCookieValue,
 			Expires: time.Now().Add(ttl),
 			Path:    "/",
+			Secure:  true,
 		}
-		if secParam == "1" {
-			sameSiteCookie.Secure = true
-		}
+
 		sameSiteCookieStr := sameSiteCookie.String()
 		sameSiteCookieStr += SameSiteAttribute
 		w.Header().Add("Set-Cookie", sameSiteCookieStr)
@@ -265,7 +261,7 @@ func (cookie *PBSCookie) TrySync(familyName string, uid string) error {
 
 	// At the moment, Facebook calls /setuid with a UID of 0 if the user isn't logged into Facebook.
 	// They shouldn't be sending us a sentinel value... but since they are, we're refusing to save that ID.
-	if familyName == string(openrtb_ext.BidderFacebook) && uid == "0" {
+	if familyName == string(openrtb_ext.BidderAudienceNetwork) && uid == "0" {
 		return errors.New("audienceNetwork uses a UID of 0 as \"not yet recognized\".")
 	}
 
@@ -337,8 +333,8 @@ func (cookie *PBSCookie) UnmarshalJSON(b []byte) error {
 			//
 			// Since users may log into facebook later, this is a bad strategy.
 			// Since "0" is a fake ID for this bidder, we'll just treat it like it doesn't exist.
-			if id, ok := cookie.uids[string(openrtb_ext.BidderFacebook)]; ok && id.UID == "0" {
-				delete(cookie.uids, string(openrtb_ext.BidderFacebook))
+			if id, ok := cookie.uids[string(openrtb_ext.BidderAudienceNetwork)]; ok && id.UID == "0" {
+				delete(cookie.uids, string(openrtb_ext.BidderAudienceNetwork))
 			}
 		}
 	}
