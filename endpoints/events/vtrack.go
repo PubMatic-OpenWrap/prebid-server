@@ -367,7 +367,7 @@ func injectVideoEventTrackers0(trackerURL, adm string, bid *openrtb.Bid, bidder,
 		}
 	}
 
-	out := []byte(vast)
+	out := []byte(adm)
 	if trackersInjected {
 		out, err = doc.WriteToBytes()
 		trackersInjected = trackersInjected && nil == err
@@ -403,7 +403,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		eventURL := trackerURL
 		macros := make(map[string]string)
 		if nil != config.TrackerMacros {
-			macros = config.TrackerMacros(event, req, openrtb.BidResponse{})
+			macros = config.TrackerMacros(event, req, bidder, bid)
 		}
 		if nil != macros && len(macros) > 0 {
 			//trackerURL = "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&crId=[CREATIVE_IDENTIFIER]&ier=[ERRORCODE]&e=3&adv=[ADERVERTISER_NAME]&orig=[PUB_DOMAIN]&dvc.plt=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]"
