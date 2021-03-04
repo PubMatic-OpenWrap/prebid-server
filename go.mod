@@ -7,10 +7,9 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.5 // indirect
-	github.com/PubMatic-OpenWrap/etree v1.0.1
+	github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
 	github.com/PubMatic-OpenWrap/openrtb v11.0.1-0.20200228131822-5216ebe65c0c+incompatible
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
-	github.com/beevik/etree v1.1.0
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/buger/jsonparser v0.0.0-20180808090653-f4dd9f5a6b44

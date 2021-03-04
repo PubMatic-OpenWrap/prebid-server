@@ -19,7 +19,8 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 
-	"github.com/beevik/etree"
+	// "github.com/beevik/etree"
+	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 )
@@ -316,15 +317,38 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 	return json.RawMessage(vast)
 }
 
-//InjectVideoEventTrackers injections the video tracking events
 func InjectVideoEventTrackers(trackerURL, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
+	return injectVideoEventTrackers0(trackerURL, vast, bid, bidder, accountID, timestamp, req)
+}
+
+func injectVideoEventTrackers1(trackerURL, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
+	// collect all creatives from vast
+	return []byte(""), false
+}
+
+//InjectVideoEventTrackers injects the video tracking events
+func injectVideoEventTrackers0(trackerURL, adm string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
+	// parse VAST
 	doc := etree.NewDocument()
-	err := doc.ReadFromString(vast)
+	err := doc.ReadFromString(adm)
+	if nil != err {
+		glog.Errorf("Error parsing VAST XML. '%v'", err.Error())
+		return []byte(adm), false // false indicates events trackers are not injected
+	}
+	//TODO return if error
 	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, req, doc)
+	trackersInjected := false
+	// return if if no tracking URL
+	if len(eventURLMap) == 0 {
+		return []byte(adm), false
+	}
+
 	// Find Creatives of Linear and NonLinear Type
 	// Injecting Tracking Events for Companion is not supported here
 	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
 	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinear")...)
 	for _, creative := range creatives {
 		trackingEvents := creative.SelectElement("TrackingEvents")
 		if nil == trackingEvents {
@@ -336,16 +360,23 @@ func InjectVideoEventTrackers(trackerURL, vast string, bid *openrtb.Bid, bidder,
 			trackingEle := trackingEvents.CreateElement("Tracking")
 			trackingEle.CreateAttr("event", event)
 			// trackingEle.SetText(fmt.Sprintf("<![CDATA[%s]]>", url))
+			//trackingEle.SetText(fmt.Sprintf("%s", url))
+			// trackingEle.SetCData(url)
 			trackingEle.SetText(fmt.Sprintf("%s", url))
+			trackersInjected = true
 		}
 	}
-	out, err := doc.WriteToBytes()
-	hasErr := false
-	if nil != err {
-		glog.Errorf("%v", err.Error())
-		hasErr = true
+
+	out := []byte(vast)
+	if trackersInjected {
+		out, err = doc.WriteToBytes()
+		trackersInjected = trackersInjected && nil == err
+		if nil != err {
+			glog.Errorf("%v", err.Error())
+
+		}
 	}
-	return out, !hasErr
+	return out, trackersInjected
 }
 
 // GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
@@ -358,15 +389,16 @@ func InjectVideoEventTrackers(trackerURL, vast string, bid *openrtb.Bid, bidder,
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
 func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
+	eventURLMap := make(map[string]string)
+	if "" == strings.Trim(trackerURL, " ") {
+		return eventURLMap
+	}
 	defaultEventIDMap := map[string]string{
 		"firstQuartile": "3",
 		"midpoint":      "4",
 		"thirdQuartile": "5",
 		"complete":      "6",
 	}
-
-	eventURLMap := make(map[string]string)
-
 	for _, event := range []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"} {
 		eventURL := trackerURL
 		macros := make(map[string]string)

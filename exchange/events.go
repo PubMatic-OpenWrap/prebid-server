@@ -2,8 +2,10 @@ package exchange
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
@@ -38,12 +40,12 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
-func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
+func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.bids {
 			if modifyingVastXMLAllowed {
-				ev.modifyBidVAST(pbsBid, bidderName)
+				ev.modifyBidVAST(pbsBid, bidderName, req, trackerURL)
 			}
 			pbsBid.bidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
 		}
@@ -57,7 +59,7 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
@@ -65,6 +67,14 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	vastXML := makeVAST(bid)
 	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bid.ID, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
 		bid.AdM = newVastXML
+	}
+
+	accountID := "0"
+	auctionTimestampMs := int64(0)
+	if newVastXML, injected := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), accountID, auctionTimestampMs, req); injected {
+		fmt.Println(string(newVastXML))
+		fmt.Println(bid.AdM)
+		bid.AdM = string(newVastXML)
 	}
 }
 

@@ -10,12 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/etree"
+	// "github.com/beevik/etree"
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
-	"github.com/beevik/etree"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -702,7 +703,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		callBack    func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string
 	}
 	type want struct {
-		vast string
+		eventURLs map[string][]string
 	}
 	tests := []struct {
 		name string
@@ -726,33 +727,25 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				},
 				bid: &openrtb.Bid{
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
-				<Linear>                      
-					<TrackingEvents>
-						<Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking>
-						<Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
-						<Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
-						<Tracking event="complete">http://example.com/tracking/complete</Tracking>
-					</TrackingEvents>
-				</Linear>
-			</Creative></Creatives></InLine></Ad></VAST>`,
+					                              <Linear>                      
+					                                      <TrackingEvents>
+					                                              <Tracking event="firstQuartile"><![CDATA[http://example.com/tracking/firstQuartile?k1=v1&k2=v2]]></Tracking>
+					                                              <Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
+					                                              <Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
+					                                              <Tracking event="complete">http://example.com/tracking/complete</Tracking>
+					                                      </TrackingEvents>
+					                              </Linear>
+					                     </Creative></Creatives></InLine></Ad></VAST>`,
 				},
 				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
 			},
 			want: want{
-				vast: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
-								<Linear>                      
-									<TrackingEvents>
-										<Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking>
-										<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?eventId=1004&appbundle=abc]]></Tracking>
-										<Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
-										<Tracking event="midpoint"><![CDATA[http://company.tracker.com?eventId=1003&appbundle=abc]]></Tracking>
-										<Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
-										<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?eventId=1005&appbundle=abc]]></Tracking>
-										<Tracking event="complete">http://example.com/tracking/complete</Tracking>
-										<Tracking event="complete"><![CDATA[http://company.tracker.com?eventId=1006&appbundle=abc]]></Tracking>
-									</TrackingEvents>
-								</Linear>
-							</Creative></Creatives></InLine></Ad></VAST>`,
+				eventURLs: map[string][]string{
+					"firstQuartile": {"http://example.com/tracking/firstQuartile?k1=v1&k2=v2", "http://company.tracker.com?eventId=1004&appbundle=abc"},
+					"midpoint":      {"http://example.com/tracking/midpoint", "http://company.tracker.com?eventId=1003&appbundle=abc"},
+					"thirdQuartile": {"http://example.com/tracking/thirdQuartile", "http://company.tracker.com?eventId=1005&appbundle=abc"},
+					"complete":      {"http://example.com/tracking/complete", "http://company.tracker.com?eventId=1006&appbundle=abc"},
+				},
 			},
 		},
 		{
@@ -772,31 +765,88 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				},
 				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
-				<NonLinear>                      
+				<NonLinear>
+					<TrackingEvents>
+					<Tracking event="firstQuartile">http://something.com</Tracking>
+					</TrackingEvents>
 				</NonLinear>
 			</Creative></Creatives></InLine></Ad></VAST>`,
 				},
 				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
 			},
 			want: want{
-				vast: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
-								<Linear>                      
-									<TrackingEvents>
-										<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?eventId=1004&appbundle=abc]]></Tracking>
-										<Tracking event="midpoint"><![CDATA[http://company.tracker.com?eventId=1003&appbundle=abc]]></Tracking>
-										<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?eventId=1005&appbundle=abc]]></Tracking>
-										<Tracking event="complete"><![CDATA[http://company.tracker.com?eventId=1006&appbundle=abc]]></Tracking>
-									</TrackingEvents>
-								</Linear>
-							</Creative></Creatives></InLine></Ad></VAST>`,
+				eventURLs: map[string][]string{
+					"firstQuartile": []string{"http://something.com", "http://company.tracker.com?eventId=1004&appbundle=abc"},
+				},
+			},
+		}, {
+			name: "no_traker_url_configured", // expect no injection
+			args: args{
+				externalURL: "",
+				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
+				<Linear>                      
+				</Linear>
+			</Creative></Creatives></InLine></Ad></VAST>`,
+				},
+				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+			},
+			want: want{
+				eventURLs: map[string][]string{},
+			},
+		},
+		{
+			name: "wrapper_vast_xml_from_partner", // expect we are injecting trackers inside wrapper
+			args: args{
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+					AdM: `<VAST version="4.2" xmlns="http://www.iab.com/VAST">
+					<Ad id="20011" sequence="1" >
+					  <Wrapper followAdditionalWrappers="0" allowMultipleAds="1" fallbackOnNoAd="0">
+						<AdSystem version="4.0">iabtechlab</AdSystem>
+					  <VASTAdTagURI>http://somevasturl</VASTAdTagURI>
+						<Impression id="Impression-ID"><![CDATA[https://example.com/track/impression]]></Impression>
+						<Creatives>
+						  <Creative id="5480" sequence="1" adId="2447226">
+							 <Linear></Linear>
+						 </Creative>
+				  </Creatives></Wrapper></Ad></VAST>`,
+				},
+				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+			},
+			want: want{
+				eventURLs: map[string][]string{
+					"firstQuartile": {"http://company.tracker.com?eventId=3&appbundle=abc"},
+					"midpoint":      {"http://company.tracker.com?eventId=4&appbundle=abc"},
+					"thirdQuartile": {"http://company.tracker.com?eventId=5&appbundle=abc"},
+					"complete":      {"http://company.tracker.com?eventId=6&appbundle=abc"},
+				},
+			},
+		},
+		{
+			name: "vast_tag_uri_response_from_partner",
+			args: args{
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+					AdM: `<![CDATA[http://hostedvasttag.url&k=v]]>`,
+				},
+				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+			},
+			want: want{
+				eventURLs: map[string][]string{
+					"firstQuartile": {"http://company.tracker.com?eventId=3&appbundle=abc"},
+					"midpoint":      {"http://company.tracker.com?eventId=4&appbundle=abc"},
+					"thirdQuartile": {"http://company.tracker.com?eventId=5&appbundle=abc"},
+					"complete":      {"http://company.tracker.com?eventId=6&appbundle=abc"},
+				},
 			},
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// if tc.name != "non_linear_creative" {
-			// 	return
-			// }
+			if tc.name != "vast_tag_uri_response_from_partner" {
+				return
+			}
 			vast := ""
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
@@ -809,45 +859,37 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			accountID := ""
 			timestamp := int64(0)
 			biddername := "test_bidder"
-			injectedVast, _ := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, accountID, timestamp, tc.args.req)
+			injectedVast, injected := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, accountID, timestamp, tc.args.req)
 
-			expectedTrackingEvents := etree.NewDocument()
-			actualTrackingEvents := etree.NewDocument()
-			// fmt.Println(string(injectedVast))
-			err := expectedTrackingEvents.ReadFromString(tc.want.vast)
+			if !injected {
+				// expect no change in input vast if tracking events are not injected
+				assert.Equal(t, vast, string(injectedVast))
+			}
+			actualVastDoc := etree.NewDocument()
+
+			fmt.Println(string(injectedVast))
+
+			err := actualVastDoc.ReadFromBytes(injectedVast)
 			if nil != err {
 				assert.Fail(t, err.Error())
 			}
-			err = actualTrackingEvents.ReadFromBytes(injectedVast)
-			if nil != err {
-				assert.Fail(t, err.Error())
-			}
-			expect := expectedTrackingEvents.FindElements("VAST/Ad/InLine/Creatives/Creative/*/TrackingEvents/Tracking")
-			actual := actualTrackingEvents.FindElements("VAST/Ad/InLine/Creatives/Creative/*/TrackingEvents/Tracking")
+			actualTrackingEvents := actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/InLine/TrackingEvents/Tracking")
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear/TrackingEvents/Tracking")...)
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/InLine/TrackingEvents/Tracking")...)
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/*/TrackingEvents/Tracking")...)
+			for event, URLs := range tc.want.eventURLs {
 
-			for _, expectedEle := range expect {
-				eevent := expectedEle.SelectAttr("event").Value
-				expectedURL := expectedEle.Text()
-				if !strings.HasPrefix(expectedURL, "<![CDATA[") {
-					expectedURL = fmt.Sprintf("<![CDATA[%v]]>", expectedURL)
-				}
-				// fmt.Println("E event = ", expectedEle.SelectAttr("event").Value, ", url = ", expectedURL)
-				// check in actual if url is present for above ele
-				eventFound := false
-				for _, actualEle := range actual {
-					actualURL := strings.Trim(actualEle.Text(), " ")
-					if !strings.HasPrefix(actualURL, "<![CDATA[") {
-						actualURL = fmt.Sprintf("<![CDATA[%v]]>", actualURL)
+				for _, expectedURL := range URLs {
+					present := false
+					for _, te := range actualTrackingEvents {
+						if te.SelectAttr("event").Value == event && te.Text() == expectedURL {
+							present = true
+							break // expected URL present. check for next expected URL
+						}
 					}
-					// fmt.Println("A event = ", actualEle.SelectAttr("event").Value, ", url = ", actualURL)
-
-					if actualEle.SelectAttr("event").Value == eevent && actualURL == expectedURL {
-						eventFound = true
-						break
+					if !present {
+						assert.Failf(t, "Expected tracker URL '%v' is not present", expectedURL)
 					}
-				}
-				if !eventFound {
-					assert.Failf(t, "Expected event '%v' and url '%v' not found", eevent, expectedURL)
 				}
 			}
 
@@ -867,7 +909,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 		callBack   func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string
 	}
 	type want struct {
-		trackerURL map[string]string
+		trackerURLMap map[string]string
 	}
 	tests := []struct {
 		name string
@@ -888,7 +930,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=someappbundle",
 					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=someappbundle",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=someappbundle",
@@ -905,7 +947,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=[APPBUNDLE]",
 					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=[APPBUNDLE]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=[APPBUNDLE]",
@@ -923,7 +965,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&param1=macro_value",
 					"midpoint":      "http://company.tracker.com?eventId=4&param1=macro_value",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=macro_value",
@@ -945,7 +987,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=my_custom_value",
 					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=my_custom_value",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=my_custom_value",
@@ -962,7 +1004,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&appbundle=myapp123&parameter2=myapp123",
 					"midpoint":      "http://company.tracker.com?eventId=4&appbundle=myapp123&parameter2=myapp123",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=myapp123&parameter2=myapp123",
@@ -980,7 +1022,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
@@ -998,7 +1040,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
@@ -1016,7 +1058,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
@@ -1040,7 +1082,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=1004",
 					"midpoint":      "http://company.tracker.com?eventId=1003",
 					"thirdQuartile": "http://company.tracker.com?eventId=1005",
@@ -1064,18 +1106,21 @@ func TestGetVideoEventTracking(t *testing.T) {
 				},
 			},
 			want: want{
-				trackerURL: map[string]string{
+				trackerURLMap: map[string]string{
 					"firstQuartile": "http://company.tracker.com?eventId=1004",
 					"midpoint":      "http://company.tracker.com?eventId=1003",
 					"thirdQuartile": "http://company.tracker.com?eventId=1005",
 					"complete":      "http://company.tracker.com?eventId=1006"},
 			},
+		}, {
+			name: "empty_tracker_url",
+			args: args{trackerURL: "    "},
+			want: want{trackerURLMap: make(map[string]string)},
 		},
-		// prefer company defined event id
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// if tc.name != "company_specific_event_id_macro" {
+			// if tc.name != "empty_tracker_url" {
 			// 	return
 			// }
 			// assign callback function if present
@@ -1085,7 +1130,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				config.TrackerMacros = tc.args.callBack
 			}
 			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc)
-			assert.Equal(t, tc.want.trackerURL, eventURLMap)
+			assert.Equal(t, tc.want.trackerURLMap, eventURLMap)
 		})
 	}
 }
