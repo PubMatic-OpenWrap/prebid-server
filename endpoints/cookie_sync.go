@@ -23,8 +23,14 @@ import (
 	"strconv"
 )
 
-func NewCookieSyncEndpoint(syncers map[openrtb_ext.BidderName]usersync.Usersyncer, cfg *config.Configuration, syncPermissions gdpr.Permissions, metrics metrics.MetricsEngine, pbsAnalytics analytics.PBSAnalyticsModule,
+func NewCookieSyncEndpoint(
+	syncers map[openrtb_ext.BidderName]usersync.Usersyncer,
+	cfg *config.Configuration,
+	syncPermissions gdpr.Permissions,
+	metrics metrics.MetricsEngine,
+	pbsAnalytics analytics.PBSAnalyticsModule,
 	bidderMap map[string]openrtb_ext.BidderName) httprouter.Handle {
+
 	bidderLookup := make(map[string]struct{})
 	for k := range bidderMap {
 		bidderLookup[k] = struct{}{}
