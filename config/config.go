@@ -719,7 +719,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("datacache.cache_size", 0)
 	v.SetDefault("datacache.ttl_seconds", 0)
 	v.SetDefault("category_mapping.filesystem.enabled", true)
-	v.SetDefault("category_mapping.filesystem.directorypath", "/home/http/GO_SERVER/dmhbserver/static/category-mapping")
+	v.SetDefault("category_mapping.filesystem.directorypath", "/usr/local/src/ssheaderbidding/static/category-mapping")
 	v.SetDefault("category_mapping.http.endpoint", "")
 	v.SetDefault("stored_requests.filesystem.enabled", false)
 	v.SetDefault("stored_requests.filesystem.directorypath", "./stored_requests/data/by_id")
@@ -914,7 +914,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})
 	v.SetDefault("gdpr.tcf1.fetch_gvl", false)
-	v.SetDefault("gdpr.tcf1.fallback_gvl_path", "/home/http/GO_SERVER/dmhbserver/static/tcf1/fallback_gvl.json")
+	v.SetDefault("gdpr.tcf1.fallback_gvl_path", "/usr/local/src/ssheaderbidding/static/tcf1/fallback_gvl.json")
 	v.SetDefault("gdpr.tcf2.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose1.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose2.enabled", true)
@@ -1013,4 +1013,8 @@ func isValidCookieSize(maxCookieSize int) error {
 	return nil
 }
 
-var TrackerMacros func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string
+//TrackerMacros is useful of you want to pass the custom macros along with its values. It accepts the standard and customize macros along with its values and sets it
+//in Video Event Tracker URL. eventType provides the information about which quartile event this function
+//suppose to provide the macros. req provides Bid request details. bid provides partner response. bidder indicates the bidder name
+//Returns the key as macro prefixed with [ and suffixed with ] and its associated values
+var TrackerMacros func(eventType string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string

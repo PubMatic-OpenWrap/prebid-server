@@ -1499,9 +1499,6 @@ func TestSetDebugContextKey(t *testing.T) {
 func TestExchangeJSON(t *testing.T) {
 	if specFiles, err := ioutil.ReadDir("./exchangetest"); err == nil {
 		for _, specFile := range specFiles {
-			if specFile.Name() != "events-vast-account-off-request-on.json" {
-				continue
-			}
 			fileName := "./exchangetest/" + specFile.Name()
 			fileDisplayName := "exchange/exchangetest/" + specFile.Name()
 			t.Run(fileDisplayName, func(t *testing.T) {

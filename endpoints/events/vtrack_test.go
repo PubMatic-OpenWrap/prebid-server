@@ -844,9 +844,9 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.name != "vast_tag_uri_response_from_partner" {
-				return
-			}
+			// if tc.name != "vast_tag_uri_response_from_partner" {
+			// 	return
+			// }
 			vast := ""
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
@@ -1162,15 +1162,6 @@ func TestReplaceMacro(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			trackerURL := replaceMacro(tc.args.trackerURL, tc.args.macro, tc.args.value)
-			// encodedExpectedURL := ""
-			// if "" != tc.want.trackerURL {
-			// 	//url encode values
-			// 	uri, err := url.ParseRequestURI(tc.want.trackerURL)
-			// 	encodedExpectedURL = uri.Host + "?" + uri.Query().Encode()
-			// 	if nil != err {
-			// 		assert.Fail(t, err.Error())
-			// 	}
-			// }
 			assert.Equal(t, tc.want.trackerURL, trackerURL)
 		})
 	}

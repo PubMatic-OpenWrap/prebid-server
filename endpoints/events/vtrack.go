@@ -382,22 +382,13 @@ func injectVideoEventTrackers0(trackerURL, adm string, bid *openrtb.Bid, bidder,
 // GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
 // By default PBS will expect [EVENT_ID] macro in trackerURL to inject event information
 // [EVENT_ID] will be injected with one of the following values
-//   3 - firstQuartile
-//   4 - midpoint
-//   5 - thirdQuartile
-//   6 - complete
+//    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
 func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.Trim(trackerURL, " ") {
 		return eventURLMap
-	}
-	defaultEventIDMap := map[string]string{
-		"firstQuartile": "3",
-		"midpoint":      "4",
-		"thirdQuartile": "5",
-		"complete":      "6",
 	}
 	for _, event := range []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"} {
 		eventURL := trackerURL
@@ -422,7 +413,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		}
 
 		// replace [EVENT_ID] macro with PBS defined event ID
-		eventURL = replaceMacro(eventURL, PBSEventIDMacro, defaultEventIDMap[event])
+		eventURL = replaceMacro(eventURL, PBSEventIDMacro, event)
 		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
