@@ -9,12 +9,8 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD
 	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/macros"
-=======
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
->>>>>>> master
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
 	"github.com/spf13/viper"
@@ -1017,4 +1013,4 @@ func isValidCookieSize(maxCookieSize int) error {
 	return nil
 }
 
-var TrackerMacros func(string, *openrtb.BidRequest, openrtb.BidResponse) map[string]string
+var TrackerMacros func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string
