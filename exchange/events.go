@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/openrtb"
@@ -61,7 +60,7 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
 func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
-	if /* pbsBid.bidType != openrtb_ext.BidTypeVideo || */ len(bid.AdM) == 0 && len(bid.NURL) == 0 {
+	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
 	vastXML := makeVAST(bid)
@@ -70,12 +69,8 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 			bid.AdM = newVastXML
 		}
 	}
-
-	accountID := "0"
-	auctionTimestampMs := int64(0)
-	if newVastXML, injected := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), accountID, auctionTimestampMs, req); injected {
-		fmt.Println(string(newVastXML))
-		fmt.Println(bid.AdM)
+	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
+	if newVastXML, injected := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
 		bid.AdM = string(newVastXML)
 	}
 }

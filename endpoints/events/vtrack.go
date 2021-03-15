@@ -16,6 +16,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
 
@@ -29,16 +30,6 @@ const (
 	AccountParameter   = "a"
 	ImpressionCloseTag = "</Impression>"
 	ImpressionOpenTag  = "<Impression>"
-)
-
-// standard VAST macros
-// https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-adcount
-const (
-	VASTAdTypeMacro    = "[ADTYPE]"
-	VASTAppBundleMacro = "[APPBUNDLE]"
-	VASTDomainMacro    = "[DOMAIN]"
-	VASTPageURLMacro   = "[PAGEURL]"
-	PBSEventIDMacro    = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
 )
 
 type vtrackEndpoint struct {
@@ -59,6 +50,18 @@ type BidCacheResponse struct {
 type CacheObject struct {
 	UUID string `json:"uuid"`
 }
+
+// standard VAST macros
+// https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-adcount
+const (
+	VASTAdTypeMacro    = "[ADTYPE]"
+	VASTAppBundleMacro = "[APPBUNDLE]"
+	VASTDomainMacro    = "[DOMAIN]"
+	VASTPageURLMacro   = "[PAGEURL]"
+	PBSEventIDMacro    = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
+)
+
+var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
 
 func NewVTrackEndpoint(cfg *config.Configuration, accounts stored_requests.AccountFetcher, cache prebid_cache_client.Client, bidderInfos adapters.BidderInfos) httprouter.Handle {
 	vte := &vtrackEndpoint{
@@ -317,38 +320,62 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 	return json.RawMessage(vast)
 }
 
-func InjectVideoEventTrackers(trackerURL, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
-	return injectVideoEventTrackers0(trackerURL, vast, bid, bidder, accountID, timestamp, req)
-}
-
-func injectVideoEventTrackers1(trackerURL, vast string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
-	// collect all creatives from vast
-	return []byte(""), false
-}
-
 //InjectVideoEventTrackers injects the video tracking events
-func injectVideoEventTrackers0(trackerURL, adm string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, req *openrtb.BidRequest) ([]byte, bool) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool) {
 	// parse VAST
 	doc := etree.NewDocument()
-	err := doc.ReadFromString(adm)
+	err := doc.ReadFromString(vastXML)
 	if nil != err {
 		glog.Errorf("Error parsing VAST XML. '%v'", err.Error())
-		return []byte(adm), false // false indicates events trackers are not injected
+		return []byte(vastXML), false // false indicates events trackers are not injected
 	}
-	//TODO return if error
-	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, req, doc)
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
-		return []byte(adm), false
+		return []byte(vastXML), false
 	}
 
 	// Find Creatives of Linear and NonLinear Type
 	// Injecting Tracking Events for Companion is not supported here
 	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
-	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear")...)
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
-	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinear")...)
+	// creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear")...)
+	// creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinear")...)
+
+	if "" == strings.Trim(bid.AdM, " ") || strings.HasPrefix(strings.TrimLeft(strings.TrimRight(bid.AdM, "]]>"), "<![CDATA["), "http") {
+		//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
+		//TODO: It should be optimized by forming once and reusing
+		impMap := make(map[string]*openrtb.Imp)
+		for i := range bidRequest.Imp {
+			impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
+		}
+
+		// determine which creative type to be created based on linearity
+		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
+			// create creative object
+			creatives = doc.FindElements("VAST/Ad/Wrapper/Creatives")
+			// var creative *etree.Element
+			// if len(creatives) > 0 {
+			// 	creative = creatives[0] // consider only first creative
+			// } else {
+			creative := doc.CreateElement("Creative")
+			creatives[0].AddChild(creative)
+
+			// }
+
+			switch imp.Video.Linearity {
+			case openrtb.VideoLinearityLinearInStream:
+				creative.AddChild(doc.CreateElement("Linear"))
+			case openrtb.VideoLinearityNonLinearOverlay:
+				creative.AddChild(doc.CreateElement("NonLinearAds"))
+			default: // create both type of creatives
+				creative.AddChild(doc.CreateElement("Linear"))
+				creative.AddChild(doc.CreateElement("NonLinearAds"))
+			}
+			creatives = creative.ChildElements() // point to actual cratives
+		}
+	}
 	for _, creative := range creatives {
 		trackingEvents := creative.SelectElement("TrackingEvents")
 		if nil == trackingEvents {
@@ -359,15 +386,12 @@ func injectVideoEventTrackers0(trackerURL, adm string, bid *openrtb.Bid, bidder,
 		for event, url := range eventURLMap {
 			trackingEle := trackingEvents.CreateElement("Tracking")
 			trackingEle.CreateAttr("event", event)
-			// trackingEle.SetText(fmt.Sprintf("<![CDATA[%s]]>", url))
-			//trackingEle.SetText(fmt.Sprintf("%s", url))
-			// trackingEle.SetCData(url)
 			trackingEle.SetText(fmt.Sprintf("%s", url))
 			trackersInjected = true
 		}
 	}
 
-	out := []byte(adm)
+	out := []byte(vastXML)
 	if trackersInjected {
 		out, err = doc.WriteToBytes()
 		trackersInjected = trackersInjected && nil == err
@@ -390,20 +414,19 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 	if "" == strings.Trim(trackerURL, " ") {
 		return eventURLMap
 	}
-	for _, event := range []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"} {
+	for _, event := range trackingEvents {
 		eventURL := trackerURL
 		macros := make(map[string]string)
 		if nil != config.TrackerMacros {
 			macros = config.TrackerMacros(event, req, bidder, bid)
 		}
 		if nil != macros && len(macros) > 0 {
-			//trackerURL = "https://aktrack.pubmatic.com/track?operId=8&p=[PUB_ID]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PARTNER_NAME]&crId=[CREATIVE_IDENTIFIER]&ier=[ERRORCODE]&e=3&adv=[ADERVERTISER_NAME]&orig=[PUB_DOMAIN]&dvc.plt=[PLATFORM]&af=[AD_FORMAT]&iid=[WRAPPER_IMPRESSION_ID]"
 			for macro, v := range macros {
 				eventURL = replaceMacro(eventURL, macro, v)
 			}
 		}
 		// replace standard macros
-		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, "")
+		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
 		if nil != req && nil != req.App {
 			eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
 		}
