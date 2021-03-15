@@ -882,11 +882,14 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			accountID := ""
 			timestamp := int64(0)
 			biddername := "test_bidder"
-			injectedVast, injected := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, accountID, timestamp, tc.args.req)
+			injectedVast, injected, ierr := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, accountID, timestamp, tc.args.req)
 
 			if !injected {
 				// expect no change in input vast if tracking events are not injected
 				assert.Equal(t, vast, string(injectedVast))
+				assert.NotNil(t, ierr)
+			} else {
+				assert.Nil(t, ierr)
 			}
 			actualVastDoc := etree.NewDocument()
 

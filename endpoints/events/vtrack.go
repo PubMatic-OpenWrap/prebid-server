@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -321,19 +322,20 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 }
 
 //InjectVideoEventTrackers injects the video tracking events
-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
 	if nil != err {
-		glog.Errorf("Error parsing VAST XML. '%v'", err.Error())
-		return []byte(vastXML), false // false indicates events trackers are not injected
+		err := fmt.Sprintf("Error parsing VAST XML. '%v'", err.Error())
+		glog.Errorf(err)
+		return []byte(vastXML), false, errors.New(err) // false indicates events trackers are not injected
 	}
 	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
-		return []byte(vastXML), false
+		return []byte(vastXML), false, errors.New("Event URLs are not found")
 	}
 
 	// Find Creatives of Linear and NonLinear Type
@@ -392,15 +394,15 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 	}
 
 	out := []byte(vastXML)
+	var wErr error
 	if trackersInjected {
-		out, err = doc.WriteToBytes()
-		trackersInjected = trackersInjected && nil == err
-		if nil != err {
-			glog.Errorf("%v", err.Error())
-
+		out, wErr = doc.WriteToBytes()
+		trackersInjected = trackersInjected && nil == wErr
+		if nil != wErr {
+			glog.Errorf("%v", wErr.Error())
 		}
 	}
-	return out, trackersInjected
+	return out, trackersInjected, wErr
 }
 
 // GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
