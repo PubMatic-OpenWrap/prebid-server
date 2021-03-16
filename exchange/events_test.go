@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -204,9 +203,6 @@ func TestModifyBidVAST(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.name != "adm_containing_url" {
-				return
-			}
 			ev := eventTracking{
 				bidderInfos: adapters.BidderInfos{
 					"somebidder": adapters.BidderInfo{
@@ -218,7 +214,6 @@ func TestModifyBidVAST(t *testing.T) {
 				bid:     tc.args.bid,
 				bidType: openrtb_ext.BidTypeVideo,
 			}, "somebidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
-			fmt.Println(tc.args.bid.AdM)
 			validator(t, tc.args.bid, tc.want.tags)
 		})
 	}

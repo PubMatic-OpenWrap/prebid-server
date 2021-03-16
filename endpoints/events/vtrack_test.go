@@ -766,11 +766,11 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				},
 				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
-				<NonLinear>
+				<NonLinearAds>
 					<TrackingEvents>
 					<Tracking event="firstQuartile">http://something.com</Tracking>
 					</TrackingEvents>
-				</NonLinear>
+				</NonLinearAds>
 			</Creative></Creatives></InLine></Ad></VAST>`,
 				},
 				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
@@ -827,49 +827,49 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "vast_tag_uri_response_from_partner",
-			args: args{
-				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
-				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
-					AdM: `<![CDATA[http://hostedvasttag.url&k=v]]>`,
-				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
-			},
-			want: want{
-				eventURLs: map[string][]string{
-					"firstQuartile": {"http://company.tracker.com?eventId=firstQuartile&appbundle=abc"},
-					"midpoint":      {"http://company.tracker.com?eventId=midpoint&appbundle=abc"},
-					"thirdQuartile": {"http://company.tracker.com?eventId=thirdQuartile&appbundle=abc"},
-					"complete":      {"http://company.tracker.com?eventId=complete&appbundle=abc"},
-				},
-			},
-		},
-		{
-			name: "adm_empty",
-			args: args{
-				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
-				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
-					AdM:  "",
-					NURL: "nurl_contents",
-				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
-			},
-			want: want{
-				eventURLs: map[string][]string{
-					"firstQuartile": {"http://company.tracker.com?eventId=firstQuartile&appbundle=abc"},
-					"midpoint":      {"http://company.tracker.com?eventId=midpoint&appbundle=abc"},
-					"thirdQuartile": {"http://company.tracker.com?eventId=thirdQuartile&appbundle=abc"},
-					"complete":      {"http://company.tracker.com?eventId=complete&appbundle=abc"},
-				},
-			},
-		},
+		// {
+		// 	name: "vast_tag_uri_response_from_partner",
+		// 	args: args{
+		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+		// 			AdM: `<![CDATA[http://hostedvasttag.url&k=v]]>`,
+		// 		},
+		// 		req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+		// 	},
+		// 	want: want{
+		// 		eventURLs: map[string][]string{
+		// 			"firstQuartile": {"http://company.tracker.com?eventId=firstQuartile&appbundle=abc"},
+		// 			"midpoint":      {"http://company.tracker.com?eventId=midpoint&appbundle=abc"},
+		// 			"thirdQuartile": {"http://company.tracker.com?eventId=thirdQuartile&appbundle=abc"},
+		// 			"complete":      {"http://company.tracker.com?eventId=complete&appbundle=abc"},
+		// 		},
+		// 	},
+		// },
+		// {
+		// 	name: "adm_empty",
+		// 	args: args{
+		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+		// 			AdM:  "",
+		// 			NURL: "nurl_contents",
+		// 		},
+		// 		req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+		// 	},
+		// 	want: want{
+		// 		eventURLs: map[string][]string{
+		// 			"firstQuartile": {"http://company.tracker.com?eventId=firstQuartile&appbundle=abc"},
+		// 			"midpoint":      {"http://company.tracker.com?eventId=midpoint&appbundle=abc"},
+		// 			"thirdQuartile": {"http://company.tracker.com?eventId=thirdQuartile&appbundle=abc"},
+		// 			"complete":      {"http://company.tracker.com?eventId=complete&appbundle=abc"},
+		// 		},
+		// 	},
+		// },
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.name != "adm_empty" {
-				return
-			}
+			// if tc.name != "vast_tag_uri_response_from_partner" {
+			// 	return
+			// }
 			vast := ""
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
@@ -879,6 +879,10 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			} else {
 				config.TrackerMacros = tc.args.callBack
 			}
+
+			// bind this bid id with imp object
+			tc.args.req.Imp = []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}}
+			tc.args.bid.ImpID = tc.args.req.Imp[0].ID
 			accountID := ""
 			timestamp := int64(0)
 			biddername := "test_bidder"
@@ -893,16 +897,16 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			}
 			actualVastDoc := etree.NewDocument()
 
-			fmt.Println(string(injectedVast))
-
 			err := actualVastDoc.ReadFromBytes(injectedVast)
 			if nil != err {
 				assert.Fail(t, err.Error())
 			}
-			actualTrackingEvents := actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/InLine/TrackingEvents/Tracking")
-			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear/TrackingEvents/Tracking")...)
-			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/InLine/TrackingEvents/Tracking")...)
-			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/*/TrackingEvents/Tracking")...)
+
+			// fmt.Println(string(injectedVast))
+			actualTrackingEvents := actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear/TrackingEvents/Tracking")
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds/TrackingEvents/Tracking")...)
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear/TrackingEvents/Tracking")...)
+			actualTrackingEvents = append(actualTrackingEvents, actualVastDoc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds/TrackingEvents/Tracking")...)
 
 			totalURLCount := 0
 			for event, URLs := range tc.want.eventURLs {
@@ -917,7 +921,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 						}
 					}
 					if !present {
-						assert.Failf(t, "Expected tracker URL '%v' is not present", expectedURL)
+						assert.Fail(t, "Expected tracker URL '"+expectedURL+"' is not present")
 					}
 				}
 			}

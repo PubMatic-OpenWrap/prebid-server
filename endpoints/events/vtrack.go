@@ -342,8 +342,8 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 	// Injecting Tracking Events for Companion is not supported here
 	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
-	// creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinear")...)
-	// creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinear")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 
 	if "" == strings.Trim(bid.AdM, " ") || strings.HasPrefix(strings.TrimLeft(strings.TrimRight(bid.AdM, "]]>"), "<![CDATA["), "http") {
 		//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
