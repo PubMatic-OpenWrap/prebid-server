@@ -392,7 +392,7 @@ func (a *AppNexusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			errs = append(errs, errors...)
 		}
 		return requests, errs
-	}
+	}*/
 
 	return splitRequests(imps, request, reqExt, thisURI, errs)
 }
