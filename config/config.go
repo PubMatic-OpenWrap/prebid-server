@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
@@ -1012,9 +1011,3 @@ func isValidCookieSize(maxCookieSize int) error {
 	}
 	return nil
 }
-
-//TrackerMacros is useful of you want to pass the custom macros along with its values. It accepts the standard and customize macros along with its values and sets it
-//in Video Event Tracker URL. eventType provides the information about which quartile event this function
-//suppose to provide the macros. req provides Bid request details. bid provides partner response. bidder indicates the bidder name
-//Returns the key as macro prefixed with [ and suffixed with ] and its associated values
-var TrackerMacros func(eventType string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string

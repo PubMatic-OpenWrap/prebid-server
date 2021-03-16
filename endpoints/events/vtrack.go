@@ -416,17 +416,26 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 	if "" == strings.Trim(trackerURL, " ") {
 		return eventURLMap
 	}
+
+	// PubMatic specific event IDs
+	// This will go in event-config once PreBid modular design is in place
+	eventIDMap := map[string]string{
+		"firstQuartile": "4",
+		"midpoint":      "3",
+		"thirdQuartile": "5",
+		"complete":      "6",
+	}
 	for _, event := range trackingEvents {
 		eventURL := trackerURL
-		macros := make(map[string]string)
-		if nil != config.TrackerMacros {
-			macros = config.TrackerMacros(event, req, bidder, bid)
-		}
-		if nil != macros && len(macros) > 0 {
-			for macro, v := range macros {
-				eventURL = replaceMacro(eventURL, macro, v)
-			}
-		}
+		// macros := make(map[string]string)
+		// if nil != config.TrackerMacros {
+		// 	macros = config.TrackerMacros(event, req, bidder, bid)
+		// }
+		// if nil != macros && len(macros) > 0 {
+		// 	for macro, v := range macros {
+		// 		eventURL = replaceMacro(eventURL, macro, v)
+		// 	}
+		// }
 		// replace standard macros
 		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
 		if nil != req && nil != req.App {
@@ -438,7 +447,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		}
 
 		// replace [EVENT_ID] macro with PBS defined event ID
-		eventURL = replaceMacro(eventURL, PBSEventIDMacro, event)
+		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
 		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
