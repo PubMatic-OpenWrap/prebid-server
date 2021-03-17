@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -1249,7 +1250,9 @@ func TestReplaceMacro(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			trackerURL := replaceMacro(tc.args.trackerURL, tc.args.macro, tc.args.value)
-			assert.Equal(t, tc.want.trackerURL, trackerURL)
+			unEscapedTrackerURL, err := url.QueryUnescape(trackerURL)
+			assert.Nil(t, err, "Failed to unescape Tracker URL")
+			assert.Equal(t, tc.want.trackerURL, unEscapedTrackerURL)
 		})
 	}
 

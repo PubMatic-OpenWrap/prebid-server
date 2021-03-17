@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -455,8 +456,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 
 func replaceMacro(trackerURL, macro, value string) string {
 	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.Trim(value, " ")) > 0 {
-		// value = url.QueryEscape(value)
-		trackerURL = strings.ReplaceAll(trackerURL, macro, value)
+		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
 	} else {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
