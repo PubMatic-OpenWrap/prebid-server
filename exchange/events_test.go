@@ -190,7 +190,7 @@ func TestModifyBidVAST(t *testing.T) {
 					Imp: []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}},
 				},
 				bid: &openrtb.Bid{
-					AdM:   "<![CDATA[http://vast_tag_inline.xml]]>",
+					AdM:   "http://vast_tag_inline.xml",
 					NURL:  "nurl_contents",
 					ImpID: "123",
 				},

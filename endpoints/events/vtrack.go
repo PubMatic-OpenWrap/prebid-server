@@ -73,6 +73,15 @@ const (
 
 var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
 
+// PubMatic specific event IDs
+// This will go in event-config once PreBid modular design is in place
+var eventIDMap = map[string]string{
+	"firstQuartile": "4",
+	"midpoint":      "3",
+	"thirdQuartile": "5",
+	"complete":      "6",
+}
+
 func NewVTrackEndpoint(cfg *config.Configuration, accounts stored_requests.AccountFetcher, cache prebid_cache_client.Client, bidderInfos adapters.BidderInfos) httprouter.Handle {
 	vte := &vtrackEndpoint{
 		Cfg:         cfg,
@@ -331,14 +340,15 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 }
 
 //InjectVideoEventTrackers injects the video tracking events
+//Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
 func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
 	if nil != err {
-		err := fmt.Sprintf("Error parsing VAST XML. '%v'", err.Error())
-		glog.Errorf(err)
-		return []byte(vastXML), false, errors.New(err) // false indicates events trackers are not injected
+		err = fmt.Errorf("Error parsing VAST XML. '%v'", err.Error())
+		glog.Errorf(err.Error())
+		return []byte(vastXML), false, err // false indicates events trackers are not injected
 	}
 	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc)
 	trackersInjected := false
@@ -354,14 +364,13 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 
-	if "" == strings.Trim(bid.AdM, " ") || strings.HasPrefix(strings.TrimLeft(strings.TrimRight(bid.AdM, "]]>"), "<![CDATA["), "http") {
+	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
 		//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
 		//TODO: It should be optimized by forming once and reusing
 		impMap := make(map[string]*openrtb.Imp)
 		for i := range bidRequest.Imp {
 			impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
 		}
-
 		// determine which creative type to be created based on linearity
 		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
 			// create creative object
@@ -422,25 +431,18 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 // and ensure that your macro is part of trackerURL configuration
 func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
 	eventURLMap := make(map[string]string)
-	if "" == strings.Trim(trackerURL, " ") {
+	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap
 	}
 
-	// PubMatic specific event IDs
-	// This will go in event-config once PreBid modular design is in place
-	eventIDMap := map[string]string{
-		"firstQuartile": "4",
-		"midpoint":      "3",
-		"thirdQuartile": "5",
-		"complete":      "6",
-	}
 	for _, event := range trackingEvents {
 		eventURL := trackerURL
 
 		// replace standard macros
 		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
 		if nil != req && nil != req.App {
-			eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
+			// eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
+			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.App.Bundle)
 			if nil != req.App.Publisher {
 				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.App.Publisher.ID)
 			}
@@ -466,7 +468,8 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 }
 
 func replaceMacro(trackerURL, macro, value string) string {
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.Trim(value, " ")) > 0 {
+	macro = strings.TrimSpace(macro)
+	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.TrimSpace(value)) > 0 {
 		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
 	} else {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)

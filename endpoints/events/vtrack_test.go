@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
-	"reflect"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -714,7 +714,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		{
 			name: "linear_creative",
 			args: args{
-				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
 					companyEventIDMap := map[string]string{
 						"midpoint":      "1003",
@@ -756,7 +756,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		{
 			name: "non_linear_creative",
 			args: args{
-				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
 					companyEventIDMap := map[string]string{
 						"midpoint":      "1003",
@@ -810,7 +810,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		{
 			name: "wrapper_vast_xml_from_partner", // expect we are injecting trackers inside wrapper
 			args: args{
-				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="4.2" xmlns="http://www.iab.com/VAST">
 					<Ad id="20011" sequence="1" >
@@ -842,7 +842,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		// {
 		// 	name: "vast_tag_uri_response_from_partner",
 		// 	args: args{
-		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 		// 			AdM: `<![CDATA[http://hostedvasttag.url&k=v]]>`,
 		// 		},
@@ -860,7 +860,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		// {
 		// 	name: "adm_empty",
 		// 	args: args{
-		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 		// 			AdM:  "",
 		// 			NURL: "nurl_contents",
@@ -879,9 +879,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// if tc.name != "vast_tag_uri_response_from_partner" {
-			// 	return
-			// }
 			vast := ""
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
@@ -966,7 +963,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 		{
 			name: "valid_scenario",
 			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				bid:        &openrtb.Bid{
 					// AdM: vastXMLWith2Creatives,
 				},
@@ -991,7 +988,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 		{
 			name: "no_macro_value", // expect no replacement
 			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				bid:        &openrtb.Bid{},
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{}, // no app bundle value
@@ -999,14 +996,14 @@ func TestGetVideoEventTracking(t *testing.T) {
 			},
 			want: want{
 				trackerURLMap: map[string]string{
-					// "firstQuartile": "http://company.tracker.com?eventId=firstQuartile&appbundle=[APPBUNDLE]",
-					// "midpoint":      "http://company.tracker.com?eventId=midpoint&appbundle=[APPBUNDLE]",
-					// "thirdQuartile": "http://company.tracker.com?eventId=thirdQuartile&appbundle=[APPBUNDLE]",
-					// "complete":      "http://company.tracker.com?eventId=complete&appbundle=[APPBUNDLE]"},
-					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=[APPBUNDLE]",
-					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=[APPBUNDLE]",
-					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=[APPBUNDLE]",
-					"complete":      "http://company.tracker.com?eventId=6&appbundle=[APPBUNDLE]"},
+					// "firstQuartile": "http://company.tracker.com?eventId=firstQuartile&appbundle=[DOMAIN]",
+					// "midpoint":      "http://company.tracker.com?eventId=midpoint&appbundle=[DOMAIN]",
+					// "thirdQuartile": "http://company.tracker.com?eventId=thirdQuartile&appbundle=[DOMAIN]",
+					// "complete":      "http://company.tracker.com?eventId=complete&appbundle=[DOMAIN]"},
+					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=[DOMAIN]",
+					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=[DOMAIN]",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=[DOMAIN]",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=[DOMAIN]"},
 			},
 		},
 		{
@@ -1033,10 +1030,10 @@ func TestGetVideoEventTracking(t *testing.T) {
 		}, {
 			name: "prefer_company_value_for_standard_macro",
 			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]",
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
 				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
 					return map[string]string{
-						"[APPBUNDLE]": "my_custom_value", // expect this value for macro
+						"[DOMAIN]": "my_custom_value", // expect this value for macro
 					}
 				},
 				req: &openrtb.BidRequest{
@@ -1059,7 +1056,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 		}, {
 			name: "multireplace_macro",
 			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[APPBUNDLE]&parameter2=[APPBUNDLE]",
+				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]&parameter2=[DOMAIN]",
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{
 						Bundle: "myapp123",
@@ -1204,20 +1201,48 @@ func TestGetVideoEventTracking(t *testing.T) {
 			args: args{trackerURL: "    "},
 			want: want{trackerURLMap: make(map[string]string)},
 		},
+		{
+			name: "all_macros",
+			args: args{
+				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+				req: &openrtb.BidRequest{
+					App: &openrtb.App{Bundle: "com.someapp.com", Publisher: &openrtb.Publisher{ID: "5890"}},
+				},
+				bid:    &openrtb.Bid{ADomain: []string{"a.com", "b.com"}},
+				bidder: "test_bidder:234",
+			},
+			want: want{
+				trackerURLMap: map[string]string{
+					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]"},
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// if tc.name != "macro_is_case_sensitive" {
-			// 	return
-			// }
 			// assign callback function if present
 			// if nil == tc.args.callBack {
 			// 	config.TrackerMacros = nil
 			// } else {
 			// 	config.TrackerMacros = tc.args.callBack
 			// }
+			if nil == tc.args.bid {
+				tc.args.bid = &openrtb.Bid{}
+			}
 			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc)
-			assert.True(t, reflect.DeepEqual(tc.want.trackerURLMap, eventURLMap), "tracker url map comparison failed")
+
+			for event, eurl := range tc.want.trackerURLMap {
+				expectedValues, _ := url.ParseQuery(eurl)
+				actualValues, _ := url.ParseQuery(eventURLMap[event])
+				for k, ev := range expectedValues {
+					av := actualValues[k]
+					for i := 0; i < len(ev); i++ {
+						assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v'. but found %v", ev[i], k, av[i]))
+					}
+				}
+			}
 		})
 	}
 }
@@ -1246,6 +1271,7 @@ func TestReplaceMacro(t *testing.T) {
 		{name: "empty_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: ""}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
 		{name: "nested_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "[TEST][TEST]"}, want: want{trackerURL: "http://something.com?test=%5BTEST%5D%5BTEST%5D"}},
 		{name: "url_as_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}},
+		{name: "macro_with_spaces", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "  [TEST]  ", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

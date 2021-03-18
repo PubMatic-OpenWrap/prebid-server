@@ -293,9 +293,7 @@ func makeVAST(bid *openrtb.Bid) string {
 	if adm == "" {
 		return fmt.Sprintf(wrapperVASTTemplate, bid.NURL) // set nurl as VASTAdTagURI
 	}
-	if strings.HasPrefix(adm, "<![CDATA[") {
-		adm = strings.TrimLeft(strings.TrimRight(adm, "]]>"), "<![CDATA[")
-	}
+
 	if strings.HasPrefix(adm, "http") { // check if it contains URL
 		return fmt.Sprintf(wrapperVASTTemplate, adm) // set adm as VASTAdTagURI
 	}
