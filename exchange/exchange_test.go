@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/prebid/prebid-server/errortypes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
