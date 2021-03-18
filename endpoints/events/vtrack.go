@@ -60,7 +60,15 @@ const (
 	VASTAppBundleMacro = "[APPBUNDLE]"
 	VASTDomainMacro    = "[DOMAIN]"
 	VASTPageURLMacro   = "[PAGEURL]"
-	PBSEventIDMacro    = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
+
+	// PBS specific macros
+	PBSEventIDMacro = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
+	//[PBS-ACCOUNT] represents publisher id / account id
+	PBSAccountMacro = "[PBS-ACCOUNT]"
+	// [PBS-BIDDER] represents bidder name
+	PBSBidderMacro = "[PBS-BIDDER]"
+	// [ADERVERTISER_NAME] represents advertiser name
+	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
 )
 
 var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
@@ -428,25 +436,28 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 	}
 	for _, event := range trackingEvents {
 		eventURL := trackerURL
-		// macros := make(map[string]string)
-		// if nil != config.TrackerMacros {
-		// 	macros = config.TrackerMacros(event, req, bidder, bid)
-		// }
-		// if nil != macros && len(macros) > 0 {
-		// 	for macro, v := range macros {
-		// 		eventURL = replaceMacro(eventURL, macro, v)
-		// 	}
-		// }
+
 		// replace standard macros
 		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
 		if nil != req && nil != req.App {
 			eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
+			if nil != req.App.Publisher {
+				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.App.Publisher.ID)
+			}
 		}
 		if nil != req && nil != req.Site {
 			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.Site.Domain)
 			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
+			if nil != req.Site.Publisher {
+				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
+			}
 		}
 
+		if len(bid.ADomain) > 0 {
+			eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
+		}
+
+		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidder)
 		// replace [EVENT_ID] macro with PBS defined event ID
 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
 		eventURLMap[event] = eventURL
