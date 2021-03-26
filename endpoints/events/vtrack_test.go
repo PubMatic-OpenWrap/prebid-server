@@ -701,7 +701,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		externalURL string
 		bid         *openrtb.Bid
 		req         *openrtb.BidRequest
-		callBack    func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string
 	}
 	type want struct {
 		eventURLs map[string][]string
@@ -715,17 +714,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				/*callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
-					}
-				},*/
 				bid: &openrtb.Bid{
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 					                              <Linear>                      
@@ -757,17 +745,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "non_linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				/*callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
-					}
-				},*/
 				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 				<NonLinearAds>
@@ -883,12 +860,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
 			}
-			// if nil == tc.args.callBack {
-			// 	config.TrackerMacros = nil
-			// } else {
-			// 	config.TrackerMacros = tc.args.callBack
-			// }
-
 			// bind this bid id with imp object
 			tc.args.req.Imp = []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}}
 			tc.args.bid.ImpID = tc.args.req.Imp[0].ID
@@ -1009,11 +980,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "prefer_company_value_for_standard_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				/*callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"[DOMAIN]": "my_custom_value", // expect this value for macro
-					}
-				},*/
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{
 						Bundle: "myapp", // do not expect this value
@@ -1062,11 +1028,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "custom_macro_without_prefix_and_suffix",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				/*callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"CUSTOM_MACRO": "my_custom_value", // invalid macro syntax missing [ and ]
-					}
-				},*/
 				req: &openrtb.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
@@ -1091,11 +1052,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "empty_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				/*callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"": "my_custom_value", // invalid macro .. its empty
-					}
-				},*/
 				req: &openrtb.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
@@ -1120,11 +1076,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "macro_is_case_sensitive",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				/*callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"[custom_MACRO]": "my_custom_value", // case sensitivity fail w.r.t. trackerURL
-					}
-				},*/
 				req: &openrtb.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
