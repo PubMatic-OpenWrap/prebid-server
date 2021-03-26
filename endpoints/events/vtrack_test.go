@@ -701,7 +701,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		externalURL string
 		bid         *openrtb.Bid
 		req         *openrtb.BidRequest
-		callBack    func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string
 	}
 	type want struct {
 		eventURLs map[string][]string
@@ -715,17 +714,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
-					}
-				},
 				bid: &openrtb.Bid{
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 					                              <Linear>                      
@@ -757,17 +745,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "non_linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[EVENT_ID]": companyEventIDMap[event], // overrides PBS default value
-					}
-				},
 				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 				<NonLinearAds>
@@ -883,12 +860,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			if nil != tc.args.bid {
 				vast = tc.args.bid.AdM // original vast
 			}
-			// if nil == tc.args.callBack {
-			// 	config.TrackerMacros = nil
-			// } else {
-			// 	config.TrackerMacros = tc.args.callBack
-			// }
-
 			// bind this bid id with imp object
 			tc.args.req.Imp = []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}}
 			tc.args.bid.ImpID = tc.args.req.Imp[0].ID
@@ -950,7 +921,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 		timestamp  int64
 		req        *openrtb.BidRequest
 		doc        *etree.Document
-		callBack   func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string
 	}
 	type want struct {
 		trackerURLMap map[string]string
@@ -1007,39 +977,18 @@ func TestGetVideoEventTracking(t *testing.T) {
 			},
 		},
 		{
-			name: "replace_using_callback_fuction",
-			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[company_custom_macro]",
-				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"[company_custom_macro]": "macro_value",
-					}
-				},
-			},
-			want: want{
-				trackerURLMap: map[string]string{
-					// "firstQuartile": "http://company.tracker.com?eventId=firstQuartile&param1=macro_value",
-					// "midpoint":      "http://company.tracker.com?eventId=midpoint&param1=macro_value",
-					// "thirdQuartile": "http://company.tracker.com?eventId=thirdQuartile&param1=macro_value",
-					// "complete":      "http://company.tracker.com?eventId=complete&param1=macro_value"},
-					"firstQuartile": "http://company.tracker.com?eventId=4&param1=[company_custom_macro]",
-					"midpoint":      "http://company.tracker.com?eventId=3&param1=[company_custom_macro]",
-					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[company_custom_macro]",
-					"complete":      "http://company.tracker.com?eventId=6&param1=[company_custom_macro]"},
-			},
-		}, {
 			name: "prefer_company_value_for_standard_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"[DOMAIN]": "my_custom_value", // expect this value for macro
-					}
-				},
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{
 						Bundle: "myapp", // do not expect this value
 					},
+					Ext: []byte(`{"prebid":{
+								"macros": {
+									"[DOMAIN]": "my_custom_value"
+								}
+						}}`),
 				},
 			},
 			want: want{
@@ -1048,10 +997,10 @@ func TestGetVideoEventTracking(t *testing.T) {
 					// "midpoint":      "http://company.tracker.com?eventId=midpoint&appbundle=my_custom_value",
 					// "thirdQuartile": "http://company.tracker.com?eventId=thirdQuartile&appbundle=my_custom_value",
 					// "complete":      "http://company.tracker.com?eventId=complete&appbundle=my_custom_value"},
-					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=myapp",
-					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=myapp",
-					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=myapp",
-					"complete":      "http://company.tracker.com?eventId=6&appbundle=myapp"},
+					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=my_custom_value",
+					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=my_custom_value",
+					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=my_custom_value",
+					"complete":      "http://company.tracker.com?eventId=6&appbundle=my_custom_value"},
 			},
 		}, {
 			name: "multireplace_macro",
@@ -1076,13 +1025,15 @@ func TestGetVideoEventTracking(t *testing.T) {
 			},
 		},
 		{
-			name: "callback_with_macro_without_prefix_and_suffix",
+			name: "custom_macro_without_prefix_and_suffix",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"CUSTOM_MACRO": "my_custom_value", // invalid macro syntax missing [ and ]
-					}
+				req: &openrtb.BidRequest{
+					Ext: []byte(`{"prebid":{
+							"macros": {
+								"CUSTOM_MACRO": "my_custom_value"
+							}
+					}}`),
 				},
 			},
 			want: want{
@@ -1098,13 +1049,15 @@ func TestGetVideoEventTracking(t *testing.T) {
 			},
 		},
 		{
-			name: "callback_with_empty_macro",
+			name: "empty_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"": "my_custom_value", // invalid macro .. its empty
-					}
+				req: &openrtb.BidRequest{
+					Ext: []byte(`{"prebid":{
+							"macros": {
+								"": "my_custom_value"
+							}
+					}}`),
 				},
 			},
 			want: want{
@@ -1123,10 +1076,12 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "macro_is_case_sensitive",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				callBack: func(string, *openrtb.BidRequest, string, *openrtb.Bid) map[string]string {
-					return map[string]string{
-						"[custom_MACRO]": "my_custom_value", // case sensitivity fail w.r.t. trackerURL
-					}
+				req: &openrtb.BidRequest{
+					Ext: []byte(`{"prebid":{
+							"macros": {
+								"": "my_custom_value"
+							}
+					}}`),
 				},
 			},
 			want: want{
@@ -1142,92 +1097,42 @@ func TestGetVideoEventTracking(t *testing.T) {
 			},
 		},
 		{
-			name: "company_specific_event_id_for_EVENT_ID_macro",
-			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]",
-				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[EVENT_ID]": companyEventIDMap[event],
-					}
-				},
-			},
-			want: want{
-				trackerURLMap: map[string]string{
-					// "firstQuartile": "http://company.tracker.com?eventId=1004",
-					// "midpoint":      "http://company.tracker.com?eventId=1003",
-					// "thirdQuartile": "http://company.tracker.com?eventId=1005",
-					// "complete":      "http://company.tracker.com?eventId=1006"},
-					"firstQuartile": "http://company.tracker.com?eventId=4",
-					"midpoint":      "http://company.tracker.com?eventId=3",
-					"thirdQuartile": "http://company.tracker.com?eventId=5",
-					"complete":      "http://company.tracker.com?eventId=6"},
-			},
-		},
-		{
-			name: "company_specific_event_id_macro",
-			args: args{
-				trackerURL: "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]",
-				callBack: func(event string, req *openrtb.BidRequest, bidder string, bid *openrtb.Bid) map[string]string {
-					companyEventIDMap := map[string]string{
-						"midpoint":      "1003",
-						"firstQuartile": "1004",
-						"thirdQuartile": "1005",
-						"complete":      "1006",
-					}
-					return map[string]string{
-						"[COMPANY_EVENT_ID]": companyEventIDMap[event],
-					}
-				},
-			},
-			want: want{
-				trackerURLMap: map[string]string{
-					// "firstQuartile": "http://company.tracker.com?eventId=1004",
-					// "midpoint":      "http://company.tracker.com?eventId=1003",
-					// "thirdQuartile": "http://company.tracker.com?eventId=1005",
-					// "complete":      "http://company.tracker.com?eventId=1006"},
-					"firstQuartile": "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]",
-					"midpoint":      "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]",
-					"thirdQuartile": "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]",
-					"complete":      "http://company.tracker.com?eventId=[COMPANY_EVENT_ID]"},
-			},
-		}, {
 			name: "empty_tracker_url",
 			args: args{trackerURL: "    "},
 			want: want{trackerURLMap: make(map[string]string)},
 		},
 		{
-			name: "all_macros",
+			name: "all_macros", // expect encoding for WRAPPER_IMPRESSION_ID macro
 			args: args{
 				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{Bundle: "com.someapp.com", Publisher: &openrtb.Publisher{ID: "5890"}},
+					Ext: []byte(`{
+						"prebid": {
+								"macros": {
+									"[PROFILE_ID]": "100",
+									"[PROFILE_VERSION]": "2",
+									"[UNIX_TIMESTAMP]": "1234567890",
+									"[PLATFORM]": "7",
+									"[WRAPPER_IMPRESSION_ID]": "abc~!@#$%^&&*()_+{}|:\"<>?[]\\;',./"
+								}
+						}
+					}`),
 				},
 				bid:    &openrtb.Bid{ADomain: []string{"a.com", "b.com"}},
 				bidder: "test_bidder:234",
 			},
 			want: want{
 				trackerURLMap: map[string]string{
-					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=[PLATFORM]&af=video&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]"},
+					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]"},
 			},
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// assign callback function if present
-			// if nil == tc.args.callBack {
-			// 	config.TrackerMacros = nil
-			// } else {
-			// 	config.TrackerMacros = tc.args.callBack
-			// }
 			if nil == tc.args.bid {
 				tc.args.bid = &openrtb.Bid{}
 			}
