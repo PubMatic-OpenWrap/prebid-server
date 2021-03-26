@@ -36,7 +36,7 @@ type ExtRequestPrebid struct {
 
 	// Macros specifies list of custom macros along with the values. This is used while forming
 	// the tracker URLs, where PBS will replace the Custom Macro with its value with url-encoding
-	Macros map[string]string `json:"macros"`
+	Macros map[string]string `json:"macros,omitempty"`
 }
 
 // ExtRequestPrebid defines the contract for bidrequest.ext.prebid.schains
