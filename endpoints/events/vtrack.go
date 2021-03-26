@@ -435,9 +435,26 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		return eventURLMap
 	}
 
+	// lookup custom macros
+	var customMacroMap map[string]string
+	if nil != req.Ext {
+		reqExt := new(openrtb_ext.ExtRequest)
+		err := json.Unmarshal(req.Ext, &reqExt)
+		if err == nil {
+			customMacroMap = reqExt.Prebid.Macros
+		} else {
+			glog.Warningf("Error in unmarshling req.Ext.Prebid.Vast: [%s]", err.Error())
+		}
+	}
+
 	for _, event := range trackingEvents {
 		eventURL := trackerURL
-
+		// lookup in custom macros
+		if nil != customMacroMap {
+			for customMacro, value := range customMacroMap {
+				eventURL = replaceMacro(eventURL, customMacro, value)
+			}
+		}
 		// replace standard macros
 		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
 		if nil != req && nil != req.App {
