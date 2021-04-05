@@ -69,6 +69,8 @@ const (
 	PBSBidderMacro = "[PBS-BIDDER]"
 	// [ADERVERTISER_NAME] represents advertiser name
 	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
+	// Pass imp.tagId using this macro
+	PBSAdUnitIDMacro = "[AD_UNIT_ID]"
 )
 
 var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
@@ -350,7 +352,15 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 		glog.Errorf(err.Error())
 		return []byte(vastXML), false, err // false indicates events trackers are not injected
 	}
-	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc)
+
+	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
+	//TODO: It should be optimized by forming once and reusing
+	impMap := make(map[string]*openrtb.Imp)
+	for i := range bidRequest.Imp {
+		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
+	}
+
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc, impMap)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
@@ -365,12 +375,6 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 
 	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
-		//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
-		//TODO: It should be optimized by forming once and reusing
-		impMap := make(map[string]*openrtb.Imp)
-		for i := range bidRequest.Imp {
-			impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
-		}
 		// determine which creative type to be created based on linearity
 		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
 			// create creative object
@@ -429,7 +433,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 //    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
+func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document, impMap map[string]*openrtb.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap
@@ -479,6 +483,10 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidder)
 		// replace [EVENT_ID] macro with PBS defined event ID
 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
+
+		if imp, ok := impMap[bid.ImpID]; ok {
+			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
+		}
 		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
