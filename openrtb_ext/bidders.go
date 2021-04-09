@@ -181,7 +181,6 @@ const (
 	BidderYieldlab         BidderName = "yieldlab"
 	BidderYieldmo          BidderName = "yieldmo"
 	BidderYieldone         BidderName = "yieldone"
-	BidderZemanta          BidderName = "zemanta"
 	BidderZeroClickFraud   BidderName = "zeroclickfraud"
 )
 
@@ -296,7 +295,6 @@ func CoreBidderNames() []BidderName {
 		BidderYieldlab,
 		BidderYieldmo,
 		BidderYieldone,
-		BidderZemanta,
 		BidderZeroClickFraud,
 	}
 }
