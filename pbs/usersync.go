@@ -11,8 +11,8 @@ import (
 
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/ssl"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/server/ssl"
 	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
@@ -40,7 +40,7 @@ type UserSyncDeps struct {
 	ExternalUrl      string
 	RecaptchaSecret  string
 	HostCookieConfig *config.HostCookie
-	MetricsEngine    pbsmetrics.MetricsEngine
+	MetricsEngine    metrics.MetricsEngine
 	PBSAnalytics     analytics.PBSAnalyticsModule
 }
 
@@ -95,7 +95,7 @@ func (deps *UserSyncDeps) OptOut(w http.ResponseWriter, r *http.Request, _ httpr
 	pc := usersync.ParsePBSCookieFromRequest(r, deps.HostCookieConfig)
 	pc.SetPreference(optout == "")
 
-	pc.SetCookieOnResponse(w, false, "", deps.HostCookieConfig, deps.HostCookieConfig.TTLDuration())
+	pc.SetCookieOnResponse(w, false, deps.HostCookieConfig, deps.HostCookieConfig.TTLDuration())
 
 	if optout == "" {
 		http.Redirect(w, r, deps.HostCookieConfig.OptInURL, 301)

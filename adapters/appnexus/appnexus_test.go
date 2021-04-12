@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/cache/dummycache"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
 	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 
@@ -25,11 +24,26 @@ import (
 )
 
 func TestJsonSamples(t *testing.T) {
-	adapterstest.RunJSONBidderTest(t, "appnexustest", NewAppNexusBidder(nil, "http://ib.adnxs.com/openrtb2", ""))
+	bidder, buildErr := Builder(openrtb_ext.BidderAppnexus, config.Adapter{
+		Endpoint: "http://ib.adnxs.com/openrtb2"})
+
+	if buildErr != nil {
+		t.Fatalf("Builder returned unexpected error %v", buildErr)
+	}
+
+	adapterstest.RunJSONBidderTest(t, "appnexustest", bidder)
 }
 
 func TestVideoSamples(t *testing.T) {
-	adapterstest.RunJSONBidderTest(t, "appnexusplatformtest", NewAppNexusBidder(nil, "http://ib.adnxs.com/openrtb2", "8"))
+	bidder, buildErr := Builder(openrtb_ext.BidderAppnexus, config.Adapter{
+		Endpoint:   "http://ib.adnxs.com/openrtb2",
+		PlatformID: "8"})
+
+	if buildErr != nil {
+		t.Fatalf("Builder returned unexpected error %v", buildErr)
+	}
+
+	adapterstest.RunJSONBidderTest(t, "appnexusplatformtest", bidder)
 }
 
 func TestMemberQueryParam(t *testing.T) {
@@ -40,7 +54,8 @@ func TestMemberQueryParam(t *testing.T) {
 	}
 }
 
-func TestVideoSinglePod(t *testing.T) {
+// Commenting out the test cases around populating adpod_id in the Appnexus request (ref: https://inside.pubmatic.com:9443/jira/browse/UOE-6196)
+/*func TestVideoSinglePod(t *testing.T) {
 	var a AppNexusAdapter
 	a.URI = "http://test.com/openrtb2"
 	a.hbSource = 5
@@ -265,7 +280,7 @@ func TestVideoTwoPodsManyImps(t *testing.T) {
 	podIds[adPodId3] = podIds[adPodId3] + 1
 
 	assert.Len(t, podIds, 2, "Incorrect number of unique pod ids")
-}
+}*/
 
 // ----------------------------------------------------------------------------
 // Code below this line tests the legacy, non-openrtb code flow. It can be deleted after we
@@ -492,7 +507,7 @@ func bidTypeToInt(bidType string) int {
 		return -1
 	}
 }
-func TestAppNexusBasicResponse(t *testing.T) {
+func TestAppNexusLegacyBasicResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(DummyAppNexusServer))
 	defer server.Close()
 
@@ -531,7 +546,7 @@ func TestAppNexusBasicResponse(t *testing.T) {
 	}
 
 	conf := *adapters.DefaultHTTPAdapterConfig
-	an := NewAppNexusAdapter(&conf, server.URL, "")
+	an := NewAppNexusLegacyAdapter(&conf, server.URL, "")
 
 	pbin := pbs.PBSRequest{
 		AdUnits: make([]pbs.AdUnit, 2),
@@ -597,7 +612,7 @@ func TestAppNexusBasicResponse(t *testing.T) {
 	pc.TrySync("adnxs", andata.buyerUID)
 	fakewriter := httptest.NewRecorder()
 
-	pc.SetCookieOnResponse(fakewriter, false, "", &config.HostCookie{Domain: ""}, 90*24*time.Hour)
+	pc.SetCookieOnResponse(fakewriter, false, &config.HostCookie{Domain: ""}, 90*24*time.Hour)
 	req.Header.Add("Cookie", fakewriter.Header().Get("Set-Cookie"))
 
 	cacheClient, _ := dummycache.New()
