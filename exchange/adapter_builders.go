@@ -89,6 +89,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/ucfunnel"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/unruly"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/valueimpression"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/verizonmedia"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/visx"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vrtcal"
@@ -192,6 +193,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderTripleliftNative: triplelift_native.Builder,
 		openrtb_ext.BidderUcfunnel:         ucfunnel.Builder,
 		openrtb_ext.BidderUnruly:           unruly.Builder,
+		openrtb_ext.BidderVASTBidder:       vastbidder.Builder,
 		openrtb_ext.BidderValueImpression:  valueimpression.Builder,
 		openrtb_ext.BidderVerizonMedia:     verizonmedia.Builder,
 		openrtb_ext.BidderVisx:             visx.Builder,

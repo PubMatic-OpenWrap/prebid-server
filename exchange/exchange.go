@@ -178,6 +178,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
 
+		/*TODO: Temporary Solution, Remove parseAliases*/
+		aliases, _ := parseAliases(r.BidRequest)
 		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids, aliases)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
@@ -1006,7 +1008,7 @@ func applyAdvertiserBlocking(bidRequest *openrtb.BidRequest, seatBids map[openrt
 	}
 
 	for bidderName, seatBid := range seatBids {
-		_, isTagBidder := getTagBidders()[resolveBidder(string(bidderName), alias)]
+		isTagBidder := (resolveBidder(string(bidderName), alias) == openrtb_ext.BidderVASTBidder)
 		if isTagBidder && len(nBadvs) > 0 {
 			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
 				bid := seatBid.bids[bidIndex]

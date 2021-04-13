@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -2767,9 +2768,12 @@ func TestRecordAdaptorDuplicateBidIDs(t *testing.T) {
 //Currently it is expected to work only with TagBidders and not woth
 // normal bidders
 func TestApplyAdvertiserBlocking(t *testing.T) {
+	const errMsgFormat = "bid rejected [bid ID: %s] reason: Bid (From '%s') belongs to blocked advertiser '%s'"
+
 	type args struct {
 		advBlockReq     *openrtb.BidRequest
 		adaptorSeatBids map[*bidderAdapter]*pbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
+		aliases         map[string]string
 	}
 	type want struct {
 		rejectedBidIds       []string
@@ -2785,6 +2789,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			args: args{
 				advBlockReq: &openrtb.BidRequest{
 					BAdv: []string{"a.com"}, // block bids returned by a.com
+				},
+				aliases: map[string]string{
+					"vast_tag_bidder": string(openrtb_ext.BidderVASTBidder),
 				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
@@ -2824,7 +2831,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "reject_b.a.com.a.com.b.c.d.a.com", "vast_tag_bidder", "a.com"),
+					fmt.Sprintf(errMsgFormat, "a.com_bid", "vast_tag_bidder", "a.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"vast_tag_bidder": 3,
 				},
@@ -2834,8 +2844,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "Badv_is_not_present", // expect no advertiser blocking
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: nil},
+				aliases: map[string]string{
+					"tag_bidder_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
-					newTestTagAdapter("tab_bidder_1"): {
+					newTestTagAdapter("tag_bidder_1"): {
 						bids: []*pbsOrtbBid{
 							{bid: &openrtb.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
 							{bid: &openrtb.Bid{ID: "bid_2_adapter_1"}},
@@ -2846,7 +2859,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				rejectedBidIds: []string{}, // no bid rejection expected
 				validBidCountPerSeat: map[string]int{
-					"tab_bidder_1": 2,
+					"tag_bidder_1": 2,
 				},
 			},
 		},
@@ -2854,6 +2867,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "adomain_is_not_present_but_Badv_is_set", // reject bids without adomain as badv is set
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"advertiser_1.com"}},
+				aliases: map[string]string{
+					"tag_bidder_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						bids: []*pbsOrtbBid{ // expect all bids are rejected
@@ -2870,7 +2886,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"bid_1_adapter_1_without_adomain", "bid_2_adapter_1_with_empty_adomain"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_2_adapter_1_with_empty_adomain", "tag_bidder_1", "advertiser_1.com"),
+					fmt.Sprintf(errMsgFormat, "bid_1_adapter_1_without_adomain", "tag_bidder_1", "advertiser_1.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
 					"rtb_bidder_1": 2, // no bid must be rejected
@@ -2881,6 +2900,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "adomain_and_badv_is_not_present", // expect no advertiser blocking
 			args: args{
 				advBlockReq: &openrtb.BidRequest{},
+				aliases: map[string]string{
+					"tag_adaptor_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_adaptor_1"): {
 						bids: []*pbsOrtbBid{
@@ -2900,6 +2922,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "empty_badv", // expect no advertiser blocking
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{}},
+				aliases: map[string]string{
+					"tag_bidder_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						bids: []*pbsOrtbBid{ // expect all bids are rejected
@@ -2927,6 +2952,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "nil_badv", // expect no advertiser blocking
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: nil},
+				aliases: map[string]string{
+					"tag_bidder_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						bids: []*pbsOrtbBid{ // expect all bids are rejected
@@ -2954,6 +2982,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "ad_domains_normalized_and_checked",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"a.com"}},
+				aliases: map[string]string{
+					"my_adapter": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("my_adapter"): {
 						bids: []*pbsOrtbBid{
@@ -2966,13 +2997,20 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					}},
 			},
 			want: want{
-				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_1_of_blocked_adv", "my_adapter", "a.com"),
+					fmt.Sprintf(errMsgFormat, "bid_2_of_blocked_adv", "my_adapter", "a.com"),
+				},
 				validBidCountPerSeat: map[string]int{"my_adapter": 1},
 			},
 		}, {
 			name: "multiple_badv",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"advertiser_1.com", "advertiser_2.com", "www.advertiser_3.com"}},
+				aliases: map[string]string{
+					"tag_adapter_1": string(openrtb_ext.BidderVASTBidder),
+					"tag_adapter_2": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						bids: []*pbsOrtbBid{
@@ -2999,7 +3037,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_1_tag_adapter_2", "tag_adapter_2", "advertiser_1.com"),
+					fmt.Sprintf(errMsgFormat, "bid_2_tag_adapter_1", "tag_adapter_1", "advertiser_2.com"),
+					fmt.Sprintf(errMsgFormat, "bid_1_tag_adapter_1", "tag_adapter_1", "advertiser_3.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 2,
 					"tag_adapter_2": 0,
@@ -3010,6 +3052,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "multiple_adomain",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"www.advertiser_3.com"}},
+				aliases: map[string]string{
+					"tag_adapter_1": string(openrtb_ext.BidderVASTBidder),
+					"tag_adapter_2": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						bids: []*pbsOrtbBid{
@@ -3036,7 +3082,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_2_tag_adapter_1", "tag_adapter_1", "advertiser_3.com"),
+					fmt.Sprintf(errMsgFormat, "bid_1_tag_adapter_1", "tag_adapter_1", "advertiser_3.com"),
+					fmt.Sprintf(errMsgFormat, "bid_1_tag_adapter_2", "tag_adapter_2", "advertiser_3.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 2,
 					"tag_adapter_2": 0,
@@ -3047,6 +3097,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "case_insensitive_badv", // case of domain not matters
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"ADVERTISER_1.COM"}},
+				aliases: map[string]string{
+					"tag_adapter_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						bids: []*pbsOrtbBid{
@@ -3057,7 +3110,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_1_rtb_adapter_1", "tag_adapter_1", "advertiser_1.com"),
+					fmt.Sprintf(errMsgFormat, "bid_2_rtb_adapter_1", "tag_adapter_1", "advertiser_1.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
@@ -3067,6 +3123,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "case_insensitive_adomain",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"advertiser_1.com"}},
+				aliases: map[string]string{
+					"tag_adapter_1": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						bids: []*pbsOrtbBid{
@@ -3077,7 +3136,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "bid_1_rtb_adapter_1", "tag_adapter_1", "advertiser_1.com"),
+					fmt.Sprintf(errMsgFormat, "bid_2_rtb_adapter_1", "tag_adapter_1", "advertiser_1.com"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
@@ -3087,6 +3149,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "various_tld_combinations",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"http://blockme.shri"}},
+				aliases: map[string]string{
+					"block_bidder": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
 						bids: []*pbsOrtbBid{
@@ -3107,7 +3172,12 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"reject_www.blockme.shri", "reject_http://www.blockme.shri", "reject_https://blockme.shri", "reject_https://www.blockme.shri"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "reject_https://blockme.shri", "block_bidder", "blockme.shri"),
+					fmt.Sprintf(errMsgFormat, "reject_https://www.blockme.shri", "block_bidder", "blockme.shri"),
+					fmt.Sprintf(errMsgFormat, "reject_www.blockme.shri", "block_bidder", "blockme.shri"),
+					fmt.Sprintf(errMsgFormat, "rejecthttp://www.blockme.shri", "block_bidder", "blockme.shri"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"block_bidder":         0,
 					"rtb_non_block_bidder": 4,
@@ -3118,6 +3188,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "subdomain_tests",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"10th.college.puneunv.edu"}},
+				aliases: map[string]string{
+					"block_bidder": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
 						bids: []*pbsOrtbBid{
@@ -3129,7 +3202,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				rejectedBidIds: []string{"reject_shri.10th.college.puneunv.edu", "reject_123.456.10th.college.puneunv.edu"},
+				rejectedBidIds: []string{
+					fmt.Sprintf(errMsgFormat, "reject_shri.10th.college.puneunv.edu", "block_bidder", "10th.college.puneunv.edu"),
+					fmt.Sprintf(errMsgFormat, "reject_123.456.10th.college.puneunv.edu", "block_bidder", "10th.college.puneunv.edu"),
+				},
 				validBidCountPerSeat: map[string]int{
 					"block_bidder": 1,
 				},
@@ -3138,6 +3214,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"edu"}},
+				aliases: map[string]string{
+					"tag_bidder": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
 						bids: []*pbsOrtbBid{
@@ -3159,6 +3238,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			name: "public_suffix_in_badv",
 			args: args{
 				advBlockReq: &openrtb.BidRequest{BAdv: []string{"co.in"}}, // co.in is valid public suffix
+				aliases: map[string]string{
+					"tag_bidder": string(openrtb_ext.BidderVASTBidder),
+				},
 				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
 						bids: []*pbsOrtbBid{
@@ -3179,80 +3261,31 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
-			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
-			getTagBidders = func() map[openrtb_ext.BidderName]adapters.Bidder { return tagBidders }
-			adapterMap := make(map[openrtb_ext.BidderName]adaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
-				adapterMap[adaptor.BidderName] = adaptor
-				if tagBidder, ok := adaptor.Bidder.(*vastbidder.TagBidder); ok {
-					tagBidders[adaptor.BidderName] = tagBidder
-				}
 				seatBids[adaptor.BidderName] = sbids
 			}
 
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
-			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, make(map[string]string))
+			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, tt.args.aliases)
 
-			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
+				//verify if sBid is empty or not
+				assert.NotNil(t, sBid, "pbsOrtbSeatBid should not be nil")
+
+				count, ok := tt.want.validBidCountPerSeat[string(bidder)]
+				// verify if seat bidder present in valid bid count
+				assert.True(t, ok, "seatbid is not present in expected result")
+
 				// verify only eligible bids are returned
-				assert.Equal(t, tt.want.validBidCountPerSeat[string(bidder)], len(sBid.bids), "Expected eligible bids are %d, but found [%d] ", tt.want.validBidCountPerSeat[string(bidder)], len(sBid.bids))
-				// verify  rejections
-				assert.Equal(t, len(tt.want.rejectedBidIds), len(rejections), "Expected bid rejections are %d, but found [%d]", len(tt.want.rejectedBidIds), len(rejections))
-				// verify rejected bid ids
-				present := false
-				for _, expectRejectedBidID := range tt.want.rejectedBidIds {
-					for _, rejection := range rejections {
-						match := re.FindStringSubmatch(rejection)
-						rejectedBidID := strings.Trim(match[1], " ")
-						if expectRejectedBidID == rejectedBidID {
-							present = true
-							break
-						}
-					}
-					if present {
-						break
-					}
-				}
-				if len(tt.want.rejectedBidIds) > 0 && !present {
-					assert.Fail(t, "Expected Bid ID [%s] as rejected. But bid is not rejected", re)
-				}
-
-				// check bidder type. Allowing following checks only if bidder is tag bidder
-				isTagBidder := false
-				for adapter := range tt.args.adaptorSeatBids {
-					if adapter.BidderName == bidder {
-						_, isTagBidder = adapter.Bidder.(*vastbidder.TagBidder)
-						if isTagBidder {
-							break
-						}
-					}
-				}
-				if !isTagBidder {
-					continue // advertiser blocking is currently enabled only for tag bidders
-				}
-				// verify eligible bids not belongs to blocked advertisers
-				for _, bid := range sBid.bids {
-					if nil != bid.bid.ADomain {
-						for _, adomain := range bid.bid.ADomain {
-							for _, blockDomain := range tt.args.advBlockReq.BAdv {
-								nDomain, _ := normalizeDomain(adomain)
-								if nDomain == blockDomain {
-									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.bid.ID, adomain)
-								}
-							}
-						}
-					}
-
-					// verify this bid not belongs to rejected list
-					for _, rejectedBidID := range tt.want.rejectedBidIds {
-						if rejectedBidID == bid.bid.ID {
-							assert.Fail(t, "Bid ID [%s] is not expected in list of rejected bids", bid.bid.ID)
-						}
-					}
-				}
+				assert.Equal(t, count, len(sBid.bids), "Expected eligible bids are %d, but found [%d] ", count, len(sBid.bids))
 			}
+
+			// verify rejected bid ids
+			sort.Strings(tt.want.rejectedBidIds)
+			sort.Strings(rejections)
+			assert.Equal(t, tt.want.rejectedBidIds, rejections)
+
 		})
 	}
 }
@@ -3298,16 +3331,8 @@ func TestNormalizeDomain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			adjustedDomain, err := normalizeDomain(tt.args.domain)
-			actualErr := "nil"
-			expectedErr := "nil"
-			if nil != err {
-				actualErr = err.Error()
-			}
-			if nil != tt.want.err {
-				actualErr = tt.want.err.Error()
-			}
-			assert.Equal(t, tt.want.err, err, "Expected error is %s, but found [%s]", expectedErr, actualErr)
-			assert.Equal(t, tt.want.domain, adjustedDomain, "Expected domain is %s, but found [%s]", tt.want.domain, adjustedDomain)
+			assert.Equal(t, tt.want.err, err)
+			assert.Equal(t, tt.want.domain, adjustedDomain)
 		})
 	}
 }
