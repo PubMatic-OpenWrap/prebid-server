@@ -22,3 +22,16 @@ type ExtImpPrebid struct {
 type ExtStoredRequest struct {
 	ID string `json:"id"`
 }
+
+type ExtImpContext struct {
+	Data *ExtData `json:"data"`
+}
+
+type ExtData struct {
+	AdServer *ExtAdServer `json:"adserver"`
+}
+
+type ExtAdServer struct {
+	Name   string `json:"name"`
+	AdSlot string `json:"adslot"`
+}
