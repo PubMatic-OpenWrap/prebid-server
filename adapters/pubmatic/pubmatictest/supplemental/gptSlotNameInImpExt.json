@@ -37,12 +37,10 @@
               "profile": 5123
             }
           },
-          "context": {
-            "data": {
-              "adserver": {
-                "name": "gam",
-                "adslot": "/1111/home"
-              }
+          "data": {
+            "adserver": {
+              "name": "gam",
+              "adslot": "/1111/home"
             }
           }
         }

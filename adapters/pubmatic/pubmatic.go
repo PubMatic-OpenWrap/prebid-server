@@ -29,6 +29,7 @@ const (
 	skAdnetworkKey           = "skadn"
 	rewardKey                = "reward"
 	ImpExtAdUnitKey          = "dfp_ad_unit_code"
+	AdServerGAM              = "gam"
 )
 
 type PubmaticAdapter struct {
@@ -632,9 +633,9 @@ func parseImpressionObject(imp *openrtb.Imp, wrapExt *pubmaticWrapperExt, pubID 
 		}
 	}
 
-	if bidderExt.Context != nil && bidderExt.Context.Data != nil && bidderExt.Context.Data.AdServer != nil &&
-		bidderExt.Context.Data.AdServer.AdSlot != "" {
-		impExtMap[ImpExtAdUnitKey] = bidderExt.Context.Data.AdServer.AdSlot
+	if bidderExt.Data != nil && bidderExt.Data.AdServer != nil &&
+		bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
+		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
 	}
 
 	if len(impExtMap) != 0 {

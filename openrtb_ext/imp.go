@@ -23,10 +23,6 @@ type ExtStoredRequest struct {
 	ID string `json:"id"`
 }
 
-type ExtImpContext struct {
-	Data *ExtData `json:"data"`
-}
-
 type ExtData struct {
 	AdServer *ExtAdServer `json:"adserver"`
 }
