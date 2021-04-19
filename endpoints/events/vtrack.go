@@ -67,8 +67,12 @@ const (
 	PBSAccountMacro = "[PBS-ACCOUNT]"
 	// [PBS-BIDDER] represents bidder name
 	PBSBidderMacro = "[PBS-BIDDER]"
+	// [PBS-BIDID] represents bid id. If auction.generate-bid-id config is on, then resolve with response.seatbid.bid.ext.prebid.bidid. Else replace with response.seatbid.bid.id
+	PBSBidIDMacro = "[PBS-BIDID]"
 	// [ADERVERTISER_NAME] represents advertiser name
 	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
+	// Pass imp.tagId using this macro
+	PBSAdUnitIDMacro = "[AD_UNIT_ID]"
 )
 
 var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
@@ -350,27 +354,24 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 		glog.Errorf(err.Error())
 		return []byte(vastXML), false, err // false indicates events trackers are not injected
 	}
-	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc)
+
+	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
+	//TODO: It should be optimized by forming once and reusing
+	impMap := make(map[string]*openrtb.Imp)
+	for i := range bidRequest.Imp {
+		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
+	}
+
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, bidder, accountID, timestamp, bidRequest, doc, impMap)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
 		return []byte(vastXML), false, errors.New("Event URLs are not found")
 	}
 
-	// Find Creatives of Linear and NonLinear Type
-	// Injecting Tracking Events for Companion is not supported here
-	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
-	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
-	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
-	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
+	creatives := FindCreatives(doc)
 
 	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
-		//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
-		//TODO: It should be optimized by forming once and reusing
-		impMap := make(map[string]*openrtb.Imp)
-		for i := range bidRequest.Imp {
-			impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
-		}
 		// determine which creative type to be created based on linearity
 		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
 			// create creative object
@@ -429,7 +430,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 //    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document) map[string]string {
+func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document, impMap map[string]*openrtb.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap
@@ -473,12 +474,23 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 		}
 
 		if len(bid.ADomain) > 0 {
-			eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
+			//eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
+			url, err := url.Parse(bid.ADomain[0])
+			if nil == err {
+				eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, url.Hostname())
+			} else {
+				glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
+			}
 		}
 
 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidder)
+		eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
 		// replace [EVENT_ID] macro with PBS defined event ID
 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
+
+		if imp, ok := impMap[bid.ImpID]; ok {
+			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
+		}
 		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
@@ -492,4 +504,18 @@ func replaceMacro(trackerURL, macro, value string) string {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
 	return trackerURL
+}
+
+//FindCreatives finds Linear, NonLinearAds fro InLine and Wrapper Type of creatives
+//from input doc - VAST Document
+//NOTE: This function is temporarily seperated to reuse in ctv_auction.go. Because, in case of ctv
+//we generate bid.id
+func FindCreatives(doc *etree.Document) []*etree.Element {
+	// Find Creatives of Linear and NonLinear Type
+	// Injecting Tracking Events for Companion is not supported here
+	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
+	return creatives
 }

@@ -941,6 +941,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					App: &openrtb.App{
 						Bundle: "someappbundle",
 					},
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -962,6 +963,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				bid:        &openrtb.Bid{},
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{}, // no app bundle value
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -984,6 +986,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					App: &openrtb.App{
 						Bundle: "myapp", // do not expect this value
 					},
+					Imp: []openrtb.Imp{},
 					Ext: []byte(`{"prebid":{
 								"macros": {
 									"[DOMAIN]": "my_custom_value"
@@ -1010,6 +1013,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					App: &openrtb.App{
 						Bundle: "myapp123",
 					},
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -1034,6 +1038,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 								"CUSTOM_MACRO": "my_custom_value"
 							}
 					}}`),
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -1058,6 +1063,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 								"": "my_custom_value"
 							}
 					}}`),
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -1082,6 +1088,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 								"": "my_custom_value"
 							}
 					}}`),
+					Imp: []openrtb.Imp{},
 				},
 			},
 			want: want{
@@ -1098,13 +1105,13 @@ func TestGetVideoEventTracking(t *testing.T) {
 		},
 		{
 			name: "empty_tracker_url",
-			args: args{trackerURL: "    "},
+			args: args{trackerURL: "    ", req: &openrtb.BidRequest{Imp: []openrtb.Imp{}}},
 			want: want{trackerURLMap: make(map[string]string)},
 		},
 		{
 			name: "all_macros", // expect encoding for WRAPPER_IMPRESSION_ID macro
 			args: args{
-				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
+				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT_ID]&bidid=[PBS-BIDID]",
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{Bundle: "com.someapp.com", Publisher: &openrtb.Publisher{ID: "5890"}},
 					Ext: []byte(`{
@@ -1118,16 +1125,19 @@ func TestGetVideoEventTracking(t *testing.T) {
 								}
 						}
 					}`),
+					Imp: []openrtb.Imp{
+						{TagID: "/testadunit/1", ID: "imp_1"},
+					},
 				},
-				bid:    &openrtb.Bid{ADomain: []string{"a.com", "b.com"}},
+				bid:    &openrtb.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
 				bidder: "test_bidder:234",
 			},
 			want: want{
 				trackerURLMap: map[string]string{
-					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]",
-					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com%2Cb.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]"},
+					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
+					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
+					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
+					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id"},
 			},
 		},
 	}
@@ -1136,7 +1146,14 @@ func TestGetVideoEventTracking(t *testing.T) {
 			if nil == tc.args.bid {
 				tc.args.bid = &openrtb.Bid{}
 			}
-			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc)
+
+			impMap := map[string]*openrtb.Imp{}
+
+			for _, imp := range tc.args.req.Imp {
+				impMap[imp.ID] = &imp
+			}
+
+			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
 
 			for event, eurl := range tc.want.trackerURLMap {
 				expectedValues, _ := url.ParseQuery(eurl)
@@ -1146,6 +1163,12 @@ func TestGetVideoEventTracking(t *testing.T) {
 					for i := 0; i < len(ev); i++ {
 						assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v'. but found %v", ev[i], k, av[i]))
 					}
+				}
+
+				// error out if extra query params
+				if len(expectedValues) != len(actualValues) {
+					assert.Equal(t, expectedValues, actualValues, fmt.Sprintf("Expected '%v' query params but found '%v'", len(expectedValues), len(actualValues)))
+					break
 				}
 			}
 		})

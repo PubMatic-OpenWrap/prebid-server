@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/events"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/impressions"
@@ -828,6 +830,15 @@ func getAdPodBidCreative(video *openrtb.Video, adpod *types.AdPodBid) *string {
 				continue
 			}
 
+			// adjust bidid in video event trackers and update
+			adjustBidIDInVideoEventTrackers(adDoc, bid.Bid)
+			adm, err := adDoc.WriteToString()
+			if nil != err {
+				util.JLogf("ERROR, %v", err.Error())
+			} else {
+				bid.AdM = adm
+			}
+
 			vastTag := adDoc.SelectElement(constant.VASTElement)
 
 			//Get Actual VAST Version
@@ -853,6 +864,7 @@ func getAdPodBidCreative(video *openrtb.Video, adpod *types.AdPodBid) *string {
 	}
 
 	vast.CreateAttr(constant.VASTVersionAttribute, constant.VASTVersionsStr[int(version)])
+
 	bidAdM, err := doc.WriteToString()
 	if nil != err {
 		fmt.Printf("ERROR, %v", err.Error())
@@ -906,4 +918,32 @@ func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value strin
 		bid.Ext = raw
 	}
 	return err
+}
+
+func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
+	// adjusment: update bid.id with ctv module generated bid.id
+	creatives := events.FindCreatives(doc)
+	for _, creative := range creatives {
+		trackingEvents := creative.FindElements("TrackingEvents/Tracking")
+		if nil != trackingEvents {
+			// update bidid= value with ctv generated bid id for this bid
+			for _, trackingEvent := range trackingEvents {
+				u, e := url.Parse(trackingEvent.Text())
+				if nil == e {
+					values, e := url.ParseQuery(u.RawQuery)
+					if nil == e && nil != values["bidid"] {
+						// handling collision
+						// if any tracker has same key bidid then prevent it from replacing the value
+						// for this, check following
+						// if current tracker URL's bidid is present in bid.ID (ctv auction generated)
+						if strings.HasSuffix(bid.ID, values["bidid"][0]) {
+							values.Set("bidid", bid.ID)
+						}
+					}
+					u.RawQuery = values.Encode()
+					trackingEvent.SetText(u.String())
+				}
+			}
+		}
+	}
 }
