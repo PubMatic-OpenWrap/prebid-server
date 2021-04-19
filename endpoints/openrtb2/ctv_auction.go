@@ -834,10 +834,10 @@ func getAdPodBidCreative(video *openrtb.Video, adpod *types.AdPodBid) *string {
 			adjustBidIDInVideoEventTrackers(adDoc, bid.Bid)
 			adm, err := adDoc.WriteToString()
 			if nil != err {
-				fmt.Printf("ERROR, %v", err.Error())
-				return nil
+				util.JLogf("ERROR, %v", err.Error())
+			} else {
+				bid.AdM = adm
 			}
-			bid.AdM = adm
 
 			vastTag := adDoc.SelectElement(constant.VASTElement)
 
