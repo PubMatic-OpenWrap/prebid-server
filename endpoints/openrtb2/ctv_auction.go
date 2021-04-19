@@ -931,8 +931,14 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
 				u, e := url.Parse(trackingEvent.Text())
 				if nil == e {
 					values, e := url.ParseQuery(u.RawQuery)
-					if nil == e {
-						values.Set("bidid", bid.ID)
+					if nil == e && nil != values["bidid"] {
+						// handling collision
+						// if any tracker has same key bidid then prevent it from replacing the value
+						// for this, check following
+						// if current tracker URL's bidid is present in bid.ID (ctv auction generated)
+						if strings.HasSuffix(bid.ID, values["bidid"][0]) {
+							values.Set("bidid", bid.ID)
+						}
 					}
 					u.RawQuery = values.Encode()
 					trackingEvent.SetText(u.String())
