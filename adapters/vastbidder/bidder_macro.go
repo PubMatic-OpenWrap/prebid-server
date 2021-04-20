@@ -23,17 +23,20 @@ type BidderMacro struct {
 	Conf *config.Adapter
 
 	//OpenRTB Specific Parameters
-	Request      *openrtb.BidRequest
-	IsApp        bool
-	HasGeo       bool
-	Imp          *openrtb.Imp
-	ImpBidderExt map[string]interface{}
-	Publisher    *openrtb.Publisher
-	Content      *openrtb.Content
+	Request   *openrtb.BidRequest
+	IsApp     bool
+	HasGeo    bool
+	Imp       *openrtb.Imp
+	Publisher *openrtb.Publisher
+	Content   *openrtb.Content
+
+	//Extensions
+	ImpBidderExt openrtb_ext.ExtImpVASTBidder
+	VASTTag      *openrtb_ext.ExtImpVASTBidderTag
 	UserExt      *openrtb_ext.ExtUser
 	RegsExt      *openrtb_ext.ExtRegs
 
-	// Impression level Request Headers
+	//Impression level Request Headers
 	ImpReqHeaders http.Header
 }
 
@@ -81,24 +84,40 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
 }
 
 //LoadImpression will set current imp
-func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
+func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) (*openrtb_ext.ExtImpVASTBidder, error) {
 	tag.Imp = imp
 
 	var bidderExt adapters.ExtImpBidder
 	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
-		return err
+		return nil, err
 	}
 
-	tag.ImpBidderExt = map[string]interface{}{}
+	tag.ImpBidderExt = openrtb_ext.ExtImpVASTBidder{}
 	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &tag.ImpBidderExt, nil
+}
+
+//LoadVASTTag will set current VAST Tag details in bidder keys
+func (tag *BidderMacro) LoadVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
+	tag.VASTTag = vastTag
 }
 
 //GetBidderKeys will set bidder level keys
 func (tag *BidderMacro) GetBidderKeys() map[string]string {
-	return NormalizeJSON(tag.ImpBidderExt)
+	var keys map[string]string
+	//Adding VAST Tag Bidder Parameters
+	keys = NormalizeJSON(tag.VASTTag.Params)
+
+	//Adding VAST Tag Standard Params
+	keys["tagid"] = tag.VASTTag.TagID
+	keys["dur"] = strconv.Itoa(tag.VASTTag.Duration)
+
+	//Adding Headers as Custom Macros
+
+	//Adding Cookies as Custom Macros
+	return keys
 }
 
 //SetAdapterConfig will set Adapter config
@@ -110,10 +129,8 @@ func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
 func (tag *BidderMacro) GetURI() string {
 
 	//check for URI at impression level
-	if nil != tag.ImpBidderExt {
-		if value, ok := tag.ImpBidderExt["url"]; ok {
-			return value.(string)
-		}
+	if nil != tag.VASTTag {
+		return tag.VASTTag.URL
 	}
 
 	//check for URI at config level
