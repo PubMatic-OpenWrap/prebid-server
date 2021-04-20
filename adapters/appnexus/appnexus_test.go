@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/PubMatic-OpenWrap/prebid-server/cache/dummycache"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
