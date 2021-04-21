@@ -1111,7 +1111,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 		{
 			name: "all_macros", // expect encoding for WRAPPER_IMPRESSION_ID macro
 			args: args{
-				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT_ID]&bidid=[PBS-BIDID]",
+				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]",
 				req: &openrtb.BidRequest{
 					App: &openrtb.App{Bundle: "com.someapp.com", Publisher: &openrtb.Publisher{ID: "5890"}},
 					Ext: []byte(`{
@@ -1208,4 +1208,28 @@ func TestReplaceMacro(t *testing.T) {
 		})
 	}
 
+}
+
+func TestExtractDomain(t *testing.T) {
+	testCases := []struct {
+		description    string
+		url            string
+		expectedDomain string
+		expectedErr    error
+	}{
+		{description: "a.com", url: "a.com", expectedDomain: "a.com", expectedErr: nil},
+		{description: "a.com/123", url: "a.com/123", expectedDomain: "a.com", expectedErr: nil},
+		{description: "http://a.com/123", url: "http://a.com/123", expectedDomain: "a.com", expectedErr: nil},
+		{description: "https://a.com/123", url: "https://a.com/123", expectedDomain: "a.com", expectedErr: nil},
+		{description: "c.b.a.com", url: "c.b.a.com", expectedDomain: "c.b.a.com", expectedErr: nil},
+		{description: "url_encoded_http://c.b.a.com", url: "http%3A%2F%2Fc.b.a.com", expectedDomain: "c.b.a.com", expectedErr: nil},
+		{description: "url_encoded_with_www_http://c.b.a.com", url: "http%3A%2F%2Fwww.c.b.a.com", expectedDomain: "c.b.a.com", expectedErr: nil},
+	}
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			domain, err := extractDomain(test.url)
+			assert.Equal(t, test.expectedDomain, domain)
+			assert.Equal(t, test.expectedErr, err)
+		})
+	}
 }

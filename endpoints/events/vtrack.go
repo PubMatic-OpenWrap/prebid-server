@@ -72,7 +72,7 @@ const (
 	// [ADERVERTISER_NAME] represents advertiser name
 	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
 	// Pass imp.tagId using this macro
-	PBSAdUnitIDMacro = "[AD_UNIT_ID]"
+	PBSAdUnitIDMacro = "[AD_UNIT]"
 )
 
 var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
@@ -475,9 +475,9 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, a
 
 		if len(bid.ADomain) > 0 {
 			//eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
-			url, err := url.Parse(bid.ADomain[0])
+			domain, err := extractDomain(bid.ADomain[0])
 			if nil == err {
-				eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, url.Hostname())
+				eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, domain)
 			} else {
 				glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
 			}
@@ -518,4 +518,21 @@ func FindCreatives(doc *etree.Document) []*etree.Element {
 	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 	return creatives
+}
+
+func extractDomain(rawURL string) (string, error) {
+	if !strings.HasPrefix(rawURL, "http") {
+		rawURL = "http://" + rawURL
+	}
+	// decode rawURL
+	rawURL, err := url.QueryUnescape(rawURL)
+	if nil != err {
+		return "", err
+	}
+	url, err := url.Parse(rawURL)
+	if nil != err {
+		return "", err
+	}
+	// remove www if present
+	return strings.TrimPrefix(url.Hostname(), "www."), nil
 }
