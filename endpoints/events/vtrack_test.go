@@ -721,7 +721,8 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 					                                              <Tracking event="firstQuartile"><![CDATA[http://example.com/tracking/firstQuartile?k1=v1&k2=v2]]></Tracking>
 					                                              <Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking>
 					                                              <Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking>
-					                                              <Tracking event="complete">http://example.com/tracking/complete</Tracking>
+																  <Tracking event="complete">http://example.com/tracking/complete</Tracking>
+																  <Tracking event="start">http://partner.tracking.url</Tracking>
 					                                      </TrackingEvents>
 					                              </Linear>
 					                     </Creative></Creatives></InLine></Ad></VAST>`,
@@ -738,6 +739,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 					"midpoint":      {"http://example.com/tracking/midpoint", "http://company.tracker.com?eventId=3&appbundle=abc"},
 					"thirdQuartile": {"http://example.com/tracking/thirdQuartile", "http://company.tracker.com?eventId=5&appbundle=abc"},
 					"complete":      {"http://example.com/tracking/complete", "http://company.tracker.com?eventId=6&appbundle=abc"},
+					"start":         {"http://company.tracker.com?eventId=2&appbundle=abc", "http://partner.tracking.url"},
 				},
 			},
 		},
@@ -766,6 +768,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 					"midpoint":      {"http://company.tracker.com?eventId=3&appbundle=abc"},
 					"thirdQuartile": {"http://company.tracker.com?eventId=5&appbundle=abc"},
 					"complete":      {"http://company.tracker.com?eventId=6&appbundle=abc"},
+					"start":         {"http://company.tracker.com?eventId=2&appbundle=abc"},
 				},
 			},
 		}, {
@@ -813,6 +816,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 					"midpoint":      {"http://company.tracker.com?eventId=3&appbundle=abc"},
 					"thirdQuartile": {"http://company.tracker.com?eventId=5&appbundle=abc"},
 					"complete":      {"http://company.tracker.com?eventId=6&appbundle=abc"},
+					"start":         {"http://company.tracker.com?eventId=2&appbundle=abc"},
 				},
 			},
 		},
@@ -953,6 +957,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=someappbundle",
 					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=someappbundle",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=someappbundle",
+					"start":         "http://company.tracker.com?eventId=2&appbundle=someappbundle",
 					"complete":      "http://company.tracker.com?eventId=6&appbundle=someappbundle"},
 			},
 		},
@@ -975,6 +980,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=[DOMAIN]",
 					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=[DOMAIN]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=[DOMAIN]",
+					"start":         "http://company.tracker.com?eventId=2&appbundle=[DOMAIN]",
 					"complete":      "http://company.tracker.com?eventId=6&appbundle=[DOMAIN]"},
 			},
 		},
@@ -1003,6 +1009,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=my_custom_value",
 					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=my_custom_value",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=my_custom_value",
+					"start":         "http://company.tracker.com?eventId=2&appbundle=my_custom_value",
 					"complete":      "http://company.tracker.com?eventId=6&appbundle=my_custom_value"},
 			},
 		}, {
@@ -1025,6 +1032,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&appbundle=myapp123&parameter2=myapp123",
 					"midpoint":      "http://company.tracker.com?eventId=3&appbundle=myapp123&parameter2=myapp123",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&appbundle=myapp123&parameter2=myapp123",
+					"start":         "http://company.tracker.com?eventId=2&appbundle=myapp123&parameter2=myapp123",
 					"complete":      "http://company.tracker.com?eventId=6&appbundle=myapp123&parameter2=myapp123"},
 			},
 		},
@@ -1050,6 +1058,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"start":         "http://company.tracker.com?eventId=2&param1=[CUSTOM_MACRO]",
 					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
 			},
 		},
@@ -1075,6 +1084,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"start":         "http://company.tracker.com?eventId=2&param1=[CUSTOM_MACRO]",
 					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
 			},
 		},
@@ -1100,6 +1110,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "http://company.tracker.com?eventId=4&param1=[CUSTOM_MACRO]",
 					"midpoint":      "http://company.tracker.com?eventId=3&param1=[CUSTOM_MACRO]",
 					"thirdQuartile": "http://company.tracker.com?eventId=5&param1=[CUSTOM_MACRO]",
+					"start":         "http://company.tracker.com?eventId=2&param1=[CUSTOM_MACRO]",
 					"complete":      "http://company.tracker.com?eventId=6&param1=[CUSTOM_MACRO]"},
 			},
 		},
@@ -1137,12 +1148,14 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
 					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
 					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
-					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id"},
+					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id",
+					"start":         "https://company.tracker.com?operId=8&e=2&p=5890&pid=100&v=2&ts=1234567890&pn=test_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id"},
 			},
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+
 			if nil == tc.args.bid {
 				tc.args.bid = &openrtb.Bid{}
 			}
@@ -1156,8 +1169,11 @@ func TestGetVideoEventTracking(t *testing.T) {
 			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
 
 			for event, eurl := range tc.want.trackerURLMap {
-				expectedValues, _ := url.ParseQuery(eurl)
-				actualValues, _ := url.ParseQuery(eventURLMap[event])
+
+				u, _ := url.Parse(eurl)
+				expectedValues, _ := url.ParseQuery(u.RawQuery)
+				u, _ = url.Parse(eventURLMap[event])
+				actualValues, _ := url.ParseQuery(u.RawQuery)
 				for k, ev := range expectedValues {
 					av := actualValues[k]
 					for i := 0; i < len(ev); i++ {
@@ -1171,6 +1187,9 @@ func TestGetVideoEventTracking(t *testing.T) {
 					break
 				}
 			}
+
+			// check if new quartile pixels are covered inside test
+			assert.Equal(t, tc.want.trackerURLMap, eventURLMap)
 		})
 	}
 }
