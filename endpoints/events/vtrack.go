@@ -75,11 +75,12 @@ const (
 	PBSAdUnitIDMacro = "[AD_UNIT]"
 )
 
-var trackingEvents = []string{"firstQuartile", "midpoint", "thirdQuartile", "complete"}
+var trackingEvents = []string{"start", "firstQuartile", "midpoint", "thirdQuartile", "complete"}
 
 // PubMatic specific event IDs
 // This will go in event-config once PreBid modular design is in place
 var eventIDMap = map[string]string{
+	"start":         "2",
 	"firstQuartile": "4",
 	"midpoint":      "3",
 	"thirdQuartile": "5",
