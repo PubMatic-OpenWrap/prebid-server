@@ -1,6 +1,6 @@
 package adhese
 
-import "github.com/PubMatic-OpenWrap/openrtb"
+import "github.com/mxmCherry/openrtb/v15/openrtb2"
 
 type AdheseOriginData struct {
 	Priority                  string `json:"priority"`
@@ -23,7 +23,7 @@ type AdheseExt struct {
 
 type AdheseBid struct {
 	Origin         string              `json:"origin"`
-	OriginData     openrtb.BidResponse `json:"originData"`
+	OriginData     openrtb2.BidResponse `json:"originData"`
 	OriginInstance string              `json:"originInstance,omitempty"`
 	Body           string              `json:"body,omitempty"`
 	Height         string              `json:"height"`

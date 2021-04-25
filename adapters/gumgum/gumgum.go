@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // GumGumAdapter implements Bidder interface.
@@ -20,8 +20,8 @@ type GumGumAdapter struct {
 }
 
 // MakeRequests makes the HTTP requests which should be made to fetch bids.
-func (g *GumGumAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	var validImps []openrtb.Imp
+func (g *GumGumAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	var validImps []openrtb2.Imp
 	var trackingId string
 
 	numRequests := len(request.Imp)
@@ -83,7 +83,7 @@ func (g *GumGumAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapt
 }
 
 // MakeBids unpacks the server's response into Bids.
-func (g *GumGumAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (g *GumGumAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
 	}
@@ -99,7 +99,7 @@ func (g *GumGumAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRe
 			Message: fmt.Sprintf("Bad server response: HTTP status %d", response.StatusCode),
 		}}
 	}
-	var bidResp openrtb.BidResponse
+	var bidResp openrtb2.BidResponse
 	if err := json.Unmarshal(response.Body, &bidResp); err != nil {
 		return nil, []error{&errortypes.BadServerResponse{
 			Message: fmt.Sprintf("Bad server response: %d. ", err),
@@ -127,7 +127,7 @@ func (g *GumGumAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRe
 	return bidResponse, errs
 }
 
-func preprocess(imp *openrtb.Imp) (string, error) {
+func preprocess(imp *openrtb2.Imp) (string, error) {
 	var bidderExt adapters.ExtImpBidder
 	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
 		err = &errortypes.BadInput{
@@ -148,7 +148,7 @@ func preprocess(imp *openrtb.Imp) (string, error) {
 	return zone, nil
 }
 
-func getMediaTypeForImpID(impID string, imps []openrtb.Imp) openrtb_ext.BidType {
+func getMediaTypeForImpID(impID string, imps []openrtb2.Imp) openrtb_ext.BidType {
 	for _, imp := range imps {
 		if imp.ID == impID && imp.Banner != nil {
 			return openrtb_ext.BidTypeBanner
@@ -157,7 +157,7 @@ func getMediaTypeForImpID(impID string, imps []openrtb.Imp) openrtb_ext.BidType 
 	return openrtb_ext.BidTypeVideo
 }
 
-func validateVideoParams(video *openrtb.Video) (err error) {
+func validateVideoParams(video *openrtb2.Video) (err error) {
 	if video.W == 0 || video.H == 0 || video.MinDuration == 0 || video.MaxDuration == 0 || video.Placement == 0 || video.Linearity == 0 {
 		return &errortypes.BadInput{
 			Message: "Invalid or missing video field(s)",

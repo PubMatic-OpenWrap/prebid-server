@@ -3,11 +3,11 @@ package revcontent
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters
 	return bidder, nil
 }
 
-func (a *adapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	reqBody, err := json.Marshal(request)
 
 	if err != nil {
@@ -46,7 +46,7 @@ func (a *adapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.Ex
 	return []*adapters.RequestData{req}, nil
 }
 
-func checkRequest(request *openrtb.BidRequest) error {
+func checkRequest(request *openrtb2.BidRequest) error {
 	if (request.App == nil || len(request.App.Name) == 0) && (request.Site == nil || len(request.Site.Domain) == 0) {
 		return &errortypes.BadInput{
 			Message: "Impression is missing app name or site domain, and must contain one.",
@@ -57,7 +57,7 @@ func checkRequest(request *openrtb.BidRequest) error {
 }
 
 // MakeBids make the bids for the bid response.
-func (a *adapter) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *adapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
 	}
@@ -74,7 +74,7 @@ func (a *adapter) MakeBids(internalRequest *openrtb.BidRequest, externalRequest 
 		}}
 	}
 
-	var bidResp openrtb.BidResponse
+	var bidResp openrtb2.BidResponse
 
 	if err := json.Unmarshal(response.Body, &bidResp); err != nil {
 		return nil, []error{err}

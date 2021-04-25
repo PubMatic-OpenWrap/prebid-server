@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestGetAdDuration(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
-			bid := openrtb.Bid{
+			bid := openrtb2.Bid{
 				Ext: []byte(`{"prebid" : {"video" : {"duration" : ` + test.adDuration + `}}}`),
 			}
 			assert.Equal(t, test.expect, getAdDuration(bid, int64(test.maxAdDuration)))
@@ -45,7 +45,7 @@ func TestAddTargetingKeys(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
-			bid := new(openrtb.Bid)
+			bid := new(openrtb2.Bid)
 			bid.Ext = []byte(test.bidExt)
 			key := openrtb_ext.TargetingKey(test.key)
 			assert.Nil(t, addTargetingKey(bid, key, test.value))

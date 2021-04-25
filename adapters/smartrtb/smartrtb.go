@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/macros"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // Base adapter structure.
@@ -59,7 +59,7 @@ func (adapter *SmartRTBAdapter) buildEndpointURL(pubID string) (string, error) {
 	return macros.ResolveMacros(adapter.EndpointTemplate, endpointParams)
 }
 
-func parseExtImp(dst *bidRequestExt, imp *openrtb.Imp) error {
+func parseExtImp(dst *bidRequestExt, imp *openrtb2.Imp) error {
 	var ext adapters.ExtImpBidder
 	if err := json.Unmarshal(imp.Ext, &ext); err != nil {
 		return adapters.BadInput(err.Error())
@@ -80,8 +80,8 @@ func parseExtImp(dst *bidRequestExt, imp *openrtb.Imp) error {
 	return nil
 }
 
-func (s *SmartRTBAdapter) MakeRequests(brq *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	var imps []openrtb.Imp
+func (s *SmartRTBAdapter) MakeRequests(brq *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	var imps []openrtb2.Imp
 	var err error
 	ext := bidRequestExt{}
 	nrImps := len(brq.Imp)
@@ -140,7 +140,7 @@ func (s *SmartRTBAdapter) MakeRequests(brq *openrtb.BidRequest, reqInfo *adapter
 }
 
 func (s *SmartRTBAdapter) MakeBids(
-	brq *openrtb.BidRequest, drq *adapters.RequestData,
+	brq *openrtb2.BidRequest, drq *adapters.RequestData,
 	rs *adapters.ResponseData,
 ) (*adapters.BidderResponse, []error) {
 	if rs.StatusCode == http.StatusNoContent {
@@ -153,7 +153,7 @@ func (s *SmartRTBAdapter) MakeBids(
 		}}
 	}
 
-	var brs openrtb.BidResponse
+	var brs openrtb2.BidResponse
 	if err := json.Unmarshal(rs.Body, &brs); err != nil {
 		return nil, []error{err}
 	}

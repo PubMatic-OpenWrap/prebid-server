@@ -1,9 +1,9 @@
 package helpers
 
 import (
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 	"testing"
 )
@@ -52,7 +52,7 @@ func TestJsonifyAmpObject(t *testing.T) {
 	ao := &analytics.AmpObject{
 		Status:             http.StatusOK,
 		Errors:             make([]error, 0),
-		AuctionResponse:    &openrtb.BidResponse{},
+		AuctionResponse:    &openrtb2.BidResponse{},
 		AmpTargetingValues: map[string]string{},
 	}
 	if _, err := JsonifyAmpObject(ao, "scopeId"); err != nil {

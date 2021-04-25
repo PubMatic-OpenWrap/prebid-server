@@ -6,7 +6,7 @@ You can configure the server using the following environment variables:
 
 ```bash
 export PBS_ANALYTICS_PUBSTACK_ENABLED="true"
-export PBS_ANALYTICS_PUBSTACK_ENDPOINT="https://openrtb.preview.pubstack.io/v1/openrtb2"
+export PBS_ANALYTICS_PUBSTACK_ENDPOINT="https://openrtb2.preview.pubstack.io/v1/openrtb2"
 export PBS_ANALYTICS_PUBSTACK_SCOPEID=<your scopeId here> # should be an UUIDv4
 ```
 
@@ -17,7 +17,7 @@ analytics:
     pubstack:
       # Required properties
       enabled: true
-      endpoint: "https://openrtb.preview.pubstack.io/v1/openrtb2"
+      endpoint: "https://openrtb2.preview.pubstack.io/v1/openrtb2"
       scopeid: "<scopeId>" # The scopeId provided by the Pubstack Support Team
       # Optional properties (advanced configuration)
       configuration_refresh_delay: "2h" # Dynamic configuration delay
