@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/events"
+	"github.com/prebid/prebid-server/stored_requests/events"
 	"github.com/julienschmidt/httprouter"
 )
 

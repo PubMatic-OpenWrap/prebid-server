@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

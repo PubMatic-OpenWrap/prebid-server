@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

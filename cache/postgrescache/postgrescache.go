@@ -7,9 +7,9 @@ import (
 	"encoding/gob"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/stored_requests"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/cache"
+	"github.com/prebid/prebid-server/cache"
 	"github.com/coocood/freecache"
 	"github.com/lib/pq"
 )

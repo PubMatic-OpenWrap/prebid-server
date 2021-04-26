@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/errortypes"
 )
 
 const (

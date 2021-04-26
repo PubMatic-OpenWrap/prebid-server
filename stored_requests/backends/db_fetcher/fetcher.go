@@ -7,7 +7,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/golang/glog"
 )
 

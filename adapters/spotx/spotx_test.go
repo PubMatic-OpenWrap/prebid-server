@@ -2,7 +2,7 @@ package spotx
 
 import (
 	"encoding/json"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters"
 	"github.com/magiconair/properties/assert"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"testing"

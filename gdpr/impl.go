@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/go-gdpr/api"
 	tcf1constants "github.com/prebid/go-gdpr/consentconstants"
 	consentconstants "github.com/prebid/go-gdpr/consentconstants/tcf2"

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/prebid_cache_client"
 	uuid "github.com/gofrs/uuid"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )

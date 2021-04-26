@@ -1,7 +1,7 @@
 package dmx
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
+	"github.com/prebid/prebid-server/privacy"
 	"testing"
 	"text/template"
 

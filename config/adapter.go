@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/macros"
+	"github.com/prebid/prebid-server/macros"
 	validator "github.com/asaskevich/govalidator"
 )
 
