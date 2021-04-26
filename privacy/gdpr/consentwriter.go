@@ -5,7 +5,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // ConsentWriter implements the PolicyWriter interface for GDPR TCF.
@@ -14,13 +14,13 @@ type ConsentWriter struct {
 }
 
 // Write mutates an OpenRTB bid request with the GDPR TCF consent.
-func (c ConsentWriter) Write(req *openrtb.BidRequest) error {
+func (c ConsentWriter) Write(req *openrtb2.BidRequest) error {
 	if c.Consent == "" {
 		return nil
 	}
 
 	if req.User == nil {
-		req.User = &openrtb.User{}
+		req.User = &openrtb2.User{}
 	}
 
 	if req.User.Ext == nil {

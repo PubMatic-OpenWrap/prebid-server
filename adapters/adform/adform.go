@@ -19,8 +19,8 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -235,8 +235,8 @@ func toPBSBidSlice(adformBids []*adformBid, r *adformRequest) pbs.PBSBidSlice {
 			BidderCode:        r.bidderCode,
 			Price:             bid.Price,
 			Adm:               adm,
-			Width:             bid.Width,
-			Height:            bid.Height,
+			Width:             int64(bid.Width),
+			Height:            int64(bid.Height),
 			DealId:            bid.DealId,
 			Creative_id:       bid.CreativeId,
 			CreativeMediaType: string(bidType),
@@ -374,7 +374,7 @@ func NewAdformLegacyAdapter(httpConfig *adapters.HTTPAdapterConfig, endpointURL 
 	}
 }
 
-func (a *AdformAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *AdformAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	adformRequest, errors := openRtbToAdformRequest(request)
 	if len(adformRequest.adUnits) == 0 {
 		return nil, errors
@@ -392,7 +392,7 @@ func (a *AdformAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapt
 	return requests, errors
 }
 
-func openRtbToAdformRequest(request *openrtb.BidRequest) (*adformRequest, []error) {
+func openRtbToAdformRequest(request *openrtb2.BidRequest) (*adformRequest, []error) {
 	adUnits := make([]*adformAdUnit, 0, len(request.Imp))
 	errors := make([]error, 0, len(request.Imp))
 	secure := false
@@ -529,35 +529,35 @@ func encodeEids(eids []openrtb_ext.ExtUserEid) string {
 	return encodedEids
 }
 
-func getIPSafely(device *openrtb.Device) string {
+func getIPSafely(device *openrtb2.Device) string {
 	if device == nil {
 		return ""
 	}
 	return device.IP
 }
 
-func getIFASafely(device *openrtb.Device) string {
+func getIFASafely(device *openrtb2.Device) string {
 	if device == nil {
 		return ""
 	}
 	return device.IFA
 }
 
-func getUASafely(device *openrtb.Device) string {
+func getUASafely(device *openrtb2.Device) string {
 	if device == nil {
 		return ""
 	}
 	return device.UA
 }
 
-func getBuyerUIDSafely(user *openrtb.User) string {
+func getBuyerUIDSafely(user *openrtb2.User) string {
 	if user == nil {
 		return ""
 	}
 	return user.BuyerUID
 }
 
-func (a *AdformAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *AdformAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
 	}
@@ -584,7 +584,7 @@ func (a *AdformAdapter) MakeBids(internalRequest *openrtb.BidRequest, externalRe
 	return bidResponse, nil
 }
 
-func toOpenRtbBidResponse(adformBids []*adformBid, r *openrtb.BidRequest) *adapters.BidderResponse {
+func toOpenRtbBidResponse(adformBids []*adformBid, r *openrtb2.BidRequest) *adapters.BidderResponse {
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(adformBids))
 	currency := bidResponse.Currency
 
@@ -598,13 +598,13 @@ func toOpenRtbBidResponse(adformBids []*adformBid, r *openrtb.BidRequest) *adapt
 			continue
 		}
 
-		openRtbBid := openrtb.Bid{
+		openRtbBid := openrtb2.Bid{
 			ID:     r.Imp[i].ID,
 			ImpID:  r.Imp[i].ID,
 			Price:  bid.Price,
 			AdM:    adm,
-			W:      bid.Width,
-			H:      bid.Height,
+			W:      int64(bid.Width),
+			H:      int64(bid.Height),
 			DealID: bid.DealId,
 			CrID:   bid.CreativeId,
 		}

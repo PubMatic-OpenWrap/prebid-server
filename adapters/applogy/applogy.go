@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 type ApplogyAdapter struct {
 	endpoint string
 }
 
-func (a *ApplogyAdapter) MakeRequests(request *openrtb.BidRequest, _ *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *ApplogyAdapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json;charset=utf-8")
 	headers.Add("Accept", "application/json")
@@ -92,7 +92,7 @@ func (a *ApplogyAdapter) MakeRequests(request *openrtb.BidRequest, _ *adapters.E
 	return result, errs
 }
 
-func (a *ApplogyAdapter) MakeBids(request *openrtb.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *ApplogyAdapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error
 
 	switch responseData.StatusCode {
@@ -110,7 +110,7 @@ func (a *ApplogyAdapter) MakeBids(request *openrtb.BidRequest, _ *adapters.Reque
 		}}
 	}
 
-	var bidResponse openrtb.BidResponse
+	var bidResponse openrtb2.BidResponse
 	err := json.Unmarshal(responseData.Body, &bidResponse)
 	if err != nil {
 		return nil, []error{&errortypes.BadServerResponse{

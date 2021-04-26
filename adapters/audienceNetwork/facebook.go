@@ -16,11 +16,11 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/util/maputil"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
-var supportedBannerHeights = map[uint64]bool{
+var supportedBannerHeights = map[int64]bool{
 	50:  true,
 	250: true,
 }
@@ -40,7 +40,7 @@ type facebookReqExt struct {
 	AuthID     string `json:"authentication_id"`
 }
 
-func (this *FacebookAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (this *FacebookAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if len(request.Imp) == 0 {
 		return nil, []error{&errortypes.BadInput{
 			Message: "No impressions provided",
@@ -62,7 +62,7 @@ func (this *FacebookAdapter) MakeRequests(request *openrtb.BidRequest, reqInfo *
 	return this.buildRequests(request)
 }
 
-func (this *FacebookAdapter) buildRequests(request *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
+func (this *FacebookAdapter) buildRequests(request *openrtb2.BidRequest) ([]*adapters.RequestData, []error) {
 	// Documentation suggests bid request splitting by impression so that each
 	// request only represents a single impression
 	reqs := make([]*adapters.RequestData, 0, len(request.Imp))
@@ -77,7 +77,7 @@ func (this *FacebookAdapter) buildRequests(request *openrtb.BidRequest) ([]*adap
 		// Make a copy of the request so that we don't change the original request which
 		// is shared across multiple threads
 		fbreq := *request
-		fbreq.Imp = []openrtb.Imp{imp}
+		fbreq.Imp = []openrtb2.Imp{imp}
 
 		if err := this.modifyRequest(&fbreq); err != nil {
 			errs = append(errs, err)
@@ -109,14 +109,14 @@ func (this *FacebookAdapter) buildRequests(request *openrtb.BidRequest) ([]*adap
 
 // The authentication ID is a sha256 hmac hash encoded as a hex string, based on
 // the app secret and the ID of the bid request
-func (this *FacebookAdapter) makeAuthID(req *openrtb.BidRequest) string {
+func (this *FacebookAdapter) makeAuthID(req *openrtb2.BidRequest) string {
 	h := hmac.New(sha256.New, []byte(this.appSecret))
 	h.Write([]byte(req.ID))
 
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (this *FacebookAdapter) modifyRequest(out *openrtb.BidRequest) error {
+func (this *FacebookAdapter) modifyRequest(out *openrtb2.BidRequest) error {
 	if len(out.Imp) != 1 {
 		panic("each bid request to facebook should only have a single impression")
 	}
@@ -146,7 +146,7 @@ func (this *FacebookAdapter) modifyRequest(out *openrtb.BidRequest) error {
 
 	if out.App != nil {
 		app := *out.App
-		app.Publisher = &openrtb.Publisher{ID: pubId}
+		app.Publisher = &openrtb2.Publisher{ID: pubId}
 		out.App = &app
 	}
 
@@ -157,7 +157,7 @@ func (this *FacebookAdapter) modifyRequest(out *openrtb.BidRequest) error {
 	return nil
 }
 
-func (this *FacebookAdapter) modifyImp(out *openrtb.Imp) error {
+func (this *FacebookAdapter) modifyImp(out *openrtb2.Imp) error {
 	impType, ok := resolveImpType(out)
 	if !ok {
 		return &errortypes.BadInput{
@@ -176,8 +176,8 @@ func (this *FacebookAdapter) modifyImp(out *openrtb.Imp) error {
 		out.Banner = &bannerCopy
 
 		if out.Instl == 1 {
-			out.Banner.W = openrtb.Uint64Ptr(0)
-			out.Banner.H = openrtb.Uint64Ptr(0)
+			out.Banner.W = openrtb2.Int64Ptr(0)
+			out.Banner.H = openrtb2.Int64Ptr(0)
 			out.Banner.Format = nil
 
 			return nil
@@ -205,14 +205,14 @@ func (this *FacebookAdapter) modifyImp(out *openrtb.Imp) error {
 		}
 
 		/* This will get overwritten post-serialization */
-		out.Banner.W = openrtb.Uint64Ptr(0)
+		out.Banner.W = openrtb2.Int64Ptr(0)
 		out.Banner.Format = nil
 	}
 
 	return nil
 }
 
-func (this *FacebookAdapter) extractPlacementAndPublisher(out *openrtb.Imp) (string, string, error) {
+func (this *FacebookAdapter) extractPlacementAndPublisher(out *openrtb2.Imp) (string, string, error) {
 	var bidderExt adapters.ExtImpBidder
 	if err := json.Unmarshal(out.Ext, &bidderExt); err != nil {
 		return "", "", &errortypes.BadInput{
@@ -264,7 +264,7 @@ func (this *FacebookAdapter) extractPlacementAndPublisher(out *openrtb.Imp) (str
 
 // XXX: This entire function is just a hack to get around mxmCherry 11.0.0 limitations, without
 // having to fork the library and maintain our own branch
-func modifyImpCustom(jsonData []byte, imp *openrtb.Imp) ([]byte, error) {
+func modifyImpCustom(jsonData []byte, imp *openrtb2.Imp) ([]byte, error) {
 	impType, ok := resolveImpType(imp)
 	if ok == false {
 		panic("processing an invalid impression")
@@ -335,7 +335,7 @@ func modifyImpCustom(jsonData []byte, imp *openrtb.Imp) ([]byte, error) {
 	}
 }
 
-func (this *FacebookAdapter) MakeBids(request *openrtb.BidRequest, adapterRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (this *FacebookAdapter) MakeBids(request *openrtb2.BidRequest, adapterRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	/* No bid response */
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
@@ -349,7 +349,7 @@ func (this *FacebookAdapter) MakeBids(request *openrtb.BidRequest, adapterReques
 		}}
 	}
 
-	var bidResp openrtb.BidResponse
+	var bidResp openrtb2.BidResponse
 	if err := json.Unmarshal(response.Body, &bidResp); err != nil {
 		return nil, []error{err}
 	}
@@ -394,7 +394,7 @@ func (this *FacebookAdapter) MakeBids(request *openrtb.BidRequest, adapterReques
 	return out, errs
 }
 
-func resolveBidType(bid *openrtb.Bid, req *openrtb.BidRequest) openrtb_ext.BidType {
+func resolveBidType(bid *openrtb2.Bid, req *openrtb2.BidRequest) openrtb_ext.BidType {
 	for _, imp := range req.Imp {
 		if bid.ImpID == imp.ID {
 			if typ, ok := resolveImpType(&imp); ok {
@@ -408,7 +408,7 @@ func resolveBidType(bid *openrtb.Bid, req *openrtb.BidRequest) openrtb_ext.BidTy
 	panic(fmt.Sprintf("Invalid bid imp ID %s does not match any imp IDs from the original bid request", bid.ImpID))
 }
 
-func resolveImpType(imp *openrtb.Imp) (openrtb_ext.BidType, bool) {
+func resolveImpType(imp *openrtb2.Imp) (openrtb_ext.BidType, bool) {
 	if imp.Banner != nil {
 		return openrtb_ext.BidTypeBanner, true
 	}

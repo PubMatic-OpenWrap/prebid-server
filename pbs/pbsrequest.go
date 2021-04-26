@@ -17,10 +17,10 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/util/httputil"
 	"github.com/PubMatic-OpenWrap/prebid-server/util/iputil"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/blang/semver"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -86,7 +86,7 @@ type PBSVideo struct {
 type AdUnit struct {
 	Code       string           `json:"code"`
 	TopFrame   int8             `json:"is_top_frame"`
-	Sizes      []openrtb.Format `json:"sizes"`
+	Sizes      []openrtb2.Format `json:"sizes"`
 	Bids       []Bids           `json:"bids"`
 	ConfigID   string           `json:"config_id"`
 	MediaTypes []string         `json:"media_types"`
@@ -95,7 +95,7 @@ type AdUnit struct {
 }
 
 type PBSAdUnit struct {
-	Sizes      []openrtb.Format
+	Sizes      []openrtb2.Format
 	TopFrame   int8
 	Code       string
 	BidID      string
@@ -162,18 +162,18 @@ type PBSRequest struct {
 	TimeoutMillis int64           `json:"timeout_millis"`
 	AdUnits       []AdUnit        `json:"ad_units"`
 	IsDebug       bool            `json:"is_debug"`
-	App           *openrtb.App    `json:"app"`
-	Device        *openrtb.Device `json:"device"`
+	App           *openrtb2.App    `json:"app"`
+	Device        *openrtb2.Device `json:"device"`
 	PBSUser       json.RawMessage `json:"user"`
 	SDK           *SDK            `json:"sdk"`
 
 	// internal
 	Bidders []*PBSBidder        `json:"-"`
-	User    *openrtb.User       `json:"-"`
+	User    *openrtb2.User       `json:"-"`
 	Cookie  *usersync.PBSCookie `json:"-"`
 	Url     string              `json:"-"`
 	Domain  string              `json:"-"`
-	Regs    *openrtb.Regs       `json:"regs"`
+	Regs    *openrtb2.Regs       `json:"regs"`
 	Start   time.Time
 }
 
@@ -236,7 +236,7 @@ func ParsePBSRequest(r *http.Request, cfg *config.AuctionTimeouts, cache cache.C
 	pbsReq.TimeoutMillis = int64(cfg.LimitAuctionTimeout(time.Duration(pbsReq.TimeoutMillis)*time.Millisecond) / time.Millisecond)
 
 	if pbsReq.Device == nil {
-		pbsReq.Device = &openrtb.Device{}
+		pbsReq.Device = &openrtb2.Device{}
 	}
 	if ip, _ := httputil.FindIP(r, ipv4Validator); ip != nil {
 		pbsReq.Device.IP = ip.String()
@@ -259,7 +259,7 @@ func ParsePBSRequest(r *http.Request, cfg *config.AuctionTimeouts, cache cache.C
 	}
 
 	if pbsReq.User == nil {
-		pbsReq.User = &openrtb.User{}
+		pbsReq.User = &openrtb2.User{}
 	}
 
 	// use client-side data for web requests
