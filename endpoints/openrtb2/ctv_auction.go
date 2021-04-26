@@ -940,7 +940,14 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
 							values.Set("bidid", bid.ID)
 						}
 					}
-					u.RawQuery = values.Encode()
+					//OTT-183: Fix
+					operID := values.Get("operId")
+					values.Del("operId")
+					values.Add("_operId", operID) // _ (underscore) will keep it as first key
+
+					u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
+					// replace _operId with operId
+					u.RawQuery = strings.ReplaceAll(u.RawQuery, "_operId", "operId")
 					trackingEvent.SetText(u.String())
 				}
 			}

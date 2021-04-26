@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/etree"
@@ -77,10 +78,10 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 			name: "replace_with_custom_ctv_bid_id",
 			want: want{
 				eventURLMap: map[string]string{
-					"thirdQuartile": "https://thirdQuartile.com?key1=value1&bidid=ctv_bid_123",
-					"complete":      "https://complete.com?key1=value1&bidid=ctv_bid_123&key2=value2",
-					"firstQuartile": "https://firstQuartile.com?key1=value1&bidid=ctv_bid_123&key2=value2",
-					"midpoint":      "https://midpoint.com?key1=value1&bidid=ctv_bid_123&key2=value2",
+					"thirdQuartile": "https://thirdQuartile.com?operId=8&key1=value1&bidid=ctv_bid_123",
+					"complete":      "https://complete.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2",
+					"firstQuartile": "https://firstQuartile.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2",
+					"midpoint":      "https://midpoint.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2",
 				},
 			},
 			args: args{
@@ -103,10 +104,10 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 								<Creative>
 									<Linear>
 										<TrackingEvents>
-											<Tracking  event="thirdQuartile"><![CDATA[https://thirdQuartile.com?key1=value1&bidid=ctv_bid_123]]></Tracking>
-											<Tracking  event="complete"><![CDATA[https://complete.com?key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
-											<Tracking  event="firstQuartile"><![CDATA[https://firstQuartile.com?key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
-											<Tracking  event="midpoint"><![CDATA[https://midpoint.com?key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
+											<Tracking  event="thirdQuartile"><![CDATA[https://thirdQuartile.com?operId=8&key1=value1&bidid=ctv_bid_123]]></Tracking>
+											<Tracking  event="complete"><![CDATA[https://complete.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
+											<Tracking  event="firstQuartile"><![CDATA[https://firstQuartile.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
+											<Tracking  event="midpoint"><![CDATA[https://midpoint.com?operId=8&key1=value1&bidid=ctv_bid_123&key2=value2]]></Tracking>
 										</TrackingEvents>
 									</Linear>
 								</Creative>
@@ -138,6 +139,9 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 					assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v'. but found %v", ev[i], k, av[i]))
 				}
 			}
+
+			// check if operId=8 is first param
+			assert.True(t, strings.HasPrefix(actualURL.RawQuery, "operId=8"), "operId=8 must be first query param")
 		}
 	}
 }
