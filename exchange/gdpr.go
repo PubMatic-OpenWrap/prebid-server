@@ -3,7 +3,7 @@ package exchange
 import (
 	"encoding/json"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/gdpr"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

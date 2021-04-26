@@ -3,9 +3,9 @@ package analytics
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/server/ssl"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/server/ssl"
+	"github.com/prebid/prebid-server/usersync"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 )

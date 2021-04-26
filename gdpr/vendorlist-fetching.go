@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/prebid/prebid-server/config"
 	"github.com/golang/glog"
 	"github.com/prebid/go-gdpr/api"
 	"github.com/prebid/go-gdpr/vendorlist"

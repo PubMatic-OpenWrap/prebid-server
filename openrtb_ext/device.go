@@ -3,7 +3,7 @@ package openrtb_ext
 import (
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/buger/jsonparser"
 )
 

@@ -3,7 +3,7 @@ package exchange
 import (
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )

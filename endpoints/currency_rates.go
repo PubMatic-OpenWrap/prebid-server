@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/golang/glog"
 )
 

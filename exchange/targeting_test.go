@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/currency"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/gdpr"
 
-	metricsConf "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
-	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	metricsConf "github.com/prebid/prebid-server/metrics/config"
+	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )

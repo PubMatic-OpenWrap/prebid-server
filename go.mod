@@ -1,4 +1,4 @@
-module github.com/PubMatic-OpenWrap/prebid-server
+module github.com/prebid/prebid-server
 
 go 1.14
 
@@ -59,4 +59,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/mxmCherry/openrtb/v15 v15.0.0 => github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425111602-5284bed23afa
+replace github.com/mxmCherry/openrtb/v15 v15.0.0 => github.com/PubMatic-OpenWrap/openrtb/v15 adbedb6f42c618555bee13551e99e6f57de448c7

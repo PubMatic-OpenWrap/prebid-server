@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

@@ -1,14 +1,14 @@
 package filesystem
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/prebid/prebid-server/config"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/usersync"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 

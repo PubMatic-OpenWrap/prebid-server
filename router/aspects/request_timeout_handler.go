@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/julienschmidt/httprouter"
 )
 

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/yudai/gojsondiff"
 	"github.com/yudai/gojsondiff/formatter"

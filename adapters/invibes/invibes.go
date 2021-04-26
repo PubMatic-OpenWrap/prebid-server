@@ -9,12 +9,12 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
-	"github.com/PubMatic-OpenWrap/prebid-server/macros"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/macros"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
