@@ -934,7 +934,10 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
 					// only do replacment if operId=8
 					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
 						values.Set("bidid", bid.ID)
+					} else {
+						continue
 					}
+
 					//OTT-183: Fix
 					if nil != values["operId"] && values["operId"][0] == "8" {
 						operID := values.Get("operId")
