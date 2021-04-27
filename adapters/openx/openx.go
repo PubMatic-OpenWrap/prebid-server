@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 const hbconfig = "hb_pbs_1.0.0"
@@ -130,7 +130,9 @@ func preprocess(imp *openrtb2.Imp, reqExt *openxReqExt) error {
 	reqExt.Platform = openxExt.Platform
 
 	imp.TagID = openxExt.Unit
-	imp.BidFloor = openxExt.CustomFloor
+	if imp.BidFloor == 0 && openxExt.CustomFloor > 0 {
+		imp.BidFloor = openxExt.CustomFloor
+	}
 	imp.Ext = nil
 
 	if openxExt.CustomParams != nil {

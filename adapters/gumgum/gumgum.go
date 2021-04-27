@@ -3,15 +3,15 @@ package gumgum
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/prebid/prebid-server/config"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // GumGumAdapter implements Bidder interface.
@@ -22,34 +22,33 @@ type GumGumAdapter struct {
 // MakeRequests makes the HTTP requests which should be made to fetch bids.
 func (g *GumGumAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	var validImps []openrtb2.Imp
-	var trackingId string
+	var siteCopy openrtb2.Site
+	if request.Site != nil {
+		siteCopy = *request.Site
+	}
 
 	numRequests := len(request.Imp)
 	errs := make([]error, 0, numRequests)
 
 	for i := 0; i < numRequests; i++ {
 		imp := request.Imp[i]
-		zone, err := preprocess(&imp)
+		gumgumExt, err := preprocess(&imp)
 		if err != nil {
 			errs = append(errs, err)
-		} else if request.Imp[i].Banner != nil {
-			bannerCopy := *request.Imp[i].Banner
-			if bannerCopy.W == nil && bannerCopy.H == nil && len(bannerCopy.Format) > 0 {
-				format := bannerCopy.Format[0]
-				bannerCopy.W = &(format.W)
-				bannerCopy.H = &(format.H)
+		} else {
+			if gumgumExt.Zone != "" {
+				siteCopy.ID = gumgumExt.Zone
 			}
-			request.Imp[i].Banner = &bannerCopy
-			validImps = append(validImps, request.Imp[i])
-			trackingId = zone
-		} else if request.Imp[i].Video != nil {
-			err := validateVideoParams(request.Imp[i].Video)
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				validImps = append(validImps, request.Imp[i])
-				trackingId = zone
+
+			if gumgumExt.PubID != 0 {
+				if siteCopy.Publisher != nil {
+					siteCopy.Publisher.ID = strconv.FormatFloat(gumgumExt.PubID, 'f', -1, 64)
+				} else {
+					siteCopy.Publisher = &openrtb2.Publisher{ID: strconv.FormatFloat(gumgumExt.PubID, 'f', -1, 64)}
+				}
 			}
+
+			validImps = append(validImps, imp)
 		}
 	}
 
@@ -60,8 +59,6 @@ func (g *GumGumAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	request.Imp = validImps
 
 	if request.Site != nil {
-		siteCopy := *request.Site
-		siteCopy.ID = trackingId
 		request.Site = &siteCopy
 	}
 
@@ -127,13 +124,13 @@ func (g *GumGumAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalR
 	return bidResponse, errs
 }
 
-func preprocess(imp *openrtb2.Imp) (string, error) {
+func preprocess(imp *openrtb2.Imp) (*openrtb_ext.ExtImpGumGum, error) {
 	var bidderExt adapters.ExtImpBidder
 	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
 		err = &errortypes.BadInput{
 			Message: err.Error(),
 		}
-		return "", err
+		return nil, err
 	}
 
 	var gumgumExt openrtb_ext.ExtImpGumGum
@@ -141,11 +138,35 @@ func preprocess(imp *openrtb2.Imp) (string, error) {
 		err = &errortypes.BadInput{
 			Message: err.Error(),
 		}
-		return "", err
+		return nil, err
 	}
 
-	zone := gumgumExt.Zone
-	return zone, nil
+	if imp.Banner != nil && imp.Banner.W == nil && imp.Banner.H == nil && len(imp.Banner.Format) > 0 {
+		bannerCopy := *imp.Banner
+		format := bannerCopy.Format[0]
+		bannerCopy.W = &(format.W)
+		bannerCopy.H = &(format.H)
+		imp.Banner = &bannerCopy
+	}
+
+	if imp.Video != nil {
+		err := validateVideoParams(imp.Video)
+		if err != nil {
+			return nil, err
+		}
+
+		if gumgumExt.IrisID != "" {
+			videoCopy := *imp.Video
+			videoExt := openrtb_ext.ExtImpGumGumVideo{IrisID: gumgumExt.IrisID}
+			videoCopy.Ext, err = json.Marshal(&videoExt)
+			if err != nil {
+				return nil, err
+			}
+			imp.Video = &videoCopy
+		}
+	}
+
+	return &gumgumExt, nil
 }
 
 func getMediaTypeForImpID(impID string, imps []openrtb2.Imp) openrtb_ext.BidType {

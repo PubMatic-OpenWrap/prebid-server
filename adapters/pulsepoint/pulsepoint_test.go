@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 
 	"bytes"
 	"context"

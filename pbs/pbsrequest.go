@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/cache"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/stored_requests"
@@ -20,7 +21,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -84,14 +84,14 @@ type PBSVideo struct {
 }
 
 type AdUnit struct {
-	Code       string           `json:"code"`
-	TopFrame   int8             `json:"is_top_frame"`
+	Code       string            `json:"code"`
+	TopFrame   int8              `json:"is_top_frame"`
 	Sizes      []openrtb2.Format `json:"sizes"`
-	Bids       []Bids           `json:"bids"`
-	ConfigID   string           `json:"config_id"`
-	MediaTypes []string         `json:"media_types"`
-	Instl      int8             `json:"instl"`
-	Video      PBSVideo         `json:"video"`
+	Bids       []Bids            `json:"bids"`
+	ConfigID   string            `json:"config_id"`
+	MediaTypes []string          `json:"media_types"`
+	Instl      int8              `json:"instl"`
+	Video      PBSVideo          `json:"video"`
 }
 
 type PBSAdUnit struct {
@@ -153,27 +153,27 @@ func (bidder *PBSBidder) LookupAdUnit(Code string) (unit *PBSAdUnit) {
 }
 
 type PBSRequest struct {
-	AccountID     string          `json:"account_id"`
-	Tid           string          `json:"tid"`
-	CacheMarkup   int8            `json:"cache_markup"`
-	SortBids      int8            `json:"sort_bids"`
-	MaxKeyLength  int8            `json:"max_key_length"`
-	Secure        int8            `json:"secure"`
-	TimeoutMillis int64           `json:"timeout_millis"`
-	AdUnits       []AdUnit        `json:"ad_units"`
-	IsDebug       bool            `json:"is_debug"`
+	AccountID     string           `json:"account_id"`
+	Tid           string           `json:"tid"`
+	CacheMarkup   int8             `json:"cache_markup"`
+	SortBids      int8             `json:"sort_bids"`
+	MaxKeyLength  int8             `json:"max_key_length"`
+	Secure        int8             `json:"secure"`
+	TimeoutMillis int64            `json:"timeout_millis"`
+	AdUnits       []AdUnit         `json:"ad_units"`
+	IsDebug       bool             `json:"is_debug"`
 	App           *openrtb2.App    `json:"app"`
 	Device        *openrtb2.Device `json:"device"`
-	PBSUser       json.RawMessage `json:"user"`
-	SDK           *SDK            `json:"sdk"`
+	PBSUser       json.RawMessage  `json:"user"`
+	SDK           *SDK             `json:"sdk"`
 
 	// internal
 	Bidders []*PBSBidder        `json:"-"`
-	User    *openrtb2.User       `json:"-"`
+	User    *openrtb2.User      `json:"-"`
 	Cookie  *usersync.PBSCookie `json:"-"`
 	Url     string              `json:"-"`
 	Domain  string              `json:"-"`
-	Regs    *openrtb2.Regs       `json:"regs"`
+	Regs    *openrtb2.Regs      `json:"-"`
 	Start   time.Time
 }
 

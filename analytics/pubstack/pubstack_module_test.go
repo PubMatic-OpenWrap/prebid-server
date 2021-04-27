@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/stretchr/testify/assert"
 )
 

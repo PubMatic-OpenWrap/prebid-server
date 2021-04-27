@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 type ImprovedigitalAdapter struct {
@@ -112,6 +112,10 @@ func getMediaTypeForImp(impID string, imps []openrtb2.Imp) (openrtb_ext.BidType,
 
 			if imp.Video != nil {
 				return openrtb_ext.BidTypeVideo, nil
+			}
+
+			if imp.Native != nil {
+				return openrtb_ext.BidTypeNative, nil
 			}
 
 			return "", &errortypes.BadServerResponse{

@@ -15,19 +15,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/glog"
+	nativeRequests "github.com/mxmCherry/openrtb/v15/native1/request"
+	nativeResponse "github.com/mxmCherry/openrtb/v15/native1/response"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	nativeRequests "github.com/mxmCherry/openrtb/v15/native1/request"
-	nativeResponse "github.com/mxmCherry/openrtb/v15/native1/response"
 )
 
 // TestSingleBidder makes sure that the following things work if the Bidder needs only one request.
@@ -36,13 +36,13 @@ import (
 // 2. The returned values are correct for a non-test bid.
 func TestSingleBidder(t *testing.T) {
 	type aTest struct {
-		debugInfo    *adapters.DebugInfo
+		debugInfo    *config.DebugInfo
 		httpCallsLen int
 	}
 
 	testCases := []*aTest{
-		{&adapters.DebugInfo{Allow: false}, 0},
-		{&adapters.DebugInfo{Allow: true}, 1},
+		{&config.DebugInfo{Allow: false}, 0},
+		{&config.DebugInfo{Allow: true}, 1},
 	}
 
 	respStatus := 200
@@ -71,7 +71,6 @@ func TestSingleBidder(t *testing.T) {
 	ctx = context.WithValue(ctx, DebugContextKey, true)
 
 	for _, test := range testCases {
-
 		mockBidderResponse := &adapters.BidderResponse{
 			Bids: []*adapters.TypedBid{
 				{
@@ -109,8 +108,12 @@ func TestSingleBidder(t *testing.T) {
 		}
 
 		// Make sure the returned values are what we expect
-		if len(errs) != 0 {
+		if len(errortypes.FatalOnly(errs)) != 0 {
 			t.Errorf("bidder.Bid returned %d errors. Expected 0", len(errs))
+		}
+
+		if !test.debugInfo.Allow && len(errortypes.WarningOnly(errs)) != 1 {
+			t.Errorf("bidder.Bid returned %d warnings. Expected 1", len(errs))
 		}
 		if len(seatBid.bids) != len(mockBidderResponse.Bids) {
 			t.Fatalf("Expected %d bids. Got %d", len(mockBidderResponse.Bids), len(seatBid.bids))
@@ -135,11 +138,49 @@ func TestSingleBidder(t *testing.T) {
 		if len(seatBid.httpCalls) != test.httpCallsLen {
 			t.Errorf("The bidder shouldn't log HttpCalls when request.test == 0. Found %d", len(seatBid.httpCalls))
 		}
-
-		if len(seatBid.ext) != 0 {
-			t.Errorf("The bidder shouldn't define any seatBid.ext. Got %s", string(seatBid.ext))
-		}
 	}
+}
+
+func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
+	server := httptest.NewServer(mockHandler(200, "getBody", "responseJson"))
+	defer server.Close()
+
+	requestHeaders := http.Header{}
+	requestHeaders.Add("Content-Type", "application/json")
+	requestHeaders.Add("Authorization", "anySecret")
+
+	bidderImpl := &goodSingleBidder{
+		httpRequest: &adapters.RequestData{
+			Method:  "POST",
+			Uri:     server.URL,
+			Body:    []byte("requestJson"),
+			Headers: requestHeaders,
+		},
+		bidResponse: &adapters.BidderResponse{
+			Bids: []*adapters.TypedBid{},
+		},
+	}
+
+	debugInfo := &config.DebugInfo{Allow: true}
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, DebugContextKey, true)
+
+	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, debugInfo)
+	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
+	seatBid, errs := bidder.requestBid(ctx, &openrtb2.BidRequest{}, "test", 1, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+
+	expectedHttpCalls := []*openrtb_ext.ExtHttpCall{
+		{
+			Uri:            server.URL,
+			RequestBody:    "requestJson",
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}},
+			ResponseBody:   "responseJson",
+			Status:         200,
+		},
+	}
+
+	assert.Empty(t, errs)
+	assert.ElementsMatch(t, seatBid.httpCalls, expectedHttpCalls)
 }
 
 // TestMultiBidder makes sure all the requests get sent, and the responses processed.
@@ -891,86 +932,204 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 	}
 }
 
-// TestBadResponseLogging makes sure that openrtb_ext works properly on malformed HTTP requests.
-func TestBadRequestLogging(t *testing.T) {
-	info := &httpCallInfo{
-		err: errors.New("Bad request"),
+func TestMakeExt(t *testing.T) {
+	testCases := []struct {
+		description string
+		given       *httpCallInfo
+		expected    *openrtb_ext.ExtHttpCall
+	}{
+		{
+			description: "Nil",
+			given:       nil,
+			expected:    &openrtb_ext.ExtHttpCall{},
+		},
+		{
+			description: "Empty",
+			given: &httpCallInfo{
+				err:      nil,
+				response: nil,
+				request:  nil,
+			},
+			expected: &openrtb_ext.ExtHttpCall{},
+		},
+		{
+			description: "Request & Response - No Error",
+			given: &httpCallInfo{
+				err: nil,
+				request: &adapters.RequestData{
+					Uri:     "requestUri",
+					Body:    []byte("requestBody"),
+					Headers: makeHeader(map[string][]string{"Key1": {"value1", "value2"}}),
+				},
+				response: &adapters.ResponseData{
+					Body:       []byte("responseBody"),
+					StatusCode: 999,
+				},
+			},
+			expected: &openrtb_ext.ExtHttpCall{
+				Uri:            "requestUri",
+				RequestBody:    "requestBody",
+				RequestHeaders: map[string][]string{"Key1": {"value1", "value2"}},
+				ResponseBody:   "responseBody",
+				Status:         999,
+			},
+		},
+		{
+			description: "Request & Response - No Error with Authorization removal",
+			given: &httpCallInfo{
+				err: nil,
+				request: &adapters.RequestData{
+					Uri:     "requestUri",
+					Body:    []byte("requestBody"),
+					Headers: makeHeader(map[string][]string{"Key1": {"value1", "value2"}, "Authorization": {"secret"}}),
+				},
+				response: &adapters.ResponseData{
+					Body:       []byte("responseBody"),
+					StatusCode: 999,
+				},
+			},
+			expected: &openrtb_ext.ExtHttpCall{
+				Uri:            "requestUri",
+				RequestBody:    "requestBody",
+				RequestHeaders: map[string][]string{"Key1": {"value1", "value2"}},
+				ResponseBody:   "responseBody",
+				Status:         999,
+			},
+		},
+		{
+			description: "Request & Response - No Error with nil header",
+			given: &httpCallInfo{
+				err: nil,
+				request: &adapters.RequestData{
+					Uri:     "requestUri",
+					Body:    []byte("requestBody"),
+					Headers: nil,
+				},
+				response: &adapters.ResponseData{
+					Body:       []byte("responseBody"),
+					StatusCode: 999,
+				},
+			},
+			expected: &openrtb_ext.ExtHttpCall{
+				Uri:            "requestUri",
+				RequestBody:    "requestBody",
+				RequestHeaders: nil,
+				ResponseBody:   "responseBody",
+				Status:         999,
+			},
+		},
+		{
+			description: "Request & Response - Error",
+			given: &httpCallInfo{
+				err: errors.New("error"),
+				request: &adapters.RequestData{
+					Uri:     "requestUri",
+					Body:    []byte("requestBody"),
+					Headers: makeHeader(map[string][]string{"Key1": {"value1", "value2"}}),
+				},
+				response: &adapters.ResponseData{
+					Body:       []byte("responseBody"),
+					StatusCode: 999,
+				},
+			},
+			expected: &openrtb_ext.ExtHttpCall{
+				Uri:            "requestUri",
+				RequestBody:    "requestBody",
+				RequestHeaders: map[string][]string{"Key1": {"value1", "value2"}},
+			},
+		},
+		{
+			description: "Request Only",
+			given: &httpCallInfo{
+				err: nil,
+				request: &adapters.RequestData{
+					Uri:     "requestUri",
+					Body:    []byte("requestBody"),
+					Headers: makeHeader(map[string][]string{"Key1": {"value1", "value2"}}),
+				},
+				response: nil,
+			},
+			expected: &openrtb_ext.ExtHttpCall{
+				Uri:            "requestUri",
+				RequestBody:    "requestBody",
+				RequestHeaders: map[string][]string{"Key1": {"value1", "value2"}},
+			},
+		}, {
+			description: "Response Only",
+			given: &httpCallInfo{
+				err: nil,
+				response: &adapters.ResponseData{
+					Body:       []byte("responseBody"),
+					StatusCode: 999,
+				},
+			},
+			expected: &openrtb_ext.ExtHttpCall{},
+		},
 	}
-	ext := makeExt(info)
-	if ext.Uri != "" {
-		t.Errorf("The URI should be empty. Got %s", ext.Uri)
-	}
-	if ext.RequestBody != "" {
-		t.Errorf("The request body should be empty. Got %s", ext.RequestBody)
-	}
-	if ext.ResponseBody != "" {
-		t.Errorf("The response body should be empty. Got %s", ext.ResponseBody)
-	}
-	if ext.Status != 0 {
-		t.Errorf("The Status code should be 0. Got %d", ext.Status)
-	}
-	if len(ext.RequestHeaders) > 0 {
-		t.Errorf("The request headers should be empty. Got %s", ext.RequestHeaders)
+
+	for _, test := range testCases {
+		result := makeExt(test.given)
+		assert.Equal(t, test.expected, result, test.description)
 	}
 }
 
-// TestBadResponseLogging makes sure that openrtb_ext works properly if we don't get a sensible HTTP response.
-func TestBadResponseLogging(t *testing.T) {
-	info := &httpCallInfo{
-		request: &adapters.RequestData{
-			Uri:  "test.com",
-			Body: []byte("request body"),
-			Headers: http.Header{
-				"header-1": []string{"value-1"},
-			},
+func TestFilterHeader(t *testing.T) {
+	testCases := []struct {
+		description string
+		given       http.Header
+		expected    http.Header
+	}{
+		{
+			description: "Nil",
+			given:       nil,
+			expected:    nil,
 		},
-		err: errors.New("Bad response"),
+		{
+			description: "Empty",
+			given:       http.Header{},
+			expected:    http.Header{},
+		},
+		{
+			description: "One",
+			given:       makeHeader(map[string][]string{"Key1": {"value1"}}),
+			expected:    makeHeader(map[string][]string{"Key1": {"value1"}}),
+		},
+		{
+			description: "Many",
+			given:       makeHeader(map[string][]string{"Key1": {"value1"}, "Key2": {"value2a", "value2b"}}),
+			expected:    makeHeader(map[string][]string{"Key1": {"value1"}, "Key2": {"value2a", "value2b"}}),
+		},
+		{
+			description: "Authorization Header Omitted",
+			given:       makeHeader(map[string][]string{"authorization": {"secret"}}),
+			expected:    http.Header{},
+		},
+		{
+			description: "Authorization Header Omitted - Case Insensitive",
+			given:       makeHeader(map[string][]string{"AuThOrIzAtIoN": {"secret"}}),
+			expected:    http.Header{},
+		},
+		{
+			description: "Authorization Header Omitted + Other Keys",
+			given:       makeHeader(map[string][]string{"authorization": {"secret"}, "Key1": {"value1"}}),
+			expected:    makeHeader(map[string][]string{"Key1": {"value1"}}),
+		},
 	}
-	ext := makeExt(info)
-	if ext.Uri != info.request.Uri {
-		t.Errorf("The URI should be test.com. Got %s", ext.Uri)
+
+	for _, test := range testCases {
+		result := filterHeader(test.given)
+		assert.Equal(t, test.expected, result, test.description)
 	}
-	if ext.RequestBody != string(info.request.Body) {
-		t.Errorf("The request body should be empty. Got %s", ext.RequestBody)
-	}
-	if ext.ResponseBody != "" {
-		t.Errorf("The response body should be empty. Got %s", ext.ResponseBody)
-	}
-	if ext.Status != 0 {
-		t.Errorf("The Status code should be 0. Got %d", ext.Status)
-	}
-	assert.Equal(t, info.request.Headers, http.Header(ext.RequestHeaders), "The request headers should be \"header-1:value-1\"")
 }
 
-// TestSuccessfulResponseLogging makes sure that openrtb_ext works properly if the HTTP request is successful.
-func TestSuccessfulResponseLogging(t *testing.T) {
-	info := &httpCallInfo{
-		request: &adapters.RequestData{
-			Uri:  "test.com",
-			Body: []byte("request body"),
-			Headers: http.Header{
-				"header-1": []string{"value-1", "value-2"},
-			},
-		},
-		response: &adapters.ResponseData{
-			StatusCode: 200,
-			Body:       []byte("response body"),
-		},
+func makeHeader(v map[string][]string) http.Header {
+	h := http.Header{}
+	for key, values := range v {
+		for _, value := range values {
+			h.Add(key, value)
+		}
 	}
-	ext := makeExt(info)
-	if ext.Uri != info.request.Uri {
-		t.Errorf("The URI should be test.com. Got %s", ext.Uri)
-	}
-	if ext.RequestBody != string(info.request.Body) {
-		t.Errorf("The request body should be \"request body\". Got %s", ext.RequestBody)
-	}
-	if ext.ResponseBody != string(info.response.Body) {
-		t.Errorf("The response body should be \"response body\". Got %s", ext.ResponseBody)
-	}
-	if ext.Status != info.response.StatusCode {
-		t.Errorf("The Status code should be 0. Got %d", ext.Status)
-	}
-	assert.Equal(t, info.request.Headers, http.Header(ext.RequestHeaders), "The request headers should be \"%s\". Got %s", info.request.Headers, ext.RequestHeaders)
+	return h
 }
 
 func TestMobileNativeTypes(t *testing.T) {
@@ -1209,6 +1368,44 @@ func TestSetAssetTypes(t *testing.T) {
 			expectedErr: "Response has an Image asset with ID:1 present that doesn't exist in the request",
 			desc:        "Assets with same ID in the req and resp are of different types",
 		},
+		{
+			respAsset: nativeResponse.Asset{
+				Img: &nativeResponse.Image{
+					URL: "http://some-url",
+				},
+			},
+			nativeReq: nativeRequests.Request{
+				Assets: []nativeRequests.Asset{
+					{
+						ID: 1,
+						Img: &nativeRequests.Image{
+							Type: 2,
+						},
+					},
+				},
+			},
+			expectedErr: "Response Image asset doesn't have an ID",
+			desc:        "Response Image without an ID",
+		},
+		{
+			respAsset: nativeResponse.Asset{
+				Data: &nativeResponse.Data{
+					Label: "some label",
+				},
+			},
+			nativeReq: nativeRequests.Request{
+				Assets: []nativeRequests.Asset{
+					{
+						ID: 1,
+						Data: &nativeRequests.Data{
+							Type: 2,
+						},
+					},
+				},
+			},
+			expectedErr: "Response Data asset doesn't have an ID",
+			desc:        "Response Data asset without an ID",
+		},
 	}
 
 	for _, test := range testCases {
@@ -1437,13 +1634,13 @@ func TestTimeoutNotificationOn(t *testing.T) {
 }
 
 func TestParseDebugInfoTrue(t *testing.T) {
-	debugInfo := &adapters.DebugInfo{Allow: true}
+	debugInfo := &config.DebugInfo{Allow: true}
 	resDebugInfo := parseDebugInfo(debugInfo)
 	assert.True(t, resDebugInfo, "Debug Allow value should be true")
 }
 
 func TestParseDebugInfoFalse(t *testing.T) {
-	debugInfo := &adapters.DebugInfo{Allow: false}
+	debugInfo := &config.DebugInfo{Allow: false}
 	resDebugInfo := parseDebugInfo(debugInfo)
 	assert.False(t, resDebugInfo, "Debug Allow value should be false")
 }
@@ -1454,15 +1651,15 @@ func TestParseDebugInfoIsNil(t *testing.T) {
 }
 
 func wrapWithBidderInfo(bidder adapters.Bidder) adapters.Bidder {
-	bidderInfo := adapters.BidderInfo{
-		Status: adapters.StatusActive,
-		Capabilities: &adapters.CapabilitiesInfo{
-			App: &adapters.PlatformInfo{
+	bidderInfo := config.BidderInfo{
+		Enabled: true,
+		Capabilities: &config.CapabilitiesInfo{
+			App: &config.PlatformInfo{
 				MediaTypes: []openrtb_ext.BidType{openrtb_ext.BidTypeBanner},
 			},
 		},
 	}
-	return adapters.EnforceBidderInfo(bidder, bidderInfo)
+	return adapters.BuildInfoAwareBidder(bidder, bidderInfo)
 }
 
 type goodSingleBidder struct {

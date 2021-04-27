@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prebid/prebid-server/analytics/pubstack/helpers"
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/analytics/pubstack/helpers"
 
 	"github.com/prebid/prebid-server/analytics"
 )

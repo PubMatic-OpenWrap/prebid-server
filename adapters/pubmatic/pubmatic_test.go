@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/cache/dummycache"
@@ -19,7 +20,6 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 func TestJsonSamples(t *testing.T) {

@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 const Seat = "beachfront"
@@ -24,12 +23,13 @@ const defaultVideoEndpoint = "https://reachms.bfmio.com/bid.json?exchange_id"
 const nurlVideoEndpointSuffix = "&prebidserver"
 
 const beachfrontAdapterName = "BF_PREBID_S2S"
-const beachfrontAdapterVersion = "0.9.1"
+const beachfrontAdapterVersion = "0.9.2"
 
 const minBidFloor = 0.01
 
-const DefaultVideoWidth = 300
-const DefaultVideoHeight = 250
+const defaultVideoWidth = 300
+const defaultVideoHeight = 250
+const fakeIP = "255.255.255.255"
 
 type BeachfrontAdapter struct {
 	bannerEndpoint string
@@ -76,6 +76,7 @@ type beachfrontBannerRequest struct {
 	AdapterVersion string           `json:"adapterVersion"`
 	IP             string           `json:"ip"`
 	RequestID      string           `json:"requestId"`
+	Real204        bool             `json:"real204"`
 }
 
 type beachfrontSlot struct {
@@ -249,16 +250,12 @@ func getAppId(ext openrtb_ext.ExtImpBeachfront, media openrtb_ext.BidType) (stri
 	var appid string
 	var error error
 
-	if fmt.Sprintf("%s", reflect.TypeOf(ext.AppId)) == "string" &&
-		ext.AppId != "" {
-
+	if ext.AppId != "" {
 		appid = ext.AppId
-	} else if fmt.Sprintf("%s", reflect.TypeOf(ext.AppIds)) == "openrtb_ext.ExtImpBeachfrontAppIds" {
-		if media == openrtb_ext.BidTypeVideo && ext.AppIds.Video != "" {
-			appid = ext.AppIds.Video
-		} else if media == openrtb_ext.BidTypeBanner && ext.AppIds.Banner != "" {
-			appid = ext.AppIds.Banner
-		}
+	} else if media == openrtb_ext.BidTypeVideo && ext.AppIds.Video != "" {
+		appid = ext.AppIds.Video
+	} else if media == openrtb_ext.BidTypeBanner && ext.AppIds.Banner != "" {
+		appid = ext.AppIds.Banner
 	} else {
 		error = errors.New("unable to determine the appId(s) from the supplied extension")
 	}
@@ -317,7 +314,7 @@ func getBannerRequest(request *openrtb2.BidRequest) (beachfrontBannerRequest, []
 	}
 
 	if request.Device != nil {
-		bfr.IP = getIP(request.Device.IP)
+		bfr.IP = request.Device.IP
 		bfr.DeviceModel = request.Device.Model
 		bfr.DeviceOs = request.Device.OS
 		if request.Device.DNT != nil {
@@ -371,6 +368,7 @@ func getBannerRequest(request *openrtb2.BidRequest) (beachfrontBannerRequest, []
 	if request.Imp[0].Secure != nil {
 		bfr.Secure = *request.Imp[0].Secure
 	}
+	bfr.Real204 = true
 
 	return bfr, errs
 }
@@ -399,6 +397,7 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 		}
 
 		appid, err := getAppId(beachfrontExt, openrtb_ext.BidTypeVideo)
+		bfReqs[i].AppId = appid
 
 		if err != nil {
 			// Failed to get an appid, so this request is junk.
@@ -407,20 +406,30 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 			continue
 		}
 
-		bfReqs[i].AppId = appid
-
-		if beachfrontExt.VideoResponseType != "" {
-			bfReqs[i].VideoResponseType = beachfrontExt.VideoResponseType
-		} else {
-			bfReqs[i].VideoResponseType = "adm"
-		}
-
 		bfReqs[i].Request = *request
 		var secure int8
 
-		if bfReqs[i].Request.Site != nil && bfReqs[i].Request.Site.Domain == "" && bfReqs[i].Request.Site.Page != "" {
-			bfReqs[i].Request.Site.Domain = getDomain(bfReqs[i].Request.Site.Page)
+		var deviceCopy openrtb2.Device
+		if bfReqs[i].Request.Device == nil {
+			deviceCopy = openrtb2.Device{}
+		} else {
+			deviceCopy = *bfReqs[i].Request.Device
+		}
 
+		if beachfrontExt.VideoResponseType == "nurl" {
+			bfReqs[i].VideoResponseType = "nurl"
+		} else {
+			bfReqs[i].VideoResponseType = "adm"
+
+			if deviceCopy.IP == "" {
+				deviceCopy.IP = fakeIP
+			}
+		}
+
+		if bfReqs[i].Request.Site != nil && bfReqs[i].Request.Site.Domain == "" && bfReqs[i].Request.Site.Page != "" {
+			siteCopy := *bfReqs[i].Request.Site
+			siteCopy.Domain = getDomain(bfReqs[i].Request.Site.Page)
+			bfReqs[i].Request.Site = &siteCopy
 			secure = isSecure(bfReqs[i].Request.Site.Page)
 		}
 
@@ -433,13 +442,13 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 						fmt.Sprintf("%s.%s", chunks[len(chunks)-(len(chunks)-1)], chunks[0])
 				}
 			}
-
 		}
 
-		if bfReqs[i].Request.Device != nil && bfReqs[i].Request.Device.DeviceType == 0 {
+		if deviceCopy.DeviceType == 0 {
 			// More fine graned deviceType methods will be added in the future
-			bfReqs[i].Request.Device.DeviceType = fallBackDeviceType(request)
+			deviceCopy.DeviceType = fallBackDeviceType(request)
 		}
+		bfReqs[i].Request.Device = &deviceCopy
 
 		imp := request.Imp[i]
 
@@ -454,8 +463,8 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 		}
 
 		if imp.Video.H == 0 && imp.Video.W == 0 {
-			imp.Video.W = DefaultVideoWidth
-			imp.Video.H = DefaultVideoHeight
+			imp.Video.W = defaultVideoWidth
+			imp.Video.H = defaultVideoHeight
 		}
 
 		if len(bfReqs[i].Request.Cur) == 0 {
@@ -464,12 +473,9 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 		}
 
 		bfReqs[i].Request.Imp = nil
-		bfReqs[i].Request.Imp = make([]openrtb2.Imp, 1, 1)
+		bfReqs[i].Request.Imp = make([]openrtb2.Imp, 1)
 		bfReqs[i].Request.Imp[0] = imp
 
-		if bfReqs[i].Request.Device != nil && bfReqs[i].Request.Device.IP != "" {
-			bfReqs[i].Request.Device.IP = getIP(bfReqs[i].Request.Device.IP)
-		}
 	}
 
 	// Strip out any failed requests
@@ -483,16 +489,19 @@ func getVideoRequests(request *openrtb2.BidRequest) ([]beachfrontVideoRequest, [
 }
 
 func (a *BeachfrontAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	var bids []openrtb2.Bid
-	var errs []error
-
-	if response.StatusCode == http.StatusNoContent || (response.StatusCode == http.StatusOK && len(response.Body) <= 2) {
+	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
 	}
 
-	if response.StatusCode == http.StatusBadRequest {
+	if response.StatusCode >= http.StatusInternalServerError {
+		return nil, []error{&errortypes.BadServerResponse{
+			Message: fmt.Sprintf("server error status code %d from %s. Run with request.debug = 1 for more info", response.StatusCode, externalRequest.Uri),
+		}}
+	}
+
+	if response.StatusCode >= http.StatusBadRequest {
 		return nil, []error{&errortypes.BadInput{
-			Message: fmt.Sprintf("bad request status code %d from %s. Run with request.debug = 1 for more info", response.StatusCode, externalRequest.Uri),
+			Message: fmt.Sprintf("request error status code %d from %s. Run with request.debug = 1 for more info", response.StatusCode, externalRequest.Uri),
 		}}
 	}
 
@@ -500,6 +509,8 @@ func (a *BeachfrontAdapter) MakeBids(internalRequest *openrtb2.BidRequest, exter
 		return nil, []error{fmt.Errorf("unexpected status code %d from %s. Run with request.debug = 1 for more info", response.StatusCode, externalRequest.Uri)}
 	}
 
+	var bids []openrtb2.Bid
+	var errs = make([]error, 0)
 	var xtrnal openrtb2.BidRequest
 
 	// For video, which uses RTB for the external request, this will unmarshal as expected. For banner, it will
@@ -516,6 +527,7 @@ func (a *BeachfrontAdapter) MakeBids(internalRequest *openrtb2.BidRequest, exter
 
 	var dur beachfrontVideoBidExtension
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(BidCapacity)
+
 	for i := 0; i < len(bids); i++ {
 
 		// If we unmarshal without an error, this is an AdM video
@@ -550,18 +562,15 @@ func (a *BeachfrontAdapter) getBidType(externalRequest *adapters.RequestData) op
 
 func postprocess(response *adapters.ResponseData, xtrnal openrtb2.BidRequest, uri string, id string) ([]openrtb2.Bid, []error) {
 	var beachfrontResp []beachfrontResponseSlot
-	var errs = make([]error, 0)
 
 	var openrtbResp openrtb2.BidResponse
 
-	// try it as a video
-	if err := json.Unmarshal(response.Body, &openrtbResp); err != nil {
-		errs = append(errs, err)
+	if err := json.Unmarshal(response.Body, &openrtbResp); err != nil || len(openrtbResp.SeatBid) == 0 {
 
-		// try it as a banner
 		if err := json.Unmarshal(response.Body, &beachfrontResp); err != nil {
-			errs = append(errs, err)
-			return nil, errs
+			return nil, []error{&errortypes.BadServerResponse{
+				Message: fmt.Sprint("server response failed to unmarshal as valid rtb. Run with request.debug = 1 for more info"),
+			}}
 		} else {
 			return postprocessBanner(beachfrontResp, id)
 		}
@@ -669,18 +678,12 @@ func isSecure(page string) int8 {
 
 }
 
-func getIP(ip string) string {
-	// This will only effect testing. The backend will return "" for localhost IPs,
-	// and seems not to know what IPv6 is, so just setting it to one that is not likely to
-	// be used.
-	if ip == "" || ip == "::1" || ip == "127.0.0.1" {
-		return "192.168.255.255"
-	}
-	return ip
-}
-
 func removeVideoElement(slice []beachfrontVideoRequest, s int) []beachfrontVideoRequest {
-	return append(slice[:s], slice[s+1:]...)
+	if len(slice) >= s+1 {
+		return append(slice[:s], slice[s+1:]...)
+	}
+
+	return []beachfrontVideoRequest{}
 }
 
 // Builder builds a new instance of the Beachfront adapter for the given bidder with the given config.

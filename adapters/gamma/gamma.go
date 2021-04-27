@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 type GammaAdapter struct {
@@ -20,8 +20,8 @@ type GammaAdapter struct {
 
 type gammaBid struct {
 	openrtb2.Bid        //base
-	VastXML     string `json:"vastXml,omitempty"`
-	VastURL     string `json:"vastUrl,omitempty"`
+	VastXML      string `json:"vastXml,omitempty"`
+	VastURL      string `json:"vastUrl,omitempty"`
 }
 
 type gammaSeatBid struct {
@@ -30,13 +30,13 @@ type gammaSeatBid struct {
 	Ext   json.RawMessage `json:"ext,omitempty"`
 }
 type gammaBidResponse struct {
-	ID         string                   `json:"id"`
-	SeatBid    []gammaSeatBid           `json:"seatbid,omitempty"`
-	BidID      string                   `json:"bidid,omitempty"`
-	Cur        string                   `json:"cur,omitempty"`
-	CustomData string                   `json:"customdata,omitempty"`
+	ID         string                    `json:"id"`
+	SeatBid    []gammaSeatBid            `json:"seatbid,omitempty"`
+	BidID      string                    `json:"bidid,omitempty"`
+	Cur        string                    `json:"cur,omitempty"`
+	CustomData string                    `json:"customdata,omitempty"`
 	NBR        *openrtb2.NoBidReasonCode `json:"nbr,omitempty"`
-	Ext        json.RawMessage          `json:"ext,omitempty"`
+	Ext        json.RawMessage           `json:"ext,omitempty"`
 }
 
 func checkParams(gammaExt openrtb_ext.ExtImpGamma) error {

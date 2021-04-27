@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 )
@@ -296,7 +296,6 @@ func TestMakeRequestsNoUser(t *testing.T) {
 }
 
 func TestMakeRequests(t *testing.T) {
-	//server := httptest.NewServer(http.HandlerFunc(DummyDmxServer))
 	var w, h int = 300, 250
 
 	var width, height int64 = int64(w), int64(h)

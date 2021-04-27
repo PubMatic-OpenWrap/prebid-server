@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/pbs"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -93,7 +93,7 @@ func (a *ConversantLegacyAdapter) Call(ctx context.Context, req *pbs.PBSRequest,
 
 		// Fill in additional impression info
 
-		imp.DisplayManager = "pubmatic-openwrap"
+		imp.DisplayManager = "prebid-s2s"
 		imp.DisplayManagerVer = "1.0.1"
 		imp.BidFloor = params.BidFloor
 		imp.TagID = params.TagID

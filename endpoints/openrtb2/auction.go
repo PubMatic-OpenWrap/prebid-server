@@ -13,6 +13,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
+	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/gofrs/uuid"
+	"github.com/golang/glog"
+	"github.com/julienschmidt/httprouter"
+	"github.com/mxmCherry/openrtb/v15/native1"
+	nativeRequests "github.com/mxmCherry/openrtb/v15/native1/request"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -22,19 +30,12 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/privacy/ccpa"
+	"github.com/prebid/prebid-server/privacy/lmt"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/httputil"
 	"github.com/prebid/prebid-server/util/iputil"
-	"github.com/buger/jsonparser"
-	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/gofrs/uuid"
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
-	"github.com/mxmCherry/openrtb/v15/native1"
-	nativeRequests "github.com/mxmCherry/openrtb/v15/native1/request"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -138,6 +139,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &labels) {
 		return
 	}
+	warnings := errortypes.WarningOnly(errL)
 
 	ctx := context.Background()
 
@@ -178,6 +180,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		RequestType:  labels.RType,
 		StartTime:    start,
 		LegacyLabels: labels,
+		Warnings:     warnings,
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
@@ -264,6 +267,8 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request) (req *openrtb2
 		return
 	}
 
+	lmt.ModifyForIOS(req)
+
 	errL := deps.validateRequest(req)
 	if len(errL) > 0 {
 		errs = append(errs, errL...)
@@ -335,10 +340,6 @@ func (deps *endpointDeps) validateRequest(req *openrtb2.BidRequest) []error {
 		if err := deps.validateEidPermissions(bidExt, aliases); err != nil {
 			return []error{err}
 		}
-
-		if err := validateSChains(bidExt); err != nil {
-			return []error{err}
-		}
 	}
 
 	if (req.Site == nil && req.App == nil) || (req.Site != nil && req.App != nil) {
@@ -361,11 +362,17 @@ func (deps *endpointDeps) validateRequest(req *openrtb2.BidRequest) []error {
 		return append(errL, err)
 	}
 
+	if err := validateDevice(req.Device); err != nil {
+		return append(errL, err)
+	}
+
 	if ccpaPolicy, err := ccpa.ReadFromRequest(req); err != nil {
 		return append(errL, err)
 	} else if _, err := ccpaPolicy.Parse(exchange.GetValidBidders(aliases)); err != nil {
-		if _, invalidConsent := err.(*errortypes.InvalidPrivacyConsent); invalidConsent {
-			errL = append(errL, &errortypes.InvalidPrivacyConsent{Message: fmt.Sprintf("CCPA consent is invalid and will be ignored. (%v)", err)})
+		if _, invalidConsent := err.(*errortypes.Warning); invalidConsent {
+			errL = append(errL, &errortypes.Warning{
+				Message:     fmt.Sprintf("CCPA consent is invalid and will be ignored. (%v)", err),
+				WarningCode: errortypes.InvalidPrivacyConsentWarningCode})
 			consentWriter := ccpa.ConsentWriter{Consent: ""}
 			if err := consentWriter.Write(req); err != nil {
 				return append(errL, fmt.Errorf("Unable to remove invalid CCPA consent from the request. (%v)", err))
@@ -489,12 +496,12 @@ func (deps *endpointDeps) validateImp(imp *openrtb2.Imp, aliases map[string]stri
 		return []error{err}
 	}
 
-	if imp.Video != nil && len(imp.Video.MIMEs) < 1 {
-		return []error{fmt.Errorf("request.imp[%d].video.mimes must contain at least one supported MIME type", index)}
+	if err := validateVideo(imp.Video, index); err != nil {
+		return []error{err}
 	}
 
-	if imp.Audio != nil && len(imp.Audio.MIMEs) < 1 {
-		return []error{fmt.Errorf("request.imp[%d].audio.mimes must contain at least one supported MIME type", index)}
+	if err := validateAudio(imp.Audio, index); err != nil {
+		return []error{err}
 	}
 
 	if err := fillAndValidateNative(imp.Native, index); err != nil {
@@ -518,8 +525,17 @@ func validateBanner(banner *openrtb2.Banner, impIndex int) error {
 		return nil
 	}
 
-	// Although these are only deprecated in the spec... since this is a new endpoint, we know nobody uses them yet.
-	// Let's start things off by pointing callers in the right direction.
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if banner.W != nil && *banner.W < 0 {
+		return fmt.Errorf("request.imp[%d].banner.w must be a positive number", impIndex)
+	}
+	if banner.H != nil && *banner.H < 0 {
+		return fmt.Errorf("request.imp[%d].banner.h must be a positive number", impIndex)
+	}
+
+	// The following fields are deprecated in the OpenRTB 2.5 spec but are still present
+	// in the OpenRTB library we use. Enforce they are not specified.
 	if banner.WMin != 0 {
 		return fmt.Errorf("request.imp[%d].banner uses unsupported property: \"wmin\". Use the \"format\" array instead.", impIndex)
 	}
@@ -538,11 +554,66 @@ func validateBanner(banner *openrtb2.Banner, impIndex int) error {
 		return fmt.Errorf("request.imp[%d].banner has no sizes. Define \"w\" and \"h\", or include \"format\" elements.", impIndex)
 	}
 
-	for fmtIndex, format := range banner.Format {
-		if err := validateFormat(&format, impIndex, fmtIndex); err != nil {
+	for i, format := range banner.Format {
+		if err := validateFormat(&format, impIndex, i); err != nil {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func validateVideo(video *openrtb2.Video, impIndex int) error {
+	if video == nil {
+		return nil
+	}
+
+	if len(video.MIMEs) < 1 {
+		return fmt.Errorf("request.imp[%d].video.mimes must contain at least one supported MIME type", impIndex)
+	}
+
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if video.W < 0 {
+		return fmt.Errorf("request.imp[%d].video.w must be a positive number", impIndex)
+	}
+	if video.H < 0 {
+		return fmt.Errorf("request.imp[%d].video.h must be a positive number", impIndex)
+	}
+	if video.MinBitRate < 0 {
+		return fmt.Errorf("request.imp[%d].video.minbitrate must be a positive number", impIndex)
+	}
+	if video.MaxBitRate < 0 {
+		return fmt.Errorf("request.imp[%d].video.maxbitrate must be a positive number", impIndex)
+	}
+
+	return nil
+}
+
+func validateAudio(audio *openrtb2.Audio, impIndex int) error {
+	if audio == nil {
+		return nil
+	}
+
+	if len(audio.MIMEs) < 1 {
+		return fmt.Errorf("request.imp[%d].audio.mimes must contain at least one supported MIME type", impIndex)
+	}
+
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if audio.Sequence < 0 {
+		return fmt.Errorf("request.imp[%d].audio.sequence must be a positive number", impIndex)
+	}
+	if audio.MaxSeq < 0 {
+		return fmt.Errorf("request.imp[%d].audio.maxseq must be a positive number", impIndex)
+	}
+	if audio.MinBitrate < 0 {
+		return fmt.Errorf("request.imp[%d].audio.minbitrate must be a positive number", impIndex)
+	}
+	if audio.MaxBitrate < 0 {
+		return fmt.Errorf("request.imp[%d].audio.maxbitrate must be a positive number", impIndex)
+	}
+
 	return nil
 }
 
@@ -587,38 +658,38 @@ func validateNativeContextTypes(cType native1.ContextType, cSubtype native1.Cont
 		return nil
 	}
 	if cType < native1.ContextTypeContent || cType > native1.ContextTypeProduct {
-		return fmt.Errorf("request.imp[%d].native1.request.context is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
+		return fmt.Errorf("request.imp[%d].native.request.context is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
 	}
 	if cSubtype < 0 {
-		return fmt.Errorf("request.imp[%d].native1.request.contextsubtype value can't be less than 0. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
+		return fmt.Errorf("request.imp[%d].native.request.contextsubtype value can't be less than 0. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
 	}
 	if cSubtype == 0 {
 		return nil
 	}
 
 	if cSubtype >= 500 {
-		return fmt.Errorf("request.imp[%d].native1.request.contextsubtype can't be greater than or equal to 500. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
+		return fmt.Errorf("request.imp[%d].native.request.contextsubtype can't be greater than or equal to 500. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
 	}
 	if cSubtype >= native1.ContextSubTypeGeneral && cSubtype <= native1.ContextSubTypeUserGenerated {
 		if cType != native1.ContextTypeContent {
-			return fmt.Errorf("request.imp[%d].native1.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
+			return fmt.Errorf("request.imp[%d].native.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
 		}
 		return nil
 	}
 	if cSubtype >= native1.ContextSubTypeSocial && cSubtype <= native1.ContextSubTypeChat {
 		if cType != native1.ContextTypeSocial {
-			return fmt.Errorf("request.imp[%d].native1.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
+			return fmt.Errorf("request.imp[%d].native.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
 		}
 		return nil
 	}
 	if cSubtype >= native1.ContextSubTypeSelling && cSubtype <= native1.ContextSubTypeProductReview {
 		if cType != native1.ContextTypeProduct {
-			return fmt.Errorf("request.imp[%d].native1.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
+			return fmt.Errorf("request.imp[%d].native.request.context is %d, but contextsubtype is %d. This is an invalid combination. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex, cType, cSubtype)
 		}
 		return nil
 	}
 
-	return fmt.Errorf("request.imp[%d].native1.request.contextsubtype is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
+	return fmt.Errorf("request.imp[%d].native.request.contextsubtype is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=39", impIndex)
 }
 
 func validateNativePlacementType(pt native1.PlacementType, impIndex int) error {
@@ -627,7 +698,7 @@ func validateNativePlacementType(pt native1.PlacementType, impIndex int) error {
 		return nil
 	}
 	if pt < native1.PlacementTypeFeed || pt > native1.PlacementTypeRecommendationWidget {
-		return fmt.Errorf("request.imp[%d].native1.request.plcmttype is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40", impIndex)
+		return fmt.Errorf("request.imp[%d].native.request.plcmttype is invalid. See https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40", impIndex)
 	}
 	return nil
 }
@@ -658,7 +729,7 @@ func fillAndValidateNativeAssets(assets []nativeRequests.Asset, impIndex int) er
 
 		// Each asset should have a unique ID thats assigned by the caller
 		if _, ok := assetIDs[assets[i].ID]; ok {
-			return fmt.Errorf("request.imp[%d].native1.request.assets[%d].id is already being used by another asset. Each asset ID must be unique.", impIndex, i)
+			return fmt.Errorf("request.imp[%d].native.request.assets[%d].id is already being used by another asset. Each asset ID must be unique.", impIndex, i)
 		}
 
 		assetIDs[assets[i].ID] = struct{}{}
@@ -668,7 +739,7 @@ func fillAndValidateNativeAssets(assets []nativeRequests.Asset, impIndex int) er
 }
 
 func validateNativeAsset(asset nativeRequests.Asset, impIndex int, assetIndex int) error {
-	assetErr := "request.imp[%d].native1.request.assets[%d] must define exactly one of {title, img, video, data}"
+	assetErr := "request.imp[%d].native.request.assets[%d] must define exactly one of {title, img, video, data}"
 	foundType := false
 
 	if asset.Title != nil {
@@ -715,6 +786,38 @@ func validateNativeAsset(asset nativeRequests.Asset, impIndex int, assetIndex in
 	return nil
 }
 
+func validateNativeEventTrackers(trackers []nativeRequests.EventTracker, impIndex int) error {
+	for i := 0; i < len(trackers); i++ {
+		if err := validateNativeEventTracker(trackers[i], impIndex, i); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateNativeAssetTitle(title *nativeRequests.Title, impIndex int, assetIndex int) error {
+	if title.Len < 1 {
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].title.len must be a positive number", impIndex, assetIndex)
+	}
+	return nil
+}
+
+func validateNativeEventTracker(tracker nativeRequests.EventTracker, impIndex int, eventIndex int) error {
+	if tracker.Event < native1.EventTypeImpression || tracker.Event > native1.EventTypeViewableVideo50 {
+		return fmt.Errorf("request.imp[%d].native.request.eventtrackers[%d].event is invalid. See section 7.6: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex)
+	}
+	if len(tracker.Methods) < 1 {
+		return fmt.Errorf("request.imp[%d].native.request.eventtrackers[%d].method is required. See section 7.7: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex)
+	}
+	for methodIndex, method := range tracker.Methods {
+		if method < native1.EventTrackingMethodImage || method > native1.EventTrackingMethodJS {
+			return fmt.Errorf("request.imp[%d].native.request.eventtrackers[%d].methods[%d] is invalid. See section 7.7: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex, methodIndex)
+		}
+	}
+
+	return nil
+}
+
 func validateNativeAssetImage(img *nativeRequests.Image, impIndex int, assetIndex int) error {
 	if img.W < 0 {
 		return fmt.Errorf("request.imp[%d].native.request.assets[%d].img.w must be a positive integer", impIndex, assetIndex)
@@ -731,47 +834,15 @@ func validateNativeAssetImage(img *nativeRequests.Image, impIndex int, assetInde
 	return nil
 }
 
-func validateNativeEventTrackers(trackers []nativeRequests.EventTracker, impIndex int) error {
-	for i := 0; i < len(trackers); i++ {
-		if err := validateNativeEventTracker(trackers[i], impIndex, i); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func validateNativeAssetTitle(title *nativeRequests.Title, impIndex int, assetIndex int) error {
-	if title.Len < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].title.len must be a positive integer", impIndex, assetIndex)
-	}
-	return nil
-}
-
-func validateNativeEventTracker(tracker nativeRequests.EventTracker, impIndex int, eventIndex int) error {
-	if tracker.Event < native1.EventTypeImpression || tracker.Event > native1.EventTypeViewableVideo50 {
-		return fmt.Errorf("request.imp[%d].native1.request.eventtrackers[%d].event is invalid. See section 7.6: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex)
-	}
-	if len(tracker.Methods) < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.eventtrackers[%d].method is required. See section 7.7: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex)
-	}
-	for methodIndex, method := range tracker.Methods {
-		if method < native1.EventTrackingMethodImage || method > native1.EventTrackingMethodJS {
-			return fmt.Errorf("request.imp[%d].native1.request.eventtrackers[%d].methods[%d] is invalid. See section 7.7: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=43", impIndex, eventIndex, methodIndex)
-		}
-	}
-
-	return nil
-}
-
 func validateNativeAssetVideo(video *nativeRequests.Video, impIndex int, assetIndex int) error {
 	if len(video.MIMEs) < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].video.mimes must be an array with at least one MIME type", impIndex, assetIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].video.mimes must be an array with at least one MIME type", impIndex, assetIndex)
 	}
 	if video.MinDuration < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].video.minduration must be a positive integer", impIndex, assetIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].video.minduration must be a positive integer", impIndex, assetIndex)
 	}
 	if video.MaxDuration < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].video.maxduration must be a positive integer", impIndex, assetIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].video.maxduration must be a positive integer", impIndex, assetIndex)
 	}
 	if err := validateNativeVideoProtocols(video.Protocols, impIndex, assetIndex); err != nil {
 		return err
@@ -782,7 +853,7 @@ func validateNativeAssetVideo(video *nativeRequests.Video, impIndex int, assetIn
 
 func validateNativeAssetData(data *nativeRequests.Data, impIndex int, assetIndex int) error {
 	if data.Type < native1.DataAssetTypeSponsored || data.Type > native1.DataAssetTypeCTAText {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].data.type is invalid. See section 7.4: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40", impIndex, assetIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].data.type is invalid. See section 7.4: https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40", impIndex, assetIndex)
 	}
 
 	return nil
@@ -790,7 +861,7 @@ func validateNativeAssetData(data *nativeRequests.Data, impIndex int, assetIndex
 
 func validateNativeVideoProtocols(protocols []native1.Protocol, impIndex int, assetIndex int) error {
 	if len(protocols) < 1 {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].video.protocols must be an array with at least one element", impIndex, assetIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].video.protocols must be an array with at least one element", impIndex, assetIndex)
 	}
 	for i := 0; i < len(protocols); i++ {
 		if err := validateNativeVideoProtocol(protocols[i], impIndex, assetIndex, i); err != nil {
@@ -802,14 +873,33 @@ func validateNativeVideoProtocols(protocols []native1.Protocol, impIndex int, as
 
 func validateNativeVideoProtocol(protocol native1.Protocol, impIndex int, assetIndex int, protocolIndex int) error {
 	if protocol < native1.ProtocolVAST10 || protocol > native1.ProtocolDAAST10Wrapper {
-		return fmt.Errorf("request.imp[%d].native1.request.assets[%d].video.protocols[%d] is invalid. See Section 5.8: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf#page=52", impIndex, assetIndex, protocolIndex)
+		return fmt.Errorf("request.imp[%d].native.request.assets[%d].video.protocols[%d] is invalid. See Section 5.8: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf#page=52", impIndex, assetIndex, protocolIndex)
 	}
 	return nil
 }
 
-func validateFormat(format *openrtb2.Format, impIndex int, formatIndex int) error {
+func validateFormat(format *openrtb2.Format, impIndex, formatIndex int) error {
 	usesHW := format.W != 0 || format.H != 0
 	usesRatios := format.WMin != 0 || format.WRatio != 0 || format.HRatio != 0
+
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if format.W < 0 {
+		return fmt.Errorf("request.imp[%d].banner.format[%d].w must be a positive number", impIndex, formatIndex)
+	}
+	if format.H < 0 {
+		return fmt.Errorf("request.imp[%d].banner.format[%d].h must be a positive number", impIndex, formatIndex)
+	}
+	if format.WRatio < 0 {
+		return fmt.Errorf("request.imp[%d].banner.format[%d].wratio must be a positive number", impIndex, formatIndex)
+	}
+	if format.HRatio < 0 {
+		return fmt.Errorf("request.imp[%d].banner.format[%d].hratio must be a positive number", impIndex, formatIndex)
+	}
+	if format.WMin < 0 {
+		return fmt.Errorf("request.imp[%d].banner.format[%d].wmin must be a positive number", impIndex, formatIndex)
+	}
+
 	if usesHW && usesRatios {
 		return fmt.Errorf("Request imp[%d].banner.format[%d] should define *either* {w, h} *or* {wmin, wratio, hratio}, but not both. If both are valid, send two \"format\" objects in the request.", impIndex, formatIndex)
 	}
@@ -849,19 +939,15 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb2.Imp, aliases map[string]s
 		return []error{err}
 	}
 
-	// Also accept bidder exts within imp[...].ext.prebid.bidder
-	// NOTE: This is not part of the official API yet, so we are not expecting clients
-	// to migrate from imp[...].ext.${BIDDER} to imp[...].ext.prebid.bidder.${BIDDER}
-	// at this time
-	// https://github.com/PubMatic-OpenWrap/prebid-server/pull/846#issuecomment-476352224
-	if rawPrebidExt, ok := bidderExts[openrtb_ext.PrebidExtKey]; ok {
-		var prebidExt openrtb_ext.ExtImpPrebid
-		if err := json.Unmarshal(rawPrebidExt, &prebidExt); err == nil && prebidExt.Bidder != nil {
-			for bidder, ext := range prebidExt.Bidder {
+	// Prefer bidder params from request.imp.ext.prebid.bidder.BIDDER over request.imp.ext.BIDDER
+	// to avoid confusion beteween prebid specific adapter config and other ext protocols.
+	if extPrebidJSON, ok := bidderExts[openrtb_ext.PrebidExtKey]; ok {
+		var extPrebid openrtb_ext.ExtImpPrebid
+		if err := json.Unmarshal(extPrebidJSON, &extPrebid); err == nil && extPrebid.Bidder != nil {
+			for bidder, ext := range extPrebid.Bidder {
 				if ext == nil {
 					continue
 				}
-
 				bidderExts[bidder] = ext
 			}
 		}
@@ -869,7 +955,6 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb2.Imp, aliases map[string]s
 
 	/* Process all the bidder exts in the request */
 	disabledBidders := []string{}
-	validationFailedBidders := []string{}
 	otherExtElements := 0
 	for bidder, ext := range bidderExts {
 		if isBidderToValidate(bidder) {
@@ -879,10 +964,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb2.Imp, aliases map[string]s
 			}
 			if bidderName, isValid := deps.bidderMap[coreBidder]; isValid {
 				if err := deps.paramsValidator.Validate(bidderName, ext); err != nil {
-					validationFailedBidders = append(validationFailedBidders, bidder)
-					msg := fmt.Sprintf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)
-					glog.Errorf("BidderSchemaValidationError: %s", msg)
-					errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
+					return []error{fmt.Errorf("request.imp[%d].ext.%s failed validation.\n%v", impIndex, coreBidder, err)}
 				}
 			} else {
 				if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
@@ -902,15 +984,6 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb2.Imp, aliases map[string]s
 		for _, bidder := range disabledBidders {
 			delete(bidderExts, bidder)
 		}
-	}
-
-	if len(validationFailedBidders) > 0 {
-		for _, bidder := range validationFailedBidders {
-			delete(bidderExts, bidder)
-		}
-	}
-
-	if len(disabledBidders) > 0 || len(validationFailedBidders) > 0 {
 		extJSON, err := json.Marshal(bidderExts)
 		if err != nil {
 			return []error{err}
@@ -925,13 +998,20 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb2.Imp, aliases map[string]s
 	return errL
 }
 
+// isBidderToValidate determines if the bidder name in request.imp[].prebid should be validated.
 func isBidderToValidate(bidder string) bool {
-	// PrebidExtKey is a special case for the prebid config section and is not considered a bidder.
-
-	// FirstPartyDataContextExtKey is a special case for the first party data context section
-	// and is not considered a bidder.
-
-	return bidder != openrtb_ext.PrebidExtKey && bidder != openrtb_ext.FirstPartyDataContextExtKey
+	switch openrtb_ext.BidderName(bidder) {
+	case openrtb_ext.BidderReservedContext:
+		return false
+	case openrtb_ext.BidderReservedData:
+		return false
+	case openrtb_ext.BidderReservedPrebid:
+		return false
+	case openrtb_ext.BidderReservedSKAdN:
+		return false
+	default:
+		return true
+	}
 }
 
 func (deps *endpointDeps) parseBidExt(ext json.RawMessage) (*openrtb_ext.ExtRequest, error) {
@@ -946,12 +1026,17 @@ func (deps *endpointDeps) parseBidExt(ext json.RawMessage) (*openrtb_ext.ExtRequ
 }
 
 func (deps *endpointDeps) validateAliases(aliases map[string]string) error {
-	for thisAlias, coreBidder := range aliases {
-		if _, isCoreBidder := deps.bidderMap[coreBidder]; !isCoreBidder {
-			return fmt.Errorf("request.ext.prebid.aliases.%s refers to unknown bidder: %s", thisAlias, coreBidder)
+	for alias, coreBidder := range aliases {
+		if _, isCoreBidderDisabled := deps.disabledBidders[coreBidder]; isCoreBidderDisabled {
+			return fmt.Errorf("request.ext.prebid.aliases.%s refers to disabled bidder: %s", alias, coreBidder)
 		}
-		if thisAlias == coreBidder {
-			return fmt.Errorf("request.ext.prebid.aliases.%s defines a no-op alias. Choose a different alias, or remove this entry.", thisAlias)
+
+		if _, isCoreBidder := deps.bidderMap[coreBidder]; !isCoreBidder {
+			return fmt.Errorf("request.ext.prebid.aliases.%s refers to unknown bidder: %s", alias, coreBidder)
+		}
+
+		if alias == coreBidder {
+			return fmt.Errorf("request.ext.prebid.aliases.%s defines a no-op alias. Choose a different alias, or remove this entry.", alias)
 		}
 	}
 	return nil
@@ -997,8 +1082,17 @@ func (deps *endpointDeps) validateApp(app *openrtb2.App) error {
 }
 
 func (deps *endpointDeps) validateUser(user *openrtb2.User, aliases map[string]string) error {
-	// DigiTrust support
-	if user != nil && user.Ext != nil {
+	if user == nil {
+		return nil
+	}
+
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if user.Geo != nil && user.Geo.Accuracy < 0 {
+		return errors.New("request.user.geo.accuracy must be a positive number")
+	}
+
+	if user.Ext != nil {
 		// Creating ExtUser object to check if DigiTrust is valid
 		var userExt openrtb_ext.ExtUser
 		if err := json.Unmarshal(user.Ext, &userExt); err == nil {
@@ -1050,7 +1144,6 @@ func (deps *endpointDeps) validateUser(user *openrtb2.User, aliases map[string]s
 				}
 			}
 		} else {
-			// Return error.
 			return fmt.Errorf("request.user.ext object is not valid: %v", err)
 		}
 	}
@@ -1068,6 +1161,29 @@ func validateRegs(regs *openrtb2.Regs) error {
 			return errors.New("request.regs.ext.gdpr must be either 0 or 1.")
 		}
 	}
+	return nil
+}
+
+func validateDevice(device *openrtb2.Device) error {
+	if device == nil {
+		return nil
+	}
+
+	// The following fields were previously uints in the OpenRTB library we use, but have
+	// since been changed to ints. We decided to maintain the non-negative check.
+	if device.W < 0 {
+		return errors.New("request.device.w must be a positive number")
+	}
+	if device.H < 0 {
+		return errors.New("request.device.h must be a positive number")
+	}
+	if device.PPI < 0 {
+		return errors.New("request.device.ppi must be a positive number")
+	}
+	if device.Geo != nil && device.Geo.Accuracy < 0 {
+		return errors.New("request.device.geo.accuracy must be a positive number")
+	}
+
 	return nil
 }
 

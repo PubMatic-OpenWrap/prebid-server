@@ -6,11 +6,11 @@ import (
 
 	"net/http"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 type RhythmoneAdapter struct {
@@ -132,9 +132,9 @@ func (a *RhythmoneAdapter) preProcess(req *openrtb2.BidRequest, errors []error) 
 			errors = append(errors, err)
 			return nil, "", errors
 		}
-		bidderExtCopy := openrtb_ext.ExtBid{
-			Bidder: rhythmoneExtCopy,
-		}
+		bidderExtCopy := struct {
+			Bidder json.RawMessage `json:"bidder,omitempty"`
+		}{rhythmoneExtCopy}
 		impExtCopy, err := json.Marshal(&bidderExtCopy)
 		if err != nil {
 			errors = append(errors, err)

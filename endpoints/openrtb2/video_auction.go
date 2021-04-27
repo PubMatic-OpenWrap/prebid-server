@@ -14,12 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/util/iputil"
 	"github.com/buger/jsonparser"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gofrs/uuid"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/util/iputil"
 
+	"github.com/golang/glog"
+	"github.com/julienschmidt/httprouter"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -29,9 +32,6 @@ import (
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 var defaultRequestTimeout int64 = 5000

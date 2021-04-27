@@ -6,18 +6,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/usersync"
+	"github.com/prometheus/client_golang/prometheus"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/prebid/prebid-server/metrics"
 
@@ -192,7 +192,6 @@ type Router struct {
 }
 
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
-
 	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
 
@@ -252,84 +251,90 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	}
 
 	p, _ := filepath.Abs(infoDirectory)
-	bidderInfos := adapters.ParseBidderInfos(cfg.Adapters, p, openrtb_ext.CoreBidderNames())
+	bidderInfos, err := config.LoadBidderInfoFromDisk(p, cfg.Adapters, openrtb_ext.BuildBidderStringSlice())
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	g_activeBidders = exchange.GetActiveBidders(bidderInfos)
 	g_disabledBidders = exchange.GetDisabledBiddersErrorMessages(bidderInfos)
 
 	_, g_defReqJSON = readDefaultRequest(cfg.DefReqConfig)
+	/*defaultAliases, defReqJSON := readDefaultRequest(cfg.DefReqConfig)
+	if err := validateDefaultAliases(defaultAliases); err != nil {
+		glog.Fatal(err)
+	}*/
 
 	g_syncers = usersyncers.NewSyncerMap(cfg)
-	g_gdprPerms = gdpr.NewPermissions(context.Background(), cfg.GDPR, adapters.GDPRAwareSyncerIDs(g_syncers), generalHttpClient)
+	gvlVendorIDs := bidderInfos.ToGVLVendorIDMap()
+	g_gdprPerms = gdpr.NewPermissions(context.Background(), cfg.GDPR, gvlVendorIDs, generalHttpClient)
 
 	exchanges = newExchangeMap(cfg)
 	g_cacheClient = pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, g_metrics)
 
 	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, bidderInfos, r.MetricsEngine)
 	if len(adaptersErrs) > 0 {
-		errs := errortypes.NewAggregateErrors("Failed to initialize adapters", adaptersErrs)
+		errs := errortypes.NewAggregateError("Failed to initialize adapters", adaptersErrs)
 		glog.Fatalf("%v", errs)
 	}
 
 	g_ex = exchange.NewExchange(adapters, g_cacheClient, cfg, g_metrics, bidderInfos, g_gdprPerms, rateConvertor, g_categoriesFetcher)
 
-	/*
-		openrtbEndpoint, err := openrtb2.NewEndpoint(theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
-		if err != nil {
-			glog.Fatalf("Failed to create the openrtb endpoint handler. %v", err)
-		}
+	/*openrtbEndpoint, err := openrtb2.NewEndpoint(theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
+	if err != nil {
+		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
+	}
 
-		ampEndpoint, err := openrtb2.NewAmpEndpoint(theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
+	ampEndpoint, err := openrtb2.NewAmpEndpoint(theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
+	if err != nil {
+		glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
+	}
 
-		if err != nil {
-			glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
-		}
+	videoEndpoint, err := openrtb2.NewVideoEndpoint(theExchange, paramsValidator, fetcher, videoFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, cacheClient)
+	if err != nil {
+		glog.Fatalf("Failed to create the video endpoint handler. %v", err)
+	}
 
-		videoEndpoint, err := openrtb2.NewVideoEndpoint(theExchange, paramsValidator, fetcher, videoFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, cacheClient)
-		if err != nil {
-			glog.Fatalf("Failed to create the video endpoint handler. %v", err)
-		}
+	requestTimeoutHeaders := config.RequestTimeoutHeaders{}
+	if cfg.RequestTimeoutHeaders != requestTimeoutHeaders {
+		videoEndpoint = aspects.QueuedRequestTimeout(videoEndpoint, cfg.RequestTimeoutHeaders, r.MetricsEngine, metrics.ReqTypeVideo)
+	}
 
-		requestTimeoutHeaders := config.RequestTimeoutHeaders{}
-		if cfg.RequestTimeoutHeaders != requestTimeoutHeaders {
-			videoEndpoint = aspects.QueuedRequestTimeout(videoEndpoint, cfg.RequestTimeoutHeaders, r.MetricsEngine, metrics.ReqTypeVideo)
-		}
+	r.POST("/auction", endpoints.Auction(cfg, syncers, gdprPerms, r.MetricsEngine, dataCache, exchanges))
+	r.POST("/openrtb2/auction", openrtbEndpoint)
+	r.POST("/openrtb2/video", videoEndpoint)
+	r.GET("/openrtb2/amp", ampEndpoint)
+	r.GET("/info/bidders", infoEndpoints.NewBiddersEndpoint(bidderInfos, defaultAliases))
+	r.GET("/info/bidders/:bidderName", infoEndpoints.NewBiddersDetailEndpoint(bidderInfos, cfg.Adapters, defaultAliases))
+	r.GET("/bidders/params", NewJsonDirectoryServer(schemaDirectory, paramsValidator, defaultAliases))
+	r.POST("/cookie_sync", endpoints.NewCookieSyncEndpoint(syncers, cfg, gdprPerms, r.MetricsEngine, pbsAnalytics, activeBidders))
+	r.GET("/status", endpoints.NewStatusEndpoint(cfg.StatusResponse))
+	r.GET("/", serveIndex)
+	r.ServeFiles("/static/*filepath", http.Dir("static"))
 
-		r.POST("/auction", endpoints.Auction(cfg, syncers, gdprPerms, r.MetricsEngine, dataCache, exchanges))
-		r.POST("/openrtb2/auction", openrtbEndpoint)
-		r.POST("/openrtb2/video", videoEndpoint)
-		r.GET("/openrtb2/amp", ampEndpoint)
-		r.GET("/info/bidders", infoEndpoints.NewBiddersEndpoint(defaultAliases))
-		r.GET("/info/bidders/:bidderName", infoEndpoints.NewBidderDetailsEndpoint(bidderInfos, defaultAliases))
-		r.GET("/bidders/params", NewJsonDirectoryServer(schemaDirectory, paramsValidator, defaultAliases))
-		r.POST("/cookie_sync", endpoints.NewCookieSyncEndpoint(syncers, cfg, gdprPerms, r.MetricsEngine, pbsAnalytics, activeBidders))
-		r.GET("/status", endpoints.NewStatusEndpoint(cfg.StatusResponse))
-		r.GET("/", serveIndex)
-		r.ServeFiles("/static/*filepath", http.Dir("static"))
+	// vtrack endpoint
+	if cfg.VTrack.Enabled {
+		vtrackEndpoint := events.NewVTrackEndpoint(cfg, accounts, cacheClient, bidderInfos)
+		r.POST("/vtrack", vtrackEndpoint)
+	}
 
-		// vtrack endpoint
-		if cfg.VTrack.Enabled {
-			vtrackEndpoint := events.NewVTrackEndpoint(cfg, accounts, cacheClient, bidderInfos)
-			r.POST("/vtrack", vtrackEndpoint)
-		}
+	// event endpoint
+	eventEndpoint := events.NewEventEndpoint(cfg, accounts, pbsAnalytics)
+	r.GET("/event", eventEndpoint)
 
-		// event endpoint
-		eventEndpoint := events.NewEventEndpoint(cfg, accounts, pbsAnalytics)
-		r.GET("/event", eventEndpoint)
+	userSyncDeps := &pbs.UserSyncDeps{
+		HostCookieConfig: &(cfg.HostCookie),
+		ExternalUrl:      cfg.ExternalURL,
+		RecaptchaSecret:  cfg.RecaptchaSecret,
+		MetricsEngine:    r.MetricsEngine,
+		PBSAnalytics:     pbsAnalytics,
+	}
 
-		userSyncDeps := &pbs.UserSyncDeps{
-			HostCookieConfig: &(cfg.HostCookie),
-			ExternalUrl:      cfg.ExternalURL,
-			RecaptchaSecret:  cfg.RecaptchaSecret,
-			MetricsEngine:    r.MetricsEngine,
-			PBSAnalytics:     pbsAnalytics,
-		}
+	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg.HostCookie, syncers, gdprPerms, pbsAnalytics, r.MetricsEngine))
+	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
+	r.POST("/optout", userSyncDeps.OptOut)
+	r.GET("/optout", userSyncDeps.OptOut)*/
 
-		r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg.HostCookie, syncers, gdprPerms, pbsAnalytics, r.MetricsEngine))
-		r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
-		r.POST("/optout", userSyncDeps.OptOut)
-		r.GET("/optout", userSyncDeps.OptOut)
-	*/
 	return r, nil
 }
 
@@ -452,4 +457,20 @@ func GetPrometheusRegistry() *prometheus.Registry {
 	}
 
 	return mEngine.PrometheusMetrics.Registry
+}
+
+func validateDefaultAliases(aliases map[string]string) error {
+	var errs []error
+
+	for alias := range aliases {
+		if openrtb_ext.IsBidderNameReserved(alias) {
+			errs = append(errs, fmt.Errorf("alias %s is a reserved bidder name and cannot be used", alias))
+		}
+	}
+
+	if len(errs) > 0 {
+		return errortypes.NewAggregateError("default request alias errors", errs)
+	}
+
+	return nil
 }

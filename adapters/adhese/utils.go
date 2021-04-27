@@ -22,13 +22,13 @@ type AdheseExt struct {
 }
 
 type AdheseBid struct {
-	Origin         string              `json:"origin"`
+	Origin         string               `json:"origin"`
 	OriginData     openrtb2.BidResponse `json:"originData"`
-	OriginInstance string              `json:"originInstance,omitempty"`
-	Body           string              `json:"body,omitempty"`
-	Height         string              `json:"height"`
-	Width          string              `json:"width"`
-	Extension      Prebid              `json:"extension"`
+	OriginInstance string               `json:"originInstance,omitempty"`
+	Body           string               `json:"body,omitempty"`
+	Height         string               `json:"height"`
+	Width          string               `json:"width"`
+	Extension      Prebid               `json:"extension"`
 }
 
 type Prebid struct {

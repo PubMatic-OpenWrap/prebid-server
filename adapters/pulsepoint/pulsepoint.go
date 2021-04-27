@@ -1,22 +1,21 @@
 package pulsepoint
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
-
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/context/ctxhttp"
 )
 

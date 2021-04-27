@@ -11,18 +11,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/cache/dummycache"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/pbs"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // Constants
 
 const ExpectedSiteID string = "12345"
-const ExpectedDisplayManager string = "pubmatic-openwrap"
+const ExpectedDisplayManager string = "prebid-s2s"
 const ExpectedBuyerUID string = "AQECT_o7M1FLbQJK8QFmAQEBAQE"
 const ExpectedNURL string = "http://test.dotomi.com"
 const ExpectedAdM string = "<img src=\"test.jpg\"/>"

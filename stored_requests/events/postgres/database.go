@@ -8,11 +8,11 @@ import (
 	"net"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/stored_requests/events"
 	"github.com/prebid/prebid-server/util/timeutil"
-	"github.com/golang/glog"
 )
 
 func bytesNull() []byte {

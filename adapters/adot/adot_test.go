@@ -2,13 +2,14 @@ package adot
 
 import (
 	"encoding/json"
+	"testing"
+
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const testsBidderEndpoint = "https://dsp.adotmob.com/headerbidding/bidrequest"

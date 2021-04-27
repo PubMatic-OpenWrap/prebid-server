@@ -8,14 +8,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"golang.org/x/net/context/ctxhttp"
-
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 type IxAdapter struct {
@@ -403,9 +402,23 @@ func (a *IxAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalReque
 			if !ok {
 				errs = append(errs, fmt.Errorf("Unmatched impression id: %s.", bid.ImpID))
 			}
+
+			var bidExtVideo *openrtb_ext.ExtBidPrebidVideo
+			var bidExt openrtb_ext.ExtBid
+			if bidType == openrtb_ext.BidTypeVideo {
+				unmarshalExtErr := json.Unmarshal(bid.Ext, &bidExt)
+				if unmarshalExtErr == nil && bidExt.Prebid != nil && bidExt.Prebid.Video != nil {
+					bidExtVideo = &openrtb_ext.ExtBidPrebidVideo{
+						Duration:        bidExt.Prebid.Video.Duration,
+						PrimaryCategory: bidExt.Prebid.Video.PrimaryCategory,
+					}
+				}
+			}
+
 			bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
-				Bid:     &bid,
-				BidType: bidType,
+				Bid:      &bid,
+				BidType:  bidType,
+				BidVideo: bidExtVideo,
 			})
 		}
 	}

@@ -1,11 +1,12 @@
 package helpers
 
 import (
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 	"testing"
+
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 func TestJsonifyAuctionObject(t *testing.T) {

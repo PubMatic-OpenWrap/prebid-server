@@ -7,13 +7,13 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/golang/glog"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 type YeahmobiAdapter struct {
@@ -95,7 +95,9 @@ func transform(request *openrtb2.BidRequest) {
 					continue
 				}
 
-				request.Imp[i].Native.Request = string(nativeReqByte)
+				nativeCopy := *request.Imp[i].Native
+				nativeCopy.Request = string(nativeReqByte)
+				request.Imp[i].Native = &nativeCopy
 			}
 		}
 	}

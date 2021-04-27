@@ -59,4 +59,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/mxmCherry/openrtb/v15 v15.0.0 => github.com/PubMatic-OpenWrap/openrtb/v15 adbedb6f42c618555bee13551e99e6f57de448c7
+replace github.com/mxmCherry/openrtb/v15 v15.0.0 => github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425134848-adbedb6f42c6

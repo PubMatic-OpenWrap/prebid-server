@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
-const clientVersion = "prebid_server_0.1"
+const clientVersion = "prebid_server_0.2"
 
 type adMarkupType string
 
@@ -81,6 +81,7 @@ func (a *SmaatoAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 			i--
 		}
 	}
+
 	if request.Site != nil {
 		siteCopy := *request.Site
 		siteCopy.Publisher = &openrtb2.Publisher{ID: publisherID}
@@ -96,6 +97,13 @@ func (a *SmaatoAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 			siteCopy.Ext = nil
 		}
 		request.Site = &siteCopy
+	}
+
+	if request.App != nil {
+		appCopy := *request.App
+		appCopy.Publisher = &openrtb2.Publisher{ID: publisherID}
+
+		request.App = &appCopy
 	}
 
 	if request.User != nil && request.User.Ext != nil {

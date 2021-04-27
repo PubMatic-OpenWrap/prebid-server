@@ -13,7 +13,7 @@
           "request": "{}"
         },
         "ext": {
-          "pubmatic": {
+          "appnexus": {
             "placementId": 12883451
           }
         }

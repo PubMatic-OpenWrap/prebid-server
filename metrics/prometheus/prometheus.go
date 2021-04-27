@@ -379,42 +379,6 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
 
-	metrics.adapterDuplicateBidIDCounter = newCounter(cfg, metrics.Registry,
-		"duplicate_bid_ids",
-		"Number of collisions observed for given adaptor",
-		[]string{adapterLabel})
-
-	metrics.requestsDuplicateBidIDCounter = newCounterWithoutLabels(cfg, metrics.Registry,
-		"requests_having_duplicate_bid_ids",
-		"Count of number of request where bid collision is detected.")
-
-	// adpod specific metrics
-	metrics.podImpGenTimer = newHistogramVec(cfg, metrics.Registry,
-		"impr_gen",
-		"Time taken by Ad Pod Impression Generator in seconds", []string{podAlgorithm, podNoOfImpressions},
-		// 200 µS, 250 µS, 275 µS, 300 µS
-		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
-		// 100 µS, 200 µS, 300 µS, 400 µS, 500 µS,  600 µS,
-		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
-
-	metrics.podCombGenTimer = newHistogramVec(cfg, metrics.Registry,
-		"comb_gen",
-		"Time taken by Ad Pod Combination Generator in seconds", []string{podAlgorithm, podTotalCombinations},
-		// 200 µS, 250 µS, 275 µS, 300 µS
-		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
-		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
-
-	metrics.podCompExclTimer = newHistogramVec(cfg, metrics.Registry,
-		"comp_excl",
-		"Time taken by Ad Pod Compititve Exclusion in seconds", []string{podAlgorithm, podNoOfResponseBids},
-		// 200 µS, 250 µS, 275 µS, 300 µS
-		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
-		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
-
-	metrics.adapterVideoBidDuration = newHistogramVec(cfg, metrics.Registry,
-		"adapter_vidbid_dur",
-		"Video Ad durations returned by the bidder", []string{adapterLabel},
-		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120})
 	preloadLabelValues(&metrics)
 
 	return &metrics

@@ -17,9 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/adapters"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/stored_requests"
 
+	"github.com/buger/jsonparser"
+	jsonpatch "github.com/evanphx/json-patch"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -28,9 +30,6 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/prebid/prebid-server/util/iputil"
-	"github.com/buger/jsonparser"
-	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +48,7 @@ type testConfigValues struct {
 	AliasJSON           string   `json:"aliases"`
 	BlacklistedAccounts []string `json:"blacklistedAccts"`
 	BlacklistedApps     []string `json:"blacklistedApps"`
-	AdapterList         []string `json:"disabledAdapters"`
+	DisabledAdapters    []string `json:"disabledAdapters"`
 }
 
 func TestJsonSampleRequests(t *testing.T) {
@@ -230,9 +229,9 @@ func (tc *testConfigValues) getBlackListedAccountMap() map[string]bool {
 func (tc *testConfigValues) getAdaptersConfigMap() map[string]config.Adapter {
 	var adaptersConfig map[string]config.Adapter
 
-	if len(tc.AdapterList) > 0 {
-		adaptersConfig = make(map[string]config.Adapter, len(tc.AdapterList))
-		for _, adapterName := range tc.AdapterList {
+	if len(tc.DisabledAdapters) > 0 {
+		adaptersConfig = make(map[string]config.Adapter, len(tc.DisabledAdapters))
+		for _, adapterName := range tc.DisabledAdapters {
 			adaptersConfig[adapterName] = config.Adapter{Disabled: true}
 		}
 	}
@@ -942,6 +941,7 @@ func TestImplicitDNTEndToEnd(t *testing.T) {
 		assert.Equal(t, test.expectedDNT, result.Device.DNT, test.description+":dnt")
 	}
 }
+
 func TestImplicitSecure(t *testing.T) {
 	httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "site.json")))
 	httpReq.Header.Set(http.CanonicalHeaderKey("X-Forwarded-Proto"), "https")
@@ -1505,7 +1505,9 @@ func TestCCPAInvalid(t *testing.T) {
 
 	errL := deps.validateRequest(&req)
 
-	expectedWarning := errortypes.InvalidPrivacyConsent{Message: "CCPA consent is invalid and will be ignored. (request.regs.ext.us_privacy must contain 4 characters)"}
+	expectedWarning := errortypes.Warning{
+		Message:     "CCPA consent is invalid and will be ignored. (request.regs.ext.us_privacy must contain 4 characters)",
+		WarningCode: errortypes.InvalidPrivacyConsentWarningCode}
 	assert.ElementsMatch(t, errL, []error{&expectedWarning})
 
 	assert.Empty(t, req.Regs.Ext, "Invalid Consent Removed From Request")
@@ -2076,6 +2078,83 @@ func TestValidateBidders(t *testing.T) {
 	}
 }
 
+func TestIOS14EndToEnd(t *testing.T) {
+	exchange := &nobidExchange{}
+
+	endpoint, _ := NewEndpoint(
+		exchange,
+		newParamsValidator(t),
+		&mockStoredReqFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		&config.Configuration{MaxRequestSize: maxSize},
+		newTestMetrics(),
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		[]byte{},
+		openrtb_ext.BuildBidderMap())
+
+	httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "app-ios140-no-ifa.json")))
+
+	endpoint(httptest.NewRecorder(), httpReq, nil)
+
+	result := exchange.gotRequest
+	if !assert.NotEmpty(t, result, "request received by the exchange.") {
+		t.FailNow()
+	}
+
+	var lmtOne int8 = 1
+	assert.Equal(t, &lmtOne, result.Device.Lmt)
+}
+
+func TestAuctionWarnings(t *testing.T) {
+	reqBody := validRequest(t, "us-privacy-invalid.json")
+	deps := &endpointDeps{
+		&warningsCheckExchange{},
+		newParamsValidator(t),
+		&mockStoredReqFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		&config.Configuration{MaxRequestSize: int64(len(reqBody))},
+		newTestMetrics(),
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		false,
+		[]byte{},
+		openrtb_ext.BuildBidderMap(),
+		nil,
+		nil,
+		hardcodedResponseIPValidator{response: true},
+	}
+
+	req := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(reqBody))
+	recorder := httptest.NewRecorder()
+
+	deps.Auction(recorder, req, nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Errorf("Endpoint should return a 200")
+	}
+	warnings := deps.ex.(*warningsCheckExchange).auctionRequest.Warnings
+	if !assert.Len(t, warnings, 1, "One warning should be returned from exchange") {
+		t.FailNow()
+	}
+	actualWarning := warnings[0].(*errortypes.Warning)
+	expectedMessage := "CCPA consent is invalid and will be ignored. (request.regs.ext.us_privacy must contain 4 characters)"
+	assert.Equal(t, expectedMessage, actualWarning.Message, "Warning message is incorrect")
+
+	assert.Equal(t, errortypes.InvalidPrivacyConsentWarningCode, actualWarning.WarningCode, "Warning code is incorrect")
+}
+
+// warningsCheckExchange is a well-behaved exchange which stores all incoming warnings.
+type warningsCheckExchange struct {
+	auctionRequest exchange.AuctionRequest
+}
+
+func (e *warningsCheckExchange) HoldAuction(ctx context.Context, r exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+	e.auctionRequest = r
+	return nil, nil
+}
+
 // nobidExchange is a well-behaved exchange which always bids "no bid".
 type nobidExchange struct {
 	gotRequest *openrtb2.BidRequest
@@ -2520,8 +2599,8 @@ func (m *mockExchange) HoldAuction(ctx context.Context, r exchange.AuctionReques
 	}, nil
 }
 
-func getBidderInfos(cfg map[string]config.Adapter, biddersNames []openrtb_ext.BidderName) adapters.BidderInfos {
-	biddersInfos := make(adapters.BidderInfos)
+func getBidderInfos(cfg map[string]config.Adapter, biddersNames []openrtb_ext.BidderName) config.BidderInfos {
+	biddersInfos := make(config.BidderInfos)
 	for _, name := range biddersNames {
 		adapterConfig, ok := cfg[string(name)]
 		if !ok {
@@ -2532,14 +2611,9 @@ func getBidderInfos(cfg map[string]config.Adapter, biddersNames []openrtb_ext.Bi
 	return biddersInfos
 }
 
-func newBidderInfo(cfg config.Adapter) adapters.BidderInfo {
-	status := adapters.StatusActive
-	if cfg.Disabled == true {
-		status = adapters.StatusDisabled
-	}
-
-	return adapters.BidderInfo{
-		Status: status,
+func newBidderInfo(cfg config.Adapter) config.BidderInfo {
+	return config.BidderInfo{
+		Enabled: !cfg.Disabled,
 	}
 }
 

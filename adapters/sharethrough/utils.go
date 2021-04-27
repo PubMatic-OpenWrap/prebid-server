@@ -5,15 +5,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"html/template"
 	"net"
 	"net/url"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 const minChromeVersion = 53

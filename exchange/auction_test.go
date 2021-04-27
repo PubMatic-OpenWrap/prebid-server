@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
 
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -486,7 +486,7 @@ func TestNewAuction(t *testing.T) {
 }
 
 type cacheSpec struct {
-	BidRequest                  openrtb2.BidRequest              `json:"bidRequest"`
+	BidRequest                  openrtb2.BidRequest             `json:"bidRequest"`
 	PbsBids                     []pbsBid                        `json:"pbsBids"`
 	ExpectedCacheables          []prebid_cache_client.Cacheable `json:"expectedCacheables"`
 	DefaultTTLs                 config.DefaultTTLs              `json:"defaultTTLs"`
@@ -500,7 +500,7 @@ type cacheSpec struct {
 }
 
 type pbsBid struct {
-	Bid     *openrtb2.Bid           `json:"bid"`
+	Bid     *openrtb2.Bid          `json:"bid"`
 	BidType openrtb_ext.BidType    `json:"bidType"`
 	Bidder  openrtb_ext.BidderName `json:"bidder"`
 }

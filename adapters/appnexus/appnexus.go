@@ -11,9 +11,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/pbs"
-	"github.com/buger/jsonparser"
 
 	"golang.org/x/net/context/ctxhttp"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 const defaultPlatformID int = 5
@@ -362,14 +362,12 @@ func (a *AppNexusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	imps := request.Imp
 
-	// Commenting out the following piece of code to avoid populating adpod_id in the Appnexus request (ref: https://inside.pubmatic.com:9443/jira/browse/UOE-6196)
-
 	// For long form requests adpod_id must be sent downstream.
 	// Adpod id is a unique identifier for pod
 	// All impressions in the same pod must have the same pod id in request extension
 	// For this all impressions in  request should belong to the same pod
 	// If impressions number per pod is more than maxImpsPerReq - divide those imps to several requests but keep pod id the same
-	/*if isVIDEO == 1 {
+	if isVIDEO == 1 {
 		podImps := groupByPods(imps)
 
 		requests := make([]*adapters.RequestData, 0, len(podImps))
@@ -381,7 +379,7 @@ func (a *AppNexusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			errs = append(errs, errors...)
 		}
 		return requests, errs
-	}*/
+	}
 
 	return splitRequests(imps, request, reqExt, thisURI, errs)
 }
@@ -678,11 +676,7 @@ func resolvePlatformID(platformID string) int {
 
 func loadCategoryMapFromFileSystem() map[string]string {
 	// Load custom options for our adapter (currently just a lookup table to convert appnexus => iab categories)
-	opts, err := ioutil.ReadFile("./home/http/GO_SERVER/dmhbserver/static/adapter/appnexus/opts.json")
-	//this is for tests
-	if err != nil {
-		opts, err = ioutil.ReadFile("./static/adapter/appnexus/opts.json")
-	}
+	opts, err := ioutil.ReadFile("./static/adapter/appnexus/opts.json")
 	if err == nil {
 		var adapterOptions appnexusAdapterOptions
 
@@ -690,5 +684,6 @@ func loadCategoryMapFromFileSystem() map[string]string {
 			return adapterOptions.IabCategories
 		}
 	}
+
 	return nil
 }

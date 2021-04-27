@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
-	"github.com/julienschmidt/httprouter"
 
 	"github.com/stretchr/testify/assert"
 )

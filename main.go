@@ -1,16 +1,16 @@
 package prebidServer
 
 import (
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/openrtb_ext"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/router"
-	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/task"
 
 	"github.com/golang/glog"
@@ -20,7 +20,7 @@ import (
 // Rev holds binary revision string
 // Set manually at build time using:
 //    go build -ldflags "-X main.Rev=`git rev-parse --short HEAD`"
-// Populated automatically at build / release time via .travis.yml
+// Populated automatically at build / releases
 //   `gox -os="linux" -arch="386" -output="{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...;`
 // See issue #559
 var Rev string

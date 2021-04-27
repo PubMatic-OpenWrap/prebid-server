@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang/glog"
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/cache"
 	"github.com/prebid/prebid-server/config"
@@ -23,8 +25,6 @@ import (
 	"github.com/prebid/prebid-server/privacy"
 	gdprPrivacy "github.com/prebid/prebid-server/privacy/gdpr"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
 )
 
 type bidResult struct {

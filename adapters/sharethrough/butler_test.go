@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +32,7 @@ func (m MockUtil) gdprApplies(request *openrtb2.BidRequest) bool {
 	return m.mockGdprApplies()
 }
 
-func (m MockUtil) getPlacementSize(imp openrtb2.Imp, strImpParams openrtb_ext.ExtImpSharethrough) (height int64, width int64) {
+func (m MockUtil) getPlacementSize(imp openrtb2.Imp, strImpParams openrtb_ext.ExtImpSharethrough) (height, width int64) {
 	return m.mockGetPlacementSize()
 }
 

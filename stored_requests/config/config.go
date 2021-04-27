@@ -8,6 +8,8 @@ import (
 
 	"github.com/prebid/prebid-server/metrics"
 
+	"github.com/golang/glog"
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/stored_requests/backends/db_fetcher"
@@ -21,8 +23,6 @@ import (
 	httpEvents "github.com/prebid/prebid-server/stored_requests/events/http"
 	postgresEvents "github.com/prebid/prebid-server/stored_requests/events/postgres"
 	"github.com/prebid/prebid-server/util/task"
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
 )
 
 // This gets set to the connection string used when a database connection is made. We only support a single

@@ -13,14 +13,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
-
-	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -453,7 +452,7 @@ func openRtbToAdformRequest(request *openrtb2.BidRequest) (*adformRequest, []err
 
 	gdprApplies := ""
 	var extRegs openrtb_ext.ExtRegs
-	if request.Regs != nil {
+	if request.Regs != nil && request.Regs.Ext != nil {
 		if err := json.Unmarshal(request.Regs.Ext, &extRegs); err != nil {
 			errors = append(errors, &errortypes.BadInput{
 				Message: err.Error(),
@@ -466,7 +465,7 @@ func openRtbToAdformRequest(request *openrtb2.BidRequest) (*adformRequest, []err
 
 	eids := ""
 	consent := ""
-	if request.User != nil {
+	if request.User != nil && request.User.Ext != nil {
 		var extUser openrtb_ext.ExtUser
 		if err := json.Unmarshal(request.User.Ext, &extUser); err == nil {
 			consent = extUser.Consent

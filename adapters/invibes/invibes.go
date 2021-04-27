@@ -9,13 +9,13 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 const adapterVersion = "prebid_1.0.0"
@@ -43,7 +43,7 @@ type InvibesBidParams struct {
 }
 type InvibesPlacementProperty struct {
 	Formats []openrtb2.Format `json:"Formats"`
-	ImpID   string           `json:"ImpId"`
+	ImpID   string            `json:"ImpId"`
 }
 type InvibesInternalParams struct {
 	BidParams   InvibesBidParams
@@ -62,7 +62,7 @@ type BidServerBidderResponse struct {
 }
 type BidServerTypedBid struct {
 	Bid          openrtb2.Bid `json:"bid"`
-	DealPriority int         `json:"dealPriority"`
+	DealPriority int          `json:"dealPriority"`
 }
 
 func (a *InvibesInternalParams) IsTestRequest() bool {

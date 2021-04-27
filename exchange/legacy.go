@@ -4,15 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 // AdaptLegacyAdapter turns a bidder.Adapter into an adaptedBidder.
@@ -90,15 +89,7 @@ func (bidder *adaptedAdapter) toLegacyRequest(req *openrtb2.BidRequest) (*pbs.PB
 	}
 
 	isDebug := false
-	var requestExt openrtb_ext.ExtRequest
-	if req.Ext != nil {
-		err = json.Unmarshal(req.Ext, &requestExt)
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding Request.ext : %s", err.Error())
-		}
-	}
-
-	if requestExt.Prebid.Debug {
+	if req.Test == 1 {
 		isDebug = true
 	}
 
