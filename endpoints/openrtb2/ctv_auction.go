@@ -931,19 +931,16 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
 				u, e := url.Parse(trackingEvent.Text())
 				if nil == e {
 					values, e := url.ParseQuery(u.RawQuery)
-					if nil == e && nil != values["bidid"] {
-						// handling collision
-						// if any tracker has same key bidid then prevent it from replacing the value
-						// for this, check following
-						// if current tracker URL's bidid is present in bid.ID (ctv auction generated)
-						if strings.HasSuffix(bid.ID, values["bidid"][0]) {
-							values.Set("bidid", bid.ID)
-						}
+					// only do replacment if operId=8
+					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
+						values.Set("bidid", bid.ID)
 					}
 					//OTT-183: Fix
-					operID := values.Get("operId")
-					values.Del("operId")
-					values.Add("_operId", operID) // _ (underscore) will keep it as first key
+					if nil != values["operId"] && values["operId"][0] == "8" {
+						operID := values.Get("operId")
+						values.Del("operId")
+						values.Add("_operId", operID) // _ (underscore) will keep it as first key
+					}
 
 					u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
 					// replace _operId with operId
