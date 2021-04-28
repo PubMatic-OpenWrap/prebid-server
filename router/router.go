@@ -259,11 +259,12 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_activeBidders = exchange.GetActiveBidders(bidderInfos)
 	g_disabledBidders = exchange.GetDisabledBiddersErrorMessages(bidderInfos)
 
-	_, g_defReqJSON = readDefaultRequest(cfg.DefReqConfig)
-	/*defaultAliases, defReqJSON := readDefaultRequest(cfg.DefReqConfig)
+	defaultAliases, defReqJSON := readDefaultRequest(cfg.DefReqConfig)
 	if err := validateDefaultAliases(defaultAliases); err != nil {
 		glog.Fatal(err)
-	}*/
+	}
+	
+	g_defReqJSON = defReqJSON
 
 	g_syncers = usersyncers.NewSyncerMap(cfg)
 	gvlVendorIDs := bidderInfos.ToGVLVendorIDMap()
