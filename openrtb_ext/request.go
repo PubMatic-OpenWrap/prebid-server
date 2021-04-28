@@ -120,6 +120,7 @@ type ExtIncludeBrandCategory struct {
 	Publisher           string `json:"publisher"`
 	WithCategory        bool   `json:"withcategory"`
 	TranslateCategories *bool  `json:"translatecategories,omitempty"`
+	SkipDedup           bool   `json:"skipdedup"`
 }
 
 // Make an unmarshaller that will set a default PriceGranularity
