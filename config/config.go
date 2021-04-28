@@ -792,7 +792,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("event.timeout_ms", 1000)
 
 	v.SetDefault("accounts.filesystem.enabled", false)
-	v.SetDefault("accounts.filesystem.directorypath", "/Users/sachin/go/src/header-bidding/resource/static/stored_requests/data/by_id")
+	v.SetDefault("accounts.filesystem.directorypath", "./stored_requests/data/by_id")
 	v.SetDefault("accounts.in_memory_cache.type", "none")
 
 	for _, bidder := range openrtb_ext.CoreBidderNames() {
