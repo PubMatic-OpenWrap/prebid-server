@@ -1,9 +1,9 @@
 package types
 
 import (
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 //Bid openrtb bid object with extra parameters
@@ -23,7 +23,7 @@ type ExtCTVBidResponse struct {
 //BidResponseAdPodExt object for ctv bidresponse adpod object
 type BidResponseAdPodExt struct {
 	Response openrtb2.BidResponse `json:"bidresponse,omitempty"`
-	Config   map[string]*ImpData `json:"config,omitempty"`
+	Config   map[string]*ImpData  `json:"config,omitempty"`
 }
 
 //AdPodBid combination contains ImpBid

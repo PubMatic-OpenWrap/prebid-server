@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/julienschmidt/httprouter"
 )
 
 const (

@@ -244,7 +244,6 @@ func (me *MultiMetricsEngine) RecordRequestPrivacy(privacy metrics.PrivacyLabels
 	}
 }
 
-
 // RecordAdapterDuplicateBidID across all engines
 func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 	for _, thisME := range *me {

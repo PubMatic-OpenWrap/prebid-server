@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 /********************* AdPodGenerator Functions *********************/

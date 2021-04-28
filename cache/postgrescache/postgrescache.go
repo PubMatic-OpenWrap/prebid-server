@@ -9,9 +9,9 @@ import (
 
 	"github.com/prebid/prebid-server/stored_requests"
 
-	"github.com/prebid/prebid-server/cache"
 	"github.com/coocood/freecache"
 	"github.com/lib/pq"
+	"github.com/prebid/prebid-server/cache"
 )
 
 type CacheConfig struct {

@@ -3,9 +3,9 @@ package endpoints
 import (
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/julienschmidt/httprouter"
 
 	"encoding/json"
 )

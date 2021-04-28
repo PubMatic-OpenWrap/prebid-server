@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/prebid/prebid-server/errortypes"
 	"github.com/buger/jsonparser"
+	"github.com/prebid/prebid-server/errortypes"
 )
 
 // PrebidExtKey represents the prebid extension key used in requests

@@ -13,6 +13,11 @@ import (
 	"time"
 
 	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/buger/jsonparser"
+	uuid "github.com/gofrs/uuid"
+	"github.com/golang/glog"
+	"github.com/julienschmidt/httprouter"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -29,11 +34,6 @@ import (
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/iputil"
-	"github.com/buger/jsonparser"
-	uuid "github.com/gofrs/uuid"
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 //CTV Specific Endpoint
