@@ -178,6 +178,7 @@ func (cookie *PBSCookie) GetId(bidderName openrtb_ext.BidderName) (id string, ex
 func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCookie bool, cfg *config.HostCookie, ttl time.Duration) {
 	httpCookie := cookie.ToHTTPCookie(ttl)
 	var domain string = cfg.Domain
+	httpCookie.Secure = true
 
 	if domain != "" {
 		httpCookie.Domain = domain
@@ -205,7 +206,7 @@ func (cookie *PBSCookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCooki
 	var uidsCookieStr string
 	var sameSiteCookie *http.Cookie
 	if setSiteCookie {
-		httpCookie.Secure = true
+		//httpCookie.Secure = true
 		uidsCookieStr = httpCookie.String()
 		uidsCookieStr += SameSiteAttribute
 		sameSiteCookie = &http.Cookie{
