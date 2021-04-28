@@ -729,7 +729,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("datacache.cache_size", 0)
 	v.SetDefault("datacache.ttl_seconds", 0)
 	v.SetDefault("category_mapping.filesystem.enabled", true)
-	v.SetDefault("category_mapping.filesystem.directorypath", "./static/category-mapping")
+	v.SetDefault("category_mapping.filesystem.directorypath", "/home/http/GO_SERVER/dmhbserver/static/category-mapping")
 	v.SetDefault("category_mapping.http.endpoint", "")
 	v.SetDefault("stored_requests.filesystem.enabled", false)
 	v.SetDefault("stored_requests.filesystem.directorypath", "./stored_requests/data/by_id")
@@ -792,7 +792,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("event.timeout_ms", 1000)
 
 	v.SetDefault("accounts.filesystem.enabled", false)
-	v.SetDefault("accounts.filesystem.directorypath", "./stored_requests/data/by_id")
+	v.SetDefault("accounts.filesystem.directorypath", "/Users/sachin/go/src/header-bidding/resource/static/stored_requests/data/by_id")
 	v.SetDefault("accounts.in_memory_cache.type", "none")
 
 	for _, bidder := range openrtb_ext.CoreBidderNames() {
@@ -936,7 +936,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})
 	v.SetDefault("gdpr.tcf1.fetch_gvl", false)
-	v.SetDefault("gdpr.tcf1.fallback_gvl_path", "./static/tcf1/fallback_gvl.json")
+	v.SetDefault("gdpr.tcf1.fallback_gvl_path", "/home/http/GO_SERVER/dmhbserver/static/tcf1/fallback_gvl.json")
 	v.SetDefault("gdpr.tcf2.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose1.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose2.enabled", true)
