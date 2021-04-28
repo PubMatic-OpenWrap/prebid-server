@@ -25,7 +25,7 @@ import (
 // See issue #559
 var Rev string
 
-const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/"
+const schemaDirectory = "/Users/sachin/go/src/header-bidding/resource/static/"
 
 /*
 func init() {
