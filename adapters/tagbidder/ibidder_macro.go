@@ -2,10 +2,10 @@ package tagbidder
 
 import (
 	"errors"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/prebid/prebid-server/config"
 )
 
 //Flags of each tag bidder
@@ -16,8 +16,8 @@ type Flags struct {
 //IBidderMacro interface will capture all macro definition
 type IBidderMacro interface {
 	//Helper Function
-	InitBidRequest(request *openrtb.BidRequest)
-	LoadImpression(imp *openrtb.Imp) error
+	InitBidRequest(request *openrtb2.BidRequest)
+	LoadImpression(imp *openrtb2.Imp) error
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
 	//SetBidderConfig(*BidderConfig)

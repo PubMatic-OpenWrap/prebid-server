@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,20 +15,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
-
-	// "github.com/beevik/etree"
-	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
+	accountService "github.com/prebid/prebid-server/account"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/stored_requests"
 )
 
 const (
@@ -37,7 +34,7 @@ const (
 type vtrackEndpoint struct {
 	Cfg         *config.Configuration
 	Accounts    stored_requests.AccountFetcher
-	BidderInfos adapters.BidderInfos
+	BidderInfos config.BidderInfos
 	Cache       prebid_cache_client.Client
 }
 
@@ -87,7 +84,7 @@ var eventIDMap = map[string]string{
 	"complete":      "6",
 }
 
-func NewVTrackEndpoint(cfg *config.Configuration, accounts stored_requests.AccountFetcher, cache prebid_cache_client.Client, bidderInfos adapters.BidderInfos) httprouter.Handle {
+func NewVTrackEndpoint(cfg *config.Configuration, accounts stored_requests.AccountFetcher, cache prebid_cache_client.Client, bidderInfos config.BidderInfos) httprouter.Handle {
 	vte := &vtrackEndpoint{
 		Cfg:         cfg,
 		Accounts:    accounts,
@@ -281,7 +278,7 @@ func (v *vtrackEndpoint) cachePutObjects(ctx context.Context, req *BidCacheReque
 }
 
 // getBiddersAllowingVastUpdate returns a list of bidders that allow VAST XML modification
-func getBiddersAllowingVastUpdate(req *BidCacheRequest, bidderInfos *adapters.BidderInfos, allowUnknownBidder bool) map[string]struct{} {
+func getBiddersAllowingVastUpdate(req *BidCacheRequest, bidderInfos *config.BidderInfos, allowUnknownBidder bool) map[string]struct{} {
 	bl := map[string]struct{}{}
 
 	for _, bcr := range req.Puts {
@@ -294,12 +291,12 @@ func getBiddersAllowingVastUpdate(req *BidCacheRequest, bidderInfos *adapters.Bi
 }
 
 // isAllowVastForBidder checks if a bidder is active and allowed to modify vast xml data
-func isAllowVastForBidder(bidder string, bidderInfos *adapters.BidderInfos, allowUnknownBidder bool) bool {
+func isAllowVastForBidder(bidder string, bidderInfos *config.BidderInfos, allowUnknownBidder bool) bool {
 	//if bidder is active and isModifyingVastXmlAllowed is true
 	// check if bidder is configured
 	if b, ok := (*bidderInfos)[bidder]; bidderInfos != nil && ok {
 		// check if bidder is enabled
-		return b.Status == adapters.StatusActive && b.ModifyingVastXmlAllowed
+		return b.Enabled && b.ModifyingVastXmlAllowed
 	}
 
 	return allowUnknownBidder
@@ -346,7 +343,7 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 
 //InjectVideoEventTrackers injects the video tracking events
 //Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool, error) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
@@ -358,7 +355,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 
 	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
 	//TODO: It should be optimized by forming once and reusing
-	impMap := make(map[string]*openrtb.Imp)
+	impMap := make(map[string]*openrtb2.Imp)
 	for i := range bidRequest.Imp {
 		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
 	}
@@ -387,9 +384,9 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 			// }
 
 			switch imp.Video.Linearity {
-			case openrtb.VideoLinearityLinearInStream:
+			case openrtb2.VideoLinearityLinearInStream:
 				creative.AddChild(doc.CreateElement("Linear"))
-			case openrtb.VideoLinearityNonLinearOverlay:
+			case openrtb2.VideoLinearityNonLinearOverlay:
 				creative.AddChild(doc.CreateElement("NonLinearAds"))
 			default: // create both type of creatives
 				creative.AddChild(doc.CreateElement("Linear"))
@@ -431,7 +428,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 //    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document, impMap map[string]*openrtb.Imp) map[string]string {
+func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap

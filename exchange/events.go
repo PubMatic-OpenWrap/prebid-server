@@ -2,16 +2,15 @@ package exchange
 
 import (
 	"encoding/json"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/events"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/evanphx/json-patch"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/endpoints/events"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 // eventTracking has configuration fields needed for adding event tracking to an auction response
@@ -21,12 +20,12 @@ type eventTracking struct {
 	enabledForRequest  bool
 	auctionTimestampMs int64
 	integration        metrics.DemandSource // web app amp
-	bidderInfos        adapters.BidderInfos
+	bidderInfos        config.BidderInfos
 	externalURL        string
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos adapters.BidderInfos, externalURL string) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
 		enabledForAccount:  account.EventsEnabled,
@@ -39,7 +38,7 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
-func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
+func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb2.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
 		// modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.bids {
@@ -58,14 +57,18 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb.BidRequest, trackerURL string) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
 	vastXML := makeVAST(bid)
+	bidID := bid.ID
+	if len(pbsBid.generatedBidID) > 0 {
+		bidID = pbsBid.generatedBidID
+	}
 	if ev.isModifyingVASTXMLAllowed(bidderName.String()) { // condition added for ow fork
-		if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bid.ID, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
+		if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs); ok {
 			bid.AdM = newVastXML
 		}
 	}
@@ -111,10 +114,14 @@ func (ev *eventTracking) makeBidExtEvents(pbsBid *pbsOrtbBid, bidderName openrtb
 
 // makeEventURL returns an analytics event url for the requested type (win or imp)
 func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName) string {
+	bidId := pbsBid.bid.ID
+	if len(pbsBid.generatedBidID) > 0 {
+		bidId = pbsBid.generatedBidID
+	}
 	return events.EventRequestToUrl(ev.externalURL,
 		&analytics.EventRequest{
 			Type:      evType,
-			BidID:     pbsBid.bid.ID,
+			BidID:     bidId,
 			Bidder:    string(bidderName),
 			AccountID: ev.accountID,
 			Timestamp: ev.auctionTimestampMs,

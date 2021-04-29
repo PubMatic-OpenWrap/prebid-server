@@ -3,13 +3,13 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/etree"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +28,7 @@ func TestGetAdDuration(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
-			bid := openrtb.Bid{
+			bid := openrtb2.Bid{
 				Ext: []byte(`{"prebid" : {"video" : {"duration" : ` + test.adDuration + `}}}`),
 			}
 			assert.Equal(t, test.expect, getAdDuration(bid, int64(test.maxAdDuration)))
@@ -49,7 +49,7 @@ func TestAddTargetingKeys(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
-			bid := new(openrtb.Bid)
+			bid := new(openrtb2.Bid)
 			bid.Ext = []byte(test.bidExt)
 			key := openrtb_ext.TargetingKey(test.key)
 			assert.Nil(t, addTargetingKey(bid, key, test.value))
@@ -63,7 +63,7 @@ func TestAddTargetingKeys(t *testing.T) {
 
 func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 	type args struct {
-		modifiedBid *openrtb.Bid
+		modifiedBid *openrtb2.Bid
 	}
 	type want struct {
 		eventURLMap map[string]string
@@ -86,7 +86,7 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 				},
 			},
 			args: args{
-				modifiedBid: &openrtb.Bid{
+				modifiedBid: &openrtb2.Bid{
 					ID: "1-bid_123",
 					AdM: `<VAST  version="3.0">
 					<Ad>

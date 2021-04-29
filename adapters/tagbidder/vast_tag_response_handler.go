@@ -3,15 +3,15 @@ package tagbidder
 import (
 	"errors"
 	"fmt"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)
@@ -33,7 +33,7 @@ func NewVASTTagResponseHandler() *VASTTagResponseHandler {
 }
 
 //Validate will return bids
-func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error {
+func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error {
 	if response.StatusCode != http.StatusOK {
 		return []error{errors.New(`validation failed`)}
 	}
@@ -41,7 +41,7 @@ func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb.BidRequ
 }
 
 //MakeBids will return bids
-func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if err := handler.Validate(internalRequest, externalRequest, response); len(err) > 0 {
 		return nil, err[:]
 	}
@@ -56,7 +56,7 @@ func (handler *VASTTagResponseHandler) ParseExtension(version string, ad *etree.
 	return nil
 }
 
-func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error
 
 	doc := etree.NewDocument()
@@ -82,7 +82,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	}
 
 	typedBid := &adapters.TypedBid{
-		Bid:      &openrtb.Bid{},
+		Bid:      &openrtb2.Bid{},
 		BidType:  openrtb_ext.BidTypeVideo,
 		BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
 	}

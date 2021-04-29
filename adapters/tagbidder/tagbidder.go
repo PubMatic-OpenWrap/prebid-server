@@ -3,11 +3,11 @@ package tagbidder
 import (
 	"errors"
 	"fmt"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 //TagBidder is default implementation of ITagBidder
@@ -40,7 +40,7 @@ func NewTestTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) 
 }
 
 //MakeRequests will contains default definition for processing queries
-func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	bidderMacro, err := GetNewBidderMacro(a.bidderName)
 	if nil != err {
 		return nil, []error{err}
@@ -85,7 +85,7 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 }
 
 //MakeBids makes bids
-func (a *TagBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	//response validation can be done here independently
 	//handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
 	handler, err := GetResponseHandler(VASTTagResponseHandlerType)

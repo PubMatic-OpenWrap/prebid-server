@@ -5,19 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"io/ioutil"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/etree"
-	// "github.com/beevik/etree"
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -379,13 +377,13 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastNotAllowe
 	cfg.MarshalAccountDefaults()
 
 	// bidder info
-	bidderInfos := make(adapters.BidderInfos)
-	bidderInfos["bidder"] = adapters.BidderInfo{
-		Status:                  adapters.StatusActive,
+	bidderInfos := make(config.BidderInfos)
+	bidderInfos["bidder"] = config.BidderInfo{
+		Enabled:                 true,
 		ModifyingVastXmlAllowed: false,
 	}
-	bidderInfos["updatable_bidder"] = adapters.BidderInfo{
-		Status:                  adapters.StatusActive,
+	bidderInfos["updatable_bidder"] = config.BidderInfo{
+		Enabled:                 true,
 		ModifyingVastXmlAllowed: true,
 	}
 
@@ -442,13 +440,13 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastAllowed(t
 	cfg.MarshalAccountDefaults()
 
 	// bidder info
-	bidderInfos := make(adapters.BidderInfos)
-	bidderInfos["bidder"] = adapters.BidderInfo{
-		Status:                  adapters.StatusActive,
+	bidderInfos := make(config.BidderInfos)
+	bidderInfos["bidder"] = config.BidderInfo{
+		Enabled:                 true,
 		ModifyingVastXmlAllowed: true,
 	}
-	bidderInfos["updatable_bidder"] = adapters.BidderInfo{
-		Status:                  adapters.StatusActive,
+	bidderInfos["updatable_bidder"] = config.BidderInfo{
+		Enabled:                 true,
 		ModifyingVastXmlAllowed: true,
 	}
 
@@ -505,7 +503,7 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableUnknownBiddersWhenUnknownBidde
 	cfg.MarshalAccountDefaults()
 
 	// bidder info
-	bidderInfos := make(adapters.BidderInfos)
+	bidderInfos := make(config.BidderInfos)
 
 	// prepare
 	data, err := getValidVTrackRequestBody(true, false)
@@ -561,7 +559,7 @@ func TestShouldReturnBadRequestWhenRequestExceedsMaxRequestSize(t *testing.T) {
 	cfg.MarshalAccountDefaults()
 
 	// bidder info
-	bidderInfos := make(adapters.BidderInfos)
+	bidderInfos := make(config.BidderInfos)
 
 	// prepare
 	data, err := getValidVTrackRequestBody(true, false)
@@ -699,8 +697,8 @@ func getVTrackRequestData(wi bool, wic bool) (db []byte, e error) {
 func TestInjectVideoEventTrackers(t *testing.T) {
 	type args struct {
 		externalURL string
-		bid         *openrtb.Bid
-		req         *openrtb.BidRequest
+		bid         *openrtb2.Bid
+		req         *openrtb2.BidRequest
 	}
 	type want struct {
 		eventURLs map[string][]string
@@ -714,7 +712,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				bid: &openrtb.Bid{
+				bid: &openrtb2.Bid{
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 					                              <Linear>                      
 					                                      <TrackingEvents>
@@ -727,7 +725,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 					                              </Linear>
 					                     </Creative></Creatives></InLine></Ad></VAST>`,
 				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+				req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 			},
 			want: want{
 				eventURLs: map[string][]string{
@@ -747,7 +745,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "non_linear_creative",
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+				bid: &openrtb2.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 				<NonLinearAds>
 					<TrackingEvents>
@@ -756,7 +754,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				</NonLinearAds>
 			</Creative></Creatives></InLine></Ad></VAST>`,
 				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+				req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 			},
 			want: want{
 				eventURLs: map[string][]string{
@@ -775,13 +773,13 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "no_traker_url_configured", // expect no injection
 			args: args{
 				externalURL: "",
-				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+				bid: &openrtb2.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative>
 				<Linear>                      
 				</Linear>
 			</Creative></Creatives></InLine></Ad></VAST>`,
 				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+				req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 			},
 			want: want{
 				eventURLs: map[string][]string{},
@@ -791,7 +789,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			name: "wrapper_vast_xml_from_partner", // expect we are injecting trackers inside wrapper
 			args: args{
 				externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+				bid: &openrtb2.Bid{ // Adm contains to TrackingEvents tag
 					AdM: `<VAST version="4.2" xmlns="http://www.iab.com/VAST">
 					<Ad id="20011" sequence="1" >
 					  <Wrapper followAdditionalWrappers="0" allowMultipleAds="1" fallbackOnNoAd="0">
@@ -804,7 +802,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 						 </Creative>
 				  </Creatives></Wrapper></Ad></VAST>`,
 				},
-				req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+				req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 			},
 			want: want{
 				eventURLs: map[string][]string{
@@ -824,10 +822,10 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		// 	name: "vast_tag_uri_response_from_partner",
 		// 	args: args{
 		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+		// 		bid: &openrtb2.Bid{ // Adm contains to TrackingEvents tag
 		// 			AdM: `<![CDATA[http://hostedvasttag.url&k=v]]>`,
 		// 		},
-		// 		req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+		// 		req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 		// 	},
 		// 	want: want{
 		// 		eventURLs: map[string][]string{
@@ -842,11 +840,11 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 		// 	name: "adm_empty",
 		// 	args: args{
 		// 		externalURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-		// 		bid: &openrtb.Bid{ // Adm contains to TrackingEvents tag
+		// 		bid: &openrtb2.Bid{ // Adm contains to TrackingEvents tag
 		// 			AdM:  "",
 		// 			NURL: "nurl_contents",
 		// 		},
-		// 		req: &openrtb.BidRequest{App: &openrtb.App{Bundle: "abc"}},
+		// 		req: &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "abc"}},
 		// 	},
 		// 	want: want{
 		// 		eventURLs: map[string][]string{
@@ -865,7 +863,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 				vast = tc.args.bid.AdM // original vast
 			}
 			// bind this bid id with imp object
-			tc.args.req.Imp = []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}}
+			tc.args.req.Imp = []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}}
 			tc.args.bid.ImpID = tc.args.req.Imp[0].ID
 			accountID := ""
 			timestamp := int64(0)
@@ -919,11 +917,11 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 func TestGetVideoEventTracking(t *testing.T) {
 	type args struct {
 		trackerURL string
-		bid        *openrtb.Bid
+		bid        *openrtb2.Bid
 		bidder     string
 		accountId  string
 		timestamp  int64
-		req        *openrtb.BidRequest
+		req        *openrtb2.BidRequest
 		doc        *etree.Document
 	}
 	type want struct {
@@ -938,14 +936,14 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "valid_scenario",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				bid:        &openrtb.Bid{
+				bid:        &openrtb2.Bid{
 					// AdM: vastXMLWith2Creatives,
 				},
-				req: &openrtb.BidRequest{
-					App: &openrtb.App{
+				req: &openrtb2.BidRequest{
+					App: &openrtb2.App{
 						Bundle: "someappbundle",
 					},
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -965,10 +963,10 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "no_macro_value", // expect no replacement
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				bid:        &openrtb.Bid{},
-				req: &openrtb.BidRequest{
-					App: &openrtb.App{}, // no app bundle value
-					Imp: []openrtb.Imp{},
+				bid:        &openrtb2.Bid{},
+				req: &openrtb2.BidRequest{
+					App: &openrtb2.App{}, // no app bundle value
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -988,11 +986,11 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "prefer_company_value_for_standard_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]",
-				req: &openrtb.BidRequest{
-					App: &openrtb.App{
+				req: &openrtb2.BidRequest{
+					App: &openrtb2.App{
 						Bundle: "myapp", // do not expect this value
 					},
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 					Ext: []byte(`{"prebid":{
 								"macros": {
 									"[DOMAIN]": "my_custom_value"
@@ -1016,11 +1014,11 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "multireplace_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]&parameter2=[DOMAIN]",
-				req: &openrtb.BidRequest{
-					App: &openrtb.App{
+				req: &openrtb2.BidRequest{
+					App: &openrtb2.App{
 						Bundle: "myapp123",
 					},
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -1040,13 +1038,13 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "custom_macro_without_prefix_and_suffix",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				req: &openrtb.BidRequest{
+				req: &openrtb2.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
 								"CUSTOM_MACRO": "my_custom_value"
 							}
 					}}`),
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -1066,13 +1064,13 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "empty_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				req: &openrtb.BidRequest{
+				req: &openrtb2.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
 								"": "my_custom_value"
 							}
 					}}`),
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -1092,13 +1090,13 @@ func TestGetVideoEventTracking(t *testing.T) {
 			name: "macro_is_case_sensitive",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&param1=[CUSTOM_MACRO]",
-				req: &openrtb.BidRequest{
+				req: &openrtb2.BidRequest{
 					Ext: []byte(`{"prebid":{
 							"macros": {
 								"": "my_custom_value"
 							}
 					}}`),
-					Imp: []openrtb.Imp{},
+					Imp: []openrtb2.Imp{},
 				},
 			},
 			want: want{
@@ -1116,15 +1114,15 @@ func TestGetVideoEventTracking(t *testing.T) {
 		},
 		{
 			name: "empty_tracker_url",
-			args: args{trackerURL: "    ", req: &openrtb.BidRequest{Imp: []openrtb.Imp{}}},
+			args: args{trackerURL: "    ", req: &openrtb2.BidRequest{Imp: []openrtb2.Imp{}}},
 			want: want{trackerURLMap: make(map[string]string)},
 		},
 		{
 			name: "all_macros", // expect encoding for WRAPPER_IMPRESSION_ID macro
 			args: args{
 				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]",
-				req: &openrtb.BidRequest{
-					App: &openrtb.App{Bundle: "com.someapp.com", Publisher: &openrtb.Publisher{ID: "5890"}},
+				req: &openrtb2.BidRequest{
+					App: &openrtb2.App{Bundle: "com.someapp.com", Publisher: &openrtb2.Publisher{ID: "5890"}},
 					Ext: []byte(`{
 						"prebid": {
 								"macros": {
@@ -1136,11 +1134,11 @@ func TestGetVideoEventTracking(t *testing.T) {
 								}
 						}
 					}`),
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{TagID: "/testadunit/1", ID: "imp_1"},
 					},
 				},
-				bid:    &openrtb.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
+				bid:    &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
 				bidder: "test_bidder:234",
 			},
 			want: want{
@@ -1157,10 +1155,10 @@ func TestGetVideoEventTracking(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			if nil == tc.args.bid {
-				tc.args.bid = &openrtb.Bid{}
+				tc.args.bid = &openrtb2.Bid{}
 			}
 
-			impMap := map[string]*openrtb.Imp{}
+			impMap := map[string]*openrtb2.Imp{}
 
 			for _, imp := range tc.args.req.Imp {
 				impMap[imp.ID] = &imp

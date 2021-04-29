@@ -1,12 +1,12 @@
 package exchange
 
 import (
+	"github.com/prebid/prebid-server/config"
 	"strings"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,6 +15,7 @@ func Test_eventsData_makeBidExtEvents(t *testing.T) {
 		enabledForAccount bool
 		enabledForRequest bool
 		bidType           openrtb_ext.BidType
+		generatedBidId    string
 	}
 	tests := []struct {
 		name string
@@ -23,7 +24,7 @@ func Test_eventsData_makeBidExtEvents(t *testing.T) {
 	}{
 		{
 			name: "banner: events enabled for request, disabled for account",
-			args: args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner},
+			args: args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			want: &openrtb_ext.ExtBidPrebidEvents{
 				Win: "http://localhost/event?t=win&b=BID-1&a=123456&bidder=openx&ts=1234567890",
 				Imp: "http://localhost/event?t=imp&b=BID-1&a=123456&bidder=openx&ts=1234567890",
@@ -31,7 +32,7 @@ func Test_eventsData_makeBidExtEvents(t *testing.T) {
 		},
 		{
 			name: "banner: events enabled for account, disabled for request",
-			args: args{enabledForAccount: true, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner},
+			args: args{enabledForAccount: true, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			want: &openrtb_ext.ExtBidPrebidEvents{
 				Win: "http://localhost/event?t=win&b=BID-1&a=123456&bidder=openx&ts=1234567890",
 				Imp: "http://localhost/event?t=imp&b=BID-1&a=123456&bidder=openx&ts=1234567890",
@@ -39,18 +40,26 @@ func Test_eventsData_makeBidExtEvents(t *testing.T) {
 		},
 		{
 			name: "banner: events disabled for account and request",
-			args: args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner},
+			args: args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			want: nil,
 		},
 		{
 			name: "video: events enabled for account and request",
-			args: args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeVideo},
+			args: args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeVideo, generatedBidId: ""},
 			want: nil,
 		},
 		{
 			name: "video: events disabled for account and request",
-			args: args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeVideo},
+			args: args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeVideo, generatedBidId: ""},
 			want: nil,
+		},
+		{
+			name: "banner: use generated bid id",
+			args: args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner, generatedBidId: "randomId"},
+			want: &openrtb_ext.ExtBidPrebidEvents{
+				Win: "http://localhost/event?t=win&b=randomId&a=123456&bidder=openx&ts=1234567890",
+				Imp: "http://localhost/event?t=imp&b=randomId&a=123456&bidder=openx&ts=1234567890",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -62,7 +71,7 @@ func Test_eventsData_makeBidExtEvents(t *testing.T) {
 				auctionTimestampMs: 1234567890,
 				externalURL:        "http://localhost",
 			}
-			bid := &pbsOrtbBid{bid: &openrtb.Bid{ID: "BID-1"}, bidType: tt.args.bidType}
+			bid := &pbsOrtbBid{bid: &openrtb2.Bid{ID: "BID-1"}, bidType: tt.args.bidType, generatedBidID: tt.args.generatedBidId}
 			assert.Equal(t, tt.want, evData.makeBidExtEvents(bid, openrtb_ext.BidderOpenx))
 		})
 	}
@@ -73,6 +82,7 @@ func Test_eventsData_modifyBidJSON(t *testing.T) {
 		enabledForAccount bool
 		enabledForRequest bool
 		bidType           openrtb_ext.BidType
+		generatedBidId    string
 	}
 	tests := []struct {
 		name      string
@@ -82,39 +92,45 @@ func Test_eventsData_modifyBidJSON(t *testing.T) {
 	}{
 		{
 			name:      "banner: events enabled for request, disabled for account",
-			args:      args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner},
+			args:      args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			jsonBytes: []byte(`{"ID": "something"}`),
 			want:      []byte(`{"ID": "something", "wurl": "http://localhost/event?t=win&b=BID-1&a=123456&bidder=openx&ts=1234567890"}`),
 		},
 		{
 			name:      "banner: events enabled for account, disabled for request",
-			args:      args{enabledForAccount: true, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner},
+			args:      args{enabledForAccount: true, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			jsonBytes: []byte(`{"ID": "something"}`),
 			want:      []byte(`{"ID": "something", "wurl": "http://localhost/event?t=win&b=BID-1&a=123456&bidder=openx&ts=1234567890"}`),
 		},
 		{
 			name:      "banner: events disabled for account and request",
-			args:      args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner},
+			args:      args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			jsonBytes: []byte(`{"ID": "something"}`),
 			want:      []byte(`{"ID": "something"}`),
 		},
 		{
 			name:      "video: events disabled for account and request",
-			args:      args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeVideo},
+			args:      args{enabledForAccount: false, enabledForRequest: false, bidType: openrtb_ext.BidTypeVideo, generatedBidId: ""},
 			jsonBytes: []byte(`{"ID": "something"}`),
 			want:      []byte(`{"ID": "something"}`),
 		},
 		{
 			name:      "video: events enabled for account and request",
-			args:      args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeVideo},
+			args:      args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeVideo, generatedBidId: ""},
 			jsonBytes: []byte(`{"ID": "something"}`),
 			want:      []byte(`{"ID": "something"}`),
 		},
 		{
 			name:      "banner: broken json expected to fail patching",
-			args:      args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner},
+			args:      args{enabledForAccount: true, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner, generatedBidId: ""},
 			jsonBytes: []byte(`broken json`),
 			want:      nil,
+		},
+		{
+			name:      "banner: generate bid id enabled",
+			args:      args{enabledForAccount: false, enabledForRequest: true, bidType: openrtb_ext.BidTypeBanner, generatedBidId: "randomID"},
+			jsonBytes: []byte(`{"ID": "something"}`),
+			want:      []byte(`{"ID": "something", "wurl":"http://localhost/event?t=win&b=randomID&a=123456&bidder=openx&ts=1234567890"}`),
 		},
 	}
 	for _, tt := range tests {
@@ -126,7 +142,7 @@ func Test_eventsData_modifyBidJSON(t *testing.T) {
 				auctionTimestampMs: 1234567890,
 				externalURL:        "http://localhost",
 			}
-			bid := &pbsOrtbBid{bid: &openrtb.Bid{ID: "BID-1"}, bidType: tt.args.bidType}
+			bid := &pbsOrtbBid{bid: &openrtb2.Bid{ID: "BID-1"}, bidType: tt.args.bidType, generatedBidID: tt.args.generatedBidId}
 			modifiedJSON, err := evData.modifyBidJSON(bid, openrtb_ext.BidderOpenx, tt.jsonBytes)
 			if tt.want != nil {
 				assert.NoError(t, err, "Unexpected error")
@@ -141,8 +157,8 @@ func Test_eventsData_modifyBidJSON(t *testing.T) {
 
 func TestModifyBidVAST(t *testing.T) {
 	type args struct {
-		bidReq *openrtb.BidRequest
-		bid    *openrtb.Bid
+		bidReq *openrtb2.BidRequest
+		bid    *openrtb2.Bid
 	}
 	type want struct {
 		tags []string
@@ -155,10 +171,10 @@ func TestModifyBidVAST(t *testing.T) {
 		{
 			name: "empty_adm", // expect adm contain vast tag with tracking events and  VASTAdTagURI nurl contents
 			args: args{
-				bidReq: &openrtb.BidRequest{
-					Imp: []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}},
+				bidReq: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
 				},
-				bid: &openrtb.Bid{
+				bid: &openrtb2.Bid{
 					AdM:   "",
 					NURL:  "nurl_contents",
 					ImpID: "123",
@@ -186,10 +202,10 @@ func TestModifyBidVAST(t *testing.T) {
 		{
 			name: "adm_containing_url", // expect adm contain vast tag with tracking events and  VASTAdTagURI adm url (previous value) contents
 			args: args{
-				bidReq: &openrtb.BidRequest{
-					Imp: []openrtb.Imp{{ID: "123", Video: &openrtb.Video{}}},
+				bidReq: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
 				},
-				bid: &openrtb.Bid{
+				bid: &openrtb2.Bid{
 					AdM:   "http://vast_tag_inline.xml",
 					NURL:  "nurl_contents",
 					ImpID: "123",
@@ -218,9 +234,9 @@ func TestModifyBidVAST(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ev := eventTracking{
-				bidderInfos: adapters.BidderInfos{
-					"somebidder": adapters.BidderInfo{
-						ModifyingVastXmlAllowed: false,
+				bidderInfos: config.BidderInfos{
+					"somebidder": config.BidderInfo{
+						ModifyingVastXmlAllowed: true,
 					},
 				},
 			}
@@ -233,7 +249,7 @@ func TestModifyBidVAST(t *testing.T) {
 	}
 }
 
-func validator(t *testing.T, b *openrtb.Bid, expectedTags []string) {
+func validator(t *testing.T, b *openrtb2.Bid, expectedTags []string) {
 	adm := b.AdM
 	assert.NotNil(t, adm)
 	assert.NotEmpty(t, adm)

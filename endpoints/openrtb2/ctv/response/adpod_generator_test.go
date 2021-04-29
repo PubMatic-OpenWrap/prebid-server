@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 )
 
 func Test_findUniqueCombinations(t *testing.T) {
@@ -27,38 +27,38 @@ func Test_findUniqueCombinations(t *testing.T) {
 				data: [][]*types.Bid{
 					{
 						{
-							Bid:               &openrtb.Bid{ID: "3-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 6.339115524232314},
+							Bid:               &openrtb2.Bid{ID: "3-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 6.339115524232314},
 							DealTierSatisfied: true,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "4-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.532468782358357},
+							Bid:               &openrtb2.Bid{ID: "4-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.532468782358357},
 							DealTierSatisfied: true,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "7-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
+							Bid:               &openrtb2.Bid{ID: "7-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
 							DealTierSatisfied: false,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "8-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
+							Bid:               &openrtb2.Bid{ID: "8-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
 							DealTierSatisfied: false,
 						},
 					}, //20
 
 					{
 						{
-							Bid:               &openrtb.Bid{ID: "2-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.4502433547413878},
+							Bid:               &openrtb2.Bid{ID: "2-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.4502433547413878},
 							DealTierSatisfied: true,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "1-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.329644588311827},
+							Bid:               &openrtb2.Bid{ID: "1-ed72b572-ba62-4220-abba-c19c0bf6346b", Price: 3.329644588311827},
 							DealTierSatisfied: true,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "5-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
+							Bid:               &openrtb2.Bid{ID: "5-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
 							DealTierSatisfied: false,
 						},
 						{
-							Bid:               &openrtb.Bid{ID: "6-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
+							Bid:               &openrtb2.Bid{ID: "6-VIDEO12-89A1-41F1-8708-978FD3C0912A", Price: 5},
 							DealTierSatisfied: false,
 						},
 					}, //25

@@ -2,21 +2,21 @@ package tagbidder
 
 import (
 	"errors"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/etree"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/openrtb_ext"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters"
 )
 
 func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 	type args struct {
-		internalRequest *openrtb.BidRequest
+		internalRequest *openrtb2.BidRequest
 		externalRequest *adapters.RequestData
 		response        *adapters.ResponseData
 	}
@@ -32,9 +32,9 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 		{
 			name: `InlinePricingNode`,
 			args: args{
-				internalRequest: &openrtb.BidRequest{
+				internalRequest: &openrtb2.BidRequest{
 					ID: `request_id_1`,
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
 							ID: `imp_id_1`,
 						},
@@ -51,7 +51,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 				bidderResponse: &adapters.BidderResponse{
 					Bids: []*adapters.TypedBid{
 						{
-							Bid: &openrtb.Bid{
+							Bid: &openrtb2.Bid{
 								ID:    `1234`,
 								ImpID: `imp_id_1`,
 								Price: 0.05,

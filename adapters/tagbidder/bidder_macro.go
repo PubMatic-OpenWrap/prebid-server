@@ -3,16 +3,16 @@ package tagbidder
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 )
 
 //BidderMacro default implementation
@@ -24,12 +24,12 @@ type BidderMacro struct {
 	//BidderConf *BidderConfig
 
 	//OpenRTB Specific Parameters
-	Request   *openrtb.BidRequest
+	Request   *openrtb2.BidRequest
 	IsApp     bool
 	HasGeo    bool
-	Imp       *openrtb.Imp
-	Publisher *openrtb.Publisher
-	Content   *openrtb.Content
+	Imp       *openrtb2.Imp
+	Publisher *openrtb2.Publisher
+	Content   *openrtb2.Content
 	UserExt   *openrtb_ext.ExtUser
 	RegsExt   *openrtb_ext.ExtRegs
 }
@@ -70,13 +70,13 @@ func (tag *BidderMacro) init() {
 }
 
 //InitBidRequest will initialise BidRequest
-func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
+func (tag *BidderMacro) InitBidRequest(request *openrtb2.BidRequest) {
 	tag.Request = request
 	tag.init()
 }
 
 //LoadImpression will set current imp
-func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) error {
+func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) error {
 	tag.Imp = imp
 	return nil
 }

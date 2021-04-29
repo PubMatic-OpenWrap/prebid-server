@@ -2,15 +2,15 @@ package tagbidder
 
 import (
 	"errors"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters"
 )
 
 //ITagResponseHandler parse bidder response
 type ITagResponseHandler interface {
-	Validate(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error
-	MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error)
+	Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error
+	MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error)
 }
 
 //GetResponseHandler returns response handler
