@@ -82,6 +82,7 @@ type Configuration struct {
 	AutoGenSourceTID bool `mapstructure:"auto_gen_source_tid"`
 	//When true, new bid id will be generated in seatbid[].bid[].ext.prebid.bidid and used in event urls instead
 	GenerateBidID bool `mapstructure:"generate_bid_id"`
+	TrackerURL       string `mapstructure:"tracker_url"`
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500
