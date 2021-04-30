@@ -92,8 +92,7 @@ func TestGetDurationInSeconds(t *testing.T) {
 	}
 	type want struct {
 		duration int // seconds  (will converted from string with format as  HH:MM:SS.mmm)
-		//duration int
-		err error
+		err      error
 	}
 	tests := []struct {
 		name string

@@ -13,6 +13,6 @@ type ExtImpVASTBidderTag struct {
 	TagID    string                 `json:"tagid"`
 	URL      string                 `json:"url"`
 	Duration int                    `json:"dur"`
-	Price    string                 `json:"price"`
+	Price    float64                `json:"price"`
 	Params   map[string]interface{} `json:"params,omitempty"`
 }

@@ -144,9 +144,9 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 
 	//if bid.price is not set in ParseExtension
 	if typedBid.Bid.Price <= 0 {
-		price, currency, ok := getPricingDetails(version, adElement)
-		if !ok {
-			price, currency, ok = getStaticPricingDetails(handler.VASTTag)
+		price, currency := getPricingDetails(version, adElement)
+		if price <= 0 {
+			price, currency = getStaticPricingDetails(handler.VASTTag)
 			if price <= 0 {
 				errs = append(errs, errors.New("Bid Price Not Present"))
 				return nil, errs[:]
@@ -233,18 +233,14 @@ func getAdvertisers(vastVer string, ad *etree.Element) []string {
 	return advertisers
 }
 
-func getStaticPricingDetails(vastTag *openrtb_ext.ExtImpVASTBidderTag) (float64, string, bool) {
+func getStaticPricingDetails(vastTag *openrtb_ext.ExtImpVASTBidderTag) (float64, string) {
 	if nil == vastTag {
-		return 0.0, "", false
+		return 0.0, ""
 	}
-	price, err := strconv.ParseFloat(vastTag.Price, 64)
-	if nil != err {
-		return 0.0, "", false
-	}
-	return price, "USD", true
+	return vastTag.Price, "USD"
 }
 
-func getPricingDetails(version string, ad *etree.Element) (float64, string, bool) {
+func getPricingDetails(version string, ad *etree.Element) (float64, string) {
 	var currency string
 	var node *etree.Element
 
@@ -255,12 +251,12 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 	}
 
 	if nil == node {
-		return 0.0, currency, false
+		return 0.0, currency
 	}
 
 	priceValue, err := strconv.ParseFloat(node.Text(), 64)
 	if nil != err {
-		return 0.0, currency, false
+		return 0.0, currency
 	}
 
 	currencyNode := node.SelectAttr(`currency`)
@@ -268,7 +264,7 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string, bool
 		currency = currencyNode.Value
 	}
 
-	return priceValue, currency, true
+	return priceValue, currency
 }
 
 // getDuration extracts the duration of the bid from input creative of Linear type.

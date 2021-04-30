@@ -13,7 +13,7 @@
             "tagid": { "type": "string" },
             "url": { "type": "string" },
             "dur": { "type": "integer" },
-            "price": { "type": "string" },
+            "price": { "type": "number" },
             "params": { "type": "object" }
           },
          "required": [ "tagid", "url", "dur" ]
