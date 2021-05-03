@@ -40,7 +40,9 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 					},
 				},
 				externalRequest: &adapters.RequestData{
-					ImpIndex: 0,
+					Params: adapters.BidRequestParams{
+						ImpIndex: 0,
+					},
 				},
 				response: &adapters.ResponseData{
 					Body: []byte(`<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`),
@@ -69,7 +71,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := &VASTTagResponseHandler{}
+			handler := NewVASTTagResponseHandler()
 			GetRandomID = func() string {
 				return `1234`
 			}
@@ -89,9 +91,8 @@ func TestGetDurationInSeconds(t *testing.T) {
 		creativeTag string // ad element
 	}
 	type want struct {
-		duration    float64 // seconds  (will converted from string with format as  HH:MM:SS.mmm)
-		durationInt int
-		err         error
+		duration int // seconds  (will converted from string with format as  HH:MM:SS.mmm)
+		err      error
 	}
 	tests := []struct {
 		name string
@@ -99,18 +100,18 @@ func TestGetDurationInSeconds(t *testing.T) {
 		want want
 	}{
 		// duration validation tests
-		{name: "duration 00:00:25 (= 25 seconds)", want: want{duration: 25, durationInt: 25}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:25</Duration> </Linear> </Creative>`}},
+		{name: "duration 00:00:25 (= 25 seconds)", want: want{duration: 25}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:25</Duration> </Linear> </Creative>`}},
 		{name: "duration 00:00:-25 (= -25 seconds)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:-25</Duration> </Linear> </Creative>`}},
-		{name: "duration 00:00:30.999 (= 30.990 seconds (int -> 30 seconds))", want: want{duration: 30.999, durationInt: 30}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:30.999</Duration> </Linear> </Creative>`}},
-		{name: "duration 00:01:08 (1 min 8 seconds = 68 seconds)", want: want{duration: 68, durationInt: 68}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:01:08</Duration> </Linear> </Creative>`}},
-		{name: "duration 02:13:12 (2 hrs 13 min  12 seconds) = 7992 seconds)", want: want{duration: 7992, durationInt: 7992}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>02:13:12</Duration> </Linear> </Creative>`}},
-		{name: "duration 3:40:43.5 (3 hrs 40 min  43 seconds 5 ms) = 6043.005 seconds (int -> 6043 seconds))", want: want{duration: 13243.005, durationInt: 13243}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:40:43.5</Duration> </Linear> </Creative>`}},
+		{name: "duration 00:00:30.999 (= 30.990 seconds (int -> 30 seconds))", want: want{duration: 30}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:30.999</Duration> </Linear> </Creative>`}},
+		{name: "duration 00:01:08 (1 min 8 seconds = 68 seconds)", want: want{duration: 68}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:01:08</Duration> </Linear> </Creative>`}},
+		{name: "duration 02:13:12 (2 hrs 13 min  12 seconds) = 7992 seconds)", want: want{duration: 7992}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>02:13:12</Duration> </Linear> </Creative>`}},
+		{name: "duration 3:40:43.5 (3 hrs 40 min  43 seconds 5 ms) = 6043.005 seconds (int -> 6043 seconds))", want: want{duration: 13243}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:40:43.5</Duration> </Linear> </Creative>`}},
 		{name: "duration 00:00:25.0005458 (0 hrs 0 min  25 seconds 0005458 ms) - invalid max ms is 999", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>00:00:25.0005458</Duration> </Linear> </Creative>`}},
 		{name: "invalid duration 3:13:900 (3 hrs 13 min  900 seconds) = Invalid seconds )", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:13:900</Duration> </Linear> </Creative>`}},
 		{name: "invalid duration 3:13:34:44 (3 hrs 13 min 34 seconds :44=invalid) = ?? )", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>3:13:34:44</Duration> </Linear> </Creative>`}},
-		{name: "duration = 0:0:45.038 , with milliseconds duration (0 hrs 0 min 45 seconds and 038 millseconds) = 45.038 seconds (int -> 45 seconds) )", want: want{duration: 45.038, durationInt: 45}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:45.038</Duration> </Linear> </InLine> </Creative>`}},
-		{name: "duration = 0:0:48.50  = 48.050 seconds (int -> 48 seconds))", want: want{duration: 48.050, durationInt: 48}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:48.50</Duration> </Linear> </InLine> </Creative>`}},
-		{name: "duration = 0:0:28.59  = 28.059 seconds  (int -> 28 seconds))", want: want{duration: 28.059, durationInt: 28}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:28.59</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:45.038 , with milliseconds duration (0 hrs 0 min 45 seconds and 038 millseconds) = 45.038 seconds (int -> 45 seconds) )", want: want{duration: 45}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:45.038</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:48.50  = 48.050 seconds (int -> 48 seconds))", want: want{duration: 48}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:48.50</Duration> </Linear> </InLine> </Creative>`}},
+		{name: "duration = 0:0:28.59  = 28.059 seconds  (int -> 28 seconds))", want: want{duration: 28}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>0:0:28.59</Duration> </Linear> </InLine> </Creative>`}},
 		{name: "duration = 56 (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>56</Duration> </Linear> </Creative>`}},
 		{name: "duration = :56 (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>:56</Duration> </Linear> </Creative>`}},
 		{name: "duration = :56: (ambiguity w.r.t. HH:MM:SS.mmm format)", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative sequence="1"> <Linear> <Duration>:56:</Duration> </Linear> </Creative>`}},
@@ -126,7 +127,7 @@ func TestGetDurationInSeconds(t *testing.T) {
 		{name: "Nil Creative tag", want: want{err: errors.New("Invalid Creative")}, args: args{creativeTag: ""}},
 
 		// multiple linear tags in creative
-		{name: "Multiple Linear Ads within Creative", want: want{duration: 25, durationInt: 25}, args: args{creativeTag: `<Creative><Linear><Duration>0:0:25<Duration></Linear><Linear><Duration>0:0:30<Duration></Linear></Creative>`}},
+		{name: "Multiple Linear Ads within Creative", want: want{duration: 25}, args: args{creativeTag: `<Creative><Linear><Duration>0:0:25<Duration></Linear><Linear><Duration>0:0:30<Duration></Linear></Creative>`}},
 		// Case sensitivity check - passing DURATION (vast is case-sensitive as per https://vastvalidator.iabtechlab.com/dash)
 		{name: "<DURATION> all caps", want: want{err: errors.New("Invalid Duration")}, args: args{creativeTag: `<Creative><Linear><DURATION>0:0:10</Duration></Linear></Creative>`}},
 	}
@@ -136,11 +137,10 @@ func TestGetDurationInSeconds(t *testing.T) {
 			doc.ReadFromString(tt.args.creativeTag)
 			dur, err := getDuration(doc.FindElement("./Creative"))
 			assert.Equal(t, tt.want.duration, dur)
-			assert.Equal(t, tt.want.durationInt, int(dur))
 			assert.Equal(t, tt.want.err, err)
 			// if error expects 0 value for duration
 			if nil != err {
-				assert.Equal(t, 0.0, dur)
+				assert.Equal(t, 0, dur)
 			}
 		})
 	}

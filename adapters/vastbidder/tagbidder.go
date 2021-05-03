@@ -26,27 +26,36 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 	bidderMacro.InitBidRequest(request)
 
 	requestData := []*adapters.RequestData{}
-	for i := range request.Imp {
-		if err := bidderMacro.LoadImpression(&request.Imp[i]); nil != err {
+	for impIndex := range request.Imp {
+		bidderExt, err := bidderMacro.LoadImpression(&request.Imp[impIndex])
+		if nil != err {
 			continue
 		}
 
-		//Setting Bidder Level Keys
-		bidderKeys := bidderMacro.GetBidderKeys()
-		macroProcessor.SetBidderKeys(bidderKeys)
+		//iterate each vast tags, and load vast tag
+		for vastTagIndex, tag := range bidderExt.Tags {
+			//load vasttag
+			bidderMacro.LoadVASTTag(tag)
 
-		//uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), a.bidderConfig.Flags)
-		uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), Flags{RemoveEmptyParam: true})
+			//Setting Bidder Level Keys
+			bidderKeys := bidderMacro.GetBidderKeys()
+			macroProcessor.SetBidderKeys(bidderKeys)
 
-		// append custom headers if any
-		headers := bidderMacro.getAllHeaders()
+			uri := macroProcessor.ProcessURL(bidderMacro.GetURI(), Flags{RemoveEmptyParam: true})
 
-		requestData = append(requestData, &adapters.RequestData{
-			ImpIndex: i,
-			Method:   `GET`,
-			Uri:      uri,
-			Headers:  headers,
-		})
+			// append custom headers if any
+			headers := bidderMacro.getAllHeaders()
+
+			requestData = append(requestData, &adapters.RequestData{
+				Params: adapters.BidRequestParams{
+					ImpIndex:     impIndex,
+					VASTTagIndex: vastTagIndex,
+				},
+				Method:  `GET`,
+				Uri:     uri,
+				Headers: headers,
+			})
+		}
 	}
 
 	return requestData, nil
@@ -56,7 +65,7 @@ func (a *TagBidder) MakeRequests(request *openrtb.BidRequest, reqInfo *adapters.
 func (a *TagBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	//response validation can be done here independently
 	//handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
-	handler, err := GetResponseHandler(VASTTagResponseHandlerType)
+	handler, err := GetResponseHandler(VASTTagHandlerType)
 	if nil != err {
 		return nil, []error{err}
 	}

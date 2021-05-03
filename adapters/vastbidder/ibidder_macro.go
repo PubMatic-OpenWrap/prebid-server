@@ -18,7 +18,8 @@ type Flags struct {
 type IBidderMacro interface {
 	//Helper Function
 	InitBidRequest(request *openrtb.BidRequest)
-	LoadImpression(imp *openrtb.Imp) error
+	LoadImpression(imp *openrtb.Imp) (*openrtb_ext.ExtImpVASTBidder, error)
+	LoadVASTTag(tag *openrtb_ext.ExtImpVASTBidderTag)
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
 	GetURI() string

@@ -2,9 +2,13 @@ package vastbidder
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 )
 
 func ObjectArrayToString(len int, separator string, cb func(i int) string) string {
@@ -20,6 +24,19 @@ func ObjectArrayToString(len int, separator string, cb func(i int) string) strin
 		out.WriteString(cb(i))
 	}
 	return out.String()
+}
+
+func readImpExt(impExt json.RawMessage) (*openrtb_ext.ExtImpVASTBidder, error) {
+	var bidderExt adapters.ExtImpBidder
+	if err := json.Unmarshal(impExt, &bidderExt); err != nil {
+		return nil, err
+	}
+
+	vastBidderExt := openrtb_ext.ExtImpVASTBidder{}
+	if err := json.Unmarshal(bidderExt.Bidder, &vastBidderExt); err != nil {
+		return nil, err
+	}
+	return &vastBidderExt, nil
 }
 
 func normalizeObject(prefix string, out map[string]string, obj map[string]interface{}) {

@@ -140,7 +140,7 @@ func TestMakeRequests(t *testing.T) {
 			reqData, err := bidder.MakeRequests(tt.args.req, nil)
 			assert.Nil(t, err)
 			for _, req := range reqData {
-				impID := tt.args.req.Imp[req.ImpIndex].ID
+				impID := tt.args.req.Imp[req.Params.ImpIndex].ID
 				expectedHeaders := tt.want.impIDReqHeaderMap[impID]
 				assert.Equal(t, expectedHeaders, req.Headers, "test for - "+impID)
 			}
