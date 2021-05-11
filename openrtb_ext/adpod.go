@@ -184,7 +184,7 @@ func (ext *ExtVideoAdPod) Validate() (err []error) {
 func (pod *VideoAdPod) SetDefaultValue() {
 	//pod.MinAds setting default value
 	if nil == pod.MinAds {
-		pod.MinAds = getIntPtr(1) //OTT-172	 Setting the default minimum ads to 1
+		pod.MinAds = getIntPtr(1)
 	}
 
 	//pod.MaxAds setting default value
