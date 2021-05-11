@@ -444,6 +444,13 @@ var impressionsTestsA2 = []struct {
 		step4: [][2]int64{},
 		step5: [][2]int64{{15, 15}, {15, 15}},
 	}},
+	{scenario: "TC59", out: expectedOutputA2{
+		step1: [][2]int64{{45, 45}},
+		step2: [][2]int64{},
+		step3: [][2]int64{},
+		step4: [][2]int64{{30, 30}},
+		step5: [][2]int64{{30, 30}},
+	}},
 	// {scenario: "TC1" , out: expectedOutputA2{
 	// 	step1: [][2]int64{},
 	// 	step2: [][2]int64{},

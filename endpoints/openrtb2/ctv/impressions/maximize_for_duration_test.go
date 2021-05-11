@@ -403,6 +403,13 @@ var impressionsTests = []struct {
 		closedSlotMinDuration: 15,
 		closedSlotMaxDuration: 45,
 	}},
+	{scenario: "TC59", out: expected{
+		impressionCount: 1,
+		freeTime:        45, closedMinDuration: 30,
+		closedMaxDuration:     90,
+		closedSlotMinDuration: 15,
+		closedSlotMaxDuration: 45,
+	}},
 }
 
 func TestGetImpressionsA1(t *testing.T) {
