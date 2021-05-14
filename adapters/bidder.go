@@ -95,6 +95,7 @@ type TypedBid struct {
 	Bid          *openrtb2.Bid
 	BidType      openrtb_ext.BidType
 	BidVideo     *openrtb_ext.ExtBidPrebidVideo
+	BidTargets   map[string]string
 	DealPriority int
 }
 

@@ -233,6 +233,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.B
 						seatBid.bids = append(seatBid.bids, &pbsOrtbBid{
 							bid:          bidResponse.Bids[i].Bid,
 							bidType:      bidResponse.Bids[i].BidType,
+							bidTargets:   bidResponse.Bids[i].BidTargets,
 							bidVideo:     bidResponse.Bids[i].BidVideo,
 							dealPriority: bidResponse.Bids[i].DealPriority,
 						})

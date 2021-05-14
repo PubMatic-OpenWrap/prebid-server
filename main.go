@@ -1,7 +1,8 @@
-package main
+package prebidServer
 
 import (
-	"flag"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 	"math/rand"
 	"net/http"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/prebid/prebid-server/currency"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/router"
-	"github.com/prebid/prebid-server/server"
 	"github.com/prebid/prebid-server/util/task"
 
 	"github.com/golang/glog"
@@ -25,6 +25,9 @@ import (
 // See issue #559
 var Rev string
 
+const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/"
+
+/*
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -42,12 +45,31 @@ func main() {
 		glog.Errorf("prebid-server failed: %v", err)
 	}
 }
+*/
 
-const configFileName = "pbs"
+func InitPrebidServer(configFile string) {
+	//init contents
+	rand.Seed(time.Now().UnixNano())
 
-func loadConfig() (*config.Configuration, error) {
+	//main contents
+	cfg, err := loadConfig(configFile)
+	if err != nil {
+		glog.Fatalf("Configuration could not be loaded or did not pass validation: %v", err)
+	}
+
+	err = serve(Rev, cfg)
+	if err != nil {
+		glog.Errorf("prebid-server failed: %v", err)
+	}
+}
+
+//const configFileName = "pbs"
+
+func loadConfig(configFileName string) (*config.Configuration, error) {
 	v := viper.New()
 	config.SetupViper(v, configFileName)
+	v.SetConfigFile(configFileName)
+	v.ReadInConfig()
 	return config.New(v)
 }
 
@@ -59,16 +81,45 @@ func serve(revision string, cfg *config.Configuration) error {
 	currencyConverterTickerTask := task.NewTickerTask(fetchingInterval, currencyConverter)
 	currencyConverterTickerTask.Start()
 
-	r, err := router.New(cfg, currencyConverter)
+	_, err := router.New(cfg, currencyConverter)
 	if err != nil {
 		return err
 	}
 
 	pbc.InitPrebidCache(cfg.CacheURL.GetBaseURL())
+	pbc.InitPrebidCacheURL(cfg.ExternalURL)
 
-	corsRouter := router.SupportCORS(r)
-	server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(revision, currencyConverter, fetchingInterval), r.MetricsEngine)
+	//corsRouter := router.SupportCORS(r)
+	//server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(revision, currencyConverter, fetchingInterval), r.MetricsEngine)
 
-	r.Shutdown()
+	//r.Shutdown()
 	return nil
+}
+
+func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
+	return router.OrtbAuctionEndpointWrapper(w, r)
+}
+
+var VideoAuction = func(w http.ResponseWriter, r *http.Request) error {
+	return router.VideoAuctionEndpointWrapper(w, r)
+}
+
+func Auction(w http.ResponseWriter, r *http.Request) {
+	router.AuctionWrapper(w, r)
+}
+
+func GetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.GetUIDSWrapper(w, r)
+}
+
+func SetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.SetUIDSWrapper(w, r)
+}
+
+func CookieSync(w http.ResponseWriter, r *http.Request) {
+	router.CookieSync(w, r)
+}
+
+func SyncerMap() map[openrtb_ext.BidderName]usersync.Usersyncer {
+	return router.SyncerMap()
 }

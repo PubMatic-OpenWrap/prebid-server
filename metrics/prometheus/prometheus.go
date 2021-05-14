@@ -15,53 +15,70 @@ type Metrics struct {
 	Registry *prometheus.Registry
 
 	// General Metrics
-	connectionsClosed            prometheus.Counter
-	connectionsError             *prometheus.CounterVec
-	connectionsOpened            prometheus.Counter
-	cookieSync                   prometheus.Counter
-	impressions                  *prometheus.CounterVec
-	impressionsLegacy            prometheus.Counter
-	prebidCacheWriteTimer        *prometheus.HistogramVec
-	requests                     *prometheus.CounterVec
-	requestsTimer                *prometheus.HistogramVec
-	requestsQueueTimer           *prometheus.HistogramVec
-	requestsWithoutCookie        *prometheus.CounterVec
-	storedImpressionsCacheResult *prometheus.CounterVec
-	storedRequestCacheResult     *prometheus.CounterVec
-	accountCacheResult           *prometheus.CounterVec
-	storedAccountFetchTimer      *prometheus.HistogramVec
-	storedAccountErrors          *prometheus.CounterVec
-	storedAMPFetchTimer          *prometheus.HistogramVec
-	storedAMPErrors              *prometheus.CounterVec
-	storedCategoryFetchTimer     *prometheus.HistogramVec
-	storedCategoryErrors         *prometheus.CounterVec
-	storedRequestFetchTimer      *prometheus.HistogramVec
-	storedRequestErrors          *prometheus.CounterVec
-	storedVideoFetchTimer        *prometheus.HistogramVec
-	storedVideoErrors            *prometheus.CounterVec
-	timeoutNotifications         *prometheus.CounterVec
-	dnsLookupTimer               prometheus.Histogram
-	tlsHandhakeTimer             prometheus.Histogram
-	privacyCCPA                  *prometheus.CounterVec
-	privacyCOPPA                 *prometheus.CounterVec
-	privacyLMT                   *prometheus.CounterVec
-	privacyTCF                   *prometheus.CounterVec
+	connectionsClosed             prometheus.Counter
+	connectionsError              *prometheus.CounterVec
+	connectionsOpened             prometheus.Counter
+	cookieSync                    prometheus.Counter
+	impressions                   *prometheus.CounterVec
+	impressionsLegacy             prometheus.Counter
+	prebidCacheWriteTimer         *prometheus.HistogramVec
+	requests                      *prometheus.CounterVec
+	requestsTimer                 *prometheus.HistogramVec
+	requestsQueueTimer            *prometheus.HistogramVec
+	requestsWithoutCookie         *prometheus.CounterVec
+	storedImpressionsCacheResult  *prometheus.CounterVec
+	storedRequestCacheResult      *prometheus.CounterVec
+	accountCacheResult            *prometheus.CounterVec
+	storedAccountFetchTimer       *prometheus.HistogramVec
+	storedAccountErrors           *prometheus.CounterVec
+	storedAMPFetchTimer           *prometheus.HistogramVec
+	storedAMPErrors               *prometheus.CounterVec
+	storedCategoryFetchTimer      *prometheus.HistogramVec
+	storedCategoryErrors          *prometheus.CounterVec
+	storedRequestFetchTimer       *prometheus.HistogramVec
+	storedRequestErrors           *prometheus.CounterVec
+	storedVideoFetchTimer         *prometheus.HistogramVec
+	storedVideoErrors             *prometheus.CounterVec
+	timeoutNotifications          *prometheus.CounterVec
+	dnsLookupTimer                prometheus.Histogram
+	tlsHandhakeTimer              prometheus.Histogram
+	privacyCCPA                   *prometheus.CounterVec
+	privacyCOPPA                  *prometheus.CounterVec
+	privacyLMT                    *prometheus.CounterVec
+	privacyTCF                    *prometheus.CounterVec
+	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics
-	adapterBids               *prometheus.CounterVec
-	adapterCookieSync         *prometheus.CounterVec
-	adapterErrors             *prometheus.CounterVec
-	adapterPanics             *prometheus.CounterVec
-	adapterPrices             *prometheus.HistogramVec
-	adapterRequests           *prometheus.CounterVec
-	adapterRequestsTimer      *prometheus.HistogramVec
-	adapterUserSync           *prometheus.CounterVec
-	adapterReusedConnections  *prometheus.CounterVec
-	adapterCreatedConnections *prometheus.CounterVec
-	adapterConnectionWaitTime *prometheus.HistogramVec
+	adapterBids                  *prometheus.CounterVec
+	adapterCookieSync            *prometheus.CounterVec
+	adapterErrors                *prometheus.CounterVec
+	adapterPanics                *prometheus.CounterVec
+	adapterPrices                *prometheus.HistogramVec
+	adapterRequests              *prometheus.CounterVec
+	adapterRequestsTimer         *prometheus.HistogramVec
+	adapterUserSync              *prometheus.CounterVec
+	adapterReusedConnections     *prometheus.CounterVec
+	adapterCreatedConnections    *prometheus.CounterVec
+	adapterConnectionWaitTime    *prometheus.HistogramVec
+	adapterDuplicateBidIDCounter *prometheus.CounterVec
+	adapterVideoBidDuration      *prometheus.HistogramVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
+
+	// Ad Pod Metrics
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	podImpGenTimer *prometheus.HistogramVec
+
+	// podImpGenTimer indicates time taken by combination generator
+	// algorithm to generate combination based on bid response and ad pod request
+	podCombGenTimer *prometheus.HistogramVec
+
+	// podCompExclTimer indicates time taken by compititve exclusion
+	// algorithm to generate final pod response based on bid response and ad pod request
+	podCompExclTimer *prometheus.HistogramVec
 
 	metricsDisabled config.DisabledMetrics
 }
@@ -107,6 +124,14 @@ const (
 const (
 	requestSuccessful = "ok"
 	requestFailed     = "failed"
+)
+
+// pod specific constants
+const (
+	podAlgorithm         = "algorithm"
+	podNoOfImpressions   = "no_of_impressions"
+	podTotalCombinations = "total_combinations"
+	podNoOfResponseBids  = "no_of_response_bids"
 )
 
 const (
@@ -353,6 +378,43 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Seconds request was waiting in queue",
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
+
+	metrics.adapterDuplicateBidIDCounter = newCounter(cfg, metrics.Registry,
+		"duplicate_bid_ids",
+		"Number of collisions observed for given adaptor",
+		[]string{adapterLabel})
+
+	metrics.requestsDuplicateBidIDCounter = newCounterWithoutLabels(cfg, metrics.Registry,
+		"requests_having_duplicate_bid_ids",
+		"Count of number of request where bid collision is detected.")
+
+	// adpod specific metrics
+	metrics.podImpGenTimer = newHistogramVec(cfg, metrics.Registry,
+		"impr_gen",
+		"Time taken by Ad Pod Impression Generator in seconds", []string{podAlgorithm, podNoOfImpressions},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		// 100 µS, 200 µS, 300 µS, 400 µS, 500 µS,  600 µS,
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCombGenTimer = newHistogramVec(cfg, metrics.Registry,
+		"comb_gen",
+		"Time taken by Ad Pod Combination Generator in seconds", []string{podAlgorithm, podTotalCombinations},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCompExclTimer = newHistogramVec(cfg, metrics.Registry,
+		"comp_excl",
+		"Time taken by Ad Pod Compititve Exclusion in seconds", []string{podAlgorithm, podNoOfResponseBids},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.adapterVideoBidDuration = newHistogramVec(cfg, metrics.Registry,
+		"adapter_vidbid_dur",
+		"Video Ad durations returned by the bidder", []string{adapterLabel},
+		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120})
 
 	preloadLabelValues(&metrics)
 
@@ -689,5 +751,69 @@ func (m *Metrics) RecordRequestPrivacy(privacy metrics.PrivacyLabels) {
 		m.privacyLMT.With(prometheus.Labels{
 			sourceLabel: sourceRequest,
 		}).Inc()
+	}
+}
+
+// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+// gives the bid response with multiple bids containing  same bid.ID
+// ensure collisions value is greater than 1. This function will not give any error
+// if collisions = 1 is passed
+func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	m.adapterDuplicateBidIDCounter.With(prometheus.Labels{
+		adapterLabel: adaptor,
+	}).Add(float64(collisions))
+}
+
+// RecordRequestHavingDuplicateBidID keeps count of request when duplicate bid.id is
+// detected in partner's response
+func (m *Metrics) RecordRequestHavingDuplicateBidID() {
+	m.requestsDuplicateBidIDCounter.Inc()
+}
+
+// pod specific metrics
+
+// recordAlgoTime is common method which handles algorithm time performance
+func recordAlgoTime(timer *prometheus.HistogramVec, labels metrics.PodLabels, elapsedTime time.Duration) {
+
+	pmLabels := prometheus.Labels{
+		podAlgorithm: labels.AlgorithmName,
+	}
+
+	if labels.NoOfImpressions != nil {
+		pmLabels[podNoOfImpressions] = strconv.Itoa(*labels.NoOfImpressions)
+	}
+	if labels.NoOfCombinations != nil {
+		pmLabels[podTotalCombinations] = strconv.Itoa(*labels.NoOfCombinations)
+	}
+	if labels.NoOfResponseBids != nil {
+		pmLabels[podNoOfResponseBids] = strconv.Itoa(*labels.NoOfResponseBids)
+	}
+
+	timer.With(pmLabels).Observe(elapsedTime.Seconds())
+}
+
+// RecordPodImpGenTime records number of impressions generated and time taken
+// by underneath algorithm to generate them
+func (m *Metrics) RecordPodImpGenTime(labels metrics.PodLabels, start time.Time) {
+	elapsedTime := time.Since(start)
+	recordAlgoTime(m.podImpGenTimer, labels, elapsedTime)
+}
+
+// RecordPodCombGenTime records number of combinations generated and time taken
+// by underneath algorithm to generate them
+func (m *Metrics) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	recordAlgoTime(m.podCombGenTimer, labels, elapsedTime)
+}
+
+// RecordPodCompititveExclusionTime records number of combinations comsumed for forming
+// final ad pod response and time taken by underneath algorithm to generate them
+func (m *Metrics) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	recordAlgoTime(m.podCompExclTimer, labels, elapsedTime)
+}
+
+//RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
+func (m *Metrics) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+	if videoBidDuration > 0 {
+		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
 	}
 }

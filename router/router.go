@@ -6,6 +6,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/usersync"
+	"github.com/prometheus/client_golang/prometheus"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -13,7 +17,6 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"github.com/prebid/prebid-server/errortypes"
 
 	"github.com/prebid/prebid-server/metrics"
@@ -35,15 +38,12 @@ import (
 	"github.com/prebid/prebid-server/cache/postgrescache"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints"
-	infoEndpoints "github.com/prebid/prebid-server/endpoints/info"
 	"github.com/prebid/prebid-server/endpoints/openrtb2"
 	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/gdpr"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/pbs"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/router/aspects"
 	"github.com/prebid/prebid-server/server/ssl"
 	storedRequestsConf "github.com/prebid/prebid-server/stored_requests/config"
 	"github.com/prebid/prebid-server/usersync/usersyncers"
@@ -56,6 +56,23 @@ import (
 
 var dataCache cache.Cache
 var exchanges map[string]adapters.Adapter
+var (
+	g_syncers           map[openrtb_ext.BidderName]usersync.Usersyncer
+	g_cfg               *config.Configuration
+	g_ex                exchange.Exchange
+	g_accounts          stored_requests.AccountFetcher
+	g_paramsValidator   openrtb_ext.BidderParamValidator
+	g_storedReqFetcher  stored_requests.Fetcher
+	g_gdprPerms         gdpr.Permissions
+	g_metrics           metrics.MetricsEngine
+	g_analytics         analytics.PBSAnalyticsModule
+	g_disabledBidders   map[string]string
+	g_categoriesFetcher stored_requests.CategoryFetcher
+	g_videoFetcher      stored_requests.Fetcher
+	g_activeBidders     map[string]openrtb_ext.BidderName
+	g_defReqJSON        []byte
+	g_cacheClient       pbc.Client
+)
 
 // NewJsonDirectoryServer is used to serve .json files from a directory as a single blob. For example,
 // given a directory containing the files "a.json" and "b.json", this returns a Handle which serves JSON like:
@@ -175,8 +192,8 @@ type Router struct {
 }
 
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
-	const schemaDirectory = "./static/bidder-params"
-	const infoDirectory = "./static/bidder-info"
+	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
+	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -214,18 +231,21 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	legacyBidderList := openrtb_ext.CoreBidderNames()
 	legacyBidderList = append(legacyBidderList, openrtb_ext.BidderName("districtm"))
 
+	g_cfg = cfg
+	var db *sql.DB
 	// Metrics engine
-	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, legacyBidderList)
-	db, shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
+	g_metrics = metricsConf.NewMetricsEngine(cfg, legacyBidderList)
+	db, _, g_storedReqFetcher, _, g_accounts, g_categoriesFetcher, g_videoFetcher = storedRequestsConf.NewStoredRequests(cfg, g_metrics, generalHttpClient, r.Router)
+
 	// todo(zachbadgett): better shutdown
-	r.Shutdown = shutdown
+	//r.Shutdown = shutdown
 	if err := loadDataCache(cfg, db); err != nil {
 		return nil, fmt.Errorf("Prebid Server could not load data cache: %v", err)
 	}
 
-	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
+	g_analytics = analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 
-	paramsValidator, err := openrtb_ext.NewBidderParamsValidator(schemaDirectory)
+	g_paramsValidator, err = openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
 	}
@@ -236,20 +256,22 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatal(err)
 	}
 
-	activeBidders := exchange.GetActiveBidders(bidderInfos)
-	disabledBidders := exchange.GetDisabledBiddersErrorMessages(bidderInfos)
+	g_activeBidders = exchange.GetActiveBidders(bidderInfos)
+	g_disabledBidders = exchange.GetDisabledBiddersErrorMessages(bidderInfos)
 
 	defaultAliases, defReqJSON := readDefaultRequest(cfg.DefReqConfig)
 	if err := validateDefaultAliases(defaultAliases); err != nil {
 		glog.Fatal(err)
 	}
+	
+	g_defReqJSON = defReqJSON
 
-	syncers := usersyncers.NewSyncerMap(cfg)
+	g_syncers = usersyncers.NewSyncerMap(cfg)
 	gvlVendorIDs := bidderInfos.ToGVLVendorIDMap()
-	gdprPerms := gdpr.NewPermissions(context.Background(), cfg.GDPR, gvlVendorIDs, generalHttpClient)
+	g_gdprPerms = gdpr.NewPermissions(context.Background(), cfg.GDPR, gvlVendorIDs, generalHttpClient)
 
 	exchanges = newExchangeMap(cfg)
-	cacheClient := pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, r.MetricsEngine)
+	g_cacheClient = pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, g_metrics)
 
 	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, bidderInfos, r.MetricsEngine)
 	if len(adaptersErrs) > 0 {
@@ -257,9 +279,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatalf("%v", errs)
 	}
 
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, r.MetricsEngine, bidderInfos, gdprPerms, rateConvertor, categoriesFetcher)
+	g_ex = exchange.NewExchange(adapters, g_cacheClient, cfg, g_metrics, bidderInfos, g_gdprPerms, rateConvertor, g_categoriesFetcher)
 
-	openrtbEndpoint, err := openrtb2.NewEndpoint(theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
+	/*openrtbEndpoint, err := openrtb2.NewEndpoint(theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
 	if err != nil {
 		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
 	}
@@ -312,9 +334,58 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg.HostCookie, syncers, gdprPerms, pbsAnalytics, r.MetricsEngine))
 	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
 	r.POST("/optout", userSyncDeps.OptOut)
-	r.GET("/optout", userSyncDeps.OptOut)
+	r.GET("/optout", userSyncDeps.OptOut)*/
 
 	return r, nil
+}
+
+//OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
+func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
+	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(g_ex, g_paramsValidator, g_storedReqFetcher, g_accounts, g_cfg, g_metrics, g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders)
+	if err != nil {
+		return err
+	}
+	ortbAuctionEndpoint(w, r, nil)
+	return nil
+}
+
+//VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
+func VideoAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
+	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(g_ex, g_paramsValidator, g_storedReqFetcher, g_videoFetcher, g_accounts, g_cfg, g_metrics, g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders)
+	if err != nil {
+		return err
+	}
+	videoAuctionEndpoint(w, r, nil)
+	return nil
+}
+
+//AuctionWrapper Openwrap wrapper method for calling /auction endpoint
+func AuctionWrapper(w http.ResponseWriter, r *http.Request) {
+	auction := endpoints.Auction(g_cfg, g_syncers, g_gdprPerms, g_metrics, dataCache, exchanges)
+	auction(w, r, nil)
+}
+
+//GetUIDSWrapper Openwrap wrapper method for calling /getuids endpoint
+func GetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
+	getUID := endpoints.NewGetUIDsEndpoint(g_cfg.HostCookie)
+	getUID(w, r, nil)
+}
+
+//SetUIDSWrapper Openwrap wrapper method for calling /setuid endpoint
+func SetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
+	setUID := endpoints.NewSetUIDEndpoint(g_cfg.HostCookie, g_syncers, g_gdprPerms, g_analytics, g_metrics)
+	setUID(w, r, nil)
+}
+
+//CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
+func CookieSync(w http.ResponseWriter, r *http.Request) {
+	cookiesync := endpoints.NewCookieSyncEndpoint(g_syncers, g_cfg, g_gdprPerms, g_metrics, g_analytics, g_activeBidders)
+	cookiesync(w, r, nil)
+}
+
+//SyncerMap Returns map of bidder and its usersync info
+func SyncerMap() map[openrtb_ext.BidderName]usersync.Usersyncer {
+	return g_syncers
 }
 
 // Fixes #648
@@ -378,6 +449,15 @@ func readDefaultRequest(defReqConfig config.DefReqConfig) (map[string]string, []
 		return aliases, defReqJSON
 	}
 	return aliases, []byte{}
+}
+
+func GetPrometheusRegistry() *prometheus.Registry {
+	mEngine, ok := g_metrics.(*metricsConf.DetailedMetricsEngine)
+	if !ok || mEngine == nil || mEngine.PrometheusMetrics == nil {
+		return nil
+	}
+
+	return mEngine.PrometheusMetrics.Registry
 }
 
 func validateDefaultAliases(aliases map[string]string) error {
