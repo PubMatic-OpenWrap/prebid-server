@@ -10,8 +10,10 @@ github.com/PubMatic-OpenWrap/etree v1.0.1 h1:Q8sZ99MuXKmAx2v4XThKjwlstgadZffiRbN
 github.com/PubMatic-OpenWrap/etree v1.0.1/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4 h1:EhiijwjoKTx7FVP8p2wwC/z4n5l4c8l2CGmsrFv2uhI=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/openrtb v11.0.1-0.20200228131822-5216ebe65c0c+incompatible h1:BGwndVLu0ncwweHnofXzLo+SnRMe04Bq3KFfELLzif4=
-github.com/PubMatic-OpenWrap/openrtb v11.0.1-0.20200228131822-5216ebe65c0c+incompatible/go.mod h1:Ply/+GFe6FLkPMLV8Yh8xW0MpqclQyVf7m4PRsnaLDY=
+github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425063110-b01110089669 h1:oEMhzdbL9IwS7wJCQfx9qpRZSHryTy8mv9Gx/8BY8eA=
+github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425063110-b01110089669/go.mod h1:TVgncsz6MOzbL7lhun1lNuUBzVBlVDbxf9Fyy1TyhZA=
+github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425134848-adbedb6f42c6 h1:HYFXG8R1mtbDYpwWPxtBXuQ8pfgndMlQd7opo+wSAbk=
+github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425134848-adbedb6f42c6/go.mod h1:XMFHmDvfVyIhz5JGzvNXVt0afDLN2mrdYviUOKIYqAo=
 github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf h1:eg0MeVzsP1G42dRafH3vf+al2vQIJU0YHX+1Tw87oco=
 github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/beevik/etree v1.1.0 h1:T0xke/WvNtMoCqgzPhkX2r4rjY3GDZFi+FjpRZY2Jbs=

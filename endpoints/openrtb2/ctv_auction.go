@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/prebid/prebid-server/endpoints/events"
 	"math"
 	"net/http"
 	"net/url"
@@ -60,7 +61,7 @@ func NewCTVEndpoint(
 	requestsByID stored_requests.Fetcher,
 	videoFetcher stored_requests.Fetcher,
 	accounts stored_requests.AccountFetcher,
-	//categories stored_requests.CategoryFetcher,
+//categories stored_requests.CategoryFetcher,
 	cfg *config.Configuration,
 	met metrics.MetricsEngine,
 	pbsAnalytics analytics.PBSAnalyticsModule,
@@ -920,7 +921,7 @@ func addTargetingKey(bid *openrtb.Bid, key openrtb_ext.TargetingKey, value strin
 	return err
 }
 
-func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb.Bid) {
+func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 	// adjusment: update bid.id with ctv module generated bid.id
 	creatives := events.FindCreatives(doc)
 	for _, creative := range creatives {

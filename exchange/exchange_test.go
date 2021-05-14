@@ -2391,7 +2391,7 @@ func TestCategoryMapping(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := &openrtb.BidRequest{}
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2448,7 +2448,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := &openrtb.BidRequest{}
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2504,7 +2504,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := &openrtb.BidRequest{}
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -2587,7 +2587,7 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	}
 
 	translateCategories := false
-	bidRequest := &openrtb.BidRequest{}
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(&translateCategories)
 
 	targData := &targetData{
@@ -2639,7 +2639,7 @@ func TestCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := &openrtb.BidRequest{}
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2720,6 +2720,7 @@ func TestNoCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2809,6 +2810,7 @@ func TestCategoryMappingBidderName(t *testing.T) {
 		includeWinners:   true,
 	}
 
+	bidRequest := openrtb2.BidRequest{}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
@@ -2863,6 +2865,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 		includeWinners:   true,
 	}
 
+	bidRequest := openrtb2.BidRequest{}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
@@ -3016,6 +3019,7 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	bidRequest := openrtb2.BidRequest{}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{

@@ -3,6 +3,7 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/etree"
 	"net/url"
 	"strings"
 	"testing"
@@ -63,7 +64,7 @@ func TestAddTargetingKeys(t *testing.T) {
 
 func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 	type args struct {
-		modifiedBid *openrtb.Bid
+		modifiedBid *openrtb2.Bid
 	}
 	type want struct {
 		eventURLMap map[string]string
@@ -86,7 +87,7 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 				},
 			},
 			args: args{
-				modifiedBid: &openrtb.Bid{
+				modifiedBid: &openrtb2.Bid{
 					ID: "1-bid_123",
 					AdM: `<VAST  version="3.0">
 					<Ad>

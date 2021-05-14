@@ -8,7 +8,6 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.5 // indirect
 	github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
-	github.com/PubMatic-OpenWrap/openrtb v11.0.1-0.20200228131822-5216ebe65c0c+incompatible
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible
@@ -59,3 +58,5 @@ require (
 	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/mxmCherry/openrtb/v15 v15.0.0 => github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210425063110-b01110089669

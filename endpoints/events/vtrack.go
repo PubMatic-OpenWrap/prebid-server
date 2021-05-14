@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -52,6 +56,40 @@ type BidCacheResponse struct {
 
 type CacheObject struct {
 	UUID string `json:"uuid"`
+}
+
+// standard VAST macros
+// https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-adcount
+const (
+	VASTAdTypeMacro    = "[ADTYPE]"
+	VASTAppBundleMacro = "[APPBUNDLE]"
+	VASTDomainMacro    = "[DOMAIN]"
+	VASTPageURLMacro   = "[PAGEURL]"
+
+	// PBS specific macros
+	PBSEventIDMacro = "[EVENT_ID]" // macro for injecting PBS defined  video event tracker id
+	//[PBS-ACCOUNT] represents publisher id / account id
+	PBSAccountMacro = "[PBS-ACCOUNT]"
+	// [PBS-BIDDER] represents bidder name
+	PBSBidderMacro = "[PBS-BIDDER]"
+	// [PBS-BIDID] represents bid id. If auction.generate-bid-id config is on, then resolve with response.seatbid.bid.ext.prebid.bidid. Else replace with response.seatbid.bid.id
+	PBSBidIDMacro = "[PBS-BIDID]"
+	// [ADERVERTISER_NAME] represents advertiser name
+	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
+	// Pass imp.tagId using this macro
+	PBSAdUnitIDMacro = "[AD_UNIT]"
+)
+
+var trackingEvents = []string{"start", "firstQuartile", "midpoint", "thirdQuartile", "complete"}
+
+// PubMatic specific event IDs
+// This will go in event-config once PreBid modular design is in place
+var eventIDMap = map[string]string{
+	"start":         "2",
+	"firstQuartile": "4",
+	"midpoint":      "3",
+	"thirdQuartile": "5",
+	"complete":      "6",
 }
 
 func NewVTrackEndpoint(cfg *config.Configuration, accounts stored_requests.AccountFetcher, cache prebid_cache_client.Client, bidderInfos config.BidderInfos) httprouter.Handle {
@@ -313,7 +351,7 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 
 //InjectVideoEventTrackers injects the video tracking events
 //Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb.BidRequest) ([]byte, bool, error) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, bidder, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
@@ -325,7 +363,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 
 	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
 	//TODO: It should be optimized by forming once and reusing
-	impMap := make(map[string]*openrtb.Imp)
+	impMap := make(map[string]*openrtb2.Imp)
 	for i := range bidRequest.Imp {
 		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
 	}
@@ -354,9 +392,9 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 			// }
 
 			switch imp.Video.Linearity {
-			case openrtb.VideoLinearityLinearInStream:
+			case openrtb2.VideoLinearityLinearInStream:
 				creative.AddChild(doc.CreateElement("Linear"))
-			case openrtb.VideoLinearityNonLinearOverlay:
+			case openrtb2.VideoLinearityNonLinearOverlay:
 				creative.AddChild(doc.CreateElement("NonLinearAds"))
 			default: // create both type of creatives
 				creative.AddChild(doc.CreateElement("Linear"))
@@ -398,7 +436,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb.Bid, bidd
 //    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb.Bid, bidder string, accountId string, timestamp int64, req *openrtb.BidRequest, doc *etree.Document, impMap map[string]*openrtb.Imp) map[string]string {
+func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap

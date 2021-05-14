@@ -49,7 +49,7 @@ func TestMakeVASTAdmContainsURI(t *testing.T) {
 		`<VASTAdTagURI><![CDATA[` + url + `]]></VASTAdTagURI>` +
 		`<Impression></Impression><Creatives></Creatives>` +
 		`</Wrapper></Ad></VAST>`
-	bid := &openrtb.Bid{
+	bid := &openrtb2.Bid{
 		AdM: url,
 	}
 	vast := makeVAST(bid)
