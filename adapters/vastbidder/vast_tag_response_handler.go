@@ -106,9 +106,11 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	}
 
 	typedBid := &adapters.TypedBid{
-		Bid:      &openrtb.Bid{},
-		BidType:  openrtb_ext.BidTypeVideo,
-		BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
+		Bid:     &openrtb.Bid{},
+		BidType: openrtb_ext.BidTypeVideo,
+		BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+			VASTTagID: handler.VASTTag.TagID,
+		},
 	}
 
 	creatives := adElement.FindElements("Creatives/Creative")

@@ -117,6 +117,13 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 	//Adding Headers as Custom Macros
 
 	//Adding Cookies as Custom Macros
+
+	//Adding Default Empty for standard keys
+	for i := range ParamKeys {
+		if _, ok := keys[ParamKeys[i]]; !ok {
+			keys[ParamKeys[i]] = ""
+		}
+	}
 	return keys
 }
 
