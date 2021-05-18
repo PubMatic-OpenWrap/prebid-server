@@ -67,8 +67,7 @@
             "requestbody": "appnexusTestRequestBody",
             "requestheaders": { "header_1" : ["value_11", "value_12"], "header_2" : ["value_21"] },
             "responsebody": "appnexusTestResponseBody",
-            "status": 200,
-            "requestheaders": null
+            "status": 200
           }
         ],
         "pbsSeatBid": {
@@ -98,8 +97,7 @@
             "requestbody": "audienceNetworkTestRequestBody",
             "requestheaders": null,
             "responsebody": "audienceNetworkTestResponseBody",
-            "status": 200,
-            "requestheaders": null
+            "status": 200
           }
         ]
       }
@@ -155,8 +153,7 @@
               "requestbody": "appnexusTestRequestBody",
               "requestheaders": { "header_1" : ["value_11", "value_12"], "header_2" : ["value_21"] },
               "responsebody": "appnexusTestResponseBody",
-              "status": 200,
-              "requestheaders": null
+              "status": 200
             }
           ],
           "audienceNetwork": [
@@ -165,8 +162,7 @@
               "requestbody": "audienceNetworkTestRequestBody",
               "requestheaders": null,
               "responsebody": "audienceNetworkTestResponseBody",
-              "status": 200,
-              "requestheaders": null
+              "status": 200
             }
           ]
         },

@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +16,7 @@ func TestMakeRequests(t *testing.T) {
 
 	type args struct {
 		customHeaders map[string]string
-		req           *openrtb.BidRequest
+		req           *openrtb2.BidRequest
 	}
 	type want struct {
 		impIDReqHeaderMap map[string]http.Header
@@ -32,49 +32,49 @@ func TestMakeRequests(t *testing.T) {
 				customHeaders: map[string]string{
 					"my-custom-header": "custom-value",
 				},
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{ // vast 2.0
 							ID: "vast_2_0_imp_req",
-							Video: &openrtb.Video{
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST20,
+							Video: &openrtb2.Video{
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST20,
 								},
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
 						{
 							ID: "vast_4_0_imp_req",
-							Video: &openrtb.Video{ // vast 4.0
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST40,
+							Video: &openrtb2.Video{ // vast 4.0
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST40,
 								},
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
 						{
 							ID: "vast_2_0_4_0_wrapper_imp_req",
-							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST40Wrapper,
-									openrtb.ProtocolVAST20,
+							Video: &openrtb2.Video{ // vast 2 and 4.0 wrapper
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST40Wrapper,
+									openrtb2.ProtocolVAST20,
 								},
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},
 						{
 							ID: "other_non_vast_protocol",
-							Video: &openrtb.Video{ // DAAST 1.0
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolDAAST10,
+							Video: &openrtb2.Video{ // DAAST 1.0
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolDAAST10,
 								},
 							},
 							Ext: []byte(`{"bidder" :{}}`),
@@ -82,8 +82,8 @@ func TestMakeRequests(t *testing.T) {
 						{
 
 							ID: "no_protocol_field_set",
-							Video: &openrtb.Video{ // vast 2 and 4.0 wrapper
-								Protocols: []openrtb.Protocol{},
+							Video: &openrtb2.Video{ // vast 2 and 4.0 wrapper
+								Protocols: []openrtb2.Protocol{},
 							},
 							Ext: []byte(`{"bidder" :{}}`),
 						},

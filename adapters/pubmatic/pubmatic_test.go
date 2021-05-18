@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/magiconair/properties/assert"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -13,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
-	"github.com/PubMatic-OpenWrap/prebid-server/cache/dummycache"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/prebid/prebid-server/cache/dummycache"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/pbs"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 func TestJsonSamples(t *testing.T) {
@@ -36,7 +35,7 @@ func TestJsonSamples(t *testing.T) {
 
 // ----------------------------------------------------------------------------
 // Code below this line tests the legacy, non-openrtb code flow. It can be deleted after we
-// clean up the existing code and make everything openrtb.
+// clean up the existing code and make everything openrtb2.
 
 func CompareStringValue(val1 string, val2 string, t *testing.T) {
 	if val1 != val2 {
@@ -52,29 +51,29 @@ func DummyPubMaticServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var breq openrtb.BidRequest
+	var breq openrtb2.BidRequest
 	err = json.Unmarshal(body, &breq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resp := openrtb.BidResponse{
+	resp := openrtb2.BidResponse{
 		ID:    breq.ID,
 		BidID: "bidResponse_ID",
 		Cur:   "USD",
-		SeatBid: []openrtb.SeatBid{
+		SeatBid: []openrtb2.SeatBid{
 			{
 				Seat: "pubmatic",
-				Bid:  make([]openrtb.Bid, 0),
+				Bid:  make([]openrtb2.Bid, 0),
 			},
 		},
 	}
 	rand.Seed(int64(time.Now().UnixNano()))
-	var bids []openrtb.Bid
+	var bids []openrtb2.Bid
 
 	for i, imp := range breq.Imp {
-		bid := openrtb.Bid{
+		bid := openrtb2.Bid{
 			ID:     fmt.Sprintf("SeatID_%d", i),
 			ImpID:  imp.ID,
 			Price:  float64(int(rand.Float64()*1000)) / 100,
@@ -133,7 +132,7 @@ func TestPubmaticTimeout(t *testing.T) {
 			{
 				Code:       "unitCode",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -168,7 +167,7 @@ func TestPubmaticInvalidJson(t *testing.T) {
 			{
 				Code:       "unitCode",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -204,7 +203,7 @@ func TestPubmaticInvalidStatusCode(t *testing.T) {
 			{
 				Code:       "unitCode",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -237,7 +236,7 @@ func TestPubmaticInvalidInputParameters(t *testing.T) {
 				Code:       "unitCode",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
 				BidID:      "bidid",
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -309,7 +308,7 @@ func TestPubmaticBasicResponse_MandatoryParams(t *testing.T) {
 				Code:       "unitCode",
 				BidID:      "bidid",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 336,
 						H: 280,
@@ -345,7 +344,7 @@ func TestPubmaticBasicResponse_AllParams(t *testing.T) {
 				Code:       "unitCode",
 				BidID:      "bidid",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 336,
 						H: 280,
@@ -390,7 +389,7 @@ func TestPubmaticMultiImpressionResponse(t *testing.T) {
 				Code:       "unitCode1",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
 				BidID:      "bidid",
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 336,
 						H: 280,
@@ -402,7 +401,7 @@ func TestPubmaticMultiImpressionResponse(t *testing.T) {
 				Code:       "unitCode1",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
 				BidID:      "bidid",
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 800,
 						H: 200,
@@ -438,7 +437,7 @@ func TestPubmaticMultiAdUnitResponse(t *testing.T) {
 				Code:       "unitCode1",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
 				BidID:      "bidid",
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 336,
 						H: 280,
@@ -450,7 +449,7 @@ func TestPubmaticMultiAdUnitResponse(t *testing.T) {
 				Code:       "unitCode2",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
 				BidID:      "bidid",
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 800,
 						H: 200,
@@ -487,7 +486,7 @@ func TestPubmaticMobileResponse(t *testing.T) {
 				Code:       "unitCode",
 				BidID:      "bidid",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 336,
 						H: 280,
@@ -498,7 +497,7 @@ func TestPubmaticMobileResponse(t *testing.T) {
 		},
 	}
 
-	pbReq.App = &openrtb.App{
+	pbReq.App = &openrtb2.App{
 		ID:   "com.test",
 		Name: "testApp",
 	}
@@ -527,7 +526,7 @@ func TestPubmaticInvalidLookupBidIDParameter(t *testing.T) {
 			{
 				Code:       "unitCode",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -559,7 +558,7 @@ func TestPubmaticAdSlotParams(t *testing.T) {
 				Code:       "unitCode",
 				BidID:      "bidid",
 				MediaTypes: []pbs.MediaType{pbs.MEDIA_TYPE_BANNER},
-				Sizes: []openrtb.Format{
+				Sizes: []openrtb2.Format{
 					{
 						W: 120,
 						H: 240,
@@ -639,7 +638,7 @@ func TestPubmaticSampleRequest(t *testing.T) {
 	}
 	pbReq.AdUnits[0] = pbs.AdUnit{
 		Code: "adUnit_1",
-		Sizes: []openrtb.Format{
+		Sizes: []openrtb2.Format{
 			{
 				W: 100,
 				H: 120,
@@ -798,37 +797,4 @@ func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
 	if bidextnew == nil {
 		t.Errorf("it should not be nil")
 	}
-}
-
-func TestMakeRequestsTrimsPubID(t *testing.T) {
-	var a PubmaticAdapter
-	a.URI = "http://test.com/openrtb2"
-
-	var bidderExt adapters.ExtImpBidder
-	extImpPubMatic := openrtb_ext.ExtImpPubmatic{}
-	extImpPubMatic.PublisherId = " 5890 "
-	bidderExt.Bidder, _ = json.Marshal(extImpPubMatic)
-	extRaw, _ := json.Marshal(bidderExt)
-
-	var w, h uint64
-	w = 300
-	h = 250
-	var impression = openrtb.Imp{
-		Banner: &openrtb.Banner{
-			W: &w,
-			H: &h,
-		},
-		Ext: extRaw,
-	}
-	request := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{impression},
-		Site: &openrtb.Site{
-			Publisher: &openrtb.Publisher{},
-		},
-	}
-	a.MakeRequests(request, nil)
-
-	updatedPubID := request.Site.Publisher.ID
-
-	assert.Equal(t, updatedPubID, "5890", "Publisher.ID field should be trimmed")
 }

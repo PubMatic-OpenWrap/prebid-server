@@ -8,11 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-
-	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 //BidderMacro default implementation
@@ -23,12 +22,12 @@ type BidderMacro struct {
 	Conf *config.Adapter
 
 	//OpenRTB Specific Parameters
-	Request   *openrtb.BidRequest
+	Request   *openrtb2.BidRequest
 	IsApp     bool
 	HasGeo    bool
-	Imp       *openrtb.Imp
-	Publisher *openrtb.Publisher
-	Content   *openrtb.Content
+	Imp       *openrtb2.Imp
+	Publisher *openrtb2.Publisher
+	Content   *openrtb2.Content
 
 	//Extensions
 	ImpBidderExt openrtb_ext.ExtImpVASTBidder
@@ -78,13 +77,13 @@ func (tag *BidderMacro) init() {
 }
 
 //InitBidRequest will initialise BidRequest
-func (tag *BidderMacro) InitBidRequest(request *openrtb.BidRequest) {
+func (tag *BidderMacro) InitBidRequest(request *openrtb2.BidRequest) {
 	tag.Request = request
 	tag.init()
 }
 
 //LoadImpression will set current imp
-func (tag *BidderMacro) LoadImpression(imp *openrtb.Imp) (*openrtb_ext.ExtImpVASTBidder, error) {
+func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error) {
 	tag.Imp = imp
 
 	var bidderExt adapters.ExtImpBidder
@@ -1180,10 +1179,10 @@ func setDefaultHeaders(tag *BidderMacro) {
 	expectedVastTags := 0
 	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols && len(tag.Imp.Video.Protocols) > 0 {
 		for _, protocol := range tag.Imp.Video.Protocols {
-			if protocol == openrtb.ProtocolVAST40 || protocol == openrtb.ProtocolVAST40Wrapper {
+			if protocol == openrtb2.ProtocolVAST40 || protocol == openrtb2.ProtocolVAST40Wrapper {
 				expectedVastTags |= 1 << 1
 			}
-			if protocol <= openrtb.ProtocolVAST30Wrapper {
+			if protocol <= openrtb2.ProtocolVAST30Wrapper {
 				expectedVastTags |= 1 << 0
 			}
 		}

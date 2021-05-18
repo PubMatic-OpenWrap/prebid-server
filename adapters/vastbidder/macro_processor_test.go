@@ -5,12 +5,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
-func getBidRequest(requestJSON string) *openrtb.BidRequest {
-	bidRequest := &openrtb.BidRequest{}
+func getBidRequest(requestJSON string) *openrtb2.BidRequest {
+	bidRequest := &openrtb2.BidRequest{}
 	json.Unmarshal([]byte(requestJSON), bidRequest)
 	return bidRequest
 }
@@ -22,19 +22,19 @@ func TestMacroProcessor_ProcessString(t *testing.T) {
 		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
 	}
 
-	sampleBidRequest := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{
+	sampleBidRequest := &openrtb2.BidRequest{
+		Imp: []openrtb2.Imp{
 			{TagID: testMacroValues[MacroTagID]},
 		},
-		Site: &openrtb.Site{
-			Publisher: &openrtb.Publisher{
+		Site: &openrtb2.Site{
+			Publisher: &openrtb2.Publisher{
 				ID: testMacroValues[MacroPubID],
 			},
 		},
 	}
 
 	type fields struct {
-		bidRequest *openrtb.BidRequest
+		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name     string
@@ -159,12 +159,12 @@ func TestMacroProcessor_processKey(t *testing.T) {
 		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
 	}
 
-	sampleBidRequest := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{
+	sampleBidRequest := &openrtb2.BidRequest{
+		Imp: []openrtb2.Imp{
 			{TagID: testMacroValues[MacroTagID]},
 		},
-		Site: &openrtb.Site{
-			Publisher: &openrtb.Publisher{
+		Site: &openrtb2.Site{
+			Publisher: &openrtb2.Publisher{
 				ID: testMacroValues[MacroPubID],
 			},
 		},
@@ -312,12 +312,12 @@ func TestMacroProcessor_processURLValues(t *testing.T) {
 		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
 	}
 
-	sampleBidRequest := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{
+	sampleBidRequest := &openrtb2.BidRequest{
+		Imp: []openrtb2.Imp{
 			{TagID: testMacroValues[MacroTagID]},
 		},
-		Site: &openrtb.Site{
-			Publisher: &openrtb.Publisher{
+		Site: &openrtb2.Site{
+			Publisher: &openrtb2.Publisher{
 				ID: testMacroValues[MacroPubID],
 			},
 		},
@@ -431,12 +431,12 @@ func TestMacroProcessor_processURLValuesEscapingKeys(t *testing.T) {
 		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
 	}
 
-	sampleBidRequest := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{
+	sampleBidRequest := &openrtb2.BidRequest{
+		Imp: []openrtb2.Imp{
 			{TagID: testMacroValues[MacroTagID]},
 		},
-		Site: &openrtb.Site{
-			Publisher: &openrtb.Publisher{
+		Site: &openrtb2.Site{
+			Publisher: &openrtb2.Publisher{
 				ID: testMacroValues[MacroPubID],
 			},
 		},
@@ -503,13 +503,13 @@ func TestMacroProcessor_ProcessURL(t *testing.T) {
 		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
 	}
 
-	sampleBidRequest := &openrtb.BidRequest{
-		Imp: []openrtb.Imp{
+	sampleBidRequest := &openrtb2.BidRequest{
+		Imp: []openrtb2.Imp{
 			{TagID: testMacroValues[MacroTagID]},
 		},
-		Site: &openrtb.Site{
+		Site: &openrtb2.Site{
 			ID: testMacroValues[MacroSiteID],
-			Publisher: &openrtb.Publisher{
+			Publisher: &openrtb2.Publisher{
 				ID: testMacroValues[MacroPubID],
 			},
 		},

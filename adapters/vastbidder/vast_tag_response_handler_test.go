@@ -7,17 +7,18 @@ import (
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 	type args struct {
-		internalRequest *openrtb.BidRequest
+		internalRequest *openrtb2.BidRequest
 		externalRequest *adapters.RequestData
 		response        *adapters.ResponseData
+		vastTag         *openrtb_ext.ExtImpVASTBidderTag
 	}
 	type want struct {
 		bidderResponse *adapters.BidderResponse
@@ -31,9 +32,9 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 		{
 			name: `InlinePricingNode`,
 			args: args{
-				internalRequest: &openrtb.BidRequest{
+				internalRequest: &openrtb2.BidRequest{
 					ID: `request_id_1`,
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
 							ID: `imp_id_1`,
 						},
@@ -47,20 +48,27 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 				response: &adapters.ResponseData{
 					Body: []byte(`<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`),
 				},
+				vastTag: &openrtb_ext.ExtImpVASTBidderTag{
+					TagID:    "101",
+					Duration: 15,
+				},
 			},
 			want: want{
 				bidderResponse: &adapters.BidderResponse{
 					Bids: []*adapters.TypedBid{
 						{
-							Bid: &openrtb.Bid{
+							Bid: &openrtb2.Bid{
 								ID:    `1234`,
 								ImpID: `imp_id_1`,
 								Price: 0.05,
 								AdM:   `<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
 								CrID:  "cr_1234",
 							},
-							BidType:  openrtb_ext.BidTypeVideo,
-							BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
+							BidType: openrtb_ext.BidTypeVideo,
+							BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+								VASTTagID: "101",
+								Duration:  15,
+							},
 						},
 					},
 					Currency: `USD`,
@@ -75,6 +83,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 			GetRandomID = func() string {
 				return `1234`
 			}
+			handler.VASTTag = tt.args.vastTag
 
 			bidderResponse, err := handler.vastTagToBidderResponse(tt.args.internalRequest, tt.args.externalRequest, tt.args.response)
 			assert.Equal(t, tt.want.bidderResponse, bidderResponse)

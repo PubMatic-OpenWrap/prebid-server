@@ -5,16 +5,15 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/config"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
 )
 
 //TestSetDefaultHeaders verifies SetDefaultHeaders
 func TestSetDefaultHeaders(t *testing.T) {
 	type args struct {
-		req *openrtb.BidRequest
+		req *openrtb2.BidRequest
 	}
 	type want struct {
 		headers http.Header
@@ -26,13 +25,13 @@ func TestSetDefaultHeaders(t *testing.T) {
 	}{
 		{
 			name: "check all default headers",
-			args: args{req: &openrtb.BidRequest{
-				Device: &openrtb.Device{
+			args: args{req: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
 					IP:       "1.1.1.1",
 					UA:       "user-agent",
 					Language: "en",
 				},
-				Site: &openrtb.Site{
+				Site: &openrtb2.Site{
 					Page: "http://test.com/",
 				},
 			}},
@@ -56,28 +55,28 @@ func TestSetDefaultHeaders(t *testing.T) {
 		},
 		{
 			name: "no headers set",
-			args: args{req: &openrtb.BidRequest{}},
+			args: args{req: &openrtb2.BidRequest{}},
 			want: want{
 				headers: http.Header{},
 			},
 		}, {
 			name: "vast 4 protocol",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST40,
-									openrtb.ProtocolDAAST10,
+							Video: &openrtb2.Video{
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST40,
+									openrtb2.ProtocolDAAST10,
 								},
 							},
 						},
@@ -95,21 +94,21 @@ func TestSetDefaultHeaders(t *testing.T) {
 		}, {
 			name: "< vast 4",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST20,
-									openrtb.ProtocolDAAST10,
+							Video: &openrtb2.Video{
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST20,
+									openrtb2.ProtocolDAAST10,
 								},
 							},
 						},
@@ -125,21 +124,21 @@ func TestSetDefaultHeaders(t *testing.T) {
 		}, {
 			name: "vast 4.0 and 4.0 wrapper",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST40,
-									openrtb.ProtocolVAST40Wrapper,
+							Video: &openrtb2.Video{
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST40,
+									openrtb2.ProtocolVAST40Wrapper,
 								},
 							},
 						},
@@ -158,21 +157,21 @@ func TestSetDefaultHeaders(t *testing.T) {
 		{
 			name: "vast 2.0 and 4.0",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{
-								Protocols: []openrtb.Protocol{
-									openrtb.ProtocolVAST40,
-									openrtb.ProtocolVAST20Wrapper,
+							Video: &openrtb2.Video{
+								Protocols: []openrtb2.Protocol{
+									openrtb2.ProtocolVAST40,
+									openrtb2.ProtocolVAST20Wrapper,
 								},
 							},
 						},
@@ -209,7 +208,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 //TestGetAllHeaders verifies default and custom headers are returned
 func TestGetAllHeaders(t *testing.T) {
 	type args struct {
-		req      *openrtb.BidRequest
+		req      *openrtb2.BidRequest
 		myBidder IBidderMacro
 	}
 	type want struct {
@@ -224,13 +223,13 @@ func TestGetAllHeaders(t *testing.T) {
 		{
 			name: "Default and custom headers check",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
 				},
@@ -253,8 +252,8 @@ func TestGetAllHeaders(t *testing.T) {
 		{
 			name: "override default header value",
 			args: args{
-				req: &openrtb.BidRequest{
-					Site: &openrtb.Site{
+				req: &openrtb2.BidRequest{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/", // default header value
 					},
 				},
@@ -272,13 +271,13 @@ func TestGetAllHeaders(t *testing.T) {
 		{
 			name: "no custom headers",
 			args: args{
-				req: &openrtb.BidRequest{
-					Device: &openrtb.Device{
+				req: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
 						IP:       "1.1.1.1",
 						UA:       "user-agent",
 						Language: "en",
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						Page: "http://test.com/",
 					},
 				},
@@ -351,7 +350,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 	type args struct {
 		tag        IBidderMacro
 		conf       *config.Adapter
-		bidRequest *openrtb.BidRequest
+		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name   string
@@ -363,14 +362,14 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 			args: args{
 				tag:  newTestBidderMacro(),
 				conf: &config.Adapter{},
-				bidRequest: &openrtb.BidRequest{
-					Imp: []openrtb.Imp{
+				bidRequest: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{},
+							Video: &openrtb2.Video{},
 						},
 					},
-					App: &openrtb.App{
-						Publisher: &openrtb.Publisher{},
+					App: &openrtb2.App{
+						Publisher: &openrtb2.Publisher{},
 					},
 				},
 			},
@@ -505,14 +504,14 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 			args: args{
 				tag:  newTestBidderMacro(),
 				conf: &config.Adapter{},
-				bidRequest: &openrtb.BidRequest{
-					Imp: []openrtb.Imp{
+				bidRequest: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
 						{
-							Video: &openrtb.Video{},
+							Video: &openrtb2.Video{},
 						},
 					},
-					Site: &openrtb.Site{
-						Publisher: &openrtb.Publisher{},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{},
 					},
 				},
 			},
@@ -647,7 +646,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 			args: args{
 				tag:  newTestBidderMacro(),
 				conf: &config.Adapter{},
-				bidRequest: &openrtb.BidRequest{
+				bidRequest: &openrtb2.BidRequest{
 					Test:  1,
 					TMax:  1000,
 					WSeat: []string{`wseat-1`, `wseat-2`},
@@ -657,16 +656,16 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BCat:  []string{`bcat-1`, `bcat-2`},
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
-					Source: &openrtb.Source{
+					Source: &openrtb2.Source{
 						FD:     1,
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
-					Regs: &openrtb.Regs{
+					Regs: &openrtb2.Regs{
 						COPPA: 1,
 						Ext:   []byte(`{"gdpr":1,"us_privacy":"user-privacy"}`),
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
 							DisplayManager:    `disp-mgr`,
 							DisplayManagerVer: `1.2`,
@@ -675,9 +674,9 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							BidFloor:          3.0,
 							BidFloorCur:       `usd`,
 							Secure:            new(int8),
-							PMP: &openrtb.PMP{
+							PMP: &openrtb2.PMP{
 								PrivateAuction: 1,
-								Deals: []openrtb.Deal{
+								Deals: []openrtb2.Deal{
 									{
 										ID:          `deal-1`,
 										BidFloor:    4.0,
@@ -696,35 +695,35 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 									},
 								},
 							},
-							Video: &openrtb.Video{
+							Video: &openrtb2.Video{
 								MIMEs:          []string{`mp4`, `flv`},
 								MinDuration:    30,
 								MaxDuration:    60,
-								Protocols:      []openrtb.Protocol{openrtb.ProtocolVAST30, openrtb.ProtocolVAST40Wrapper},
-								Protocol:       openrtb.ProtocolVAST40Wrapper,
+								Protocols:      []openrtb2.Protocol{openrtb2.ProtocolVAST30, openrtb2.ProtocolVAST40Wrapper},
+								Protocol:       openrtb2.ProtocolVAST40Wrapper,
 								W:              640,
 								H:              480,
-								StartDelay:     new(openrtb.StartDelay),
-								Placement:      openrtb.VideoPlacementTypeInStream,
-								Linearity:      openrtb.VideoLinearityLinearInStream,
+								StartDelay:     new(openrtb2.StartDelay),
+								Placement:      openrtb2.VideoPlacementTypeInStream,
+								Linearity:      openrtb2.VideoLinearityLinearInStream,
 								Skip:           new(int8),
 								SkipMin:        10,
 								SkipAfter:      5,
 								Sequence:       1,
-								BAttr:          []openrtb.CreativeAttribute{openrtb.CreativeAttributeAudioAdAutoPlay, openrtb.CreativeAttributeAudioAdUserInitiated},
+								BAttr:          []openrtb2.CreativeAttribute{openrtb2.CreativeAttributeAudioAdAutoPlay, openrtb2.CreativeAttributeAudioAdUserInitiated},
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
 								BoxingAllowed:  1,
-								PlaybackMethod: []openrtb.PlaybackMethod{openrtb.PlaybackMethodPageLoadSoundOn, openrtb.PlaybackMethodClickSoundOn},
-								PlaybackEnd:    openrtb.PlaybackCessationModeVideoCompletionOrTerminatedByUser,
-								Delivery:       []openrtb.ContentDeliveryMethod{openrtb.ContentDeliveryMethodStreaming, openrtb.ContentDeliveryMethodDownload},
-								Pos:            new(openrtb.AdPosition),
-								API:            []openrtb.APIFramework{openrtb.APIFrameworkVPAID10, openrtb.APIFrameworkVPAID20},
+								PlaybackMethod: []openrtb2.PlaybackMethod{openrtb2.PlaybackMethodPageLoadSoundOn, openrtb2.PlaybackMethodClickSoundOn},
+								PlaybackEnd:    openrtb2.PlaybackCessationModeVideoCompletionOrTerminatedByUser,
+								Delivery:       []openrtb2.ContentDeliveryMethod{openrtb2.ContentDeliveryMethodStreaming, openrtb2.ContentDeliveryMethodDownload},
+								Pos:            new(openrtb2.AdPosition),
+								API:            []openrtb2.APIFramework{openrtb2.APIFrameworkVPAID10, openrtb2.APIFrameworkVPAID20},
 							},
 						},
 					},
-					Site: &openrtb.Site{
+					Site: &openrtb2.Site{
 						ID:            `site-id`,
 						Name:          `site-name`,
 						Domain:        `site-domain`,
@@ -737,12 +736,12 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						Mobile:        1,
 						PrivacyPolicy: 2,
 						Keywords:      `site-keywords`,
-						Publisher: &openrtb.Publisher{
+						Publisher: &openrtb2.Publisher{
 							ID:     `site-pub-id`,
 							Name:   `site-pub-name`,
 							Domain: `site-pub-domain`,
 						},
-						Content: &openrtb.Content{
+						Content: &openrtb2.Content{
 							ID:                 `site-cnt-id`,
 							Episode:            2,
 							Title:              `site-cnt-title`,
@@ -754,31 +753,31 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							ISRC:               `site-cnt-isrc`,
 							URL:                `site-cnt-url`,
 							Cat:                []string{`site-cnt-cat1`, `site-cnt-cat2`},
-							ProdQ:              new(openrtb.ProductionQuality),
-							VideoQuality:       new(openrtb.ProductionQuality),
-							Context:            openrtb.ContentContextVideo,
+							ProdQ:              new(openrtb2.ProductionQuality),
+							VideoQuality:       new(openrtb2.ProductionQuality),
+							Context:            openrtb2.ContentContextVideo,
 							ContentRating:      `1.2`,
 							UserRating:         `2.2`,
-							QAGMediaRating:     openrtb.IQGMediaRatingAll,
+							QAGMediaRating:     openrtb2.IQGMediaRatingAll,
 							Keywords:           `site-cnt-keywords`,
 							LiveStream:         1,
 							SourceRelationship: 1,
 							Len:                100,
 							Language:           `english`,
 							Embeddable:         1,
-							Producer: &openrtb.Producer{
+							Producer: &openrtb2.Producer{
 								ID:   `site-cnt-prod-id`,
 								Name: `site-cnt-prod-name`,
 							},
 						},
 					},
-					Device: &openrtb.Device{
+					Device: &openrtb2.Device{
 						UA:             `user-agent`,
 						DNT:            new(int8),
 						Lmt:            new(int8),
 						IP:             `ipv4`,
 						IPv6:           `ipv6`,
-						DeviceType:     openrtb.DeviceTypeConnectedTV,
+						DeviceType:     openrtb2.DeviceTypeConnectedTV,
 						Make:           `device-make`,
 						Model:          `device-model`,
 						OS:             `os`,
@@ -787,7 +786,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						W:              2048,
 						JS:             1,
 						Language:       `device-lang`,
-						ConnectionType: new(openrtb.ConnectionType),
+						ConnectionType: new(openrtb2.ConnectionType),
 						IFA:            `ifa`,
 						DIDSHA1:        `didsha1`,
 						DIDMD5:         `didmd5`,
@@ -795,7 +794,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						DPIDMD5:        `dpidmd5`,
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
-						Geo: &openrtb.Geo{
+						Geo: &openrtb2.Geo{
 							Lat:       1.1,
 							Lon:       2.2,
 							Country:   `country`,
@@ -805,7 +804,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UTCOffset: 1000,
 						},
 					},
-					User: &openrtb.User{
+					User: &openrtb2.User{
 						ID:     `user-id`,
 						Yob:    1990,
 						Gender: `M`,
@@ -944,7 +943,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 			args: args{
 				tag:  newTestBidderMacro(),
 				conf: &config.Adapter{},
-				bidRequest: &openrtb.BidRequest{
+				bidRequest: &openrtb2.BidRequest{
 					Test:  1,
 					TMax:  1000,
 					WSeat: []string{`wseat-1`, `wseat-2`},
@@ -954,16 +953,16 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BCat:  []string{`bcat-1`, `bcat-2`},
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
-					Source: &openrtb.Source{
+					Source: &openrtb2.Source{
 						FD:     1,
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
-					Regs: &openrtb.Regs{
+					Regs: &openrtb2.Regs{
 						COPPA: 1,
 						Ext:   []byte(`{"gdpr":1,"us_privacy":"user-privacy"}`),
 					},
-					Imp: []openrtb.Imp{
+					Imp: []openrtb2.Imp{
 						{
 							DisplayManager:    `disp-mgr`,
 							DisplayManagerVer: `1.2`,
@@ -972,9 +971,9 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							BidFloor:          3.0,
 							BidFloorCur:       `usd`,
 							Secure:            new(int8),
-							PMP: &openrtb.PMP{
+							PMP: &openrtb2.PMP{
 								PrivateAuction: 1,
-								Deals: []openrtb.Deal{
+								Deals: []openrtb2.Deal{
 									{
 										ID:          `deal-1`,
 										BidFloor:    4.0,
@@ -993,35 +992,35 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 									},
 								},
 							},
-							Video: &openrtb.Video{
+							Video: &openrtb2.Video{
 								MIMEs:          []string{`mp4`, `flv`},
 								MinDuration:    30,
 								MaxDuration:    60,
-								Protocols:      []openrtb.Protocol{openrtb.ProtocolVAST30, openrtb.ProtocolVAST40Wrapper},
-								Protocol:       openrtb.ProtocolVAST40Wrapper,
+								Protocols:      []openrtb2.Protocol{openrtb2.ProtocolVAST30, openrtb2.ProtocolVAST40Wrapper},
+								Protocol:       openrtb2.ProtocolVAST40Wrapper,
 								W:              640,
 								H:              480,
-								StartDelay:     new(openrtb.StartDelay),
-								Placement:      openrtb.VideoPlacementTypeInStream,
-								Linearity:      openrtb.VideoLinearityLinearInStream,
+								StartDelay:     new(openrtb2.StartDelay),
+								Placement:      openrtb2.VideoPlacementTypeInStream,
+								Linearity:      openrtb2.VideoLinearityLinearInStream,
 								Skip:           new(int8),
 								SkipMin:        10,
 								SkipAfter:      5,
 								Sequence:       1,
-								BAttr:          []openrtb.CreativeAttribute{openrtb.CreativeAttributeAudioAdAutoPlay, openrtb.CreativeAttributeAudioAdUserInitiated},
+								BAttr:          []openrtb2.CreativeAttribute{openrtb2.CreativeAttributeAudioAdAutoPlay, openrtb2.CreativeAttributeAudioAdUserInitiated},
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
 								BoxingAllowed:  1,
-								PlaybackMethod: []openrtb.PlaybackMethod{openrtb.PlaybackMethodPageLoadSoundOn, openrtb.PlaybackMethodClickSoundOn},
-								PlaybackEnd:    openrtb.PlaybackCessationModeVideoCompletionOrTerminatedByUser,
-								Delivery:       []openrtb.ContentDeliveryMethod{openrtb.ContentDeliveryMethodStreaming, openrtb.ContentDeliveryMethodDownload},
-								Pos:            new(openrtb.AdPosition),
-								API:            []openrtb.APIFramework{openrtb.APIFrameworkVPAID10, openrtb.APIFrameworkVPAID20},
+								PlaybackMethod: []openrtb2.PlaybackMethod{openrtb2.PlaybackMethodPageLoadSoundOn, openrtb2.PlaybackMethodClickSoundOn},
+								PlaybackEnd:    openrtb2.PlaybackCessationModeVideoCompletionOrTerminatedByUser,
+								Delivery:       []openrtb2.ContentDeliveryMethod{openrtb2.ContentDeliveryMethodStreaming, openrtb2.ContentDeliveryMethodDownload},
+								Pos:            new(openrtb2.AdPosition),
+								API:            []openrtb2.APIFramework{openrtb2.APIFrameworkVPAID10, openrtb2.APIFrameworkVPAID20},
 							},
 						},
 					},
-					App: &openrtb.App{
+					App: &openrtb2.App{
 						ID:            `app-id`,
 						Bundle:        `app-bundle`,
 						StoreURL:      `app-store-url`,
@@ -1034,12 +1033,12 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						PageCat:       []string{`app-page-cat1`, `app-page-cat2`},
 						PrivacyPolicy: 2,
 						Keywords:      `app-keywords`,
-						Publisher: &openrtb.Publisher{
+						Publisher: &openrtb2.Publisher{
 							ID:     `app-pub-id`,
 							Name:   `app-pub-name`,
 							Domain: `app-pub-domain`,
 						},
-						Content: &openrtb.Content{
+						Content: &openrtb2.Content{
 							ID:                 `app-cnt-id`,
 							Episode:            2,
 							Title:              `app-cnt-title`,
@@ -1051,30 +1050,30 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							ISRC:               `app-cnt-isrc`,
 							URL:                `app-cnt-url`,
 							Cat:                []string{`app-cnt-cat1`, `app-cnt-cat2`},
-							ProdQ:              new(openrtb.ProductionQuality),
-							VideoQuality:       new(openrtb.ProductionQuality),
-							Context:            openrtb.ContentContextVideo,
+							ProdQ:              new(openrtb2.ProductionQuality),
+							VideoQuality:       new(openrtb2.ProductionQuality),
+							Context:            openrtb2.ContentContextVideo,
 							ContentRating:      `1.2`,
 							UserRating:         `2.2`,
-							QAGMediaRating:     openrtb.IQGMediaRatingAll,
+							QAGMediaRating:     openrtb2.IQGMediaRatingAll,
 							Keywords:           `app-cnt-keywords`,
 							LiveStream:         1,
 							SourceRelationship: 1,
 							Len:                100,
 							Language:           `english`,
 							Embeddable:         1,
-							Producer: &openrtb.Producer{
+							Producer: &openrtb2.Producer{
 								ID:   `app-cnt-prod-id`,
 								Name: `app-cnt-prod-name`,
 							},
 						},
 					},
-					Device: &openrtb.Device{
+					Device: &openrtb2.Device{
 						UA:             `user-agent`,
 						DNT:            new(int8),
 						Lmt:            new(int8),
 						IPv6:           `ipv6`,
-						DeviceType:     openrtb.DeviceTypeConnectedTV,
+						DeviceType:     openrtb2.DeviceTypeConnectedTV,
 						Make:           `device-make`,
 						Model:          `device-model`,
 						OS:             `os`,
@@ -1083,7 +1082,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						W:              2048,
 						JS:             1,
 						Language:       `device-lang`,
-						ConnectionType: new(openrtb.ConnectionType),
+						ConnectionType: new(openrtb2.ConnectionType),
 						IFA:            `ifa`,
 						DIDSHA1:        `didsha1`,
 						DIDMD5:         `didmd5`,
@@ -1091,7 +1090,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						DPIDMD5:        `dpidmd5`,
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
-						Geo: &openrtb.Geo{
+						Geo: &openrtb2.Geo{
 							Lat:       1.1,
 							Lon:       2.2,
 							Country:   `country`,
@@ -1101,7 +1100,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UTCOffset: 1000,
 						},
 					},
-					User: &openrtb.User{
+					User: &openrtb2.User{
 						ID:     `user-id`,
 						Yob:    1990,
 						Gender: `M`,

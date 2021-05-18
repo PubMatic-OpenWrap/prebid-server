@@ -3,10 +3,9 @@ package vastbidder
 import (
 	"net/http"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 //Flags of each tag bidder
@@ -17,8 +16,8 @@ type Flags struct {
 //IBidderMacro interface will capture all macro definition
 type IBidderMacro interface {
 	//Helper Function
-	InitBidRequest(request *openrtb.BidRequest)
-	LoadImpression(imp *openrtb.Imp) (*openrtb_ext.ExtImpVASTBidder, error)
+	InitBidRequest(request *openrtb2.BidRequest)
+	LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error)
 	LoadVASTTag(tag *openrtb_ext.ExtImpVASTBidderTag)
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
