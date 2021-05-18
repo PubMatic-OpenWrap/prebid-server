@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/beevik/etree"
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"

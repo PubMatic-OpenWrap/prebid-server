@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"io/ioutil"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/beevik/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/prebid_cache_client"

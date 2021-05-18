@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/beevik/etree"
 	"github.com/buger/jsonparser"
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
