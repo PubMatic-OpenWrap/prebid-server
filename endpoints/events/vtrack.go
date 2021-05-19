@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
@@ -464,7 +465,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 			}
 		}
 		if nil != req && nil != req.Site {
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.Site.Domain)
+			eventURL = replaceMacro(eventURL, VASTDomainMacro, replaceDomain(req))
 			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
 			if nil != req.Site.Publisher {
 				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
@@ -533,4 +534,21 @@ func extractDomain(rawURL string) (string, error) {
 	}
 	// remove www if present
 	return strings.TrimPrefix(url.Hostname(), "www."), nil
+}
+
+func replaceDomain(request *openrtb2.BidRequest) string {
+	if request.Site.Domain != "" {
+		return request.Site.Domain
+	}
+
+	hostname := ""
+
+	if request.Site.Page != "" {
+		pageURL, err := url.Parse(request.Site.Page)
+		if err == nil && pageURL != nil {
+			hostname = pageURL.Host
+		}
+	}
+
+	return hostname
 }
