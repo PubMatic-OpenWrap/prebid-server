@@ -465,7 +465,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 			}
 		}
 		if nil != req && nil != req.Site {
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, getDomain(req))
+			eventURL = replaceMacro(eventURL, VASTDomainMacro, getDomain(req.Site))
 			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
 			if nil != req.Site.Publisher {
 				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
@@ -536,15 +536,15 @@ func extractDomain(rawURL string) (string, error) {
 	return strings.TrimPrefix(url.Hostname(), "www."), nil
 }
 
-func getDomain(request *openrtb2.BidRequest) string {
-	if request.Site.Domain != "" {
-		return request.Site.Domain
+func getDomain(site *openrtb2.Site) string {
+	if site.Domain != "" {
+		return site.Domain
 	}
 
 	hostname := ""
 
-	if request.Site.Page != "" {
-		pageURL, err := url.Parse(request.Site.Page)
+	if site.Page != "" {
+		pageURL, err := url.Parse(site.Page)
 		if err == nil && pageURL != nil {
 			hostname = pageURL.Host
 		}
