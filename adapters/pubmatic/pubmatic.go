@@ -26,7 +26,16 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-const MAX_IMPRESSIONS_PUBMATIC = 30
+const (
+	MAX_IMPRESSIONS_PUBMATIC = 30
+	PUBMATIC                 = "[PUBMATIC]"
+	buyId                    = "buyid"
+	buyIdTargetingKey        = "hb_buyid_pubmatic"
+	skAdnetworkKey           = "skadn"
+	rewardKey                = "reward"
+	ImpExtAdUnitKey          = "dfp_ad_unit_code"
+	AdServerGAM              = "gam"
+)
 
 type PubmaticAdapter struct {
 	http *adapters.HTTPAdapter
@@ -570,6 +579,11 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		if bidderExt.Prebid.IsRewardedInventory == 1 {
 			impExtMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
 		}
+	}
+
+	if bidderExt.Data != nil && bidderExt.Data.AdServer != nil &&
+		bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
+		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
 	}
 
 	if len(impExtMap) != 0 {
