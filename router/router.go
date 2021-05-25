@@ -260,6 +260,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatal(err)
 	}
 
+	g_defReqJSON = defReqJSON
+
 	syncers := usersyncers.NewSyncerMap(cfg)
 	gvlVendorIDs := bidderInfos.ToGVLVendorIDMap()
 	gdprPerms := gdpr.NewPermissions(context.Background(), cfg.GDPR, gvlVendorIDs, generalHttpClient)
