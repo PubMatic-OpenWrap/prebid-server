@@ -492,6 +492,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 		if imp, ok := impMap[bid.ImpID]; ok {
 			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
 		} else {
+			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
 			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, "")
 		}
 
@@ -502,10 +503,12 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 
 func replaceMacro(trackerURL, macro, value string) string {
 	macro = strings.TrimSpace(macro)
-	value = strings.TrimSpace(value)
+	trimmedValue := strings.TrimSpace(value)
 
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") {
+	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) > 0 {
 		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
+	} else if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) == 0 {
+		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(""))
 	} else {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
