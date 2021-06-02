@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PubMatic-OpenWrap/etree"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,14 +12,10 @@ import (
 	"strings"
 	"time"
 
-	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
+
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	accountService "github.com/prebid/prebid-server/account"
@@ -472,22 +465,24 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 			}
 		}
 		if nil != req && nil != req.Site {
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.Site.Domain)
+			eventURL = replaceMacro(eventURL, VASTDomainMacro, getDomain(req.Site))
 			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
 			if nil != req.Site.Publisher {
 				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
 			}
 		}
 
+		domain := ""
 		if len(bid.ADomain) > 0 {
+			var err error
 			//eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
-			domain, err := extractDomain(bid.ADomain[0])
-			if nil == err {
-				eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, domain)
-			} else {
+			domain, err = extractDomain(bid.ADomain[0])
+			if err != nil {
 				glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
 			}
 		}
+
+		eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, domain)
 
 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidder)
 		eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
@@ -496,7 +491,11 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 
 		if imp, ok := impMap[bid.ImpID]; ok {
 			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
+		} else {
+			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
+			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, "")
 		}
+
 		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
@@ -504,8 +503,12 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 
 func replaceMacro(trackerURL, macro, value string) string {
 	macro = strings.TrimSpace(macro)
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(strings.TrimSpace(value)) > 0 {
+	trimmedValue := strings.TrimSpace(value)
+
+	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) > 0 {
 		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
+	} else if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) == 0 {
+		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(""))
 	} else {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
@@ -541,4 +544,21 @@ func extractDomain(rawURL string) (string, error) {
 	}
 	// remove www if present
 	return strings.TrimPrefix(url.Hostname(), "www."), nil
+}
+
+func getDomain(site *openrtb2.Site) string {
+	if site.Domain != "" {
+		return site.Domain
+	}
+
+	hostname := ""
+
+	if site.Page != "" {
+		pageURL, err := url.Parse(site.Page)
+		if err == nil && pageURL != nil {
+			hostname = pageURL.Host
+		}
+	}
+
+	return hostname
 }
