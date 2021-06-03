@@ -2,10 +2,11 @@ package exchange
 
 import (
 	"encoding/json"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"time"
 
-	"github.com/evanphx/json-patch"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
@@ -38,12 +39,12 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
-func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb2.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
+func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, req *openrtb2.BidRequest, trackerURL string, aliases map[string]string) map[openrtb_ext.BidderName]*pbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
 		// modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.bids {
 			// if modifyingVastXMLAllowed {
-			ev.modifyBidVAST(pbsBid, bidderName, req, trackerURL)
+			ev.modifyBidVAST(pbsBid, bidderName, req, trackerURL, aliases)
 			// }
 			pbsBid.bidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
 		}
@@ -57,11 +58,12 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string, aliases map[string]string) {
 	bid := pbsBid.bid
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
+
 	vastXML := makeVAST(bid)
 	bidID := bid.ID
 	if len(pbsBid.generatedBidID) > 0 {
@@ -72,8 +74,9 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 			bid.AdM = newVastXML
 		}
 	}
+
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs, req, aliases); injected {
 		bid.AdM = string(newVastXML)
 	}
 }
