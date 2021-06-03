@@ -71,7 +71,7 @@ const (
 	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
 	// Pass imp.tagId using this macro
 	PBSAdUnitIDMacro = "[AD_UNIT]"
-	//CoreBidderMacro for injecting c ///////////////////
+	//BidderCodeMacro presents partner bidder code
 	BidderCodeMacro = "[BIDDER_CODE]"
 )
 
