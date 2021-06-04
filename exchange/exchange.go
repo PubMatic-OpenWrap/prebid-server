@@ -435,10 +435,7 @@ func (e *exchange) getAllBids(
 			}
 			var reqInfo adapters.ExtraRequestInfo
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
-			bids, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest.BidRequest, bidderRequest.BidderName, adjustmentFactor, conversions, &reqInfo, accountDebugAllowed)
-
-			// set core bidder name in the bids
-			bids.bidderCoreName = bidderRequest.BidderCoreName.String()
+			bids, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest.BidRequest, bidderRequest.BidderName, bidderRequest.BidderCoreName, adjustmentFactor, conversions, &reqInfo, accountDebugAllowed)
 
 			// Add in time reporting
 			elapsed := time.Since(start)

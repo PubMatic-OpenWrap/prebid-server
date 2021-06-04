@@ -2882,7 +2882,7 @@ type validatingBidder struct {
 	mockResponses map[string]bidderResponse
 }
 
-func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (seatBid *pbsOrtbSeatBid, errs []error) {
+func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (seatBid *pbsOrtbSeatBid, errs []error) {
 	if expectedRequest, ok := b.expectations[string(name)]; ok {
 		if expectedRequest != nil {
 			if expectedRequest.BidAdjustment != bidAdjustment {
@@ -2905,13 +2905,15 @@ func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb2.Bid
 			}
 
 			seatBid = &pbsOrtbSeatBid{
-				bids:      bids,
-				httpCalls: mockResponse.HttpCalls,
+				bids:           bids,
+				httpCalls:      mockResponse.HttpCalls,
+				bidderCoreName: bidderCoreName.String(),
 			}
 		} else {
 			seatBid = &pbsOrtbSeatBid{
-				bids:      nil,
-				httpCalls: mockResponse.HttpCalls,
+				bids:           nil,
+				httpCalls:      mockResponse.HttpCalls,
+				bidderCoreName: bidderCoreName.String(),
 			}
 		}
 
@@ -3061,7 +3063,7 @@ func (e *mockUsersync) LiveSyncCount() int {
 
 type panicingAdapter struct{}
 
-func (panicingAdapter) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (posb *pbsOrtbSeatBid, errs []error) {
+func (panicingAdapter) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (posb *pbsOrtbSeatBid, errs []error) {
 	panic("Panic! Panic! The world is ending!")
 }
 
