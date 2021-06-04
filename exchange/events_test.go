@@ -158,9 +158,8 @@ func Test_eventsData_modifyBidJSON(t *testing.T) {
 
 func TestModifyBidVAST(t *testing.T) {
 	type args struct {
-		bidReq  *openrtb2.BidRequest
-		bid     *openrtb2.Bid
-		aliases map[string]string
+		bidReq *openrtb2.BidRequest
+		bid    *openrtb2.Bid
 	}
 	type want struct {
 		tags []string
@@ -245,7 +244,7 @@ func TestModifyBidVAST(t *testing.T) {
 			ev.modifyBidVAST(&pbsOrtbBid{
 				bid:     tc.args.bid,
 				bidType: openrtb_ext.BidTypeVideo,
-			}, "somebidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]", map[string]string{"somebidder": "corebidder"})
+			}, "somebidder", "coreBidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
 			validator(t, tc.args.bid, tc.want.tags)
 		})
 	}

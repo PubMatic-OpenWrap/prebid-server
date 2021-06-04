@@ -58,7 +58,7 @@ func cleanOpenRTBRequests(ctx context.Context,
 	gDPR gdpr.Permissions,
 	usersyncIfAmbiguous bool,
 	privacyConfig config.Privacy,
-	account *config.Account) (bidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, aliases map[string]string, errs []error) {
+	account *config.Account) (bidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, errs []error) {
 
 	impsByBidder, err := splitImps(req.BidRequest.Imp)
 	if err != nil {
@@ -66,7 +66,7 @@ func cleanOpenRTBRequests(ctx context.Context,
 		return
 	}
 
-	aliases, errs = parseAliases(req.BidRequest)
+	aliases, errs := parseAliases(req.BidRequest)
 	if len(errs) > 0 {
 		return
 	}
