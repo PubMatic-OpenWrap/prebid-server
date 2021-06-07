@@ -355,6 +355,8 @@ func makeExt(httpInfo *httpCallInfo) *openrtb_ext.ExtHttpCall {
 			ext.ResponseBody = string(httpInfo.response.Body)
 			ext.Status = httpInfo.response.StatusCode
 		}
+		ext.Params["ImpIndex"] = httpInfo.request.Params.ImpIndex
+		ext.Params["VASTTagIndex"] = httpInfo.request.Params.VASTTagIndex
 	}
 
 	return ext
