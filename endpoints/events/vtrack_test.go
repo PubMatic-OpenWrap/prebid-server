@@ -868,9 +868,9 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 			tc.args.bid.ImpID = tc.args.req.Imp[0].ID
 			accountID := ""
 			timestamp := int64(0)
-			biddername := "test_bidder"
+			requestingBidder := "test_bidder"
 			bidderCoreName := "test_core_bidder"
-			injectedVast, injected, ierr := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, biddername, bidderCoreName, accountID, timestamp, tc.args.req)
+			injectedVast, injected, ierr := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, requestingBidder, bidderCoreName, accountID, timestamp, tc.args.req)
 
 			if !injected {
 				// expect no change in input vast if tracking events are not injected
