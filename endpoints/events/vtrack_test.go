@@ -918,14 +918,14 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 
 func TestGetVideoEventTracking(t *testing.T) {
 	type args struct {
-		trackerURL     string
-		bid            *openrtb2.Bid
-		bidder         string
-		bidderCoreName string
-		accountId      string
-		timestamp      int64
-		req            *openrtb2.BidRequest
-		doc            *etree.Document
+		trackerURL       string
+		bid              *openrtb2.Bid
+		requestingBidder string
+		bidderCoreName   string
+		accountId        string
+		timestamp        int64
+		req              *openrtb2.BidRequest
+		doc              *etree.Document
 	}
 	type want struct {
 		trackerURLMap map[string]string
@@ -1169,9 +1169,9 @@ func TestGetVideoEventTracking(t *testing.T) {
 						{TagID: "/testadunit/1", ID: "imp_1"},
 					},
 				},
-				bid:            &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
-				bidder:         "test_bidder:234",
-				bidderCoreName: "test_core_bidder:234",
+				bid:              &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
+				requestingBidder: "test_bidder:234",
+				bidderCoreName:   "test_core_bidder:234",
 			},
 			want: want{
 				trackerURLMap: map[string]string{
@@ -1196,7 +1196,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				impMap[imp.ID] = &imp
 			}
 
-			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.bidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
+			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.requestingBidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
 
 			for event, eurl := range tc.want.trackerURLMap {
 
