@@ -94,7 +94,7 @@ func TestSingleBidder(t *testing.T) {
 		bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, test.debugInfo)
 		currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 
-		seatBid, errs := bidder.requestBid(ctx, &openrtb2.BidRequest{}, "test", "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+		seatBid, errs := bidder.requestBid(ctx, &openrtb2.BidRequest{}, "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
 
 		// Make sure the goodSingleBidder was called with the expected arguments.
 		if bidderImpl.httpResponse == nil {
@@ -167,7 +167,7 @@ func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
 
 	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, debugInfo)
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	seatBid, errs := bidder.requestBid(ctx, &openrtb2.BidRequest{}, "test", "test", 1, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+	seatBid, errs := bidder.requestBid(ctx, &openrtb2.BidRequest{}, "test", 1, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
 
 	expectedHttpCalls := []*openrtb_ext.ExtHttpCall{
 		{
@@ -225,7 +225,7 @@ func TestMultiBidder(t *testing.T) {
 	}
 	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, nil)
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	seatBid, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+	seatBid, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
 
 	if seatBid == nil {
 		t.Fatalf("SeatBid should exist, because bids exist.")
@@ -598,7 +598,6 @@ func TestMultiCurrencies(t *testing.T) {
 			context.Background(),
 			&openrtb2.BidRequest{},
 			"test",
-			"test",
 			1,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
@@ -743,7 +742,6 @@ func TestMultiCurrencies_RateConverterNotSet(t *testing.T) {
 		seatBid, errs := bidder.requestBid(
 			context.Background(),
 			&openrtb2.BidRequest{},
-			"test",
 			"test",
 			1,
 			currencyConverter.Rates(),
@@ -917,7 +915,6 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			&openrtb2.BidRequest{
 				Cur: tc.bidRequestCurrencies,
 			},
-			"test",
 			"test",
 			1,
 			currencyConverter.Rates(),
@@ -1223,7 +1220,6 @@ func TestMobileNativeTypes(t *testing.T) {
 			context.Background(),
 			tc.mockBidderRequest,
 			"test",
-			"test",
 			1.0,
 			currencyConverter.Rates(),
 			&adapters.ExtraRequestInfo{},
@@ -1241,7 +1237,7 @@ func TestMobileNativeTypes(t *testing.T) {
 func TestErrorReporting(t *testing.T) {
 	bidder := adaptBidder(&bidRejector{}, nil, &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, nil)
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	bids, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+	bids, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", 1.0, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
 	if bids != nil {
 		t.Errorf("There should be no seatbid if no http requests are returned.")
 	}
@@ -1462,7 +1458,7 @@ func TestCallRecordAdapterConnections(t *testing.T) {
 	// Run requestBid using an http.Client with a mock handler
 	bidder := adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, metrics, openrtb_ext.BidderAppnexus, nil)
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	_, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
+	_, errs := bidder.requestBid(context.Background(), &openrtb2.BidRequest{}, "test", bidAdjustment, currencyConverter.Rates(), &adapters.ExtraRequestInfo{}, true)
 
 	// Assert no errors
 	assert.Equal(t, 0, len(errs), "bidder.requestBid returned errors %v \n", errs)

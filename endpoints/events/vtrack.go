@@ -488,6 +488,7 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, bidder string, 
 
 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidderCoreName)
 		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, bidder)
+
 		eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
 		// replace [EVENT_ID] macro with PBS defined event ID
 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])

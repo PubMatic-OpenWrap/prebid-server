@@ -58,7 +58,7 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, bidderCoreName string, req *openrtb2.BidRequest, trackerURL string) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
@@ -76,7 +76,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	}
 
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), bidderCoreName, ev.accountID, ev.auctionTimestampMs, req); injected {
+	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
 		bid.AdM = string(newVastXML)
 	}
 }

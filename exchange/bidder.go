@@ -49,7 +49,7 @@ type adaptedBidder interface {
 	//
 	// Any errors will be user-facing in the API.
 	// Error messages should help publishers understand what might account for "bad" bids.
-	requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (*pbsOrtbSeatBid, []error)
+	requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (*pbsOrtbSeatBid, []error)
 }
 
 // pbsOrtbBid is a Bid returned by an adaptedBidder.
@@ -86,7 +86,7 @@ type pbsOrtbSeatBid struct {
 	// This will become response.ext.debug.httpcalls.{bidder} on the final Response.
 	httpCalls []*openrtb_ext.ExtHttpCall
 	// bidderCoreName represents the core bidder id.
-	bidderCoreName string
+	bidderCoreName openrtb_ext.BidderName
 }
 
 // adaptBidder converts an adapters.Bidder into an exchange.adaptedBidder.
@@ -128,7 +128,7 @@ type bidderAdapterConfig struct {
 	DebugInfo          config.DebugInfo
 }
 
-func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (*pbsOrtbSeatBid, []error) {
+func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed bool) (*pbsOrtbSeatBid, []error) {
 	reqData, errs := bidder.Bidder.MakeRequests(request, reqInfo)
 
 	if len(reqData) == 0 {
@@ -154,10 +154,9 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.B
 
 	defaultCurrency := "USD"
 	seatBid := &pbsOrtbSeatBid{
-		bids:           make([]*pbsOrtbBid, 0, len(reqData)),
-		currency:       defaultCurrency,
-		httpCalls:      make([]*openrtb_ext.ExtHttpCall, 0, len(reqData)),
-		bidderCoreName: bidderCoreName.String(),
+		bids:      make([]*pbsOrtbBid, 0, len(reqData)),
+		currency:  defaultCurrency,
+		httpCalls: make([]*openrtb_ext.ExtHttpCall, 0, len(reqData)),
 	}
 
 	// If the bidder made multiple requests, we still want them to enter as many bids as possible...
