@@ -1,9 +1,10 @@
 package exchange
 
 import (
-	"github.com/prebid/prebid-server/config"
 	"strings"
 	"testing"
+
+	"github.com/prebid/prebid-server/config"
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -243,7 +244,7 @@ func TestModifyBidVAST(t *testing.T) {
 			ev.modifyBidVAST(&pbsOrtbBid{
 				bid:     tc.args.bid,
 				bidType: openrtb_ext.BidTypeVideo,
-			}, "somebidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
+			}, "somebidder", "coreBidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
 			validator(t, tc.args.bid, tc.want.tags)
 		})
 	}
