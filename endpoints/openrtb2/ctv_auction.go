@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"math"
 	"net/http"
 	"net/url"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/prebid/prebid-server/endpoints/events"
 
 	"github.com/PubMatic-OpenWrap/etree"
 	"github.com/buger/jsonparser"
@@ -221,6 +222,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 		//Create Impression Bids
 		deps.getBids(response)
+		deps.vastUnWrapFilter()
 
 		//Do AdPod Exclusions
 		bids := deps.doAdPodExclusions()
@@ -244,6 +246,17 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.labels.RequestStatus = metrics.RequestStatusNetworkErr
 		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/video Failed to send response: %v", err))
 	}
+}
+
+func (deps *ctvEndpointDeps) vastUnWrapFilter() {
+	/*
+		for _, imp := range deps.impData {
+			for _, bid := range imp.Bid.Bids {
+				//filter
+				//bid.FilterReasonCode = constant.CTVVASTUnWrapError
+			}
+		}
+	*/
 }
 
 func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs *usersync.PBSCookie, account *config.Account, startTime time.Time) (*openrtb2.BidResponse, error) {

@@ -38,6 +38,7 @@ const (
 	CTVRCWinningBid        FilterReasonCode = 1
 	CTVRCCategoryExclusion FilterReasonCode = 2
 	CTVRCDomainExclusion   FilterReasonCode = 3
+	CTVVASTUnWrapError     FilterReasonCode = 4
 )
 
 // MonitorKey provides the unique key for moniroting the algorithms
