@@ -463,6 +463,9 @@ func (e *exchange) getAllBids(
 
 			bids, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest.BidRequest, bidderRequest.BidderName, adjustmentFactor, conversions, &reqInfo, accountDebugAllowed, headerDebugAllowed)
 
+			// Setting bidderCoreName in SeatBid
+			bids.bidderCoreName = bidderRequest.BidderCoreName
+
 			// Add in time reporting
 			elapsed := time.Since(start)
 			brw.adapterBids = bids
