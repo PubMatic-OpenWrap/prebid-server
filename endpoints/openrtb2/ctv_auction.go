@@ -267,6 +267,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/video Failed to send response: %v", err))
 	}
 }
+
+// prepareRequest will prepare POST request with given URL, header and body data.
 func prepareRequest(url string, headers http.Header, body *string) (*http.Request, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(*body)))
 	if nil != err {
@@ -276,12 +278,14 @@ func prepareRequest(url string, headers http.Header, body *string) (*http.Reques
 	return req, nil
 }
 
+// readResponse read http.Response until an error or EOF and returns the data it read and error.
 func readResponse(resp *http.Response) (respByte []byte, err error) {
 
 	reader := resp.Body
 	return ioutil.ReadAll(reader)
 }
 
+// unwrap send request to vastunwrap service for wrapper creative unwrapping
 func unwrap(vast string, useragent string) (string, int) {
 	header := make(http.Header)
 	header.Add("User-Agent", useragent)
@@ -307,11 +311,19 @@ func unwrap(vast string, useragent string) (string, int) {
 	return respBodyStr, status
 }
 
+// vastunwrap service call for vast wrapper creative unwrapping
+// On success, Inline response is received from vastunwrap and AdM is overwritten by Inline VAST
+// On Failure, Error reason is received from vastunwrap and creative is filtered with CTVVASTUnWrapError reason
 func (deps *ctvEndpointDeps) vastUnWrapFilter() {
-
+	if deps.impData == nil {
+		fmt.Println("nil deps.impData")
+		return
+	}
 	for _, imp := range deps.impData {
+		if imp == nil || imp.Bid == nil {
+			continue
+		}
 		for _, bid := range imp.Bid.Bids {
-			//filter
 			if nil != bid && strings.Contains(bid.AdM, "Wrapper") {
 				unwrapResp, unwrapStatus := unwrap(bid.AdM, deps.request.Device.UA)
 				if unwrapStatus != 0 {
