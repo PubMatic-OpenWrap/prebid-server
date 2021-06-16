@@ -1,10 +1,13 @@
 package openrtb2
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -37,6 +40,23 @@ import (
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/iputil"
+)
+
+// Http Client Initialization
+var (
+	httpClient = &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   10,
+			IdleConnTimeout:       time.Duration(300) * time.Second,
+			ResponseHeaderTimeout: time.Duration(10000) * time.Millisecond,
+		},
+	}
+)
+
+const (
+	cURL             = "http://127.0.0.1:9090/unwrap"
+	cContentEncoding = "Content-Encoding"
 )
 
 //CTV Specific Endpoint
@@ -247,16 +267,61 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/video Failed to send response: %v", err))
 	}
 }
+func prepareRequest(url string, headers http.Header, body *string) (*http.Request, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(*body)))
+	if nil != err {
+		return nil, err
+	}
+	req.Header = headers
+	return req, nil
+}
+
+func readResponse(resp *http.Response) (respByte []byte, err error) {
+
+	reader := resp.Body
+	return ioutil.ReadAll(reader)
+}
+
+func unwrap(vast string, useragent string) (string, int) {
+	header := make(http.Header)
+	header.Add("User-Agent", useragent)
+	header.Add("unwrap-timeout", "10000")
+	fmt.Println("VASTERR wrapper ", vast)
+	request, err := prepareRequest(cURL, header, &vast)
+	if nil != err {
+		log.Printf("[VASTERR]: %s\n", err)
+	}
+	response, err := httpClient.Do(request)
+	if nil == response {
+		log.Printf("[VASTERR]: error_msg:%v\n", err)
+	}
+	defer response.Body.Close()
+
+	respBody, err := readResponse(response)
+	if nil != err || nil == respBody {
+		log.Printf("[Error]: In Unwrap function, In Reading Response Body: %s\n", err)
+	}
+	respBodyStr := string(respBody)
+	status, _ := strconv.Atoi(response.Header.Get("unwrap-status"))
+	fmt.Println("VASTERR ultimate \n", respBodyStr)
+	return respBodyStr, status
+}
 
 func (deps *ctvEndpointDeps) vastUnWrapFilter() {
-	/*
-		for _, imp := range deps.impData {
-			for _, bid := range imp.Bid.Bids {
-				//filter
-				//bid.FilterReasonCode = constant.CTVVASTUnWrapError
+
+	for _, imp := range deps.impData {
+		for _, bid := range imp.Bid.Bids {
+			//filter
+			if nil != bid && strings.Contains(bid.AdM, "Wrapper") {
+				unwrapResp, unwrapStatus := unwrap(bid.AdM, deps.request.Device.UA)
+				if unwrapStatus != 0 {
+					bid.FilterReasonCode = constant.CTVVASTUnWrapError
+				} else {
+					bid.AdM = unwrapResp
+				}
 			}
 		}
-	*/
+	}
 }
 
 func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs *usersync.PBSCookie, account *config.Account, startTime time.Time) (*openrtb2.BidResponse, error) {
