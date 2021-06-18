@@ -2,10 +2,10 @@ package exchange
 
 import (
 	"encoding/json"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"time"
 
-	"github.com/evanphx/json-patch"
+	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
@@ -43,7 +43,7 @@ func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName
 		// modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.bids {
 			// if modifyingVastXMLAllowed {
-			ev.modifyBidVAST(pbsBid, bidderName, req, trackerURL)
+			ev.modifyBidVAST(pbsBid, bidderName, seatBid.bidderCoreName, req, trackerURL)
 			// }
 			pbsBid.bidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
 		}
@@ -57,7 +57,7 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
 	bid := pbsBid.bid
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
@@ -72,8 +72,9 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 			bid.AdM = newVastXML
 		}
 	}
+
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
 		bid.AdM = string(newVastXML)
 	}
 }

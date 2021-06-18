@@ -6,15 +6,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prometheus/client_golang/prometheus"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/usersync"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
@@ -263,7 +264,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if err := validateDefaultAliases(defaultAliases); err != nil {
 		glog.Fatal(err)
 	}
-	
+
 	g_defReqJSON = defReqJSON
 
 	g_syncers = usersyncers.NewSyncerMap(cfg)
