@@ -149,3 +149,76 @@ func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
 		}
 	}
 }
+
+func TestFilterImpsVastTagsByDuration(t *testing.T) {
+	tt := []struct {
+		testName          string
+		inputBid          openrtb2.BidRequest
+		expectedOutputBid openrtb2.BidRequest
+	}{
+		{
+			testName: "test_single_impression_single_vast_partner",
+			inputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+				},
+			},
+			expectedOutputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25}]}}`)},
+				},
+			},
+		},
+		{
+			testName: "test_single_impression_multiple_vast_partners",
+			inputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15},{"dur":25},{"dur":30}]},"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15},{"dur":25},{"dur":30}]},"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15},{"dur":25},{"dur":30}]},"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+				},
+			},
+			expectedOutputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20}]},"spotx_vast_bidder":{"tags":[{"dur":15}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25}]},"spotx_vast_bidder":{"tags":[{"dur":25},{"dur":30}]}}`)},
+				},
+			},
+		},
+		{
+			testName: "test_multi_impression_multi_partner",
+			inputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35},{"dur":25},{"dur":20}]}}`)},
+					{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30},{"dur":40}]}}`)},
+				},
+			},
+			expectedOutputBid: openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
+					{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20}]}}`)},
+					{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25}]}}`)},
+					{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30}]}}`)},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.testName, func(t *testing.T) {
+			t.Parallel()
+
+			outputBids := &tc.inputBid
+			filterImpsVastTagsByDuration(outputBids)
+			assert.Equal(t, tc.expectedOutputBid, *outputBids, "Expected length of impressions array was %d but actual was %d", tc.expectedOutputBid, outputBids)
+		})
+	}
+}
