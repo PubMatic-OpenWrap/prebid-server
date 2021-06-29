@@ -237,7 +237,7 @@ func TestModifyBidVAST(t *testing.T) {
 			ev := eventTracking{
 				bidderInfos: config.BidderInfos{
 					"somebidder": config.BidderInfo{
-						ModifyingVastXmlAllowed: true,
+						ModifyingVastXmlAllowed: false,
 					},
 				},
 			}

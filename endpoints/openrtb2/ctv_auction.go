@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"math"
 	"net/http"
 	"net/url"
@@ -14,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/etree"
+	"github.com/beevik/etree"
 	"github.com/buger/jsonparser"
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
@@ -23,6 +22,7 @@ import (
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/endpoints/events"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/impressions"
@@ -421,8 +421,76 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	//createImpressions
 	ctvRequest.Imp = deps.createImpressions()
 
+	filterImpsVastTagsByDuration(&ctvRequest)
+
 	//TODO: remove adpod extension if not required to send further
 	return &ctvRequest
+}
+
+//filterImpsVastTagsByDuration checks if a Vast tag should be called for a generated impression based on the duration of tag and impression
+func filterImpsVastTagsByDuration(bidReq *openrtb2.BidRequest) {
+
+	allExtMap := make(map[string]map[string]map[string]interface{})
+	for impCount, imp := range bidReq.Imp {
+		index := strings.LastIndex(imp.ID, "_")
+		if index == -1 {
+			continue
+		}
+
+		originalImpID := imp.ID[:index]
+
+		if _, exists := allExtMap[originalImpID]; !exists {
+			var impExt map[string]map[string]interface{}
+			if err := json.Unmarshal(imp.Ext, &impExt); err != nil {
+				continue
+			}
+
+			allExtMap[originalImpID] = impExt
+		}
+
+		impExtMap := allExtMap[originalImpID]
+		newImpExtMap := make(map[string]map[string]interface{})
+		for k, v := range impExtMap {
+			newImpExtMap[k] = v
+		}
+
+		for partnerName, partnerExt := range newImpExtMap {
+			if partnerExt["tags"] != nil {
+				impVastTags, ok := partnerExt["tags"].([]interface{})
+				if !ok {
+					continue
+				}
+
+				var compatibleVasts []interface{}
+				for _, tag := range impVastTags {
+					vastTag, ok := tag.(map[string]interface{})
+					if !ok {
+						continue
+					}
+
+					tagDuration := int(vastTag["dur"].(float64))
+					if int(imp.Video.MinDuration) <= tagDuration && tagDuration <= int(imp.Video.MaxDuration) {
+						compatibleVasts = append(compatibleVasts, tag)
+					}
+				}
+
+				if len(compatibleVasts) < 1 {
+					delete(newImpExtMap, partnerName)
+				} else {
+					newImpExtMap[partnerName] = map[string]interface{}{
+						"tags": compatibleVasts,
+					}
+				}
+
+				bExt, err := json.Marshal(newImpExtMap)
+				if err != nil {
+					continue
+				}
+				imp.Ext = bExt
+			}
+		}
+		bidReq.Imp[impCount] = imp
+	}
 }
 
 //getAllAdPodImpsConfigs will return all impression adpod configurations

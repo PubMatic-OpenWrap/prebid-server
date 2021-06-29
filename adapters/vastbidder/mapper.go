@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 type macroCallBack struct {
 	cached   bool
@@ -101,20 +101,29 @@ var _defaultMapper = Mapper{
 	MacroPubDomain: &macroCallBack{cached: true, callback: IBidderMacro.MacroPubDomain},
 
 	//Content
-	MacroContentID:                &macroCallBack{cached: true, callback: IBidderMacro.MacroContentID},
-	MacroContentEpisode:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentEpisode},
-	MacroContentTitle:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentTitle},
-	MacroContentSeries:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeries},
-	MacroContentSeason:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeason},
-	MacroContentArtist:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentArtist},
-	MacroContentGenre:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentGenre},
-	MacroContentAlbum:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentAlbum},
-	MacroContentISrc:              &macroCallBack{cached: true, callback: IBidderMacro.MacroContentISrc},
-	MacroContentURL:               &macroCallBack{cached: true, callback: IBidderMacro.MacroContentURL},
-	MacroContentCategory:          &macroCallBack{cached: true, callback: IBidderMacro.MacroContentCategory},
-	MacroContentProductionQuality: &macroCallBack{cached: true, callback: IBidderMacro.MacroContentProductionQuality},
-	MacroContentVideoQuality:      &macroCallBack{cached: true, callback: IBidderMacro.MacroContentVideoQuality},
-	MacroContentContext:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentContext},
+	MacroContentID:                 &macroCallBack{cached: true, callback: IBidderMacro.MacroContentID},
+	MacroContentEpisode:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentEpisode},
+	MacroContentTitle:              &macroCallBack{cached: true, callback: IBidderMacro.MacroContentTitle},
+	MacroContentSeries:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeries},
+	MacroContentSeason:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSeason},
+	MacroContentArtist:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentArtist},
+	MacroContentGenre:              &macroCallBack{cached: true, callback: IBidderMacro.MacroContentGenre},
+	MacroContentAlbum:              &macroCallBack{cached: true, callback: IBidderMacro.MacroContentAlbum},
+	MacroContentISrc:               &macroCallBack{cached: true, callback: IBidderMacro.MacroContentISrc},
+	MacroContentURL:                &macroCallBack{cached: true, callback: IBidderMacro.MacroContentURL},
+	MacroContentCategory:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentCategory},
+	MacroContentProductionQuality:  &macroCallBack{cached: true, callback: IBidderMacro.MacroContentProductionQuality},
+	MacroContentVideoQuality:       &macroCallBack{cached: true, callback: IBidderMacro.MacroContentVideoQuality},
+	MacroContentContext:            &macroCallBack{cached: true, callback: IBidderMacro.MacroContentContext},
+	MacroContentContentRating:      &macroCallBack{cached: true, callback: IBidderMacro.MacroContentContentRating},
+	MacroContentUserRating:         &macroCallBack{cached: true, callback: IBidderMacro.MacroContentUserRating},
+	MacroContentQAGMediaRating:     &macroCallBack{cached: true, callback: IBidderMacro.MacroContentQAGMediaRating},
+	MacroContentKeywords:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentKeywords},
+	MacroContentLiveStream:         &macroCallBack{cached: true, callback: IBidderMacro.MacroContentLiveStream},
+	MacroContentSourceRelationship: &macroCallBack{cached: true, callback: IBidderMacro.MacroContentSourceRelationship},
+	MacroContentLength:             &macroCallBack{cached: true, callback: IBidderMacro.MacroContentLength},
+	MacroContentLanguage:           &macroCallBack{cached: true, callback: IBidderMacro.MacroContentLanguage},
+	MacroContentEmbeddable:         &macroCallBack{cached: true, callback: IBidderMacro.MacroContentEmbeddable},
 
 	//Producer
 	MacroProducerID:   &macroCallBack{cached: true, callback: IBidderMacro.MacroProducerID},
@@ -165,7 +174,7 @@ var _defaultMapper = Mapper{
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
 }
 
-//GetNewDefaultMapper will return clone of default Mapper function
-func GetNewDefaultMapper() Mapper {
+//GetDefaultMapper will return clone of default Mapper function
+func GetDefaultMapper() Mapper {
 	return _defaultMapper.clone()
 }

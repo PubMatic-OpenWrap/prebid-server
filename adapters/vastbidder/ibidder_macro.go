@@ -1,11 +1,11 @@
-package tagbidder
+package vastbidder
 
 import (
-	"errors"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 //Flags of each tag bidder
@@ -17,12 +17,14 @@ type Flags struct {
 type IBidderMacro interface {
 	//Helper Function
 	InitBidRequest(request *openrtb2.BidRequest)
-	LoadImpression(imp *openrtb2.Imp) error
+	LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error)
+	LoadVASTTag(tag *openrtb_ext.ExtImpVASTBidderTag)
 	GetBidderKeys() map[string]string
 	SetAdapterConfig(*config.Adapter)
-	//SetBidderConfig(*BidderConfig)
 	GetURI() string
 	GetHeaders() http.Header
+	//getAllHeaders returns default and custom heades
+	getAllHeaders() http.Header
 
 	//Request
 	MacroTest(string) string
@@ -121,6 +123,15 @@ type IBidderMacro interface {
 	MacroContentProductionQuality(string) string
 	MacroContentVideoQuality(string) string
 	MacroContentContext(string) string
+	MacroContentContentRating(string) string
+	MacroContentUserRating(string) string
+	MacroContentQAGMediaRating(string) string
+	MacroContentKeywords(string) string
+	MacroContentLiveStream(string) string
+	MacroContentSourceRelationship(string) string
+	MacroContentLength(string) string
+	MacroContentLanguage(string) string
+	MacroContentEmbeddable(string) string
 
 	//Producer
 	MacroProducerID(string) string
@@ -171,22 +182,18 @@ type IBidderMacro interface {
 	MacroCacheBuster(string) string
 }
 
-var bidderMacroMap = map[string]func() IBidderMacro{}
+var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}
 
 //RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
-func RegisterNewBidderMacro(bidder string, macro func() IBidderMacro) {
+func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro func() IBidderMacro) {
 	bidderMacroMap[bidder] = macro
 }
 
 //GetNewBidderMacro will return IBidderMacro of specific bidder
-func GetNewBidderMacro(bidder string) (IBidderMacro, error) {
+func GetNewBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro {
 	callback, ok := bidderMacroMap[bidder]
 	if ok {
-		return callback(), nil
+		return callback()
 	}
-	return nil, errors.New(`missing bidder macro`)
-}
-
-func init() {
-	RegisterNewBidderMacro(`spotx`, NewBidderMacro)
+	return NewBidderMacro()
 }

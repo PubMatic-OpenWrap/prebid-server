@@ -1,13 +1,17 @@
-package tagbidder
+package vastbidder
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
+
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func objectArrayToString(len int, separator string, cb func(i int) string) string {
+func ObjectArrayToString(len int, separator string, cb func(i int) string) string {
 	if 0 == len {
 		return ""
 	}
@@ -20,6 +24,19 @@ func objectArrayToString(len int, separator string, cb func(i int) string) strin
 		out.WriteString(cb(i))
 	}
 	return out.String()
+}
+
+func readImpExt(impExt json.RawMessage) (*openrtb_ext.ExtImpVASTBidder, error) {
+	var bidderExt adapters.ExtImpBidder
+	if err := json.Unmarshal(impExt, &bidderExt); err != nil {
+		return nil, err
+	}
+
+	vastBidderExt := openrtb_ext.ExtImpVASTBidder{}
+	if err := json.Unmarshal(bidderExt.Bidder, &vastBidderExt); err != nil {
+		return nil, err
+	}
+	return &vastBidderExt, nil
 }
 
 func normalizeObject(prefix string, out map[string]string, obj map[string]interface{}) {
@@ -42,12 +59,12 @@ func normalizeObject(prefix string, out map[string]string, obj map[string]interf
 	}
 }
 
-func normalizeJSON(obj map[string]interface{}) map[string]string {
+func NormalizeJSON(obj map[string]interface{}) map[string]string {
 	out := map[string]string{}
 	normalizeObject("", out, obj)
 	return out
 }
 
-var getRandomID = func() string {
+var GetRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }
