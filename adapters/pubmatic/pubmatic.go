@@ -84,10 +84,12 @@ const (
 	INVALID_MEDIATYPE = "Invalid MediaType"
 	INVALID_ADSLOT    = "Invalid AdSlot"
 
-	dctrKeyName        = "key_val"
-	dctrKeywordName    = "dctr"
-	pmZoneIDKeyName    = "pmZoneId"
-	pmZoneIDKeyNameOld = "pmZoneID"
+	dctrKeyName              = "key_val"
+	dctrKeywordName          = "dctr"
+	pmZoneIDKeyName          = "pmZoneId"
+	pmZoneIDRequestParamName = "pmzoneid"
+
+	urlEncodedEqualChar = "%3D"
 )
 
 func PrepareLogMessage(tID, pubId, adUnitId, bidID, details string, args ...interface{}) string {
@@ -672,11 +674,11 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			val := strings.Join(keyVal.Values[:], ",")
 
 			key := keyVal.Key
-			if key == pmZoneIDKeyNameOld {
+			if strings.EqualFold(key, pmZoneIDRequestParamName) {
 				key = pmZoneIDKeyName
 			} else if key == dctrKeywordName {
 				key = dctrKeyName
-				if strings.Contains(val, "%3D") {
+				if isUrlEncoded(val) {
 					urlDecodedVal, err := url.QueryUnescape(val)
 					if err == nil {
 						val = urlDecodedVal
@@ -687,6 +689,10 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			extMap[key] = val
 		}
 	}
+}
+
+func isUrlEncoded(val string) bool {
+	return strings.Contains(val, urlEncodedEqualChar)
 }
 
 func prepareImpressionExt(keywords map[string]string) string {
