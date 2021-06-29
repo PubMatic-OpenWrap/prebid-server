@@ -678,7 +678,8 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 				key = pmZoneIDKeyName
 			} else if key == dctrKeywordName {
 				key = dctrKeyName
-				if isUrlEncoded(val) {
+				// URL-decode dctr value if it is url-encoded
+				if strings.Contains(val, urlEncodedEqualChar) {
 					urlDecodedVal, err := url.QueryUnescape(val)
 					if err == nil {
 						val = urlDecodedVal
@@ -689,10 +690,6 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			extMap[key] = val
 		}
 	}
-}
-
-func isUrlEncoded(val string) bool {
-	return strings.Contains(val, urlEncodedEqualChar)
 }
 
 func prepareImpressionExt(keywords map[string]string) string {
