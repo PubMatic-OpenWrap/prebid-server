@@ -627,37 +627,37 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 
 	imp.Ext = nil
 
-	extMap := make(map[string]interface{}, 0)
+	impExtMap := make(map[string]interface{}, 0)
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
-		addKeywordsToExt(pubmaticExt.Keywords, extMap)
+		addKeywordsToExt(pubmaticExt.Keywords, impExtMap)
 	}
 	//Give preference to direct values of 'dctr' & 'pmZoneId' params in extension
 	if pubmaticExt.Dctr != "" {
-		extMap[dctrKeyName] = pubmaticExt.Dctr
+		impExtMap[dctrKeyName] = pubmaticExt.Dctr
 	}
 	if pubmaticExt.PmZoneID != "" {
-		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
+		impExtMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
 	}
 
 	if bidderExt.Prebid != nil {
 		if bidderExt.Prebid.SKAdnetwork != nil {
-			extMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
+			impExtMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
 		}
 		if bidderExt.Prebid.IsRewardedInventory == 1 {
-			extMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
+			impExtMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
 		}
 	}
 
 	if bidderExt.Data != nil && bidderExt.Data.AdServer != nil &&
 		bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
-		extMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
+		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
 	}
 
 	imp.Ext = nil
-	if len(extMap) > 0 {
-		ext, err := json.Marshal(extMap)
+	if len(impExtMap) > 0 {
+		impExtBytes, err := json.Marshal(impExtMap)
 		if err == nil {
-			imp.Ext = ext
+			imp.Ext = impExtBytes
 		}
 	}
 
