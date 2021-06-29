@@ -627,7 +627,7 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 
 	imp.Ext = nil
 
-	impExtMap := make(map[string]interface{}, 0)
+	impExtMap := make(map[string]interface{})
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
 		addKeywordsToExt(pubmaticExt.Keywords, impExtMap)
 	}
