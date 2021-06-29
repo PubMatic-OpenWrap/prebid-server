@@ -85,6 +85,7 @@ const (
 	INVALID_ADSLOT    = "Invalid AdSlot"
 
 	dctrKeyName        = "key_val"
+	dctrKeywordName    = "dctr"
 	pmZoneIDKeyName    = "pmZoneId"
 	pmZoneIDKeyNameOld = "pmZoneID"
 )
@@ -668,17 +669,21 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			logf("No values present for key = %s", keyVal.Key)
 			continue
 		} else {
-			key := keyVal.Key
-			if keyVal.Key == pmZoneIDKeyNameOld {
-				key = pmZoneIDKeyName
-			}
 			val := strings.Join(keyVal.Values[:], ",")
-			if strings.Contains(val, "%3D") {
-				urlDecodedVal, err := url.QueryUnescape(val)
-				if err == nil {
-					val = urlDecodedVal
+
+			key := keyVal.Key
+			if key == pmZoneIDKeyNameOld {
+				key = pmZoneIDKeyName
+			} else if key == dctrKeywordName {
+				key = dctrKeyName
+				if strings.Contains(val, "%3D") {
+					urlDecodedVal, err := url.QueryUnescape(val)
+					if err == nil {
+						val = urlDecodedVal
+					}
 				}
 			}
+
 			extMap[key] = val
 		}
 	}
