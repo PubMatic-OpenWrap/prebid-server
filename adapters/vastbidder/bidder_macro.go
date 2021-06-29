@@ -1,14 +1,14 @@
-package tagbidder
+package vastbidder
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -20,7 +20,6 @@ type BidderMacro struct {
 
 	//Configuration Parameters
 	Conf *config.Adapter
-	//BidderConf *BidderConfig
 
 	//OpenRTB Specific Parameters
 	Request   *openrtb2.BidRequest
@@ -29,13 +28,22 @@ type BidderMacro struct {
 	Imp       *openrtb2.Imp
 	Publisher *openrtb2.Publisher
 	Content   *openrtb2.Content
-	UserExt   *openrtb_ext.ExtUser
-	RegsExt   *openrtb_ext.ExtRegs
+
+	//Extensions
+	ImpBidderExt openrtb_ext.ExtImpVASTBidder
+	VASTTag      *openrtb_ext.ExtImpVASTBidderTag
+	UserExt      *openrtb_ext.ExtUser
+	RegsExt      *openrtb_ext.ExtRegs
+
+	//Impression level Request Headers
+	ImpReqHeaders http.Header
 }
 
 //NewBidderMacro contains definition for all openrtb macro's
 func NewBidderMacro() IBidderMacro {
-	return &BidderMacro{}
+	obj := &BidderMacro{}
+	obj.IBidderMacro = obj
+	return obj
 }
 
 func (tag *BidderMacro) init() {
@@ -75,24 +83,47 @@ func (tag *BidderMacro) InitBidRequest(request *openrtb2.BidRequest) {
 }
 
 //LoadImpression will set current imp
-func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) error {
+func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error) {
 	tag.Imp = imp
-	return nil
+
+	var bidderExt adapters.ExtImpBidder
+	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
+		return nil, err
+	}
+
+	tag.ImpBidderExt = openrtb_ext.ExtImpVASTBidder{}
+	if err := json.Unmarshal(bidderExt.Bidder, &tag.ImpBidderExt); err != nil {
+		return nil, err
+	}
+	return &tag.ImpBidderExt, nil
+}
+
+//LoadVASTTag will set current VAST Tag details in bidder keys
+func (tag *BidderMacro) LoadVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
+	tag.VASTTag = vastTag
 }
 
 //GetBidderKeys will set bidder level keys
 func (tag *BidderMacro) GetBidderKeys() map[string]string {
-	var bidderExt adapters.ExtImpBidder
-	if err := json.Unmarshal(tag.Imp.Ext, &bidderExt); err != nil {
-		return nil
-	}
+	var keys map[string]string
+	//Adding VAST Tag Bidder Parameters
+	keys = NormalizeJSON(tag.VASTTag.Params)
 
-	ext := map[string]interface{}{}
-	if err := json.Unmarshal(bidderExt.Bidder, &ext); err != nil {
-		return nil
-	}
+	//Adding VAST Tag Standard Params
+	keys["tagid"] = tag.VASTTag.TagID
+	keys["dur"] = strconv.Itoa(tag.VASTTag.Duration)
 
-	return normalizeJSON(ext)
+	//Adding Headers as Custom Macros
+
+	//Adding Cookies as Custom Macros
+
+	//Adding Default Empty for standard keys
+	for i := range ParamKeys {
+		if _, ok := keys[ParamKeys[i]]; !ok {
+			keys[ParamKeys[i]] = ""
+		}
+	}
+	return keys
 }
 
 //SetAdapterConfig will set Adapter config
@@ -100,27 +131,20 @@ func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
 	tag.Conf = conf
 }
 
-/*
-//SetBidderConfig will set Bidder config
-func (tag *BidderMacro) SetBidderConfig(conf *BidderConfig) {
-	tag.BidderConf = conf
-}
-*/
-
 //GetURI get URL
 func (tag *BidderMacro) GetURI() string {
-	//1. check for impression level URL
-	//2. check for bidder config level URL
-	//3. check for adapter config level URL
-	/*
-		if nil != tag.BidderConf && len(tag.BidderConf.URL) > 0 {
-			return tag.BidderConf.URL
-		}
-	*/
+
+	//check for URI at impression level
+	if nil != tag.VASTTag {
+		return tag.VASTTag.URL
+	}
+
+	//check for URI at config level
 	return tag.Conf.Endpoint
 }
 
-//GetHeaders GetHeaders
+//GetHeaders returns list of custom request headers
+//Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
@@ -299,7 +323,7 @@ func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
 func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Protocols
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -332,7 +356,7 @@ func (tag *BidderMacro) MacroVideoStartDelay(key string) string {
 
 //MacroVideoPlacement contains definition for VideoPlacement Parameter
 func (tag *BidderMacro) MacroVideoPlacement(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.Placement > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Placement), intBase)
 	}
 	return ""
@@ -340,7 +364,7 @@ func (tag *BidderMacro) MacroVideoPlacement(key string) string {
 
 //MacroVideoLinearity contains definition for VideoLinearity Parameter
 func (tag *BidderMacro) MacroVideoLinearity(key string) string {
-	if nil != tag.Imp.Video {
+	if nil != tag.Imp.Video && tag.Imp.Video.Linearity > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Linearity), intBase)
 	}
 	return ""
@@ -348,7 +372,7 @@ func (tag *BidderMacro) MacroVideoLinearity(key string) string {
 
 //MacroVideoSkip contains definition for VideoSkip Parameter
 func (tag *BidderMacro) MacroVideoSkip(key string) string {
-	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip && *tag.Imp.Video.Skip > 0 {
+	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip {
 		return strconv.FormatInt(int64(*tag.Imp.Video.Skip), intBase)
 	}
 	return ""
@@ -382,7 +406,7 @@ func (tag *BidderMacro) MacroVideoSequence(key string) string {
 func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.BAttr
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -425,7 +449,7 @@ func (tag *BidderMacro) MacroVideoBoxing(key string) string {
 func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.PlaybackMethod
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -436,7 +460,7 @@ func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 func (tag *BidderMacro) MacroVideoDelivery(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Delivery
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -455,7 +479,7 @@ func (tag *BidderMacro) MacroVideoPosition(key string) string {
 func (tag *BidderMacro) MacroVideoAPI(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.API
-		return objectArrayToString(len(value), comma, func(i int) string {
+		return ObjectArrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -482,7 +506,7 @@ func (tag *BidderMacro) MacroSiteName(key string) string {
 
 //MacroSitePage contains definition for SitePage Parameter
 func (tag *BidderMacro) MacroSitePage(key string) string {
-	if !tag.IsApp {
+	if !tag.IsApp && nil != tag.Request && nil != tag.Request.Site {
 		return tag.Request.Site.Page
 	}
 	return ""
@@ -556,7 +580,7 @@ func (tag *BidderMacro) MacroAppVersion(key string) string {
 
 //MacroAppPaid contains definition for AppPaid Parameter
 func (tag *BidderMacro) MacroAppPaid(key string) string {
-	if tag.IsApp {
+	if tag.IsApp && tag.Request.App.Paid != 0 {
 		return strconv.FormatInt(int64(tag.Request.App.Paid), intBase)
 	}
 	return ""
@@ -575,9 +599,9 @@ func (tag *BidderMacro) MacroCategory(key string) string {
 //MacroDomain contains definition for Domain Parameter
 func (tag *BidderMacro) MacroDomain(key string) string {
 	if tag.IsApp {
-		return strings.Join(tag.Request.App.Cat, comma)
+		return tag.Request.App.Domain
 	}
-	return strings.Join(tag.Request.Site.Cat, comma)
+	return tag.Request.Site.Domain
 }
 
 //MacroSectionCategory contains definition for SectionCategory Parameter
@@ -752,8 +776,80 @@ func (tag *BidderMacro) MacroContentVideoQuality(key string) string {
 
 //MacroContentContext contains definition for ContentContext Parameter
 func (tag *BidderMacro) MacroContentContext(key string) string {
-	if nil != tag.Content {
+	if nil != tag.Content && tag.Content.Context > 0 {
 		return strconv.FormatInt(int64(tag.Content.Context), intBase)
+	}
+	return ""
+}
+
+//MacroContentContentRating contains definition for ContentContentRating Parameter
+func (tag *BidderMacro) MacroContentContentRating(key string) string {
+	if nil != tag.Content {
+		return tag.Content.ContentRating
+	}
+	return ""
+}
+
+//MacroContentUserRating contains definition for ContentUserRating Parameter
+func (tag *BidderMacro) MacroContentUserRating(key string) string {
+	if nil != tag.Content {
+		return tag.Content.UserRating
+	}
+	return ""
+}
+
+//MacroContentQAGMediaRating contains definition for ContentQAGMediaRating Parameter
+func (tag *BidderMacro) MacroContentQAGMediaRating(key string) string {
+	if nil != tag.Content && tag.Content.QAGMediaRating > 0 {
+		return strconv.FormatInt(int64(tag.Content.QAGMediaRating), intBase)
+	}
+	return ""
+}
+
+//MacroContentKeywords contains definition for ContentKeywords Parameter
+func (tag *BidderMacro) MacroContentKeywords(key string) string {
+	if nil != tag.Content {
+		return tag.Content.Keywords
+	}
+	return ""
+}
+
+//MacroContentLiveStream contains definition for ContentLiveStream Parameter
+func (tag *BidderMacro) MacroContentLiveStream(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.LiveStream), intBase)
+	}
+	return ""
+}
+
+//MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
+func (tag *BidderMacro) MacroContentSourceRelationship(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.SourceRelationship), intBase)
+	}
+	return ""
+}
+
+//MacroContentLength contains definition for ContentLength Parameter
+func (tag *BidderMacro) MacroContentLength(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.Len), intBase)
+	}
+	return ""
+}
+
+//MacroContentLanguage contains definition for ContentLanguage Parameter
+func (tag *BidderMacro) MacroContentLanguage(key string) string {
+	if nil != tag.Content {
+		return tag.Content.Language
+	}
+	return ""
+}
+
+//MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
+func (tag *BidderMacro) MacroContentEmbeddable(key string) string {
+	if nil != tag.Content {
+		return strconv.FormatInt(int64(tag.Content.Embeddable), intBase)
 	}
 	return ""
 }
@@ -780,7 +876,7 @@ func (tag *BidderMacro) MacroProducerName(key string) string {
 
 //MacroUserAgent contains definition for UserAgent Parameter
 func (tag *BidderMacro) MacroUserAgent(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.UA
 	}
 	return ""
@@ -804,7 +900,7 @@ func (tag *BidderMacro) MacroLMT(key string) string {
 
 //MacroIP contains definition for IP Parameter
 func (tag *BidderMacro) MacroIP(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		if len(tag.Request.Device.IP) > 0 {
 			return tag.Request.Device.IP
 		} else if len(tag.Request.Device.IPv6) > 0 {
@@ -880,7 +976,7 @@ func (tag *BidderMacro) MacroDeviceJS(key string) string {
 
 //MacroDeviceLanguage contains definition for DeviceLanguage Parameter
 func (tag *BidderMacro) MacroDeviceLanguage(key string) string {
-	if nil != tag.Request.Device {
+	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.Language
 	}
 	return ""
@@ -1058,4 +1154,81 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}
+
+/********************* Request Headers *********************/
+
+// setDefaultHeaders sets following default headers based on VAST protocol version
+//  X-device-IP; end users IP address, per VAST 4.x
+//  X-Forwarded-For; end users IP address, prior VAST versions
+//  X-Device-User-Agent; End users user agent, per VAST 4.x
+//  User-Agent; End users user agent, prior VAST versions
+//  X-Device-Referer; Referer value from the original request, per VAST 4.x
+//  X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
+func setDefaultHeaders(tag *BidderMacro) {
+	// openrtb2. auction.go setDeviceImplicitly
+	// already populates OpenRTB bid request based on http request headers
+	// reusing the same information to set these headers via Macro* methods
+	headers := http.Header{}
+	ip := tag.IBidderMacro.MacroIP("")
+	userAgent := tag.IBidderMacro.MacroUserAgent("")
+	referer := tag.IBidderMacro.MacroSitePage("")
+	language := tag.IBidderMacro.MacroDeviceLanguage("")
+
+	// 1 - vast 1 - 3 expected, 2 - vast 4 expected
+	expectedVastTags := 0
+	if nil != tag.Imp && nil != tag.Imp.Video && nil != tag.Imp.Video.Protocols && len(tag.Imp.Video.Protocols) > 0 {
+		for _, protocol := range tag.Imp.Video.Protocols {
+			if protocol == openrtb2.ProtocolVAST40 || protocol == openrtb2.ProtocolVAST40Wrapper {
+				expectedVastTags |= 1 << 1
+			}
+			if protocol <= openrtb2.ProtocolVAST30Wrapper {
+				expectedVastTags |= 1 << 0
+			}
+		}
+	} else {
+		// not able to detect protocols. set all headers
+		expectedVastTags = 3
+	}
+
+	if expectedVastTags == 1 || expectedVastTags == 3 {
+		// vast prior to version 3 headers
+		setHeaders(headers, "X-Forwarded-For", ip)
+		setHeaders(headers, "User-Agent", userAgent)
+	}
+
+	if expectedVastTags == 2 || expectedVastTags == 3 {
+		// vast 4 specific headers
+		setHeaders(headers, "X-device-Ip", ip)
+		setHeaders(headers, "X-Device-User-Agent", userAgent)
+		setHeaders(headers, "X-Device-Referer", referer)
+		setHeaders(headers, "X-Device-Accept-Language", language)
+	}
+	tag.ImpReqHeaders = headers
+}
+
+func setHeaders(headers http.Header, key, value string) {
+	if "" != value {
+		headers.Set(key, value)
+	}
+}
+
+//getAllHeaders combines default and custom headers and returns common list
+//It internally calls GetHeaders() method for obtaining list of custom headers
+func (tag *BidderMacro) getAllHeaders() http.Header {
+	setDefaultHeaders(tag)
+	customHeaders := tag.IBidderMacro.GetHeaders()
+	if nil != customHeaders {
+		for k, v := range customHeaders {
+			// custom header may contains default header key with value
+			// in such case custom value will be prefered
+			if nil != v && len(v) > 0 {
+				tag.ImpReqHeaders.Set(k, v[0])
+				for i := 1; i < len(v); i++ {
+					tag.ImpReqHeaders.Add(k, v[i])
+				}
+			}
+		}
+	}
+	return tag.ImpReqHeaders
 }

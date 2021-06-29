@@ -1,4 +1,4 @@
-package tagbidder
+package vastbidder
 
 const (
 	intBase = 10
@@ -51,7 +51,7 @@ const (
 	MacroVideoSkipAfter        = `skipafter`
 	MacroVideoSequence         = `sequence`
 	MacroVideoBlockedAttribute = `battr`
-	MacroVideoMaximumExtended  = `maxextend`
+	MacroVideoMaximumExtended  = `maxextended`
 	MacroVideoMinimumBitRate   = `minbitrate`
 	MacroVideoMaximumBitRate   = `maxbitrate`
 	MacroVideoBoxing           = `boxingallowed`
@@ -90,20 +90,29 @@ const (
 	MacroPubDomain = `pubdomain`
 
 	//Content
-	MacroContentID                = `contentid`
-	MacroContentEpisode           = `episode`
-	MacroContentTitle             = `title`
-	MacroContentSeries            = `series`
-	MacroContentSeason            = `season`
-	MacroContentArtist            = `artist`
-	MacroContentGenre             = `genre`
-	MacroContentAlbum             = `album`
-	MacroContentISrc              = `isrc`
-	MacroContentURL               = `contenturl`
-	MacroContentCategory          = `contentcat`
-	MacroContentProductionQuality = `contentprodq`
-	MacroContentVideoQuality      = `contentvideoquality`
-	MacroContentContext           = `context`
+	MacroContentID                 = `contentid`
+	MacroContentEpisode            = `episode`
+	MacroContentTitle              = `title`
+	MacroContentSeries             = `series`
+	MacroContentSeason             = `season`
+	MacroContentArtist             = `artist`
+	MacroContentGenre              = `genre`
+	MacroContentAlbum              = `album`
+	MacroContentISrc               = `isrc`
+	MacroContentURL                = `contenturl`
+	MacroContentCategory           = `contentcat`
+	MacroContentProductionQuality  = `contentprodq`
+	MacroContentVideoQuality       = `contentvideoquality`
+	MacroContentContext            = `context`
+	MacroContentContentRating      = `contentrating`
+	MacroContentUserRating         = `userrating`
+	MacroContentQAGMediaRating     = `qagmediarating`
+	MacroContentKeywords           = `contentkeywords`
+	MacroContentLiveStream         = `livestream`
+	MacroContentSourceRelationship = `sourcerelationship`
+	MacroContentLength             = `contentlen`
+	MacroContentLanguage           = `contentlanguage`
+	MacroContentEmbeddable         = `contentembeddable`
 
 	//Producer
 	MacroProducerID   = `prodid`
@@ -133,11 +142,11 @@ const (
 
 	//Geo
 	MacroLatitude  = `lat`
-	MacroLongitude = `long`
+	MacroLongitude = `lon`
 	MacroCountry   = `country`
 	MacroRegion    = `region`
 	MacroCity      = `city`
-	MacroZip       = `aip`
+	MacroZip       = `zip`
 	MacroUTCOffset = `utcoffset`
 
 	//User
@@ -154,10 +163,4 @@ const (
 	MacroCacheBuster = `cachebuster`
 )
 
-//ResponseHandlerType list of tag based response handlers
-type ResponseHandlerType string
-
-const (
-	OpenRTBResponseHandlerType ResponseHandlerType = `openrtb`
-	VASTTagResponseHandlerType ResponseHandlerType = `vasttag`
-)
+var ParamKeys = []string{"param1", "param2", "param3", "param4", "param5"}
