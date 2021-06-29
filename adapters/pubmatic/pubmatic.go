@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -82,6 +83,10 @@ const (
 	INVALID_HEIGHT    = "Invalid Height"
 	INVALID_MEDIATYPE = "Invalid MediaType"
 	INVALID_ADSLOT    = "Invalid AdSlot"
+
+	dctrKeyName        = "key_val"
+	pmZoneIDKeyName    = "pmZoneId"
+	pmZoneIDKeyNameOld = "pmZoneID"
 )
 
 func PrepareLogMessage(tID, pubId, adUnitId, bidID, details string, args ...interface{}) string {
@@ -619,42 +624,62 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 
 	imp.Ext = nil
 
-	impExtMap := make(map[string]interface{})
+	extMap := make(map[string]interface{}, 0)
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
-		populateKeywordsInExt(pubmaticExt.Keywords, impExtMap)
+		addKeywordsToExt(pubmaticExt.Keywords, extMap)
+	}
+	//Give preference to direct values of 'dctr' & 'pmZoneId' params in extension
+	if pubmaticExt.Dctr != "" {
+		extMap[dctrKeyName] = pubmaticExt.Dctr
+	}
+	if pubmaticExt.PmZoneID != "" {
+		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
 	}
 
 	if bidderExt.Prebid != nil {
 		if bidderExt.Prebid.SKAdnetwork != nil {
-			impExtMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
+			extMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
 		}
 		if bidderExt.Prebid.IsRewardedInventory == 1 {
-			impExtMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
+			extMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
 		}
 	}
 
 	if bidderExt.Data != nil && bidderExt.Data.AdServer != nil &&
 		bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
-		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
+		extMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
 	}
 
-	if len(impExtMap) != 0 {
-		impExtBytes, err := json.Marshal(impExtMap)
+	imp.Ext = nil
+	if len(extMap) > 0 {
+		ext, err := json.Marshal(extMap)
 		if err == nil {
-			imp.Ext = json.RawMessage(impExtBytes)
+			imp.Ext = ext
 		}
 	}
+
 	return nil
 
 }
 
-func populateKeywordsInExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, impExtMap map[string]interface{}) {
+func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[string]interface{}) {
 	for _, keyVal := range keywords {
 		if len(keyVal.Values) == 0 {
 			logf("No values present for key = %s", keyVal.Key)
 			continue
 		} else {
-			impExtMap[keyVal.Key] = strings.Join(keyVal.Values[:], ",")
+			key := keyVal.Key
+			if keyVal.Key == pmZoneIDKeyNameOld {
+				key = pmZoneIDKeyName
+			}
+			val := strings.Join(keyVal.Values[:], ",")
+			if strings.Contains(val, "%3D") {
+				urlDecodedVal, err := url.QueryUnescape(val)
+				if err == nil {
+					val = urlDecodedVal
+				}
+			}
+			extMap[key] = val
 		}
 	}
 }
