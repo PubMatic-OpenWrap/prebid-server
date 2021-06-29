@@ -47,7 +47,7 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 			headers := bidderMacro.getAllHeaders()
 
 			requestData = append(requestData, &adapters.RequestData{
-				Params: adapters.BidRequestParams{
+				Params: &adapters.BidRequestParams{
 					ImpIndex:     impIndex,
 					VASTTagIndex: vastTagIndex,
 				},

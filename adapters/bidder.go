@@ -117,7 +117,7 @@ type BidRequestParams struct {
 
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
-	Params  BidRequestParams
+	Params  *BidRequestParams
 	Method  string
 	Uri     string
 	Body    []byte

@@ -347,7 +347,6 @@ func filterHeader(h http.Header) http.Header {
 // makeExt transforms information about the HTTP call into the contract class for the PBS response.
 func makeExt(httpInfo *httpCallInfo) *openrtb_ext.ExtHttpCall {
 	ext := &openrtb_ext.ExtHttpCall{}
-	ext.Params = make(map[string]int)
 
 	if httpInfo != nil && httpInfo.request != nil {
 		ext.Uri = httpInfo.request.Uri
@@ -358,8 +357,12 @@ func makeExt(httpInfo *httpCallInfo) *openrtb_ext.ExtHttpCall {
 			ext.ResponseBody = string(httpInfo.response.Body)
 			ext.Status = httpInfo.response.StatusCode
 		}
-		ext.Params["ImpIndex"] = httpInfo.request.Params.ImpIndex
-		ext.Params["VASTTagIndex"] = httpInfo.request.Params.VASTTagIndex
+
+		if nil != httpInfo.request.Params {
+			ext.Params = make(map[string]int)
+			ext.Params["ImpIndex"] = httpInfo.request.Params.ImpIndex
+			ext.Params["VASTTagIndex"] = httpInfo.request.Params.VASTTagIndex
+		}
 	}
 
 	return ext

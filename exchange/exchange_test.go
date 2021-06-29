@@ -1801,25 +1801,6 @@ func (big *mockBidIDGenerator) New() (string, error) {
 
 }
 
-type mockBidIDGenerator struct {
-	GenerateBidID bool `json:"generateBidID"`
-	ReturnError   bool `json:"returnError"`
-}
-
-func (big *mockBidIDGenerator) Enabled() bool {
-	return big.GenerateBidID
-}
-
-func (big *mockBidIDGenerator) New() (string, error) {
-
-	if big.ReturnError {
-		err := errors.New("Test error generating bid.ext.prebid.bidid")
-		return "", err
-	}
-	return "mock_uuid", nil
-
-}
-
 func newExtRequest() openrtb_ext.ExtRequest {
 	priceGran := openrtb_ext.PriceGranularity{
 		Precision: 2,

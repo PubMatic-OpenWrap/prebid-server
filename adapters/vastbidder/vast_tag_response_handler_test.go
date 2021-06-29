@@ -41,7 +41,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 					},
 				},
 				externalRequest: &adapters.RequestData{
-					Params: adapters.BidRequestParams{
+					Params: &adapters.BidRequestParams{
 						ImpIndex: 0,
 					},
 				},
