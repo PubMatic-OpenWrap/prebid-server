@@ -455,7 +455,11 @@ func (e *exchange) getAllBids(
 			// Structure to record extra tracking data generated during bidding
 			ae := new(seatResponseExtra)
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
+
 			if bids != nil {
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
+
 				ae.HttpCalls = bids.httpCalls
 			}
 
