@@ -447,16 +447,17 @@ func (e *exchange) getAllBids(
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			bids, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest.BidRequest, bidderRequest.BidderName, adjustmentFactor, conversions, &reqInfo, accountDebugAllowed)
 
-			// Setting bidderCoreName in SeatBid
-			bids.bidderCoreName = bidderRequest.BidderCoreName
-
 			// Add in time reporting
 			elapsed := time.Since(start)
 			brw.adapterBids = bids
 			// Structure to record extra tracking data generated during bidding
 			ae := new(seatResponseExtra)
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
+
 			if bids != nil {
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
+
 				ae.HttpCalls = bids.httpCalls
 			}
 
