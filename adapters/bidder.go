@@ -135,8 +135,7 @@ type ExtImpBidder struct {
 	//
 	// Bidder implementations may safely assume that this JSON has been validated by their
 	// static/bidder-params/{bidder}.json file.
-	Bidder json.RawMessage      `json:"bidder"`
-	Data   *openrtb_ext.ExtData `json:"data,omitempty"`
+	Bidder json.RawMessage `json:"bidder"`
 }
 
 func (r *RequestData) SetBasicAuth(username string, password string) {
