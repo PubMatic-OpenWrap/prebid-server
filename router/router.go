@@ -3,10 +3,12 @@ package router
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -73,6 +75,7 @@ var (
 	g_activeBidders     map[string]openrtb_ext.BidderName
 	g_defReqJSON        []byte
 	g_cacheClient       pbc.Client
+	g_transport         *http.Transport
 )
 
 // NewJsonDirectoryServer is used to serve .json files from a directory as a single blob. For example,
@@ -192,6 +195,39 @@ type Router struct {
 	Shutdown        func()
 }
 
+func getTransport(cfg *config.Configuration, certPool *x509.CertPool) *http.Transport {
+	transport := &http.Transport{
+		MaxConnsPerHost: cfg.Client.MaxConnsPerHost,
+		IdleConnTimeout: time.Duration(cfg.Client.IdleConnTimeout) * time.Second,
+		TLSClientConfig: &tls.Config{RootCAs: certPool},
+	}
+
+	if cfg.Client.DialTimeout > 0 {
+		transport.Dial = (&net.Dialer{
+			Timeout:   time.Duration(cfg.Client.DialTimeout) * time.Millisecond,
+			KeepAlive: time.Duration(cfg.Client.DialKeepAlive) * time.Second,
+		}).Dial
+	}
+
+	if cfg.Client.TLSHandshakeTimeout > 0 {
+		transport.TLSHandshakeTimeout = time.Duration(cfg.Client.TLSHandshakeTimeout) * time.Second
+	}
+
+	if cfg.Client.ResponseHeaderTimeout > 0 {
+		transport.ResponseHeaderTimeout = time.Duration(cfg.Client.ResponseHeaderTimeout) * time.Second
+	}
+
+	if cfg.Client.MaxIdleConns > 0 {
+		transport.MaxIdleConns = cfg.Client.MaxIdleConns
+	}
+
+	if cfg.Client.MaxIdleConnsPerHost > 0 {
+		transport.MaxIdleConnsPerHost = cfg.Client.MaxIdleConnsPerHost
+	}
+
+	return transport
+}
+
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
 	const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 	const infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
@@ -209,16 +245,32 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Infof("Could not read certificates file: %s \n", readCertErr.Error())
 	}
 
+	g_transport = getTransport(cfg, certPool)
 	generalHttpClient := &http.Client{
-		Transport: &http.Transport{
-			MaxConnsPerHost:     cfg.Client.MaxConnsPerHost,
-			MaxIdleConns:        cfg.Client.MaxIdleConns,
-			MaxIdleConnsPerHost: cfg.Client.MaxIdleConnsPerHost,
-			IdleConnTimeout:     time.Duration(cfg.Client.IdleConnTimeout) * time.Second,
-			TLSClientConfig:     &tls.Config{RootCAs: certPool},
-		},
+		Transport: g_transport,
 	}
 
+	/*
+		* Add Dialer:
+		* Add TLSHandshakeTimeout:
+		* MaxConnsPerHost: Max value should be QPS
+		* MaxIdleConnsPerHost:
+		* ResponseHeaderTimeout: Max Timeout from OW End
+		* No Need for MaxIdleConns:
+		*
+
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:   100 * time.Millisecond,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			MaxIdleConnsPerHost:   (maxIdleConnsPerHost / size), // ideal needs to be defined diff?
+			MaxConnsPerHost:       (maxConnPerHost / size),
+			ResponseHeaderTimeout: responseHdrTimeout,
+		}
+	*/
 	cacheHttpClient := &http.Client{
 		Transport: &http.Transport{
 			MaxConnsPerHost:     cfg.CacheClient.MaxConnsPerHost,
@@ -338,6 +390,10 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.GET("/optout", userSyncDeps.OptOut)*/
 
 	return r, nil
+}
+
+func GetGlobalTransport() *http.Transport {
+	return g_transport
 }
 
 //OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
