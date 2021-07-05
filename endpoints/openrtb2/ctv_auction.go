@@ -41,14 +41,14 @@ import (
 //CTV Specific Endpoint
 type ctvEndpointDeps struct {
 	endpointDeps
-	request            *openrtb2.BidRequest
-	reqExt             *openrtb_ext.ExtRequestAdPod
-	impData            []*types.ImpData
-	videoSeats         []*openrtb2.SeatBid //stores pure video impression bids
-	impIndices         map[string]int
-	isAdPodRequest     bool
-	impsExt            map[string]map[string]map[string]interface{}
-	impPartnerTagIDMap map[string]map[string][]string
+	request                   *openrtb2.BidRequest
+	reqExt                    *openrtb_ext.ExtRequestAdPod
+	impData                   []*types.ImpData
+	videoSeats                []*openrtb2.SeatBid //stores pure video impression bids
+	impIndices                map[string]int
+	isAdPodRequest            bool
+	impsExt                   map[string]map[string]map[string]interface{}
+	impPartnerBlockedTagIDMap map[string]map[string][]string
 
 	//Prebid Specific
 	ctx    context.Context
@@ -418,7 +418,7 @@ func (deps *ctvEndpointDeps) validateBidRequest() (err []error) {
 //readImpExtensionsAndTags will read the impression extensions
 func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 	deps.impsExt = make(map[string]map[string]map[string]interface{})
-	deps.impPartnerTagIDMap = make(map[string]map[string][]string)
+	deps.impPartnerBlockedTagIDMap = make(map[string]map[string][]string) //Initially this will have all tags, eligible tags will be filtered in filterImpsVastTagsByDuration
 
 	for _, imp := range deps.request.Imp {
 		var impExt map[string]map[string]interface{}
@@ -427,7 +427,7 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 			continue
 		}
 
-		deps.impPartnerTagIDMap[imp.ID] = make(map[string][]string)
+		deps.impPartnerBlockedTagIDMap[imp.ID] = make(map[string][]string)
 
 		for partnerName, partnerExt := range impExt {
 			impVastTags, ok := partnerExt["tags"].([]interface{})
@@ -441,7 +441,7 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 					continue
 				}
 
-				deps.impPartnerTagIDMap[imp.ID][partnerName] = append(deps.impPartnerTagIDMap[imp.ID][partnerName], vastTag["tagid"].(string))
+				deps.impPartnerBlockedTagIDMap[imp.ID][partnerName] = append(deps.impPartnerBlockedTagIDMap[imp.ID][partnerName], vastTag["tagid"].(string))
 			}
 		}
 
@@ -504,9 +504,9 @@ func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRe
 					if int(imp.Video.MinDuration) <= tagDuration && tagDuration <= int(imp.Video.MaxDuration) {
 						compatibleVasts = append(compatibleVasts, tag)
 
-						deps.impPartnerTagIDMap[originalImpID][partnerName] = remove(deps.impPartnerTagIDMap[originalImpID][partnerName], vastTag["tagid"].(string))
-						if len(deps.impPartnerTagIDMap[originalImpID][partnerName]) == 0 {
-							delete(deps.impPartnerTagIDMap[originalImpID], partnerName)
+						deps.impPartnerBlockedTagIDMap[originalImpID][partnerName] = remove(deps.impPartnerBlockedTagIDMap[originalImpID][partnerName], vastTag["tagid"].(string))
+						if len(deps.impPartnerBlockedTagIDMap[originalImpID][partnerName]) == 0 {
+							delete(deps.impPartnerBlockedTagIDMap[originalImpID], partnerName)
 						}
 					}
 				}
@@ -529,7 +529,7 @@ func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRe
 		bidReq.Imp[impCount] = imp
 	}
 
-	for impID, blockedTags := range deps.impPartnerTagIDMap {
+	for impID, blockedTags := range deps.impPartnerBlockedTagIDMap {
 		for _, datum := range deps.impData {
 			if datum.ImpID == impID {
 				datum.BlockedVASTTags = blockedTags
