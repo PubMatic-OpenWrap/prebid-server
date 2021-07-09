@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
+	"golang.org/x/net/publicsuffix"
 )
 
 type ContextKey string
@@ -201,6 +202,14 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
+
+		/*TODO: Temporary Solution, Remove parseAliases*/
+		aliases, _ := parseAliases(r.BidRequest)
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids, aliases)
+		// add advertiser blocking specific errors
+		for _, message := range rejections {
+			errs = append(errs, errors.New(message))
+		}
 
 		var bidCategory map[string]string
 		//If includebrandcategory is present in ext then CE feature is on.
@@ -412,7 +421,6 @@ func (e *exchange) getAllBids(
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(bidderRequests))
 	chBids := make(chan *bidResponseWrapper, len(bidderRequests))
 	bidsFound := false
-	bidIDsCollision := false
 
 	for _, bidder := range bidderRequests {
 		// Here we actually call the adapters and collect the bids.
@@ -438,13 +446,20 @@ func (e *exchange) getAllBids(
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			bids, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest.BidRequest, bidderRequest.BidderName, adjustmentFactor, conversions, &reqInfo, accountDebugAllowed)
 
+			// Setting bidderCoreName in SeatBid
+			bids.bidderCoreName = bidderRequest.BidderCoreName
+
 			// Add in time reporting
 			elapsed := time.Since(start)
 			brw.adapterBids = bids
 			// Structure to record extra tracking data generated during bidding
 			ae := new(seatResponseExtra)
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
+
 			if bids != nil {
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
+
 				ae.HttpCalls = bids.httpCalls
 
 				// Setting bidderCoreName in SeatBid
@@ -464,9 +479,6 @@ func (e *exchange) getAllBids(
 					var cpm = float64(bid.bid.Price * 1000)
 					e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 					e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.bidType, bid.bid.AdM != "")
-					if bid.bidType == openrtb_ext.BidTypeVideo && bid.bidVideo != nil && bid.bidVideo.Duration > 0 {
-						e.me.RecordAdapterVideoBidDuration(bidderRequest.BidderLabels, bid.bidVideo.Duration)
-					}
 				}
 			}
 			chBids <- brw
@@ -486,14 +498,9 @@ func (e *exchange) getAllBids(
 
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
-			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
+	}
 
-	}
-	if bidIDsCollision {
-		// record this request count this request if bid collision is detected
-		e.me.RecordRequestHavingDuplicateBidID()
-	}
 	return adapterBids, adapterExtra, bidsFound
 }
 
@@ -1037,4 +1044,80 @@ func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBi
 		}
 	}
 	return bidIDCollisionFound
+}
+
+//normalizeDomain validates, normalizes and returns valid domain or error if failed to validate
+//checks if domain starts with http by lowercasing entire domain
+//if not it prepends it before domain. This is required for obtaining the url
+//using url.parse method. on successfull url parsing, it will replace first occurance of www.
+//from the domain
+func normalizeDomain(domain string) (string, error) {
+	domain = strings.Trim(strings.ToLower(domain), " ")
+	// not checking if it belongs to icann
+	suffix, _ := publicsuffix.PublicSuffix(domain)
+	if domain != "" && suffix == domain { // input is publicsuffix
+		return "", errors.New("domain [" + domain + "] is public suffix")
+	}
+	if !strings.HasPrefix(domain, "http") {
+		domain = fmt.Sprintf("http://%s", domain)
+	}
+	url, err := url.Parse(domain)
+	if nil == err && url.Host != "" {
+		return strings.Replace(url.Host, "www.", "", 1), nil
+	}
+	return "", err
+}
+
+//applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
+//the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
+//it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
+func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, alias map[string]string) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+	rejections := []string{}
+	nBadvs := []string{}
+	if nil != bidRequest.BAdv {
+		for _, domain := range bidRequest.BAdv {
+			nDomain, err := normalizeDomain(domain)
+			if nil == err && nDomain != "" { // skip empty and domains with errors
+				nBadvs = append(nBadvs, nDomain)
+			}
+		}
+	}
+
+	for bidderName, seatBid := range seatBids {
+		isTagBidder := (resolveBidder(string(bidderName), alias) == openrtb_ext.BidderVASTBidder)
+		if isTagBidder && len(nBadvs) > 0 {
+			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
+				bid := seatBid.bids[bidIndex]
+				for _, bAdv := range nBadvs {
+					aDomains := bid.bid.ADomain
+					rejectBid := false
+					if nil == aDomains {
+						// provision to enable rejecting of bids when req.badv is set
+						rejectBid = true
+					} else {
+						for _, d := range aDomains {
+							if aDomain, err := normalizeDomain(d); nil == err {
+								// compare and reject bid if
+								// 1. aDomain == bAdv
+								// 2. .bAdv is suffix of aDomain
+								// 3. aDomain not present but request has list of block advertisers
+								if aDomain == bAdv || strings.HasSuffix(aDomain, "."+bAdv) || (len(aDomain) == 0 && len(bAdv) > 0) {
+									// aDomain must be subdomain of bAdv
+									rejectBid = true
+									break
+								}
+							}
+						}
+					}
+					if rejectBid {
+						// reject the bid. bid belongs to blocked advertisers list
+						seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
+						rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
+						break // bid is rejected due to advertiser blocked. No need to check further domains
+					}
+				}
+			}
+		}
+	}
+	return seatBids, rejections
 }

@@ -17,6 +17,7 @@ import (
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
@@ -3091,4 +3092,18 @@ type nilCategoryFetcher struct{}
 
 func (nilCategoryFetcher) FetchCategories(ctx context.Context, primaryAdServer, publisherId, iabCategory string) (string, error) {
 	return "", nil
+}
+
+func newTestTagAdapter(name string) *bidderAdapter {
+	return &bidderAdapter{
+		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}),
+		BidderName: openrtb_ext.BidderName(name),
+	}
+}
+
+func newTestRtbAdapter(name string) *bidderAdapter {
+	return &bidderAdapter{
+		Bidder:     &goodSingleBidder{},
+		BidderName: openrtb_ext.BidderName(name),
+	}
 }
