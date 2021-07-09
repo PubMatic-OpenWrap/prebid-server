@@ -461,6 +461,9 @@ func (e *exchange) getAllBids(
 				bids.bidderCoreName = bidderRequest.BidderCoreName
 
 				ae.HttpCalls = bids.httpCalls
+
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
 			}
 
 			// Timing statistics
@@ -518,9 +521,14 @@ func (e *exchange) recoverSafely(bidderRequests []BidderRequest,
 					allBidders = sb.String()[:sb.Len()-1]
 				}
 
+				bidderRequestJSON, err := json.Marshal(bidderRequest)
+				if nil != err {
+					bidderRequestJSON = []byte(err.Error())
+				}
+
 				glog.Errorf("OpenRTB auction recovered panic from Bidder %s: %v. "+
-					"Account id: %s, All Bidders: %s, Stack trace is: %v",
-					bidderRequest.BidderCoreName, r, bidderRequest.BidderLabels.PubID, allBidders, string(debug.Stack()))
+					"Account id: %s, All Bidders: %s, BidRequest: %s, Stack trace is: %v",
+					bidderRequest.BidderCoreName, r, bidderRequest.BidderLabels.PubID, allBidders, string(bidderRequestJSON), string(debug.Stack()))
 				e.me.RecordAdapterPanic(bidderRequest.BidderLabels)
 				// Let the master request know that there is no data here
 				brw := new(bidResponseWrapper)
