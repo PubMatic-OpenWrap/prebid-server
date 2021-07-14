@@ -671,7 +671,8 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 		}
 	}
 
-	if len(impExtMap) != 0 {
+	imp.Ext = nil
+	if len(impExtMap) > 0 {
 		impExtBytes, err := JSONMarshal(impExtMap)
 		if err == nil {
 			imp.Ext = impExtBytes
