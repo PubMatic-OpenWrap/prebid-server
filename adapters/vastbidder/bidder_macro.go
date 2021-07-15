@@ -110,7 +110,6 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 	keys = NormalizeJSON(tag.VASTTag.Params)
 
 	//Adding VAST Tag Standard Params
-	keys["tagid"] = tag.VASTTag.TagID
 	keys["dur"] = strconv.Itoa(tag.VASTTag.Duration)
 
 	//Adding Headers as Custom Macros
