@@ -13,6 +13,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -149,7 +150,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		if price <= 0 {
 			price, currency = getStaticPricingDetails(handler.VASTTag)
 			if price <= 0 {
-				errs = append(errs, errors.New("Bid Price Not Present"))
+				errs = append(errs, &errortypes.NoBidPrice{Message: "Bid Price Not Present"})
 				return nil, errs[:]
 			}
 		}
