@@ -454,6 +454,9 @@ func (e *exchange) getAllBids(
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
 
 			if bids != nil {
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
+
 				ae.HttpCalls = bids.httpCalls
 
 				// Setting bidderCoreName in SeatBid
