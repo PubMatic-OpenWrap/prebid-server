@@ -671,23 +671,15 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 		}
 	}
 
-	imp.Ext = nil
-	if len(impExtMap) > 0 {
-		impExtBytes, err := JSONMarshal(impExtMap)
+	if len(impExtMap) != 0 {
+		impExtBytes, err := json.Marshal(impExtMap)
 		if err == nil {
 			imp.Ext = impExtBytes
 		}
 	}
 
 	return nil
-}
 
-func JSONMarshal(t interface{}) ([]byte, error) {
-	buffer := &bytes.Buffer{}
-	encoder := json.NewEncoder(buffer)
-	encoder.SetEscapeHTML(false)
-	err := encoder.Encode(t)
-	return buffer.Bytes(), err
 }
 
 func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[string]interface{}) {
