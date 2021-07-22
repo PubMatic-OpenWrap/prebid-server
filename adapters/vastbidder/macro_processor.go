@@ -87,7 +87,6 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 				//escaping string nEscaping times
 				value = escape(value, nEscaping)
 			}
-
 			if nil != valueCallback && valueCallback.cached {
 				//cached value if its cached flag is true
 				mp.macroCache[key] = value
@@ -148,8 +147,7 @@ func (mp *MacroProcessor) ProcessString(in string) (response string) {
 		//glog.Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
 	}
 	response = out.String()
-	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", in, response)
-
+	glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", in, response)
 	return
 }
 
@@ -159,15 +157,15 @@ func (mp *MacroProcessor) ProcessURL(uri string, flags Flags) (response string) 
 		return mp.ProcessString(uri)
 	}
 
-	url, _ := url.Parse(uri)
+	murl, _ := url.Parse(uri)
 
-	url.Path = mp.ProcessString(url.Path)
-	url.RawQuery = mp.processURLValues(url.Query(), flags)
-	url.Fragment = mp.ProcessString(url.Fragment)
+	murl.Path = mp.ProcessString(murl.Path)
+	murl.RawQuery = mp.processURLValues(murl.Query(), flags)
+	murl.Fragment = mp.ProcessString(murl.Fragment)
 
-	response = url.String()
+	response = murl.String()
 
-	glog.V(3).Infof("[MACRO]:in:[%s]\nreplaced:[%s]\n", uri, response)
+	glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", uri, response)
 	return
 }
 
@@ -199,7 +197,7 @@ func (mp *MacroProcessor) processURLValues(values url.Values, flags Flags) (resp
 			}
 			out.WriteString(k)
 			out.WriteByte('=')
-			out.WriteString(value)
+			out.WriteString(url.QueryEscape(value))
 		}
 	}
 	return out.String()
