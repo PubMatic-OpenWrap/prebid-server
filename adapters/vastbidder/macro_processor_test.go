@@ -423,21 +423,25 @@ func TestMacroProcessor_processURLValues(t *testing.T) {
 }
 
 func TestMacroProcessor_processURLValuesEscapingKeys(t *testing.T) {
+	testMacroImpValues := map[string]string{
+		MacroPubID: `pub id`,
+		MacroTagID: `tagid value`,
+	}
+
 	testMacroValues := map[string]string{
-		MacroPubID:                     `pub id`,
-		MacroPubID + macroEscapeSuffix: `pub+id`,
-		MacroTagID:                     `tagid value`,
-		MacroTagID + macroEscapeSuffix: `tagid+value`,
-		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
+		MacroPubID:                     `pub+id`,
+		MacroTagID:                     `tagid+value`,
+		MacroTagID + macroEscapeSuffix: `tagid%2Bvalue`,
+		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%252Bvalue`,
 	}
 
 	sampleBidRequest := &openrtb2.BidRequest{
 		Imp: []openrtb2.Imp{
-			{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroImpValues[MacroTagID]},
 		},
 		Site: &openrtb2.Site{
 			Publisher: &openrtb2.Publisher{
-				ID: testMacroValues[MacroPubID],
+				ID: testMacroImpValues[MacroPubID],
 			},
 		},
 	}
@@ -494,23 +498,20 @@ func TestMacroProcessor_processURLValuesEscapingKeys(t *testing.T) {
 }
 
 func TestMacroProcessor_ProcessURL(t *testing.T) {
-	testMacroValues := map[string]string{
-		MacroPubID:                     `123`,
-		MacroPubID + macroEscapeSuffix: `123`,
-		MacroSiteID:                    `567`,
-		MacroTagID:                     `tagid value`,
-		MacroTagID + macroEscapeSuffix: `tagid+value`,
-		MacroTagID + macroEscapeSuffix + macroEscapeSuffix: `tagid%2Bvalue`,
+	testMacroImpValues := map[string]string{
+		MacroPubID:  `123`,
+		MacroSiteID: `567`,
+		MacroTagID:  `tagid value`,
 	}
 
 	sampleBidRequest := &openrtb2.BidRequest{
 		Imp: []openrtb2.Imp{
-			{TagID: testMacroValues[MacroTagID]},
+			{TagID: testMacroImpValues[MacroTagID]},
 		},
 		Site: &openrtb2.Site{
-			ID: testMacroValues[MacroSiteID],
+			ID: testMacroImpValues[MacroSiteID],
 			Publisher: &openrtb2.Publisher{
-				ID: testMacroValues[MacroPubID],
+				ID: testMacroImpValues[MacroPubID],
 			},
 		},
 	}
@@ -533,15 +534,15 @@ func TestMacroProcessor_ProcessURL(t *testing.T) {
 			wantResponse: ``,
 		},
 		{
-			name: "RemovedEmptyParams",
+			name: "RemovedEmptyParams1",
 			args: args{
-				uri:   `http://xyz.domain.com/` + GetMacroKey(MacroPubID) + `/` + GetMacroKey(MacroSiteID) + `?tagID=` + GetMacroKey(MacroTagID+macroEscapeSuffix) + `&notfound=` + GetMacroKey(MacroTimeout) + `&k1=v1&k2=v2`,
+				uri:   `http://xyz.domain.com/` + GetMacroKey(MacroPubID) + `/` + GetMacroKey(MacroSiteID) + `?tagID=` + GetMacroKey(MacroTagID) + `&notfound=` + GetMacroKey(MacroTimeout) + `&k1=v1&k2=v2`,
 				flags: Flags{RemoveEmptyParam: true},
 			},
 			wantResponse: `http://xyz.domain.com/123/567?tagID=tagid+value&k1=v1&k2=v2`,
 		},
 		{
-			name: "RemovedEmptyParams",
+			name: "RemovedEmptyParams2",
 			args: args{
 				uri:   `http://xyz.domain.com/` + GetMacroKey(MacroPubID) + `/` + GetMacroKey(MacroSiteID) + `?tagID=` + GetMacroKey(MacroTagID+macroEscapeSuffix) + `&notfound=` + GetMacroKey(MacroTimeout) + `&k1=v1&k2=v2`,
 				flags: Flags{RemoveEmptyParam: false},
