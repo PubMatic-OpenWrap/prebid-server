@@ -421,6 +421,7 @@ func (e *exchange) getAllBids(
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(bidderRequests))
 	chBids := make(chan *bidResponseWrapper, len(bidderRequests))
 	bidsFound := false
+	bidIDsCollision := false
 
 	for _, bidder := range bidderRequests {
 		// Here we actually call the adapters and collect the bids.
@@ -476,6 +477,9 @@ func (e *exchange) getAllBids(
 					var cpm = float64(bid.bid.Price * 1000)
 					e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 					e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.bidType, bid.bid.AdM != "")
+					if bid.bidType == openrtb_ext.BidTypeVideo && bid.bidVideo != nil && bid.bidVideo.Duration > 0 {
+						e.me.RecordAdapterVideoBidDuration(bidderRequest.BidderLabels, bid.bidVideo.Duration)
+					}
 				}
 			}
 			chBids <- brw
@@ -495,7 +499,12 @@ func (e *exchange) getAllBids(
 
 		if !bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].bids) > 0 {
 			bidsFound = true
+			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
+	}
+	if bidIDsCollision {
+		// record this request count this request if bid collision is detected
+		e.me.RecordRequestHavingDuplicateBidID()
 	}
 
 	return adapterBids, adapterExtra, bidsFound
@@ -768,49 +777,51 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 				categoryDuration = fmt.Sprintf("%s_%s", categoryDuration, bidderName.String())
 			}
 
-			if dupe, ok := dedupe[dupeKey]; ok {
+			if !brandCatExt.SkipDedup {
+				if dupe, ok := dedupe[dupeKey]; ok {
 
-				dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
-				if err != nil {
-					dupeBidPrice = 0
-				}
-				currBidPrice, err := strconv.ParseFloat(pb, 64)
-				if err != nil {
-					currBidPrice = 0
-				}
-				if dupeBidPrice == currBidPrice {
-					if rand.Intn(100) < 50 {
-						dupeBidPrice = -1
-					} else {
-						currBidPrice = -1
+					dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
+					if err != nil {
+						dupeBidPrice = 0
 					}
-				}
-
-				if dupeBidPrice < currBidPrice {
-					if dupe.bidderName == bidderName {
-						// An older bid from the current bidder
-						bidsToRemove = append(bidsToRemove, dupe.bidIndex)
-						rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
-					} else {
-						// An older bid from a different seatBid we've already finished with
-						oldSeatBid := (seatBids)[dupe.bidderName]
-						if len(oldSeatBid.bids) == 1 {
-							seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
-							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+					currBidPrice, err := strconv.ParseFloat(pb, 64)
+					if err != nil {
+						currBidPrice = 0
+					}
+					if dupeBidPrice == currBidPrice {
+						if rand.Intn(100) < 50 {
+							dupeBidPrice = -1
 						} else {
-							oldSeatBid.bids = append(oldSeatBid.bids[:dupe.bidIndex], oldSeatBid.bids[dupe.bidIndex+1:]...)
+							currBidPrice = -1
 						}
 					}
-					delete(res, dupe.bidID)
-				} else {
-					// Remove this bid
-					bidsToRemove = append(bidsToRemove, bidInd)
-					rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
-					continue
+
+					if dupeBidPrice < currBidPrice {
+						if dupe.bidderName == bidderName {
+							// An older bid from the current bidder
+							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
+							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+						} else {
+							// An older bid from a different seatBid we've already finished with
+							oldSeatBid := (seatBids)[dupe.bidderName]
+							if len(oldSeatBid.bids) == 1 {
+								seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
+								rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+							} else {
+								oldSeatBid.bids = append(oldSeatBid.bids[:dupe.bidIndex], oldSeatBid.bids[dupe.bidIndex+1:]...)
+							}
+						}
+						delete(res, dupe.bidID)
+					} else {
+						// Remove this bid
+						bidsToRemove = append(bidsToRemove, bidInd)
+						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
+						continue
+					}
 				}
+				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
 			res[bidID] = categoryDuration
-			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}
 
 		if len(bidsToRemove) > 0 {
