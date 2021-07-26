@@ -203,9 +203,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
 
-		/*TODO: Temporary Solution, Remove parseAliases*/
-		aliases, _ := parseAliases(r.BidRequest)
-		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids, aliases)
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -1076,7 +1074,7 @@ func normalizeDomain(domain string) (string, error) {
 //applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 //the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, alias map[string]string) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	rejections := []string{}
 	nBadvs := []string{}
 	if nil != bidRequest.BAdv {
@@ -1089,8 +1087,7 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 	}
 
 	for bidderName, seatBid := range seatBids {
-		isTagBidder := (resolveBidder(string(bidderName), alias) == openrtb_ext.BidderVASTBidder)
-		if isTagBidder && len(nBadvs) > 0 {
+		if seatBid.bidderCoreName == openrtb_ext.BidderVASTBidder && len(nBadvs) > 0 {
 			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
 				bid := seatBid.bids[bidIndex]
 				for _, bAdv := range nBadvs {
