@@ -385,9 +385,12 @@ func (deps *ctvEndpointDeps) setDefaultValues() {
 	//set request is adpod request or normal request
 	deps.setIsAdPodRequest()
 
-	if deps.isAdPodRequest {
-		deps.readImpExtensionsAndTags()
-	}
+	//TODO: OTT-217, OTT-161 commenting code of filtering vast tags
+	/*
+		if deps.isAdPodRequest {
+			deps.readImpExtensionsAndTags()
+		}
+	*/
 }
 
 //validateBidRequest will validate AdPod specific mandatory Parameters and returns error
@@ -463,7 +466,8 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	//createImpressions
 	ctvRequest.Imp = deps.createImpressions()
 
-	deps.filterImpsVastTagsByDuration(&ctvRequest)
+	//TODO: OTT-217, OTT-161 commenting code of filtering vast tags
+	//deps.filterImpsVastTagsByDuration(&ctvRequest)
 
 	//TODO: remove adpod extension if not required to send further
 	return &ctvRequest
