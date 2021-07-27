@@ -314,6 +314,7 @@ func CoreBidderNames() []BidderName {
 		BidderUnicorn,
 		BidderUnruly,
 		BidderValueImpression,
+		BidderVASTBidder,
 		BidderVerizonMedia,
 		BidderViewdeos,
 		BidderVisx,
