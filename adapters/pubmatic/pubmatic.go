@@ -582,9 +582,12 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		}
 	}
 
-	if bidderExt.Data != nil && bidderExt.Data.AdServer != nil &&
-		bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
-		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
+	if bidderExt.Data != nil {
+		if bidderExt.Data.AdServer != nil && bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
+			impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
+		} else if bidderExt.Data.PBAdSlot != "" {
+			impExtMap[ImpExtAdUnitKey] = bidderExt.Data.PBAdSlot
+		}
 	}
 
 	imp.Ext = nil
