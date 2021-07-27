@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -586,12 +587,14 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		impExtMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
 	}
 
-	if len(impExtMap) != 0 {
+	imp.Ext = nil
+	if len(impExtMap) > 0 {
 		impExtBytes, err := json.Marshal(impExtMap)
 		if err == nil {
-			imp.Ext = json.RawMessage(impExtBytes)
+			imp.Ext = impExtBytes
 		}
 	}
+
 	return nil
 
 }
