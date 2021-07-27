@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -98,9 +99,12 @@ const (
 	INVALID_MEDIATYPE = "Invalid MediaType"
 	INVALID_ADSLOT    = "Invalid AdSlot"
 
-	dctrKeyName        = "key_val"
-	pmZoneIDKeyName    = "pmZoneId"
-	pmZoneIDKeyNameOld = "pmZoneID"
+	dctrKeyName              = "key_val"
+	dctrKeywordName          = "dctr"
+	pmZoneIDKeyName          = "pmZoneId"
+	pmZoneIDRequestParamName = "pmzoneid"
+
+	urlEncodedEqualChar = "%3D"
 )
 
 func PrepareLogMessage(tID, pubId, adUnitId, bidID, details string, args ...interface{}) string {
@@ -346,6 +350,7 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 
 	return bids, nil
 }
+
 func getBidderParam(request *openrtb2.BidRequest, key string) ([]byte, error) {
 	var reqExt openrtb_ext.ExtRequest
 	if len(request.Ext) <= 0 {
@@ -665,9 +670,9 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 
 	imp.Ext = nil
 	if len(impExtMap) > 0 {
-		ext, err := json.Marshal(impExtMap)
+		impExtBytes, err := json.Marshal(impExtMap)
 		if err == nil {
-			imp.Ext = ext
+			imp.Ext = impExtBytes
 		}
 	}
 	return nil
@@ -680,11 +685,23 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			logf("No values present for key = %s", keyVal.Key)
 			continue
 		} else {
+			val := strings.Join(keyVal.Values[:], ",")
+
 			key := keyVal.Key
-			if keyVal.Key == pmZoneIDKeyNameOld {
+			if strings.EqualFold(key, pmZoneIDRequestParamName) {
 				key = pmZoneIDKeyName
+			} else if key == dctrKeywordName {
+				key = dctrKeyName
+				// URL-decode dctr value if it is url-encoded
+				if strings.Contains(val, urlEncodedEqualChar) {
+					urlDecodedVal, err := url.QueryUnescape(val)
+					if err == nil {
+						val = urlDecodedVal
+					}
+				}
 			}
-			extMap[key] = strings.Join(keyVal.Values[:], ",")
+
+			extMap[key] = val
 		}
 	}
 }
