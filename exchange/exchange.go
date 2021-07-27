@@ -789,7 +789,8 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 				categoryDuration = fmt.Sprintf("%s_%s", categoryDuration, bidderName.String())
 			}
 
-			if dupe, ok := dedupe[dupeKey]; ok {
+			if !brandCatExt.SkipDedup {
+				if dupe, ok := dedupe[dupeKey]; ok {
 
 				dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
 				if err != nil {
@@ -805,7 +806,6 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 					} else {
 						currBidPrice = -1
 					}
-				}
 
 				if dupeBidPrice < currBidPrice {
 					if dupe.bidderName == bidderName {
@@ -837,7 +837,6 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
 			res[bidID] = categoryDuration
-			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}
 
 		if len(bidsToRemove) > 0 {
