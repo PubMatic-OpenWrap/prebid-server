@@ -30,6 +30,7 @@ type BidCache struct {
 type putObject struct {
 	Type  string      `json:"type"`
 	Value interface{} `json:"value"`
+	UUID  string      `json:"uuid"`
 }
 
 type putRequest struct {
@@ -89,6 +90,7 @@ func Put(ctx context.Context, objs []*CacheObject) error {
 			pr.Puts[i].Type = "json"
 		}
 		pr.Puts[i].Value = obj.Value
+		pr.Puts[i].UUID = obj.UUID
 	}
 	// Don't want to escape the HTML for adm and nurl
 	buf := new(bytes.Buffer)
