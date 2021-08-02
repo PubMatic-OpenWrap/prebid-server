@@ -463,37 +463,3 @@ func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*
 
 	return &timeoutReq, nil
 }
-
-func (fa *FacebookAdapter) MakeTimeoutNotification(req *adapters.RequestData) (*adapters.RequestData, []error) {
-	var (
-		rID   string
-		pubID string
-		err   error
-	)
-
-	// Note, the facebook adserver can only handle single impression requests, so we have to split multi-imp requests into
-	// multiple request. In order to ensure that every split request has a unique ID, the split request IDs are set to the
-	// corresponding imp's ID
-	rID, err = jsonparser.GetString(req.Body, "id")
-	if err != nil {
-		return &adapters.RequestData{}, []error{err}
-	}
-
-	// The publisher ID is expected in the app object
-	pubID, err = jsonparser.GetString(req.Body, "app", "publisher", "id")
-	if err != nil {
-		return &adapters.RequestData{}, []error{
-			errors.New("path app.publisher.id not found in the request"),
-		}
-	}
-
-	uri := fmt.Sprintf("https://www.facebook.com/audiencenetwork/nurl/?partner=%s&app=%s&auction=%s&ortb_loss_code=2", fa.platformID, pubID, rID)
-	timeoutReq := adapters.RequestData{
-		Method:  "GET",
-		Uri:     uri,
-		Body:    nil,
-		Headers: http.Header{},
-	}
-
-	return &timeoutReq, nil
-}

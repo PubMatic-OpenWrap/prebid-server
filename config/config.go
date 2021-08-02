@@ -98,7 +98,7 @@ type HTTPClient struct {
 	DialKeepAlive         int `mapstructure:"dial_keepalive"`
 }
 
-func (cfg *Configuration) validate() []error {
+func (cfg *Configuration) validate(v *viper.Viper) []error {
 	var errs []error
 	errs = cfg.AuctionTimeouts.validate(errs)
 	errs = cfg.StoredRequests.validate(errs)
@@ -110,7 +110,7 @@ func (cfg *Configuration) validate() []error {
 	if cfg.MaxRequestSize < 0 {
 		errs = append(errs, fmt.Errorf("cfg.max_request_size must be >= 0. Got %d", cfg.MaxRequestSize))
 	}
-	errs = cfg.GDPR.validate(errs)
+	errs = cfg.GDPR.validate(v, errs)
 	errs = cfg.CurrencyConverter.validate(errs)
 	errs = validateAdapters(cfg.Adapters, errs)
 	errs = cfg.Debug.validate(errs)
@@ -198,22 +198,26 @@ type Privacy struct {
 type GDPR struct {
 	Enabled                 bool         `mapstructure:"enabled"`
 	HostVendorID            int          `mapstructure:"host_vendor_id"`
-	UsersyncIfAmbiguous     bool         `mapstructure:"usersync_if_ambiguous"`
+	DefaultValue            string       `mapstructure:"default_value"`
 	Timeouts                GDPRTimeouts `mapstructure:"timeouts_ms"`
 	NonStandardPublishers   []string     `mapstructure:"non_standard_publishers,flow"`
 	NonStandardPublisherMap map[string]struct{}
-	TCF1                    TCF1 `mapstructure:"tcf1"`
 	TCF2                    TCF2 `mapstructure:"tcf2"`
 	AMPException            bool `mapstructure:"amp_exception"` // Deprecated: Use account-level GDPR settings (gdpr.integration_enabled.amp) instead
 	// EEACountries (EEA = European Economic Area) are a list of countries where we should assume GDPR applies.
 	// If the gdpr flag is unset in a request, but geo.country is set, we will assume GDPR applies if and only
 	// if the country matches one on this list. If both the GDPR flag and country are not set, we default
-	// to UsersyncIfAmbiguous
+	// to DefaultValue
 	EEACountries    []string `mapstructure:"eea_countries"`
 	EEACountriesMap map[string]struct{}
 }
 
-func (cfg *GDPR) validate(errs []error) []error {
+func (cfg *GDPR) validate(v *viper.Viper, errs []error) []error {
+	if !v.IsSet("gdpr.default_value") {
+		errs = append(errs, fmt.Errorf("gdpr.default_value is required and must be specified"))
+	} else if cfg.DefaultValue != "0" && cfg.DefaultValue != "1" {
+		errs = append(errs, fmt.Errorf("gdpr.default_value must be 0 or 1"))
+	}
 	if cfg.HostVendorID < 0 || cfg.HostVendorID > 0xffff {
 		errs = append(errs, fmt.Errorf("gdpr.host_vendor_id must be in the range [0, %d]. Got %d", 0xffff, cfg.HostVendorID))
 	}
@@ -222,9 +226,6 @@ func (cfg *GDPR) validate(errs []error) []error {
 	}
 	if cfg.AMPException == true {
 		errs = append(errs, fmt.Errorf("gdpr.amp_exception has been discontinued and must be removed from your config. If you need to disable GDPR for AMP, you may do so per-account (gdpr.integration_enabled.amp) or at the host level for the default account (account_defaults.gdpr.integration_enabled.amp)"))
-	}
-	if cfg.TCF1.FetchGVL == true {
-		errs = append(errs, fmt.Errorf("gdpr.tcf1.fetch_gvl has been discontinued and must be removed from your config. TCF1 will always use the fallback GVL going forward"))
 	}
 	return errs
 }
@@ -242,20 +243,14 @@ func (t *GDPRTimeouts) ActiveTimeout() time.Duration {
 	return time.Duration(t.ActiveVendorlistFetch) * time.Millisecond
 }
 
-// TCF1 defines the TCF1 specific configurations for GDPR
-type TCF1 struct {
-	FetchGVL        bool   `mapstructure:"fetch_gvl"` // Deprecated: In a future version TCF1 will always use the fallback GVL
-	FallbackGVLPath string `mapstructure:"fallback_gvl_path"`
-}
-
 // TCF2 defines the TCF2 specific configurations for GDPR
 type TCF2 struct {
-	Enabled             bool                 `mapstructure:"enabled"`
-	Purpose1            PurposeDetail        `mapstructure:"purpose1"`
-	Purpose2            PurposeDetail        `mapstructure:"purpose2"`
-	Purpose7            PurposeDetail        `mapstructure:"purpose7"`
-	SpecialPurpose1     PurposeDetail        `mapstructure:"special_purpose1"`
-	PurposeOneTreatment PurposeOneTreatement `mapstructure:"purpose_one_treatement"`
+	Enabled             bool                `mapstructure:"enabled"`
+	Purpose1            PurposeDetail       `mapstructure:"purpose1"`
+	Purpose2            PurposeDetail       `mapstructure:"purpose2"`
+	Purpose7            PurposeDetail       `mapstructure:"purpose7"`
+	SpecialPurpose1     PurposeDetail       `mapstructure:"special_purpose1"`
+	PurposeOneTreatment PurposeOneTreatment `mapstructure:"purpose_one_treatment"`
 }
 
 // Making a purpose struct so purpose specific details can be added later.
@@ -263,7 +258,7 @@ type PurposeDetail struct {
 	Enabled bool `mapstructure:"enabled"`
 }
 
-type PurposeOneTreatement struct {
+type PurposeOneTreatment struct {
 	Enabled       bool `mapstructure:"enabled"`
 	AccessAllowed bool `mapstructure:"access_allowed"`
 }
@@ -532,7 +527,7 @@ func New(v *viper.Viper) (*Configuration, error) {
 
 	glog.Info("Logging the resolved configuration:")
 	logGeneral(reflect.ValueOf(c), "  \t")
-	if errs := c.validate(); len(errs) > 0 {
+	if errs := c.validate(v); len(errs) > 0 {
 		return &c, errortypes.NewAggregateError("validation errors", errs)
 	}
 
@@ -621,6 +616,7 @@ func (cfg *Configuration) setDerivedDefaults() {
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderGrid, "https://x.bidswitch.net/check_uuid/"+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dgrid%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24%7BBSW_UUID%7D?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}")
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderGumGum, "https://rtb.gumgum.com/usync/prbds2s?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&r="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dgumgum%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D")
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderImprovedigital, "https://ad.360yield.com/server_match?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&r="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dimprovedigital%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%7BPUB_USER_ID%7D")
+	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderInMobi, "https://id5-sync.com/i/495/0.gif?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&callback="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dinmobi%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%7BID5UID%7D")
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderIx, "https://ssum.casalemedia.com/usermatchredir?s=186523&gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&cb="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dix%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D")
 	// openrtb_ext.BidderInvibes doesn't have a good default.
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderJixie, "https://id.jixie.io/api/sync?pid=&gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&redirect="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Djixie%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%25%25JXUID%25%25")
@@ -660,7 +656,7 @@ func (cfg *Configuration) setDerivedDefaults() {
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderTrustX, "https://x.bidswitch.net/check_uuid/"+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dtrustx%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24%7BBSW_UUID%7D?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}")
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderUcfunnel, "https://sync.aralego.com/idsync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&usprivacy={{.USPrivacy}}&redirect="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Ducfunnel%26uid%3DSspCookieUserId")
 	// openrtb_ext.BidderUnicorn doesn't have a good default.
-	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderUnruly, "https://sync.1rx.io/usersync2/rmpssp?sub=openwrap&gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&rurl="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dunruly%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24UID")
+	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderUnruly, "https://usermatch.targeting.unrulymedia.com/pbsync?gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&rurl="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dunruly%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24UID")
 	// openrtb_ext.BidderVASTBidder doesn't have a good default.
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderValueImpression, "https://rtb.valueimpression.com/usersync?gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&redirect="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dvalueimpression%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24UID")
 	setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderVisx, "https://t.visx.net/s2s_sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&redir="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3Dvisx%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D%24%7BUUID%7D")
@@ -725,6 +721,10 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("http_client.max_idle_connections", 400)
 	v.SetDefault("http_client.max_idle_connections_per_host", 10)
 	v.SetDefault("http_client.idle_connection_timeout_seconds", 60)
+	v.SetDefault("http_client_cache.max_connections_per_host", 0) // unlimited
+	v.SetDefault("http_client_cache.max_idle_connections", 10)
+	v.SetDefault("http_client_cache.max_idle_connections_per_host", 2)
+	v.SetDefault("http_client_cache.idle_connection_timeout_seconds", 60)
 	v.SetDefault("http_client.tls_handshake_timeout", 0)          //no timeout
 	v.SetDefault("http_client.response_header_timeout", 0)        //unlimited
 	v.SetDefault("http_client.dial_timeout", 0)                   //no timeout
@@ -737,6 +737,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("metrics.disabled_metrics.account_adapter_details", false)
 	v.SetDefault("metrics.disabled_metrics.adapter_connections_metrics", true)
 	v.SetDefault("metrics.disabled_metrics.adapter_gdpr_request_blocked", false)
+	v.SetDefault("metrics.disabled_metrics.adapter_connections_metrics", true)
 	v.SetDefault("metrics.influxdb.host", "")
 	v.SetDefault("metrics.influxdb.database", "")
 	v.SetDefault("metrics.influxdb.username", "")
@@ -886,6 +887,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.gumgum.endpoint", "https://g2.gumgum.com/providers/prbds2s/bid")
 	v.SetDefault("adapters.improvedigital.endpoint", "http://ad.360yield.com/pbs")
 	v.SetDefault("adapters.inmobi.endpoint", "https://api.w.inmobi.com/showad/openrtb/bidder/prebid")
+	v.SetDefault("adapters.interactiveoffers.endpoint", "https://rtb.ioadx.com/bidRequest/?partnerId=d9e56d418c4825d466ee96c7a31bf1da6b62fa04")
 	v.SetDefault("adapters.ix.disabled", false)
 	v.SetDefault("adapters.ix.endpoint", "http://exchange.indexww.com/pbs?p=192919")
 	v.SetDefault("adapters.jixie.endpoint", "https://hb.jixie.io/v2/hbsvrpost")
@@ -964,22 +966,19 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("analytics.pubstack.buffers.count", 100)
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
+	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)
 	v.SetDefault("gdpr.host_vendor_id", 0)
 	v.SetDefault("gdpr.usersync_if_ambiguous", true)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})
-	v.SetDefault("gdpr.tcf1.fetch_gvl", false)
-	v.SetDefault("gdpr.tcf1.fallback_gvl_path", "/home/http/GO_SERVER/dmhbserver/static/tcf1/fallback_gvl.json")
 	v.SetDefault("gdpr.tcf2.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose1.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose2.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose4.enabled", true)
 	v.SetDefault("gdpr.tcf2.purpose7.enabled", true)
 	v.SetDefault("gdpr.tcf2.special_purpose1.enabled", true)
-	v.SetDefault("gdpr.tcf2.purpose_one_treatement.enabled", true)
-	v.SetDefault("gdpr.tcf2.purpose_one_treatement.access_allowed", true)
 	v.SetDefault("gdpr.amp_exception", false)
 	v.SetDefault("gdpr.eea_countries", []string{"ALA", "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST",
 		"FIN", "FRA", "GUF", "DEU", "GIB", "GRC", "GLP", "GGY", "HUN", "ISL", "IRL", "IMN", "ITA", "JEY", "LVA",
@@ -1034,6 +1033,10 @@ func SetupViper(v *viper.Viper, filename string) {
 
 	// Migrate config settings to maintain compatibility with old configs
 	migrateConfig(v)
+	migrateConfigPurposeOneTreatment(v)
+
+	v.SetDefault("gdpr.tcf2.purpose_one_treatment.enabled", true)
+	v.SetDefault("gdpr.tcf2.purpose_one_treatment.access_allowed", true)
 }
 
 func migrateConfig(v *viper.Viper) {
@@ -1046,6 +1049,18 @@ func migrateConfig(v *viper.Viper) {
 		m["enabled"] = v.GetBool("stored_requests.filesystem")
 		m["directorypath"] = v.GetString("stored_requests.directorypath")
 		v.Set("stored_requests.filesystem", m)
+	}
+}
+
+func migrateConfigPurposeOneTreatment(v *viper.Viper) {
+	if oldConfig, ok := v.Get("gdpr.tcf2.purpose_one_treatement").(map[string]interface{}); ok {
+		if v.IsSet("gdpr.tcf2.purpose_one_treatment") {
+			glog.Warning("using gdpr.tcf2.purpose_one_treatment and ignoring deprecated gdpr.tcf2.purpose_one_treatement")
+		} else {
+			glog.Warning("gdpr.tcf2.purpose_one_treatement.enabled should be changed to gdpr.tcf2.purpose_one_treatment.enabled")
+			glog.Warning("gdpr.tcf2.purpose_one_treatement.access_allowed should be changed to gdpr.tcf2.purpose_one_treatment.access_allowed")
+			v.Set("gdpr.tcf2.purpose_one_treatment", oldConfig)
+		}
 	}
 }
 

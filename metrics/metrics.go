@@ -363,6 +363,7 @@ type MetricsEngine interface {
 	RecordRequestQueueTime(success bool, requestType RequestType, length time.Duration)
 	RecordTimeoutNotice(sucess bool)
 	RecordRequestPrivacy(privacy PrivacyLabels)
+	RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.BidderName)
 
 	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 	// gives the bid response with multiple bids containing  same bid.ID

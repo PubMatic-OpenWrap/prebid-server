@@ -104,10 +104,6 @@ func (p *permissionsImpl) normalizeGDPR(gdprSignal Signal) Signal {
 	return SignalYes
 }
 
-func (p *permissionsImpl) AMPException() bool {
-	return p.cfg.AMPException
-}
-
 func (p *permissionsImpl) allowSync(ctx context.Context, vendorID uint16, consent string) (bool, error) {
 
 	if consent == "" {
@@ -142,7 +138,11 @@ func (p *permissionsImpl) allowActivities(ctx context.Context, vendorID uint16, 
 
 	// vendor will be nil if not a valid TCF2 consent string
 	if vendor == nil {
-		return false, false, false, nil
+		if weakVendorEnforcement && parsedConsent.Version() == 2 {
+			vendor = vendorTrue{}
+		} else {
+			return false, false, false, nil
+		}
 	}
 
 	if !p.cfg.TCF2.Enabled {
@@ -215,6 +215,7 @@ func (p *permissionsImpl) parseVendor(ctx context.Context, vendorID uint16, cons
 	if version != 2 {
 		return
 	}
+
 	vendorList, err := p.fetchVendorList[version](ctx, parsedConsent.VendorListVersion())
 	if err != nil {
 		return
@@ -249,25 +250,21 @@ func (a AlwaysAllow) AuctionActivitiesAllowed(ctx context.Context, bidder openrt
 	return true, true, true, nil
 }
 
-func (a AlwaysAllow) AMPException() bool {
-	return false
+// vendorTrue claims everything.
+type vendorTrue struct{}
+
+func (v vendorTrue) Purpose(purposeID consentconstants.Purpose) bool {
+	return true
 }
-
-// Exporting to allow for easy test setups
-type AlwaysFail struct{}
-
-func (a AlwaysFail) HostCookiesAllowed(ctx context.Context, consent string) (bool, error) {
-	return false, nil
+func (v vendorTrue) PurposeStrict(purposeID consentconstants.Purpose) bool {
+	return true
 }
-
-func (a AlwaysFail) BidderSyncAllowed(ctx context.Context, bidder openrtb_ext.BidderName, consent string) (bool, error) {
-	return false, nil
+func (v vendorTrue) LegitimateInterest(purposeID consentconstants.Purpose) bool {
+	return true
 }
-
-func (a AlwaysFail) PersonalInfoAllowed(ctx context.Context, bidder openrtb_ext.BidderName, PublisherID string, consent string) (bool, bool, bool, error) {
-	return false, false, false, nil
+func (v vendorTrue) LegitimateInterestStrict(purposeID consentconstants.Purpose) bool {
+	return true
 }
-
-func (a AlwaysFail) AMPException() bool {
-	return false
+func (v vendorTrue) SpecialPurpose(purposeID consentconstants.Purpose) (hasSpecialPurpose bool) {
+	return true
 }

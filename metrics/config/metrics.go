@@ -286,8 +286,39 @@ func (me *MultiMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.Adapt
 	}
 }
 
+// RecordAdapterGDPRRequestBlocked across all engines
+func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterGDPRRequestBlocked(adapter)
+	}
+}
+
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
+
+func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	panic("implement me")
+}
+
+func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
+	panic("implement me")
+}
+
+func (me *DummyMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
+	panic("implement me")
+}
+
+func (me *DummyMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	panic("implement me")
+}
+
+func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	panic("implement me")
+}
+
+func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+	panic("implement me")
+}
 
 // RecordRequest as a noop
 func (me *DummyMetricsEngine) RecordRequest(labels metrics.Labels) {
@@ -393,26 +424,6 @@ func (me *DummyMetricsEngine) RecordTimeoutNotice(success bool) {
 func (me *DummyMetricsEngine) RecordRequestPrivacy(privacy metrics.PrivacyLabels) {
 }
 
-// RecordAdapterDuplicateBidID as a noop
-func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
-}
-
-// RecordRequestHavingDuplicateBidID as a noop
-func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
-}
-
-// RecordPodImpGenTime as a noop
-func (me *DummyMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, start time.Time) {
-}
-
-// RecordPodCombGenTime as a noop
-func (me *DummyMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-}
-
-// RecordPodCompititveExclusionTime as a noop
-func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-}
-
-// RecordAdapterVideoBidDuration as a noop
-func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+// RecordAdapterGDPRRequestBlocked as a noop
+func (me *DummyMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
 }

@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/config"
-
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/usersync"
 )

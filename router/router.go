@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"io/ioutil"
 	"net"
 	"net/http"

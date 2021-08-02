@@ -149,13 +149,3 @@ func getMediaTypeForImp(impId string, imps []openrtb2.Imp) openrtb_ext.BidType {
 	}
 	return openrtb_ext.BidTypeVideo
 }
-
-func getMediaTypeForImp(impId string, imps []openrtb.Imp) openrtb_ext.BidType {
-	//default to video unless banner exists in impression
-	for _, imp := range imps {
-		if imp.ID == impId && imp.Banner != nil {
-			return openrtb_ext.BidTypeBanner
-		}
-	}
-	return openrtb_ext.BidTypeVideo
-}

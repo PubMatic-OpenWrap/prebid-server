@@ -1836,53 +1836,6 @@ func TestGetAccountID(t *testing.T) {
 	}
 }
 
-func TestSChainInvalid(t *testing.T) {
-	deps := &endpointDeps{
-		&nobidExchange{},
-		newParamsValidator(t),
-		&mockStoredReqFetcher{},
-		empty_fetcher.EmptyFetcher{},
-		empty_fetcher.EmptyFetcher{},
-		&config.Configuration{},
-		pbsmetrics.NewMetrics(metrics.NewRegistry(), openrtb_ext.BidderList(), config.DisabledMetrics{}),
-		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
-		map[string]string{},
-		false,
-		[]byte{},
-		openrtb_ext.BidderMap,
-		nil,
-		nil,
-		hardcodedResponseIPValidator{response: true},
-	}
-
-	ui := uint64(1)
-	req := openrtb.BidRequest{
-		ID: "someID",
-		Imp: []openrtb.Imp{
-			{
-				ID: "imp-ID",
-				Banner: &openrtb.Banner{
-					W: &ui,
-					H: &ui,
-				},
-				Ext: json.RawMessage(`{"appnexus": {"placementId": 5667}}`),
-			},
-		},
-		Site: &openrtb.Site{
-			ID: "myID",
-		},
-		Regs: &openrtb.Regs{
-			Ext: json.RawMessage(`{"us_privacy":"abcd"}`),
-		},
-		Ext: json.RawMessage(`{"prebid":{"schains":[{"bidders":["appnexus"],"schain":{"complete":1,"nodes":[{"asi":"directseller1.com","sid":"00001","rid":"BidRequest1","hp":1}],"ver":"1.0"}}, {"bidders":["appnexus"],"schain":{"complete":1,"nodes":[{"asi":"directseller2.com","sid":"00002","rid":"BidRequest2","hp":1}],"ver":"1.0"}}]}}`),
-	}
-
-	errL := deps.validateRequest(&req)
-
-	expectedError := fmt.Errorf("request.ext.prebid.schains contains multiple schains for bidder appnexus; it must contain no more than one per bidder.")
-	assert.ElementsMatch(t, errL, []error{expectedError})
-}
-
 func TestSanitizeRequest(t *testing.T) {
 	testCases := []struct {
 		description  string
