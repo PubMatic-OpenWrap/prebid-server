@@ -16,10 +16,9 @@
           "bidder": {
             "adSlot": "AdTag_Div1@300x250",
             "publisherId": "  999  ",
-            "dctr": "key1=V1,V2,V3|key2=v1|key3=v3,v5",
             "keywords": [
               {
-                "key": "pmzoneid",
+                "key": "pmZoneID",
                 "value": [
                   "Zone1",
                   "Zone2"
@@ -30,6 +29,12 @@
                 "value": [
                   "sports",
                   "movies"
+                ]
+              },
+              {
+                "key":"dctr",
+                "value":[
+                  "title%3DThe%20Hunt%7Cgenre%3Danimation%2Cadventure"
                 ]
               }
             ],
@@ -72,7 +77,7 @@
                 "w": 300
               },
               "ext": {
-                "key_val": "key1=V1,V2,V3|key2=v1|key3=v3,v5",
+                "key_val": "title=The Hunt|genre=animation,adventure",
                 "pmZoneId": "Zone1,Zone2",
                 "preference": "sports,movies"
               }

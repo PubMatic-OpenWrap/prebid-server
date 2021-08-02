@@ -296,28 +296,28 @@ func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ex
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
 
+// RecordAdapterDuplicateBidID as a noop
 func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
-	panic("implement me")
 }
 
+// RecordRequestHavingDuplicateBidID as a noop
 func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
-	panic("implement me")
 }
 
+// RecordPodImpGenTime as a noop
 func (me *DummyMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
-	panic("implement me")
 }
 
+// RecordPodCombGenTime as a noop
 func (me *DummyMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-	panic("implement me")
 }
 
+// RecordPodCompititveExclusionTime as a noop
 func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-	panic("implement me")
 }
 
+// RecordAdapterVideoBidDuration as a noop
 func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
-	panic("implement me")
 }
 
 // RecordRequest as a noop

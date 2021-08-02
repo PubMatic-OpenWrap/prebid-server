@@ -111,8 +111,14 @@ type ResponseData struct {
 	Headers    http.Header
 }
 
+type BidRequestParams struct {
+	ImpIndex     int
+	VASTTagIndex int
+}
+
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
+	Params  *BidRequestParams
 	Method  string
 	Uri     string
 	Body    []byte

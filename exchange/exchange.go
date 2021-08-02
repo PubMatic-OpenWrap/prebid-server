@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
+	"golang.org/x/net/publicsuffix"
 )
 
 type ContextKey string
@@ -217,6 +218,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
+
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids)
+		// add advertiser blocking specific errors
+		for _, message := range rejections {
+			errs = append(errs, errors.New(message))
+		}
 
 		var bidCategory map[string]string
 		//If includebrandcategory is present in ext then CE feature is on.
@@ -463,8 +470,15 @@ func (e *exchange) getAllBids(
 			// Structure to record extra tracking data generated during bidding
 			ae := new(seatResponseExtra)
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
+
 			if bids != nil {
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
+
 				ae.HttpCalls = bids.httpCalls
+
+				// Setting bidderCoreName in SeatBid
+				bids.bidderCoreName = bidderRequest.BidderCoreName
 			}
 
 			// Timing statistics
@@ -529,9 +543,19 @@ func (e *exchange) recoverSafely(bidderRequests []BidderRequest,
 					allBidders = sb.String()[:sb.Len()-1]
 				}
 
+				bidderRequestStr := ""
+				if nil != bidderRequest.BidRequest {
+					value, err := json.Marshal(bidderRequest.BidRequest)
+					if nil == err {
+						bidderRequestStr = string(value)
+					} else {
+						bidderRequestStr = err.Error()
+					}
+				}
+
 				glog.Errorf("OpenRTB auction recovered panic from Bidder %s: %v. "+
-					"Account id: %s, All Bidders: %s, Stack trace is: %v",
-					bidderRequest.BidderCoreName, r, bidderRequest.BidderLabels.PubID, allBidders, string(debug.Stack()))
+					"Account id: %s, All Bidders: %s, BidRequest: %s, Stack trace is: %v",
+					bidderRequest.BidderCoreName, r, bidderRequest.BidderLabels.PubID, allBidders, bidderRequestStr, string(debug.Stack()))
 				e.me.RecordAdapterPanic(bidderRequest.BidderLabels)
 				// Let the master request know that there is no data here
 				brw := new(bidResponseWrapper)
@@ -769,54 +793,56 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 				categoryDuration = fmt.Sprintf("%s_%s", categoryDuration, bidderName.String())
 			}
 
-			if dupe, ok := dedupe[dupeKey]; ok {
+			if !brandCatExt.SkipDedup {
+				if dupe, ok := dedupe[dupeKey]; ok {
 
-				dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
-				if err != nil {
-					dupeBidPrice = 0
-				}
-				currBidPrice, err := strconv.ParseFloat(pb, 64)
-				if err != nil {
-					currBidPrice = 0
-				}
-				if dupeBidPrice == currBidPrice {
-					if booleanGenerator.Generate() {
-						dupeBidPrice = -1
-					} else {
-						currBidPrice = -1
+					dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
+					if err != nil {
+						dupeBidPrice = 0
 					}
-				}
-
-				if dupeBidPrice < currBidPrice {
-					if dupe.bidderName == bidderName {
-						// An older bid from the current bidder
-						bidsToRemove = append(bidsToRemove, dupe.bidIndex)
-						rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
-					} else {
-						// An older bid from a different seatBid we've already finished with
-						oldSeatBid := (seatBids)[dupe.bidderName]
-						rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
-						if len(oldSeatBid.bids) == 1 {
-							seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
+					currBidPrice, err := strconv.ParseFloat(pb, 64)
+					if err != nil {
+						currBidPrice = 0
+					}
+					if dupeBidPrice == currBidPrice {
+						if booleanGenerator.Generate() {
+							dupeBidPrice = -1
 						} else {
-							// This is a very rare, but still possible case where bid needs to be removed from already processed bidder
-							// This happens when current processing bidder has a bid that has same deduplication key as a bid from already processed bidder
-							// and already processed bid was selected to be removed
-							// See example of input data in unit test `TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice`
-							// Need to remove bid by name, not index in this case
-							removeBidById(oldSeatBid, dupe.bidID)
+							currBidPrice = -1
 						}
 					}
-					delete(res, dupe.bidID)
-				} else {
-					// Remove this bid
-					bidsToRemove = append(bidsToRemove, bidInd)
-					rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
-					continue
+
+					if dupeBidPrice < currBidPrice {
+						if dupe.bidderName == bidderName {
+							// An older bid from the current bidder
+							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
+							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+						} else {
+							// An older bid from a different seatBid we've already finished with
+							oldSeatBid := (seatBids)[dupe.bidderName]
+							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+							if len(oldSeatBid.bids) == 1 {
+								seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
+							} else {
+								// This is a very rare, but still possible case where bid needs to be removed from already processed bidder
+								// This happens when current processing bidder has a bid that has same deduplication key as a bid from already processed bidder
+								// and already processed bid was selected to be removed
+								// See example of input data in unit test `TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice`
+								// Need to remove bid by name, not index in this case
+								removeBidById(oldSeatBid, dupe.bidID)
+							}
+						}
+						delete(res, dupe.bidID)
+					} else {
+						// Remove this bid
+						bidsToRemove = append(bidsToRemove, bidInd)
+						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
+						continue
+					}
 				}
+				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
 			res[bidID] = categoryDuration
-			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}
 
 		if len(bidsToRemove) > 0 {
@@ -1098,4 +1124,79 @@ func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBi
 		}
 	}
 	return bidIDCollisionFound
+}
+
+//normalizeDomain validates, normalizes and returns valid domain or error if failed to validate
+//checks if domain starts with http by lowercasing entire domain
+//if not it prepends it before domain. This is required for obtaining the url
+//using url.parse method. on successfull url parsing, it will replace first occurance of www.
+//from the domain
+func normalizeDomain(domain string) (string, error) {
+	domain = strings.Trim(strings.ToLower(domain), " ")
+	// not checking if it belongs to icann
+	suffix, _ := publicsuffix.PublicSuffix(domain)
+	if domain != "" && suffix == domain { // input is publicsuffix
+		return "", errors.New("domain [" + domain + "] is public suffix")
+	}
+	if !strings.HasPrefix(domain, "http") {
+		domain = fmt.Sprintf("http://%s", domain)
+	}
+	url, err := url.Parse(domain)
+	if nil == err && url.Host != "" {
+		return strings.Replace(url.Host, "www.", "", 1), nil
+	}
+	return "", err
+}
+
+//applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
+//the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
+//it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
+func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+	rejections := []string{}
+	nBadvs := []string{}
+	if nil != bidRequest.BAdv {
+		for _, domain := range bidRequest.BAdv {
+			nDomain, err := normalizeDomain(domain)
+			if nil == err && nDomain != "" { // skip empty and domains with errors
+				nBadvs = append(nBadvs, nDomain)
+			}
+		}
+	}
+
+	for bidderName, seatBid := range seatBids {
+		if seatBid.bidderCoreName == openrtb_ext.BidderVASTBidder && len(nBadvs) > 0 {
+			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
+				bid := seatBid.bids[bidIndex]
+				for _, bAdv := range nBadvs {
+					aDomains := bid.bid.ADomain
+					rejectBid := false
+					if nil == aDomains {
+						// provision to enable rejecting of bids when req.badv is set
+						rejectBid = true
+					} else {
+						for _, d := range aDomains {
+							if aDomain, err := normalizeDomain(d); nil == err {
+								// compare and reject bid if
+								// 1. aDomain == bAdv
+								// 2. .bAdv is suffix of aDomain
+								// 3. aDomain not present but request has list of block advertisers
+								if aDomain == bAdv || strings.HasSuffix(aDomain, "."+bAdv) || (len(aDomain) == 0 && len(bAdv) > 0) {
+									// aDomain must be subdomain of bAdv
+									rejectBid = true
+									break
+								}
+							}
+						}
+					}
+					if rejectBid {
+						// reject the bid. bid belongs to blocked advertisers list
+						seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
+						rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
+						break // bid is rejected due to advertiser blocked. No need to check further domains
+					}
+				}
+			}
+		}
+	}
+	return seatBids, rejections
 }
