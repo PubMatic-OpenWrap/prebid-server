@@ -129,14 +129,6 @@ func buildImpBanner(imp *openrtb2.Imp) error {
 // Add Between required properties to Imp object
 func addImpProps(imp *openrtb2.Imp, secure *int8, betweenExt *openrtb_ext.ExtImpBetween) {
 	imp.Secure = secure
-	if betweenExt.BidFloor <= 0 {
-		imp.BidFloor = defaultBidfloor
-	} else {
-		imp.BidFloor = betweenExt.BidFloor
-	}
-	if betweenExt.BidFloorCur != "" {
-		imp.BidFloorCur = betweenExt.BidFloorCur
-	}
 }
 
 // Adding header fields to request header

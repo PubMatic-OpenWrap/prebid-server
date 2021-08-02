@@ -2,11 +2,10 @@ package exchange
 
 import (
 	"encoding/json"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"time"
 
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
-
-	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/evanphx/json-patch"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
@@ -63,7 +62,6 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
-
 	vastXML := makeVAST(bid)
 	bidID := bid.ID
 	if len(pbsBid.generatedBidID) > 0 {
