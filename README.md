@@ -60,8 +60,6 @@ of exported types.
 
 Want to [add an adapter](https://docs.prebid.org/prebid-server/developers/add-new-bidder-go.html)? Found a bug? Great!
 
-Report bugs, request features, and suggest improvements [on Github](https://github.com/PubMatic-OpenWrap/prebid-server/issues).
-
 Or better yet, [open a pull request](https://github.com/PubMatic-OpenWrap/prebid-server/compare) with the changes you'd like to see.
 
 ## IDE Recommendations
