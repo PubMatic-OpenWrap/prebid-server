@@ -297,27 +297,21 @@ func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ex
 type DummyMetricsEngine struct{}
 
 func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
-	panic("implement me")
 }
 
 func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
-	panic("implement me")
 }
 
 func (me *DummyMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
-	panic("implement me")
 }
 
 func (me *DummyMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-	panic("implement me")
 }
 
 func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
-	panic("implement me")
 }
 
 func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
-	panic("implement me")
 }
 
 // RecordRequest as a noop
