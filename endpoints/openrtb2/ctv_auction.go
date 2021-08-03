@@ -62,7 +62,7 @@ func NewCTVEndpoint(
 	requestsByID stored_requests.Fetcher,
 	videoFetcher stored_requests.Fetcher,
 	accounts stored_requests.AccountFetcher,
-	//categories stored_requests.CategoryFetcher,
+//categories stored_requests.CategoryFetcher,
 	cfg *config.Configuration,
 	met metrics.MetricsEngine,
 	pbsAnalytics analytics.PBSAnalyticsModule,
@@ -999,6 +999,7 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid) *string {
 	}
 
 	vast.CreateAttr(constant.VASTVersionAttribute, constant.VASTVersionsStr[int(version)])
+
 	bidAdM, err := doc.WriteToString()
 	if nil != err {
 		fmt.Printf("ERROR, %v", err.Error())
