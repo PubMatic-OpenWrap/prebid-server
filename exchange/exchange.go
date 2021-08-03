@@ -499,12 +499,12 @@ func (e *exchange) getAllBids(
 			bidsFound = true
 			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
+
 	}
 	if bidIDsCollision {
 		// record this request count this request if bid collision is detected
 		e.me.RecordRequestHavingDuplicateBidID()
 	}
-
 	return adapterBids, adapterExtra, bidsFound
 }
 

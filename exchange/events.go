@@ -62,7 +62,6 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	if pbsBid.bidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
 	}
-
 	vastXML := makeVAST(bid)
 	bidID := bid.ID
 	if len(pbsBid.generatedBidID) > 0 {
