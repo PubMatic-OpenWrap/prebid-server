@@ -999,6 +999,7 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid) *string {
 	}
 
 	vast.CreateAttr(constant.VASTVersionAttribute, constant.VASTVersionsStr[int(version)])
+
 	bidAdM, err := doc.WriteToString()
 	if nil != err {
 		fmt.Printf("ERROR, %v", err.Error())
