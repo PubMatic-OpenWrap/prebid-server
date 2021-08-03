@@ -58,6 +58,12 @@ type pubmaticParams struct {
 	Keywords    map[string]string `json:"keywords,omitempty"`
 }
 
+type pubmaticWrapperExt struct {
+	ProfileID    int    `json:"profile,omitempty"`
+	VersionID    int    `json:"version,omitempty"`
+	WrapperImpID string `json:"wiid,omitempty"`
+}
+
 type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
@@ -80,12 +86,6 @@ type ExtData struct {
 type ExtAdServer struct {
 	Name   string `json:"name"`
 	AdSlot string `json:"adslot"`
-}
-
-type pubmaticWrapperExt struct {
-	ProfileID    int    `json:"profile,omitempty"`
-	VersionID    int    `json:"version,omitempty"`
-	WrapperImpID string `json:"wiid,omitempty"`
 }
 
 const (
