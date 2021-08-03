@@ -1378,6 +1378,7 @@ func TestDisabledMetrics(t *testing.T) {
 	assert.Nil(t, prometheusMetrics.adapterReusedConnections, "Counter Vector adapterReusedConnections should be nil")
 	assert.Nil(t, prometheusMetrics.adapterCreatedConnections, "Counter Vector adapterCreatedConnections should be nil")
 	assert.Nil(t, prometheusMetrics.adapterConnectionWaitTime, "Counter Vector adapterConnectionWaitTime should be nil")
+	assert.Nil(t, prometheusMetrics.tlsHandhakeTimer, "Counter Vector tlsHandhakeTimer should be nil")
 	assert.Nil(t, prometheusMetrics.adapterGDPRBlockedRequests, "Counter Vector adapterGDPRBlockedRequests should be nil")
 }
 

@@ -1,12 +1,14 @@
 package openrtb_ext
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
 // ExtBid defines the contract for bidresponse.seatbid.bid[i].ext
 type ExtBid struct {
-	Prebid *ExtBidPrebid `json:"prebid,omitempty"`
+	Prebid *ExtBidPrebid   `json:"prebid,omitempty"`
+	Bidder json.RawMessage `json:"bidder,omitempty"`
 }
 
 // ExtBidPrebid defines the contract for bidresponse.seatbid.bid[i].ext.prebid
