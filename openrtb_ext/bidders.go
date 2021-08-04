@@ -75,6 +75,7 @@ func IsBidderNameReserved(name string) bool {
 const (
 	Bidder33Across          BidderName = "33across"
 	BidderAcuityAds         BidderName = "acuityads"
+	BidderAdagio            BidderName = "adagio"
 	BidderAdf               BidderName = "adf"
 	BidderAdform            BidderName = "adform"
 	BidderAdgeneration      BidderName = "adgeneration"
@@ -153,6 +154,7 @@ const (
 	BidderNoBid             BidderName = "nobid"
 	BidderOneTag            BidderName = "onetag"
 	BidderOpenx             BidderName = "openx"
+	BidderOperaads          BidderName = "operaads"
 	BidderOrbidder          BidderName = "orbidder"
 	BidderOutbrain          BidderName = "outbrain"
 	BidderPangle            BidderName = "pangle"
@@ -201,6 +203,7 @@ func CoreBidderNames() []BidderName {
 	return []BidderName{
 		Bidder33Across,
 		BidderAcuityAds,
+		BidderAdagio,
 		BidderAdf,
 		BidderAdform,
 		BidderAdgeneration,
@@ -279,6 +282,7 @@ func CoreBidderNames() []BidderName {
 		BidderNoBid,
 		BidderOneTag,
 		BidderOpenx,
+		BidderOperaads,
 		BidderOrbidder,
 		BidderOutbrain,
 		BidderPangle,
