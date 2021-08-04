@@ -42,8 +42,7 @@
             "adserver": {
               "name": "gam",
               "adslot": "/1111/home"
-            },
-            "pbadslot": "/2222/home"
+            }
           }
         }
       }
