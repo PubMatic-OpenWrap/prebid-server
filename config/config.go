@@ -1008,6 +1008,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)
 	v.SetDefault("gdpr.host_vendor_id", 0)
+	v.SetDefault("gdpr.default_value", "0")
 	v.SetDefault("gdpr.usersync_if_ambiguous", true)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
