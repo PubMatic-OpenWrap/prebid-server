@@ -215,5 +215,5 @@ func (err *BidderFailedSchemaValidation) Code() int {
 }
 
 func (err *BidderFailedSchemaValidation) Severity() Severity {
-	return SeverityFatal
+	return SeverityWarning
 }
