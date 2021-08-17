@@ -1526,7 +1526,7 @@ func TestValidateImpExt(t *testing.T) {
 						&errortypes.BidderTemporarilyDisabled{Message: "The bidder 'disabledbidder' has been disabled."}},
 				},
 				{
-					description:    "Valid Bidder + Disabled Bidder + Invalid bidder params",
+					description:    "Disabled Bidder + Invalid bidder params",
 					impExt:         json.RawMessage(`{"pubmatic":{"publisherId":156209},"disabledbidder":{"foo":"bar"}}`),
 					expectedImpExt: `{}`,
 					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"},
