@@ -15,33 +15,33 @@ type Metrics struct {
 	Registry *prometheus.Registry
 
 	// General Metrics
-	connectionsClosed             prometheus.Counter
-	connectionsError              *prometheus.CounterVec
-	connectionsOpened             prometheus.Counter
-	cookieSync                    prometheus.Counter
-	impressions                   *prometheus.CounterVec
-	impressionsLegacy             prometheus.Counter
-	prebidCacheWriteTimer         *prometheus.HistogramVec
-	requests                      *prometheus.CounterVec
-	requestsTimer                 *prometheus.HistogramVec
-	requestsQueueTimer            *prometheus.HistogramVec
-	requestsWithoutCookie         *prometheus.CounterVec
-	storedImpressionsCacheResult  *prometheus.CounterVec
-	storedRequestCacheResult      *prometheus.CounterVec
-	accountCacheResult            *prometheus.CounterVec
-	storedAccountFetchTimer       *prometheus.HistogramVec
-	storedAccountErrors           *prometheus.CounterVec
-	storedAMPFetchTimer           *prometheus.HistogramVec
-	storedAMPErrors               *prometheus.CounterVec
-	storedCategoryFetchTimer      *prometheus.HistogramVec
-	storedCategoryErrors          *prometheus.CounterVec
-	storedRequestFetchTimer       *prometheus.HistogramVec
-	storedRequestErrors           *prometheus.CounterVec
-	storedVideoFetchTimer         *prometheus.HistogramVec
-	storedVideoErrors             *prometheus.CounterVec
-	timeoutNotifications          *prometheus.CounterVec
-	dnsLookupTimer                prometheus.Histogram
-	tlsHandhakeTimer              prometheus.Histogram
+	connectionsClosed            prometheus.Counter
+	connectionsError             *prometheus.CounterVec
+	connectionsOpened            prometheus.Counter
+	cookieSync                   prometheus.Counter
+	impressions                  *prometheus.CounterVec
+	impressionsLegacy            prometheus.Counter
+	prebidCacheWriteTimer        *prometheus.HistogramVec
+	requests                     *prometheus.CounterVec
+	requestsTimer                *prometheus.HistogramVec
+	requestsQueueTimer           *prometheus.HistogramVec
+	requestsWithoutCookie        *prometheus.CounterVec
+	storedImpressionsCacheResult *prometheus.CounterVec
+	storedRequestCacheResult     *prometheus.CounterVec
+	accountCacheResult           *prometheus.CounterVec
+	storedAccountFetchTimer      *prometheus.HistogramVec
+	storedAccountErrors          *prometheus.CounterVec
+	storedAMPFetchTimer          *prometheus.HistogramVec
+	storedAMPErrors              *prometheus.CounterVec
+	storedCategoryFetchTimer     *prometheus.HistogramVec
+	storedCategoryErrors         *prometheus.CounterVec
+	storedRequestFetchTimer      *prometheus.HistogramVec
+	storedRequestErrors          *prometheus.CounterVec
+	storedVideoFetchTimer        *prometheus.HistogramVec
+	storedVideoErrors            *prometheus.CounterVec
+	timeoutNotifications         *prometheus.CounterVec
+	dnsLookupTimer               prometheus.Histogram
+	//tlsHandhakeTimer             prometheus.Histogram
 	privacyCCPA                   *prometheus.CounterVec
 	privacyCOPPA                  *prometheus.CounterVec
 	privacyLMT                    *prometheus.CounterVec
@@ -49,18 +49,21 @@ type Metrics struct {
 	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics
-	adapterBids                *prometheus.CounterVec
-	adapterCookieSync          *prometheus.CounterVec
-	adapterErrors              *prometheus.CounterVec
-	adapterPanics              *prometheus.CounterVec
-	adapterPrices              *prometheus.HistogramVec
-	adapterRequests            *prometheus.CounterVec
-	adapterRequestsTimer       *prometheus.HistogramVec
-	adapterUserSync            *prometheus.CounterVec
-	adapterReusedConnections   *prometheus.CounterVec
-	adapterCreatedConnections  *prometheus.CounterVec
-	adapterConnectionWaitTime  *prometheus.HistogramVec
-	adapterGDPRBlockedRequests *prometheus.CounterVec
+	adapterBids                  *prometheus.CounterVec
+	adapterCookieSync            *prometheus.CounterVec
+	adapterErrors                *prometheus.CounterVec
+	adapterPanics                *prometheus.CounterVec
+	adapterPrices                *prometheus.HistogramVec
+	adapterRequests              *prometheus.CounterVec
+	adapterRequestsTimer         *prometheus.HistogramVec
+	adapterUserSync              *prometheus.CounterVec
+	adapterReusedConnections     *prometheus.CounterVec
+	adapterCreatedConnections    *prometheus.CounterVec
+	adapterConnectionWaitTime    *prometheus.HistogramVec
+	adapterDuplicateBidIDCounter *prometheus.CounterVec
+	adapterVideoBidDuration      *prometheus.HistogramVec
+	tlsHandhakeTimer             *prometheus.HistogramVec
+	adapterGDPRBlockedRequests   *prometheus.CounterVec
 
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
@@ -750,6 +753,46 @@ func (m *Metrics) RecordRequestPrivacy(privacy metrics.PrivacyLabels) {
 func (m *Metrics) RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.BidderName) {
 	if m.metricsDisabled.AdapterGDPRRequestBlocked {
 		return
+	}
+
+	m.adapterGDPRBlockedRequests.With(prometheus.Labels{
+		adapterLabel: string(adapterName),
+	}).Inc()
+}
+
+// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+// gives the bid response with multiple bids containing  same bid.ID
+// ensure collisions value is greater than 1. This function will not give any error
+// if collisions = 1 is passed
+func (m *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	m.adapterDuplicateBidIDCounter.With(prometheus.Labels{
+		adapterLabel: adaptor,
+	}).Add(float64(collisions))
+}
+
+// RecordRequestHavingDuplicateBidID keeps count of request when duplicate bid.id is
+// detected in partner's response
+func (m *Metrics) RecordRequestHavingDuplicateBidID() {
+	m.requestsDuplicateBidIDCounter.Inc()
+}
+
+// pod specific metrics
+
+// recordAlgoTime is common method which handles algorithm time performance
+func recordAlgoTime(timer *prometheus.HistogramVec, labels metrics.PodLabels, elapsedTime time.Duration) {
+
+	pmLabels := prometheus.Labels{
+		podAlgorithm: labels.AlgorithmName,
+	}
+
+	if labels.NoOfImpressions != nil {
+		pmLabels[podNoOfImpressions] = strconv.Itoa(*labels.NoOfImpressions)
+	}
+	if labels.NoOfCombinations != nil {
+		pmLabels[podTotalCombinations] = strconv.Itoa(*labels.NoOfCombinations)
+	}
+	if labels.NoOfResponseBids != nil {
+		pmLabels[podNoOfResponseBids] = strconv.Itoa(*labels.NoOfResponseBids)
 	}
 
 	m.adapterGDPRBlockedRequests.With(prometheus.Labels{

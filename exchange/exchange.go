@@ -63,6 +63,7 @@ type exchange struct {
 	privacyConfig     config.Privacy
 	categoriesFetcher stored_requests.CategoryFetcher
 	bidIDGenerator    BidIDGenerator
+	trakerURL         string
 }
 
 // Container to pass out response ext data from the GetAllBids goroutines back into the main thread
@@ -233,7 +234,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
@@ -523,7 +524,6 @@ func (e *exchange) getAllBids(
 			bidsFound = true
 			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
-
 	}
 	if bidIDsCollision {
 		// record this request count this request if bid collision is detected
@@ -668,7 +668,7 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
 	res := make(map[string]string)
 
 	type bidDedupe struct {
@@ -802,19 +802,20 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 			if !brandCatExt.SkipDedup {
 				if dupe, ok := dedupe[dupeKey]; ok {
 
-				dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
-				if err != nil {
-					dupeBidPrice = 0
-				}
-				currBidPrice, err := strconv.ParseFloat(pb, 64)
-				if err != nil {
-					currBidPrice = 0
-				}
-				if dupeBidPrice == currBidPrice {
-					if booleanGenerator.Generate() {
-						dupeBidPrice = -1
-					} else {
-						currBidPrice = -1
+					dupeBidPrice, err := strconv.ParseFloat(dupe.bidPrice, 64)
+					if err != nil {
+						dupeBidPrice = 0
+					}
+					currBidPrice, err := strconv.ParseFloat(pb, 64)
+					if err != nil {
+						currBidPrice = 0
+					}
+					if dupeBidPrice == currBidPrice {
+						if booleanGenerator.Generate() {
+							dupeBidPrice = -1
+						} else {
+							currBidPrice = -1
+						}
 					}
 
 				if dupeBidPrice < currBidPrice {
@@ -829,12 +830,19 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 						if len(oldSeatBid.bids) == 1 {
 							seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
 						} else {
-							// This is a very rare, but still possible case where bid needs to be removed from already processed bidder
-							// This happens when current processing bidder has a bid that has same deduplication key as a bid from already processed bidder
-							// and already processed bid was selected to be removed
-							// See example of input data in unit test `TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice`
-							// Need to remove bid by name, not index in this case
-							removeBidById(oldSeatBid, dupe.bidID)
+							// An older bid from a different seatBid we've already finished with
+							oldSeatBid := (seatBids)[dupe.bidderName]
+							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
+							if len(oldSeatBid.bids) == 1 {
+								seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
+							} else {
+								// This is a very rare, but still possible case where bid needs to be removed from already processed bidder
+								// This happens when current processing bidder has a bid that has same deduplication key as a bid from already processed bidder
+								// and already processed bid was selected to be removed
+								// See example of input data in unit test `TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice`
+								// Need to remove bid by name, not index in this case
+								removeBidById(oldSeatBid, dupe.bidID)
+							}
 						}
 						delete(res, dupe.bidID)
 					} else {
@@ -844,9 +852,9 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 						continue
 					}
 				}
-				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
 			res[bidID] = categoryDuration
+			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}
 
 		if len(bidsToRemove) > 0 {

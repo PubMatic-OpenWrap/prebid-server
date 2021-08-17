@@ -255,6 +255,16 @@ func getAuctionBidderRequests(req AuctionRequest,
 		}
 	}
 
+	var sChainsByBidder map[string]*openrtb_ext.ExtRequestPrebidSChainSChain
+
+	// Quick extra wrapper until RequestWrapper makes its way into CleanRequests
+	if requestExt != nil {
+		sChainsByBidder, err = BidderToPrebidSChains(requestExt.Prebid.SChains)
+		if err != nil {
+			return nil, []error{err}
+		}
+	}
+
 	reqExt, err := getExtJson(req.BidRequest, requestExt)
 	if err != nil {
 		return nil, []error{err}

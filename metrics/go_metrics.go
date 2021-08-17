@@ -102,6 +102,7 @@ type AdapterMetrics struct {
 	ConnReused         metrics.Counter
 	ConnWaitTime       metrics.Timer
 	GDPRRequestBlocked metrics.Meter
+	TLSHandshakeTimer  metrics.Timer
 }
 
 type MarkupDeliveryMetrics struct {
@@ -320,6 +321,9 @@ func makeBlankAdapterMetrics(disabledMetrics config.DisabledMetrics) *AdapterMet
 		newAdapter.ConnCreated = metrics.NilCounter{}
 		newAdapter.ConnReused = metrics.NilCounter{}
 		newAdapter.ConnWaitTime = &metrics.NilTimer{}
+	}
+	if !disabledMetrics.AdapterGDPRRequestBlocked {
+		newAdapter.GDPRRequestBlocked = blankMeter
 	}
 	if !disabledMetrics.AdapterGDPRRequestBlocked {
 		newAdapter.GDPRRequestBlocked = blankMeter
@@ -728,6 +732,31 @@ func (me *Metrics) RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.Bidde
 	if me.MetricsDisabled.AdapterGDPRRequestBlocked {
 		return
 	}
+
+	am, ok := me.AdapterMetrics[adapterName]
+	if !ok {
+		glog.Errorf("Trying to log adapter GDPR request blocked metric for %s: adapter not found", string(adapterName))
+		return
+	}
+
+	am.GDPRRequestBlocked.Mark(1)
+}
+
+// RecordAdapterDuplicateBidID as noop
+func (me *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+// RecordRequestHavingDuplicateBidID as noop
+func (me *Metrics) RecordRequestHavingDuplicateBidID() {
+}
+
+// RecordPodImpGenTime as a noop
+func (me *Metrics) RecordPodImpGenTime(labels PodLabels, startTime time.Time) {
+}
+
+// RecordPodCombGenTime as a noop
+func (me *Metrics) RecordPodCombGenTime(labels PodLabels, elapsedTime time.Duration) {
+}
 
 	am, ok := me.AdapterMetrics[adapterName]
 	if !ok {

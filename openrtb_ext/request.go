@@ -43,6 +43,10 @@ type ExtRequestPrebid struct {
 	// The array may contain a single sstar ('*') entry to represent all bidders.
 	NoSale []string `json:"nosale,omitempty"`
 
+	// Macros specifies list of custom macros along with the values. This is used while forming
+	// the tracker URLs, where PBS will replace the Custom Macro with its value with url-encoding
+	Macros map[string]string `json:"macros,omitempty"`
+
 	CurrencyConversions *ExtRequestCurrency `json:"currency,omitempty"`
 }
 

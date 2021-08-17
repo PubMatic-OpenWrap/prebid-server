@@ -754,6 +754,10 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("http_client.max_idle_connections", 400)
 	v.SetDefault("http_client.max_idle_connections_per_host", 10)
 	v.SetDefault("http_client.idle_connection_timeout_seconds", 60)
+	v.SetDefault("http_client_cache.max_connections_per_host", 0) // unlimited
+	v.SetDefault("http_client_cache.max_idle_connections", 10)
+	v.SetDefault("http_client_cache.max_idle_connections_per_host", 2)
+	v.SetDefault("http_client_cache.idle_connection_timeout_seconds", 60)
 	v.SetDefault("http_client.tls_handshake_timeout", 0)          //no timeout
 	v.SetDefault("http_client.response_header_timeout", 0)        //unlimited
 	v.SetDefault("http_client.dial_timeout", 0)                   //no timeout
@@ -766,6 +770,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("metrics.disabled_metrics.account_adapter_details", false)
 	v.SetDefault("metrics.disabled_metrics.adapter_connections_metrics", true)
 	v.SetDefault("metrics.disabled_metrics.adapter_gdpr_request_blocked", false)
+	v.SetDefault("metrics.disabled_metrics.adapter_connections_metrics", true)
 	v.SetDefault("metrics.influxdb.host", "")
 	v.SetDefault("metrics.influxdb.database", "")
 	v.SetDefault("metrics.influxdb.username", "")
@@ -998,6 +1003,8 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)
 	v.SetDefault("gdpr.host_vendor_id", 0)
+	v.SetDefault("gdpr.default_value", "0")
+	v.SetDefault("gdpr.usersync_if_ambiguous", true)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})

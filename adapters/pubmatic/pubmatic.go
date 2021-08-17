@@ -489,6 +489,10 @@ func assignBannerSize(banner *openrtb2.Banner) (*openrtb2.Banner, error) {
 		return banner, nil
 	}
 
+	if len(banner.Format) == 0 {
+		return nil, errors.New(fmt.Sprintf("No sizes provided for Banner %v", banner.Format))
+	}
+
 	return assignBannerWidthAndHeight(banner, banner.Format[0].W, banner.Format[0].H), nil
 }
 
@@ -545,7 +549,7 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		imp.Banner = bannerCopy
 	}
 
-	extMap := make(map[string]interface{}, 0)
+	impExtMap := make(map[string]interface{}, 0)
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
 		addKeywordsToExt(pubmaticExt.Keywords, extMap)
 	}

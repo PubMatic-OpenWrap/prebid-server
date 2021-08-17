@@ -374,13 +374,15 @@ func (a *AppNexusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	imps := request.Imp
 
+	// Commenting out the following piece of code to avoid populating adpod_id in the Appnexus request (ref: https://inside.pubmatic.com:9443/jira/browse/UOE-6196)
+
 	// For long form requests if adpodId feature enabled, adpod_id must be sent downstream.
 	// Adpod id is a unique identifier for pod
 	// All impressions in the same pod must have the same pod id in request extension
 	// For this all impressions in  request should belong to the same pod
 	// If impressions number per pod is more than maxImpsPerReq - divide those imps to several requests but keep pod id the same
 	// If  adpodId feature disabled and impressions number per pod is more than maxImpsPerReq  - divide those imps to several requests but do not include ad pod id
-	if isVIDEO == 1 && *adPodId {
+	/*if isVIDEO == 1 && *adPodId {
 		podImps := groupByPods(imps)
 
 		requests := make([]*adapters.RequestData, 0, len(podImps))

@@ -376,14 +376,6 @@ func (deps *endpointDeps) validateRequest(req *openrtb_ext.RequestWrapper) []err
 		if err := validateCustomRates(reqPrebid.CurrencyConversions); err != nil {
 			return []error{err}
 		}
-
-		if err := validateSChains(bidExt); err != nil {
-			return []error{err}
-		}
-
-		if err := deps.validateEidPermissions(bidExt, aliases); err != nil {
-			return []error{err}
-		}
 	}
 
 	if (req.Site == nil && req.App == nil) || (req.Site != nil && req.App != nil) {

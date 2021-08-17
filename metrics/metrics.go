@@ -364,4 +364,38 @@ type MetricsEngine interface {
 	RecordTimeoutNotice(sucess bool)
 	RecordRequestPrivacy(privacy PrivacyLabels)
 	RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.BidderName)
+
+	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+	// gives the bid response with multiple bids containing  same bid.ID
+	RecordAdapterDuplicateBidID(adaptor string, collisions int)
+
+	// RecordRequestHavingDuplicateBidID keeps track off how many request got bid.id collision
+	// detected
+	RecordRequestHavingDuplicateBidID()
+
+	// ad pod specific metrics
+
+	// RecordPodImpGenTime records number of impressions generated and time taken
+	// by underneath algorithm to generate them
+	// labels accept name of the algorithm and no of impressions generated
+	// startTime indicates the time at which algorithm started
+	// This function will take care of computing the elpased time
+	RecordPodImpGenTime(labels PodLabels, startTime time.Time)
+
+	// RecordPodCombGenTime records number of combinations generated and time taken
+	// by underneath algorithm to generate them
+	// labels accept name of the algorithm and no of combinations generated
+	// elapsedTime indicates the time taken by combination generator to compute all requested combinations
+	// This function will take care of computing the elpased time
+	RecordPodCombGenTime(labels PodLabels, elapsedTime time.Duration)
+
+	// RecordPodCompititveExclusionTime records time take by competitive exclusion
+	// to compute the final Ad pod Response.
+	// labels accept name of the algorithm and no of combinations evaluated, total bids
+	// elapsedTime indicates the time taken by competitive exclusion to form final ad pod response using combinations and exclusion algorithm
+	// This function will take care of computing the elpased time
+	RecordPodCompititveExclusionTime(labels PodLabels, elapsedTime time.Duration)
+
+	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
+	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 }

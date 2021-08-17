@@ -56,7 +56,7 @@ func InitPrebidServer(configFile string) {
 
 	err = serve(Rev, cfg)
 	if err != nil {
-		glog.Errorf("prebid-server failed: %v", err)
+		glog.Exitf("prebid-server failed: %v", err)
 	}
 }
 

@@ -147,9 +147,9 @@ func (me *MultiMetricsEngine) RecordDNSTime(dnsLookupTime time.Duration) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
+func (me *MultiMetricsEngine) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordTLSHandshakeTime(tlsHandshakeTime)
+		thisME.RecordTLSHandshakeTime(adapterName, tlsHandshakeTime)
 	}
 }
 
@@ -251,8 +251,33 @@ func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ex
 	}
 }
 
+// RecordAdapterGDPRRequestBlocked across all engines
+func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterGDPRRequestBlocked(adapter)
+	}
+}
+
 // DummyMetricsEngine is a Noop metrics engine in case no metrics are configured. (may also be useful for tests)
 type DummyMetricsEngine struct{}
+
+func (me *DummyMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+func (me *DummyMetricsEngine) RecordRequestHavingDuplicateBidID() {
+}
+
+func (me *DummyMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
+}
+
+func (me *DummyMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+}
+
+func (me *DummyMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+}
+
+func (me *DummyMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+}
 
 // RecordRequest as a noop
 func (me *DummyMetricsEngine) RecordRequest(labels metrics.Labels) {
@@ -303,7 +328,7 @@ func (me *DummyMetricsEngine) RecordDNSTime(dnsLookupTime time.Duration) {
 }
 
 // RecordTLSHandshakeTime as a noop
-func (me *DummyMetricsEngine) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
+func (me *DummyMetricsEngine) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
 }
 
 // RecordAdapterBidReceived as a noop
