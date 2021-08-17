@@ -1519,7 +1519,7 @@ func TestValidateImpExt(t *testing.T) {
 					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"}},
 				},
 				{
-					description:    "Valid Bidder + Disabled Bidder + Invalid bidder params",
+					description:    "Valid Bidder params + Disabled Bidder + Invalid bidder params",
 					impExt:         json.RawMessage(`{"pubmatic":{"publisherId":156209},"appnexus":{"placement_id":555},"disabledbidder":{"foo":"bar"}}`),
 					expectedImpExt: `{"appnexus":{"placement_id":555}}`,
 					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"},
