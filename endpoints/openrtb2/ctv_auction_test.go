@@ -3,13 +3,13 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/beevik/etree"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
