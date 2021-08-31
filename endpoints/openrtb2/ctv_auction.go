@@ -104,6 +104,7 @@ func NewCTVEndpoint(
 func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	defer util.TimeTrack(time.Now(), "CTVAuctionEndpoint")
 
+	var reqWrapper *openrtb_ext.RequestWrapper
 	var request *openrtb2.BidRequest
 	var response *openrtb2.BidResponse
 	var err error
@@ -136,10 +137,11 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}()
 
 	//Parse ORTB Request and do Standard Validation
-	request, errL = deps.parseRequest(r)
+	reqWrapper, errL = deps.parseRequest(r)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
+	request = reqWrapper.BidRequest
 
 	util.JLogf("Original BidRequest", request) //TODO: REMOVE LOG
 
@@ -385,12 +387,9 @@ func (deps *ctvEndpointDeps) setDefaultValues() {
 	//set request is adpod request or normal request
 	deps.setIsAdPodRequest()
 
-	//TODO: OTT-217, OTT-161 commenting code of filtering vast tags
-	/*
-		if deps.isAdPodRequest {
-			deps.readImpExtensionsAndTags()
-		}
-	*/
+	if deps.isAdPodRequest {
+		deps.readImpExtensionsAndTags()
+	}
 }
 
 //validateBidRequest will validate AdPod specific mandatory Parameters and returns error
@@ -466,8 +465,7 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	//createImpressions
 	ctvRequest.Imp = deps.createImpressions()
 
-	//TODO: OTT-217, OTT-161 commenting code of filtering vast tags
-	//deps.filterImpsVastTagsByDuration(&ctvRequest)
+	deps.filterImpsVastTagsByDuration(&ctvRequest)
 
 	//TODO: remove adpod extension if not required to send further
 	return &ctvRequest
