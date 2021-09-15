@@ -639,9 +639,7 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 		imp.Banner = bannerCopy
 	}
 
-	imp.Ext = nil
-
-	impExtMap := make(map[string]interface{})
+	impExtMap := make(map[string]interface{}, 0)
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
 		addKeywordsToExt(pubmaticExt.Keywords, impExtMap)
 	}
@@ -670,7 +668,8 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *pubmaticWrapperExt, pubID
 		}
 	}
 
-	if len(impExtMap) != 0 {
+	imp.Ext = nil
+	if len(impExtMap) > 0 {
 		impExtBytes, err := json.Marshal(impExtMap)
 		if err == nil {
 			imp.Ext = impExtBytes
