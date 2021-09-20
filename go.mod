@@ -1,4 +1,5 @@
-module github.com/prebid/prebid-server
+//module github.com/prebid/prebid-server
+module github.com/PubMatic-OpenWrap/prebid-server
 
 go 1.16
 
