@@ -137,7 +137,7 @@ func TestDefaults(t *testing.T) {
 	cmpBools(t, "stored_requests.filesystem.enabled", false, cfg.StoredRequests.Files.Enabled)
 	cmpStrings(t, "stored_requests.filesystem.directorypath", "./stored_requests/data/by_id", cfg.StoredRequests.Files.Path)
 	cmpBools(t, "auto_gen_source_tid", cfg.AutoGenSourceTID, true)
-	cmpBools(t, "generate_bid_id", cfg.GenerateBidID, false)
+	cmpBools(t, "generate_bid_id", cfg.GenerateBidID, true)
 
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{

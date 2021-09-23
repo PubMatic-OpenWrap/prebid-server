@@ -728,7 +728,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 				}
 
 				//making unique bid.id's per impression
-				bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
+				bid.ID = ext.Prebid.BidId
 
 				impBids.Bids = append(impBids.Bids, &types.Bid{
 					Bid:               bid,
