@@ -65,6 +65,8 @@ const (
 	PBSAccountMacro = "[PBS-ACCOUNT]"
 	// [PBS-BIDDER] represents bidder name
 	PBSBidderMacro = "[PBS-BIDDER]"
+	// [PBS-ORIG_BIDID] represents original bid id.
+	PBSOrigBidIDMacro = "[PBS-ORIG_BIDID]"
 	// [PBS-BIDID] represents bid id. If auction.generate-bid-id config is on, then resolve with response.seatbid.bid.ext.prebid.bidid. Else replace with response.seatbid.bid.id
 	PBSBidIDMacro = "[PBS-BIDID]"
 	// [ADERVERTISER_NAME] represents advertiser name
@@ -489,7 +491,18 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, requestingBidde
 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidderCoreName)
 		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, requestingBidder)
 
-		eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
+		/* Use generated bidId if present, else use bid.ID */
+		gen_bid_id := bid.ID
+		if nil != bid.Ext {
+			ext := openrtb_ext.ExtBid{}
+			err := json.Unmarshal(bid.Ext, &ext)
+			if err != nil && ext.Prebid != nil && len(ext.Prebid.BidId) != 0 {
+				gen_bid_id = ext.Prebid.BidId
+			}
+		}
+		eventURL = replaceMacro(eventURL, PBSBidIDMacro, gen_bid_id)
+		eventURL = replaceMacro(eventURL, PBSOrigBidIDMacro, bid.ID)
+
 		// replace [EVENT_ID] macro with PBS defined event ID
 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
 

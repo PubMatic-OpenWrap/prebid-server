@@ -1066,7 +1066,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("account_defaults.debug_allow", true)
 	v.SetDefault("certificates_file", "")
 	v.SetDefault("auto_gen_source_tid", true)
-	v.SetDefault("generate_bid_id", true)
+	v.SetDefault("generate_bid_id", false)
 
 	v.SetDefault("request_timeout_headers.request_time_in_queue", "")
 	v.SetDefault("request_timeout_headers.request_timeout_in_queue", "")

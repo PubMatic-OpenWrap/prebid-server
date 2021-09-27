@@ -728,7 +728,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 				}
 
 				//making unique bid.id's per impression
-				bid.ID = ext.Prebid.BidId
+				bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
 
 				impBids.Bids = append(impBids.Bids, &types.Bid{
 					Bid:               bid,
@@ -1020,7 +1020,13 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	}
 
 	for i, bid := range adpod.Bids {
-		bidExt.AdPod.RefBids[i] = bid.ID
+		ext := openrtb_ext.ExtBid{}
+		err := json.Unmarshal(bid.Ext, &ext)
+		if err != nil && ext.Prebid != nil && len(ext.Prebid.BidId) != 0 {
+			bidExt.AdPod.RefBids[i] = ext.Prebid.BidId
+		} else {
+			bidExt.AdPod.RefBids[i] = bid.ID
+		}
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
 		bid.FilterReasonCode = constant.CTVRCWinningBid
 	}
@@ -1062,10 +1068,19 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 			for _, trackingEvent := range trackingEvents {
 				u, e := url.Parse(trackingEvent.Text())
 				if nil == e {
+					bid_id := bid.ID
 					values, e := url.ParseQuery(u.RawQuery)
 					// only do replacment if operId=8
 					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
-						values.Set("bidid", bid.ID)
+						/* If generated bidId is present then use it, else use bid.ID */
+						if nil != bid.Ext {
+							ext := openrtb_ext.ExtBid{}
+							err := json.Unmarshal(bid.Ext, &ext)
+							if err != nil && ext.Prebid != nil && len(ext.Prebid.BidId) != 0 {
+								bid_id = ext.Prebid.BidId
+							}
+						}
+						values.Set("bidid", bid_id)
 					} else {
 						continue
 					}
