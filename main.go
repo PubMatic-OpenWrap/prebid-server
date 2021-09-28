@@ -1,6 +1,7 @@
 package prebidServer
 
 import (
+	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
 	"math/rand"
@@ -88,6 +89,12 @@ func serve(revision string, cfg *config.Configuration) error {
 
 	pbc.InitPrebidCache(cfg.CacheURL.GetBaseURL())
 	pbc.InitPrebidCacheURL(cfg.ExternalURL)
+
+	vendorListScheduler, err := gdpr.NewVendorListScheduler("1s")
+	if err != nil {
+		return err
+	}
+	vendorListScheduler.Start()
 
 	//corsRouter := router.SupportCORS(r)
 	//server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(revision, currencyConverter, fetchingInterval), r.MetricsEngine)
