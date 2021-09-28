@@ -2,10 +2,11 @@ package exchange
 
 import (
 	"encoding/json"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"time"
 
-	"github.com/evanphx/json-patch"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
@@ -74,7 +75,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
 	}
 
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
 		bid.AdM = string(newVastXML)
 	}
 }
