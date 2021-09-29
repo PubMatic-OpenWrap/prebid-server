@@ -92,6 +92,7 @@ func (scheduler *vendorListScheduler) runLoadCache() {
 		if list := cacheLoad(i); list != nil {
 			continue
 		}
+		fmt.Println("Downloading: " + vendorListURLMaker(i))
 		saveOne(preloadContext, scheduler.httpClient, vendorListURLMaker(i), cacheSave)
 	}
 }
@@ -101,13 +102,15 @@ func loadCache(ctx context.Context, client *http.Client, urlMaker func(uint16) s
 	latestVersion := saveOne(ctx, client, urlMaker(0), saver)
 
 	// The GVL for TCF2 has no vendors defined in its first version. It's very unlikely to be used, so don't preload it.
-	firstVersionToLoad := uint16(2)
+	//firstVersionToLoad := uint16(2)
+	firstVersionToLoad := uint16(91)
 
 	for i := latestVersion; i > firstVersionToLoad; i-- {
 		// Check if version is present in cache
 		if list := cacheLoad(i); list != nil {
 			continue
 		}
+		fmt.Println("Downloading: " + urlMaker(i))
 		saveOne(ctx, client, urlMaker(i), saver)
 	}
 }
