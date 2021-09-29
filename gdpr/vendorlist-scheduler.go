@@ -3,8 +3,9 @@ package gdpr
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/golang/glog"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type vendorListScheduler struct {
 	interval  time.Duration
 	done      chan bool
 	isRunning bool
+	isStarted bool
 	lastRun   time.Time
 
 	httpClient *http.Client
@@ -21,6 +23,7 @@ type vendorListScheduler struct {
 
 //Only single instance must be created
 var _instance *vendorListScheduler
+var once sync.Once
 
 func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (*vendorListScheduler, error) {
 	if _instance != nil {
@@ -37,29 +40,43 @@ func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (
 		return nil, errors.New("error parsing vendor list scheduler timeout: " + err.Error())
 	}
 
-	_instance := &vendorListScheduler{
-		ticker:     nil,
-		interval:   intervalDuration,
-		done:       make(chan bool),
-		httpClient: httpClient,
-		timeout:    timeoutDuration,
+	if httpClient == nil {
+		return nil, errors.New("http-client can not be nil")
 	}
+
+	once.Do(func() {
+		_instance = &vendorListScheduler{
+			ticker:     nil,
+			interval:   intervalDuration,
+			done:       make(chan bool),
+			httpClient: httpClient,
+			timeout:    timeoutDuration,
+		}
+	})
+
 	return _instance, nil
 }
 
 func (scheduler *vendorListScheduler) Start() {
+	if scheduler == nil || scheduler.isStarted {
+		return
+	}
+
 	scheduler.ticker = time.NewTicker(scheduler.interval)
+	scheduler.isStarted = true
 	go func() {
 		for {
 			select {
 			case <-scheduler.done:
 				scheduler.isRunning = false
+				scheduler.isStarted = false
+				scheduler.ticker = nil
 				return
 			case t := <-scheduler.ticker.C:
 				if !scheduler.isRunning {
 					scheduler.isRunning = true
 
-					fmt.Println("Tick at", t)
+					glog.Info("Running vendor list scheduler at ", t)
 					scheduler.runLoadCache()
 
 					scheduler.lastRun = t
@@ -71,46 +88,32 @@ func (scheduler *vendorListScheduler) Start() {
 }
 
 func (scheduler *vendorListScheduler) Stop() {
-	if scheduler.isRunning {
-		scheduler.ticker.Stop()
-		scheduler.done <- true
+	if scheduler == nil || !scheduler.isStarted {
+		return
 	}
+	scheduler.ticker.Stop()
+	scheduler.done <- true
 }
 
 func (scheduler *vendorListScheduler) runLoadCache() {
+	if scheduler == nil {
+		return
+	}
+
 	preloadContext, cancel := context.WithTimeout(context.Background(), scheduler.timeout)
 	defer cancel()
-	//loadCache(preloadContext, scheduler.httpClient, vendorListURLMaker, cacheSave)
 
 	latestVersion := saveOne(preloadContext, scheduler.httpClient, vendorListURLMaker(0), cacheSave)
 
 	// The GVL for TCF2 has no vendors defined in its first version. It's very unlikely to be used, so don't preload it.
 	firstVersionToLoad := uint16(2)
 
-	for i := latestVersion; i > firstVersionToLoad; i-- {
-		// Check if version is present in cache
+	for i := latestVersion; i >= firstVersionToLoad; i-- {
+		// Check if version is present in the cache
 		if list := cacheLoad(i); list != nil {
 			continue
 		}
-		fmt.Println("Downloading: " + vendorListURLMaker(i))
+		glog.Infof("Downloading: " + vendorListURLMaker(i))
 		saveOne(preloadContext, scheduler.httpClient, vendorListURLMaker(i), cacheSave)
-	}
-}
-
-// loadCache saves newly available versions of the vendor list for future use.
-func loadCache(ctx context.Context, client *http.Client, urlMaker func(uint16) string, saver saveVendors) {
-	latestVersion := saveOne(ctx, client, urlMaker(0), saver)
-
-	// The GVL for TCF2 has no vendors defined in its first version. It's very unlikely to be used, so don't preload it.
-	//firstVersionToLoad := uint16(2)
-	firstVersionToLoad := uint16(91)
-
-	for i := latestVersion; i > firstVersionToLoad; i-- {
-		// Check if version is present in cache
-		if list := cacheLoad(i); list != nil {
-			continue
-		}
-		fmt.Println("Downloading: " + urlMaker(i))
-		saveOne(ctx, client, urlMaker(i), saver)
 	}
 }
