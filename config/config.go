@@ -83,6 +83,14 @@ type Configuration struct {
 	//When true, new bid id will be generated in seatbid[].bid[].ext.prebid.bidid and used in event urls instead
 	GenerateBidID bool   `mapstructure:"generate_bid_id"`
 	TrackerURL    string `mapstructure:"tracker_url"`
+
+	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
+}
+
+type VendorListScheduler struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Interval string `mapstructure:"interval"`
+	Timeout  string `mapstructure:"timeout"`
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500
@@ -952,7 +960,8 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.operaads.endpoint", "https://s.adx.opera.com/ortb/v2/{{.PublisherID}}?ep={{.AccountID}}")
 	v.SetDefault("adapters.orbidder.endpoint", "https://orbidder.otto.de/openrtb2")
 	v.SetDefault("adapters.outbrain.endpoint", "https://prebidtest.zemanta.com/api/bidder/prebidtest/bid/")
-	v.SetDefault("adapters.pangle.disabled", true)
+	v.SetDefault("adapters.pangle.disabled", false)
+	v.SetDefault("adapters.pangle.endpoint", "https://api16-access-sg.pangle.io/api/ad/union/openrtb/get_ads/")
 	v.SetDefault("adapters.pubmatic.endpoint", "https://hbopenbid.pubmatic.com/translator?source=prebid-server")
 	v.SetDefault("adapters.pubnative.endpoint", "http://dsp.pubnative.net/bid/v1/request")
 	v.SetDefault("adapters.pulsepoint.endpoint", "http://bid.contextweb.com/header/s/ortb/prebid-s2s")
