@@ -64,7 +64,7 @@ type ExtRequestAdPod struct {
 	CrossPodIABCategoryExclusionPercent *int   `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
 	IABCategoryExclusionWindow          *int   `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
 	AdvertiserExclusionWindow           *int   `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
-	DurationRangeSec                    []int  `json:"durationrangesec"`             //Range of ad durations allowed in the response
+	DurationRangeSec                    []int  `json:"durationrangesec,omitempty"`   //Range of ad durations allowed in the response
 	DurationMatching                    string `json:"durationmatching,omitempty"`   //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
