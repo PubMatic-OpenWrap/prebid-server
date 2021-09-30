@@ -38,6 +38,7 @@ const (
 var MonitorKey = map[Algorithm]string{
 	MaximizeForDuration: `a1_max`,
 	MinMaxAlgorithm:     `a2_min_max`,
+	ByDurationRanges:    `a3_duration`,
 }
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
@@ -55,7 +56,7 @@ type IImpressions interface {
 // based on input algorithm type
 // if invalid algorithm type is passed, it returns default algorithm which will compute
 // impressions based on minimum ad slot duration
-func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.VideoAdPod, algorithm Algorithm) IImpressions {
+func NewImpressions(podMinDuration, podMaxDuration int64, reqAdPod *openrtb_ext.ExtRequestAdPod, vPod *openrtb_ext.VideoAdPod, algorithm Algorithm) IImpressions {
 	switch algorithm {
 	case MaximizeForDuration:
 		util.Logf("Selected ImpGen Algorithm - 'MaximizeForDuration'")
@@ -69,7 +70,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.Vide
 
 	case ByDurationRanges:
 		util.Logf("Selected ImpGen Algorithm - 'ByDurationRanges'")
-		g := newByDurationRanges(nil, 0, 0)
+		g := newByDurationRanges(reqAdPod.DurationRangeSec, util.Max(len(reqAdPod.DurationRangeSec), int(*vPod.MaxAds)), int(podMinDuration), int(podMaxDuration))
 		return &g
 	}
 
@@ -82,6 +83,19 @@ func NewImpressions(podMinDuration, podMaxDuration int64, vPod *openrtb_ext.Vide
 		MaxDuration: vPod.MinDuration, // sending slot minduration as max duration
 	})
 	return &defaultGenerator
+}
+
+// SelectAlgorithm is factory function which will return valid Algorithm based on adpod parameters
+// Return Value:
+//  - MinMaxAlgorithm (default)
+//  - ByDurationRanges: if reqAdPod extension has DurationRangeSec and DurationMatchingAlgorithm is "exact" algorithm
+func SelectAlgorithm(reqAdPod *openrtb_ext.ExtRequestAdPod) Algorithm {
+	if nil != reqAdPod {
+		if len(reqAdPod.DurationRangeSec) > 0 && openrtb_ext.OWAdPodExactDurationMatching == reqAdPod.DurationMatching {
+			return ByDurationRanges
+		}
+	}
+	return MinMaxAlgorithm
 }
 
 // Duration indicates the position
