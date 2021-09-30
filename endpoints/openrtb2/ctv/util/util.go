@@ -97,3 +97,11 @@ func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, b
 	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
+
+// Max it will return max value from i and j
+func Max(i, j int) int {
+	if i > j {
+		return i
+	}
+	return j
+}
