@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
-
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -201,6 +199,40 @@ func TestGetTargeting(t *testing.T) {
 				assert.Empty(t, value)
 			}
 			assert.Equal(t, test.expectValue, value)
+		})
+	}
+}
+
+func TestMax(t *testing.T) {
+	type args struct {
+		i int
+		j int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "first",
+			args: args{i: 10, j: 20},
+			want: 20,
+		},
+		{
+			name: "second",
+			args: args{i: 10, j: 20},
+			want: 20,
+		},
+		{
+			name: "equal",
+			args: args{i: 10, j: 10},
+			want: 10,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Max(tt.args.i, tt.args.j)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
