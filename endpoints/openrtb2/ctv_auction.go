@@ -575,13 +575,12 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 
 //getAdPodImpsConfigs will return number of impressions configurations within adpod
 func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openrtb_ext.VideoAdPod) []*types.ImpAdPodConfig {
-	selectedAlgorithm := impressions.MinMaxAlgorithm
-	labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
-
 	// monitor
 	start := time.Now()
-	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, selectedAlgorithm)
+	selectedAlgorithm := impressions.SelectAlgorithm(deps.reqExt)
+	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, deps.reqExt, adpod, selectedAlgorithm)
 	impRanges := impGen.Get()
+	labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
 	*labels.NoOfImpressions = len(impRanges)
 	deps.metricsEngine.RecordPodImpGenTime(labels, start)
 

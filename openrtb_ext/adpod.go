@@ -14,6 +14,7 @@ var (
 	errInvalidCrossPodIABCategoryExclusionPercent = errors.New("request.ext.adpod.crosspodexcliabcat must be a number between 0 and 100")
 	errInvalidIABCategoryExclusionWindow          = errors.New("request.ext.adpod.excliabcatwindow must be postive number")
 	errInvalidAdvertiserExclusionWindow           = errors.New("request.ext.adpod.excladvwindow must be postive number")
+	errInvalidDurationMatching                    = errors.New("request.ext.adpod.durationmatching must be exact|roundup")
 	errInvalidAdPodOffset                         = errors.New("request.imp.video.ext.offset must be postive number")
 	errInvalidMinAds                              = errors.New("%key%.ext.adpod.minads must be positive number")
 	errInvalidMaxAds                              = errors.New("%key%.ext.adpod.maxads must be positive number")
@@ -24,6 +25,11 @@ var (
 	errInvalidMinMaxAds                           = errors.New("%key%.ext.adpod.minads must be less than %key%.ext.adpod.maxads")
 	errInvalidMinMaxDuration                      = errors.New("%key%.ext.adpod.adminduration must be less than %key%.ext.adpod.admaxduration")
 	errInvalidMinMaxDurationRange                 = errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
+)
+
+const (
+	OWAdPodExactDurationMatching   = `exact`
+	OWAdPodRoundupDurationMatching = `roundup`
 )
 
 // ExtCTVBid defines the contract for bidresponse.seatbid.bid[i].ext
@@ -39,8 +45,8 @@ type BidAdPodExt struct {
 	RefBids    []string `json:"refbids,omitempty"`
 }
 
-// ExtCTVRequest defines the contract for bidrequest.ext
-type ExtCTVRequest struct {
+// ExtOWRequest defines the contract for bidrequest.ext
+type ExtOWRequest struct {
 	ExtRequest
 	AdPod *ExtRequestAdPod `json:"adpod,omitempty"`
 }
@@ -54,10 +60,12 @@ type ExtVideoAdPod struct {
 //ExtRequestAdPod holds AdPod specific extension parameters at request level
 type ExtRequestAdPod struct {
 	VideoAdPod
-	CrossPodAdvertiserExclusionPercent  *int `json:"crosspodexcladv,omitempty"`    //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
-	CrossPodIABCategoryExclusionPercent *int `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
-	IABCategoryExclusionWindow          *int `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
-	AdvertiserExclusionWindow           *int `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
+	CrossPodAdvertiserExclusionPercent  *int   `json:"crosspodexcladv,omitempty"`    //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
+	CrossPodIABCategoryExclusionPercent *int   `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
+	IABCategoryExclusionWindow          *int   `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
+	AdvertiserExclusionWindow           *int   `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
+	DurationRangeSec                    []int  `json:"durationrangesec"`             //Range of ad durations allowed in the response
+	DurationMatching                    string `json:"durationmatching,omitempty"`   //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 //VideoAdPod holds Video AdPod specific extension parameters at impression level
@@ -105,11 +113,11 @@ func (pod *VideoAdPod) Validate() (err []error) {
 		err = append(err, errInvalidMaxAds)
 	}
 
-	if nil != pod.MinDuration && *pod.MinDuration < 0 {
+	if nil != pod.MinDuration && *pod.MinDuration <= 0 {
 		err = append(err, errInvalidMinDuration)
 	}
 
-	if nil != pod.MaxDuration && *pod.MaxDuration < 0 {
+	if nil != pod.MaxDuration && *pod.MaxDuration <= 0 {
 		err = append(err, errInvalidMaxDuration)
 	}
 
@@ -154,6 +162,10 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 
 	if nil != ext.AdvertiserExclusionWindow && *ext.AdvertiserExclusionWindow < 0 {
 		err = append(err, errInvalidAdvertiserExclusionWindow)
+	}
+
+	if len(ext.DurationMatching) > 0 && !(OWAdPodExactDurationMatching == ext.DurationMatching || OWAdPodRoundupDurationMatching == ext.DurationMatching) {
+		err = append(err, errInvalidDurationMatching)
 	}
 
 	if errL := ext.VideoAdPod.Validate(); nil != errL {
