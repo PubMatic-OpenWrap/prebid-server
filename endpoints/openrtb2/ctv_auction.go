@@ -1014,8 +1014,10 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	for i, bid := range adpod.Bids {
 		if bid.ExtBid.Prebid != nil && len(bid.ExtBid.Prebid.BidId) != 0 {
 			bidExt.AdPod.RefBids[i] = bid.ExtBid.Prebid.BidId
+			bidExt.Prebid.BidId = bid.ExtBid.Prebid.BidId
 		} else {
 			bidExt.AdPod.RefBids[i] = bid.ID
+			bidExt.Prebid.BidId = bid.ID
 		}
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
 		bid.FilterReasonCode = constant.CTVRCWinningBid
