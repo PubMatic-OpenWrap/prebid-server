@@ -348,7 +348,7 @@ func ModifyVastXmlJSON(externalUrl string, data json.RawMessage, bidid, bidder, 
 
 //InjectVideoEventTrackers injects the video tracking events
 //Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, gen_bidid, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
@@ -365,7 +365,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, gen
 		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
 	}
 
-	eventURLMap := GetVideoEventTracking(trackerURL, bid, gen_bidid, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, doc, impMap)
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, doc, impMap)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
@@ -433,7 +433,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, gen
 //    firstQuartile, midpoint, thirdQuartile, complete
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, gen_bidid string, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
+func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId string, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
 	if "" == strings.TrimSpace(trackerURL) {
 		return eventURLMap
@@ -492,8 +492,8 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, gen_bidid strin
 		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, requestingBidder)
 
 		/* Use generated bidId if present, else use bid.ID */
-		if len(gen_bidid) > 0 && gen_bidid != bid.ID {
-			eventURL = replaceMacro(eventURL, PBSBidIDMacro, gen_bidid)
+		if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
+			eventURL = replaceMacro(eventURL, PBSBidIDMacro, prebidGenBidId)
 		} else {
 			eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
 		}
