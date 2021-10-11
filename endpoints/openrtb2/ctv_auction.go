@@ -346,12 +346,6 @@ func (deps *ctvEndpointDeps) readRequestExtension() (err []error) {
 			}
 
 			deps.reqExt.SetDefaultValue()
-
-			//removing key from extensions
-			deps.request.Ext = jsonparser.Delete(deps.request.Ext, constant.CTVAdpod)
-			if string(deps.request.Ext) == `{}` {
-				deps.request.Ext = nil
-			}
 		}
 	}
 
