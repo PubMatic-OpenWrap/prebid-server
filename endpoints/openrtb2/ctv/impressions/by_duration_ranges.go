@@ -7,16 +7,14 @@ type byDurRangeConfig struct {
 	IImpressions         //IImpressions interface
 	durations      []int //durations list of durations in seconds used for creating impressions object
 	maxAds         int   //maxAds is number of max impressions can be created
-	podMinDuration int   //podMinDuration, element in durations must be less than podMinDuration(boundry check)
 	podMaxDuration int   //podMaxDuration, element in durations must be greater than podMaxDuration(boundry check)
 }
 
 // newByDurationRanges will create new object ob byDurRangeConfig for creating impressions for adpod request
-func newByDurationRanges(durations []int, maxAds, podMinDuration, podMaxDuration int) byDurRangeConfig {
+func newByDurationRanges(durations []int, maxAds, podMaxDuration int) byDurRangeConfig {
 	return byDurRangeConfig{
 		durations:      durations,
 		maxAds:         maxAds,
-		podMinDuration: podMinDuration,
 		podMaxDuration: podMaxDuration,
 	}
 }
@@ -31,7 +29,7 @@ func (c *byDurRangeConfig) Get() [][2]int64 {
 	}
 	imps := make([][2]int64, 0)
 	for _, dur := range c.durations {
-		if dur < c.podMinDuration || dur > c.podMaxDuration {
+		if dur > c.podMaxDuration {
 			continue // invalid duration
 		}
 		imps = append(imps, [2]int64{int64(dur), int64(dur)})
