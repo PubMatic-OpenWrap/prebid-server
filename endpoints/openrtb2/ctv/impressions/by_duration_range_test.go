@@ -8,7 +8,6 @@ import (
 
 func TestGetImpressionsA3(t *testing.T) {
 	type args struct {
-		podMinDuration int
 		podMaxDuration int
 		maxAds         int
 		durations      []int
@@ -51,20 +50,8 @@ func TestGetImpressionsA3(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid_durations",
-			args: args{
-				podMinDuration: 30,
-				podMaxDuration: 60,
-				durations:      []int{5, 10, 15},
-			},
-			want: want{
-				imps: [][2]int64{},
-			},
-		},
-		{
 			name: "len_of_durations_<_maxAds",
 			args: args{
-				podMinDuration: 5,
 				podMaxDuration: 20,
 				maxAds:         5,
 				durations:      []int{5, 10, 15},
@@ -83,7 +70,6 @@ func TestGetImpressionsA3(t *testing.T) {
 		{
 			name: "len_of_durations_>_maxAds",
 			args: args{
-				podMinDuration: 5,
 				podMaxDuration: 25,
 				maxAds:         2,
 				durations:      []int{5, 10, 15},
@@ -112,21 +98,6 @@ func TestGetImpressionsA3(t *testing.T) {
 			},
 		},
 		{
-			name: "durations_in_durations_<podMinDuration",
-			args: args{
-				podMinDuration: 10,
-				durations:      []int{5, 10, 15},
-				podMaxDuration: 20,
-			},
-			want: want{
-				imps: [][2]int64{
-					// do not expect {5,5}
-					{10, 10},
-					{15, 15},
-				},
-			},
-		},
-		{
 			name: "valid_name",
 			args: args{
 				podMaxDuration: 20,
@@ -145,7 +116,7 @@ func TestGetImpressionsA3(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := tt.args
-			gen := newByDurationRanges(args.durations, args.maxAds, args.podMinDuration, args.podMaxDuration)
+			gen := newByDurationRanges(args.durations, args.maxAds, args.podMaxDuration)
 			imps := gen.Get()
 			assert.Equal(t, tt.want.imps, imps)
 		})
