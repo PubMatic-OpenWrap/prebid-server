@@ -322,6 +322,14 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	gvlVendorIDs := bidderInfos.ToGVLVendorIDMap()
 	gdprPerms := gdpr.NewPermissions(context.Background(), cfg.GDPR, gvlVendorIDs, generalHttpClient)
 
+	if cfg.VendorListScheduler.Enabled {
+		vendorListScheduler, err := gdpr.GetVendorListScheduler(cfg.VendorListScheduler.Interval, cfg.VendorListScheduler.Timeout, generalHttpClient)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		vendorListScheduler.Start()
+	}
+
 	exchanges = newExchangeMap(cfg)
 	g_cacheClient = pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, g_metrics)
 
