@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestViewdeosSyncer(t *testing.T) {
+func TestGroumSyncer(t *testing.T) {
 	syncURL := "//ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&predirect=localhost%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D"
 	syncURLTemplate := template.Must(
 		template.New("sync-template").Parse(syncURL),
