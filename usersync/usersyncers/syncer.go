@@ -1,9 +1,11 @@
 package usersyncers
 
 import (
-	"github.com/prebid/prebid-server/adapters/operaads"
 	"strings"
 	"text/template"
+
+	"github.com/prebid/prebid-server/adapters/groupm"
+	"github.com/prebid/prebid-server/adapters/operaads"
 
 	"github.com/golang/glog"
 	ttx "github.com/prebid/prebid-server/adapters/33across"
@@ -42,7 +44,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/datablocks"
 	"github.com/prebid/prebid-server/adapters/deepintent"
 	"github.com/prebid/prebid-server/adapters/dmx"
-	"github.com/prebid/prebid-server/adapters/e_volution"
+	evolution "github.com/prebid/prebid-server/adapters/e_volution"
 	"github.com/prebid/prebid-server/adapters/emx_digital"
 	"github.com/prebid/prebid-server/adapters/engagebdr"
 	"github.com/prebid/prebid-server/adapters/eplanning"
@@ -73,7 +75,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/rhythmone"
 	"github.com/prebid/prebid-server/adapters/rtbhouse"
 	"github.com/prebid/prebid-server/adapters/rubicon"
-	"github.com/prebid/prebid-server/adapters/sa_lunamedia"
+	salunamedia "github.com/prebid/prebid-server/adapters/sa_lunamedia"
 	"github.com/prebid/prebid-server/adapters/sharethrough"
 	"github.com/prebid/prebid-server/adapters/smartadserver"
 	"github.com/prebid/prebid-server/adapters/smartrtb"
@@ -152,6 +154,7 @@ func NewSyncerMap(cfg *config.Configuration) map[openrtb_ext.BidderName]usersync
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderGamma, gamma.NewGammaSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderGamoshi, gamoshi.NewGamoshiSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderGrid, grid.NewGridSyncer)
+	insertIntoMap(cfg, syncers, openrtb_ext.BidderGroupm, groupm.NewGroupmSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderGumGum, gumgum.NewGumGumSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderImprovedigital, improvedigital.NewImprovedigitalSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderInMobi, inmobi.NewInmobiSyncer)
