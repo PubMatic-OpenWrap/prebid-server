@@ -1,0 +1,12 @@
+maintainer:
+  email: "header-bidding@pubmatic.com"
+gvlVendorID: 98
+capabilities:
+  app:
+    mediaTypes:
+      - banner
+      - video
+  site:
+    mediaTypes:
+      - banner
+      - video
