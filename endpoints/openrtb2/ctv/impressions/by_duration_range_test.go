@@ -98,6 +98,17 @@ func TestGetImpressionsA3(t *testing.T) {
 			},
 		},
 		{
+			name: "all_durations_in_durations_>podMaxDuration",
+			args: args{
+				durations:      []int{15, 20, 25},
+				podMaxDuration: 10,
+				maxAds:         3,
+			},
+			want: want{
+				imps: [][2]int64{},
+			},
+		},
+		{
 			name: "valid_name",
 			args: args{
 				podMaxDuration: 20,
