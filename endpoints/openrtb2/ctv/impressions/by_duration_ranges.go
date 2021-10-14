@@ -36,8 +36,10 @@ func (c *byDurRangeConfig) Get() [][2]int64 {
 	}
 
 	//adding extra impressions incase of total impressions generated are less than pod max ads.
-	for i := 0; len(imps) < c.maxAds; i++ {
-		imps = append(imps, [2]int64{imps[i][0], imps[i][1]})
+	if len(imps) > 0 {
+		for i := 0; len(imps) < c.maxAds; i++ {
+			imps = append(imps, [2]int64{imps[i][0], imps[i][1]})
+		}
 	}
 
 	return imps
