@@ -4,9 +4,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/prebid/prebid-server/adapters/groupm"
-	"github.com/prebid/prebid-server/adapters/operaads"
-
 	"github.com/golang/glog"
 	ttx "github.com/prebid/prebid-server/adapters/33across"
 	"github.com/prebid/prebid-server/adapters/acuityads"
@@ -51,6 +48,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/gamma"
 	"github.com/prebid/prebid-server/adapters/gamoshi"
 	"github.com/prebid/prebid-server/adapters/grid"
+	"github.com/prebid/prebid-server/adapters/groupm"
 	"github.com/prebid/prebid-server/adapters/gumgum"
 	"github.com/prebid/prebid-server/adapters/improvedigital"
 	"github.com/prebid/prebid-server/adapters/inmobi"
@@ -69,6 +67,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/nobid"
 	"github.com/prebid/prebid-server/adapters/onetag"
 	"github.com/prebid/prebid-server/adapters/openx"
+	"github.com/prebid/prebid-server/adapters/operaads"
 	"github.com/prebid/prebid-server/adapters/outbrain"
 	"github.com/prebid/prebid-server/adapters/pubmatic"
 	"github.com/prebid/prebid-server/adapters/pulsepoint"
