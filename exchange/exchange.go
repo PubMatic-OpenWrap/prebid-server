@@ -969,10 +969,6 @@ func (e *exchange) makeBid(bids []*pbsOrtbBid, auc *auction, returnCreative bool
 	errs := make([]error, 0, 1)
 
 	for _, bid := range bids {
-		bidID := bid.bid.ID
-		if len(bid.generatedBidID) > 0 {
-			bidID = bid.generatedBidID
-		}
 		bidExtPrebid := &openrtb_ext.ExtBidPrebid{
 			DealPriority:      bid.dealPriority,
 			DealTierSatisfied: bid.dealTierSatisfied,
@@ -980,7 +976,7 @@ func (e *exchange) makeBid(bids []*pbsOrtbBid, auc *auction, returnCreative bool
 			Targeting:         bid.bidTargets,
 			Type:              bid.bidType,
 			Video:             bid.bidVideo,
-			BidId:             bidID,
+			BidId:             bid.generatedBidID,
 		}
 
 		if cacheInfo, found := e.getBidCacheInfo(bid, auc); found {
