@@ -9,7 +9,6 @@ import (
 //Bid openrtb bid object with extra parameters
 type Bid struct {
 	*openrtb2.Bid
-	openrtb_ext.ExtBid
 	Duration          int
 	FilterReasonCode  constant.FilterReasonCode
 	DealTierSatisfied bool

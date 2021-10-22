@@ -242,7 +242,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			for _, seatBid := range adapterBids {
 				for _, pbsBid := range seatBid.bids {
 					pbsBid.generatedBidID, err = e.bidIDGenerator.New()
-					glog.Infof("Original BidID = %s Generated BidID = %s", pbsBid.bid.ID, pbsBid.generatedBidID)
 					if err != nil {
 						errs = append(errs, errors.New("Error generating bid.ext.prebid.bidid"))
 					}
