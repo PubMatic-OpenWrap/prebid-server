@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,7 +21,6 @@ import (
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/impressions"
@@ -983,15 +981,6 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid) *string {
 				continue
 			}
 
-			// adjust bidid in video event trackers and update
-			adjustBidIDInVideoEventTrackers(adDoc, bid.Bid)
-			adm, err := adDoc.WriteToString()
-			if nil != err {
-				util.JLogf("ERROR, %v", err.Error())
-			} else {
-				bid.AdM = adm
-			}
-
 			vastTag := adDoc.SelectElement(constant.VASTElement)
 
 			//Get Actual VAST Version
@@ -1040,9 +1029,13 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	}
 
 	for i, bid := range adpod.Bids {
-		//adding bid id in adpod.refbids
-		bidExt.AdPod.RefBids[i] = bid.ID
-
+		if bid.ExtBid.Prebid != nil && len(bid.ExtBid.Prebid.BidId) != 0 {
+			bidExt.AdPod.RefBids[i] = bid.ExtBid.Prebid.BidId
+			bidExt.Prebid.BidId = bid.ExtBid.Prebid.BidId
+		} else {
+			bidExt.AdPod.RefBids[i] = bid.ID
+			bidExt.Prebid.BidId = bid.ID
+		}
 		//updating exact duration of adpod creative
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
 
@@ -1110,39 +1103,4 @@ func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value stri
 		bid.Ext = raw
 	}
 	return err
-}
-
-func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
-	// adjusment: update bid.id with ctv module generated bid.id
-	creatives := events.FindCreatives(doc)
-	for _, creative := range creatives {
-		trackingEvents := creative.FindElements("TrackingEvents/Tracking")
-		if nil != trackingEvents {
-			// update bidid= value with ctv generated bid id for this bid
-			for _, trackingEvent := range trackingEvents {
-				u, e := url.Parse(trackingEvent.Text())
-				if nil == e {
-					values, e := url.ParseQuery(u.RawQuery)
-					// only do replacment if operId=8
-					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
-						values.Set("bidid", bid.ID)
-					} else {
-						continue
-					}
-
-					//OTT-183: Fix
-					if nil != values["operId"] && values["operId"][0] == "8" {
-						operID := values.Get("operId")
-						values.Del("operId")
-						values.Add("_operId", operID) // _ (underscore) will keep it as first key
-					}
-
-					u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
-					// replace _operId with operId
-					u.RawQuery = strings.ReplaceAll(u.RawQuery, "_operId", "operId")
-					trackingEvent.SetText(u.String())
-				}
-			}
-		}
-	}
 }
