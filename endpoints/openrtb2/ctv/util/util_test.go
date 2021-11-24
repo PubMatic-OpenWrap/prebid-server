@@ -236,3 +236,101 @@ func TestMax(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNearestDuration(t *testing.T) {
+	type args struct {
+		duration int64
+		config   []*types.ImpAdPodConfig
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantDuration int64
+	}{
+		// TODO: Add test cases.
+		{
+			name: "sorted_array_exact_match",
+			args: args{
+				duration: 20,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			wantDuration: 20,
+		},
+		{
+			name: "sorted_array_first_element",
+			args: args{
+				duration: 5,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			wantDuration: 10,
+		},
+		{
+			name: "sorted_array_not_found",
+			args: args{
+				duration: 45,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			wantDuration: -1,
+		},
+		{
+			name: "unsorted_array_exact_match",
+			args: args{
+				duration: 10,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 40},
+					{MaxDuration: 20},
+					{MaxDuration: 10},
+					{MaxDuration: 30},
+				},
+			},
+			wantDuration: 10,
+		},
+		{
+			name: "unsorted_array_round_to_minimum",
+			args: args{
+				duration: 5,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 40},
+					{MaxDuration: 20},
+					{MaxDuration: 10},
+					{MaxDuration: 30},
+				},
+			},
+			wantDuration: 10,
+		},
+		{
+			name: "unsorted_array_invalid",
+			args: args{
+				duration: 45,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 40},
+					{MaxDuration: 20},
+					{MaxDuration: 10},
+					{MaxDuration: 30},
+				},
+			},
+			wantDuration: -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			duration := GetNearestDuration(tt.args.duration, tt.args.config)
+			assert.Equal(t, tt.wantDuration, duration)
+		})
+	}
+}
