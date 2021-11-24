@@ -10,7 +10,7 @@ import (
 type Bid struct {
 	*openrtb2.Bid
 	Duration          int
-	FilterReasonCode  constant.FilterReasonCode
+	Status            constant.BidStatus
 	DealTierSatisfied bool
 }
 

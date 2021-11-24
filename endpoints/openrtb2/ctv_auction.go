@@ -71,9 +71,9 @@ func NewCTVEndpoint(
 	bidderMap map[string]openrtb_ext.BidderName) (httprouter.Handle, error) {
 
 	if ex == nil || validator == nil || requestsByID == nil || accounts == nil || cfg == nil || met == nil {
-		return nil, errors.New("NewCTVEndpoint requires non-nil arguments.")
+		return nil, errors.New("NewCTVEndpoint requires non-nil arguments")
 	}
-	defRequest := defReqJSON != nil && len(defReqJSON) > 0
+	defRequest := len(defReqJSON) > 0
 
 	ipValidator := iputil.PublicNetworkIPValidator{
 		IPv4PrivateNetworks: cfg.RequestValidation.IPv4PrivateNetworksParsed,
@@ -723,10 +723,14 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 				//making unique bid.id's per impression
 				bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
 
+				//get duration of creative
+				duration, status := getBidDuration(bid, deps.reqExt, deps.impData[index].Config,
+					deps.impData[index].Config[sequenceNumber-1].MaxDuration)
+
 				impBids.Bids = append(impBids.Bids, &types.Bid{
 					Bid:               bid,
-					FilterReasonCode:  constant.CTVRCDidNotGetChance,
-					Duration:          getAdDuration(*bid, deps.impData[index].Config[sequenceNumber-1].MaxDuration),
+					Status:            status,
+					Duration:          int(duration),
 					DealTierSatisfied: util.GetDealTierSatisfied(&ext),
 				})
 			}
@@ -874,7 +878,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 				}
 
 				//add bid filter reason value
-				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.FilterReasonCode)), "adpod", "aprc")
+				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.Status)), "adpod", "aprc")
 				if nil == err {
 					bid.Ext = raw
 				}
@@ -1013,24 +1017,64 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	}
 
 	for i, bid := range adpod.Bids {
+		//adding bid id in adpod.refbids
 		bidExt.AdPod.RefBids[i] = bid.ID
+
+		//updating exact duration of adpod creative
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
-		bid.FilterReasonCode = constant.CTVRCWinningBid
+
+		//setting bid status as winning bid
+		bid.Status = constant.StatusWinningBid
 	}
 	rawExt, _ := json.Marshal(bidExt)
 	return rawExt
 }
 
-//getAdDuration determines the duration of video ad from given bid.
-//it will try to get the actual ad duration returned by the bidder using prebid.video.duration
-//if prebid.video.duration = 0 or there is error occured in determing it then
-//impress
-func getAdDuration(bid openrtb2.Bid, defaultDuration int64) int {
+//getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoLengthMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
+	switch policy {
+	case openrtb_ext.OWExactVideoLengthsMatching:
+		tmp := util.GetNearestDuration(duration, config)
+		if tmp != duration {
+			return duration, constant.StatusDurationMismatch
+		}
+		//its and valid duration return it with StatusOK
+
+	case openrtb_ext.OWRoundupVideoLengthMatching:
+		tmp := util.GetNearestDuration(duration, config)
+		if tmp == -1 {
+			return duration, constant.StatusDurationMismatch
+		}
+		//update duration with nearest one duration
+		duration = tmp
+		//its and valid duration return it with StatusOK
+	}
+
+	return duration, constant.StatusOK
+}
+
+/*
+getBidDuration determines the duration of video ad from given bid.
+it will try to get the actual ad duration returned by the bidder using prebid.video.duration
+if prebid.video.duration not present then uses defaultDuration passed as an argument
+if video lengths matching policy is present for request then it will validate and update duration based on policy
+*/
+func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, config []*types.ImpAdPodConfig, defaultDuration int64) (int64, constant.BidStatus) {
+
+	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
 	if nil != err || duration <= 0 {
-		duration = defaultDuration
+		// incase if duration is not present use impression duration directly as it is
+		return defaultDuration, constant.StatusOK
 	}
-	return int(duration)
+
+	// C2: Based on video lengths matching policy validate and return duration
+	if nil != reqExt && len(reqExt.VideoLengthMatching) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoLengthMatching, config)
+	}
+
+	//default return duration which is present in bid.ext.prebid.vide.duration field
+	return duration, constant.StatusOK
 }
 
 func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value string) error {
