@@ -25,23 +25,23 @@ func TestSelectAlgorithm(t *testing.T) {
 			want: MinMaxAlgorithm,
 		},
 		{
-			name: "missing_durationrangesec",
+			name: "missing_videolengths",
 			args: args{reqAdPod: &openrtb_ext.ExtRequestAdPod{}},
 			want: MinMaxAlgorithm,
 		},
 		{
 			name: "roundup_matching_algo",
 			args: args{reqAdPod: &openrtb_ext.ExtRequestAdPod{
-				DurationRangeSec: []int{15, 20},
-				DurationMatching: openrtb_ext.OWAdPodRoundupDurationMatching,
+				VideoLengths:        []int{15, 20},
+				VideoLengthMatching: openrtb_ext.OWRoundupVideoLengthMatching,
 			}},
-			want: MinMaxAlgorithm,
+			want: ByDurationRanges,
 		},
 		{
 			name: "exact_matching_algo",
 			args: args{reqAdPod: &openrtb_ext.ExtRequestAdPod{
-				DurationRangeSec: []int{15, 20},
-				DurationMatching: openrtb_ext.OWAdPodExactDurationMatching,
+				VideoLengths:        []int{15, 20},
+				VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
 			}},
 			want: ByDurationRanges,
 		},
@@ -124,7 +124,7 @@ func TestNewImpressions(t *testing.T) {
 				podMinDuration: 15,
 				podMaxDuration: 90,
 				reqAdPod: &openrtb_ext.ExtRequestAdPod{
-					DurationRangeSec: []int{10, 15},
+					VideoLengths: []int{10, 15},
 				},
 				vPod: &openrtb_ext.VideoAdPod{
 					MinAds:      intPtr(1),
