@@ -783,21 +783,23 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 			//duration wise buckets sorted
 			buckets := util.GetDurationWiseBidsBucket(bid.Bids[:])
 
-			//combination generator
-			comb := combination.NewCombination(
-				buckets,
-				uint64(deps.request.Imp[index].Video.MinDuration),
-				uint64(deps.request.Imp[index].Video.MaxDuration),
-				deps.impData[index].VideoExt.AdPod)
+			if len(buckets) > 0 {
+				//combination generator
+				comb := combination.NewCombination(
+					buckets,
+					uint64(deps.request.Imp[index].Video.MinDuration),
+					uint64(deps.request.Imp[index].Video.MaxDuration),
+					deps.impData[index].VideoExt.AdPod)
 
-			//adpod generator
-			adpodGenerator := response.NewAdPodGenerator(deps.request, index, buckets, comb, deps.impData[index].VideoExt.AdPod, deps.metricsEngine)
+				//adpod generator
+				adpodGenerator := response.NewAdPodGenerator(deps.request, index, buckets, comb, deps.impData[index].VideoExt.AdPod, deps.metricsEngine)
 
-			adpodBids := adpodGenerator.GetAdPodBids()
-			if adpodBids != nil {
-				adpodBids.OriginalImpID = bid.OriginalImpID
-				adpodBids.SeatName = bid.SeatName
-				result = append(result, adpodBids)
+				adpodBids := adpodGenerator.GetAdPodBids()
+				if adpodBids != nil {
+					adpodBids.OriginalImpID = bid.OriginalImpID
+					adpodBids.SeatName = bid.SeatName
+					result = append(result, adpodBids)
+				}
 			}
 		}
 	}
