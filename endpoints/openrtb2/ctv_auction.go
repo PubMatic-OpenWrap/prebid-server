@@ -732,7 +732,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 
 				impBids.Bids = append(impBids.Bids, &types.Bid{
 					Bid:               bid,
-					FilterReasonCode:  constant.CTVRCDidNotGetChance,
+					Status:            constant.StatusOK,
 					Duration:          getAdDuration(*bid, deps.impData[index].Config[sequenceNumber-1].MaxDuration),
 					DealTierSatisfied: util.GetDealTierSatisfied(&ext),
 				})
@@ -881,7 +881,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 				}
 
 				//add bid filter reason value
-				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.FilterReasonCode)), "adpod", "aprc")
+				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.Status)), "adpod", "aprc")
 				if nil == err {
 					bid.Ext = raw
 				}
@@ -1022,7 +1022,7 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	for i, bid := range adpod.Bids {
 		bidExt.AdPod.RefBids[i] = bid.ID
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
-		bid.FilterReasonCode = constant.CTVRCWinningBid
+		bid.Status = constant.StatusWinningBid
 	}
 	rawExt, _ := json.Marshal(bidExt)
 	return rawExt
