@@ -72,7 +72,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, reqAdPod *openrtb_ext.
 		util.Logf("Selected ImpGen Algorithm - 'ByDurationRanges'")
 
 		g := newByDurationRanges(reqAdPod.VideoLengthMatching, reqAdPod.VideoLengths,
-			util.Max(len(reqAdPod.VideoLengths), int(*vPod.MaxAds)),
+			int(*vPod.MaxAds),
 			*vPod.MinDuration, *vPod.MaxDuration)
 
 		return &g

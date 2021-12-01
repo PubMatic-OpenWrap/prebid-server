@@ -147,6 +147,23 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 				imps: [][2]int64{},
 			},
 		},
+		{
+			name: "roundup_policy_valid_max_ads_more_than_max_ads",
+			args: args{
+				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        2,
+				adMinDuration: 10,
+				adMaxDuration: 20,
+			},
+			want: want{
+				imps: [][2]int64{
+					{10, 10},
+					{10, 15},
+					{10, 20},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

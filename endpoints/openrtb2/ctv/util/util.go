@@ -100,14 +100,6 @@ func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, b
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
 
-// Max it will return max value from i and j
-func Max(i, j int) int {
-	if i > j {
-		return i
-	}
-	return j
-}
-
 // GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
 // it will return -1 if it doesn't found any match
 func GetNearestDuration(duration int64, config []*types.ImpAdPodConfig) int64 {
