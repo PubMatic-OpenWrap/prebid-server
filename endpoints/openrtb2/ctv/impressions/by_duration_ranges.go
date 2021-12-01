@@ -69,9 +69,15 @@ func (c *byDurRangeConfig) Get() [][2]int64 {
 		}
 	}
 
+	//calculate max ads
+	maxAds := c.maxAds
+	if len(validDurations) > maxAds {
+		maxAds = len(validDurations)
+	}
+
 	//adding extra impressions incase of total impressions generated are less than pod max ads.
 	if len(imps) > 0 {
-		for i := 0; len(imps) < c.maxAds; i++ {
+		for i := 0; len(imps) < maxAds; i++ {
 			imps = append(imps, [2]int64{imps[i][0], imps[i][1]})
 		}
 	}

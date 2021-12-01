@@ -203,40 +203,6 @@ func TestGetTargeting(t *testing.T) {
 	}
 }
 
-func TestMax(t *testing.T) {
-	type args struct {
-		i int
-		j int
-	}
-	tests := []struct {
-		name string
-		args args
-		want int
-	}{
-		{
-			name: "first",
-			args: args{i: 10, j: 20},
-			want: 20,
-		},
-		{
-			name: "second",
-			args: args{i: 10, j: 20},
-			want: 20,
-		},
-		{
-			name: "equal",
-			args: args{i: 10, j: 10},
-			want: 10,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := Max(tt.args.i, tt.args.j)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestGetNearestDuration(t *testing.T) {
 	type args struct {
 		duration int64
