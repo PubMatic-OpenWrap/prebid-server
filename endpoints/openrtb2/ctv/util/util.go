@@ -14,7 +14,17 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
+)
+
+var (
+	//prebid_ctv_errors
+	UnableToGenerateImpressionsError = &errortypes.AdpodPrefiltering{Message: `prebid_ctv unable to generate impressions for adpod`}
+
+	//prebid_ctv_warnings
+	DurationMismatchWarning      = &openrtb_ext.ExtBidderMessage{Code: errortypes.AdpodPostFilteringWarningCode, Message: `prebid_ctv all bids filtered while matching lineitem duration`}
+	UnableToGenerateAdPodWarning = &openrtb_ext.ExtBidderMessage{Code: errortypes.AdpodPostFilteringWarningCode, Message: `prebid_ctv unable to generate adpod from bids combinations`}
 )
 
 func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
@@ -96,4 +106,15 @@ func TimeTrack(start time.Time, name string) {
 func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
 	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
+}
+
+// ErrToBidderMessage will return error message in ExtBidderMessage format
+func ErrToBidderMessage(err error) *openrtb_ext.ExtBidderMessage {
+	if err == nil {
+		return nil
+	}
+	return &openrtb_ext.ExtBidderMessage{
+		Code:    errortypes.ReadCode(err),
+		Message: err.Error(),
+	}
 }

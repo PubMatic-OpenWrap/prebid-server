@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	//BidderOWPrebidCTV for prebid adpod response
+	BidderOWPrebidCTV BidderName = "prebid_ctv"
+)
+
 var (
 	errInvalidAdPodMinDuration                    = errors.New("imp.video.minduration must be number positive number")
 	errInvalidAdPodMaxDuration                    = errors.New("imp.video.maxduration must be number positive non zero number")

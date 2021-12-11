@@ -1,7 +1,6 @@
 package constant
 
 const (
-	PrebidCTVSeatName        = `prebid_ctv`
 	CTVImpressionIDSeparator = `_`
 	CTVImpressionIDFormat    = `%v` + CTVImpressionIDSeparator + `%v`
 	CTVUniqueBidIDFormat     = `%v-%v`
@@ -27,12 +26,10 @@ var (
 	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 )
 
-//ErrorCode contains list of error codes for validation of ctv requests
-type ErrorCode = int
-
 const (
-	//CTVErrorNoValidImpressionsForAdPodConfig ...
-	CTVErrorNoValidImpressionsForAdPodConfig ErrorCode = 601
+	UnableToGenerateImpressions = `prebid_ctv unable to generate impressions for adpod`
+	DurationMismatchError       = `prebid_ctv all bids filtered while matching lineitem duration`
+	UnableToGenerateAdPod       = `prebid_ctv unable to generate adpod from bids combinations`
 )
 
 //BidStatus contains bids filtering reason

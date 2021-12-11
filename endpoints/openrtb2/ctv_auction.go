@@ -564,17 +564,18 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 			continue
 		}
 		deps.impData[index].ImpID = imp.ID
-		deps.impData[index].Config = deps.getAdPodImpsConfigs(&imp, deps.impData[index].VideoExt.AdPod)
-		if 0 == len(deps.impData[index].Config) {
-			errorCode := new(int)
-			*errorCode = 101
-			deps.impData[index].ErrorCode = errorCode
+
+		config, err := deps.getAdPodImpsConfigs(&imp, deps.impData[index].VideoExt.AdPod)
+		if err != nil {
+			deps.impData[index].Error = util.ErrToBidderMessage(err)
+			continue
 		}
+		deps.impData[index].Config = config[:]
 	}
 }
 
 //getAdPodImpsConfigs will return number of impressions configurations within adpod
-func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openrtb_ext.VideoAdPod) []*types.ImpAdPodConfig {
+func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openrtb_ext.VideoAdPod) ([]*types.ImpAdPodConfig, error) {
 	selectedAlgorithm := impressions.MinMaxAlgorithm
 	labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
 
@@ -582,8 +583,15 @@ func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openr
 	start := time.Now()
 	impGen := impressions.NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, selectedAlgorithm)
 	impRanges := impGen.Get()
+
+	//log number of impressions in stats
 	*labels.NoOfImpressions = len(impRanges)
 	deps.metricsEngine.RecordPodImpGenTime(labels, start)
+
+	// check if algorithm has generated impressions
+	if len(impRanges) == 0 {
+		return nil, util.UnableToGenerateImpressionsError
+	}
 
 	config := make([]*types.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {
@@ -594,14 +602,14 @@ func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openr
 			SequenceNumber: int8(i + 1), /* Must be starting with 1 */
 		}
 	}
-	return config[:]
+	return config[:], nil
 }
 
 //createImpressions will create multiple impressions based on adpod configurations
 func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	impCount := 0
 	for _, imp := range deps.impData {
-		if nil == imp.ErrorCode {
+		if nil == imp.Error {
 			if len(imp.Config) == 0 {
 				impCount = impCount + 1
 			} else {
@@ -613,7 +621,7 @@ func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	count := 0
 	imps := make([]openrtb2.Imp, impCount)
 	for index, imp := range deps.request.Imp {
-		if nil == deps.impData[index].ErrorCode {
+		if nil == deps.impData[index].Error {
 			adPodConfig := deps.impData[index].Config
 			if len(adPodConfig) == 0 {
 				//non adpod request it will be normal video impression
@@ -722,7 +730,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 				if !ok {
 					impBids = &types.AdPodBid{
 						OriginalImpID: originalImpID,
-						SeatName:      constant.PrebidCTVSeatName,
+						SeatName:      string(openrtb_ext.BidderOWPrebidCTV),
 					}
 					result[originalImpID] = impBids
 				}
@@ -760,7 +768,7 @@ func (deps *ctvEndpointDeps) getImpressionID(id string) (string, int) {
 	index, ok := deps.impIndices[originalImpID]
 	if !ok {
 		//if not present check impression id present in request or not
-		index, ok = deps.impIndices[id]
+		_, ok = deps.impIndices[id]
 		if !ok {
 			return id, -1
 		}
@@ -786,6 +794,11 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 			//duration wise buckets sorted
 			buckets := util.GetDurationWiseBidsBucket(bid.Bids[:])
 
+			if len(buckets) == 0 {
+				deps.impData[index].Error = util.DurationMismatchWarning
+				continue
+			}
+
 			//combination generator
 			comb := combination.NewCombination(
 				buckets,
@@ -797,11 +810,14 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 			adpodGenerator := response.NewAdPodGenerator(deps.request, index, buckets, comb, deps.impData[index].VideoExt.AdPod, deps.metricsEngine)
 
 			adpodBids := adpodGenerator.GetAdPodBids()
-			if adpodBids != nil {
-				adpodBids.OriginalImpID = bid.OriginalImpID
-				adpodBids.SeatName = bid.SeatName
-				result = append(result, adpodBids)
+			if adpodBids == nil {
+				deps.impData[index].Error = util.UnableToGenerateAdPodWarning
+				continue
 			}
+
+			adpodBids.OriginalImpID = bid.OriginalImpID
+			adpodBids.SeatName = bid.SeatName
+			result = append(result, adpodBids)
 		}
 	}
 	return result

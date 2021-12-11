@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
-
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -201,6 +200,45 @@ func TestGetTargeting(t *testing.T) {
 				assert.Empty(t, value)
 			}
 			assert.Equal(t, test.expectValue, value)
+		})
+	}
+}
+
+func TestErrToBidderMessage(t *testing.T) {
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb_ext.ExtBidderMessage
+	}{
+		{
+			name: `nil_check`,
+			args: args{err: nil},
+			want: nil,
+		},
+		{
+			name: `normal_error`,
+			args: args{err: fmt.Errorf(`normal_error`)},
+			want: &openrtb_ext.ExtBidderMessage{
+				Code:    errortypes.UnknownErrorCode,
+				Message: `normal_error`,
+			},
+		},
+		{
+			name: `prebid_ctv_error`,
+			args: args{err: &errortypes.Timeout{Message: `timeout`}},
+			want: &openrtb_ext.ExtBidderMessage{
+				Code:    errortypes.TimeoutErrorCode,
+				Message: `timeout`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ErrToBidderMessage(tt.args.err)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
