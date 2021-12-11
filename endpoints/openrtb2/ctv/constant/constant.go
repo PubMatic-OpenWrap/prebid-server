@@ -1,7 +1,6 @@
 package constant
 
 const (
-	PrebidCTVSeatName        = `prebid_ctv`
 	CTVImpressionIDSeparator = `_`
 	CTVImpressionIDFormat    = `%v` + CTVImpressionIDSeparator + `%v`
 	CTVUniqueBidIDFormat     = `%v-%v`
