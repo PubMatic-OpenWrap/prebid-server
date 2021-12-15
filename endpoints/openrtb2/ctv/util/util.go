@@ -3,25 +3,37 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
-
 	"github.com/golang/glog"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
+)
+
+var (
+	//prebid_ctv_errors
+	UnableToGenerateImpressionsError = &errortypes.AdpodPrefiltering{Message: `prebid_ctv unable to generate impressions for adpod`}
+
+	//prebid_ctv_warnings
+	DurationMismatchWarning      = &openrtb_ext.ExtBidderMessage{Code: errortypes.AdpodPostFilteringWarningCode, Message: `prebid_ctv all bids filtered while matching lineitem duration`}
+	UnableToGenerateAdPodWarning = &openrtb_ext.ExtBidderMessage{Code: errortypes.AdpodPostFilteringWarningCode, Message: `prebid_ctv unable to generate adpod from bids combinations`}
 )
 
 func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
 	result := types.BidsBuckets{}
 
 	for i, bid := range bids {
-		result[bid.Duration] = append(result[bid.Duration], bids[i])
+		if constant.StatusOK == bid.Status {
+			result[bid.Duration] = append(result[bid.Duration], bids[i])
+		}
 	}
 
 	for k, v := range result {
@@ -98,10 +110,32 @@ func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, b
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
 
-// Max it will return max value from i and j
-func Max(i, j int) int {
-	if i > j {
-		return i
+// GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
+// it will return -1 if it doesn't found any match
+func GetNearestDuration(duration int64, config []*types.ImpAdPodConfig) int64 {
+	tmp := int64(-1)
+	diff := int64(math.MaxInt64)
+	for _, c := range config {
+		tdiff := (c.MaxDuration - duration)
+		if tdiff == 0 {
+			tmp = c.MaxDuration
+			break
+		}
+		if tdiff > 0 && tdiff <= diff {
+			tmp = c.MaxDuration
+			diff = tdiff
+		}
 	}
-	return j
+	return tmp
+}
+
+// ErrToBidderMessage will return error message in ExtBidderMessage format
+func ErrToBidderMessage(err error) *openrtb_ext.ExtBidderMessage {
+	if err == nil {
+		return nil
+	}
+	return &openrtb_ext.ExtBidderMessage{
+		Code:    errortypes.ReadCode(err),
+		Message: err.Error(),
+	}
 }

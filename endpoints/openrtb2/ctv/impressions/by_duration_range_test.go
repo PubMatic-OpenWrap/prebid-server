@@ -3,15 +3,17 @@ package impressions
 import (
 	"testing"
 
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetImpressionsA3(t *testing.T) {
+func TestGetImpressionsByDurationRanges(t *testing.T) {
 	type args struct {
-		podMinDuration int
-		podMaxDuration int
-		maxAds         int
-		durations      []int
+		policy        openrtb_ext.OWVideoLengthMatchingPolicy
+		durations     []int
+		maxAds        int
+		adMinDuration int
+		adMaxDuration int
 	}
 	type want struct {
 		imps [][2]int64
@@ -51,92 +53,114 @@ func TestGetImpressionsA3(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid_durations",
+			name: "zero_valid_durations_under_boundary",
 			args: args{
-				podMinDuration: 30,
-				podMaxDuration: 60,
-				durations:      []int{5, 10, 15},
+				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				durations:     []int{5, 10, 15},
+				maxAds:        5,
+				adMinDuration: 2,
+				adMaxDuration: 2,
 			},
 			want: want{
 				imps: [][2]int64{},
 			},
 		},
 		{
-			name: "len_of_durations_<_maxAds",
+			name: "zero_valid_durations_out_of_bound",
 			args: args{
-				podMinDuration: 5,
-				podMaxDuration: 20,
-				maxAds:         5,
-				durations:      []int{5, 10, 15},
+				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				durations:     []int{5, 10, 15},
+				maxAds:        5,
+				adMinDuration: 20,
+				adMaxDuration: 20,
+			},
+			want: want{
+				imps: [][2]int64{},
+			},
+		},
+		{
+			name: "valid_durations_less_than_maxAds",
+			args: args{
+				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        5,
+				adMinDuration: 10,
+				adMaxDuration: 20,
 			},
 			want: want{
 				imps: [][2]int64{
-					{5, 5},
 					{10, 10},
 					{15, 15},
+					{20, 20},
 					//got repeated because of current video duration impressions are less than maxads
-					{5, 5},
-					{10, 10},
-				},
-			},
-		},
-		{
-			name: "len_of_durations_>_maxAds",
-			args: args{
-				podMinDuration: 5,
-				podMaxDuration: 25,
-				maxAds:         2,
-				durations:      []int{5, 10, 15},
-			},
-			want: want{
-				imps: [][2]int64{
-					{5, 5},
-					{10, 10},
-					{15, 15},
-					//got repeated because need to cover all video durations for creatives
-				},
-			},
-		},
-		{
-			name: "durations_in_durations_>podMaxDuration",
-			args: args{
-				durations:      []int{5, 10, 15},
-				podMaxDuration: 10,
-			},
-			want: want{
-				imps: [][2]int64{
-					// do not expect {15,15}
-					{5, 5},
-					{10, 10},
-				},
-			},
-		},
-		{
-			name: "durations_in_durations_<podMinDuration",
-			args: args{
-				podMinDuration: 10,
-				durations:      []int{5, 10, 15},
-				podMaxDuration: 20,
-			},
-			want: want{
-				imps: [][2]int64{
-					// do not expect {5,5}
 					{10, 10},
 					{15, 15},
 				},
 			},
 		},
 		{
-			name: "valid_name",
+			name: "valid_durations_greater_than_maxAds",
 			args: args{
-				podMaxDuration: 20,
-				durations:      []int{5, 10, 15},
+				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        2,
+				adMinDuration: 10,
+				adMaxDuration: 20,
 			},
 			want: want{
 				imps: [][2]int64{
-					{5, 5},
 					{10, 10},
 					{15, 15},
+					{20, 20},
+				},
+			},
+		},
+		{
+			name: "roundup_policy_valid_durations",
+			args: args{
+				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        5,
+				adMinDuration: 10,
+				adMaxDuration: 20,
+			},
+			want: want{
+				imps: [][2]int64{
+					{10, 10},
+					{10, 15},
+					{10, 20},
+					{10, 10},
+					{10, 15},
+				},
+			},
+		},
+		{
+			name: "roundup_policy_zero_valid_durations",
+			args: args{
+				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        5,
+				adMinDuration: 30,
+				adMaxDuration: 30,
+			},
+			want: want{
+				imps: [][2]int64{},
+			},
+		},
+		{
+			name: "roundup_policy_valid_max_ads_more_than_max_ads",
+			args: args{
+				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				durations:     []int{5, 10, 15, 20, 25},
+				maxAds:        2,
+				adMinDuration: 10,
+				adMaxDuration: 20,
+			},
+			want: want{
+				imps: [][2]int64{
+					{10, 10},
+					{10, 15},
+					{10, 20},
 				},
 			},
 		},
@@ -145,7 +169,7 @@ func TestGetImpressionsA3(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := tt.args
-			gen := newByDurationRanges(args.durations, args.maxAds, args.podMinDuration, args.podMaxDuration)
+			gen := newByDurationRanges(args.policy, args.durations, args.maxAds, args.adMinDuration, args.adMaxDuration)
 			imps := gen.Get()
 			assert.Equal(t, tt.want.imps, imps)
 		})

@@ -70,7 +70,11 @@ func NewImpressions(podMinDuration, podMaxDuration int64, reqAdPod *openrtb_ext.
 
 	case ByDurationRanges:
 		util.Logf("Selected ImpGen Algorithm - 'ByDurationRanges'")
-		g := newByDurationRanges(reqAdPod.DurationRangeSec, util.Max(len(reqAdPod.DurationRangeSec), int(*vPod.MaxAds)), int(podMinDuration), int(podMaxDuration))
+
+		g := newByDurationRanges(reqAdPod.VideoLengthMatching, reqAdPod.VideoLengths,
+			int(*vPod.MaxAds),
+			*vPod.MinDuration, *vPod.MaxDuration)
+
 		return &g
 	}
 
@@ -88,10 +92,11 @@ func NewImpressions(podMinDuration, podMaxDuration int64, reqAdPod *openrtb_ext.
 // SelectAlgorithm is factory function which will return valid Algorithm based on adpod parameters
 // Return Value:
 //  - MinMaxAlgorithm (default)
-//  - ByDurationRanges: if reqAdPod extension has DurationRangeSec and DurationMatchingAlgorithm is "exact" algorithm
+//  - ByDurationRanges: if reqAdPod extension has VideoLengths and VideoLengthMatchingPolicy is "exact" algorithm
 func SelectAlgorithm(reqAdPod *openrtb_ext.ExtRequestAdPod) Algorithm {
 	if nil != reqAdPod {
-		if len(reqAdPod.DurationRangeSec) > 0 && openrtb_ext.OWAdPodExactDurationMatching == reqAdPod.DurationMatching {
+		if len(reqAdPod.VideoLengths) > 0 &&
+			(openrtb_ext.OWExactVideoLengthsMatching == reqAdPod.VideoLengthMatching || openrtb_ext.OWRoundupVideoLengthMatching == reqAdPod.VideoLengthMatching) {
 			return ByDurationRanges
 		}
 	}

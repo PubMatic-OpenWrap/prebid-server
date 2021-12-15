@@ -9,33 +9,11 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestGetAdDuration(t *testing.T) {
-	var tests = []struct {
-		scenario      string
-		adDuration    string // actual ad duration. 0 value will be assumed as no ad duration
-		maxAdDuration int    // requested max ad duration
-		expect        int
-	}{
-		{"0sec ad duration", "0", 200, 200},
-		{"30sec ad duration", "30", 100, 30},
-		{"negative ad duration", "-30", 100, 100},
-		{"invalid ad duration", "invalid", 80, 80},
-		{"ad duration breaking bid.Ext json", `""quote""`, 50, 50},
-	}
-	for _, test := range tests {
-		t.Run(test.scenario, func(t *testing.T) {
-			bid := openrtb2.Bid{
-				Ext: []byte(`{"prebid" : {"video" : {"duration" : ` + test.adDuration + `}}}`),
-			}
-			assert.Equal(t, test.expect, getAdDuration(bid, int64(test.maxAdDuration)))
-		})
-	}
-}
 
 func TestAddTargetingKeys(t *testing.T) {
 	var tests = []struct {
@@ -60,6 +38,95 @@ func TestAddTargetingKeys(t *testing.T) {
 		})
 	}
 	assert.Equal(t, "Invalid bid", addTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
+}
+
+func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
+	type args struct {
+		modifiedBid *openrtb2.Bid
+	}
+	type want struct {
+		eventURLMap map[string]string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "replace_with_custom_ctv_bid_id",
+			want: want{
+				eventURLMap: map[string]string{
+					"thirdQuartile": "https://thirdQuartile.com?operId=8&key1=value1&bidid=1-bid_123",
+					"complete":      "https://complete.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+					"firstQuartile": "https://firstQuartile.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+					"midpoint":      "https://midpoint.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+					"someevent":     "https://othermacros?bidid=bid_123&abc=pqr",
+				},
+			},
+			args: args{
+				modifiedBid: &openrtb2.Bid{
+					ID: "1-bid_123",
+					AdM: `<VAST  version="3.0">
+					<Ad>
+						<Wrapper>
+							<AdSystem>
+								<![CDATA[prebid.org wrapper]]>
+							</AdSystem>
+							<VASTAdTagURI>
+								<![CDATA[https://search.spotxchange.com/vast/2.00/85394?VPI=MP4]]>
+							</VASTAdTagURI>
+							<Impression>
+								<![CDATA[https://imptracker.url]]>
+							</Impression>
+							<Impression/>
+							<Creatives>
+								<Creative>
+									<Linear>
+										<TrackingEvents>
+											<Tracking  event="someevent"><![CDATA[https://othermacros?bidid=bid_123&abc=pqr]]></Tracking>
+											<Tracking  event="thirdQuartile"><![CDATA[https://thirdQuartile.com?operId=8&key1=value1&bidid=bid_123]]></Tracking>
+											<Tracking  event="complete"><![CDATA[https://complete.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+											<Tracking  event="firstQuartile"><![CDATA[https://firstQuartile.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+											<Tracking  event="midpoint"><![CDATA[https://midpoint.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+										</TrackingEvents>
+									</Linear>
+								</Creative>
+							</Creatives>
+							<Error>
+								<![CDATA[https://error.com]]>
+							</Error>
+						</Wrapper>
+					</Ad>
+				</VAST>`,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		doc := etree.NewDocument()
+		doc.ReadFromString(test.args.modifiedBid.AdM)
+		adjustBidIDInVideoEventTrackers(doc, test.args.modifiedBid)
+		events := doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear/TrackingEvents/Tracking")
+		for _, event := range events {
+			evntName := event.SelectAttr("event").Value
+			expectedURL, _ := url.Parse(test.want.eventURLMap[evntName])
+			expectedValues := expectedURL.Query()
+			actualURL, _ := url.Parse(event.Text())
+			actualValues := actualURL.Query()
+			for k, ev := range expectedValues {
+				av := actualValues[k]
+				for i := 0; i < len(ev); i++ {
+					assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v' [Event = %v]. but found %v", ev[i], k, evntName, av[i]))
+				}
+			}
+
+			// check if operId=8 is first param
+			if evntName != "someevent" {
+				assert.True(t, strings.HasPrefix(actualURL.RawQuery, "operId=8"), "operId=8 must be first query param")
+			}
+		}
+	}
 }
 
 func TestFilterImpsVastTagsByDuration(t *testing.T) {
@@ -288,91 +355,308 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 		})
 	}
 }
-func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
+
+func TestGetBidDuration(t *testing.T) {
 	type args struct {
-		modifiedBid *openrtb2.Bid
+		bid             *openrtb2.Bid
+		reqExt          *openrtb_ext.ExtRequestAdPod
+		config          []*types.ImpAdPodConfig
+		defaultDuration int64
 	}
 	type want struct {
-		eventURLMap map[string]string
+		duration int64
+		status   constant.BidStatus
 	}
+	var tests = []struct {
+		name   string
+		args   args
+		want   want
+		expect int
+	}{
+		{
+			name: "nil_bid_ext",
+			args: args{
+				bid:             &openrtb2.Bid{},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 100,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "use_default_duration",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"tmp":123}`),
+				},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 100,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "invalid_duration_in_bid_ext",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":"invalid"}}}`),
+				},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 100,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "0sec_duration_in_bid_ext",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":0}}}`),
+				},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 100,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "negative_duration_in_bid_ext",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":-30}}}`),
+				},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 100,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "30sec_duration_in_bid_ext",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
+				},
+				reqExt:          nil,
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 30,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "duration_matching_empty",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
+				},
+				reqExt: &openrtb_ext.ExtRequestAdPod{
+					VideoLengthMatching: "",
+				},
+				config:          nil,
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 30,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "duration_matching_exact",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
+				},
+				reqExt: &openrtb_ext.ExtRequestAdPod{
+					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+				},
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 30,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "duration_matching_exact_not_present",
+			args: args{
+				bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"prebid":{"video":{"duration":35}}}`),
+				},
+				reqExt: &openrtb_ext.ExtRequestAdPod{
+					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+				},
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+				defaultDuration: 100,
+			},
+			want: want{
+				duration: 35,
+				status:   constant.StatusDurationMismatch,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			duration, status := getBidDuration(tt.args.bid, tt.args.reqExt, tt.args.config, tt.args.defaultDuration)
+			assert.Equal(t, tt.want.duration, duration)
+			assert.Equal(t, tt.want.status, status)
+		})
+	}
+}
 
+func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
+	type args struct {
+		duration int64
+		policy   openrtb_ext.OWVideoLengthMatchingPolicy
+		config   []*types.ImpAdPodConfig
+	}
+	type want struct {
+		duration int64
+		status   constant.BidStatus
+	}
 	tests := []struct {
 		name string
 		args args
 		want want
 	}{
 		{
-			name: "replace_with_custom_ctv_bid_id",
-			want: want{
-				eventURLMap: map[string]string{
-					"thirdQuartile": "https://thirdQuartile.com?operId=8&key1=value1&bidid=1-bid_123",
-					"complete":      "https://complete.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
-					"firstQuartile": "https://firstQuartile.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
-					"midpoint":      "https://midpoint.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
-					"someevent":     "https://othermacros?bidid=bid_123&abc=pqr",
+			name: "empty_duration_policy",
+			args: args{
+				duration: 10,
+				policy:   "",
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
 				},
 			},
-			args: args{
-				modifiedBid: &openrtb2.Bid{
-					ID: "1-bid_123",
-					AdM: `<VAST  version="3.0">
-						<Ad>
-							<Wrapper>
-								<AdSystem>
-									<![CDATA[prebid.org wrapper]]>
-								</AdSystem>
-								<VASTAdTagURI>
-									<![CDATA[https://search.spotxchange.com/vast/2.00/85394?VPI=MP4]]>
-								</VASTAdTagURI>
-								<Impression>
-									<![CDATA[https://imptracker.url]]>
-								</Impression>
-								<Impression/>
-								<Creatives>
-									<Creative>
-										<Linear>
-											<TrackingEvents>
-												<Tracking  event="someevent"><![CDATA[https://othermacros?bidid=bid_123&abc=pqr]]></Tracking>
-												<Tracking  event="thirdQuartile"><![CDATA[https://thirdQuartile.com?operId=8&key1=value1&bidid=bid_123]]></Tracking>
-												<Tracking  event="complete"><![CDATA[https://complete.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
-												<Tracking  event="firstQuartile"><![CDATA[https://firstQuartile.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
-												<Tracking  event="midpoint"><![CDATA[https://midpoint.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
-											</TrackingEvents>
-										</Linear>
-									</Creative>
-								</Creatives>
-								<Error>
-									<![CDATA[https://error.com]]>
-								</Error>
-							</Wrapper>
-						</Ad>
-					</VAST>`,
-				},
+			want: want{
+				duration: 10,
+				status:   constant.StatusOK,
 			},
 		},
-	}
-	for _, test := range tests {
-		doc := etree.NewDocument()
-		doc.ReadFromString(test.args.modifiedBid.AdM)
-		adjustBidIDInVideoEventTrackers(doc, test.args.modifiedBid)
-		events := doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear/TrackingEvents/Tracking")
-		for _, event := range events {
-			evntName := event.SelectAttr("event").Value
-			expectedURL, _ := url.Parse(test.want.eventURLMap[evntName])
-			expectedValues := expectedURL.Query()
-			actualURL, _ := url.Parse(event.Text())
-			actualValues := actualURL.Query()
-			for k, ev := range expectedValues {
-				av := actualValues[k]
-				for i := 0; i < len(ev); i++ {
-					assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v' [Event = %v]. but found %v", ev[i], k, evntName, av[i]))
-				}
-			}
+		{
+			name: "policy_exact",
+			args: args{
+				duration: 10,
+				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			want: want{
+				duration: 10,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "policy_exact_didnot_match",
+			args: args{
+				duration: 15,
+				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			want: want{
+				duration: 15,
+				status:   constant.StatusDurationMismatch,
+			},
+		},
+		{
+			name: "policy_roundup_exact",
+			args: args{
+				duration: 20,
+				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			want: want{
+				duration: 20,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "policy_roundup",
+			args: args{
+				duration: 25,
+				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			want: want{
+				duration: 30,
+				status:   constant.StatusOK,
+			},
+		},
+		{
+			name: "policy_roundup_didnot_match",
+			args: args{
+				duration: 45,
+				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				config: []*types.ImpAdPodConfig{
+					{MaxDuration: 10},
+					{MaxDuration: 20},
+					{MaxDuration: 30},
+					{MaxDuration: 40},
+				},
+			},
+			want: want{
+				duration: 45,
+				status:   constant.StatusDurationMismatch,
+			},
+		},
 
-			// check if operId=8 is first param
-			if evntName != "someevent" {
-				assert.True(t, strings.HasPrefix(actualURL.RawQuery, "operId=8"), "operId=8 must be first query param")
-			}
-		}
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			duration, status := getDurationBasedOnDurationMatchingPolicy(tt.args.duration, tt.args.policy, tt.args.config)
+			assert.Equal(t, tt.want.duration, duration)
+			assert.Equal(t, tt.want.status, status)
+		})
 	}
 }
