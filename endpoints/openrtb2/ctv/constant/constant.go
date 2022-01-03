@@ -26,12 +26,6 @@ var (
 	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 )
 
-const (
-	UnableToGenerateImpressions = `prebid_ctv unable to generate impressions for adpod`
-	DurationMismatchError       = `prebid_ctv all bids filtered while matching lineitem duration`
-	UnableToGenerateAdPod       = `prebid_ctv unable to generate adpod from bids combinations`
-)
-
 //BidStatus contains bids filtering reason
 type BidStatus = int
 
@@ -44,6 +38,8 @@ const (
 	StatusCategoryExclusion BidStatus = 2
 	//StatusDomainExclusion ...
 	StatusDomainExclusion BidStatus = 3
+	//StatusDurationMismatch ...
+	StatusDurationMismatch BidStatus = 4
 )
 
 // MonitorKey provides the unique key for moniroting the algorithms
