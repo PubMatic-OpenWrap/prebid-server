@@ -59,6 +59,7 @@ var (
 	g_syncers           map[openrtb_ext.BidderName]usersync.Usersyncer
 	g_cfg               *config.Configuration
 	g_ex                exchange.Exchange
+	g_accounts          stored_requests.AccountFetcher
 	g_paramsValidator   openrtb_ext.BidderParamValidator
 	g_storedReqFetcher  stored_requests.Fetcher
 	g_gdprPerms         gdpr.Permissions

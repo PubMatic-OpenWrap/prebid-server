@@ -120,6 +120,16 @@ const (
 	storedDataErrorLabel     = "stored_data_error"
 )
 
+const (
+	sourceLabel   = "source"
+	sourceRequest = "request"
+)
+
+const (
+	storedDataFetchTypeLabel = "stored_data_fetch_type"
+	storedDataErrorLabel     = "stored_data_error"
+)
+
 // NewMetrics initializes a new Prometheus metrics instance with preloaded label values.
 func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMetrics) *Metrics {
 	standardTimeBuckets := []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
@@ -372,7 +382,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Count of number of request where bid collision is detected.")
 
 	// adpod specific metrics
-	metrics.podImpGenTimer = newHistogram(cfg, metrics.Registry,
+	metrics.podImpGenTimer = newHistogramVec(cfg, metrics.Registry,
 		"impr_gen",
 		"Time taken by Ad Pod Impression Generator in seconds", []string{podAlgorithm, podNoOfImpressions},
 		// 200 µS, 250 µS, 275 µS, 300 µS
@@ -380,20 +390,24 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		// 100 µS, 200 µS, 300 µS, 400 µS, 500 µS,  600 µS,
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
-	metrics.podCombGenTimer = newHistogram(cfg, metrics.Registry,
+	metrics.podCombGenTimer = newHistogramVec(cfg, metrics.Registry,
 		"comb_gen",
 		"Time taken by Ad Pod Combination Generator in seconds", []string{podAlgorithm, podTotalCombinations},
 		// 200 µS, 250 µS, 275 µS, 300 µS
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
-	metrics.podCompExclTimer = newHistogram(cfg, metrics.Registry,
+	metrics.podCompExclTimer = newHistogramVec(cfg, metrics.Registry,
 		"comp_excl",
 		"Time taken by Ad Pod Compititve Exclusion in seconds", []string{podAlgorithm, podNoOfResponseBids},
 		// 200 µS, 250 µS, 275 µS, 300 µS
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
+	metrics.adapterVideoBidDuration = newHistogram(cfg, metrics.Registry,
+		"adapter_vidbid_dur",
+		"Video Ad durations returned by the bidder", []string{adapterLabel},
+		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60})
 	preloadLabelValues(&metrics)
 
 	return &metrics

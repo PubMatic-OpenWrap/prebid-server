@@ -392,7 +392,6 @@ func updateHbPbCatDur(bid *pbsOrtbBid, dealTier openrtb_ext.DealTier, bidCategor
 		prefixTier := fmt.Sprintf("%s%d_", dealTier.Prefix, bid.dealPriority)
 		bid.dealTierSatisfied = true
 
-		prefixTier := fmt.Sprintf("%s%d_", dealTierInfo.Prefix, bid.dealPriority)
 		if oldCatDur, ok := bidCategory[bid.bid.ID]; ok {
 			oldCatDurSplit := strings.SplitAfterN(oldCatDur, "_", 2)
 			oldCatDurSplit[0] = prefixTier
@@ -507,6 +506,7 @@ func (e *exchange) getAllBids(
 			bidsFound = true
 			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
 		}
+
 	}
 	if bidIDsCollision {
 		// record this request count this request if bid collision is detected
@@ -815,9 +815,8 @@ func applyCategoryMapping(ctx context.Context, requestExt *openrtb_ext.ExtReques
 						continue
 					}
 				}
-				dedupe[categoryDuration] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID}
+				dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 			}
-
 			res[bidID] = categoryDuration
 			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
 		}

@@ -112,7 +112,7 @@ func SetUIDS(w http.ResponseWriter, r *http.Request) {
 	router.SetUIDSWrapper(w, r)
 }
 
-func CookieSync(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func CookieSync(w http.ResponseWriter, r *http.Request) {
 	router.CookieSync(w, r)
 }
 
