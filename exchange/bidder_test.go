@@ -15,13 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/golang/glog"
 	nativeRequests "github.com/mxmCherry/openrtb/v15/native1/request"
 	nativeResponse "github.com/mxmCherry/openrtb/v15/native1/response"
@@ -1613,7 +1606,7 @@ func TestCallRecordDNSTime(t *testing.T) {
 func TestCallRecordTLSHandshakeTime(t *testing.T) {
 	// setup a mock metrics engine and its expectation
 	metricsMock := &metrics.MetricsEngineMock{}
-	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything).Return()
+	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything, mock.Anything).Return()
 
 	// Instantiate the bidder that will send the request. We'll make sure to use an
 	// http.Client that runs our mock RoundTripper so DNSDone(httptrace.DNSDoneInfo{})

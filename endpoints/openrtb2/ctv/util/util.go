@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
@@ -106,7 +105,7 @@ func TimeTrack(start time.Time, name string) {
 // it is expected that bid.Ext contains prebid.targeting map
 // if value not present or any error occured empty value will be returned
 // along with error.
-func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb.Bid) (string, error) {
+func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
 	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }

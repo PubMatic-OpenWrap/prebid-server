@@ -12,8 +12,6 @@ import (
 	"net/http/httptrace"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config/util"
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config/util"
 	"github.com/prebid/prebid-server/currency"
@@ -259,8 +257,8 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.B
 							bid:          bidResponse.Bids[i].Bid,
 							bidMeta:      bidResponse.Bids[i].BidMeta,
 							bidType:      bidResponse.Bids[i].BidType,
-							bidVideo:     bidResponse.Bids[i].BidVideo,
 							bidTargets:   bidResponse.Bids[i].BidTargets,
+							bidVideo:     bidResponse.Bids[i].BidVideo,
 							dealPriority: bidResponse.Bids[i].DealPriority,
 						})
 					}
@@ -546,7 +544,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
 			tlsHandshakeTime := time.Now().Sub(tlsStart)
 
-			bidder.me.RecordTLSHandshakeTime(tlsHandshakeTime)
+			bidder.me.RecordTLSHandshakeTime(bidder.BidderName, tlsHandshakeTime)
 		},
 	}
 	return httptrace.WithClientTrace(ctx, trace)

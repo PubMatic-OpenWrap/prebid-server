@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
@@ -703,5 +701,6 @@ func loadCategoryMapFromFileSystem() map[string]string {
 			return adapterOptions.IabCategories
 		}
 	}
+
 	return nil
 }

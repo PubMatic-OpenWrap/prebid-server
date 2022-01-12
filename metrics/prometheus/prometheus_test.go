@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -1199,35 +1199,57 @@ func TestRecordDNSTime(t *testing.T) {
 }
 
 func TestRecordTLSHandshakeTime(t *testing.T) {
-	testCases := []struct {
-		description          string
+	type testIn struct {
+		adapterName          openrtb_ext.BidderName
 		tLSHandshakeDuration time.Duration
-		expectedDuration     float64
-		expectedCount        uint64
+	}
+
+	type testOut struct {
+		expectedDuration float64
+		expectedCount    uint64
+	}
+
+	testCases := []struct {
+		description string
+		in          testIn
+		out         testOut
 	}{
 		{
-			description:          "Five second DNS lookup time",
-			tLSHandshakeDuration: time.Second * 5,
-			expectedDuration:     5,
-			expectedCount:        1,
+			description: "Five second DNS lookup time",
+			in: testIn{
+				adapterName:          openrtb_ext.BidderAppnexus,
+				tLSHandshakeDuration: time.Second * 5,
+			},
+			out: testOut{
+				expectedDuration: 5,
+				expectedCount:    1,
+			},
 		},
 		{
-			description:          "Zero DNS lookup time",
-			tLSHandshakeDuration: 0,
-			expectedDuration:     0,
-			expectedCount:        1,
+			description: "Zero DNS lookup time",
+			in: testIn{
+				adapterName:          openrtb_ext.BidderAppnexus,
+				tLSHandshakeDuration: 0,
+			},
+			out: testOut{
+				expectedDuration: 0,
+				expectedCount:    1,
+			},
 		},
 	}
 	for i, test := range testCases {
 		pm := createMetricsForTesting()
-		pm.RecordTLSHandshakeTime(test.tLSHandshakeDuration)
+		assertDesciptions := []string{
+			fmt.Sprintf("[%d] Incorrect number of histogram entries. Desc: %s", i+1, test.description),
+			fmt.Sprintf("[%d] Incorrect number of histogram cumulative values. Desc: %s", i+1, test.description),
+		}
 
-		m := dto.Metric{}
-		pm.tlsHandhakeTimer.Write(&m)
-		histogram := *m.GetHistogram()
+		pm.RecordTLSHandshakeTime(test.in.adapterName, test.in.tLSHandshakeDuration)
 
-		assert.Equal(t, test.expectedCount, histogram.GetSampleCount(), "[%d] Incorrect number of histogram entries. Desc: %s\n", i, test.description)
-		assert.Equal(t, test.expectedDuration, histogram.GetSampleSum(), "[%d] Incorrect number of histogram cumulative values. Desc: %s\n", i, test.description)
+		// Assert TLS Handshake time
+		histogram := getHistogramFromHistogramVec(pm.tlsHandhakeTimer, adapterLabel, string(test.in.adapterName))
+		assert.Equal(t, test.out.expectedCount, histogram.GetSampleCount(), assertDesciptions[0])
+		assert.Equal(t, test.out.expectedDuration, histogram.GetSampleSum(), assertDesciptions[1])
 	}
 }
 

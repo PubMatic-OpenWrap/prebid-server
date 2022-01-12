@@ -104,6 +104,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/somoaudience"
 	"github.com/prebid/prebid-server/adapters/sonobi"
 	"github.com/prebid/prebid-server/adapters/sovrn"
+	"github.com/prebid/prebid-server/adapters/spotx"
 	"github.com/prebid/prebid-server/adapters/synacormedia"
 	"github.com/prebid/prebid-server/adapters/tappx"
 	"github.com/prebid/prebid-server/adapters/telaria"

@@ -9,14 +9,6 @@ import (
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/go-gdpr/vendorconsent"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/lmt"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/gdpr"
@@ -245,11 +237,9 @@ func getAuctionBidderRequests(req AuctionRequest,
 		return nil, []error{err}
 	}
 
-	var sChainsByBidder map[string]*openrtb_ext.ExtRequestPrebidSChainSChain
-
-	// Quick extra wrapper until RequestWrapper makes its way into CleanRequests
+	var bidderExt map[string]map[string]interface{}
 	if requestExt != nil {
-		sChainsByBidder, err = BidderToPrebidSChains(requestExt.Prebid.SChains)
+		bidderExt, err = getBidderExts(requestExt)
 		if err != nil {
 			return nil, []error{err}
 		}
@@ -280,16 +270,19 @@ func getAuctionBidderRequests(req AuctionRequest,
 
 		prepareSource(&reqCopy, bidder, sChainsByBidder)
 
-		if err := removeUnpermissionedEids(&reqCopy, bidder, requestExt); err != nil {
-			errs = append(errs, fmt.Errorf("unable to enforce request.ext.prebid.data.eidpermissions because %v", err))
-			continue
-		}
+		if len(bidderExt) != 0 {
+			bidderName := openrtb_ext.BidderName(bidder)
+			if bidderParams, ok := bidderExt[string(bidderName)]; ok {
+				requestExt.Prebid.BidderParams = bidderParams
+			} else {
+				requestExt.Prebid.BidderParams = nil
+			}
 
 			if reqCopy.Ext, err = getExtJson(req.BidRequest, requestExt); err != nil {
 				return nil, []error{err}
 			}
 		} else {
-			bidderRequest.BidderLabels.CookieFlag = metrics.CookieFlagYes
+			reqCopy.Ext = reqExt
 		}
 
 		if err := removeUnpermissionedEids(&reqCopy, bidder, requestExt); err != nil {

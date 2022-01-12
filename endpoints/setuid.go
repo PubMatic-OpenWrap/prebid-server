@@ -9,12 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"

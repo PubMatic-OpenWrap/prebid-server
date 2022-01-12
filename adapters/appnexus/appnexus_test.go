@@ -11,12 +11,10 @@ import (
 	"time"
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/PubMatic-OpenWrap/prebid-server/cache/dummycache"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
+	"github.com/prebid/prebid-server/cache/dummycache"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/pbs"
+	"github.com/prebid/prebid-server/usersync"
 
 	"fmt"
 

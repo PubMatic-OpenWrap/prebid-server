@@ -1,18 +1,17 @@
-package main
+package prebidServer
 
 import (
-	"flag"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 	"math/rand"
 	"net/http"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	pbc "github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
-	"github.com/PubMatic-OpenWrap/prebid-server/router"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
-	"github.com/PubMatic-OpenWrap/prebid-server/util/task"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/currency"
+	pbc "github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/router"
+	"github.com/prebid/prebid-server/util/task"
 
 	"github.com/golang/glog"
 	"github.com/spf13/viper"
@@ -26,6 +25,9 @@ import (
 // See issue #559
 var Rev string
 
+const schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/"
+
+/*
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -43,6 +45,7 @@ func main() {
 		glog.Exitf("prebid-server failed: %v", err)
 	}
 }
+*/
 
 func InitPrebidServer(configFile string) {
 	//init contents
@@ -84,11 +87,12 @@ func serve(revision string, cfg *config.Configuration) error {
 	}
 
 	pbc.InitPrebidCache(cfg.CacheURL.GetBaseURL())
+	pbc.InitPrebidCacheURL(cfg.ExternalURL)
 
-	corsRouter := router.SupportCORS(r)
-	server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(revision, currencyConverter, fetchingInterval), r.MetricsEngine)
+	//corsRouter := router.SupportCORS(r)
+	//server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(revision, currencyConverter, fetchingInterval), r.MetricsEngine)
 
-	r.Shutdown()
+	//r.Shutdown()
 	return nil
 }
 

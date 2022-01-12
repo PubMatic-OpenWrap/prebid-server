@@ -81,10 +81,10 @@ func TestNewExchange(t *testing.T) {
 // and check whether the returned request successfully prints any '&' characters as it should
 // To do so, we:
 // 	1) Write the endpoint adapter URL with an '&' character into a new config,Configuration struct
-// 	   as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
+// 	   as specified in https://github.com/prebid/prebid-server/issues/465
 // 	2) Initialize a new exchange with said configuration
 // 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs including the
-// 	   sample request as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
+// 	   sample request as specified in https://github.com/prebid/prebid-server/issues/465
 // 	4) Build a BidResponse struct using exchange.buildBidResponse(ctx.Background(), liveA... )
 // 	5) Assert we have no '&' characters in the response that exchange.buildBidResponse returns
 func TestCharacterEscape(t *testing.T) {
@@ -4409,27 +4409,115 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	}
 }
 
-func (m *fakeCurrencyRatesHttpClient) Do(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		Status:     "200 OK",
-		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(strings.NewReader(m.responseBody)),
-	}, nil
+func TestNormalizeDomain(t *testing.T) {
+	type args struct {
+		domain string
+	}
+	type want struct {
+		domain string
+		err    error
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{name: "a.com", args: args{domain: "a.com"}, want: want{domain: "a.com"}},
+		{name: "http://a.com", args: args{domain: "http://a.com"}, want: want{domain: "a.com"}},
+		{name: "https://a.com", args: args{domain: "https://a.com"}, want: want{domain: "a.com"}},
+		{name: "https://www.a.com", args: args{domain: "https://www.a.com"}, want: want{domain: "a.com"}},
+		{name: "https://www.a.com/my/page?k=1", args: args{domain: "https://www.a.com/my/page?k=1"}, want: want{domain: "a.com"}},
+		{name: "empty_domain", args: args{domain: ""}, want: want{domain: ""}},
+		{name: "trim_domain", args: args{domain: " trim.me?k=v    "}, want: want{domain: "trim.me"}},
+		{name: "trim_domain_with_http_in_it", args: args{domain: " http://trim.me?k=v    "}, want: want{domain: "trim.me"}},
+		{name: "https://www.something.a.com/my/page?k=1", args: args{domain: "https://www.something.a.com/my/page?k=1"}, want: want{domain: "something.a.com"}},
+		{name: "wWW.something.a.com", args: args{domain: "wWW.something.a.com"}, want: want{domain: "something.a.com"}},
+		{name: "2_times_www", args: args{domain: "www.something.www.a.com"}, want: want{domain: "something.www.a.com"}},
+		{name: "consecutive_www", args: args{domain: "www.www.something.a.com"}, want: want{domain: "www.something.a.com"}},
+		{name: "abchttp.com", args: args{domain: "abchttp.com"}, want: want{domain: "abchttp.com"}},
+		{name: "HTTP://CAPS.com", args: args{domain: "HTTP://CAPS.com"}, want: want{domain: "caps.com"}},
+
+		// publicsuffix
+		{name: "co.in", args: args{domain: "co.in"}, want: want{domain: "", err: fmt.Errorf("domain [co.in] is public suffix")}},
+		{name: ".co.in", args: args{domain: ".co.in"}, want: want{domain: ".co.in"}},
+		{name: "amazon.co.in", args: args{domain: "amazon.co.in"}, want: want{domain: "amazon.co.in"}},
+		// we wont check if shriprasad belongs to icann
+		{name: "shriprasad", args: args{domain: "shriprasad"}, want: want{domain: "", err: fmt.Errorf("domain [shriprasad] is public suffix")}},
+		{name: ".shriprasad", args: args{domain: ".shriprasad"}, want: want{domain: ".shriprasad"}},
+		{name: "abc.shriprasad", args: args{domain: "abc.shriprasad"}, want: want{domain: "abc.shriprasad"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			adjustedDomain, err := normalizeDomain(tt.args.domain)
+			actualErr := "nil"
+			expectedErr := "nil"
+			if nil != err {
+				actualErr = err.Error()
+			}
+			if nil != tt.want.err {
+				actualErr = tt.want.err.Error()
+			}
+			assert.Equal(t, tt.want.err, err, "Expected error is %s, but found [%s]", expectedErr, actualErr)
+			assert.Equal(t, tt.want.domain, adjustedDomain, "Expected domain is %s, but found [%s]", tt.want.domain, adjustedDomain)
+		})
+	}
 }
 
-type mockBidder struct {
-	mock.Mock
-	lastExtraRequestInfo *adapters.ExtraRequestInfo
+func newTestTagAdapter(name string) *bidderAdapter {
+	return &bidderAdapter{
+		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}),
+		BidderName: openrtb_ext.BidderName(name),
+	}
 }
 
-func (m *mockBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	m.lastExtraRequestInfo = reqInfo
-
-	args := m.Called(request, reqInfo)
-	return args.Get(0).([]*adapters.RequestData), args.Get(1).([]error)
+func newTestRtbAdapter(name string) *bidderAdapter {
+	return &bidderAdapter{
+		Bidder:     &goodSingleBidder{},
+		BidderName: openrtb_ext.BidderName(name),
+	}
 }
 
-func (m *mockBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	args := m.Called(internalRequest, externalRequest, response)
-	return args.Get(0).(*adapters.BidderResponse), args.Get(1).([]error)
+func TestRecordAdaptorDuplicateBidIDs(t *testing.T) {
+	type bidderCollisions = map[string]int
+	testCases := []struct {
+		scenario         string
+		bidderCollisions *bidderCollisions // represents no of collisions detected for bid.id at bidder level for given request
+		hasCollision     bool
+	}{
+		{scenario: "invalid collision value", bidderCollisions: &map[string]int{"bidder-1": -1}, hasCollision: false},
+		{scenario: "no collision", bidderCollisions: &map[string]int{"bidder-1": 0}, hasCollision: false},
+		{scenario: "one collision", bidderCollisions: &map[string]int{"bidder-1": 1}, hasCollision: false},
+		{scenario: "multiple collisions", bidderCollisions: &map[string]int{"bidder-1": 2}, hasCollision: true}, // when 2 collisions it counter will be 1
+		{scenario: "multiple bidders", bidderCollisions: &map[string]int{"bidder-1": 2, "bidder-2": 4}, hasCollision: true},
+		{scenario: "multiple bidders with bidder-1 no collision", bidderCollisions: &map[string]int{"bidder-1": 1, "bidder-2": 4}, hasCollision: true},
+		{scenario: "no bidders", bidderCollisions: nil, hasCollision: false},
+	}
+	testEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, nil)
+
+	for _, testcase := range testCases {
+		var adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		if nil == testcase.bidderCollisions {
+			break
+		}
+		adapterBids = make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
+		for bidder, collisions := range *testcase.bidderCollisions {
+			bids := make([]*pbsOrtbBid, 0)
+			testBidID := "bid_id_for_bidder_" + bidder
+			// add bids as per collisions value
+			bidCount := 0
+			for ; bidCount < collisions; bidCount++ {
+				bids = append(bids, &pbsOrtbBid{
+					bid: &openrtb2.Bid{
+						ID: testBidID,
+					},
+				})
+			}
+			if nil == adapterBids[openrtb_ext.BidderName(bidder)] {
+				adapterBids[openrtb_ext.BidderName(bidder)] = new(pbsOrtbSeatBid)
+			}
+			adapterBids[openrtb_ext.BidderName(bidder)].bids = bids
+		}
+		assert.Equal(t, testcase.hasCollision, recordAdaptorDuplicateBidIDs(testEngine, adapterBids))
+	}
 }

@@ -3,10 +3,10 @@ package config
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	prometheusmetrics "github.com/PubMatic-OpenWrap/prebid-server/metrics/prometheus"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
+	prometheusmetrics "github.com/prebid/prebid-server/metrics/prometheus"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	gometrics "github.com/rcrowley/go-metrics"
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
@@ -244,10 +244,45 @@ func (me *MultiMetricsEngine) RecordRequestPrivacy(privacy metrics.PrivacyLabels
 	}
 }
 
-// RecordAdapterGDPRRequestBlocked across all engines
-func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
+// RecordAdapterDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
 	for _, thisME := range *me {
-		thisME.RecordAdapterGDPRRequestBlocked(adapter)
+		thisME.RecordAdapterDuplicateBidID(adaptor, collisions)
+	}
+}
+
+// RecordRequestHavingDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordRequestHavingDuplicateBidID() {
+	for _, thisME := range *me {
+		thisME.RecordRequestHavingDuplicateBidID()
+	}
+}
+
+// RecordPodImpGenTime across all engines
+func (me *MultiMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
+	for _, thisME := range *me {
+		thisME.RecordPodImpGenTime(labels, startTime)
+	}
+}
+
+// RecordPodCombGenTime as a noop
+func (me *MultiMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCombGenTime(labels, elapsedTime)
+	}
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
+	}
+}
+
+// RecordAdapterVideoBidDuration as a noop
+func (me *MultiMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterVideoBidDuration(labels, videoBidDuration)
 	}
 }
 

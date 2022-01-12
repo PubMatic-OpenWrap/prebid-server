@@ -68,7 +68,11 @@
             },
                 "ext": {
                     "pmZoneId": "Zone1,Zone2",
-                    "preference": "sports,movies"
+                    "preference": "sports,movies",
+                    "skadn": {
+                      "skadnetids": ["k674qkevps.skadnetwork"],
+                      "version": "2.0"
+                    }
                 }
               }
             ], 

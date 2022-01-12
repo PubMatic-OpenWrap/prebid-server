@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -72,8 +72,8 @@ func (me *MetricsEngineMock) RecordDNSTime(dnsLookupTime time.Duration) {
 	me.Called(dnsLookupTime)
 }
 
-func (me *MetricsEngineMock) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
-	me.Called(tlsHandshakeTime)
+func (me *MetricsEngineMock) RecordTLSHandshakeTime(bidderName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
+	me.Called(bidderName, tlsHandshakeTime)
 }
 
 // RecordAdapterBidReceived mock

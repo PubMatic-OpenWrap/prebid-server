@@ -818,17 +818,11 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 						}
 					}
 
-				if dupeBidPrice < currBidPrice {
-					if dupe.bidderName == bidderName {
-						// An older bid from the current bidder
-						bidsToRemove = append(bidsToRemove, dupe.bidIndex)
-						rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
-					} else {
-						// An older bid from a different seatBid we've already finished with
-						oldSeatBid := (seatBids)[dupe.bidderName]
-						rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
-						if len(oldSeatBid.bids) == 1 {
-							seatBidsToRemove = append(seatBidsToRemove, dupe.bidderName)
+					if dupeBidPrice < currBidPrice {
+						if dupe.bidderName == bidderName {
+							// An older bid from the current bidder
+							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
+							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
 						} else {
 							// An older bid from a different seatBid we've already finished with
 							oldSeatBid := (seatBids)[dupe.bidderName]

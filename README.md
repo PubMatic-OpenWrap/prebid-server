@@ -30,8 +30,8 @@ Download and prepare Prebid Server:
 
 ```bash
 cd YOUR_DIRECTORY
-git clone https://github.com/prebid/prebid-server src/github.com/prebid/prebid-server
-cd src/github.com/prebid/prebid-server
+git clone https://github.com/PubMatic-OpenWrap/prebid-server src/github.com/PubMatic-OpenWrap/prebid-server
+cd src/github.com/PubMatic-OpenWrap/prebid-server
 ```
 
 Run the automated tests:

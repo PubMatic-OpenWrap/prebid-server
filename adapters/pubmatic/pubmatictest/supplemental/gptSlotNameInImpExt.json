@@ -56,6 +56,13 @@
       "publisher": {
         "id": "1234"
       }
+    },
+    "ext": {
+      "prebid": {
+        "bidderparams": {
+          "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
+        }
+      }
     }
   },
   "httpCalls": [
@@ -97,7 +104,8 @@
           "ext": {
             "wrapper": {
               "profile": 5123,
-              "version": 1
+              "version": 1,
+              "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
             }
           }
         }

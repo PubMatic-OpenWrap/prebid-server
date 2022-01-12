@@ -885,7 +885,6 @@ func TestImplicitDNT(t *testing.T) {
 			},
 		},
 	}
-}
 
 	for _, test := range testCases {
 		httpReq := httptest.NewRequest("POST", "/openrtb2/auction", nil)

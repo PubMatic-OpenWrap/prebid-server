@@ -11,22 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
-	"github.com/PubMatic-OpenWrap/prebid-server/amp"
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
-	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/backends/empty_fetcher"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
-	"github.com/PubMatic-OpenWrap/prebid-server/util/iputil"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
@@ -139,9 +123,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		origin = r.Header.Get("Origin")
 		ao.Origin = origin
 	}
-
-	debugParam := r.FormValue("debug")
-	debug := debugParam == "1"
 
 	// Headers "Access-Control-Allow-Origin", "Access-Control-Allow-Headers",
 	// and "Access-Control-Allow-Credentials" are handled in CORS middleware
@@ -283,7 +264,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	ao.AmpTargetingValues = targets
 
 	// add debug information if requested
-	if debug && eRErr == nil {
+	if req.Test == 1 && eRErr == nil {
 		if extResponse.Debug != nil {
 			ampResponse.Debug = extResponse.Debug
 		} else {
@@ -497,9 +478,6 @@ func defaultRequestExt(req *openrtb2.BidRequest) (errs []error) {
 	}
 
 	setDefaults := false
-	if debug {
-		extRequest.Prebid.Debug = 1
-	}
 	// Ensure Targeting and caching is on
 	if extRequest.Prebid.Targeting == nil {
 		setDefaults = true

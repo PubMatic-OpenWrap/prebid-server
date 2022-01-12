@@ -8,8 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
-	"github.com/PubMatic-OpenWrap/prebid-server/util/timeutil"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/util/timeutil"

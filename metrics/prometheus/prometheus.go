@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -68,6 +68,20 @@ type Metrics struct {
 	// Account Metrics
 	accountRequests *prometheus.CounterVec
 
+	// Ad Pod Metrics
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	podImpGenTimer *prometheus.HistogramVec
+
+	// podImpGenTimer indicates time taken by combination generator
+	// algorithm to generate combination based on bid response and ad pod request
+	podCombGenTimer *prometheus.HistogramVec
+
+	// podCompExclTimer indicates time taken by compititve exclusion
+	// algorithm to generate final pod response based on bid response and ad pod request
+	podCompExclTimer *prometheus.HistogramVec
+
 	metricsDisabled config.DisabledMetrics
 }
 
@@ -114,14 +128,12 @@ const (
 	requestFailed     = "failed"
 )
 
+// pod specific constants
 const (
-	sourceLabel   = "source"
-	sourceRequest = "request"
-)
-
-const (
-	storedDataFetchTypeLabel = "stored_data_fetch_type"
-	storedDataErrorLabel     = "stored_data_error"
+	podAlgorithm         = "algorithm"
+	podNoOfImpressions   = "no_of_impressions"
+	podTotalCombinations = "total_combinations"
+	podNoOfResponseBids  = "no_of_response_bids"
 )
 
 const (
@@ -273,10 +285,10 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Seconds to resolve DNS",
 		standardTimeBuckets)
 
-	metrics.tlsHandhakeTimer = newHistogram(cfg, metrics.Registry,
-		"tls_handshake_time",
-		"Seconds to perform TLS Handshake",
-		standardTimeBuckets)
+	//metrics.tlsHandhakeTimer = newHistogram(cfg, metrics.Registry,
+	//	"tls_handshake_time",
+	//	"Seconds to perform TLS Handshake",
+	//	standardTimeBuckets)
 
 	metrics.privacyCCPA = newCounter(cfg, metrics.Registry,
 		"privacy_ccpa",
@@ -352,6 +364,12 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 			"Seconds from when the connection was requested until it is either created or reused",
 			[]string{adapterLabel},
 			standardTimeBuckets)
+
+		metrics.tlsHandhakeTimer = newHistogramVec(cfg, metrics.Registry,
+			"tls_handshake_time",
+			"Seconds to perform TLS Handshake",
+			[]string{adapterLabel},
+			standardTimeBuckets)
 	}
 
 	metrics.adapterRequestsTimer = newHistogramVec(cfg, metrics.Registry,
@@ -412,6 +430,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"adapter_vidbid_dur",
 		"Video Ad durations returned by the bidder", []string{adapterLabel},
 		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120})
+
 	preloadLabelValues(&metrics)
 
 	return &metrics
@@ -618,8 +637,11 @@ func (m *Metrics) RecordDNSTime(dnsLookupTime time.Duration) {
 	m.dnsLookupTimer.Observe(dnsLookupTime.Seconds())
 }
 
-func (m *Metrics) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
-	m.tlsHandhakeTimer.Observe(tlsHandshakeTime.Seconds())
+func (m *Metrics) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
+	//m.tlsHandhakeTimer.Observe(tlsHandshakeTime.Seconds())
+	m.tlsHandhakeTimer.With(prometheus.Labels{
+		adapterLabel: string(adapterName),
+	}).Observe(tlsHandshakeTime.Seconds())
 }
 
 func (m *Metrics) RecordAdapterPanic(labels metrics.AdapterLabels) {
@@ -795,7 +817,31 @@ func recordAlgoTime(timer *prometheus.HistogramVec, labels metrics.PodLabels, el
 		pmLabels[podNoOfResponseBids] = strconv.Itoa(*labels.NoOfResponseBids)
 	}
 
-	m.adapterGDPRBlockedRequests.With(prometheus.Labels{
-		adapterLabel: string(adapterName),
-	}).Inc()
+	timer.With(pmLabels).Observe(elapsedTime.Seconds())
+}
+
+// RecordPodImpGenTime records number of impressions generated and time taken
+// by underneath algorithm to generate them
+func (m *Metrics) RecordPodImpGenTime(labels metrics.PodLabels, start time.Time) {
+	elapsedTime := time.Since(start)
+	recordAlgoTime(m.podImpGenTimer, labels, elapsedTime)
+}
+
+// RecordPodCombGenTime records number of combinations generated and time taken
+// by underneath algorithm to generate them
+func (m *Metrics) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	recordAlgoTime(m.podCombGenTimer, labels, elapsedTime)
+}
+
+// RecordPodCompititveExclusionTime records number of combinations comsumed for forming
+// final ad pod response and time taken by underneath algorithm to generate them
+func (m *Metrics) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	recordAlgoTime(m.podCompExclTimer, labels, elapsedTime)
+}
+
+//RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
+func (m *Metrics) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+	if videoBidDuration > 0 {
+		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
+	}
 }

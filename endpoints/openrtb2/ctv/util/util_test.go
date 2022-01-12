@@ -143,7 +143,7 @@ func TestSortByDealPriority(t *testing.T) {
 
 	newBid := func(bid testbid) *types.Bid {
 		return &types.Bid{
-			Bid: &openrtb.Bid{
+			Bid: &openrtb2.Bid{
 				ID:    bid.id,
 				Price: bid.price,
 				//Ext:   json.RawMessage(`{"prebid":{ "dealTierSatisfied" : ` + bid.isDealBid + ` }}`),
@@ -192,7 +192,7 @@ func TestGetTargeting(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
-			bid := new(openrtb.Bid)
+			bid := new(openrtb2.Bid)
 			bid.Ext = []byte(`{"prebid" : { "targeting" : ` + test.targeting + `}}`)
 			value, err := GetTargeting(test.key, openrtb_ext.BidderName(test.bidder), *bid)
 			if test.expectError {

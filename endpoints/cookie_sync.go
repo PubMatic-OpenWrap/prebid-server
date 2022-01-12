@@ -10,32 +10,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
-	gdprPrivacy "github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/privacy"
+	"github.com/prebid/prebid-server/privacy/ccpa"
+	gdprPrivacy "github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/prebid/prebid-server/usersync"
 )
-
-func NewCookieSyncEndpoint(
-	syncers map[openrtb_ext.BidderName]usersync.Usersyncer,
-	cfg *config.Configuration,
-	syncPermissions gdpr.Permissions,
-	metrics metrics.MetricsEngine,
-	pbsAnalytics analytics.PBSAnalyticsModule,
-	bidderMap map[string]openrtb_ext.BidderName) httprouter.Handle {
-
-	bidderLookup := make(map[string]struct{})
-	for k := range bidderMap {
-		bidderLookup[k] = struct{}{}
-	}
 
 func NewCookieSyncEndpoint(
 	syncers map[openrtb_ext.BidderName]usersync.Usersyncer,
@@ -169,10 +156,16 @@ func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ h
 		Status:       cookieSyncStatus(userSyncCookie.LiveSyncCount()),
 		BidderStatus: make([]*usersync.CookieSyncBidders, 0, len(parsedReq.Bidders)),
 	}
-
 	for i := 0; i < len(parsedReq.Bidders); i++ {
 		bidder := parsedReq.Bidders[i]
-		syncInfo, err := deps.syncers[openrtb_ext.BidderName(bidder)].GetUsersyncInfo(privacyPolicy)
+
+		//added hack to support to old wrapper versions having indexExchange as partner
+		//TODO: Remove when a stable version is released
+		newBidder := bidder
+		if bidder == "indexExchange" {
+			newBidder = "ix"
+		}
+		syncInfo, err := deps.syncers[openrtb_ext.BidderName(newBidder)].GetUsersyncInfo(privacyPolicy)
 		if err == nil {
 			newSync := &usersync.CookieSyncBidders{
 				BidderCode:   bidder,
@@ -253,6 +246,11 @@ type cookieSyncRequest struct {
 func (req *cookieSyncRequest) filterExistingSyncs(valid map[openrtb_ext.BidderName]usersync.Usersyncer, cookie *usersync.PBSCookie, needSyncupForSameSite bool) {
 	for i := 0; i < len(req.Bidders); i++ {
 		thisBidder := req.Bidders[i]
+		//added hack to support to old wrapper versions having indexExchange as partner
+		//TODO: Remove when a stable version is released
+		if thisBidder == "indexExchange" {
+			thisBidder = "ix"
+		}
 		if syncer, isValid := valid[openrtb_ext.BidderName(thisBidder)]; !isValid || (cookie.HasLiveSync(syncer.FamilyName()) && !needSyncupForSameSite) {
 			req.Bidders = append(req.Bidders[:i], req.Bidders[i+1:]...)
 			i--

@@ -13,21 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/openrtb"
-	"github.com/PubMatic-OpenWrap/openrtb/native"
-	nativeRequests "github.com/PubMatic-OpenWrap/openrtb/native/request"
-	accountService "github.com/PubMatic-OpenWrap/prebid-server/account"
-	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
-	"github.com/PubMatic-OpenWrap/prebid-server/config"
-	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
-	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
-	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
-	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
-	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
-	"github.com/PubMatic-OpenWrap/prebid-server/util/httputil"
-	"github.com/PubMatic-OpenWrap/prebid-server/util/iputil"
 	"github.com/buger/jsonparser"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/gofrs/uuid"
@@ -223,6 +208,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
+
 	// Fixes #231
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
