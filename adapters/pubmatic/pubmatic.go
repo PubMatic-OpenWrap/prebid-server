@@ -10,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -27,8 +30,13 @@ type PubmaticAdapter struct {
 	URI  string
 }
 
-// used for cookies and such
+/* Name - export adapter name */
 func (a *PubmaticAdapter) Name() string {
+	return "pubmatic"
+}
+
+// used for cookies and such
+func (a *PubmaticAdapter) FamilyName() string {
 	return "pubmatic"
 }
 
@@ -212,6 +220,9 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 			siteCopy := *pbReq.Site
 			siteCopy.Publisher = &openrtb2.Publisher{ID: params.PublisherId, Domain: req.Domain}
 			pbReq.Site = &siteCopy
+			if kadPageURL != "" {
+				pbReq.Site.Page = kadPageURL
+			}
 		}
 		if pbReq.App != nil {
 			appCopy := *pbReq.App
@@ -242,7 +253,7 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 		bidder.Debug = append(bidder.Debug, debug)
 	}
 
-	userId, _, _ := req.Cookie.GetUID(a.Name())
+	userId, _, _ := req.Cookie.GetUID(a.FamilyName())
 	httpReq, err := http.NewRequest("POST", a.URI, bytes.NewBuffer(reqJSON))
 	httpReq.Header.Add("Content-Type", "application/json;charset=utf-8")
 	httpReq.Header.Add("Accept", "application/json")
@@ -326,8 +337,10 @@ func (a *PubmaticAdapter) Call(ctx context.Context, req *pbs.PBSRequest, bidder 
 			pbid.CreativeMediaType = string(mediaType)
 
 			bids = append(bids, &pbid)
-			logf("[PUBMATIC] Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
-				pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
+			/*
+				logf("[PUBMATIC] Returned Bid for PubID [%s] AdUnit [%s] BidID [%s] Size [%dx%d] Price [%f] \n",
+					pubId, pbid.AdUnitCode, pbid.BidID, pbid.Width, pbid.Height, pbid.Price)
+			*/
 		}
 	}
 
@@ -648,7 +661,14 @@ func logf(msg string, args ...interface{}) {
 
 func NewPubmaticLegacyAdapter(config *adapters.HTTPAdapterConfig, uri string) *PubmaticAdapter {
 	a := adapters.NewHTTPAdapter(config)
+	return &PubmaticAdapter{
+		http: a,
+		URI:  uri,
+	}
+}
 
+func NewPubmaticBidder(client *http.Client, uri string) *PubmaticAdapter {
+	a := &adapters.HTTPAdapter{Client: client}
 	return &PubmaticAdapter{
 		http: a,
 		URI:  uri,

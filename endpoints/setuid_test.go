@@ -17,7 +17,7 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
