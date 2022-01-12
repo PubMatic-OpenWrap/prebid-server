@@ -55,6 +55,20 @@ import (
 
 var dataCache cache.Cache
 var exchanges map[string]adapters.Adapter
+var (
+	g_syncers           map[openrtb_ext.BidderName]usersync.Usersyncer
+	g_cfg               *config.Configuration
+	g_ex                exchange.Exchange
+	g_paramsValidator   openrtb_ext.BidderParamValidator
+	g_storedReqFetcher  stored_requests.Fetcher
+	g_gdprPerms         gdpr.Permissions
+	g_metrics           pbsmetrics.MetricsEngine
+	g_analytics         analytics.PBSAnalyticsModule
+	g_disabledBidders   map[string]string
+	g_categoriesFetcher stored_requests.CategoryFetcher
+	g_bidderMap         map[string]openrtb_ext.BidderName
+	g_defReqJSON        []byte
+)
 
 // NewJsonDirectoryServer is used to serve .json files from a directory as a single blob. For example,
 // given a directory containing the files "a.json" and "b.json", this returns a Handle which serves JSON like:
@@ -223,7 +237,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 
-	paramsValidator, err := openrtb_ext.NewBidderParamsValidator(schemaDirectory)
+	g_paramsValidator, err = openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
 	}
@@ -261,6 +275,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if err != nil {
 		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
 	}
+	ortbAuctionEndpoint(w, r, nil)
+	return nil
+}
 
 	ampEndpoint, err := openrtb2.NewAmpEndpoint(theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders)
 	if err != nil {
@@ -312,7 +329,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.POST("/optout", userSyncDeps.OptOut)
 	r.GET("/optout", userSyncDeps.OptOut)
 
-	return r, nil
+func SyncerMap() map[openrtb_ext.BidderName]usersync.Usersyncer {
+	return g_syncers
 }
 
 // Fixes #648
