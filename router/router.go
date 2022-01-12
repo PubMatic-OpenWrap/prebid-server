@@ -285,6 +285,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if err != nil {
 		glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
 	}
+	videoAuctionEndpoint(w, r, nil)
+	return nil
+}
 
 	videoEndpoint, err := openrtb2.NewVideoEndpoint(theExchange, paramsValidator, fetcher, videoFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, cacheClient)
 	if err != nil {
