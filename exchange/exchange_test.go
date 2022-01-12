@@ -80,10 +80,10 @@ func TestNewExchange(t *testing.T) {
 // and check whether the returned request successfully prints any '&' characters as it should
 // To do so, we:
 // 	1) Write the endpoint adapter URL with an '&' character into a new config,Configuration struct
-// 	   as specified in https://github.com/prebid/prebid-server/issues/465
+// 	   as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
 // 	2) Initialize a new exchange with said configuration
 // 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs including the
-// 	   sample request as specified in https://github.com/prebid/prebid-server/issues/465
+// 	   sample request as specified in https://github.com/PubMatic-OpenWrap/prebid-server/issues/465
 // 	4) Build a BidResponse struct using exchange.buildBidResponse(ctx.Background(), liveA... )
 // 	5) Assert we have no '&' characters in the response that exchange.buildBidResponse returns
 func TestCharacterEscape(t *testing.T) {
