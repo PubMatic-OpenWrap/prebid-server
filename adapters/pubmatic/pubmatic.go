@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"io/ioutil"
 	"net/http"
 	"strconv"
