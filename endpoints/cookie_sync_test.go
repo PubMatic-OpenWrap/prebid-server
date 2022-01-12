@@ -10,6 +10,16 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/appnexus"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/audienceNetwork"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/lifestreet"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/pubmatic"
+	analyticsConf "github.com/PubMatic-OpenWrap/prebid-server/analytics/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	metricsConf "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/buger/jsonparser"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/adapters/appnexus"
@@ -308,4 +318,44 @@ func (g *gdprPerms) BidderSyncAllowed(ctx context.Context, bidder openrtb_ext.Bi
 
 func (g *gdprPerms) AuctionActivitiesAllowed(ctx context.Context, bidder openrtb_ext.BidderName, PublisherID string, gdprSignal gdpr.Signal, consent string, weakVendorEnforcement bool) (allowBidRequest, passGeo bool, passID bool, err error) {
 	return true, true, true, nil
+}
+
+func TestSetSecureParam(t *testing.T) {
+	type args struct {
+		userSyncUrl string
+		isSecure    bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test unescaped with secure = false",
+			args: args{"http://testurl.com?sec={SecParam}", false},
+			want: "http://testurl.com?sec=0",
+		},
+		{
+			name: "Test unescaped with secure = true",
+			args: args{"http://testurl.com?sec={SecParam}", true},
+			want: "http://testurl.com?sec=1",
+		},
+		{
+			name: "Test escaped with secure = false",
+			args: args{"http://testurl.com?sec%2f%7BSecParam%7D", false},
+			want: "http://testurl.com?sec%2f0",
+		},
+		{
+			name: "Test escaped with secure = true",
+			args: args{"http://testurl.com?sec%2f%7BSecParam%7D", true},
+			want: "http://testurl.com?sec%2f1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := setSecureParam(tt.args.userSyncUrl, tt.args.isSecure); got != tt.want {
+				t.Errorf("Got: %s, want: %s", got, tt.want)
+			}
+		})
+	}
 }

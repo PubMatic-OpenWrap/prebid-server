@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
@@ -687,7 +689,11 @@ func resolvePlatformID(platformID string) int {
 
 func loadCategoryMapFromFileSystem() map[string]string {
 	// Load custom options for our adapter (currently just a lookup table to convert appnexus => iab categories)
-	opts, err := ioutil.ReadFile("./static/adapter/appnexus/opts.json")
+	opts, err := ioutil.ReadFile("./home/http/GO_SERVER/dmhbserver/static/adapter/appnexus/opts.json")
+	//this is for tests
+	if err != nil {
+		opts, err = ioutil.ReadFile("./static/adapter/appnexus/opts.json")
+	}
 	if err == nil {
 		var adapterOptions appnexusAdapterOptions
 
@@ -695,6 +701,5 @@ func loadCategoryMapFromFileSystem() map[string]string {
 			return adapterOptions.IabCategories
 		}
 	}
-
 	return nil
 }

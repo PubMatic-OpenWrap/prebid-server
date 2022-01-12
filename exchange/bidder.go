@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/config/util"
+	"github.com/PubMatic-OpenWrap/prebid-server/currency"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config/util"
 	"github.com/prebid/prebid-server/currency"

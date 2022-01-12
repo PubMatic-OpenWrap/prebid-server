@@ -62,6 +62,20 @@ type Metrics struct {
 	PrivacyLMTRequest        metrics.Meter
 	PrivacyTCFRequestVersion map[TCFVersionValue]metrics.Meter
 
+	// Ad Pod Metrics
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	podImpGenTimer metrics.Timer
+
+	// podImpGenTimer indicates time taken by combination generator
+	// algorithm to generate combination based on bid response and ad pod request
+	podCombGenTimer metrics.Timer
+
+	// podCompExclTimer indicates time taken by compititve exclusion
+	// algorithm to generate final pod response based on bid response and ad pod request
+	podCompExclTimer metrics.Timer
+
 	AdapterMetrics map[openrtb_ext.BidderName]*AdapterMetrics
 	// Don't export accountMetrics because we need helper functions here to insure its properly populated dynamically
 	accountMetrics        map[string]*accountMetrics

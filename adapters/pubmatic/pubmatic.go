@@ -12,6 +12,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/openrtb"
 	"github.com/PubMatic-OpenWrap/prebid-server/adapters"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/PubMatic-OpenWrap/prebid-server/pbs"
@@ -697,12 +698,12 @@ func NewPubmaticLegacyAdapter(config *adapters.HTTPAdapterConfig, uri string) *P
 	}
 }
 
-func NewPubmaticBidder(client *http.Client, uri string) *PubmaticAdapter {
-	a := &adapters.HTTPAdapter{Client: client}
-	return &PubmaticAdapter{
-		http: a,
-		URI:  uri,
+// Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters.Bidder, error) {
+	bidder := &PubmaticAdapter{
+		URI: config.Endpoint,
 	}
+	return bidder, nil
 }
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.

@@ -14,8 +14,8 @@ import (
 
 	"github.com/prebid/prebid-server/gdpr"
 
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
-	metricsConfig "github.com/prebid/prebid-server/metrics/config"
+	metricsConf "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
+	metricsConfig "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"

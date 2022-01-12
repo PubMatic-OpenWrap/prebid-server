@@ -12,6 +12,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
+	gdprPrivacy "github.com/PubMatic-OpenWrap/prebid-server/privacy/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
@@ -25,6 +34,19 @@ import (
 	gdprPrivacy "github.com/prebid/prebid-server/privacy/gdpr"
 	"github.com/prebid/prebid-server/usersync"
 )
+
+func NewCookieSyncEndpoint(
+	syncers map[openrtb_ext.BidderName]usersync.Usersyncer,
+	cfg *config.Configuration,
+	syncPermissions gdpr.Permissions,
+	metrics metrics.MetricsEngine,
+	pbsAnalytics analytics.PBSAnalyticsModule,
+	bidderMap map[string]openrtb_ext.BidderName) httprouter.Handle {
+
+	bidderLookup := make(map[string]struct{})
+	for k := range bidderMap {
+		bidderLookup[k] = struct{}{}
+	}
 
 func NewCookieSyncEndpoint(
 	syncers map[openrtb_ext.BidderName]usersync.Usersyncer,
@@ -64,7 +86,6 @@ type cookieSyncDeps struct {
 }
 
 func (deps *cookieSyncDeps) Endpoint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
 	//CookieSyncObject makes a log of requests and responses to  /cookie_sync endpoint
 	co := analytics.CookieSyncObject{
 		Status:       http.StatusOK,

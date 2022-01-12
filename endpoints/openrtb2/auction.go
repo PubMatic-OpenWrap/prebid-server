@@ -20,8 +20,8 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-server/analytics"
 	"github.com/PubMatic-OpenWrap/prebid-server/config"
 	"github.com/PubMatic-OpenWrap/prebid-server/exchange"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
 	"github.com/PubMatic-OpenWrap/prebid-server/prebid_cache_client"
 	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
@@ -374,6 +374,14 @@ func (deps *endpointDeps) validateRequest(req *openrtb_ext.RequestWrapper) []err
 		}
 
 		if err := validateCustomRates(reqPrebid.CurrencyConversions); err != nil {
+			return []error{err}
+		}
+
+		if err := validateSChains(bidExt); err != nil {
+			return []error{err}
+		}
+
+		if err := deps.validateEidPermissions(bidExt, aliases); err != nil {
 			return []error{err}
 		}
 	}

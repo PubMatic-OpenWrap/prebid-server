@@ -13,6 +13,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/backends/empty_fetcher"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/backends/http_fetcher"
+	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests/events"
+	httpEvents "github.com/PubMatic-OpenWrap/prebid-server/stored_requests/events/http"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"

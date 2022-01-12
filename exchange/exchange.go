@@ -485,6 +485,9 @@ func (e *exchange) getAllBids(
 					var cpm = float64(bid.bid.Price * 1000)
 					e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 					e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.bidType, bid.bid.AdM != "")
+					if bid.bidType == openrtb_ext.BidTypeVideo && bid.bidVideo != nil && bid.bidVideo.Duration > 0 {
+						e.me.RecordAdapterVideoBidDuration(bidderRequest.BidderLabels, bid.bidVideo.Duration)
+					}
 				}
 			}
 			chBids <- brw
@@ -1097,7 +1100,7 @@ func listBiddersWithRequests(bidderRequests []BidderRequest) []openrtb_ext.Bidde
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
 // it returns true if collosion(s) is/are detected in any of the bidder's bids
-func recordAdaptorDuplicateBidIDs(metricsEngine pbsmetrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
+func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
 	bidIDCollisionFound := false
 	if nil == adapterBids {
 		return false

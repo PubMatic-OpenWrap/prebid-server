@@ -303,6 +303,7 @@ func CoreBidderNames() []BidderName {
 		BidderSomoaudience,
 		BidderSonobi,
 		BidderSovrn,
+		BidderSpotX,
 		BidderSynacormedia,
 		BidderTappx,
 		BidderTelaria,

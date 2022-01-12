@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,37 +15,38 @@ type Metrics struct {
 	Registry *prometheus.Registry
 
 	// General Metrics
-	connectionsClosed            prometheus.Counter
-	connectionsError             *prometheus.CounterVec
-	connectionsOpened            prometheus.Counter
-	cookieSync                   prometheus.Counter
-	impressions                  *prometheus.CounterVec
-	impressionsLegacy            prometheus.Counter
-	prebidCacheWriteTimer        *prometheus.HistogramVec
-	requests                     *prometheus.CounterVec
-	requestsTimer                *prometheus.HistogramVec
-	requestsQueueTimer           *prometheus.HistogramVec
-	requestsWithoutCookie        *prometheus.CounterVec
-	storedImpressionsCacheResult *prometheus.CounterVec
-	storedRequestCacheResult     *prometheus.CounterVec
-	accountCacheResult           *prometheus.CounterVec
-	storedAccountFetchTimer      *prometheus.HistogramVec
-	storedAccountErrors          *prometheus.CounterVec
-	storedAMPFetchTimer          *prometheus.HistogramVec
-	storedAMPErrors              *prometheus.CounterVec
-	storedCategoryFetchTimer     *prometheus.HistogramVec
-	storedCategoryErrors         *prometheus.CounterVec
-	storedRequestFetchTimer      *prometheus.HistogramVec
-	storedRequestErrors          *prometheus.CounterVec
-	storedVideoFetchTimer        *prometheus.HistogramVec
-	storedVideoErrors            *prometheus.CounterVec
-	timeoutNotifications         *prometheus.CounterVec
-	dnsLookupTimer               prometheus.Histogram
-	tlsHandhakeTimer             prometheus.Histogram
-	privacyCCPA                  *prometheus.CounterVec
-	privacyCOPPA                 *prometheus.CounterVec
-	privacyLMT                   *prometheus.CounterVec
-	privacyTCF                   *prometheus.CounterVec
+	connectionsClosed             prometheus.Counter
+	connectionsError              *prometheus.CounterVec
+	connectionsOpened             prometheus.Counter
+	cookieSync                    prometheus.Counter
+	impressions                   *prometheus.CounterVec
+	impressionsLegacy             prometheus.Counter
+	prebidCacheWriteTimer         *prometheus.HistogramVec
+	requests                      *prometheus.CounterVec
+	requestsTimer                 *prometheus.HistogramVec
+	requestsQueueTimer            *prometheus.HistogramVec
+	requestsWithoutCookie         *prometheus.CounterVec
+	storedImpressionsCacheResult  *prometheus.CounterVec
+	storedRequestCacheResult      *prometheus.CounterVec
+	accountCacheResult            *prometheus.CounterVec
+	storedAccountFetchTimer       *prometheus.HistogramVec
+	storedAccountErrors           *prometheus.CounterVec
+	storedAMPFetchTimer           *prometheus.HistogramVec
+	storedAMPErrors               *prometheus.CounterVec
+	storedCategoryFetchTimer      *prometheus.HistogramVec
+	storedCategoryErrors          *prometheus.CounterVec
+	storedRequestFetchTimer       *prometheus.HistogramVec
+	storedRequestErrors           *prometheus.CounterVec
+	storedVideoFetchTimer         *prometheus.HistogramVec
+	storedVideoErrors             *prometheus.CounterVec
+	timeoutNotifications          *prometheus.CounterVec
+	dnsLookupTimer                prometheus.Histogram
+	tlsHandhakeTimer              prometheus.Histogram
+	privacyCCPA                   *prometheus.CounterVec
+	privacyCOPPA                  *prometheus.CounterVec
+	privacyLMT                    *prometheus.CounterVec
+	privacyTCF                    *prometheus.CounterVec
+	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics
 	adapterBids                *prometheus.CounterVec

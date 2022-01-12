@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/metrics"
 )

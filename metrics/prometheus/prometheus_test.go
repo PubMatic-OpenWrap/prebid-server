@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -1482,7 +1482,7 @@ func TestRecordAdapterDuplicateBidID(t *testing.T) {
 func TestRecordPodImpGenTime(t *testing.T) {
 	impressions := 4
 	testAlgorithmMetrics(t, impressions, func(m *Metrics) dto.Histogram {
-		m.RecordPodImpGenTime(pbsmetrics.PodLabels{AlgorithmName: "sample_imp_algo", NoOfImpressions: &impressions}, time.Now())
+		m.RecordPodImpGenTime(metrics.PodLabels{AlgorithmName: "sample_imp_algo", NoOfImpressions: &impressions}, time.Now())
 		return getHistogramFromHistogramVec(m.podImpGenTimer, podNoOfImpressions, strconv.Itoa(impressions))
 	})
 }
@@ -1490,7 +1490,7 @@ func TestRecordPodImpGenTime(t *testing.T) {
 func TestRecordPodCombGenTime(t *testing.T) {
 	combinations := 5
 	testAlgorithmMetrics(t, combinations, func(m *Metrics) dto.Histogram {
-		m.RecordPodCombGenTime(pbsmetrics.PodLabels{AlgorithmName: "sample_comb_algo", NoOfCombinations: &combinations}, time.Since(time.Now()))
+		m.RecordPodCombGenTime(metrics.PodLabels{AlgorithmName: "sample_comb_algo", NoOfCombinations: &combinations}, time.Since(time.Now()))
 		return getHistogramFromHistogramVec(m.podCombGenTimer, podTotalCombinations, strconv.Itoa(combinations))
 	})
 }
@@ -1498,7 +1498,7 @@ func TestRecordPodCombGenTime(t *testing.T) {
 func TestRecordPodCompetitiveExclusionTime(t *testing.T) {
 	totalBids := 8
 	testAlgorithmMetrics(t, totalBids, func(m *Metrics) dto.Histogram {
-		m.RecordPodCompititveExclusionTime(pbsmetrics.PodLabels{AlgorithmName: "sample_comt_excl_algo", NoOfResponseBids: &totalBids}, time.Since(time.Now()))
+		m.RecordPodCompititveExclusionTime(metrics.PodLabels{AlgorithmName: "sample_comt_excl_algo", NoOfResponseBids: &totalBids}, time.Since(time.Now()))
 		return getHistogramFromHistogramVec(m.podCompExclTimer, podNoOfResponseBids, strconv.Itoa(totalBids))
 	})
 }
@@ -1576,7 +1576,7 @@ func TestRecordAdapterVideoBidDuration(t *testing.T) {
 			m := createMetricsForTesting()
 			for adapterName, adDurations := range test.bidderAdDurations {
 				for _, adDuration := range adDurations {
-					m.RecordAdapterVideoBidDuration(pbsmetrics.AdapterLabels{
+					m.RecordAdapterVideoBidDuration(metrics.AdapterLabels{
 						Adapter: openrtb_ext.BidderName(adapterName),
 					}, adDuration)
 				}

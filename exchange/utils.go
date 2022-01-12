@@ -9,6 +9,14 @@ import (
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/go-gdpr/vendorconsent"
 
+	"github.com/PubMatic-OpenWrap/openrtb"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/ccpa"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy/lmt"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/gdpr"
@@ -202,6 +210,29 @@ func extractLMT(orig *openrtb2.BidRequest, privacyConfig config.Privacy) privacy
 	}
 }
 
+func getBidderExts(reqExt *openrtb_ext.ExtRequest) (map[string]map[string]interface{}, error) {
+	if reqExt == nil {
+		return nil, nil
+	}
+
+	if reqExt.Prebid.BidderParams == nil {
+		return nil, nil
+	}
+
+	pbytes, err := json.Marshal(reqExt.Prebid.BidderParams)
+	if err != nil {
+		return nil, err
+	}
+
+	var bidderParams map[string]map[string]interface{}
+	err = json.Unmarshal(pbytes, &bidderParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return bidderParams, nil
+}
+
 func getAuctionBidderRequests(req AuctionRequest,
 	requestExt *openrtb_ext.ExtRequest,
 	impsByBidder map[string][]openrtb2.Imp,
@@ -238,6 +269,18 @@ func getAuctionBidderRequests(req AuctionRequest,
 		reqCopy.Ext = reqExt
 
 		prepareSource(&reqCopy, bidder, sChainsByBidder)
+
+		if err := removeUnpermissionedEids(&reqCopy, bidder, requestExt); err != nil {
+			errs = append(errs, fmt.Errorf("unable to enforce request.ext.prebid.data.eidpermissions because %v", err))
+			continue
+		}
+
+			if reqCopy.Ext, err = getExtJson(req.BidRequest, requestExt); err != nil {
+				return nil, []error{err}
+			}
+		} else {
+			bidderRequest.BidderLabels.CookieFlag = metrics.CookieFlagYes
+		}
 
 		if err := removeUnpermissionedEids(&reqCopy, bidder, requestExt); err != nil {
 			errs = append(errs, fmt.Errorf("unable to enforce request.ext.prebid.data.eidpermissions because %v", err))

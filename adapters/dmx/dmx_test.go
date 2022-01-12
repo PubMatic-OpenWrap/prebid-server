@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 
-	"github.com/prebid/prebid-server/adapters/adapterstest"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/adapterstest"
 )
 
 var (

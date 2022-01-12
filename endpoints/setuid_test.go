@@ -12,17 +12,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/privacy"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/gdpr"
+	"github.com/PubMatic-OpenWrap/prebid-server/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/privacy"
+	"github.com/PubMatic-OpenWrap/prebid-server/usersync"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
 
-	analyticsConf "github.com/prebid/prebid-server/analytics/config"
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
+	analyticsConf "github.com/PubMatic-OpenWrap/prebid-server/analytics/config"
+	metricsConf "github.com/PubMatic-OpenWrap/prebid-server/metrics/config"
 )
 
 func TestSetUIDEndpoint(t *testing.T) {
@@ -418,7 +418,6 @@ func addCookie(req *http.Request, cookie *usersync.PBSCookie) {
 
 func parseCookieString(t *testing.T, response *httptest.ResponseRecorder) *usersync.PBSCookie {
 	cookieString := response.Header().Get("Set-Cookie")
-
 	parser := regexp.MustCompile("uids=(.*?);")
 	res := parser.FindStringSubmatch(cookieString)
 	assert.Equal(t, 2, len(res))
