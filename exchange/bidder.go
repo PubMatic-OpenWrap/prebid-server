@@ -12,6 +12,7 @@ import (
 	"net/http/httptrace"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/config/util"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config/util"
 	"github.com/prebid/prebid-server/currency"
@@ -256,6 +257,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, request *openrtb2.B
 							bidMeta:      bidResponse.Bids[i].BidMeta,
 							bidType:      bidResponse.Bids[i].BidType,
 							bidVideo:     bidResponse.Bids[i].BidVideo,
+							bidTargets:   bidResponse.Bids[i].BidTargets,
 							dealPriority: bidResponse.Bids[i].DealPriority,
 						})
 					}

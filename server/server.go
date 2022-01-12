@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/PubMatic-OpenWrap/prebid-server/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics"
+	metricsconfig "github.com/PubMatic-OpenWrap/prebid-server/pbsmetrics/config"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"

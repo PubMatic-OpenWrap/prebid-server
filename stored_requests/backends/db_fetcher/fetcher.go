@@ -7,8 +7,8 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/golang/glog"
 	"github.com/PubMatic-OpenWrap/prebid-server/stored_requests"
+	"github.com/golang/glog"
 )
 
 func NewFetcher(db *sql.DB, queryMaker func(int, int) string) stored_requests.AllFetcher {

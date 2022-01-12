@@ -66,8 +66,10 @@ var (
 	g_analytics         analytics.PBSAnalyticsModule
 	g_disabledBidders   map[string]string
 	g_categoriesFetcher stored_requests.CategoryFetcher
+	g_videoFetcher      stored_requests.Fetcher
 	g_bidderMap         map[string]openrtb_ext.BidderName
 	g_defReqJSON        []byte
+	g_cacheClient       pbc.Client
 )
 
 // NewJsonDirectoryServer is used to serve .json files from a directory as a single blob. For example,
@@ -235,7 +237,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		return nil, fmt.Errorf("Prebid Server could not load data cache: %v", err)
 	}
 
-	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
+	g_analytics = analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 
 	g_paramsValidator, err = openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
@@ -324,11 +326,13 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		PBSAnalytics:     pbsAnalytics,
 	}
 
-	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg.HostCookie, syncers, gdprPerms, pbsAnalytics, r.MetricsEngine))
-	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
-	r.POST("/optout", userSyncDeps.OptOut)
-	r.GET("/optout", userSyncDeps.OptOut)
+//CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
+func CookieSync(w http.ResponseWriter, r *http.Request) {
+	cookiesync := endpoints.NewCookieSyncEndpoint(g_syncers, g_cfg, g_gdprPerms, g_metrics, g_analytics)
+	cookiesync(w, r, nil)
+}
 
+//SyncerMap Returns map of bidder and its usersync info
 func SyncerMap() map[openrtb_ext.BidderName]usersync.Usersyncer {
 	return g_syncers
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
@@ -43,11 +44,29 @@ func main() {
 	}
 }
 
-const configFileName = "pbs"
+func InitPrebidServer(configFile string) {
+	//init contents
+	rand.Seed(time.Now().UnixNano())
 
-func loadConfig() (*config.Configuration, error) {
+	//main contents
+	cfg, err := loadConfig(configFile)
+	if err != nil {
+		glog.Fatalf("Configuration could not be loaded or did not pass validation: %v", err)
+	}
+
+	err = serve(Rev, cfg)
+	if err != nil {
+		glog.Errorf("prebid-server failed: %v", err)
+	}
+}
+
+//const configFileName = "pbs"
+
+func loadConfig(configFileName string) (*config.Configuration, error) {
 	v := viper.New()
 	config.SetupViper(v, configFileName)
+	v.SetConfigFile(configFileName)
+	v.ReadInConfig()
 	return config.New(v)
 }
 
