@@ -124,6 +124,9 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		ao.Origin = origin
 	}
 
+	debugParam := r.FormValue("debug")
+	debug := debugParam == "1"
+
 	// Headers "Access-Control-Allow-Origin", "Access-Control-Allow-Headers",
 	// and "Access-Control-Allow-Credentials" are handled in CORS middleware
 	w.Header().Set("AMP-Access-Control-Allow-Source-Origin", origin)
@@ -264,7 +267,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	ao.AmpTargetingValues = targets
 
 	// add debug information if requested
-	if req.Test == 1 && eRErr == nil {
+	if debug && eRErr == nil {
 		if extResponse.Debug != nil {
 			ampResponse.Debug = extResponse.Debug
 		} else {
@@ -478,6 +481,9 @@ func defaultRequestExt(req *openrtb2.BidRequest) (errs []error) {
 	}
 
 	setDefaults := false
+	if debug {
+		extRequest.Prebid.Debug = 1
+	}
 	// Ensure Targeting and caching is on
 	if extRequest.Prebid.Targeting == nil {
 		setDefaults = true
