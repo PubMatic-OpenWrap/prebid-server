@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/stored_requests"
+	"golang.org/x/net/publicsuffix"
 )
 
 type ContextKey string
