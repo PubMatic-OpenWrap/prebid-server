@@ -52,6 +52,8 @@ type pubmaticBidExtVideo struct {
 type ExtImpBidderPubmatic struct {
 	adapters.ExtImpBidder
 	Data *ExtData `json:"data,omitempty"`
+
+	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
 }
 
 type ExtData struct {
@@ -346,6 +348,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	if pubmaticExt.PmZoneID != "" {
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
+	}
+
+	if bidderExt.SKAdnetwork != nil {
+		extMap[skAdnetworkKey] = bidderExt.SKAdnetwork
 	}
 
 	if bidderExt.Prebid != nil {
