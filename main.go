@@ -57,15 +57,6 @@ func serve(cfg *config.Configuration) error {
 		return err
 	}
 
-	// corsRouter := router.SupportCORS(r)
-	// server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(currencyConverter, fetchingInterval), r.MetricsEngine)
-
-	//r.Shutdown()
-
-	// TODO check updated implementation
-	// pbc.InitPrebidCache(cfg.CacheURL.GetBaseURL())
-	// pbc.InitPrebidCacheURL(cfg.ExternalURL)
-
 	return nil
 }
 
@@ -75,11 +66,6 @@ func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
 
 var VideoAuction = func(w http.ResponseWriter, r *http.Request) error {
 	return router.VideoAuctionEndpointWrapper(w, r)
-}
-
-func Auction(w http.ResponseWriter, r *http.Request) {
-	// TODO: 2.5 to 2.4 converter middleware?
-	router.OrtbAuctionEndpointWrapper(w, r)
 }
 
 func GetUIDS(w http.ResponseWriter, r *http.Request) {

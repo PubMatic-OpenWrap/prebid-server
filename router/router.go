@@ -438,6 +438,10 @@ func GetCacheClient() *pbc.Client {
 	return &g_cacheClient
 }
 
+func GetPrebidCacheURL() string {
+	return g_cfg.ExternalURL
+}
+
 //OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
 func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, g_ex, g_paramsValidator, g_storedReqFetcher, g_accounts, g_cfg, g_metrics, g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, g_storedRespFetcher)
