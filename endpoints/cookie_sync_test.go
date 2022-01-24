@@ -1051,21 +1051,21 @@ func TestCookieSyncHandleResponse(t *testing.T) {
 func TestMapBidderStatusToAnalytics(t *testing.T) {
 	testCases := []struct {
 		description string
-		given       []cookieSyncResponseBidder
+		given       []CookieSyncResponseBidder
 		expected    []*analytics.CookieSyncBidder
 	}{
 		{
 			description: "None",
-			given:       []cookieSyncResponseBidder{},
+			given:       []CookieSyncResponseBidder{},
 			expected:    []*analytics.CookieSyncBidder{},
 		},
 		{
 			description: "One",
-			given: []cookieSyncResponseBidder{
+			given: []CookieSyncResponseBidder{
 				{
 					BidderCode:   "a",
 					NoCookie:     true,
-					UsersyncInfo: cookieSyncResponseSync{URL: "aURL", Type: "aType", SupportCORS: false},
+					UsersyncInfo: CookieSyncResponseSync{URL: "aURL", Type: "aType", SupportCORS: false},
 				},
 			},
 			expected: []*analytics.CookieSyncBidder{
@@ -1078,16 +1078,16 @@ func TestMapBidderStatusToAnalytics(t *testing.T) {
 		},
 		{
 			description: "Many",
-			given: []cookieSyncResponseBidder{
+			given: []CookieSyncResponseBidder{
 				{
 					BidderCode:   "a",
 					NoCookie:     true,
-					UsersyncInfo: cookieSyncResponseSync{URL: "aURL", Type: "aType", SupportCORS: false},
+					UsersyncInfo: CookieSyncResponseSync{URL: "aURL", Type: "aType", SupportCORS: false},
 				},
 				{
 					BidderCode:   "b",
 					NoCookie:     false,
-					UsersyncInfo: cookieSyncResponseSync{URL: "bURL", Type: "bType", SupportCORS: true},
+					UsersyncInfo: CookieSyncResponseSync{URL: "bURL", Type: "bType", SupportCORS: true},
 				},
 			},
 			expected: []*analytics.CookieSyncBidder{

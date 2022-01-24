@@ -260,9 +260,9 @@ func (c *cookieSyncEndpoint) handleResponse(w http.ResponseWriter, tf usersync.S
 		status = "ok"
 	}
 
-	response := cookieSyncResponse{
+	response := CookieSyncResponse{
 		Status:       status,
-		BidderStatus: make([]cookieSyncResponseBidder, 0, len(s)),
+		BidderStatus: make([]CookieSyncResponseBidder, 0, len(s)),
 	}
 
 	for _, syncerChoice := range s {
@@ -273,10 +273,10 @@ func (c *cookieSyncEndpoint) handleResponse(w http.ResponseWriter, tf usersync.S
 			continue
 		}
 
-		response.BidderStatus = append(response.BidderStatus, cookieSyncResponseBidder{
+		response.BidderStatus = append(response.BidderStatus, CookieSyncResponseBidder{
 			BidderCode: syncerChoice.Bidder,
 			NoCookie:   true,
-			UsersyncInfo: cookieSyncResponseSync{
+			UsersyncInfo: CookieSyncResponseSync{
 				URL:         sync.URL,
 				Type:        string(sync.Type),
 				SupportCORS: sync.SupportCORS,
@@ -295,7 +295,7 @@ func (c *cookieSyncEndpoint) handleResponse(w http.ResponseWriter, tf usersync.S
 	enc.Encode(response)
 }
 
-func mapBidderStatusToAnalytics(from []cookieSyncResponseBidder) []*analytics.CookieSyncBidder {
+func mapBidderStatusToAnalytics(from []CookieSyncResponseBidder) []*analytics.CookieSyncBidder {
 	to := make([]*analytics.CookieSyncBidder, len(from))
 	for i, b := range from {
 		to[i] = &analytics.CookieSyncBidder{
@@ -331,18 +331,18 @@ type cookieSyncRequestFilter struct {
 	Mode    string      `json:"filter"`
 }
 
-type cookieSyncResponse struct {
+type CookieSyncResponse struct {
 	Status       string                     `json:"status"`
-	BidderStatus []cookieSyncResponseBidder `json:"bidder_status"`
+	BidderStatus []CookieSyncResponseBidder `json:"bidder_status"`
 }
 
-type cookieSyncResponseBidder struct {
+type CookieSyncResponseBidder struct {
 	BidderCode   string                 `json:"bidder"`
 	NoCookie     bool                   `json:"no_cookie,omitempty"`
-	UsersyncInfo cookieSyncResponseSync `json:"usersync,omitempty"`
+	UsersyncInfo CookieSyncResponseSync `json:"usersync,omitempty"`
 }
 
-type cookieSyncResponseSync struct {
+type CookieSyncResponseSync struct {
 	URL         string `json:"url,omitempty"`
 	Type        string `json:"type,omitempty"`
 	SupportCORS bool   `json:"supportCORS,omitempty"`
