@@ -181,6 +181,8 @@ const (
 	BidderSomoaudience      BidderName = "somoaudience"
 	BidderSonobi            BidderName = "sonobi"
 	BidderSovrn             BidderName = "sovrn"
+	BidderSpotX             BidderName = "spotx"
+	BidderStreamkey         BidderName = "streamkey"
 	BidderSynacormedia      BidderName = "synacormedia"
 	BidderTappx             BidderName = "tappx"
 	BidderTelaria           BidderName = "telaria"
@@ -191,6 +193,7 @@ const (
 	BidderUnicorn           BidderName = "unicorn"
 	BidderUnruly            BidderName = "unruly"
 	BidderValueImpression   BidderName = "valueimpression"
+	BidderVASTBidder        BidderName = "vastbidder"
 	BidderVerizonMedia      BidderName = "verizonmedia"
 	BidderVisx              BidderName = "visx"
 	BidderViewdeos          BidderName = "viewdeos"
@@ -315,6 +318,8 @@ func CoreBidderNames() []BidderName {
 		BidderSomoaudience,
 		BidderSonobi,
 		BidderSovrn,
+		BidderSpotX,
+		BidderStreamkey,
 		BidderSynacormedia,
 		BidderTappx,
 		BidderTelaria,
@@ -325,6 +330,7 @@ func CoreBidderNames() []BidderName {
 		BidderUnicorn,
 		BidderUnruly,
 		BidderValueImpression,
+		BidderVASTBidder,
 		BidderVerizonMedia,
 		BidderViewdeos,
 		BidderVisx,

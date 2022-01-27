@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -21,6 +23,16 @@ import (
 )
 
 const MAX_IMPRESSIONS_PUBMATIC = 30
+
+const (
+	PUBMATIC            = "[PUBMATIC]"
+	buyId               = "buyid"
+	buyIdTargetingKey   = "hb_buyid_pubmatic"
+	skAdnetworkKey      = "skadn"
+	rewardKey           = "reward"
+	dctrKeywordName     = "dctr"
+	urlEncodedEqualChar = "%3D"
+)
 
 type PubmaticAdapter struct {
 	http *adapters.HTTPAdapter
@@ -382,6 +394,46 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		request.App = &appCopy
 	}
 
+	// move user.ext.eids to user.eids
+	if request.User != nil && request.User.Ext != nil {
+		var userExt *openrtb_ext.ExtUser
+		if err = json.Unmarshal(request.User.Ext, &userExt); err == nil {
+			if userExt != nil && userExt.Eids != nil {
+				var eidArr []openrtb2.Eid
+				for _, eid := range userExt.Eids {
+					//var newEid openrtb2.Eid
+					newEid := &openrtb2.Eid{
+						ID:     eid.ID,
+						Source: eid.Source,
+						Ext:    eid.Ext,
+					}
+					var uidArr []openrtb2.Uid
+					for _, uid := range eid.Uids {
+						newUID := &openrtb2.Uid{
+							ID:    uid.ID,
+							AType: uid.Atype,
+							Ext:   uid.Ext,
+						}
+						uidArr = append(uidArr, *newUID)
+					}
+					newEid.Uids = uidArr
+					eidArr = append(eidArr, *newEid)
+				}
+				request.User.Eids = eidArr
+				userExt.Eids = nil
+				updatedUserExt, err1 := json.Marshal(userExt)
+				if err1 == nil {
+					request.User.Ext = updatedUserExt
+				}
+			}
+		}
+	}
+
+	//adding hack to support DNT, since hbopenbid does not support lmt
+	if request.Device != nil && request.Device.Lmt != nil && *request.Device.Lmt != 0 {
+		request.Device.DNT = request.Device.Lmt
+	}
+
 	reqJSON, err := json.Marshal(request)
 	if err != nil {
 		errs = append(errs, err)
@@ -391,6 +443,9 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json;charset=utf-8")
 	headers.Add("Accept", "application/json")
+	for _, line := range cookies {
+		headers.Add("Cookie", line)
+	}
 	return []*adapters.RequestData{{
 		Method:  "POST",
 		Uri:     a.URI,
@@ -419,26 +474,26 @@ func validateAdSlot(adslot string, imp *openrtb2.Imp) error {
 
 		adSize := strings.Split(strings.ToLower(adSlot[1]), "x")
 		if len(adSize) != 2 {
-			return fmt.Errorf("Invalid size provided in adSlot %v", adSlotStr)
+			return errors.New(fmt.Sprintf("Invalid size provided in adSlot %v", adSlotStr))
 		}
 
 		width, err := strconv.Atoi(strings.TrimSpace(adSize[0]))
 		if err != nil {
-			return fmt.Errorf("Invalid width provided in adSlot %v", adSlotStr)
+			return errors.New(fmt.Sprintf("Invalid width provided in adSlot %v", adSlotStr))
 		}
 
 		heightStr := strings.Split(adSize[1], ":")
 		height, err := strconv.Atoi(strings.TrimSpace(heightStr[0]))
 		if err != nil {
-			return fmt.Errorf("Invalid height provided in adSlot %v", adSlotStr)
+			return errors.New(fmt.Sprintf("Invalid height provided in adSlot %v", adSlotStr))
 		}
 
 		//In case of video, size could be derived from the player size
-		if imp.Banner != nil {
+		if imp.Banner != nil && width != 0 && height != 0 {
 			imp.Banner = assignBannerWidthAndHeight(imp.Banner, int64(width), int64(height))
 		}
 	} else {
-		return fmt.Errorf("Invalid adSlot %v", adSlotStr)
+		return errors.New(fmt.Sprintf("Invalid adSlot %v", adSlotStr))
 	}
 
 	return nil
@@ -447,6 +502,10 @@ func validateAdSlot(adslot string, imp *openrtb2.Imp) error {
 func assignBannerSize(banner *openrtb2.Banner) (*openrtb2.Banner, error) {
 	if banner.W != nil && banner.H != nil {
 		return banner, nil
+	}
+
+	if len(banner.Format) == 0 {
+		return nil, errors.New(fmt.Sprintf("No sizes provided for Banner %v", banner.Format))
 	}
 
 	return assignBannerWidthAndHeight(banner, banner.Format[0].W, banner.Format[0].H), nil
@@ -518,6 +577,15 @@ func parseImpressionObject(imp *openrtb2.Imp, wrapExt *string, pubID *string) er
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
 	}
 
+	if bidderExt.Prebid != nil {
+		if bidderExt.Prebid.SKAdnetwork != nil {
+			extMap[skAdnetworkKey] = bidderExt.Prebid.SKAdnetwork
+		}
+		if bidderExt.Prebid.IsRewardedInventory == 1 {
+			extMap[rewardKey] = bidderExt.Prebid.IsRewardedInventory
+		}
+	}
+
 	if bidderExt.Data != nil {
 		if bidderExt.Data.AdServer != nil && bidderExt.Data.AdServer.Name == AdServerGAM && bidderExt.Data.AdServer.AdSlot != "" {
 			extMap[ImpExtAdUnitKey] = bidderExt.Data.AdServer.AdSlot
@@ -545,10 +613,20 @@ func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[s
 			continue
 		} else {
 			key := keyVal.Key
-			if keyVal.Key == pmZoneIDKeyNameOld {
+			val := strings.Join(keyVal.Values[:], ",")
+			if strings.EqualFold(key, pmZoneIDRequestParamName) {
 				key = pmZoneIDKeyName
+			} else if key == dctrKeywordName {
+				key = dctrKeyName
+				// URL-decode dctr value if it is url-encoded
+				if strings.Contains(val, urlEncodedEqualChar) {
+					urlDecodedVal, err := url.QueryUnescape(val)
+					if err == nil {
+						val = urlDecodedVal
+					}
+				}
 			}
-			extMap[key] = strings.Join(keyVal.Values[:], ",")
+			extMap[key] = val
 		}
 	}
 }
@@ -593,8 +671,12 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 	var errs []error
 	for _, sb := range bidResp.SeatBid {
+		targets := getTargetingKeys(sb.Ext)
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
+			// Copy SeatBid Ext to Bid.Ext
+			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
+
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
@@ -610,9 +692,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bidType = getBidType(bidExt)
 			}
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:      &bid,
-				BidType:  bidType,
-				BidVideo: impVideo,
+				Bid:        &bid,
+				BidType:    bidType,
+				BidVideo:   impVideo,
+				BidTargets: targets,
 			})
 
 		}
@@ -661,4 +744,45 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters
 		URI: config.Endpoint,
 	}
 	return bidder, nil
+}
+
+func getTargetingKeys(bidExt json.RawMessage) map[string]string {
+	targets := map[string]string{}
+	if bidExt != nil {
+		bidExtMap := make(map[string]interface{})
+		err := json.Unmarshal(bidExt, &bidExtMap)
+		if err == nil && bidExtMap[buyId] != nil {
+			targets[buyIdTargetingKey] = string(bidExtMap[buyId].(string))
+		}
+	}
+	return targets
+}
+
+func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMessage {
+	if sbExt != nil {
+		sbExtMap := getMapFromJSON(sbExt)
+		bidExtMap := make(map[string]interface{})
+		if bidExt != nil {
+			bidExtMap = getMapFromJSON(bidExt)
+		}
+		if bidExtMap != nil && sbExtMap != nil {
+			if sbExtMap[buyId] != nil && bidExtMap[buyId] == nil {
+				bidExtMap[buyId] = sbExtMap[buyId]
+			}
+		}
+		byteAra, _ := json.Marshal(bidExtMap)
+		return json.RawMessage(byteAra)
+	}
+	return bidExt
+}
+
+func getMapFromJSON(ext json.RawMessage) map[string]interface{} {
+	if ext != nil {
+		extMap := make(map[string]interface{})
+		err := json.Unmarshal(ext, &extMap)
+		if err == nil {
+			return extMap
+		}
+	}
+	return nil
 }
