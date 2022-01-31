@@ -120,6 +120,7 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	if cfg.AccountDefaults.Disabled {
 		glog.Warning(`With account_defaults.disabled=true, host-defined accounts must exist and have "disabled":false. All other requests will be rejected.`)
 	}
+	errs = cfg.AccountDefaults.Events.Validate(errs)
 	return errs
 }
 
@@ -604,11 +605,6 @@ func New(v *viper.Viper) (*Configuration, error) {
 	if errs := c.validate(v); len(errs) > 0 {
 		return &c, errortypes.NewAggregateError("validation errors", errs)
 	}
-
-	if err := c.AccountDefaults.Events.Validate(); err != nil {
-		return nil, err
-	}
-
 	return &c, nil
 }
 

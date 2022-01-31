@@ -14,20 +14,21 @@ var createElements = [...]string{"impression", "tracking", "clicktracking", "com
 // eventTypes contains list of valid VAST event types for tracking element
 var eventTypes = [...]string{"start", "firstQuartile", "midPoint", "thirdQuartile", "complete"}
 
-// Validate validates the events and returns error if at least one is invalid.
-func (e Events) Validate() error {
+// Validate verifies the events object  and returns error if at least one is invalid.
+func (e Events) Validate(errs []error) []error {
 	if e.Enabled { // validate only if events are enabled
 		if !isValidURL(e.DefaultURL) {
-			return errors.New("Invalid Events.DefaultURL")
+			return append(errs, errors.New("Invalid events.default_url"))
 		}
 		err := validateVASTEvents(e.VASTEvents)
 		if err != nil {
-			return err
+			return append(errs, err)
 		}
 	}
-	return nil // valid events or events are not enabled skip validation
+	return errs // valid events or events are not enabled skip validation
 }
 
+// validateVASTEvents verifies the all VASTEvent objects and returns error if at least one is invalid.
 func validateVASTEvents(events []VASTEvent) error {
 	if nil != events {
 		for i, event := range events {
@@ -42,31 +43,31 @@ func validateVASTEvents(events []VASTEvent) error {
 // validateVASTEvent validates event object and  returns error if at least one is invalid
 func validateVASTEvent(event VASTEvent, index int) error {
 	if !isValidCreateElement(event.CreateElement) {
-		return fmt.Errorf("Invalid VASTEvents[%d].CreateElement", index)
+		return fmt.Errorf("Invalid events.vast_events[%d].create_element", index)
 	}
 
 	// VASTEvent.ExcludeDefaultURL assumed to be false by default
 	if !isValidType(event) {
 		if isTrackingEvent(event) {
-			return fmt.Errorf("Missing or Invalid VASTEvents[%d].Type.Valid values are %v", index, strings.Join(eventTypes[:], " ,"))
+			return fmt.Errorf("Missing or Invalid events.vast_events[%d].type. Valid values are %v", index, strings.Join(eventTypes[:], " ,"))
 		}
-		return fmt.Errorf("VASTEvents[%d].Type is not applicable for create element '%s'", index, event.CreateElement)
+		return fmt.Errorf("events.vast_events[%d].type is not applicable for create element '%s'", index, event.CreateElement)
 	}
 	for i, url := range event.URLs {
 		if !isValidURL(url) {
-			return fmt.Errorf("Invalid VASTEvents[%d].URLs[%d]", index, i)
+			return fmt.Errorf("Invalid events.vast_events[%d].urls[%d]", index, i)
 		}
 	}
 	// ensure at least one valid url exists when default URL to be excluded
 	if event.ExcludeDefaultURL && len(event.URLs) == 0 {
-		return fmt.Errorf("Please provide at least one valid URL for VASTEvents[%d] or set VASTEvents[%d].ExcludeDefaultURL=false", index, index)
+		return fmt.Errorf("Please provide at least one valid URL in events.vast_events[%d].urls or set events.vast_events[%d].exclude_default_url=false", index, index)
 	}
 
 	return nil // no errors
 }
 
-// isValidCreateElement checks if value belongs to
-//  createElements
+// isValidCreateElement checks create_element has valid value
+// if value is value returns true, otherwise false
 func isValidCreateElement(element string) bool {
 	valid := false
 	// validate create element
@@ -79,7 +80,7 @@ func isValidCreateElement(element string) bool {
 	return valid
 }
 
-// isValidtype checks valid type is provided in case event is of type tracking
+// isValidtype checks if valid type is provided in case event is of type tracking.
 // in case of other events this value must be empty
 func isValidType(event VASTEvent) bool {
 	if isTrackingEvent(event) {

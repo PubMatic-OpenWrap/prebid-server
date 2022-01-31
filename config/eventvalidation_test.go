@@ -149,14 +149,14 @@ func TestValidateVASTEventTypeNotApplicable(t *testing.T) {
 // Expect error (non nil object) becase default_url = "" i.e. invalid
 func TestValidateEventsEnabled(t *testing.T) {
 	e := Events{Enabled: true}
-	assert.NotNil(t, e.Validate())
+	assert.NotNil(t, e.Validate(make([]error, 0)))
 }
 
 // Expect no error when no vast events are there but
 // enabled = true and valid default_url is present
 func TestValidateEventsEmptyVASTEvents(t *testing.T) {
 	e := Events{Enabled: true, DefaultURL: "http://prebid.org"}
-	assert.Nil(t, e.Validate())
+	assert.Empty(t, e.Validate(make([]error, 0)))
 }
 
 // Expect error (non nil object) becase of invalid vast events
@@ -165,7 +165,7 @@ func TestValidateInvalidVASTEvents(t *testing.T) {
 		VASTEvents: []VASTEvent{
 			{}, // this is invalid vast event as no create element specified
 		}}
-	assert.NotNil(t, e.Validate())
+	assert.NotNil(t, e.Validate(make([]error, 0)))
 }
 
 // validateVASTEvents tests
