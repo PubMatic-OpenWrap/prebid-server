@@ -20,7 +20,7 @@ import (
 	"github.com/prebid/prebid-server/pbs"
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	gdprPolicy "github.com/prebid/prebid-server/privacy/gdpr"
-	"github.com/prebid/prebid-server/usersync/usersyncers"
+	"github.com/prebid/prebid-server/usersync"
 	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
@@ -351,13 +351,13 @@ func TestCacheVideoOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	syncers := usersyncers.NewSyncerMap(cfg)
+	syncersByBidder := map[string]usersync.Syncer{}
 	gdprPerms := gdpr.NewPermissions(context.Background(), config.GDPR{
 		HostVendorID: 0,
 	}, nil, nil)
 	prebid_cache_client.InitPrebidCache(server.URL)
 	var labels = &metrics.Labels{}
-	if err := cacheVideoOnly(bids, ctx, &auction{cfg: cfg, syncers: syncers, gdprPerms: gdprPerms, metricsEngine: &metricsConf.DummyMetricsEngine{}}, labels); err != nil {
+	if err := cacheVideoOnly(bids, ctx, &auction{cfg: cfg, syncersByBidder: syncersByBidder, gdprPerms: gdprPerms, metricsEngine: &metricsConf.NilMetricsEngine{}}, labels); err != nil {
 		t.Errorf("Prebid cache failed: %v \n", err)
 		return
 	}
@@ -637,18 +637,18 @@ func TestWriteAuctionError(t *testing.T) {
 }
 
 func TestPanicRecovery(t *testing.T) {
-	dummy := auction{
-		cfg:     nil,
-		syncers: nil,
+	testAuction := auction{
+		cfg:             nil,
+		syncersByBidder: nil,
 		gdprPerms: &auctionMockPermissions{
 			allowBidderSync:  false,
 			allowHostCookies: false,
 		},
-		metricsEngine: &metricsConf.DummyMetricsEngine{},
+		metricsEngine: &metricsConf.NilMetricsEngine{},
 	}
 	panicker := func(bidder *pbs.PBSBidder, blables metrics.AdapterLabels) {
 		panic("panic!")
 	}
-	recovered := dummy.recoverSafely(panicker)
+	recovered := testAuction.recoverSafely(panicker)
 	recovered(nil, metrics.AdapterLabels{})
 }

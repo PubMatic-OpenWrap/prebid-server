@@ -1,11 +1,12 @@
 package prebidServer
 
 import (
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
 	"math/rand"
 	"net/http"
 	"time"
+
+	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -40,7 +41,7 @@ func main() {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
 
-	err = serve(Rev, cfg)
+	err = serve(cfg)
 	if err != nil {
 		glog.Exitf("prebid-server failed: %v", err)
 	}
@@ -73,7 +74,7 @@ func loadConfig(configFileName string) (*config.Configuration, error) {
 	return config.New(v)
 }
 
-func serve(revision string, cfg *config.Configuration) error {
+func serve(cfg *config.Configuration) error {
 	fetchingInterval := time.Duration(cfg.CurrencyConverter.FetchIntervalSeconds) * time.Second
 	staleRatesThreshold := time.Duration(cfg.CurrencyConverter.StaleRatesSeconds) * time.Second
 	currencyConverter := currency.NewRateConverter(&http.Client{}, cfg.CurrencyConverter.FetchURL, staleRatesThreshold)

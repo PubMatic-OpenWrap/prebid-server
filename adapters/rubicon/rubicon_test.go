@@ -5,37 +5,47 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/stretchr/testify/mock"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/errortypes"
-
+	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/cache/dummycache"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
 	"github.com/prebid/prebid-server/usersync"
 
-	"fmt"
-
-	"strings"
-
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-
+	"github.com/buger/jsonparser"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type rubiAppendTrackerUrlTestScenario struct {
 	source   string
 	tracker  string
 	expected string
+}
+
+type rubiPopulateFpdAttributesScenario struct {
+	source json.RawMessage
+	target map[string]interface{}
+	result map[string]interface{}
+}
+
+type rubiSetNetworkIdTestScenario struct {
+	bidExt            *openrtb_ext.ExtBidPrebid
+	buyer             string
+	expectedNetworkId int64
+	isNetworkIdSet    bool
 }
 
 type rubiTagInfo struct {
@@ -1027,7 +1037,7 @@ func CreatePrebidRequest(server *httptest.Server, t *testing.T) (an *RubiconAdap
 	req.Header.Add("User-Agent", rubidata.deviceUA)
 	req.Header.Add("X-Real-IP", rubidata.deviceIP)
 
-	pc := usersync.ParsePBSCookieFromRequest(req, &config.HostCookie{})
+	pc := usersync.ParseCookieFromRequest(req, &config.HostCookie{})
 	pc.TrySync("rubicon", rubidata.buyerUID)
 	fakewriter := httptest.NewRecorder()
 
@@ -1273,7 +1283,10 @@ func TestOpenRTBRequestWithImpAndAdSlotIncluded(t *testing.T) {
 				},
 				"context": {
 					"data": {
-						"adslot": "///test-adslot"
+                        "adserver": {
+                             "adslot": "/test-adslot",
+                             "name": "gam"
+                        }
 					}
 				}
 			}`),
@@ -1298,14 +1311,52 @@ func TestOpenRTBRequestWithImpAndAdSlotIncluded(t *testing.T) {
 	if err := json.Unmarshal(rubiconReq.Imp[0].Ext, &rpImpExt); err != nil {
 		t.Fatal("Error unmarshalling imp.ext")
 	}
+	assert.Equal(t, rpImpExt.GPID, "/test-adslot")
+}
 
-	rubiconExtInventory := make(map[string]interface{})
-	if err := json.Unmarshal(rpImpExt.RP.Target, &rubiconExtInventory); err != nil {
-		t.Fatal("Error unmarshalling imp.ext.rp.target")
+func TestOpenRTBFirstPartyDataPopulating(t *testing.T) {
+	testScenarios := []rubiPopulateFpdAttributesScenario{
+		{
+			source: json.RawMessage(`{"sourceKey": ["sourceValue", "sourceValue2"]}`),
+			target: map[string]interface{}{"targetKey": []interface{}{"targetValue"}},
+			result: map[string]interface{}{"targetKey": []interface{}{"targetValue"}, "sourceKey": []interface{}{"sourceValue", "sourceValue2"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": ["sourceValue", "sourceValue2"]}`),
+			target: make(map[string]interface{}),
+			result: map[string]interface{}{"sourceKey": []interface{}{"sourceValue", "sourceValue2"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": "sourceValue"}`),
+			target: make(map[string]interface{}),
+			result: map[string]interface{}{"sourceKey": [1]string{"sourceValue"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": true, "sourceKey2": [true, false, true]}`),
+			target: make(map[string]interface{}),
+			result: map[string]interface{}{"sourceKey": [1]string{"true"}, "sourceKey2": []string{"true", "false", "true"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": 1, "sourceKey2": [1, 2, 3]}`),
+			target: make(map[string]interface{}),
+			result: map[string]interface{}{"sourceKey": [1]string{"1"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": 1, "sourceKey2": 3.23}`),
+			target: make(map[string]interface{}),
+			result: map[string]interface{}{"sourceKey": [1]string{"1"}},
+		},
+		{
+			source: json.RawMessage(`{"sourceKey": {}}`),
+			target: make(map[string]interface{}),
+			result: make(map[string]interface{}),
+		},
 	}
 
-	assert.Equal(t, "test-adslot", rubiconExtInventory["dfp_ad_unit_code"],
-		"Unexpected dfp_ad_unit_code: %s", rubiconExtInventory["dfp_ad_unit_code"])
+	for _, scenario := range testScenarios {
+		populateFirstPartyDataAttributes(scenario.source, scenario.target)
+		assert.Equal(t, scenario.result, scenario.target)
+	}
 }
 
 func TestOpenRTBRequestWithBadvOverflowed(t *testing.T) {
@@ -1672,6 +1723,105 @@ func TestOpenRTBResponseOverridePriceFromBidRequest(t *testing.T) {
 
 	assert.Equal(t, float64(10), bidResponse.Bids[0].Bid.Price,
 		"Expected Price 10. Got: %s", bidResponse.Bids[0].Bid.Price)
+}
+
+func TestOpenRTBResponseSettingOfNetworkId(t *testing.T) {
+	testScenarios := []rubiSetNetworkIdTestScenario{
+		{
+			bidExt:            nil,
+			buyer:             "1",
+			expectedNetworkId: 1,
+			isNetworkIdSet:    true,
+		},
+		{
+			bidExt:            nil,
+			buyer:             "0",
+			expectedNetworkId: 0,
+			isNetworkIdSet:    false,
+		},
+		{
+			bidExt:            nil,
+			buyer:             "-1",
+			expectedNetworkId: 0,
+			isNetworkIdSet:    false,
+		},
+		{
+			bidExt:            nil,
+			buyer:             "1.1",
+			expectedNetworkId: 0,
+			isNetworkIdSet:    false,
+		},
+		{
+			bidExt:            &openrtb_ext.ExtBidPrebid{},
+			buyer:             "2",
+			expectedNetworkId: 2,
+			isNetworkIdSet:    true,
+		},
+		{
+			bidExt:            &openrtb_ext.ExtBidPrebid{Meta: &openrtb_ext.ExtBidPrebidMeta{}},
+			buyer:             "3",
+			expectedNetworkId: 3,
+			isNetworkIdSet:    true,
+		},
+		{
+			bidExt:            &openrtb_ext.ExtBidPrebid{Meta: &openrtb_ext.ExtBidPrebidMeta{NetworkID: 5}},
+			buyer:             "4",
+			expectedNetworkId: 4,
+			isNetworkIdSet:    true,
+		},
+		{
+			bidExt:            &openrtb_ext.ExtBidPrebid{Meta: &openrtb_ext.ExtBidPrebidMeta{NetworkID: 5}},
+			buyer:             "-1",
+			expectedNetworkId: 5,
+			isNetworkIdSet:    false,
+		},
+	}
+
+	for _, scenario := range testScenarios {
+		request := &openrtb2.BidRequest{
+			Imp: []openrtb2.Imp{{
+				ID:     "test-imp-id",
+				Banner: &openrtb2.Banner{},
+			}},
+		}
+
+		requestJson, _ := json.Marshal(request)
+		reqData := &adapters.RequestData{
+			Method:  "POST",
+			Uri:     "test-uri",
+			Body:    requestJson,
+			Headers: nil,
+		}
+
+		var givenBidExt json.RawMessage
+		if scenario.bidExt != nil {
+			marshalledExt, _ := json.Marshal(scenario.bidExt)
+			givenBidExt = marshalledExt
+		} else {
+			givenBidExt = nil
+		}
+		givenBidResponse := rubiconBidResponse{
+			SeatBid: []rubiconSeatBid{{Buyer: scenario.buyer,
+				SeatBid: openrtb2.SeatBid{
+					Bid: []openrtb2.Bid{{Price: 123.2, ImpID: "test-imp-id", Ext: givenBidExt}}}}},
+		}
+		body, _ := json.Marshal(&givenBidResponse)
+		httpResp := &adapters.ResponseData{
+			StatusCode: http.StatusOK,
+			Body:       body,
+		}
+
+		bidder := new(RubiconAdapter)
+		bidResponse, errs := bidder.MakeBids(request, reqData, httpResp)
+		assert.Empty(t, errs)
+		if scenario.isNetworkIdSet {
+			networkdId, err := jsonparser.GetInt(bidResponse.Bids[0].Bid.Ext, "prebid", "meta", "networkId")
+			assert.NoError(t, err)
+			assert.Equal(t, scenario.expectedNetworkId, networkdId)
+		} else {
+			assert.Equal(t, bidResponse.Bids[0].Bid.Ext, givenBidExt)
+		}
+	}
 }
 
 func TestOpenRTBResponseOverridePriceFromCorrespondingImp(t *testing.T) {
