@@ -14,8 +14,8 @@ var createElements = [...]string{"impression", "tracking", "clicktracking", "com
 // eventTypes contains list of valid VAST event types for tracking element
 var eventTypes = [...]string{"start", "firstQuartile", "midPoint", "thirdQuartile", "complete"}
 
-// Validate verifies the events object  and returns error if at least one is invalid.
-func (e Events) Validate(errs []error) []error {
+// validate verifies the events object  and returns error if at least one is invalid.
+func (e Events) validate(errs []error) []error {
 	if e.Enabled { // validate only if events are enabled
 		if !isValidURL(e.DefaultURL) {
 			return append(errs, errors.New("Invalid events.default_url"))
