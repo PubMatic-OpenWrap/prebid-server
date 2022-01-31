@@ -605,6 +605,7 @@ func New(v *viper.Viper) (*Configuration, error) {
 	if errs := c.validate(v); len(errs) > 0 {
 		return &c, errortypes.NewAggregateError("validation errors", errs)
 	}
+
 	return &c, nil
 }
 
