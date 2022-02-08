@@ -324,8 +324,9 @@ type LMT struct {
 }
 
 type Analytics struct {
-	File     FileLogs `mapstructure:"file"`
-	Pubstack Pubstack `mapstructure:"pubstack"`
+	File          FileLogs      `mapstructure:"file"`
+	Pubstack      Pubstack      `mapstructure:"pubstack"`
+	ShriAnalytics ShriAnalytics `mapstructure:"shrianalytics"`
 }
 
 type CurrencyConverter struct {
@@ -352,6 +353,10 @@ type Pubstack struct {
 	IntakeUrl   string         `mapstructure:"endpoint"`
 	Buffers     PubstackBuffer `mapstructure:"buffers"`
 	ConfRefresh string         `mapstructure:"configuration_refresh_delay"`
+}
+
+type ShriAnalytics struct {
+	Enabled bool `mapstructure:"enabled"`
 }
 
 type PubstackBuffer struct {

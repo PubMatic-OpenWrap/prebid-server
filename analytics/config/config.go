@@ -6,6 +6,7 @@ import (
 	"github.com/prebid/prebid-server/analytics/clients"
 	"github.com/prebid/prebid-server/analytics/filesystem"
 	"github.com/prebid/prebid-server/analytics/pubstack"
+	"github.com/prebid/prebid-server/analytics/shritestanlt"
 	"github.com/prebid/prebid-server/config"
 )
 
@@ -33,6 +34,11 @@ func NewPBSAnalytics(analytics *config.Analytics) analytics.PBSAnalyticsModule {
 		} else {
 			glog.Errorf("Could not initialize PubstackModule: %v", err)
 		}
+	}
+
+	if analytics.ShriAnalytics.Enabled {
+		shrianlt := shritestanlt.NewShriTestAnalyticsModule()
+		modules = append(modules, shrianlt)
 	}
 	return modules
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 
 	"github.com/buger/jsonparser"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -430,7 +431,7 @@ func (deps *endpointDeps) createImpressions(videoReq *openrtb_ext.BidRequestVide
 				impsArray[impInd].Video.MaxDuration = int64(maxDuration)
 			}
 
-			impsArray[impInd].ID = fmt.Sprintf("%d_%d", pod.PodId, impInd)
+			// impsArray[impInd].ID = fmt.Sprintf("%d_%d", pod.PodId, impInd)
 		}
 		finalImpsArray = append(finalImpsArray, impsArray...)
 
