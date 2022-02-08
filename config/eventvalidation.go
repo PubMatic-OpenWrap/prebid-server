@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,6 +26,8 @@ func (e Events) validate(errs []error) []error {
 			return append(errs, err)
 		}
 	}
+	out, _ := json.MarshalIndent(e, "", "    ")
+	fmt.Printf("%s", string(out))
 	return errs // valid events or events are not enabled skip validation
 }
 
