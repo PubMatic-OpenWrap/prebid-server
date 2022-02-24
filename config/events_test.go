@@ -14,7 +14,7 @@ func TestIsValidCreateElement(t *testing.T) {
 	}{
 		{
 			description:   "Empty create element",
-			createElement: "", // being string this element can never be nil
+			createElement: "",
 			valid:         false,
 		},
 		{
