@@ -120,12 +120,13 @@ type BidRequestParams struct {
 
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
-	Params     *BidRequestParams
+	Params  *BidRequestParams
+	Method  string
+	Uri     string
+	Body    []byte
+	Headers http.Header
+
 	BidderName openrtb_ext.BidderName
-	Method     string
-	Uri        string
-	Body       []byte
-	Headers    http.Header
 }
 
 // ExtImpBidder can be used by Bidders to unmarshal any request.imp[i].ext.
