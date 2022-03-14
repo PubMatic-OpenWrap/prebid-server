@@ -13,6 +13,7 @@ type ExtImpPubmatic struct {
 	AdSlot      string                  `json:"adSlot"`
 	Dctr        string                  `json:"dctr,omitempty"`
 	PmZoneID    string                  `json:"pmzoneid,omitempty"`
+	Kadfloor    string                  `json:"kadfloor,omitempty"`
 	WrapExt     json.RawMessage         `json:"wrapper,omitempty"`
 	Keywords    []*ExtImpPubmaticKeyVal `json:"keywords,omitempty"`
 }
