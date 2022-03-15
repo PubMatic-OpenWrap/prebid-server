@@ -7,7 +7,6 @@ import (
 
 	"github.com/influxdata/influxdb/pkg/testing/assert"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -174,21 +173,7 @@ func Test_parseImpressionObject(t *testing.T) {
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
-					Ext: func() json.RawMessage {
-						bidder, err := json.Marshal(openrtb_ext.ExtImpPubmatic{Kadfloor: "0.12"})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						m, err := json.Marshal(ExtImpBidderPubmatic{
-							ExtImpBidder: adapters.ExtImpBidder{Bidder: bidder},
-						})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						return json.RawMessage(m)
-					}(),
+					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
 				},
 			},
 			wantImp: &openrtb2.Imp{
@@ -201,21 +186,7 @@ func Test_parseImpressionObject(t *testing.T) {
 				imp: &openrtb2.Imp{
 					BidFloor: 0.12,
 					Video:    &openrtb2.Video{},
-					Ext: func() json.RawMessage {
-						bidder, err := json.Marshal(openrtb_ext.ExtImpPubmatic{})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						m, err := json.Marshal(ExtImpBidderPubmatic{
-							ExtImpBidder: adapters.ExtImpBidder{Bidder: bidder},
-						})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						return json.RawMessage(m)
-					}(),
+					Ext:      json.RawMessage(`{"bidder":{}}`),
 				},
 			},
 			wantImp: &openrtb2.Imp{
@@ -228,21 +199,7 @@ func Test_parseImpressionObject(t *testing.T) {
 				imp: &openrtb2.Imp{
 					BidFloor: 0.12,
 					Video:    &openrtb2.Video{},
-					Ext: func() json.RawMessage {
-						bidder, err := json.Marshal(openrtb_ext.ExtImpPubmatic{Kadfloor: "aaa"})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						m, err := json.Marshal(ExtImpBidderPubmatic{
-							ExtImpBidder: adapters.ExtImpBidder{Bidder: bidder},
-						})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						return json.RawMessage(m)
-					}(),
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"aaa"}}`),
 				},
 			},
 			wantImp: &openrtb2.Imp{
@@ -255,21 +212,7 @@ func Test_parseImpressionObject(t *testing.T) {
 				imp: &openrtb2.Imp{
 					BidFloor: 0.12,
 					Video:    &openrtb2.Video{},
-					Ext: func() json.RawMessage {
-						bidder, err := json.Marshal(openrtb_ext.ExtImpPubmatic{Kadfloor: "0.11"})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						m, err := json.Marshal(ExtImpBidderPubmatic{
-							ExtImpBidder: adapters.ExtImpBidder{Bidder: bidder},
-						})
-						if err != nil {
-							panic(err.Error())
-						}
-
-						return json.RawMessage(m)
-					}(),
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.11"}}`),
 				},
 			},
 			wantImp: &openrtb2.Imp{
