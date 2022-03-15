@@ -2,8 +2,11 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
+	"github.com/influxdata/influxdb/pkg/testing/assert"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -148,5 +151,89 @@ func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
 	bidextnew := copySBExtToBidExt(nil, bidext)
 	if bidextnew == nil {
 		t.Errorf("it should not be nil")
+	}
+}
+
+func Test_parseImpressionObject(t *testing.T) {
+	type args struct {
+		imp                      *openrtb2.Imp
+		extractWrapperExtFromImp bool
+		extractPubIDFromImp      bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *pubmaticWrapperExt
+		want1   string
+		wantErr bool
+		wantImp *openrtb2.Imp
+	}{
+		{
+			name: "imp.bidfloor empty and kadfloor set",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
+				},
+			},
+			wantImp: &openrtb2.Imp{
+				BidFloor: 0.12,
+			},
+		},
+		{
+			name: "imp.bidfloor set and kadfloor empty",
+			args: args{
+				imp: &openrtb2.Imp{
+					BidFloor: 0.12,
+					Video:    &openrtb2.Video{},
+					Ext:      json.RawMessage(`{"bidder":{}}`),
+				},
+			},
+			wantImp: &openrtb2.Imp{
+				BidFloor: 0.12,
+			},
+		},
+		{
+			name: "imp.bidfloor set and kadfloor invalid",
+			args: args{
+				imp: &openrtb2.Imp{
+					BidFloor: 0.12,
+					Video:    &openrtb2.Video{},
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"aaa"}}`),
+				},
+			},
+			wantImp: &openrtb2.Imp{
+				BidFloor: 0.12,
+			},
+		},
+		{
+			name: "imp.bidfloor set and kadfloor set, preference to kadfloor",
+			args: args{
+				imp: &openrtb2.Imp{
+					BidFloor: 0.12,
+					Video:    &openrtb2.Video{},
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.11"}}`),
+				},
+			},
+			wantImp: &openrtb2.Imp{
+				BidFloor: 0.11,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseImpressionObject() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseImpressionObject() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseImpressionObject() got1 = %v, want %v", got1, tt.want1)
+			}
+			assert.Equal(t, tt.args.imp.BidFloor, tt.wantImp.BidFloor)
+		})
 	}
 }
