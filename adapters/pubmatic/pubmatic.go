@@ -83,7 +83,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
-	wrapperExt, cookies, err := extractPubmaticWrapperExtFromRequest(request)
+	wrapperExt, acat, cookies, err := extractPubmaticWrapperExtFromRequest(request)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -135,15 +135,12 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		return nil, errs
 	}
 
-	if wrapperExt != nil {
-		reqExt := make(map[string]interface{})
-		reqExt["wrapper"] = wrapperExt
-		rawExt, err := json.Marshal(reqExt)
-		if err != nil {
-			return nil, []error{err}
-		}
-		request.Ext = rawExt
+	reqExt := map[string]interface{}{"acat": acat, "wrapper": wrapperExt}
+	rawExt, err := json.Marshal(reqExt)
+	if err != nil {
+		return nil, []error{err}
 	}
+	request.Ext = rawExt
 
 	if request.Site != nil {
 		siteCopy := *request.Site
@@ -389,19 +386,19 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 }
 
 // extractPubmaticWrapperExtFromRequest parse the imp to get it ready to send to pubmatic
-func extractPubmaticWrapperExtFromRequest(request *openrtb2.BidRequest) (*pubmaticWrapperExt, []string, error) {
-	var cookies []string
+func extractPubmaticWrapperExtFromRequest(request *openrtb2.BidRequest) (*pubmaticWrapperExt, []string, []string, error) {
+	var acat, cookies []string
 	var wrpExt *pubmaticWrapperExt
 	reqExtBidderParams, err := adapters.ExtractReqExtBidderParamsMap(request)
 	if err != nil {
-		return wrpExt, cookies, err
+		return wrpExt, acat, cookies, err
 	}
 
 	//get request ext bidder params
 	if wrapperObj, present := reqExtBidderParams["wrapper"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &wrpExt)
 		if err != nil {
-			return wrpExt, cookies, err
+			return wrpExt, acat, cookies, err
 		}
 	}
 
@@ -416,11 +413,15 @@ func extractPubmaticWrapperExtFromRequest(request *openrtb2.BidRequest) (*pubmat
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &cookies)
 		if err != nil {
-			return wrpExt, cookies, err
+			return wrpExt, acat, cookies, err
 		}
 	}
 
-	return wrpExt, cookies, nil
+	if _acat, ok := reqExtBidderParams["acat"]; ok {
+		err = json.Unmarshal(_acat, &acat)
+	}
+
+	return wrpExt, acat, cookies, err
 }
 
 func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[string]interface{}) {
