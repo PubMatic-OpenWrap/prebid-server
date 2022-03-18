@@ -135,12 +135,20 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		return nil, errs
 	}
 
-	reqExt := map[string]interface{}{"acat": acat, "wrapper": wrapperExt}
-	rawExt, err := json.Marshal(reqExt)
-	if err != nil {
-		return nil, []error{err}
+	reqExt := make(map[string]interface{})
+	if len(acat) > 0 {
+		reqExt["acat"] = acat
 	}
-	request.Ext = rawExt
+	if wrapperExt != nil {
+		reqExt["wrapper"] = wrapperExt
+	}
+	if len(reqExt) > 0 {
+		rawExt, err := json.Marshal(reqExt)
+		if err != nil {
+			return nil, []error{err}
+		}
+		request.Ext = rawExt
+	}
 
 	if request.Site != nil {
 		siteCopy := *request.Site
