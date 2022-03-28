@@ -58,13 +58,13 @@ type ExtRequestPrebid struct {
 	Transparency        *TransparencyExt    `json:"transparency,omitempty"`
 }
 
-type BidderContentTransparency struct {
+type TransparencyRule struct {
 	Include bool     `json:"include,omitempty"`
 	Keys    []string `json:"keys,omitempty"`
 }
 
 type TransparencyExt struct {
-	Content map[string]BidderContentTransparency `json:"content,omitempty"`
+	Content map[string]TransparencyRule `json:"content,omitempty"`
 }
 
 type BidderConfig struct {
