@@ -371,7 +371,7 @@ func getTransparencyRules(transparencyExt *openrtb_ext.TransparencyExt) (map[str
 		Include: false,
 	}
 
-	if rule, ok := rules["*"]; ok {
+	if rule, ok := rules["default"]; ok {
 		defaultRule = rule
 	}
 
