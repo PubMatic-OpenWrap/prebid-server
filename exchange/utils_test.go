@@ -3031,7 +3031,7 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Transparency: &openrtb_ext.TransparencyExt{
 							Content: map[string]openrtb_ext.BidderContentTransparency{
-								"*": {
+								"default": {
 									Include: true,
 									Keys: []string{
 										"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
