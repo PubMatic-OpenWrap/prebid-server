@@ -1,13 +1,15 @@
 package exchange
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 // updateContentObjectForBidder updates the content object for each bidder based on content transparency rules
 func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt *openrtb_ext.ExtRequest) {
-
 	if requestExt == nil || requestExt.Prebid.Transparency == nil {
 		return
 	}
@@ -27,118 +29,49 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 	rules := requestExt.Prebid.Transparency.Content
 
 	// Dont send content object if no rule and default is not present
-	defaultRule := openrtb_ext.TransparencyRule{}
-
+	var defaultRule = openrtb_ext.TransparencyRule{}
 	if rule, ok := rules["default"]; ok {
 		defaultRule = rule
 	}
 
-	for i, bidderRequest := range allBidderRequests {
-
+	for _, bidderRequest := range allBidderRequests {
 		var newContentObject *openrtb2.Content
 
 		if len(rules) != 0 {
-
 			rule, ok := rules[string(bidderRequest.BidderName)]
 			if !ok {
 				rule = defaultRule
 			}
 
-			if len(rule.Keys) == 0 {
-				if rule.Include {
-					newContentObject = &openrtb2.Content{}
-					*newContentObject = *contentObject
-				}
-			} else {
-				newContentObject = &openrtb2.Content{}
-				createNewContentObject(newContentObject, contentObject, rule.Include, rule.Keys)
+			if len(rule.Keys) != 0 {
+				newContentObject = createNewContentObject(newContentObject, contentObject, rule.Include, rule.Keys)
+			} else if rule.Include {
+				newContentObject = contentObject
 			}
 		}
-
-		bidderRequest.BidRequest = copyRequest(bidderRequest.BidRequest, newContentObject, isApp)
-		allBidderRequests[i] = bidderRequest
+		deepCopyContentObj(bidderRequest.BidRequest, newContentObject, isApp)
 	}
 }
 
-func copyRequest(originalRequest *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) *openrtb2.BidRequest {
-
-	newRequest := *originalRequest
-
+func deepCopyContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) {
 	if isApp {
-		app := *originalRequest.App
+		app := *request.App
 		app.Content = contentObject
-		newRequest.App = &app
 	} else {
-		site := *originalRequest.Site
+		site := *request.Site
 		site.Content = contentObject
-		newRequest.Site = &site
 	}
-	return &newRequest
 }
 
-func createNewContentObject(newContentObject, contentObject *openrtb2.Content, include bool, keys []string) {
-
-	if !include {
-		*newContentObject = *contentObject
-		for _, key := range keys {
-
-			switch key {
-			case "id":
-				newContentObject.ID = ""
-			case "episode":
-				newContentObject.Episode = 0
-			case "title":
-				newContentObject.Title = ""
-			case "series":
-				newContentObject.Series = ""
-			case "season":
-				newContentObject.Season = ""
-			case "artist":
-				newContentObject.Artist = ""
-			case "genre":
-				newContentObject.Genre = ""
-			case "album":
-				newContentObject.Album = ""
-			case "isrc":
-				newContentObject.ISRC = ""
-			case "producer":
-				newContentObject.Producer = nil
-			case "url":
-				newContentObject.URL = ""
-			case "cat":
-				newContentObject.Cat = nil
-			case "prodq":
-				newContentObject.ProdQ = nil
-			case "videoquality":
-				newContentObject.VideoQuality = nil
-			case "context":
-				newContentObject.Context = 0
-			case "contentrating":
-				newContentObject.ContentRating = ""
-			case "userrating":
-				newContentObject.UserRating = ""
-			case "qagmediarating":
-				newContentObject.QAGMediaRating = 0
-			case "keywords":
-				newContentObject.Keywords = ""
-			case "livestream":
-				newContentObject.LiveStream = 0
-			case "sourcerelationship":
-				newContentObject.SourceRelationship = 0
-			case "len":
-				newContentObject.Len = 0
-			case "language":
-				newContentObject.Language = ""
-			case "embeddable":
-				newContentObject.Embeddable = 0
-			case "data":
-				newContentObject.Data = nil
-			case "ext":
-				newContentObject.Ext = nil
-			}
-		}
-		return
+func createNewContentObject(newContentObject, contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
+	if include {
+		return excludeKeys(contentObject, keys)
 	}
+	return includeKeys(contentObject, keys)
+}
+
+func includeKeys(contentObject *openrtb2.Content, keys []string) *openrtb2.Content {
+	newContentObject := *contentObject
 
 	for _, key := range keys {
 		switch key {
@@ -207,4 +140,25 @@ func createNewContentObject(newContentObject, contentObject *openrtb2.Content, i
 			newContentObject.Ext = contentObject.Ext
 		}
 	}
+
+	return &newContentObject
+}
+
+func excludeKeys(contentObject *openrtb2.Content, keys []string) *openrtb2.Content {
+	newContentObject := *contentObject
+
+	keyMap := make(map[string]struct{}, 1)
+	for _, key := range keys {
+		keyMap[key] = struct{}{}
+	}
+
+	rt := reflect.TypeOf(newContentObject)
+	for i := 0; i < rt.NumField(); i++ {
+		key := strings.Split(rt.Field(i).Tag.Get("json"), ",")[0] // remove omitempty, etc
+		if _, ok := keyMap[key]; ok {
+			reflect.ValueOf(&newContentObject).Elem().FieldByName(rt.Field(i).Name).Set(reflect.Zero(rt.Field(i).Type))
+		}
+	}
+
+	return &newContentObject
 }

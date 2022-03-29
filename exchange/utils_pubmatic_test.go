@@ -405,7 +405,34 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateContentObjectForBidder(tt.args.allBidderRequests, tt.args.requestExt)
-			assert.Equal(t, tt.args.allBidderRequests, tt.wantedAllBidderRequests, tt.name)
+			assert.Equal(t, tt.wantedAllBidderRequests, tt.args.allBidderRequests, tt.name)
+		})
+	}
+}
+
+func Test_excludeKeys(t *testing.T) {
+	type args struct {
+		contentObject *openrtb2.Content
+		keys          []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.Content
+	}{
+		{
+			name: "exclude key episode",
+			args: args{
+				contentObject: &openrtb2.Content{ID: "123", Episode: 456},
+				keys:          []string{"episode"},
+			},
+			want: &openrtb2.Content{ID: "123"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := excludeKeys(tt.args.contentObject, tt.args.keys)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
