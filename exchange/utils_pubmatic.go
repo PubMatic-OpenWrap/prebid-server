@@ -10,7 +10,7 @@ import (
 
 // updateContentObjectForBidder updates the content object for each bidder based on content transparency rules
 func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt *openrtb_ext.ExtRequest) {
-	if requestExt == nil || requestExt.Prebid.Transparency == nil {
+	if requestExt == nil || requestExt.Prebid.Transparency == nil || requestExt.Prebid.Transparency.Content == nil {
 		return
 	}
 
