@@ -9,9 +9,24 @@ import (
 )
 
 func Test_updateContentObjectForBidder(t *testing.T) {
+
+	createBidderRequest := func(BidRequest *openrtb2.BidRequest) []BidderRequest {
+		newReq := *BidRequest
+		newReq.ID = "2"
+		return []BidderRequest{{
+			BidderName: "pubmatic",
+			BidRequest: BidRequest,
+		},
+			{
+				BidderName: "appnexus",
+				BidRequest: &newReq,
+			},
+		}
+	}
+
 	type args struct {
-		allBidderRequests []BidderRequest
-		requestExt        *openrtb_ext.ExtRequest
+		BidRequest *openrtb2.BidRequest
+		requestExt *openrtb_ext.ExtRequest
 	}
 	tests := []struct {
 		name                    string
@@ -21,19 +36,14 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 		{
 			name: "No Transparency Object",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-								},
-							},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title: "Title1",
 						},
 					},
 				},
@@ -53,28 +63,38 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
 			name: "No Content Object in App/Site",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-							},
-							Site: &openrtb2.Site{
-								ID:   "1",
-								Name: "Site1",
-							},
-						},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+					},
+					Site: &openrtb2.Site{
+						ID:   "1",
+						Name: "Site1",
 					},
 				},
+
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Transparency: &openrtb_ext.TransparencyExt{
@@ -99,23 +119,34 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+						},
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Site1",
+						},
+					},
+				},
 			},
 		},
 		{
 			name: "No partner/ default rules in tranpsarency",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							Site: &openrtb2.Site{
-								ID:   "1",
-								Name: "Test",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-								},
-							},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					Site: &openrtb2.Site{
+						ID:   "1",
+						Name: "Test",
+						Content: &openrtb2.Content{
+							Title: "Title1",
+							Genre: "Genre1",
 						},
 					},
 				},
@@ -138,25 +169,31 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Test",
+						},
+					},
+				},
 			},
 		},
 		{
-			name: "Include All keys for pubmatic bidder",
+			name: "Include All keys for bidder",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-									Genre: "Genre1",
-								},
-							},
+
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title: "Title1",
+							Genre: "Genre1",
 						},
 					},
 				},
@@ -166,6 +203,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 							Content: map[string]openrtb_ext.TransparencyRule{
 								"pubmatic": {
 									Include: true,
+									Keys:    []string{},
+								},
+								"appnexus": {
+									Include: false,
 									Keys:    []string{},
 								},
 							},
@@ -189,25 +230,32 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+						},
+					},
+				},
 			},
 		},
 		{
 			name: "Exclude All keys for pubmatic bidder",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-									Genre: "Genre1",
-								},
-							},
+
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title: "Title1",
+							Genre: "Genre1",
 						},
 					},
 				},
@@ -217,6 +265,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 							Content: map[string]openrtb_ext.TransparencyRule{
 								"pubmatic": {
 									Include: false,
+									Keys:    []string{},
+								},
+								"appnexus": {
+									Include: true,
 									Keys:    []string{},
 								},
 							},
@@ -236,25 +288,35 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
 			name: "Include title field for pubmatic bidder",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-									Genre: "Genre1",
-								},
-							},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title: "Title1",
+							Genre: "Genre1",
 						},
 					},
 				},
@@ -266,6 +328,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 									Include: true,
 									Keys:    []string{"title"},
 								},
+								"appnexus": {
+									Include: false,
+									Keys:    []string{"genre"},
+								},
 							},
 						},
 					},
@@ -276,6 +342,20 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 					BidderName: "pubmatic",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "1",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+							},
+						},
+					},
+				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
 						App: &openrtb2.App{
 							ID:     "1",
 							Name:   "Test",
@@ -291,20 +371,15 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 		{
 			name: "Exclude title field for pubmatic bidder",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title: "Title1",
-									Genre: "Genre1",
-								},
-							},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title: "Title1",
+							Genre: "Genre1",
 						},
 					},
 				},
@@ -315,6 +390,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 								"pubmatic": {
 									Include: false,
 									Keys:    []string{"title"},
+								},
+								"appnexus": {
+									Include: true,
+									Keys:    []string{"genre"},
 								},
 							},
 						},
@@ -336,31 +415,40 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						},
 					},
 				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+							Content: &openrtb2.Content{
+								Genre: "Genre1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
 			name: "Use default rule for pubmatic bidder",
 			args: args{
-				allBidderRequests: []BidderRequest{
-					{
-						BidderName: "pubmatic",
-						BidRequest: &openrtb2.BidRequest{
-							ID: "1",
-							App: &openrtb2.App{
-								ID:     "1",
-								Name:   "Test",
-								Bundle: "com.pubmatic.app",
-								Content: &openrtb2.Content{
-									Title:    "Title1",
-									Genre:    "Genre1",
-									Series:   "Series1",
-									Season:   "Season1",
-									Artist:   "Artist1",
-									Album:    "Album1",
-									ISRC:     "isrc1",
-									Producer: &openrtb2.Producer{},
-								},
-							},
+				BidRequest: &openrtb2.BidRequest{
+					ID: "1",
+					App: &openrtb2.App{
+						ID:     "1",
+						Name:   "Test",
+						Bundle: "com.pubmatic.app",
+						Content: &openrtb2.Content{
+							Title:    "Title1",
+							Genre:    "Genre1",
+							Series:   "Series1",
+							Season:   "Season1",
+							Artist:   "Artist1",
+							Album:    "Album1",
+							ISRC:     "isrc1",
+							Producer: &openrtb2.Producer{},
 						},
 					},
 				},
@@ -373,6 +461,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 									Keys: []string{
 										"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
 								},
+								"pubmatic": {
+									Include: true,
+									Keys:    []string{"title", "genre"},
+								},
 							},
 						},
 					},
@@ -383,6 +475,21 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 					BidderName: "pubmatic",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "1",
+						App: &openrtb2.App{
+							ID:     "1",
+							Name:   "Test",
+							Bundle: "com.pubmatic.app",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
+						},
+					},
+				},
+				{
+					BidderName: "appnexus",
+					BidRequest: &openrtb2.BidRequest{
+						ID: "2",
 						App: &openrtb2.App{
 							ID:     "1",
 							Name:   "Test",
@@ -404,8 +511,9 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateContentObjectForBidder(tt.args.allBidderRequests, tt.args.requestExt)
-			assert.Equal(t, tt.args.allBidderRequests, tt.wantedAllBidderRequests, tt.name)
+			allBidderRequests := createBidderRequest(tt.args.BidRequest)
+			updateContentObjectForBidder(allBidderRequests, tt.args.requestExt)
+			assert.Equal(t, tt.wantedAllBidderRequests, allBidderRequests, tt.name)
 		})
 	}
 }

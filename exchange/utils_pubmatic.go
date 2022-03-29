@@ -33,51 +33,39 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 		defaultRule = rule
 	}
 
-	for i, bidderRequest := range allBidderRequests {
-
+	for _, bidderRequest := range allBidderRequests {
 		var newContentObject *openrtb2.Content
-
 		if len(rules) != 0 {
-
 			rule, ok := rules[string(bidderRequest.BidderName)]
 			if !ok {
 				rule = defaultRule
 			}
-
-			if len(rule.Keys) == 0 {
-				if rule.Include {
-					newContentObject = &openrtb2.Content{}
-					*newContentObject = *contentObject
-				}
-			} else {
-				newContentObject = &openrtb2.Content{}
-				createNewContentObject(newContentObject, contentObject, rule.Include, rule.Keys)
+			if len(rule.Keys) != 0 {
+				newContentObject = createNewContentObject(contentObject, rule.Include, rule.Keys)
+			} else if rule.Include {
+				newContentObject = contentObject
 			}
 		}
 
-		bidderRequest.BidRequest = copyRequest(bidderRequest.BidRequest, newContentObject, isApp)
-		allBidderRequests[i] = bidderRequest
+		deepCopyContentObject(bidderRequest.BidRequest, newContentObject, isApp)
 	}
 }
 
-func copyRequest(originalRequest *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) *openrtb2.BidRequest {
-
-	newRequest := *originalRequest
+func deepCopyContentObject(originalRequest *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) {
 
 	if isApp {
 		app := *originalRequest.App
 		app.Content = contentObject
-		newRequest.App = &app
+		originalRequest.App = &app
 	} else {
 		site := *originalRequest.Site
 		site.Content = contentObject
-		newRequest.Site = &site
+		originalRequest.Site = &site
 	}
-	return &newRequest
 }
 
-func createNewContentObject(newContentObject, contentObject *openrtb2.Content, include bool, keys []string) {
-
+func createNewContentObject(contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
+	newContentObject := &openrtb2.Content{}
 	if !include {
 		*newContentObject = *contentObject
 		for _, key := range keys {
@@ -137,7 +125,8 @@ func createNewContentObject(newContentObject, contentObject *openrtb2.Content, i
 				newContentObject.Ext = nil
 			}
 		}
-		return
+
+		return newContentObject
 	}
 
 	for _, key := range keys {
@@ -207,4 +196,6 @@ func createNewContentObject(newContentObject, contentObject *openrtb2.Content, i
 			newContentObject.Ext = contentObject.Ext
 		}
 	}
+
+	return newContentObject
 }
