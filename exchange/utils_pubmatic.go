@@ -36,7 +36,6 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 
 	for _, bidderRequest := range allBidderRequests {
 		var newContentObject *openrtb2.Content
-
 		if len(rules) != 0 {
 			rule, ok := rules[string(bidderRequest.BidderName)]
 			if !ok {
