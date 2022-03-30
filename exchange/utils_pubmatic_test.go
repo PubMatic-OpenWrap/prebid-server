@@ -98,7 +98,11 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{},
+							Content: map[string]openrtb_ext.TransparencyRule{
+								"pubmatic": {
+									Include: true,
+								},
+							},
 						},
 					},
 				},
@@ -166,6 +170,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						Site: &openrtb2.Site{
 							ID:   "1",
 							Name: "Test",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
 						},
 					},
 				},
@@ -176,6 +184,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						Site: &openrtb2.Site{
 							ID:   "1",
 							Name: "Test",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
 						},
 					},
 				},
@@ -187,10 +199,9 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 
 				BidRequest: &openrtb2.BidRequest{
 					ID: "1",
-					App: &openrtb2.App{
-						ID:     "1",
-						Name:   "Test",
-						Bundle: "com.pubmatic.app",
+					Site: &openrtb2.Site{
+						ID:   "1",
+						Name: "Test",
 						Content: &openrtb2.Content{
 							Title: "Title1",
 							Genre: "Genre1",
@@ -219,10 +230,9 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 					BidderName: "pubmatic",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "1",
-						App: &openrtb2.App{
-							ID:     "1",
-							Name:   "Test",
-							Bundle: "com.pubmatic.app",
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Test",
 							Content: &openrtb2.Content{
 								Title: "Title1",
 								Genre: "Genre1",
@@ -234,10 +244,9 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 					BidderName: "appnexus",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "2",
-						App: &openrtb2.App{
-							ID:     "1",
-							Name:   "Test",
-							Bundle: "com.pubmatic.app",
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Test",
 						},
 					},
 				},
@@ -608,7 +617,11 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{},
+							Content: map[string]openrtb_ext.TransparencyRule{
+								"pubmatic": {
+									Include: true,
+								},
+							},
 						},
 					},
 				},
@@ -676,6 +689,10 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 						Site: &openrtb2.Site{
 							ID:   "1",
 							Name: "Test",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
 						},
 					},
 				},
@@ -686,6 +703,10 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 						Site: &openrtb2.Site{
 							ID:   "1",
 							Name: "Test",
+							Content: &openrtb2.Content{
+								Title: "Title1",
+								Genre: "Genre1",
+							},
 						},
 					},
 				},
@@ -697,10 +718,9 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 
 				BidRequest: &openrtb2.BidRequest{
 					ID: "1",
-					App: &openrtb2.App{
-						ID:     "1",
-						Name:   "Test",
-						Bundle: "com.pubmatic.app",
+					Site: &openrtb2.Site{
+						ID:   "1",
+						Name: "Test",
 						Content: &openrtb2.Content{
 							Title: "Title1",
 							Genre: "Genre1",
@@ -729,10 +749,9 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 					BidderName: "pubmatic",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "1",
-						App: &openrtb2.App{
-							ID:     "1",
-							Name:   "Test",
-							Bundle: "com.pubmatic.app",
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Test",
 							Content: &openrtb2.Content{
 								Title: "Title1",
 								Genre: "Genre1",
@@ -744,10 +763,9 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 					BidderName: "appnexus",
 					BidRequest: &openrtb2.BidRequest{
 						ID: "2",
-						App: &openrtb2.App{
-							ID:     "1",
-							Name:   "Test",
-							Bundle: "com.pubmatic.app",
+						Site: &openrtb2.Site{
+							ID:   "1",
+							Name: "Test",
 						},
 					},
 				},

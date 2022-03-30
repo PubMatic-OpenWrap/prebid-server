@@ -11,6 +11,12 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 		return
 	}
 
+	rules := requestExt.Prebid.Transparency.Content
+
+	if len(rules) == 0 {
+		return
+	}
+
 	var contentObject *openrtb2.Content
 	isApp := false
 	bidderRequest := allBidderRequests[0]
@@ -23,8 +29,6 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 		return
 	}
 
-	rules := requestExt.Prebid.Transparency.Content
-
 	// Dont send content object if no rule and default is not present
 	var defaultRule = openrtb_ext.TransparencyRule{}
 	if rule, ok := rules["default"]; ok {
@@ -33,17 +37,16 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 
 	for _, bidderRequest := range allBidderRequests {
 		var newContentObject *openrtb2.Content
-		if len(rules) != 0 {
-			rule, ok := rules[string(bidderRequest.BidderName)]
-			if !ok {
-				rule = defaultRule
-			}
 
-			if len(rule.Keys) != 0 {
-				newContentObject = createNewContentObject(contentObject, rule.Include, rule.Keys)
-			} else if rule.Include {
-				newContentObject = contentObject
-			}
+		rule, ok := rules[string(bidderRequest.BidderName)]
+		if !ok {
+			rule = defaultRule
+		}
+
+		if len(rule.Keys) != 0 {
+			newContentObject = createNewContentObject(contentObject, rule.Include, rule.Keys)
+		} else if rule.Include {
+			newContentObject = contentObject
 		}
 		deepCopyContentObj(bidderRequest.BidRequest, newContentObject, isApp)
 	}
