@@ -68,6 +68,8 @@ patch=0
 get_current_tag_version major minor patch
 ((minor++))
 log "Starting with version split major:$major, minor:$minor, patch:$patch"
+current_fork_at_version="$major.$minor.$patch"
+git diff tags/$current_fork_at_version..origin/master > current_ow_patch-$current_fork_at_version-origin_master-$attempt.diff
 
 while [ "$minor" -le "$to_minor" ]; do
     # _upgrade_version="$prefix$major.$minor.$patch"
@@ -95,35 +97,14 @@ while [ "$minor" -le "$to_minor" ]; do
         exit 2
     fi
 
-    # if git rebase $tag_base_branch_name ; then
-    #     log "Success!!!"
-    #     git checkout master
-    #     if [ "$?" -ne 0 ]
-    #     then
-    #         log "Failed to checkout master. Abort!!!"
-    #         exit 3
-    #     fi
-
-    #     log "Merging branch $upgrade_branch_name in master"
-    #     git merge -m "Merge branch '$upgrade_branch_name'" $upgrade_branch_name
-
-    #     # log "Validating the merge for current tag"
-    #     # ./validate.sh -- TODO make sure every tag is valid build
-    # else
-    #     log "Failure. Resolve confict, update version and continue. Abort!!!"
-    #     exit 4
-    # fi
-    # OR
-
-    git merge master
+    git merge master --no-edit
     git checkout master
-    git merge $upgrade_branch_name
-    
+    git merge $upgrade_branch_name --no-edit
 
-    # git commit -m "Upgraded to prebid-server $_upgrade_version"
-    
-    # log "Validating the merge for current tag"
-    # ./validate.sh -- TODO make sure every tag is valid build
+    git diff tags/$_upgrade_version..master > new_ow_patch_$upgrade_version-master-1.diff
+
+    log "Validating the merge for current tag"
+    ./validate.sh
 done
 
 # TODO:
