@@ -56,11 +56,29 @@ type ExtRequestPrebid struct {
 	CurrencyConversions *ExtRequestCurrency `json:"currency,omitempty"`
 	BidderConfigs       []BidderConfig      `json:"bidderconfig,omitempty"`
 	Transparency        *TransparencyExt    `json:"transparency,omitempty"`
+	Floors              *FloorExtension     `json:"floors,omitempty"`
 }
 
 type TransparencyRule struct {
 	Include bool     `json:"include,omitempty"`
 	Keys    []string `json:"keys,omitempty"`
+}
+
+type Schema struct {
+	Fields    []string `json:"fields"`
+	Delimiter string   `json:"delimiter,omitempty"`
+}
+
+type FloorData struct {
+	Currency string             `json:"currency"`
+	SkipRate int                `json:"skipRate"`
+	Schema   Schema             `json:"schema"`
+	Values   map[string]float64 `json:"values"`
+	Default  float64            `json:"default"`
+}
+
+type FloorExtension struct {
+	Data FloorData `json:"data"`
 }
 
 type TransparencyExt struct {

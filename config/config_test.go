@@ -447,6 +447,10 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "gdpr.host_vendor_id", cfg.GDPR.HostVendorID, 15)
 	cmpStrings(t, "gdpr.default_value", cfg.GDPR.DefaultValue, "1")
 
+	//Asset the price floor values
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
+
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
 	assert.Equal(t, map[string]struct{}{"pub1": {}, "pub2": {}}, cfg.GDPR.NonStandardPublisherMap, "gdpr.non_standard_publishers Hash Map")
