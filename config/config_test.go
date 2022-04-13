@@ -144,6 +144,10 @@ func TestDefaults(t *testing.T) {
 	cmpBools(t, "auto_gen_source_tid", cfg.AutoGenSourceTID, true)
 	cmpBools(t, "generate_bid_id", cfg.GenerateBidID, false)
 
+	//Assert the price floor default values
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
+
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
 		Enabled: true,
@@ -359,6 +363,9 @@ request_validation:
     ipv4_private_networks: ["1.1.1.0/24"]
     ipv6_private_networks: ["1111::/16", "2222::/16"]
 generate_bid_id: true
+price_floors:
+  enabled: true
+  use_dynamic_data: false
 `)
 
 var adapterExtraInfoConfig = []byte(`
@@ -448,7 +455,7 @@ func TestFullConfig(t *testing.T) {
 	cmpStrings(t, "gdpr.default_value", cfg.GDPR.DefaultValue, "1")
 
 	//Asset the price floor values
-	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, true)
 	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled

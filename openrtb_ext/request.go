@@ -65,20 +65,27 @@ type TransparencyRule struct {
 }
 
 type Schema struct {
-	Fields    []string `json:"fields"`
+	Fields    []string `json:"fields,omitempty"`
 	Delimiter string   `json:"delimiter,omitempty"`
 }
 
 type FloorData struct {
-	Currency string             `json:"currency"`
-	SkipRate int                `json:"skipRate"`
-	Schema   Schema             `json:"schema"`
-	Values   map[string]float64 `json:"values"`
-	Default  float64            `json:"default"`
+	Currency string             `json:"currency,omitempty"`
+	SkipRate int                `json:"skipRate,omitempty"`
+	Schema   Schema             `json:"schema,omitempty"`
+	Values   map[string]float64 `json:"values,omitempty"`
+	Default  float64            `json:"default,omitempty"`
+}
+
+type Enforcement struct {
+	EnforcePBS bool `json:"enforcepbs,omitempty"`
+	FloorDeals bool `json:"floordeals,omitempty"`
 }
 
 type FloorExtension struct {
-	Data FloorData `json:"data"`
+	Data        FloorData   `json:"data,omitempty"`
+	Enabled     bool        `json:"enabled,omitempty"`
+	Enforcement Enforcement `json:"enforcement,omitempty"`
 }
 
 type TransparencyExt struct {
