@@ -92,6 +92,12 @@ type Configuration struct {
 
 	TrackerURL          string              `mapstructure:"tracker_url"`
 	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
+	PriceFloors         PriceFloors         `mapstructure:"price_floors"`
+}
+
+type PriceFloors struct {
+	Enabled        bool `mapstructure:"enabled"`
+	UseDynamicData bool `mapstructure:"use_dynamic_data"`
 }
 
 type VendorListScheduler struct {
@@ -1101,6 +1107,8 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("gdpr.tcf2.purpose_one_treatment.access_allowed", true)
 	v.SetDefault("gdpr.tcf2.special_feature1.enforce", true)
 	v.SetDefault("gdpr.tcf2.special_feature1.vendor_exceptions", []openrtb_ext.BidderName{})
+	v.SetDefault("price_floors.enabled", false)
+	v.SetDefault("price_floors.use_dynamic_data", false)
 }
 
 func migrateConfig(v *viper.Viper) {
