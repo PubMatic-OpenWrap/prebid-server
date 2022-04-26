@@ -228,6 +228,7 @@ func (o *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombinati
 	for index, duration := range durationSequence {
 		if 0 != index && durationSequence[index-1] == duration {
 			combinations[uniqueDuration-1]++
+			// NYC_LURL: Omit as this has same duration as prev.?. error code????
 			continue
 		}
 		data = append(data, o.buckets[duration][:])
@@ -268,12 +269,13 @@ func findUniqueCombinations(data [][]*types.Bid, combination []int, maxCategoryS
 		ehc, inext, jnext, rc = evaluate(data[:], indices[:], totalBids, maxCategoryScore, maxDomainScore)
 		if nil != ehc {
 			if nil == hc || (hc.nDealBids == ehc.nDealBids && hc.price < ehc.price) || (hc.nDealBids < ehc.nDealBids) {
-				hc = ehc
+				hc = ehc // NYC_LURL: prev. Lost to this higher bid
 			} else {
 				// if you see current combination price lower than the highest one then break the loop
 				break
 			}
 		} else {
+			// NYC_LURL: Lost to StatusCategoryExclusion or Lost to StatusDomainExclusion
 			//Filtered Bid
 			for i := 0; i <= inext; i++ {
 				for j := 0; j < combination[i] && !(i == inext && j > jnext); j++ {

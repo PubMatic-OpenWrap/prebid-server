@@ -33,6 +33,8 @@ func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
 	for i, bid := range bids {
 		if constant.StatusOK == bid.Status {
 			result[bid.Duration] = append(result[bid.Duration], bids[i])
+		} else {
+			// NYC_LURL: Non ok ommited here. bid.Status should already have a correct value
 		}
 	}
 
