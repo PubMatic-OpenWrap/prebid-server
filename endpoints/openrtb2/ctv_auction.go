@@ -141,7 +141,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}()
 
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, errL = deps.parseRequest(r)
+	reqWrapper, _, _, errL = deps.parseRequest(r)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
