@@ -1168,7 +1168,7 @@ func buildStoredAuctionResponse(storedAuctionResponses map[string]json.RawMessag
 			} else {
 				//create new seat bid and add it to live adapters
 				liveAdapters = append(liveAdapters, bidderName)
-				newSeatBid := pbsOrtbSeatBid{bidsToAdd, "", nil}
+				newSeatBid := pbsOrtbSeatBid{bidsToAdd, "", nil, bidderName}
 				adapterBids[bidderName] = &newSeatBid
 
 			}
