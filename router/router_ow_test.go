@@ -54,7 +54,7 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			_, err := New(tt.args.cfg, tt.args.rateConvertor)
-			assert.Equal(t, tt.wantErr, err != nil)
+			assert.Equal(t, tt.wantErr, err != nil, err)
 
 			assert.NotNil(t, g_syncers)
 			assert.NotNil(t, g_cfg)
