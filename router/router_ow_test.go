@@ -10,6 +10,15 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	originalSchemaDirectory := schemaDirectory
+	originalinfoDirectory := infoDirectory
+	defer func() {
+		schemaDirectory = originalSchemaDirectory
+		infoDirectory = originalinfoDirectory
+	}()
+	schemaDirectory = "../static/bidder-params"
+	infoDirectory = "../static/bidder-info"
+
 	type args struct {
 		cfg           *config.Configuration
 		rateConvertor *currency.RateConverter
