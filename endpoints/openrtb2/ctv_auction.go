@@ -264,12 +264,12 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs
 	}
 
 	auctionRequest := exchange.AuctionRequest{
-		BidRequest:   request,
-		Account:      *account,
-		UserSyncs:    usersyncs,
-		RequestType:  deps.labels.RType,
-		StartTime:    startTime,
-		LegacyLabels: deps.labels,
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:           *account,
+		UserSyncs:         usersyncs,
+		RequestType:       deps.labels.RType,
+		StartTime:         startTime,
+		LegacyLabels:      deps.labels,
 	}
 
 	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)

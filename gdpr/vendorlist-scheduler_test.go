@@ -2,11 +2,12 @@ package gdpr
 
 import (
 	"context"
-	"github.com/prebid/go-gdpr/api"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/prebid/go-gdpr/api"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetVendorListScheduler(t *testing.T) {
@@ -146,7 +147,7 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 			tt.fields.scheduler.timeout = 2 * time.Minute
 
 			mockCacheSave := func(uint16, api.VendorList) {}
-			latestVersion := saveOne(context.Background(), http.DefaultClient, vendorListURLMaker(0), mockCacheSave)
+			latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(0), mockCacheSave)
 
 			cacheSave, cacheLoad = newVendorListCache()
 			tt.fields.scheduler.runLoadCache()

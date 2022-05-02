@@ -410,6 +410,16 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (*pubmaticWrapp
 		}
 	}
 
+	if acatBytes, ok := reqExtBidderParams["acat"]; ok {
+		err = json.Unmarshal(acatBytes, &acat)
+		for i := 0; i < len(acat); i++ {
+			acat[i] = strings.TrimSpace(acat[i])
+		}
+		if err != nil {
+			return wrpExt, acat, cookies, err
+		}
+	}
+
 	if wiid, ok := reqExtBidderParams["wiid"]; ok {
 		if wrpExt == nil {
 			wrpExt = &pubmaticWrapperExt{}
@@ -425,14 +435,7 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (*pubmaticWrapp
 		}
 	}
 
-	if acatBytes, ok := reqExtBidderParams["acat"]; ok {
-		err = json.Unmarshal(acatBytes, &acat)
-		for i := 0; i < len(acat); i++ {
-			acat[i] = strings.TrimSpace(acat[i])
-		}
-	}
-
-	return wrpExt, acat, acat, err
+	return wrpExt, acat, cookies, err
 }
 
 func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[string]interface{}) {

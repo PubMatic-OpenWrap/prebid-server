@@ -33,13 +33,6 @@
         "device":{
             "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
         },
-        "ext": {
-          "prebid": {
-            "bidderparams": {
-              "acat": ["drg","dlu","ssr"]
-            }
-          }
-        },
         "site": {
 		      	"id": "siteID",
 		    	  "publisher": {
@@ -49,6 +42,7 @@
         "ext":{
           "prebid" :{
             "bidderparams": {
+              "acat": ["drg","dlu","ssr"],
               "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
             }
           }
