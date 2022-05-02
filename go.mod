@@ -1,4 +1,4 @@
-module github.com/prebid/prebid-server
+module github.com/PubMatic-OpenWrap/prebid-server
 
 go 1.16
 
@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/beevik/etree v1.0.2
 	github.com/buger/jsonparser v1.1.1
 	github.com/chasex/glog v0.0.0-20160217080310-c62392af379c
 	github.com/coocood/freecache v1.2.0
@@ -26,6 +27,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
 	github.com/xeipuuv/gojsonschema v1.2.0
+	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/xeipuuv/gojsonschema v0.0.0-20180816142147-da425ebb7609
 	github.com/yudai/gojsondiff v1.0.0
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
@@ -34,3 +37,9 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
+
+replace github.com/prebid/prebid-server => ./
+
+replace github.com/mxmCherry/openrtb/v15 => github.com/PubMatic-OpenWrap/openrtb/v15 v15.0.0-20210514055459-92ccbf3eb6fe
+
+replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
