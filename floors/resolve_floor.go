@@ -90,15 +90,15 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 		}
 		request.Imp[i].BidFloorCur = "USD"
 
-		updateImpExtWithFloorDetails(matchedRule, request.Imp[i])
+		updateImpExtWithFloorDetails(matchedRule, request, i)
 	}
 	floorModelErrList = append(floorModelErrList, floorErrList...)
 	return floorModelErrList
 }
 
-func updateImpExtWithFloorDetails(matchedRule string, imp openrtb2.Imp) {
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", imp.BidFloor)), "prebid", "floors", "floorRuleValue")
+func updateImpExtWithFloorDetails(matchedRule string, request *openrtb2.BidRequest, i int) {
+	request.Imp[i].Ext, _ = jsonparser.Set(request.Imp[i].Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
+	request.Imp[i].Ext, _ = jsonparser.Set(request.Imp[i].Ext, []byte(fmt.Sprintf("%.4f", request.Imp[i].BidFloor)), "prebid", "floors", "floorRuleValue")
 }
 
 func validateFloorModelGroups(modelGroups []openrtb_ext.PriceFloorModelGroup) []error {

@@ -73,7 +73,7 @@ type PriceFloorSchema struct {
 	Delimiter string   `json:"delimiter,omitempty"`
 }
 type PriceFloorModelGroup struct {
-	Currency     string
+	Currency     string             `json:"currency,omitempty"`
 	ModelWeight  int                `json:"modelWeight,omitempty"`
 	ModelVersion string             `json:"modelVersion,omitempty"`
 	SkipRate     int                `json:"skipRate,omitempty"`
