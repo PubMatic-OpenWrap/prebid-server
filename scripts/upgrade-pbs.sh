@@ -131,6 +131,13 @@ checkpoint_run() {
     cmd_exe $cmd
 }
 
+go_mod() {
+    go mod download all
+    go mod tidy
+    go mod tidy
+    go mod download all
+}
+
 # --- main ---
 
 if [ "$RESTART" -eq "1" ]; then
@@ -173,6 +180,7 @@ log "Starting with version split major:$major, minor:$minor, patch:$patch"
 # fi
 
 log "Checking if last failure was for test case. Need this to pick correct"
+go_mod
 checkpoint_run "./validate.sh"
 
 log "Starting upgrade loop..."
@@ -202,6 +210,8 @@ while [ "$minor" -le "$to_minor" ]; do
 
     # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
     log "Validating the merge for current tag"
+    
+    go_mod
     checkpoint_run "./validate.sh"
 
     # revert changes by ./validate.sh
