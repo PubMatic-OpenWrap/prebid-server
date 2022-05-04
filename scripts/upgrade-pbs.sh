@@ -202,10 +202,6 @@ while [ "$minor" -le "$to_minor" ]; do
 
     # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
     log "Validating the merge for current tag"
-    go mod download all
-    go mod tidy
-    go mod tidy
-    go mod download all
     checkpoint_run "./validate.sh"
 
     # revert changes by ./validate.sh

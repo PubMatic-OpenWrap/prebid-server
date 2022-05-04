@@ -2,7 +2,12 @@
 
 set -e
 
-RACE=0
+go mod download all
+go mod tidy
+go mod tidy
+go mod download all
+
+RACE=10
 AUTOFMT=true
 COVERAGE=false
 VET=true
