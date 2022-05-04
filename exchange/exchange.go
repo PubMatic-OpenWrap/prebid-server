@@ -210,7 +210,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExt)
 
 	// If floors feature is enabled at server and request level, Update floors values in impression object
-	if e.floor.Enabled() && requestExt.Prebid.Floors.Enabled {
+	if e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt) {
 		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequest)
 	}
 

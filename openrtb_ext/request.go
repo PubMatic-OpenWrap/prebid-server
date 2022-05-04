@@ -74,8 +74,8 @@ type PriceFloorSchema struct {
 }
 type PriceFloorModelGroup struct {
 	Currency     string
-	ModelWeigth  int                `json:"modelWeight,omitempty"`
-	ModelVersion int                `json:"modelVersion,omitempty"`
+	ModelWeight  int                `json:"modelWeight,omitempty"`
+	ModelVersion string             `json:"modelVersion,omitempty"`
 	SkipRate     int                `json:"skipRate,omitempty"`
 	Schema       PriceFloorSchema   `json:"schema,omitempty"`
 	Values       map[string]float64 `json:"values,omitempty"`
@@ -102,16 +102,16 @@ type PriceFloorEndpoint struct {
 }
 
 type PriceFloorRules struct {
-	FloorMin      float64               `json:"floorMin,omitempty"`
-	FloorMinCur   string                `json:"floorMincur,omitempty"`
-	FloorProvider string                `json:"floorProvider,omitempty"`
-	Enforcement   PriceFloorEnforcement `json:"enforcement,omitempty"`
-	SkipRate      int                   `json:"skipRate,omitempty"`
-	Location      PriceFloorEndpoint    `json:"location,omitempty"`
-	Data          PriceFloorData        `json:"data,omitempty"`
-	Enabled       bool                  `json:"enabled,omitempty"`
-	Skipped       bool
+	FloorMin    float64                `json:"floorMin,omitempty"`
+	FloorMinCur string                 `json:"floorMincur,omitempty"`
+	SkipRate    int                    `json:"skipRate,omitempty"`
+	Location    *PriceFloorEndpoint    `json:"location,omitempty"`
+	Data        *PriceFloorData        `json:"data,omitempty"`
+	Enforcement *PriceFloorEnforcement `json:"enforcement,omitempty"`
+	Enabled     *bool                  `json:"enabled,omitempty"`
+	Skipped     *bool
 }
+
 type BidderConfig struct {
 	Bidders []string `json:"bidders,omitempty"`
 	Config  *Config  `json:"config,omitempty"`

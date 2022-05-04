@@ -1,11 +1,14 @@
 package floors
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/bits"
+	"math/rand"
 	"sort"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -13,14 +16,61 @@ import (
 type RequestType string
 
 const (
-	DEFAULT_DELIMITER string = "|"
-	CATCH_ALL         string = "*"
+	DEFAULT_DELIMITER      string = "|"
+	CATCH_ALL              string = "*"
+	SKIP_RATE_MIN          int    = 0
+	SKIP_RATE_MAX          int    = 100
+	MODEL_WEIGHT_MAX_VALUE int    = 1000000
+	MODEL_WEIGHT_MIN_VALUE int    = 0
 )
+
+func IsRequestEnabledWithFloor(requestExt *openrtb_ext.ExtRequest) bool {
+	if requestExt.Prebid.Floors != nil && requestExt.Prebid.Floors.Enabled != nil && *requestExt.Prebid.Floors.Enabled == true {
+		return true
+	} else {
+		return false
+	}
+}
+
+func shouldSkipFloors(floorData *openrtb_ext.PriceFloorData) bool {
+	var skipRate int
+
+	if floorData.ModelGroups[0].SkipRate > 0 {
+		skipRate = floorData.ModelGroups[0].SkipRate
+	} else {
+		skipRate = floorData.SkipRate
+	}
+
+	if skipRate > 0 && skipRate > rand.Intn(SKIP_RATE_MAX) {
+		return true
+	} else {
+		return false
+	}
+}
 
 func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest) []error {
 	var floorErrList []error
 	var floorVal float64
+
 	floorData := floorExt.Data
+
+	floorModelErrList := validateFloorModelGroups(floorData.ModelGroups)
+
+	if len(floorData.ModelGroups) > 1 {
+		selectFloorModelGroup(floorData.ModelGroups)
+	}
+
+	if floorData.ModelGroups[0].Schema.Delimiter == "" {
+		floorData.ModelGroups[0].Schema.Delimiter = DEFAULT_DELIMITER
+	}
+
+	floorExt.Skipped = new(bool)
+	if shouldSkipFloors(floorData) == true {
+		*floorExt.Skipped = true
+		return floorModelErrList
+	} else {
+		*floorExt.Skipped = false
+	}
 
 	floorErrList = validateFloorRules(floorData.ModelGroups[0].Schema, floorData.ModelGroups[0].Schema.Delimiter, floorData.ModelGroups[0].Values)
 	for i := 0; i < len(request.Imp); i++ {
@@ -38,11 +88,60 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 		} else {
 			request.Imp[i].BidFloor = floorVal
 		}
-
 		request.Imp[i].BidFloorCur = "USD"
 
+		updateImpExtWithFloorDetails(matchedRule, request.Imp[i])
 	}
-	return floorErrList
+	floorModelErrList = append(floorModelErrList, floorErrList...)
+	return floorModelErrList
+}
+
+func updateImpExtWithFloorDetails(matchedRule string, imp openrtb2.Imp) {
+	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
+	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", imp.BidFloor)), "prebid", "floors", "floorRuleValue")
+}
+
+func validateFloorModelGroups(modelGroups []openrtb_ext.PriceFloorModelGroup) []error {
+	var floorModelErrList []error
+
+	for i, modelGroup := range modelGroups {
+
+		if modelGroup.SkipRate < SKIP_RATE_MIN || modelGroup.SkipRate > SKIP_RATE_MAX {
+			floorModelErrList = append(floorModelErrList, fmt.Errorf("Invalid Floor Model = '%v' due to SkipRate = '%v'", modelGroup.ModelVersion, modelGroup.SkipRate))
+			modelGroups = append(modelGroups[:i], modelGroups[i+1:]...)
+			continue
+		}
+
+		if modelGroup.ModelWeight < MODEL_WEIGHT_MIN_VALUE || modelGroup.ModelWeight > MODEL_WEIGHT_MAX_VALUE {
+			floorModelErrList = append(floorModelErrList, fmt.Errorf("Invalid Floor Model = '%v' due to ModelWeight = '%v'", modelGroup.ModelVersion, modelGroup.ModelWeight))
+			modelGroups = append(modelGroups[:i], modelGroups[i+1:]...)
+			continue
+		}
+	}
+	return floorModelErrList
+
+}
+
+func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup) {
+	totalModelWeight := 0
+
+	for i := 0; i < len(modelGroups); i++ {
+		totalModelWeight += modelGroups[i].ModelWeight
+	}
+
+	sort.SliceStable(modelGroups, func(i, j int) bool {
+		return modelGroups[i].ModelWeight < modelGroups[j].ModelWeight
+	})
+
+	winWeight := rand.Intn(totalModelWeight)
+
+	for i, modelGroup := range modelGroups {
+		winWeight -= modelGroup.ModelWeight
+		if winWeight <= 0 {
+			modelGroups = append([]openrtb_ext.PriceFloorModelGroup{modelGroup}, append((modelGroups)[:i], (modelGroups)[i+1:]...)...)
+			return
+		}
+	}
 }
 
 func validateFloorRules(Schema openrtb_ext.PriceFloorSchema, delimiter string, RuleValues map[string]float64) []error {
@@ -54,7 +153,7 @@ func validateFloorRules(Schema openrtb_ext.PriceFloorSchema, delimiter string, R
 		parsedKey := strings.Split(key, delimiter)
 		if len(parsedKey) != schemaLen {
 			// Number of fields are not matching
-			floorErrList = append(floorErrList, fmt.Errorf("Invalid Floor Rule = '%s' for Schema Fields = '%v'  ", key, Schema.Fields))
+			floorErrList = append(floorErrList, fmt.Errorf("Invalid Floor Rule = '%s' for Schema Fields = '%v'", key, Schema.Fields))
 			delete(RuleValues, key)
 		}
 	}
@@ -97,6 +196,38 @@ func getSizeValue(imp openrtb2.Imp) string {
 	}
 
 	return size
+}
+
+func extractChanelNameFromBidRequestExt(bidRequest *openrtb2.BidRequest) string {
+	requestExt := &openrtb_ext.ExtRequest{}
+
+	if bidRequest == nil {
+		return ""
+	}
+
+	if len(bidRequest.Ext) > 0 {
+		err := json.Unmarshal(bidRequest.Ext, &requestExt)
+		if err != nil {
+			return ""
+		}
+	}
+
+	if requestExt.Prebid.Channel != nil {
+		return requestExt.Prebid.Channel.Name
+	} else {
+		return ""
+	}
+}
+
+func getpbadslot(imp openrtb2.Imp) string {
+	var value string
+	pbAdSlot, err := jsonparser.GetString(imp.Ext, "data", "pbadslot")
+	if err == nil {
+		value = pbAdSlot
+	} else {
+		value = CATCH_ALL
+	}
+	return value
 }
 
 func CreateRuleKey(floorSchema openrtb_ext.PriceFloorSchema, request *openrtb2.BidRequest, imp openrtb2.Imp) []string {
@@ -174,9 +305,27 @@ func CreateRuleKey(floorSchema openrtb_ext.PriceFloorSchema, request *openrtb2.B
 			} else {
 				value = CATCH_ALL
 			}
-
-			// TODO:
-			// add case for channel, gptSlot and pbAdSlot
+		case "channel":
+			channel := extractChanelNameFromBidRequestExt(request)
+			if channel != "" {
+				value = channel
+			} else {
+				value = CATCH_ALL
+			}
+		case "gptSlot":
+			adsname, err := jsonparser.GetString(imp.Ext, "data", "adserver", "name")
+			if err == nil && adsname == "gam" {
+				gptSlot, _ := jsonparser.GetString(imp.Ext, "data", "adserver", "adslot")
+				if gptSlot != "" {
+					value = gptSlot
+				} else {
+					value = CATCH_ALL
+				}
+			} else {
+				value = getpbadslot(imp)
+			}
+		case "pbAdSlot":
+			value = getpbadslot(imp)
 		}
 
 		ruleKeys = append(ruleKeys, value)
