@@ -2,7 +2,7 @@
 
 set -e
 
-RACE=5
+RACE=0
 AUTOFMT=true
 COVERAGE=false
 VET=true

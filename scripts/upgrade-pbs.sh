@@ -40,7 +40,7 @@ clear_log() {
     
         log "Last validation before creating PR"
         go_mod
-        checkpoint_run "./validate.sh"
+        checkpoint_run "./validate.sh --race 5"
         go_discard
 
         set +e
@@ -130,8 +130,8 @@ checkpoint_run() {
         if grep -q "$cmd" "$CHECKLOG"; then
             log "Retry this checkpoint: $cmd"
             rm "$CHECKLOG"
-        elif grep -q "./validate.sh" "$CHECKLOG"; then
-            log "Special checkpoint. ./validate.sh failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
+        elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
+            log "Special checkpoint. ./validate.sh --race 5 failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
             cmd_exe $cmd
             rm "$CHECKLOG"
         else
@@ -200,7 +200,7 @@ log "Starting with version split major:$major, minor:$minor, patch:$patch"
 
 log "Checking if last failure was for test case. Need this to pick correct"
 go_mod
-checkpoint_run "./validate.sh"
+checkpoint_run "./validate.sh --race 5"
 go_discard
 
 log "Starting upgrade loop..."
@@ -222,7 +222,7 @@ while [ "$minor" -le "$to_minor" ]; do
     # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
     log "Validating the master merge into current tag. Fix and commit changes if required. Use 'git commit --amend --no-edit' for consistency"
     go_mod
-    checkpoint_run "./validate.sh"
+    checkpoint_run "./validate.sh --race 5"
     go_discard
 
     checkpoint_run git checkout master
