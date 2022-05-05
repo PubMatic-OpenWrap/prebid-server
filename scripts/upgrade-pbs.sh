@@ -36,9 +36,20 @@ clear_log() {
 
     if [ "$current_fork_at_version" == "$upgrade_version" ] ; then
         log "Upgraded to $current_fork_at_version"
-            rm -f "$CHECKLOG"
+        rm -f "$CHECKLOG"
+    
+        log "Last validation before creating PR"
+        go_mod
+        checkpoint_run "./validate.sh"
+        go_discard
+
+        set +e
+        log "Commit final go.mod and go.sum"
+        git commit go.mod go.sum --amend --no-edit
+        set -e
     else
         log "Exiting with failure!!!"
+        exit 1
     fi
 }
 
@@ -92,16 +103,16 @@ checkout_branch() {
     set +e
     git checkout tags/$_upgrade_version -b $tag_base_branch_name
     # git push origin $tag_base_branch_name
-    set -e
 
     git checkout -b $upgrade_branch_name
     # git push origin $upgrade_branch_name
 
-    if [ "$?" -ne 0 ]
-    then
-        log "Failed to create branch $upgrade_branch_name. Already working on it???"
-        exit 1
-    fi
+    set -e
+#    if [ "$?" -ne 0 ]
+#    then
+#        log "Failed to create branch $upgrade_branch_name. Already working on it???"
+#        exit 1
+#    fi
 }
 
 cmd_exe() {
@@ -138,6 +149,13 @@ go_mod() {
     go mod download all
 }
 
+go_discard() {
+    # discard local changes if any. manual validate, compile, etc
+    # git checkout master go.mod
+    # git checkout master go.sum
+    git checkout go.mod go.sum
+}
+
 # --- main ---
 
 if [ "$RESTART" -eq "1" ]; then
@@ -153,9 +171,10 @@ checkpoint_run clone_repo
 cd /tmp/prebid-server
 log "At $(pwd)"
 
+# code merged in master
 if [ "$RESTART" -eq "1" ]; then
     # TODO: commit this in origin/master,ci and remove it from here.
-    git merge --squash origin/UOE-7610-1-codify 
+    git merge --squash origin/UOE-7610-1-upgrade.sh
     git commit --no-edit
 fi
 
@@ -182,6 +201,7 @@ log "Starting with version split major:$major, minor:$minor, patch:$patch"
 log "Checking if last failure was for test case. Need this to pick correct"
 go_mod
 checkpoint_run "./validate.sh"
+go_discard
 
 log "Starting upgrade loop..."
 while [ "$minor" -le "$to_minor" ]; do
@@ -196,27 +216,20 @@ while [ "$minor" -le "$to_minor" ]; do
     log "Reference tag branch: $tag_base_branch_name"
     log "Upgrade branch: $upgrade_branch_name"
 
-    # discard local changes if any. manual validate, compile, etc
-    git checkout master go.mod
-    git checkout master go.sum
-
     checkpoint_run checkout_branch
 
     checkpoint_run git merge master --no-edit
+    # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
+    log "Validating the master merge into current tag. Fix and commit changes if required. Use 'git commit --amend --no-edit' for consistency"
+    go_mod
+    checkpoint_run "./validate.sh"
+    go_discard
+
     checkpoint_run git checkout master
     checkpoint_run git merge $upgrade_branch_name --no-edit
 
+    log "Generating patch file at /tmp/pbs-patch/ for $_upgrade_version"
     git diff tags/$_upgrade_version..master > /tmp/pbs-patch/new_ow_patch_$upgrade_version-master-1.diff
-
-    # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
-    log "Validating the merge for current tag"
-    
-    go_mod
-    checkpoint_run "./validate.sh"
-
-    # revert changes by ./validate.sh
-    git checkout master go.mod
-    git checkout master go.sum
 done
 
 # TODO:
