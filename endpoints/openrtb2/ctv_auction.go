@@ -141,7 +141,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}()
 
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, errL = deps.parseRequest(r)
+	reqWrapper, _, _, _, errL = deps.parseRequest(r)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
@@ -264,12 +264,12 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs
 	}
 
 	auctionRequest := exchange.AuctionRequest{
-		BidRequest:   request,
-		Account:      *account,
-		UserSyncs:    usersyncs,
-		RequestType:  deps.labels.RType,
-		StartTime:    startTime,
-		LegacyLabels: deps.labels,
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:           *account,
+		UserSyncs:         usersyncs,
+		RequestType:       deps.labels.RType,
+		StartTime:         startTime,
+		LegacyLabels:      deps.labels,
 	}
 
 	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)
