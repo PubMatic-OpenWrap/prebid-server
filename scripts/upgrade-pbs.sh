@@ -8,12 +8,29 @@ upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 attempt=4
 
+usage="
+Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch
+
+    ./upgrade-pbs.sh [--restart]
+
+    --restart   Restart the upgrade (deletes /tmp/prebid-server and /tmp/pbs-patch)
+    -h          Help
+
+TODO:
+    - paramertrize the script
+    - create ci branch PR
+    - create header-bidding PR"
+
 RESTART=0
 for i in "$@"; do
   case $i in
     --restart)
       RESTART=1
       shift
+      ;;
+    -h)
+      echo "$usage"
+      exit 0
       ;;
   esac
 done
