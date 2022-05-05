@@ -172,11 +172,11 @@ cd /tmp/prebid-server
 log "At $(pwd)"
 
 # code merged in master
-if [ "$RESTART" -eq "1" ]; then
-    # TODO: commit this in origin/master,ci and remove it from here.
-    git merge --squash origin/UOE-7610-1-upgrade.sh
-    git commit --no-edit
-fi
+# if [ "$RESTART" -eq "1" ]; then
+#     # TODO: commit this in origin/master,ci and remove it from here.
+#     git merge --squash origin/UOE-7610-1-upgrade.sh
+#     git commit --no-edit
+# fi
 
 major=0
 minor=0
