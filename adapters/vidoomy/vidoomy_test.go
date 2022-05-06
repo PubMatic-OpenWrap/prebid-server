@@ -3,8 +3,7 @@ package vidoomy
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
+	"github.com/influxdata/influxdb/pkg/testing/assert"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"

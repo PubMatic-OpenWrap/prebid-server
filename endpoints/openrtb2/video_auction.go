@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"io"
 	"io/ioutil"
 	"net/http"

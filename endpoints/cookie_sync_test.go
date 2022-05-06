@@ -466,6 +466,30 @@ func TestCookieSyncParseRequest(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	for _, test := range testCases {
+		mockPerms := MockGDPRPerms{}
+		mockPerms.On("HostCookiesAllowed", mock.Anything, gdpr.SignalYes, "anyConsent").Return(test.givenResponse, test.givenError)
+
+		privacy := usersyncPrivacy{
+			gdprPermissions: &mockPerms,
+			gdprSignal:      gdpr.SignalYes,
+			gdprConsent:     "anyConsent",
+		}
+
+		result := privacy.GDPRAllowsHostCookie()
+		assert.Equal(t, test.expected, result, test.description)
+	}
+}
+
+func TestUsersyncPrivacyGDPRAllowsBidderSync(t *testing.T) {
+	testCases := []struct {
+		description   string
+		givenResponse bool
+		givenError    error
+		expected      bool
+	}{
 		{
 			description:      "Cooperative False - Default False",
 			givenBody:        strings.NewReader(`{"coopSync":false}`),
