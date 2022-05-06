@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/prebid/prebid-server/stored_responses"
 	"math/rand"
+
+	"github.com/prebid/prebid-server/stored_responses"
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
@@ -74,6 +75,8 @@ func cleanOpenRTBRequests(ctx context.Context,
 	bidderNameToBidderReq := buildBidResponseRequest(req.BidRequest, bidderImpWithBidResp, aliases)
 	//this function should be executed after getAuctionBidderRequests
 	allBidderRequests = mergeBidderRequests(allBidderRequests, bidderNameToBidderReq)
+
+	updateContentObjectForBidder(allBidderRequests, requestExt)
 
 	gdprSignal, err := extractGDPR(req.BidRequest)
 	if err != nil {
@@ -234,6 +237,7 @@ func getAuctionBidderRequests(auctionRequest AuctionRequest,
 
 			requestExt.Prebid.BidderParams = params
 		}
+		reqCopy.Ext = reqExt
 
 		reqExt, err := getExtJson(req.BidRequest, requestExt)
 		if err != nil {

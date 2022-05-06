@@ -49,6 +49,8 @@ func (a *ImprovedigitalAdapter) makeRequest(request openrtb2.BidRequest, imp ope
 		request.User = &userCopy
 	}
 
+func (a *ImprovedigitalAdapter) makeRequest(request openrtb2.BidRequest, imp openrtb2.Imp) (*adapters.RequestData, error) {
+	request.Imp = []openrtb2.Imp{imp}
 	reqJSON, err := json.Marshal(request)
 	if err != nil {
 		return nil, err

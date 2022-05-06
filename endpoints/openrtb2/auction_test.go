@@ -1966,7 +1966,6 @@ func TestRequestSizeEdgeCase(t *testing.T) {
 		&metricsConfig.NilMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
-		false,
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		nil,
@@ -2021,6 +2020,8 @@ func TestTimeoutParser(t *testing.T) {
 	if timeout != 22*time.Millisecond {
 		t.Errorf("Failed to parse tmax properly. Expected %d, got %d", 22*time.Millisecond, timeout)
 	}
+	setSiteImplicitly(httpReq, &bidReq)
+	assert.JSONEq(t, `{"amp":0}`, string(bidReq.Site.Ext))
 }
 
 func TestImplicitAMPNoExt(t *testing.T) {
@@ -2313,6 +2314,7 @@ func TestValidateImpExt(t *testing.T) {
 				},
 			},
 		},
+		Cur: []string{"USD", "EUR"},
 	}
 
 	deps := &endpointDeps{
@@ -2549,6 +2551,7 @@ func TestValidateSourceTID(t *testing.T) {
 			ID: "anySiteID",
 		},
 	}
+}
 
 	deps.validateRequest(&openrtb_ext.RequestWrapper{BidRequest: &req}, false, false, nil)
 	assert.NotEmpty(t, req.Source.TID, "Expected req.Source.TID to be filled with a randomly generated UID")
@@ -3857,10 +3860,7 @@ func (e *mockBidExchange) HoldAuction(ctx context.Context, auctionRequest exchan
 							continue
 						}
 
-						bidderExts[bidder] = ext
-					}
-				}
-			}
+		endpoint(recorder, httpReq, nil)
 
 			for bidderNameOrAlias := range bidderExts {
 				if isBidderToValidate(bidderNameOrAlias) {
@@ -4444,6 +4444,10 @@ var testBidRequests = []string{
 		},
 		"imp": [
 			{
+				"video":{
+					"h":300,
+					"w":200
+				},
 				"ext": {
 					"prebid": {
 						"storedrequest": {
