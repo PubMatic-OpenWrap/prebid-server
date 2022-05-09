@@ -33,19 +33,20 @@
         "device":{
             "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
         },
+        "ext": {
+          "prebid": {
+            "bidderparams": {
+              "acat": ["drg","dlu","ssr"],
+              "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
+            }
+          }
+        },
         "site": {
 		      	"id": "siteID",
 		    	  "publisher": {
 			        	"id": "1234"
 		      	}
-          },
-        "ext":{
-          "prebid" :{
-            "bidderparams": {
-              "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
-            }
           }
-        }
      },
   
     "httpCalls": [
@@ -89,7 +90,8 @@
                     "profile": 5123,
                     "version":1,
                     "wiid" : "dwzafakjflan-tygannnvlla-mlljvj"
-                }
+                },
+                "acat": ["drg","dlu","ssr"]
             }
           }
         },
