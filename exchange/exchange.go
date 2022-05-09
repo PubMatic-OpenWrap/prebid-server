@@ -65,7 +65,7 @@ type exchange struct {
 	privacyConfig     config.Privacy
 	categoriesFetcher stored_requests.CategoryFetcher
 	bidIDGenerator    BidIDGenerator
-	floor             Floor
+	floor             floors.Floor
 	trakerURL         string
 }
 
@@ -90,24 +90,12 @@ type BidIDGenerator interface {
 	Enabled() bool
 }
 
-type Floor interface {
-	Enabled() bool
-}
-
 func (big *bidIDGenerator) Enabled() bool {
 	return big.enabled
 }
 
 type bidIDGenerator struct {
 	enabled bool
-}
-
-type floorConfig struct {
-	enabled bool
-}
-
-func (fc *floorConfig) Enabled() bool {
-	return fc.enabled
 }
 
 func (big *bidIDGenerator) New() (string, error) {
@@ -154,7 +142,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 			LMT:  cfg.LMT,
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
-		floor:          &floorConfig{cfg.PriceFloors.Enabled},
+		floor:          &floors.FloorConfig{cfg.PriceFloors.Enabled},
 		trakerURL:      cfg.TrackerURL,
 	}
 }
@@ -210,7 +198,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExt)
 
 	// If floors feature is enabled at server and request level, Update floors values in impression object
-	if e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt) {
+	if e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) {
 		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequest)
 	}
 

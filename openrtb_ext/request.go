@@ -68,50 +68,6 @@ type TransparencyRule struct {
 type TransparencyExt struct {
 	Content map[string]TransparencyRule `json:"content,omitempty"`
 }
-type PriceFloorSchema struct {
-	Fields    []string `json:"fields,omitempty"`
-	Delimiter string   `json:"delimiter,omitempty"`
-}
-type PriceFloorModelGroup struct {
-	Currency     string             `json:"currency,omitempty"`
-	ModelWeight  int                `json:"modelWeight,omitempty"`
-	ModelVersion string             `json:"modelVersion,omitempty"`
-	SkipRate     int                `json:"skipRate,omitempty"`
-	Schema       PriceFloorSchema   `json:"schema,omitempty"`
-	Values       map[string]float64 `json:"values,omitempty"`
-	Default      float64            `json:"default,omitempty"`
-}
-type PriceFloorData struct {
-	FloorProvider       string                 `json:"floorProvider,omitempty"`
-	Currency            string                 `json:"currency,omitempty"`
-	SkipRate            int                    `json:"skipRate,omitempty"`
-	FloorsSchemaVersion string                 `json:"floorsSchemaVersion,omitempty"`
-	ModelTimestamp      int                    `json:"modelTimestamp,omitempty"`
-	ModelGroups         []PriceFloorModelGroup `json:"modelGroups,omitempty"`
-}
-
-type PriceFloorEnforcement struct {
-	EnforcePBS    bool `json:"enforcepbs,omitempty"`
-	FloorDeals    bool `json:"floordeals,omitempty"`
-	BidAdjustment bool `json:"bidAdjustment,omitempty"`
-	EnforceRate   int  `json:"enforceRate,omitempty"`
-}
-
-type PriceFloorEndpoint struct {
-	URL string `json:"url,omitempty"`
-}
-
-type PriceFloorRules struct {
-	FloorMin    float64                `json:"floorMin,omitempty"`
-	FloorMinCur string                 `json:"floorMincur,omitempty"`
-	SkipRate    int                    `json:"skipRate,omitempty"`
-	Location    *PriceFloorEndpoint    `json:"location,omitempty"`
-	Data        *PriceFloorData        `json:"data,omitempty"`
-	Enforcement *PriceFloorEnforcement `json:"enforcement,omitempty"`
-	Enabled     *bool                  `json:"enabled,omitempty"`
-	Skipped     *bool
-}
-
 type BidderConfig struct {
 	Bidders []string `json:"bidders,omitempty"`
 	Config  *Config  `json:"config,omitempty"`
