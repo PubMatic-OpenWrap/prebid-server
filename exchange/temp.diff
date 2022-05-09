@@ -1,0 +1,52 @@
+diff --git a/exchange/exchangetest/bid-ext-prebid-collision.json b/exchange/exchangetest/bid-ext-prebid-collision.json
+index 054671ce..4fb29524 100644
+--- a/exchange/exchangetest/bid-ext-prebid-collision.json
++++ b/exchange/exchangetest/bid-ext-prebid-collision.json
+@@ -55,7 +55,8 @@
+                             "ext": {
+                                 "someField": "someValue",
+                                 "prebid": {
+-                                    "willBeOverwritten": "by core logic"
++                                    "willBeOverwritten": "by core logic",
++                                    "bidid" : "apn-bid"
+                                 }
+                             }
+                         },
+diff --git a/exchange/exchangetest/targeting-with-winners.json b/exchange/exchangetest/targeting-with-winners.json
+index f081b7ee..5a42356c 100644
+--- a/exchange/exchangetest/targeting-with-winners.json
++++ b/exchange/exchangetest/targeting-with-winners.json
+@@ -120,6 +120,7 @@
+             "ext": {
+               "prebid": {
+                 "type": "video",
++                "bidid": "contending-bid",
+                 "targeting": {
+                   "hb_bidder_audienceNe": "audienceNetwork",
+                   "hb_cache_host_audien": "www.pbcserver.com",
+@@ -143,6 +144,7 @@
+             "ext": {
+               "prebid": {
+                 "type": "video",
++                "bidid": "winning-bid",
+                 "targeting": {
+                   "hb_bidder": "appnexus",
+                   "hb_bidder_appnexus": "appnexus",
+@@ -167,7 +169,8 @@
+             "crid": "creative-2",
+             "ext": {
+               "prebid": {
+-                "type": "video"
++                "type": "video",
++                "bidid": "losing-bid"
+               }
+             }
+           },
+@@ -181,6 +184,7 @@
+             "ext": {
+               "prebid": {
+                 "type": "video",
++                "bidid": "other-bid",
+                 "targeting": {
+                   "hb_bidder": "appnexus",
+                   "hb_bidder_appnexus": "appnexus",

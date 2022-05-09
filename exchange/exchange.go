@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/firstpartydata"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -65,6 +66,7 @@ type exchange struct {
 	categoriesFetcher stored_requests.CategoryFetcher
 	bidIDGenerator    BidIDGenerator
 	gvlVendorIDs      map[openrtb_ext.BidderName]uint16
+	floor             floors.Floor
 	trakerURL         string
 }
 
@@ -89,12 +91,12 @@ type BidIDGenerator interface {
 	Enabled() bool
 }
 
-type bidIDGenerator struct {
-	enabled bool
-}
-
 func (big *bidIDGenerator) Enabled() bool {
 	return big.enabled
+}
+
+type bidIDGenerator struct {
+	enabled bool
 }
 
 func (big *bidIDGenerator) New() (string, error) {
@@ -142,6 +144,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
 		gvlVendorIDs:   infos.ToGVLVendorIDMap(),
+		floor:          &floors.FloorConfig{cfg.PriceFloors.Enabled},
 		trakerURL:      cfg.TrackerURL,
 	}
 }
@@ -239,6 +242,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	}
 
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExt)
+
+	// If floors feature is enabled at server and request level, Update floors values in impression object
+	if e.floor != nil && e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) {
+		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequestWrapper.BidRequest)
+	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
 
