@@ -16,16 +16,16 @@
           "ext": {
             "bidder": {
                 "adSlot": "AdTag_Div1@300x250",
-                "publisherId": "999"
+                "publisherId": "999"			
              }
           }
         }
-      ],
+      ], 
       "site": {
         "id": "siteID"
         }
     },
-
+  
     "httpCalls": [
         {
           "expectedRequest": {
@@ -47,7 +47,7 @@
                   "w": 300
               }
                 }
-              ],
+              ], 
               "site": {
                   "id": "siteID",
                   "publisher": {
@@ -87,7 +87,7 @@
           }
         }
       ],
-
+    
       "expectedBidResponses": [
         {
           "currency": "USD",

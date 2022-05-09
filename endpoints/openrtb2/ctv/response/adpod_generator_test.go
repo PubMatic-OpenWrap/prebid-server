@@ -4,10 +4,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 )
 
 func Test_findUniqueCombinations(t *testing.T) {
