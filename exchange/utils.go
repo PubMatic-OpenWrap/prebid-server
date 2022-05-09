@@ -77,6 +77,8 @@ func cleanOpenRTBRequests(ctx context.Context,
 
 	updateContentObjectForBidder(allBidderRequests, requestExt)
 
+	updateContentObjectForBidder(allBidderRequests, requestExt)
+
 	gdprSignal, err := extractGDPR(req.BidRequest)
 	if err != nil {
 		errs = append(errs, err)

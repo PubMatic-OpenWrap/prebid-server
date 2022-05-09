@@ -1210,6 +1210,8 @@ func SetupViper(v *viper.Viper, filename string) {
 
 	// Defaults for account_defaults.events.default_url
 	v.SetDefault("account_defaults.events.default_url", "https://PBS_HOST/event?t=##PBS-EVENTTYPE##&vtype=##PBS-VASTEVENT##&b=##PBS-BIDID##&f=i&a=##PBS-ACCOUNTID##&ts=##PBS-TIMESTAMP##&bidder=##PBS-BIDDER##&int=##PBS-INTEGRATION##&mt=##PBS-MEDIATYPE##&ch=##PBS-CHANNEL##&aid=##PBS-AUCTIONID##&l=##PBS-LINEID##")
+	v.SetDefault("price_floors.enabled", false)
+	v.SetDefault("price_floors.use_dynamic_data", false)
 }
 
 func migrateConfig(v *viper.Viper) {

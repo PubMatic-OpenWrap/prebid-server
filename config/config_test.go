@@ -378,6 +378,9 @@ request_validation:
     ipv4_private_networks: ["1.1.1.0/24"]
     ipv6_private_networks: ["1111::/16", "2222::/16"]
 generate_bid_id: true
+price_floors:
+   enabled: true
+   use_dynamic_data: false
 `)
 
 var adapterExtraInfoConfig = []byte(`
