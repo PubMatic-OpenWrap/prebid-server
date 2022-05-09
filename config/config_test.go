@@ -145,6 +145,10 @@ func TestDefaults(t *testing.T) {
 	cmpBools(t, "auto_gen_source_tid", cfg.AutoGenSourceTID, true)
 	cmpBools(t, "generate_bid_id", cfg.GenerateBidID, false)
 
+	//Assert the price floor default values
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
+
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
 		Enabled: true,
@@ -461,6 +465,10 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "http_client_cache.idle_connection_timeout_seconds", cfg.CacheClient.IdleConnTimeout, 3)
 	cmpInts(t, "gdpr.host_vendor_id", cfg.GDPR.HostVendorID, 15)
 	cmpStrings(t, "gdpr.default_value", cfg.GDPR.DefaultValue, "1")
+
+	//Assert the price floor values
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
+	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
