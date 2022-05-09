@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/firstpartydata"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -64,6 +65,7 @@ type exchange struct {
 	privacyConfig     config.Privacy
 	categoriesFetcher stored_requests.CategoryFetcher
 	bidIDGenerator    BidIDGenerator
+	floor             floors.Floor
 	trakerURL         string
 }
 
@@ -88,12 +90,12 @@ type BidIDGenerator interface {
 	Enabled() bool
 }
 
-type bidIDGenerator struct {
-	enabled bool
-}
-
 func (big *bidIDGenerator) Enabled() bool {
 	return big.enabled
+}
+
+type bidIDGenerator struct {
+	enabled bool
 }
 
 func (big *bidIDGenerator) New() (string, error) {
@@ -140,6 +142,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 			LMT:  cfg.LMT,
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
+		floor:          &floors.FloorConfig{cfg.PriceFloors.Enabled},
 		trakerURL:      cfg.TrackerURL,
 	}
 }
@@ -178,6 +181,7 @@ type BidderRequest struct {
 
 func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
 	var err error
+	var errs []error
 	requestExt, err := extractBidRequestExt(r.BidRequest)
 	if err != nil {
 		return nil, err
@@ -192,6 +196,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequest, requestExt, r.Account.DebugAllow, debugLog)
 
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExt)
+
+	// If floors feature is enabled at server and request level, Update floors values in impression object
+	if e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) {
+		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequest)
+	}
 
 	recordImpMetrics(r.BidRequest, e.me)
 
