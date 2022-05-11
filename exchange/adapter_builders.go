@@ -3,6 +3,7 @@ package exchange
 import (
 	"github.com/prebid/prebid-server/adapters"
 	ttx "github.com/prebid/prebid-server/adapters/33across"
+	"github.com/prebid/prebid-server/adapters/aax"
 	"github.com/prebid/prebid-server/adapters/aceex"
 	"github.com/prebid/prebid-server/adapters/acuityads"
 	"github.com/prebid/prebid-server/adapters/adf"
@@ -142,6 +143,7 @@ import (
 func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 	return map[openrtb_ext.BidderName]adapters.Builder{
 		openrtb_ext.Bidder33Across:          ttx.Builder,
+		openrtb_ext.BidderAax:               aax.Builder,
 		openrtb_ext.BidderAceex:             aceex.Builder,
 		openrtb_ext.BidderAcuityAds:         acuityads.Builder,
 		openrtb_ext.BidderAdf:               adf.Builder,
@@ -212,6 +214,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderInvibes:           invibes.Builder,
 		openrtb_ext.BidderIQZone:            iqzone.Builder,
 		openrtb_ext.BidderIx:                ix.Builder,
+		openrtb_ext.BidderJANet:             adtelligent.Builder,
 		openrtb_ext.BidderJixie:             jixie.Builder,
 		openrtb_ext.BidderKayzen:            kayzen.Builder,
 		openrtb_ext.BidderKidoz:             kidoz.Builder,
@@ -239,6 +242,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderOrbidder:          orbidder.Builder,
 		openrtb_ext.BidderOutbrain:          outbrain.Builder,
 		openrtb_ext.BidderPangle:            pangle.Builder,
+		openrtb_ext.BidderPGAM:              adtelligent.Builder,
 		openrtb_ext.BidderPubmatic:          pubmatic.Builder,
 		openrtb_ext.BidderPubnative:         pubnative.Builder,
 		openrtb_ext.BidderPulsepoint:        pulsepoint.Builder,
