@@ -67,6 +67,8 @@ var stringCachedIndexBasedProcessor IProcessor
 
 const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 
+var URL2 = getSampleTemplateURL("##")
+
 func init() {
 	fmt.Println("start init")
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
@@ -135,6 +137,21 @@ var testData = map[string]string{
 	"PBS_CHANNEL":         "header_bidding",
 	"PBS_ANALYTICS":       "abc_adaptor",
 	"PBS_MACRO_profileid": "1234",
+}
+
+func getSampleTemplateURL(delimiter string) string {
+	macros := make([]string, 0)
+	for macro := range testData {
+		macros = append(macros, macro)
+	}
+	sample := "http://tracker.com?"
+	for cnt, macro := range macros {
+		sample += fmt.Sprintf("macro_%d=%s%s%s&", cnt+1, delimiter, macro, delimiter)
+		cnt += 1
+	}
+	// no macro value test sample
+	sample += fmt.Sprintf("no_macro=%sNO_MACRO%s", delimiter, delimiter)
+	return sample
 }
 
 func TestVastBidderMacroProcessor(t *testing.T) {

@@ -1,6 +1,8 @@
 package macros
 
 import (
+	"bytes"
+	"net/url"
 	"sort"
 	"strings"
 )
@@ -20,10 +22,10 @@ type strMetaTemplate struct {
 func (p *StringIndexCached) initTemplate() {
 	delim := p.Cfg.delimiter
 	p.templates = make(map[string]strMetaTemplate)
-	if nil == p.Cfg.templates || len(p.Cfg.templates) == 0 {
+	if nil == p.Processor.Cfg.templates || len(p.Processor.Cfg.templates) == 0 {
 		panic("No input templates")
 	}
-	for _, str := range p.Cfg.templates {
+	for _, str := range p.Processor.Cfg.templates {
 		si := 0
 		tmplt := strMetaTemplate{
 			macroSIndexMap:  make(map[string]int),
@@ -67,27 +69,23 @@ func (p *StringIndexCached) initTemplate() {
 }
 func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (string, error) {
 	tmplt := p.templates[str]
-	res := ""
-	// for macro, value := range macroValues {
-	// 	if si, found := tmplt.macroSIndexMap[macro]; found {
-	// 		res += str[i : si-1]
-	// 		res += value
-	// 	}
-	// }
-
+	var result bytes.Buffer
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
 	s := 0
 	for _, index := range tmplt.indices {
 		macro := tmplt.sIndexMacrosMap[index]
 		// copy prev part
-		res += str[s:index]
+		result.WriteString(str[s:index])
 		if value, found := macroValues[macro]; found {
 			// replace macro with value
-			res += value
+			if p.Cfg.valueConfig.UrlEscape {
+				value = url.QueryEscape(value)
+			}
+			result.WriteString(value)
 			s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
 		}
 	}
 
-	return res, nil
+	return result.String(), nil
 }
