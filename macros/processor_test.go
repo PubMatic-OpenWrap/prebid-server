@@ -10,12 +10,11 @@ import (
 func TestStringBasedProcessor(t *testing.T) {
 
 	p, _ := NewProcessor(STRING_BASED, Config{
-		delimiter:   "##",
-		macroValues: testData,
+		delimiter: "##",
 	})
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=##shri##"
-	actual, err := p.Replace(tURL)
+	actual, err := p.Replace(tURL, testData)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -25,13 +24,28 @@ func TestStringBasedProcessor(t *testing.T) {
 func TestTemplateBasedProcessor(t *testing.T) {
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	p, _ := NewProcessor(TEMPLATE_BASED, Config{
-		delimiter:   "##",
-		macroValues: testData,
-		templates:   []string{tURL},
+		delimiter: "##",
+		templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom="
-	actual, err := p.Replace(tURL)
+	actual, err := p.Replace(tURL, testData)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	assert.Equal(t, expected, actual, fmt.Sprintf("Expected [%s] found - %s", expected, actual))
+	fmt.Println(actual)
+}
+
+func TestStringCachedIndexBasedProcessor(t *testing.T) {
+	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
+	p, _ := NewProcessor(STRING_INDEX_CACHED, Config{
+		delimiter: "##",
+		templates: []string{tURL},
+	})
+	// expect ##shri## is replaced with empty
+	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom="
+	actual, err := p.Replace(tURL, testData)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -41,8 +55,7 @@ func TestTemplateBasedProcessor(t *testing.T) {
 
 func BenchmarkStringBasedProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-
-		stringBasedProcessor.Replace(tURL)
+		stringBasedProcessor.Replace(tURL, testData)
 	}
 }
 
@@ -50,47 +63,55 @@ var tmplProcessor IProcessor
 var stringBasedProcessor IProcessor
 var tmplProcessorAlwaysInit IProcessor
 var vastBidderMacroProcessor IProcessor
+var stringCachedIndexBasedProcessor IProcessor
 
 const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 
 func init() {
 	fmt.Println("start init")
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
-		delimiter:   "##",
-		macroValues: testData,
-		templates:   []string{tURL},
+		delimiter: "##",
+		templates: []string{tURL},
 	})
 	stringBasedProcessor, _ = NewProcessor(STRING_BASED, Config{
-		delimiter:   "##",
-		macroValues: testData,
+		delimiter: "##",
 	})
 
 	tmplProcessorAlwaysInit, _ = NewProcessor(TEMPLATE_BASED_INIT_ALWAYS, Config{
-		delimiter:   "##",
-		macroValues: testData,
+		delimiter: "##",
 	})
 
 	vastBidderMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
-		delimiter:   "##",
-		macroValues: testData,
+		delimiter: "##",
+	})
+
+	stringCachedIndexBasedProcessor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
+		delimiter: "##",
+		templates: []string{tURL},
 	})
 
 }
 func BenchmarkTemplateBasedProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		tmplProcessor.Replace(tURL)
+		tmplProcessor.Replace(tURL, testData)
 	}
 }
 
 func BenchmarkTemplateBasedProcessorInitAlways(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		tmplProcessorAlwaysInit.Replace(tURL)
+		tmplProcessorAlwaysInit.Replace(tURL, testData)
 	}
 }
 
 func BenchmarkVastBidderMacroProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		vastBidderMacroProcessor.Replace(tURL)
+		vastBidderMacroProcessor.Replace(tURL, testData)
+	}
+}
+
+func BenchmarkStringCachedIndexBasedProcessor(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		stringCachedIndexBasedProcessor.Replace(tURL, testData)
 	}
 }
 
@@ -118,12 +139,11 @@ var testData = map[string]string{
 
 func TestVastBidderMacroProcessor(t *testing.T) {
 	p, _ := NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
-		delimiter:   "##",
-		macroValues: testData,
+		delimiter: "##",
 	})
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=##shri##"
-	actual, err := p.Replace(tURL)
+	actual, err := p.Replace(tURL, testData)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

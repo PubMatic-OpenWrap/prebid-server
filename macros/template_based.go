@@ -12,8 +12,8 @@ type TemplateBased struct {
 	templates map[string]*template.Template
 }
 
-func (p *TemplateBased) Replace(str string) (string, error) {
-	return replaceTemplateBased(p.templates[str], p.Cfg.macroValues)
+func (p *TemplateBased) Replace(str string, macroValues map[string]string) (string, error) {
+	return replaceTemplateBased(p.templates[str], macroValues)
 }
 
 func (p *TemplateBased) init0(templates []string) {

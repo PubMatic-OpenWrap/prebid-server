@@ -10,7 +10,7 @@ type Processor struct {
 type IProcessor interface {
 	// Replace the macros and returns replaced string
 	// if any error the error will be returned
-	Replace(str string) (string, error)
+	Replace(string, map[string]string) (string, error)
 }
 
 type Type int
@@ -21,11 +21,11 @@ var TEMPLATE_BASED Type = 1
 // following types are temporary kept for benchmarking go template for macro replacement
 var TEMPLATE_BASED_INIT_ALWAYS Type = 2
 var VAST_BIDDER_MACRO_PROCESSOR Type = 3
+var STRING_INDEX_CACHED Type = 4
 
 type Config struct {
 	delimiter   string
 	valueConfig MacroValueConfig
-	macroValues map[string]string
 	templates   []string // Required by TEMPLATE_BASED processors
 }
 
@@ -65,6 +65,12 @@ func NewProcessor(t Type, config Config) (IProcessor, error) {
 	case VAST_BIDDER_MACRO_PROCESSOR:
 		p := VastBidderBased{}
 		p.Cfg = config
+		return &p, nil
+
+	case STRING_INDEX_CACHED:
+		p := StringIndexCached{}
+		p.Cfg = config
+		p.initTemplate()
 		return &p, nil
 
 	}

@@ -8,8 +8,8 @@ type StringBased struct {
 	Processor
 }
 
-func (p *StringBased) Replace(str string) (string, error) {
-	return replaceStringBased(str, p.Cfg.delimiter, p.Cfg.macroValues, p.Cfg.valueConfig)
+func (p *StringBased) Replace(str string, macroValues map[string]string) (string, error) {
+	return replaceStringBased(str, p.Cfg.delimiter, macroValues, p.Cfg.valueConfig)
 }
 
 func replaceStringBased(str, delimiter string, macroValueMap map[string]string, valueConfig MacroValueConfig) (string, error) {

@@ -18,7 +18,7 @@ const (
 	macroEscapeSuffixLen int    = len(macroEscapeSuffix)
 )
 
-func (p *VastBidderBased) Replace(in string) (string, error) {
+func (p *VastBidderBased) Replace(in string, macroValues map[string]string) (string, error) {
 	var out bytes.Buffer
 	pos, start, end, size := 0, 0, 0, len(in)
 
@@ -57,7 +57,7 @@ func (p *VastBidderBased) Replace(in string) (string, error) {
 
 		//process macro
 		// value, found := mp.processKey(key)
-		value, found := p.Cfg.macroValues[key]
+		value, found := macroValues[key]
 		if found {
 			out.WriteString(value)
 			pos = end
