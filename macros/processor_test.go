@@ -41,24 +41,56 @@ func TestTemplateBasedProcessor(t *testing.T) {
 
 func BenchmarkStringBasedProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		p, _ := NewProcessor(STRING_BASED, Config{
-			delimiter:   "##",
-			macroValues: testData,
-		})
-		tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
-		p.Replace(tURL)
+
+		stringBasedProcessor.Replace(tURL)
 	}
 }
 
-func BenchmarkTemplateBasedProcessor(b *testing.B) {
-	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
-	p, _ := NewProcessor(TEMPLATE_BASED, Config{
+var tmplProcessor IProcessor
+var stringBasedProcessor IProcessor
+var tmplProcessorAlwaysInit IProcessor
+var vastBidderMacroProcessor IProcessor
+
+const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
+
+func init() {
+	fmt.Println("start init")
+	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
 		delimiter:   "##",
 		macroValues: testData,
 		templates:   []string{tURL},
 	})
+	stringBasedProcessor, _ = NewProcessor(STRING_BASED, Config{
+		delimiter:   "##",
+		macroValues: testData,
+	})
+
+	tmplProcessorAlwaysInit, _ = NewProcessor(TEMPLATE_BASED_INIT_ALWAYS, Config{
+		delimiter:   "##",
+		macroValues: testData,
+	})
+
+	vastBidderMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
+		delimiter:   "##",
+		macroValues: testData,
+	})
+
+}
+func BenchmarkTemplateBasedProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		p.Replace(tURL)
+		tmplProcessor.Replace(tURL)
+	}
+}
+
+func BenchmarkTemplateBasedProcessorInitAlways(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		tmplProcessorAlwaysInit.Replace(tURL)
+	}
+}
+
+func BenchmarkVastBidderMacroProcessor(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		vastBidderMacroProcessor.Replace(tURL)
 	}
 }
 
@@ -82,4 +114,18 @@ var testData = map[string]string{
 	"PBS_CHANNEL":         "header_bidding",
 	"PBS_ANALYTICS":       "abc_adaptor",
 	"PBS_MACRO_profileid": "1234",
+}
+
+func TestVastBidderMacroProcessor(t *testing.T) {
+	p, _ := NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
+		delimiter:   "##",
+		macroValues: testData,
+	})
+	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
+	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=##shri##"
+	actual, err := p.Replace(tURL)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	assert.Equal(t, expected, actual, fmt.Sprintf("Expected [%s] found - %s", expected, actual))
 }

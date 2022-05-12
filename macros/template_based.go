@@ -16,14 +16,14 @@ func (p *TemplateBased) Replace(str string) (string, error) {
 	return replaceTemplateBased(p.templates[str], p.Cfg.macroValues)
 }
 
-func (p *TemplateBased) init0() {
+func (p *TemplateBased) init0(templates []string) {
 	delimiter := p.Cfg.delimiter
 	p.templates = make(map[string]*template.Template, len(p.Cfg.templates))
-	for _, str := range p.Cfg.templates {
+	for _, str := range templates {
 		tmpl := template.New("macro_replace")
 		tmpl.Option("missingkey=zero")
 		tmpl.Delims(delimiter, delimiter)
-		// collect all PBS_ words
+		// collect all macros based on delimiters
 		regex := fmt.Sprintf("%s(.*?)%s", delimiter, delimiter)
 		re := regexp.MustCompile(regex)
 		// Example
@@ -42,6 +42,8 @@ func (p *TemplateBased) init0() {
 }
 
 func replaceTemplateBased(tmpl *template.Template, macroValueMap map[string]string) (string, error) {
+	// http://abc.co?key=##mac##
+
 	return resolveMacros(tmpl, macroValueMap)
 }
 

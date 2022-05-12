@@ -18,6 +18,10 @@ type Type int
 var STRING_BASED Type = 0
 var TEMPLATE_BASED Type = 1
 
+// following types are temporary kept for benchmarking go template for macro replacement
+var TEMPLATE_BASED_INIT_ALWAYS Type = 2
+var VAST_BIDDER_MACRO_PROCESSOR Type = 3
+
 type Config struct {
 	delimiter   string
 	valueConfig MacroValueConfig
@@ -50,8 +54,20 @@ func NewProcessor(t Type, config Config) (IProcessor, error) {
 			panic("Missing config.templates")
 		}
 		p.Cfg = config
-		p.init0()
+		p.init0(p.Cfg.templates)
 		return &p, nil
+
+	case TEMPLATE_BASED_INIT_ALWAYS:
+		p := TemplateBasedInitAlways{}
+		p.Cfg = config
+		return &p, nil
+
+	case VAST_BIDDER_MACRO_PROCESSOR:
+		p := VastBidderBased{}
+		p.Cfg = config
+		return &p, nil
+
 	}
+
 	return nil, errors.New("Invalid Processor Type")
 }
