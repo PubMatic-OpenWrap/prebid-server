@@ -38,9 +38,10 @@ func TestTemplateBasedProcessor(t *testing.T) {
 }
 
 func TestStringCachedIndexBasedProcessor(t *testing.T) {
-	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
+	delimiter := "$$"
+	tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter)
 	p, _ := NewProcessor(STRING_INDEX_CACHED, Config{
-		delimiter: "##",
+		delimiter: delimiter,
 		templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
