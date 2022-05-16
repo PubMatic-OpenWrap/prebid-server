@@ -9,8 +9,68 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
+
+const (
+	SiteDomain string = "siteDomain"
+	PubDomain  string = "pubDomain"
+	Domain     string = "domain"
+	Bundle     string = "bundle"
+	Channel    string = "channel"
+	MediaType  string = "mediaType"
+	Size       string = "size"
+	GptSlot    string = "gptSlot"
+	PbAdSlot   string = "pbAdSlot"
+	Country    string = "country"
+	DeviceType string = "deviceType"
+	Tablet     string = "tablet"
+	Phone      string = "phone"
+)
+
+func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currency.Conversions) float64 {
+	floorData := floorExt.Data
+	floorMin := floorExt.FloorMin
+	if floorExt.FloorMin > 0.0 && floorExt.FloorMinCur != "" && floorData.ModelGroups[0].Currency != "" &&
+		floorExt.FloorMinCur != floorData.ModelGroups[0].Currency {
+		rate, _ := conversions.GetRate(floorData.ModelGroups[0].Currency, floorExt.FloorMinCur)
+		floorMin = rate * floorExt.FloorMin
+	}
+	return floorMin
+}
+
+func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb2.Imp, floorVal float64) {
+	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
+	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", floorVal)), "prebid", "floors", "floorRuleValue")
+}
+
+func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {
+	totalModelWeight := 0
+
+	for i := 0; i < len(modelGroups); i++ {
+		if modelGroups[i].ModelWeight == 0 {
+			modelGroups[i].ModelWeight = 1
+		}
+		totalModelWeight += modelGroups[i].ModelWeight
+	}
+
+	sort.SliceStable(modelGroups, func(i, j int) bool {
+		return modelGroups[i].ModelWeight < modelGroups[j].ModelWeight
+	})
+
+	winWeight := f(totalModelWeight + 1)
+	debugWeight := winWeight
+	for i, modelGroup := range modelGroups {
+		winWeight -= modelGroup.ModelWeight
+		if winWeight <= 0 {
+			modelGroups[0], modelGroups[i] = modelGroups[i], modelGroups[0]
+			modelGroups[0].DebugWeight = debugWeight
+			return modelGroups[:1]
+		}
+	}
+	return modelGroups[:1]
+}
 
 func shouldSkipFloors(ModelGroupsSkipRate, DataSkipRate, RootSkipRate int, f func(int) int) bool {
 	skipRate := 0
