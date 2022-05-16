@@ -52,6 +52,11 @@ type ExtRequestPrebid struct {
 
 	CurrencyConversions *ExtRequestCurrency `json:"currency,omitempty"`
 	BidderConfigs       []BidderConfig      `json:"bidderconfig,omitempty"`
+	// Macros holds request level custom macros. It will be used for replacing macros
+	// present inside event URLs e.g. VAST quartile events
+	// Maximum 100 characters will be considered from value.
+	// Rest of the part will be truncated
+	Macros map[string]string `json:"macros,omitempty"`
 }
 
 type BidderConfig struct {

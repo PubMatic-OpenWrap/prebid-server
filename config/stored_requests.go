@@ -133,6 +133,8 @@ func resolvedStoredRequestsConfig(cfg *Configuration) {
 	cfg.StoredVideo.dataType = VideoDataType
 	cfg.CategoryMapping.dataType = CategoryDataType
 	cfg.Accounts.dataType = AccountDataType
+	cfg.StoredVideo.Files.Enabled = true
+	cfg.StoredVideo.Files.Path = "./stored_requests/data/by_id/"
 }
 
 func (cfg *StoredRequests) validate(errs []error) []error {

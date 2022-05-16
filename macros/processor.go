@@ -26,7 +26,7 @@ var STRING_INDEX_CACHED Type = 4
 type Config struct {
 	delimiter   string
 	valueConfig MacroValueConfig
-	templates   []string // Required by TEMPLATE_BASED processors
+	Templates   []string // Required by TEMPLATE_BASED processors
 }
 
 type MacroValueConfig struct {
@@ -49,12 +49,12 @@ func NewProcessor(t Type, config Config) (IProcessor, error) {
 
 	case TEMPLATE_BASED:
 		p := TemplateBased{}
-		if nil == config.templates || len(config.templates) == 0 {
+		if nil == config.Templates || len(config.Templates) == 0 {
 			// return nil, errors.New("Missing templates")
 			panic("Missing config.templates")
 		}
 		p.Cfg = config
-		p.init0(p.Cfg.templates)
+		p.init0(p.Cfg.Templates)
 		return &p, nil
 
 	case TEMPLATE_BASED_INIT_ALWAYS:

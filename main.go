@@ -23,7 +23,6 @@ func init() {
 
 func main() {
 	flag.Parse() // required for glog flags and testing package flags
-
 	cfg, err := loadConfig()
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)

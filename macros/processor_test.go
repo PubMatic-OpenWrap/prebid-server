@@ -25,7 +25,7 @@ func TestTemplateBasedProcessor(t *testing.T) {
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	p, _ := NewProcessor(TEMPLATE_BASED, Config{
 		delimiter: "##",
-		templates: []string{tURL},
+		Templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom="
@@ -38,20 +38,21 @@ func TestTemplateBasedProcessor(t *testing.T) {
 }
 
 func TestStringCachedIndexBasedProcessor(t *testing.T) {
-	delimiter := "$$"
-	tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter)
+	delimiter := "##"
+	// tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE&%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter)
 	p, _ := NewProcessor(STRING_INDEX_CACHED, Config{
 		delimiter: delimiter,
-		templates: []string{tURL},
+		Templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
-	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom="
+	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=&url=http://mydomain.com/myPage?key=value"
 	actual, err := p.Replace(tURL, testData)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 	assert.Equal(t, expected, actual, fmt.Sprintf("Expected [%s] found - %s", expected, actual))
-	fmt.Println(actual)
+	fmt.Println("\n" + actual)
+
 }
 
 func BenchmarkStringBasedProcessor(b *testing.B) {
@@ -66,7 +67,7 @@ var tmplProcessorAlwaysInit IProcessor
 var vastBidderMacroProcessor IProcessor
 var stringCachedIndexBasedProcessor IProcessor
 
-const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
+const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
 
 var URL2 = getSampleTemplateURL("##")
 
@@ -74,7 +75,7 @@ func init() {
 	fmt.Println("start init")
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
 		delimiter: "##",
-		templates: []string{tURL},
+		Templates: []string{tURL},
 	})
 	stringBasedProcessor, _ = NewProcessor(STRING_BASED, Config{
 		delimiter: "##",
@@ -90,7 +91,10 @@ func init() {
 
 	stringCachedIndexBasedProcessor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
 		delimiter: "##",
-		templates: []string{tURL},
+		Templates: []string{tURL},
+		valueConfig: MacroValueConfig{
+			UrlEscape: true,
+		},
 	})
 
 }

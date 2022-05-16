@@ -307,6 +307,32 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
+		// r.Account.Events.MacroProcessor().Replace()
+		/* build macro value map */
+		// request := r.BidRequestWrapper.BidRequest
+		// var macroValues = map[string]string{
+		// 	"PBS_EVENTTYPE":       "SOURCE_NOT_DEFINED",
+		// 	"PBS_VASTEVENT":       "SOURCE_NOT_DEFINED",
+		// 	"PBS_APPBUNDLE":       request.App.Bundle,
+		// 	"PBS_DOMAIN":          "mydomain.com",
+		// 	"PBS_PUBDOMAIN":       "pub.domain.com",
+		// 	"PBS_PAGEURL":         "http://mydomain.com/myPage?key=value",
+		// 	"PBS_GDPRCONSENT":     "consent",
+		// 	"PBS_LIMITADTRACKING": " yes",
+		// 	"PBS_VASTCRTID":       "vast_creative_1",
+		// 	"PBS_BIDID":           ["bid_123",""]
+		// 	"PBS_AUCTIONID":       "auction_123",
+		// 	"PBS_ACCOUNTID":       "5890",
+		// 	"PBS_TIMESTAMP":       "12345678",
+		// 	"PBS_BIDDER":          "pubmatic",
+		// 	"PBS_INTEGRATION":     "video",
+		// 	"PBS_LINEID":          "line_item_1",
+		// 	"PBS_CHANNEL":         "header_bidding",
+		// 	"PBS_ANALYTICS":       "abc_adaptor",
+		// 	"PBS_MACRO_profileid": "1234",
+		// }
+
+		// map[string][]string => "imp" => []str,
 		evTracking := getEventTracking(&requestExt.Prebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL)
 		adapterBids = evTracking.modifyBidsForEvents(adapterBids)
 

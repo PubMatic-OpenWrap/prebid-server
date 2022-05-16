@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	validator "github.com/asaskevich/govalidator"
+	"github.com/prebid/prebid-server/macros"
 )
 
 // VASTEventElement indicates valid VAST event element
@@ -64,6 +65,8 @@ type Events struct {
 	Enabled    bool        `mapstructure:"enabled" json:"enabled"`
 	DefaultURL string      `mapstructure:"default_url" json:"default_url"`
 	VASTEvents []VASTEvent `mapstructure:"vast_events" json:"vast_events,omitempty"`
+	// macroProcessor is responsible for replacing the macros present inside tracker events
+	macroProcessor macros.IProcessor
 }
 
 // validate verifies the events object  and returns error if at least one is invalid.
@@ -73,6 +76,10 @@ func (e Events) validate(errs []error) []error {
 			return append(errs, errors.New("Invalid events.default_url"))
 		}
 		err := validateVASTEvents(e.VASTEvents)
+		if err != nil {
+			return append(errs, err)
+		}
+		e.macroProcessor, err = e.initMacroProcessor()
 		if err != nil {
 			return append(errs, err)
 		}
@@ -146,4 +153,22 @@ func isValidURL(eventURL string) bool {
 // isTrackingEvent returns true if event object contains event.CreateElement == "tracking"
 func (e VASTEvent) isTrackingEvent() bool {
 	return e.CreateElement == TrackingVASTElement
+}
+
+func (e Events) initMacroProcessor() (macros.IProcessor, error) {
+	// init micro procesor
+	templates := make([]string, 0)
+	templates = append(templates, e.DefaultURL)
+	for _, vEvent := range e.VASTEvents {
+		for _, url := range vEvent.URLs {
+			templates = append(templates, url)
+		}
+	}
+	return macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
+		Templates: templates,
+	})
+}
+
+func (e Events) MacroProcessor() macros.IProcessor {
+	return e.macroProcessor
 }

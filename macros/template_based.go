@@ -18,7 +18,7 @@ func (p *TemplateBased) Replace(str string, macroValues map[string]string) (stri
 
 func (p *TemplateBased) init0(templates []string) {
 	delimiter := p.Cfg.delimiter
-	p.templates = make(map[string]*template.Template, len(p.Cfg.templates))
+	p.templates = make(map[string]*template.Template, len(p.Cfg.Templates))
 	for _, str := range templates {
 		tmpl := template.New("macro_replace")
 		tmpl.Option("missingkey=zero")

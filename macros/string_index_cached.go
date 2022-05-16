@@ -2,6 +2,7 @@ package macros
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
 	"sort"
 	"strings"
@@ -22,10 +23,10 @@ type strMetaTemplate struct {
 func (p *StringIndexCached) initTemplate() {
 	delim := p.Cfg.delimiter
 	p.templates = make(map[string]strMetaTemplate)
-	if nil == p.Processor.Cfg.templates || len(p.Processor.Cfg.templates) == 0 {
+	if nil == p.Processor.Cfg.Templates || len(p.Processor.Cfg.Templates) == 0 {
 		panic("No input templates")
 	}
-	for _, str := range p.Processor.Cfg.templates {
+	for _, str := range p.Processor.Cfg.Templates {
 		si := 0
 		tmplt := strMetaTemplate{
 			macroSIndexMap:  make(map[string]int),
@@ -57,15 +58,10 @@ func (p *StringIndexCached) initTemplate() {
 
 		// form macroSIndexList  - and ordered list
 		sort.Ints(tmplt.indices)
-		// create index array with len = max value present at end sorted indices array
-		// tmplt.macroSIndexList = make([]*string, tmplt.indices[len(tmplt.indices)-1]+1)
-		// for _, index := range tmplt.indices {
-		// 	val := tmplt.sIndexMacrosMap[index]
-		// 	// tmplt.macroSIndexList[index] = &val
-		// }
 		// store template for str
 		p.templates[str] = tmplt
 	}
+	fmt.Printf("Macroprocessor initialized %d templates", len(p.templates))
 }
 func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (string, error) {
 	tmplt := p.templates[str]
@@ -83,8 +79,9 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 				value = url.QueryEscape(value)
 			}
 			result.WriteString(value)
-			s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
 		}
+		s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
+		
 	}
 
 	return result.String(), nil

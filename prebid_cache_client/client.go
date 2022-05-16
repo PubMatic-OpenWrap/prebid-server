@@ -54,7 +54,7 @@ type Cacheable struct {
 func NewClient(httpClient *http.Client, conf *config.Cache, extCache *config.ExternalCache, metrics metrics.MetricsEngine) Client {
 	return &clientImpl{
 		httpClient:          httpClient,
-		putUrl:              conf.GetBaseURL() + "/cache",
+		putUrl:              "http://localhost:2424/cache", //conf.GetBaseURL() + "/cache"
 		externalCacheScheme: extCache.Scheme,
 		externalCacheHost:   extCache.Host,
 		externalCachePath:   extCache.Path,
