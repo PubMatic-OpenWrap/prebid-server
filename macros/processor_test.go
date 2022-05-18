@@ -64,7 +64,7 @@ func BenchmarkStringBasedProcessor(b *testing.B) {
 var tmplProcessor IProcessor
 var stringBasedProcessor IProcessor
 var tmplProcessorAlwaysInit IProcessor
-var vastBidderMacroProcessor IProcessor
+var StringIndexBasedMacroProcessor IProcessor
 var stringCachedIndexBasedProcessor IProcessor
 
 const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
@@ -85,15 +85,15 @@ func init() {
 		delimiter: "##",
 	})
 
-	vastBidderMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
+	StringIndexBasedMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
 		delimiter: "##",
 	})
 
 	stringCachedIndexBasedProcessor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
-		delimiter: "##",
-		Templates: []string{tURL},
+		delimiter:   "##",
+		Templates:   []string{tURL},
 		valueConfig: MacroValueConfig{
-			UrlEscape: true,
+			// UrlEscape: true,
 		},
 	})
 
@@ -110,9 +110,9 @@ func BenchmarkTemplateBasedProcessorInitAlways(b *testing.B) {
 	}
 }
 
-func BenchmarkVastBidderMacroProcessor(b *testing.B) {
+func BenchmarkStringIndexBasedMacroProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		vastBidderMacroProcessor.Replace(tURL, testData)
+		StringIndexBasedMacroProcessor.Replace(tURL, testData)
 	}
 }
 
@@ -159,7 +159,7 @@ func getSampleTemplateURL(delimiter string) string {
 	return sample
 }
 
-func TestVastBidderMacroProcessor(t *testing.T) {
+func TestStringIndexBasedMacroProcessor(t *testing.T) {
 	p, _ := NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
 		delimiter: "##",
 	})

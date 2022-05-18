@@ -2,6 +2,9 @@ package macros
 
 import "errors"
 
+//GProcessor a global instance of macro processor
+var GProcessor IProcessor
+
 type Processor struct {
 	IProcessor
 	Cfg Config

@@ -80,6 +80,7 @@ func (e Events) validate(errs []error) []error {
 			return append(errs, err)
 		}
 		e.macroProcessor, err = e.initMacroProcessor()
+		macros.GProcessor, err = e.initMacroProcessor()
 		if err != nil {
 			return append(errs, err)
 		}

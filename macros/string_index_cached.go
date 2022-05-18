@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 )
 
@@ -14,7 +13,7 @@ type StringIndexCached struct {
 }
 
 type strMetaTemplate struct {
-	macroSIndexMap  map[string]int
+	// macroSIndexMap  map[string]int
 	sIndexMacrosMap map[int]string
 	// macroSIndexList []*string // ordered list of indices (useful for replace method)
 	indices []int
@@ -29,7 +28,6 @@ func (p *StringIndexCached) initTemplate() {
 	for _, str := range p.Processor.Cfg.Templates {
 		si := 0
 		tmplt := strMetaTemplate{
-			macroSIndexMap:  make(map[string]int),
 			sIndexMacrosMap: make(map[int]string),
 			indices:         []int{},
 		}
@@ -45,9 +43,7 @@ func (p *StringIndexCached) initTemplate() {
 			}
 			ei = ei + msi // offset adjustment (delimiter inclusive)
 			mei := ei     // just for readiability
-			// fmt.Println(str[msi:mei])
 			// cache macro and its start index
-			tmplt.macroSIndexMap[str[msi:mei]] = si
 			tmplt.sIndexMacrosMap[si] = str[msi:mei]
 			tmplt.indices = append(tmplt.indices, si)
 			si = ei + 1
@@ -55,10 +51,6 @@ func (p *StringIndexCached) initTemplate() {
 				break
 			}
 		}
-
-		// form macroSIndexList  - and ordered list
-		sort.Ints(tmplt.indices)
-		// store template for str
 		p.templates[str] = tmplt
 	}
 	fmt.Printf("Macroprocessor initialized %d templates", len(p.templates))
@@ -81,7 +73,7 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 			result.WriteString(value)
 		}
 		s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
-		
+
 	}
 
 	return result.String(), nil
