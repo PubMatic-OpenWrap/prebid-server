@@ -1,6 +1,7 @@
 package floors
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
@@ -56,6 +57,7 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 	floorExt.Skipped = new(bool)
 	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
 		*floorExt.Skipped = true
+		floorData.ModelGroups = nil
 		return floorModelErrList
 	}
 
@@ -71,10 +73,10 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 			}
 
 			if floorVal > 0.0 {
-				request.Imp[i].BidFloor = floorVal
+				request.Imp[i].BidFloor = math.Round(floorVal*10000) / 10000
 				floorMinVal := getMinFloorValue(floorExt, conversions)
 				if floorMinVal > 0.0 && floorVal < floorMinVal {
-					request.Imp[i].BidFloor = floorMinVal
+					request.Imp[i].BidFloor = math.Round(floorMinVal*10000) / 10000
 				}
 
 				request.Imp[i].BidFloorCur = floorData.ModelGroups[0].Currency
