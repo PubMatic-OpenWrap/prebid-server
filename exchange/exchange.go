@@ -311,6 +311,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 					if err != nil {
 						errs = append(errs, errors.New("Error generating bid.ext.prebid.bidid"))
 					}
+					glog.Infof("Original BidID = %s Generated BidID = %s", pbsBid.bid.ID, pbsBid.generatedBidID)
 				}
 			}
 		}
