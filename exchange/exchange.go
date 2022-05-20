@@ -253,6 +253,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		if err != nil {
 			errs = append(errs, err)
 		}
+		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
+		glog.Infof("\n Updated Floor Request after parsing floors = %v", string(updatedBidReq))
 	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
