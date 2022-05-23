@@ -96,8 +96,10 @@ type Configuration struct {
 }
 
 type PriceFloors struct {
-	Enabled        bool `mapstructure:"enabled"`
-	UseDynamicData bool `mapstructure:"use_dynamic_data"`
+	Enabled           bool `mapstructure:"enabled"`
+	UseDynamicData    bool `mapstructure:"use_dynamic_data"`
+	EnforceFloorsRate int  `mapstructure:"enforce-floors-rate"`
+	EnforceDealFloors bool `mapstructure:"enforce-deal-floors"`
 }
 
 type VendorListScheduler struct {
@@ -1109,6 +1111,8 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("gdpr.tcf2.special_feature1.vendor_exceptions", []openrtb_ext.BidderName{})
 	v.SetDefault("price_floors.enabled", false)
 	v.SetDefault("price_floors.use_dynamic_data", false)
+	v.SetDefault("price_floors.enforce-floors-rate", 0)
+	v.SetDefault("price_floors.enforce-deal-floors", false)
 }
 
 func migrateConfig(v *viper.Viper) {

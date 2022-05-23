@@ -142,8 +142,12 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 			LMT:  cfg.LMT,
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
-		floor:          &floors.FloorConfig{cfg.PriceFloors.Enabled},
-		trakerURL:      cfg.TrackerURL,
+		floor: &floors.FloorConfig{
+			FloorEnabled:      cfg.PriceFloors.Enabled,
+			EnforceRate:       cfg.PriceFloors.EnforceFloorsRate,
+			EnforceDealFloors: cfg.PriceFloors.EnforceDealFloors,
+		},
+		trakerURL: cfg.TrackerURL,
 	}
 }
 
@@ -229,6 +233,14 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
+
+		if e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) && floors.ShouldEnforceFloors(requestExt.Prebid.Floors, e.floor.GetEnforceRate(), rand.Intn) {
+			var rejections []string
+			adapterBids, rejections = EnforceFloorToBids(r.BidRequest, adapterBids, conversions)
+			for _, message := range rejections {
+				errs = append(errs, errors.New(message))
+			}
+		}
 
 		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequest, adapterBids)
 		// add advertiser blocking specific errors

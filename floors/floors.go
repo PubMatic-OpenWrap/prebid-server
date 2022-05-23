@@ -35,18 +35,32 @@ const (
 	SKIP_RATE_MAX          int    = 100
 	MODEL_WEIGHT_MAX_VALUE int    = 1000000
 	MODEL_WEIGHT_MIN_VALUE int    = 0
+	ENFORCE_RATE_MIN       int    = 0
+	ENFORCE_RATE_MAX       int    = 100
 )
 
 type FloorConfig struct {
-	FloorEnabled bool
+	FloorEnabled      bool
+	EnforceRate       int
+	EnforceDealFloors bool
 }
 
 func (fc *FloorConfig) Enabled() bool {
 	return fc.FloorEnabled
 }
 
+func (fc *FloorConfig) GetEnforceRate() int {
+	return fc.EnforceRate
+}
+
+func (fc *FloorConfig) EnforceDealFloor() bool {
+	return fc.EnforceDealFloors
+}
+
 type Floor interface {
 	Enabled() bool
+	GetEnforceRate() int
+	EnforceDealFloor() bool
 }
 
 // IsRequestEnabledWithFloor will check if floors is enabled in request
@@ -76,6 +90,7 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 	floorExt.Skipped = new(bool)
 	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
 		*floorExt.Skipped = true
+		floorExt.Enforcement.EnforcePBS = false
 		return floorModelErrList
 	}
 
