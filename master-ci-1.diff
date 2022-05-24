@@ -1,0 +1,697 @@
+diff --git a/adapters/pubmatic/pubmatictest/supplemental/gptSlotNameInImpExt.json b/adapters/pubmatic/pubmatictest/supplemental/gptSlotNameInImpExt.json
+index ee763ce1..cf016565 100644
+--- a/adapters/pubmatic/pubmatictest/supplemental/gptSlotNameInImpExt.json
++++ b/adapters/pubmatic/pubmatictest/supplemental/gptSlotNameInImpExt.json
+@@ -38,7 +38,6 @@
+             }
+           },
+           "data": {
+-            "pbadslot": "/2222/home",
+             "adserver": {
+               "name": "gam",
+               "adslot": "/1111/home"
+diff --git a/adapters/vastbidder/vast_tag_response_handler.go b/adapters/vastbidder/vast_tag_response_handler.go
+index 92e42328..031e9e32 100644
+--- a/adapters/vastbidder/vast_tag_response_handler.go
++++ b/adapters/vastbidder/vast_tag_response_handler.go
+@@ -248,6 +248,9 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
+ 
+ 	if version == `2.0` {
+ 		node = ad.FindElement(`./Extensions/Extension/Price`)
++		if node == nil {
++			node = ad.FindElement(`./Extensions/Extension/Pricing`)
++		}
+ 	} else {
+ 		node = ad.FindElement(`./Pricing`)
+ 	}
+@@ -256,7 +259,7 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
+ 		return 0.0, currency
+ 	}
+ 
+-	priceValue, err := strconv.ParseFloat(node.Text(), 64)
++	priceValue, err := getPricingValue(node)
+ 	if nil != err {
+ 		return 0.0, currency
+ 	}
+@@ -269,6 +272,31 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
+ 	return priceValue, currency
+ }
+ 
++//getPricingValue return pricing value from vast xml node
++func getPricingValue(node *etree.Element) (float64, error) {
++	value := strings.TrimSpace(node.Text())
++	if len(value) == 0 {
++		//added custom logic for ignoring whitespaces elements while reading pricing node
++		/*
++			<Pricing>
++				<![CDATA[
++					0.05
++				]]>
++			</Pricing>
++		*/
++		for _, t := range node.Child {
++			if c, ok := t.(*etree.CharData); ok {
++				value = strings.TrimSpace(c.Data)
++				if len(value) > 0 {
++					//found value
++					break
++				}
++			}
++		}
++	}
++	return strconv.ParseFloat(value, 64)
++}
++
+ // getDuration extracts the duration of the bid from input creative of Linear type.
+ // The lookup may vary from vast version provided in the input
+ // returns duration in seconds or error if failed to obtained the duration.
+diff --git a/adapters/vastbidder/vast_tag_response_handler_test.go b/adapters/vastbidder/vast_tag_response_handler_test.go
+index 28c29ef6..8c00d9b9 100644
+--- a/adapters/vastbidder/vast_tag_response_handler_test.go
++++ b/adapters/vastbidder/vast_tag_response_handler_test.go
+@@ -75,6 +75,98 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
+ 				},
+ 			},
+ 		},
++		{
++			name: `ExtensionPricingNode`,
++			args: args{
++				internalRequest: &openrtb2.BidRequest{
++					ID: `request_id_1`,
++					Imp: []openrtb2.Imp{
++						{
++							ID: `imp_id_1`,
++						},
++					},
++				},
++				externalRequest: &adapters.RequestData{
++					Params: &adapters.BidRequestParams{
++						ImpIndex: 0,
++					},
++				},
++				response: &adapters.ResponseData{
++					Body: []byte(`<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Pricing model="CPM" currency="USD"><![CDATA[0.05]]></Pricing> </Extension> </Extensions> </InLine> </Ad> </VAST>`),
++				},
++				vastTag: &openrtb_ext.ExtImpVASTBidderTag{
++					TagID:    "101",
++					Duration: 15,
++				},
++			},
++			want: want{
++				bidderResponse: &adapters.BidderResponse{
++					Bids: []*adapters.TypedBid{
++						{
++							Bid: &openrtb2.Bid{
++								ID:    `1234`,
++								ImpID: `imp_id_1`,
++								Price: 0.05,
++								AdM:   `<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Pricing model="CPM" currency="USD"><![CDATA[0.05]]></Pricing> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
++								CrID:  "cr_1234",
++							},
++							BidType: openrtb_ext.BidTypeVideo,
++							BidVideo: &openrtb_ext.ExtBidPrebidVideo{
++								VASTTagID: "101",
++								Duration:  15,
++							},
++						},
++					},
++					Currency: `USD`,
++				},
++			},
++		},
++		{
++			name: `InlinePricingNodeWithSpaces`,
++			args: args{
++				internalRequest: &openrtb2.BidRequest{
++					ID: `request_id_1`,
++					Imp: []openrtb2.Imp{
++						{
++							ID: `imp_id_1`,
++						},
++					},
++				},
++				externalRequest: &adapters.RequestData{
++					Params: &adapters.BidRequestParams{
++						ImpIndex: 0,
++					},
++				},
++				response: &adapters.ResponseData{
++					Body: []byte(`<VAST version="3.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"> <Ad id="20001"> <InLine> <AdSystem version="4.0">iabtechlab</AdSystem> <AdTitle>iabtechlab video ad</AdTitle> <Pricing model="cpm" currency="USD"> <![CDATA[ 7 ]]> </Pricing> <Error>https://example.com/error</Error> <Impression id="Impression-ID">https://example.com/track/impression</Impression> <Creatives> <Creative id="5480" sequence="1"> <Linear > <Duration>00:00:15</Duration> <VideoClicks> <ClickTracking id="blog"> <![CDATA[https://iabtechlab.com]]> </ClickTracking> <CustomClick>http://iabtechlab.com</CustomClick> </VideoClicks> <MediaFiles> <MediaFile id="5241" delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" minBitrate="360" maxBitrate="1080" scalable="1" maintainAspectRatio="1" codec="0"> <![CDATA[https://tech-stack-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/7c3dec9e-2665-4c24-aefa-dada2a7bb859.mp4]]> </MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="iab-Count"> <total_available> <![CDATA[ 2 ]]> </total_available> </Extension> </Extensions> </InLine> </Ad> </VAST>`),
++				},
++				vastTag: &openrtb_ext.ExtImpVASTBidderTag{
++					TagID:    "101",
++					Duration: 15,
++				},
++			},
++			want: want{
++				bidderResponse: &adapters.BidderResponse{
++					Bids: []*adapters.TypedBid{
++						{
++							Bid: &openrtb2.Bid{
++								ID:    `1234`,
++								ImpID: `imp_id_1`,
++								Price: 7,
++								AdM:   `<VAST version="3.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"> <Ad id="20001"> <InLine> <AdSystem version="4.0">iabtechlab</AdSystem> <AdTitle>iabtechlab video ad</AdTitle> <Pricing model="cpm" currency="USD"> <![CDATA[ 7 ]]> </Pricing> <Error>https://example.com/error</Error> <Impression id="Impression-ID">https://example.com/track/impression</Impression> <Creatives> <Creative id="5480" sequence="1"> <Linear > <Duration>00:00:15</Duration> <VideoClicks> <ClickTracking id="blog"> <![CDATA[https://iabtechlab.com]]> </ClickTracking> <CustomClick>http://iabtechlab.com</CustomClick> </VideoClicks> <MediaFiles> <MediaFile id="5241" delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" minBitrate="360" maxBitrate="1080" scalable="1" maintainAspectRatio="1" codec="0"> <![CDATA[https://tech-stack-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/7c3dec9e-2665-4c24-aefa-dada2a7bb859.mp4]]> </MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="iab-Count"> <total_available> <![CDATA[ 2 ]]> </total_available> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
++								CrID:  "5480",
++							},
++							BidType: openrtb_ext.BidTypeVideo,
++							BidVideo: &openrtb_ext.ExtBidPrebidVideo{
++								VASTTagID: "101",
++								Duration:  15,
++							},
++						},
++					},
++					Currency: `USD`,
++				},
++			},
++		},
+ 		// TODO: Add test cases.
+ 	}
+ 	for _, tt := range tests {
+diff --git a/config/config.go b/config/config.go
+index 934422d0..972d14c4 100644
+--- a/config/config.go
++++ b/config/config.go
+@@ -95,6 +95,12 @@ type Configuration struct {
+ 
+ 	TrackerURL          string              `mapstructure:"tracker_url"`
+ 	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
++	PriceFloors         PriceFloors         `mapstructure:"price_floors"`
++}
++
++type PriceFloors struct {
++	Enabled        bool `mapstructure:"enabled"`
++	UseDynamicData bool `mapstructure:"use_dynamic_data"`
+ }
+ 
+ type VendorListScheduler struct {
+diff --git a/config/config_test.go b/config/config_test.go
+index 4f9bc44c..775ff973 100644
+--- a/config/config_test.go
++++ b/config/config_test.go
+@@ -145,6 +145,10 @@ func TestDefaults(t *testing.T) {
+ 	cmpBools(t, "auto_gen_source_tid", cfg.AutoGenSourceTID, true)
+ 	cmpBools(t, "generate_bid_id", cfg.GenerateBidID, false)
+ 
++	//Assert the price floor default values
++	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
++	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
++
+ 	//Assert purpose VendorExceptionMap hash tables were built correctly
+ 	expectedTCF2 := TCF2{
+ 		Enabled: true,
+@@ -374,6 +378,9 @@ request_validation:
+     ipv4_private_networks: ["1.1.1.0/24"]
+     ipv6_private_networks: ["1111::/16", "2222::/16"]
+ generate_bid_id: true
++price_floors:
++   enabled: true
++   use_dynamic_data: false
+ `)
+ 
+ var adapterExtraInfoConfig = []byte(`
+@@ -462,6 +469,10 @@ func TestFullConfig(t *testing.T) {
+ 	cmpInts(t, "gdpr.host_vendor_id", cfg.GDPR.HostVendorID, 15)
+ 	cmpStrings(t, "gdpr.default_value", cfg.GDPR.DefaultValue, "1")
+ 
++	//Assert the price floor values
++	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, true)
++	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
++
+ 	//Assert the NonStandardPublishers was correctly unmarshalled
+ 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
+ 	assert.Equal(t, map[string]struct{}{"pub1": {}, "pub2": {}}, cfg.GDPR.NonStandardPublisherMap, "gdpr.non_standard_publishers Hash Map")
+diff --git a/endpoints/events/vtrack_ow.go b/endpoints/events/vtrack_ow.go
+index fc63bf88..0d76d172 100644
+--- a/endpoints/events/vtrack_ow.go
++++ b/endpoints/events/vtrack_ow.go
+@@ -29,6 +29,8 @@ const (
+ 	PBSBidderMacro = "[PBS-BIDDER]"
+ 	// [PBS-BIDID] represents bid id. If auction.generate-bid-id config is on, then resolve with response.seatbid.bid.ext.prebid.bidid. Else replace with response.seatbid.bid.id
+ 	PBSBidIDMacro = "[PBS-BIDID]"
++	// [PBS-ORIG_BIDID] represents original bid id.
++	PBSOrigBidIDMacro = "[PBS-ORIG_BIDID]"
+ 	// [ADERVERTISER_NAME] represents advertiser name
+ 	PBSAdvertiserNameMacro = "[ADVERTISER_NAME]"
+ 	// Pass imp.tagId using this macro
+@@ -51,7 +53,7 @@ var eventIDMap = map[string]string{
+ 
+ //InjectVideoEventTrackers injects the video tracking events
+ //Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
+-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
++func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
+ 	// parse VAST
+ 	doc := etree.NewDocument()
+ 	err := doc.ReadFromString(vastXML)
+@@ -68,7 +70,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, req
+ 		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
+ 	}
+ 
+-	eventURLMap := GetVideoEventTracking(trackerURL, bid, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, doc, impMap)
++	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, doc, impMap)
+ 	trackersInjected := false
+ 	// return if if no tracking URL
+ 	if len(eventURLMap) == 0 {
+@@ -136,7 +138,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, req
+ //    firstQuartile, midpoint, thirdQuartile, complete
+ // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
+ // and ensure that your macro is part of trackerURL configuration
+-func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
++func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
+ 	eventURLMap := make(map[string]string)
+ 	if "" == strings.TrimSpace(trackerURL) {
+ 		return eventURLMap
+@@ -194,7 +196,14 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, requestingBidde
+ 		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidderCoreName)
+ 		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, requestingBidder)
+ 
+-		eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
++		/* Use generated bidId if present, else use bid.ID */
++		if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
++			eventURL = replaceMacro(eventURL, PBSBidIDMacro, prebidGenBidId)
++		} else {
++			eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
++		}
++
++		eventURL = replaceMacro(eventURL, PBSOrigBidIDMacro, bid.ID)
+ 		// replace [EVENT_ID] macro with PBS defined event ID
+ 		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
+ 
+diff --git a/endpoints/events/vtrack_ow_test.go b/endpoints/events/vtrack_ow_test.go
+index 3cf18b48..f87298eb 100644
+--- a/endpoints/events/vtrack_ow_test.go
++++ b/endpoints/events/vtrack_ow_test.go
+@@ -13,6 +13,7 @@ import (
+ func TestInjectVideoEventTrackers(t *testing.T) {
+ 	type args struct {
+ 		externalURL string
++		gen_bidid   string
+ 		bid         *openrtb2.Bid
+ 		req         *openrtb2.BidRequest
+ 	}
+@@ -185,7 +186,7 @@ func TestInjectVideoEventTrackers(t *testing.T) {
+ 			timestamp := int64(0)
+ 			requestingBidder := "test_bidder"
+ 			bidderCoreName := "test_core_bidder"
+-			injectedVast, injected, ierr := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, requestingBidder, bidderCoreName, accountID, timestamp, tc.args.req)
++			injectedVast, injected, ierr := InjectVideoEventTrackers(tc.args.externalURL, vast, tc.args.bid, tc.args.gen_bidid, requestingBidder, bidderCoreName, accountID, timestamp, tc.args.req)
+ 
+ 			if !injected {
+ 				// expect no change in input vast if tracking events are not injected
+@@ -235,6 +236,7 @@ func TestGetVideoEventTracking(t *testing.T) {
+ 	type args struct {
+ 		trackerURL       string
+ 		bid              *openrtb2.Bid
++		gen_bidid        string
+ 		requestingBidder string
+ 		bidderCoreName   string
+ 		accountId        string
+@@ -464,9 +466,9 @@ func TestGetVideoEventTracking(t *testing.T) {
+ 			},
+ 		},
+ 		{
+-			name: "all_macros", // expect encoding for WRAPPER_IMPRESSION_ID macro
++			name: "all_macros with generated_bidId", // expect encoding for WRAPPER_IMPRESSION_ID macro
+ 			args: args{
+-				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&bc=[BIDDER_CODE]",
++				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&origbidid=[PBS-ORIG_BIDID]&bc=[BIDDER_CODE]",
+ 				req: &openrtb2.BidRequest{
+ 					App: &openrtb2.App{Bundle: "com.someapp.com", Publisher: &openrtb2.Publisher{ID: "5890"}},
+ 					Ext: []byte(`{
+@@ -485,16 +487,52 @@ func TestGetVideoEventTracking(t *testing.T) {
+ 					},
+ 				},
+ 				bid:              &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
++				gen_bidid:        "random_bid_id",
+ 				requestingBidder: "test_bidder:234",
+ 				bidderCoreName:   "test_core_bidder:234",
+ 			},
+ 			want: want{
+ 				trackerURLMap: map[string]string{
+-					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&bc=test_bidder%3A234",
+-					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&bc=test_bidder%3A234",
+-					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&bc=test_bidder%3A234",
+-					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&bc=test_bidder%3A234",
+-					"start":         "https://company.tracker.com?operId=8&e=2&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&bc=test_bidder%3A234"},
++					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=random_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=random_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=random_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=random_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"start":         "https://company.tracker.com?operId=8&e=2&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=random_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234"},
++			},
++		},
++		{
++			name: "all_macros with empty generated_bidId", // expect encoding for WRAPPER_IMPRESSION_ID macro
++			args: args{
++				trackerURL: "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&origbidid=[PBS-ORIG_BIDID]&bc=[BIDDER_CODE]",
++				req: &openrtb2.BidRequest{
++					App: &openrtb2.App{Bundle: "com.someapp.com", Publisher: &openrtb2.Publisher{ID: "5890"}},
++					Ext: []byte(`{
++									"prebid": {
++											"macros": {
++												"[PROFILE_ID]": "100",
++												"[PROFILE_VERSION]": "2",
++												"[UNIX_TIMESTAMP]": "1234567890",
++												"[PLATFORM]": "7",
++												"[WRAPPER_IMPRESSION_ID]": "abc~!@#$%^&&*()_+{}|:\"<>?[]\\;',./"
++											}
++									}
++								}`),
++					Imp: []openrtb2.Imp{
++						{TagID: "/testadunit/1", ID: "imp_1"},
++					},
++				},
++				bid:              &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"},
++				gen_bidid:        "",
++				requestingBidder: "test_bidder:234",
++				bidderCoreName:   "test_core_bidder:234",
++			},
++			want: want{
++				trackerURLMap: map[string]string{
++					"firstQuartile": "https://company.tracker.com?operId=8&e=4&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"midpoint":      "https://company.tracker.com?operId=8&e=3&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"thirdQuartile": "https://company.tracker.com?operId=8&e=5&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"complete":      "https://company.tracker.com?operId=8&e=6&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234",
++					"start":         "https://company.tracker.com?operId=8&e=2&p=5890&pid=100&v=2&ts=1234567890&pn=test_core_bidder%3A234&advertiser_id=a.com&sURL=com.someapp.com&pfi=7&af=video&iid=abc~%21%40%23%24%25%5E%26%26%2A%28%29_%2B%7B%7D%7C%3A%22%3C%3E%3F%5B%5D%5C%3B%27%2C.%2F&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=%2Ftestadunit%2F1&bidid=test_bid_id&origbidid=test_bid_id&bc=test_bidder%3A234"},
+ 			},
+ 		},
+ 	}
+@@ -511,7 +549,7 @@ func TestGetVideoEventTracking(t *testing.T) {
+ 				impMap[imp.ID] = &imp
+ 			}
+ 
+-			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.requestingBidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
++			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.gen_bidid, tc.args.requestingBidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
+ 
+ 			for event, eurl := range tc.want.trackerURLMap {
+ 
+diff --git a/endpoints/openrtb2/ctv/types/adpod_types.go b/endpoints/openrtb2/ctv/types/adpod_types.go
+index bf52e6cb..11a2e6b6 100644
+--- a/endpoints/openrtb2/ctv/types/adpod_types.go
++++ b/endpoints/openrtb2/ctv/types/adpod_types.go
+@@ -9,6 +9,7 @@ import (
+ //Bid openrtb bid object with extra parameters
+ type Bid struct {
+ 	*openrtb2.Bid
++	openrtb_ext.ExtBid
+ 	Duration          int
+ 	Status            constant.BidStatus
+ 	DealTierSatisfied bool
+diff --git a/endpoints/openrtb2/ctv_auction.go b/endpoints/openrtb2/ctv_auction.go
+index eb1f5268..fe5bbcfe 100644
+--- a/endpoints/openrtb2/ctv_auction.go
++++ b/endpoints/openrtb2/ctv_auction.go
+@@ -7,7 +7,6 @@ import (
+ 	"fmt"
+ 	"math"
+ 	"net/http"
+-	"net/url"
+ 	"sort"
+ 	"strconv"
+ 	"strings"
+@@ -22,7 +21,6 @@ import (
+ 	accountService "github.com/prebid/prebid-server/account"
+ 	"github.com/prebid/prebid-server/analytics"
+ 	"github.com/prebid/prebid-server/config"
+-	"github.com/prebid/prebid-server/endpoints/events"
+ 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
+ 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
+ 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/impressions"
+@@ -983,15 +981,6 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid) *string {
+ 				continue
+ 			}
+ 
+-			// adjust bidid in video event trackers and update
+-			adjustBidIDInVideoEventTrackers(adDoc, bid.Bid)
+-			adm, err := adDoc.WriteToString()
+-			if nil != err {
+-				util.JLogf("ERROR, %v", err.Error())
+-			} else {
+-				bid.AdM = adm
+-			}
+-
+ 			vastTag := adDoc.SelectElement(constant.VASTElement)
+ 
+ 			//Get Actual VAST Version
+@@ -1041,7 +1030,13 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
+ 
+ 	for i, bid := range adpod.Bids {
+ 		//adding bid id in adpod.refbids
+-		bidExt.AdPod.RefBids[i] = bid.ID
++		if bid.ExtBid.Prebid != nil && len(bid.ExtBid.Prebid.BidId) != 0 {
++			bidExt.AdPod.RefBids[i] = bid.ExtBid.Prebid.BidId
++			bidExt.Prebid.BidId = bid.ExtBid.Prebid.BidId
++		} else {
++			bidExt.AdPod.RefBids[i] = bid.ID
++			bidExt.Prebid.BidId = bid.ID
++		}
+ 
+ 		//updating exact duration of adpod creative
+ 		bidExt.Prebid.Video.Duration += int(bid.Duration)
+@@ -1111,38 +1106,3 @@ func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value stri
+ 	}
+ 	return err
+ }
+-
+-func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
+-	// adjusment: update bid.id with ctv module generated bid.id
+-	creatives := events.FindCreatives(doc)
+-	for _, creative := range creatives {
+-		trackingEvents := creative.FindElements("TrackingEvents/Tracking")
+-		if nil != trackingEvents {
+-			// update bidid= value with ctv generated bid id for this bid
+-			for _, trackingEvent := range trackingEvents {
+-				u, e := url.Parse(trackingEvent.Text())
+-				if nil == e {
+-					values, e := url.ParseQuery(u.RawQuery)
+-					// only do replacment if operId=8
+-					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
+-						values.Set("bidid", bid.ID)
+-					} else {
+-						continue
+-					}
+-
+-					//OTT-183: Fix
+-					if nil != values["operId"] && values["operId"][0] == "8" {
+-						operID := values.Get("operId")
+-						values.Del("operId")
+-						values.Add("_operId", operID) // _ (underscore) will keep it as first key
+-					}
+-
+-					u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
+-					// replace _operId with operId
+-					u.RawQuery = strings.ReplaceAll(u.RawQuery, "_operId", "operId")
+-					trackingEvent.SetText(u.String())
+-				}
+-			}
+-		}
+-	}
+-}
+diff --git a/endpoints/openrtb2/ctv_auction_test.go b/endpoints/openrtb2/ctv_auction_test.go
+index 876a181f..fdc01fae 100644
+--- a/endpoints/openrtb2/ctv_auction_test.go
++++ b/endpoints/openrtb2/ctv_auction_test.go
+@@ -2,12 +2,8 @@ package openrtb2
+ 
+ import (
+ 	"encoding/json"
+-	"fmt"
+-	"net/url"
+-	"strings"
+ 	"testing"
+ 
+-	"github.com/beevik/etree"
+ 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+ 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
+ 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+@@ -40,95 +36,6 @@ func TestAddTargetingKeys(t *testing.T) {
+ 	assert.Equal(t, "Invalid bid", addTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
+ }
+ 
+-func TestAdjustBidIDInVideoEventTrackers(t *testing.T) {
+-	type args struct {
+-		modifiedBid *openrtb2.Bid
+-	}
+-	type want struct {
+-		eventURLMap map[string]string
+-	}
+-
+-	tests := []struct {
+-		name string
+-		args args
+-		want want
+-	}{
+-		{
+-			name: "replace_with_custom_ctv_bid_id",
+-			want: want{
+-				eventURLMap: map[string]string{
+-					"thirdQuartile": "https://thirdQuartile.com?operId=8&key1=value1&bidid=1-bid_123",
+-					"complete":      "https://complete.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+-					"firstQuartile": "https://firstQuartile.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+-					"midpoint":      "https://midpoint.com?operId=8&key1=value1&bidid=1-bid_123&key2=value2",
+-					"someevent":     "https://othermacros?bidid=bid_123&abc=pqr",
+-				},
+-			},
+-			args: args{
+-				modifiedBid: &openrtb2.Bid{
+-					ID: "1-bid_123",
+-					AdM: `<VAST  version="3.0">
+-					<Ad>
+-						<Wrapper>
+-							<AdSystem>
+-								<![CDATA[prebid.org wrapper]]>
+-							</AdSystem>
+-							<VASTAdTagURI>
+-								<![CDATA[https://search.spotxchange.com/vast/2.00/85394?VPI=MP4]]>
+-							</VASTAdTagURI>
+-							<Impression>
+-								<![CDATA[https://imptracker.url]]>
+-							</Impression>
+-							<Impression/>
+-							<Creatives>
+-								<Creative>
+-									<Linear>
+-										<TrackingEvents>
+-											<Tracking  event="someevent"><![CDATA[https://othermacros?bidid=bid_123&abc=pqr]]></Tracking>
+-											<Tracking  event="thirdQuartile"><![CDATA[https://thirdQuartile.com?operId=8&key1=value1&bidid=bid_123]]></Tracking>
+-											<Tracking  event="complete"><![CDATA[https://complete.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+-											<Tracking  event="firstQuartile"><![CDATA[https://firstQuartile.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+-											<Tracking  event="midpoint"><![CDATA[https://midpoint.com?operId=8&key1=value1&bidid=bid_123&key2=value2]]></Tracking>
+-										</TrackingEvents>
+-									</Linear>
+-								</Creative>
+-							</Creatives>
+-							<Error>
+-								<![CDATA[https://error.com]]>
+-							</Error>
+-						</Wrapper>
+-					</Ad>
+-				</VAST>`,
+-				},
+-			},
+-		},
+-	}
+-	for _, test := range tests {
+-		doc := etree.NewDocument()
+-		doc.ReadFromString(test.args.modifiedBid.AdM)
+-		adjustBidIDInVideoEventTrackers(doc, test.args.modifiedBid)
+-		events := doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear/TrackingEvents/Tracking")
+-		for _, event := range events {
+-			evntName := event.SelectAttr("event").Value
+-			expectedURL, _ := url.Parse(test.want.eventURLMap[evntName])
+-			expectedValues := expectedURL.Query()
+-			actualURL, _ := url.Parse(event.Text())
+-			actualValues := actualURL.Query()
+-			for k, ev := range expectedValues {
+-				av := actualValues[k]
+-				for i := 0; i < len(ev); i++ {
+-					assert.Equal(t, ev[i], av[i], fmt.Sprintf("Expected '%v' for '%v' [Event = %v]. but found %v", ev[i], k, evntName, av[i]))
+-				}
+-			}
+-
+-			// check if operId=8 is first param
+-			if evntName != "someevent" {
+-				assert.True(t, strings.HasPrefix(actualURL.RawQuery, "operId=8"), "operId=8 must be first query param")
+-			}
+-		}
+-	}
+-}
+-
+ func TestFilterImpsVastTagsByDuration(t *testing.T) {
+ 	type inputParams struct {
+ 		request          *openrtb2.BidRequest
+diff --git a/exchange/events.go b/exchange/events.go
+index 23f7f77a..cb08c79c 100644
+--- a/exchange/events.go
++++ b/exchange/events.go
+@@ -71,7 +71,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *pbsOrtbBid, bidderName openrtb_ex
+ 	}
+ 
+ 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
+-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
++	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+ 		bid.AdM = string(newVastXML)
+ 	}
+ }
+diff --git a/exchange/exchange.go b/exchange/exchange.go
+index 838d72f2..a718943a 100644
+--- a/exchange/exchange.go
++++ b/exchange/exchange.go
+@@ -311,6 +311,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
+ 					if err != nil {
+ 						errs = append(errs, errors.New("Error generating bid.ext.prebid.bidid"))
+ 					}
++					glog.Infof("Original BidID = %s Generated BidID = %s", pbsBid.bid.ID, pbsBid.generatedBidID)
+ 				}
+ 			}
+ 		}
+diff --git a/exchange/utils.go b/exchange/utils.go
+index 843747ec..16e77e9c 100644
+--- a/exchange/utils.go
++++ b/exchange/utils.go
+@@ -4,9 +4,10 @@ import (
+ 	"context"
+ 	"encoding/json"
+ 	"fmt"
+-	"github.com/prebid/prebid-server/stored_responses"
+ 	"math/rand"
+ 
++	"github.com/prebid/prebid-server/stored_responses"
++
+ 	"github.com/buger/jsonparser"
+ 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+ 	"github.com/prebid/go-gdpr/vendorconsent"
+diff --git a/exchange/utils_pubmatic.go b/exchange/utils_ow.go
+similarity index 100%
+rename from exchange/utils_pubmatic.go
+rename to exchange/utils_ow.go
+diff --git a/exchange/utils_pubmatic_test.go b/exchange/utils_ow_test.go
+similarity index 100%
+rename from exchange/utils_pubmatic_test.go
+rename to exchange/utils_ow_test.go
+diff --git a/openrtb_ext/request.go b/openrtb_ext/request.go
+index 8b057145..2d101584 100644
+--- a/openrtb_ext/request.go
++++ b/openrtb_ext/request.go
+@@ -56,7 +56,9 @@ type ExtRequestPrebid struct {
+ 
+ 	CurrencyConversions *ExtRequestCurrency `json:"currency,omitempty"`
+ 	BidderConfigs       []BidderConfig      `json:"bidderconfig,omitempty"`
+-	Transparency        *TransparencyExt    `json:"transparency,omitempty"`
++
++	Transparency *TransparencyExt `json:"transparency,omitempty"`
++	Floors       *FloorExtension  `json:"floors,omitempty"`
+ }
+ 
+ type TransparencyRule struct {
+@@ -68,6 +70,30 @@ type TransparencyExt struct {
+ 	Content map[string]TransparencyRule `json:"content,omitempty"`
+ }
+ 
++type Schema struct {
++	Fields    []string `json:"fields,omitempty"`
++	Delimiter string   `json:"delimiter,omitempty"`
++}
++
++type FloorData struct {
++	Currency string             `json:"currency,omitempty"`
++	SkipRate int                `json:"skipRate,omitempty"`
++	Schema   Schema             `json:"schema,omitempty"`
++	Values   map[string]float64 `json:"values,omitempty"`
++	Default  float64            `json:"default,omitempty"`
++}
++
++type Enforcement struct {
++	EnforcePBS bool `json:"enforcepbs,omitempty"`
++	FloorDeals bool `json:"floordeals,omitempty"`
++}
++
++type FloorExtension struct {
++	Data        FloorData   `json:"data,omitempty"`
++	Enabled     bool        `json:"enabled,omitempty"`
++	Enforcement Enforcement `json:"enforcement,omitempty"`
++}
++
+ type BidderConfig struct {
+ 	Bidders []string `json:"bidders,omitempty"`
+ 	Config  *Config  `json:"config,omitempty"`
