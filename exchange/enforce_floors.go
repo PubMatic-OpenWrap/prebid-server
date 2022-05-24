@@ -31,9 +31,7 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 		for bidInd := range seatBid.bids {
 			bid := seatBid.bids[bidInd]
 			bidID := bid.bid.ID
-			fmt.Println("adfd", bid.bid.DealID)
 			if bid.bid.DealID != "" && !enforceDealFloors {
-				fmt.Println("inss")
 				eligibleBids = append(eligibleBids, bid)
 				continue
 			}
@@ -49,7 +47,6 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 					continue
 				}
 				bidPrice = rate * bid.bid.Price
-
 			}
 			if bidFloor.bidFloor > bidPrice {
 				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %f is less than bidFloor value %f for impression id %s", bidPrice, bidFloor.bidFloor, bid.bid.ImpID))

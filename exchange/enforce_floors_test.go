@@ -3,7 +3,6 @@ package exchange
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -585,13 +584,6 @@ func TestEnforceFloorToBids(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1 := EnforceFloorToBids(tt.args.bidRequest, tt.args.seatBids, tt.args.conversions, tt.args.enforceDealFloors)
-			for k, v := range got {
-				fmt.Println(k)
-				bids := v.bids
-				for i := range bids {
-					fmt.Println(bids[i].bid)
-				}
-			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("EnforceFloorToBids() got = %v, want %v", got, tt.want)
 			}

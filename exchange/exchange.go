@@ -305,7 +305,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If floor enforcement config enabled then filter bids
 		if e.floor != nil && e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) && floors.ShouldEnforceFloors(requestExt.Prebid.Floors, e.floor.GetEnforceRate(), rand.Intn) {
 			var rejections []string
-			adapterBids, rejections = EnforceFloorToBids(r.BidRequestWrapper.BidRequest, adapterBids, conversions, requestExt.Prebid.Floors.Enforcement.FloorDeals && e.floor.EnforceDealFloor())
+			var enforceDealFloors bool
+			if requestExt.Prebid.Floors.Enforcement != nil {
+				enforceDealFloors = requestExt.Prebid.Floors.Enforcement.FloorDeals && e.floor.EnforceDealFloor()
+			}
+			adapterBids, rejections = EnforceFloorToBids(r.BidRequestWrapper.BidRequest, adapterBids, conversions, enforceDealFloors)
 			for _, message := range rejections {
 				errs = append(errs, errors.New(message))
 			}
