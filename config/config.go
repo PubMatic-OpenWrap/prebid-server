@@ -95,6 +95,12 @@ type Configuration struct {
 
 	TrackerURL          string              `mapstructure:"tracker_url"`
 	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
+	PriceFloors         PriceFloors         `mapstructure:"price_floors"`
+}
+
+type PriceFloors struct {
+	Enabled        bool `mapstructure:"enabled"`
+	UseDynamicData bool `mapstructure:"use_dynamic_data"`
 }
 
 type VendorListScheduler struct {
