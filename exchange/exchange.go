@@ -144,8 +144,12 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
 		gvlVendorIDs:   infos.ToGVLVendorIDMap(),
-		floor:          &floors.FloorConfig{cfg.PriceFloors.Enabled},
-		trakerURL:      cfg.TrackerURL,
+		floor: &floors.FloorConfig{
+			FloorEnabled:      cfg.PriceFloors.Enabled,
+			EnforceRate:       cfg.PriceFloors.EnforceFloorsRate,
+			EnforceDealFloors: cfg.PriceFloors.EnforceDealFloors,
+		},
+		trakerURL: cfg.TrackerURL,
 	}
 }
 
@@ -190,6 +194,7 @@ type BidderRequest struct {
 }
 
 func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
+
 	var errs []error
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
@@ -299,7 +304,21 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 	if anyBidsReturned {
 
+		//If floor enforcement config enabled then filter bids
+		if e.floor != nil && e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) && floors.ShouldEnforceFloors(requestExt.Prebid.Floors, e.floor.GetEnforceRate(), rand.Intn) {
+			var rejections []string
+			var enforceDealFloors bool
+			if requestExt.Prebid.Floors.Enforcement != nil {
+				enforceDealFloors = requestExt.Prebid.Floors.Enforcement.FloorDeals && e.floor.EnforceDealFloor()
+			}
+			adapterBids, rejections = EnforceFloorToBids(r.BidRequestWrapper.BidRequest, adapterBids, conversions, enforceDealFloors)
+			for _, message := range rejections {
+				errs = append(errs, errors.New(message))
+			}
+		}
+
 		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids)
+
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))

@@ -147,7 +147,9 @@ func TestDefaults(t *testing.T) {
 
 	//Assert the price floor default values
 	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, false)
-	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
+	cmpBools(t, "price_floors.use_dynamic_data", cfg.PriceFloors.UseDynamicData, false)
+	cmpInts(t, "price_floors.enforce-floors-rate", cfg.PriceFloors.EnforceFloorsRate, 100)
+	cmpBools(t, "price_floors.enforce-deal-floors", cfg.PriceFloors.EnforceDealFloors, false)
 
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
@@ -381,6 +383,8 @@ generate_bid_id: true
 price_floors:
    enabled: true
    use_dynamic_data: false
+   enforce-floors-rate: 100
+   enforce-deal-floors: true
 `)
 
 var adapterExtraInfoConfig = []byte(`
@@ -471,7 +475,9 @@ func TestFullConfig(t *testing.T) {
 
 	//Assert the price floor values
 	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.Enabled, true)
-	cmpBools(t, "price_floors.enabled", cfg.PriceFloors.UseDynamicData, false)
+	cmpBools(t, "price_floors.use_dynamic_data", cfg.PriceFloors.UseDynamicData, false)
+	cmpInts(t, "price_floors.enforce-floors-rate", cfg.PriceFloors.EnforceFloorsRate, 100)
+	cmpBools(t, "price_floors.enforce-deal-floors", cfg.PriceFloors.EnforceDealFloors, true)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
