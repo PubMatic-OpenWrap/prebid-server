@@ -43,7 +43,7 @@ type FloorConfig struct {
 	FloorEnabled      bool
 	EnforceRate       int
 	EnforceDealFloors bool
-)
+}
 
 func (fc *FloorConfig) Enabled() bool {
 	return fc.FloorEnabled
@@ -61,7 +61,6 @@ type Floor interface {
 	Enabled() bool
 	GetEnforceRate() int
 	EnforceDealFloor() bool
-
 }
 
 // IsRequestEnabledWithFloor will check if floors is enabled in request

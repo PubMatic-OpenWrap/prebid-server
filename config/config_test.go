@@ -151,7 +151,6 @@ func TestDefaults(t *testing.T) {
 	cmpInts(t, "price_floors.enforce-floors-rate", cfg.PriceFloors.EnforceFloorsRate, 100)
 	cmpBools(t, "price_floors.enforce-deal-floors", cfg.PriceFloors.EnforceDealFloors, false)
 
-
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
 		Enabled: true,
