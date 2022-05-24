@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/currency"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -44,7 +45,7 @@ func TestIsRequestEnabledWithFloor(t *testing.T) {
 	}
 }
 
-func TestUpdateImpsWithFloors1(t *testing.T) {
+func TestUpdateImpsWithFloorsVariousRuleKeys(t *testing.T) {
 
 	floorExt := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{ModelGroups: []openrtb_ext.PriceFloorModelGroup{{Schema: openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "country", "deviceType"}},
 		Values: map[string]float64{
@@ -163,7 +164,7 @@ func TestUpdateImpsWithFloors1(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = UpdateImpsWithFloors(tc.floorExt, tc.request)
+			_ = UpdateImpsWithFloors(tc.floorExt, tc.request, nil)
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
 			}
@@ -173,7 +174,20 @@ func TestUpdateImpsWithFloors1(t *testing.T) {
 		})
 	}
 }
+
+func getCurrencyRates(rates map[string]map[string]float64) currency.Conversions {
+	return currency.NewRates(rates)
+}
+
 func TestUpdateImpsWithFloors(t *testing.T) {
+
+	rates := map[string]map[string]float64{
+		"USD": {
+			"INR": 70,
+			"EUR": 0.9,
+			"JPY": 5.09,
+		},
+	}
 
 	floorExt := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{ModelGroups: []openrtb_ext.PriceFloorModelGroup{{Schema: openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
 		Values: map[string]float64{
@@ -217,18 +231,24 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 			"*|*|*":                              16.01,
 		}, Default: 0.01}}}}
 
-	floorExt3 := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{ModelGroups: []openrtb_ext.PriceFloorModelGroup{{Schema: openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "pubDomain"}, Delimiter: "|"},
-		Values: map[string]float64{
-			"banner|300x250|www.publisher.com": 1.01,
-			"banner|300x250|*":                 2.01,
-			"banner|300x600|www.publisher.com": 3.01,
-			"banner|300x600|*":                 4.01,
-			"banner|728x90|www.website.com":    5.01,
-			"banner|728x90|*":                  6.01,
-			"banner|*|www.website.com":         7.01,
-			"banner|*|*":                       8.01,
-		}, Default: 0.01}}}}
+	floorExt3 := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+		{Schema: openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "pubDomain"}, Delimiter: "|"},
+			Values: map[string]float64{
+				"banner|300x250|www.publisher.com": 1.01,
+				"banner|300x250|*":                 2.01,
+				"banner|300x600|www.publisher.com": 3.01,
+				"banner|300x600|*":                 4.01,
+				"banner|728x90|www.website.com":    5.01,
+				"banner|728x90|*":                  6.01,
+				"banner|*|www.website.com":         7.01,
+				"banner|*|*":                       8.01,
+			}, Currency: "USD", Default: 0.01}}}, FloorMin: 1.0, FloorMinCur: "EUR"}
 
+	floorExt4 := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+		{Schema: openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "pubDomain"}, Delimiter: "|"},
+			Values: map[string]float64{
+				"banner|300x250|www.publisher.com": 1.01,
+			}, SkipRate: 100, Default: 0.01}}}}
 	width := int64(300)
 	height := int64(600)
 	tt := []struct {
@@ -237,6 +257,7 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 		request  *openrtb2.BidRequest
 		floorVal float64
 		floorCur string
+		Skipped  bool
 	}{
 		{
 			name: "banner|300x250|www.website.com",
@@ -339,10 +360,9 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "pubDomain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorExt: floorExt3,
-			floorVal: 0.01,
+			floorVal: 0.9,
 			floorCur: "USD",
 		},
-
 		{
 			name: "pubDomain, Default Floor Value",
 			request: &openrtb2.BidRequest{
@@ -353,102 +373,37 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "pubDomain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorExt: floorExt3,
-			floorVal: 0.01,
+			floorVal: 0.9,
 			floorCur: "USD",
+		},
+		{
+			name: "Skiprate = 100, Check Skipped Flag",
+			request: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}}},
+				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "pubDomain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
+			},
+			floorExt: floorExt4,
+			floorVal: 0.0,
+			floorCur: "",
+			Skipped:  true,
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = UpdateImpsWithFloors(tc.floorExt, tc.request)
+			_ = UpdateImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
 			}
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloorCur, tc.floorCur) {
 				t.Errorf("Floor Currency error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorCur)
 			}
-		})
-	}
-}
 
-func TestSelectFloorModelGroup(t *testing.T) {
-	floorExt := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{
-		SkipRate: 30,
-		ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
-			ModelWeight:  50,
-			SkipRate:     10,
-			ModelVersion: "Version 1",
-			Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-			Values: map[string]float64{
-				"banner|300x250|www.website.com": 1.01,
-				"banner|300x250|*":               2.01,
-				"banner|300x600|www.website.com": 3.01,
-				"banner|300x600|*":               4.01,
-				"banner|728x90|www.website.com":  5.01,
-				"banner|728x90|*":                6.01,
-				"banner|*|www.website.com":       7.01,
-				"banner|*|*":                     8.01,
-				"*|300x250|www.website.com":      9.01,
-				"*|300x250|*":                    10.01,
-				"*|300x600|www.website.com":      11.01,
-				"*|300x600|*":                    12.01,
-				"*|728x90|www.website.com":       13.01,
-				"*|728x90|*":                     14.01,
-				"*|*|www.website.com":            15.01,
-				"*|*|*":                          16.01,
-			}, Default: 0.01},
-			{
-				ModelWeight:  25,
-				SkipRate:     20,
-				ModelVersion: "Version 2",
-				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-				Values: map[string]float64{
-					"banner|300x250|www.website.com": 1.01,
-					"banner|300x250|*":               2.01,
-					"banner|300x600|www.website.com": 3.01,
-					"banner|300x600|*":               4.01,
-					"banner|728x90|www.website.com":  5.01,
-					"banner|728x90|*":                6.01,
-					"banner|*|www.website.com":       7.01,
-					"banner|*|*":                     8.01,
-					"*|300x250|www.website.com":      9.01,
-					"*|300x250|*":                    10.01,
-					"*|300x600|www.website.com":      11.01,
-					"*|300x600|*":                    12.01,
-					"*|728x90|www.website.com":       13.01,
-					"*|728x90|*":                     14.01,
-					"*|*|www.website.com":            15.01,
-					"*|*|*":                          16.01,
-				}, Default: 0.01},
-		}}}
-
-	tt := []struct {
-		name         string
-		floorExt     *openrtb_ext.PriceFloorRules
-		ModelVersion string
-		fn           func(int) int
-	}{
-		{
-			name:         "banner|300x250|www.website.com",
-			floorExt:     floorExt,
-			ModelVersion: "Version 2",
-			fn:           func(i int) int { return 5 },
-		},
-		{
-			name:         "banner|300x600|www.website.com",
-			floorExt:     floorExt,
-			ModelVersion: "Version 1",
-			fn:           func(i int) int { return 55 },
-		},
-	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			selectFloorModelGroup(tc.floorExt.Data.ModelGroups, tc.fn)
-
-			if !reflect.DeepEqual(tc.floorExt.Data.ModelGroups[0].ModelVersion, tc.ModelVersion) {
-				t.Errorf("Floor Model Version mismatch error: \nreturn:\t%v\nwant:\t%v", tc.floorExt.Data.ModelGroups[0].ModelVersion, tc.ModelVersion)
+			if !reflect.DeepEqual(*tc.floorExt.Skipped, tc.Skipped) {
+				t.Errorf("Floor Skipped error: \nreturn:\t%v\nwant:\t%v", tc.floorExt.Skipped, tc.Skipped)
 			}
-
 		})
 	}
 }
@@ -480,7 +435,7 @@ func TestUpdateImpsWithModelGroups(t *testing.T) {
 				"*|*|*":                          16.01,
 			}, Default: 0.01},
 			{
-				ModelWeight:  25,
+				ModelWeight:  50,
 				SkipRate:     20,
 				ModelVersion: "Version 2",
 				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
@@ -504,6 +459,13 @@ func TestUpdateImpsWithModelGroups(t *testing.T) {
 				}, Default: 0.01},
 		}}}
 
+	rates := map[string]map[string]float64{
+		"USD": {
+			"INR": 70,
+			"EUR": 0.9,
+			"JPY": 5.09,
+		},
+	}
 	tt := []struct {
 		name         string
 		floorExt     *openrtb_ext.PriceFloorRules
@@ -529,7 +491,7 @@ func TestUpdateImpsWithModelGroups(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = UpdateImpsWithFloors(tc.floorExt, tc.request)
+			_ = UpdateImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
 			if tc.floorExt.Skipped != nil && *tc.floorExt.Skipped != true {
 				if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 					t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
@@ -572,6 +534,13 @@ func TestUpdateImpsWithInvalidModelGroups(t *testing.T) {
 				"*|*|*":                          16.01,
 			}, Default: 0.01},
 		}}}
+	rates := map[string]map[string]float64{
+		"USD": {
+			"INR": 70,
+			"EUR": 0.9,
+			"JPY": 5.09,
+		},
+	}
 
 	tt := []struct {
 		name         string
@@ -599,7 +568,7 @@ func TestUpdateImpsWithInvalidModelGroups(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			ErrList := UpdateImpsWithFloors(tc.floorExt, tc.request)
+			ErrList := UpdateImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
 
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)

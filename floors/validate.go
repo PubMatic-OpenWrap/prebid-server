@@ -31,7 +31,7 @@ func validateFloorModelGroups(modelGroups []openrtb_ext.PriceFloorModelGroup) ([
 			continue
 		}
 
-		if modelGroup.ModelWeight < MODEL_WEIGHT_MIN_VALUE || modelGroup.ModelWeight > MODEL_WEIGHT_MAX_VALUE {
+		if modelGroup.ModelWeight < MODEL_WEIGHT_MIN_VALUE || modelGroup.ModelWeight >= MODEL_WEIGHT_MAX_VALUE {
 			errs = append(errs, fmt.Errorf("Invalid Floor Model = '%v' due to ModelWeight = '%v'", modelGroup.ModelVersion, modelGroup.ModelWeight))
 			modelGroups = append(modelGroups[:i], modelGroups[i+1:]...)
 			continue

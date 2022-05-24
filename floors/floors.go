@@ -1,31 +1,12 @@
 package floors
 
 import (
-	"fmt"
+	"math"
 	"math/rand"
-	"sort"
 
-	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
-)
-
-type RequestType string
-
-const (
-	SiteDomain string = "siteDomain"
-	PubDomain  string = "pubDomain"
-	Domain     string = "domain"
-	Bundle     string = "bundle"
-	Channel    string = "channel"
-	MediaType  string = "mediaType"
-	Size       string = "size"
-	GptSlot    string = "gptSlot"
-	PbAdSlot   string = "pbAdSlot"
-	Country    string = "country"
-	DeviceType string = "deviceType"
-	Tablet     string = "tablet"
-	Phone      string = "phone"
 )
 
 const (
@@ -70,7 +51,7 @@ func IsRequestEnabledWithFloor(Floors *openrtb_ext.PriceFloorRules) bool {
 
 // UpdateImpsWithFloors will validate floor rules, based on request and rules prepares various combinations
 // to match with floor rules and selects appripariate floor rule and update imp.bidfloor and imp.bidfloorcur
-func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest) []error {
+func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
 	var floorErrList []error
 	var floorModelErrList []error
 	var floorVal float64
@@ -80,7 +61,7 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 	if len(floorData.ModelGroups) == 0 {
 		return floorModelErrList
 	} else if len(floorData.ModelGroups) > 1 {
-		selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
+		floorData.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
 	}
 
 	if floorData.ModelGroups[0].Schema.Delimiter == "" {
@@ -90,7 +71,8 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 	floorExt.Skipped = new(bool)
 	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
 		*floorExt.Skipped = true
-		floorExt.Enforcement.EnforcePBS = false
+		floorData.ModelGroups = nil
+    floorExt.Enforcement.EnforcePBS = false
 		return floorModelErrList
 	}
 
@@ -105,41 +87,22 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 				floorVal = floorData.ModelGroups[0].Values[matchedRule]
 			}
 
-			request.Imp[i].BidFloor = floorVal
-			if floorExt.FloorMin != 0.0 && floorVal < floorExt.FloorMin {
-				request.Imp[i].BidFloor = floorExt.FloorMin
-			}
-			request.Imp[i].BidFloorCur = "USD"
+			if floorVal > 0.0 {
+				request.Imp[i].BidFloor = math.Round(floorVal*10000) / 10000
+				floorMinVal := getMinFloorValue(floorExt, conversions)
+				if floorMinVal > 0.0 && floorVal < floorMinVal {
+					request.Imp[i].BidFloor = math.Round(floorMinVal*10000) / 10000
+				}
 
-			updateImpExtWithFloorDetails(matchedRule, &request.Imp[i])
+				request.Imp[i].BidFloorCur = floorData.ModelGroups[0].Currency
+				if floorData.ModelGroups[0].Currency == "" {
+					request.Imp[i].BidFloorCur = "USD"
+				}
+
+				updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], floorVal)
+			}
 		}
 	}
 	floorModelErrList = append(floorModelErrList, floorErrList...)
 	return floorModelErrList
-}
-
-func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb2.Imp) {
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", imp.BidFloor)), "prebid", "floors", "floorRuleValue")
-}
-
-func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) {
-	totalModelWeight := 0
-
-	for i := 0; i < len(modelGroups); i++ {
-		totalModelWeight += modelGroups[i].ModelWeight
-	}
-
-	sort.SliceStable(modelGroups, func(i, j int) bool {
-		return modelGroups[i].ModelWeight < modelGroups[j].ModelWeight
-	})
-
-	winWeight := f(totalModelWeight + 1)
-	for i, modelGroup := range modelGroups {
-		winWeight -= modelGroup.ModelWeight
-		if winWeight <= 0 {
-			modelGroups[0], modelGroups[i] = modelGroups[i], modelGroups[0]
-			return
-		}
-	}
 }

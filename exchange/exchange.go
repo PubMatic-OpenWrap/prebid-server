@@ -248,9 +248,16 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExt)
 
+	// Get currency rates conversions for the auction
+	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
+
 	// If floors feature is enabled at server and request level, Update floors values in impression object
 	if e.floor != nil && e.floor.Enabled() && floors.IsRequestEnabledWithFloor(requestExt.Prebid.Floors) {
-		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequestWrapper.BidRequest)
+		errs = floors.UpdateImpsWithFloors(requestExt.Prebid.Floors, r.BidRequestWrapper.BidRequest, conversions)
+		r.BidRequestWrapper.BidRequest.Ext, err = json.Marshal(requestExt)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
@@ -269,9 +276,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	// We should reduce the amount of time the bidders have, to compensate.
 	auctionCtx, cancel := e.makeAuctionContext(ctx, cacheInstructions.cacheBids)
 	defer cancel()
-
-	// Get currency rates conversions for the auction
-	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
 
 	var adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid
 	var adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra
