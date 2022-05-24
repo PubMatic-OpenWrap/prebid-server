@@ -3,6 +3,7 @@ package exchange
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -39,9 +40,10 @@ func (c convert) GetRates() *map[string]map[string]float64 {
 func TestEnforceFloorToBids(t *testing.T) {
 
 	type args struct {
-		bidRequest  *openrtb2.BidRequest
-		seatBids    map[openrtb_ext.BidderName]*pbsOrtbSeatBid
-		conversions currency.Conversions
+		bidRequest        *openrtb2.BidRequest
+		seatBids          map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		conversions       currency.Conversions
+		enforceDealFloors bool
 	}
 	tests := []struct {
 		name  string
@@ -114,7 +116,8 @@ func TestEnforceFloorToBids(t *testing.T) {
 						currency: "USD",
 					},
 				},
-				conversions: currency.Conversions(convert{}),
+				conversions:       currency.Conversions(convert{}),
+				enforceDealFloors: true,
 			},
 			want: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
 				"pubmatic": {
@@ -209,7 +212,8 @@ func TestEnforceFloorToBids(t *testing.T) {
 						currency: "USD",
 					},
 				},
-				conversions: currency.Conversions(convert{}),
+				conversions:       currency.Conversions(convert{}),
+				enforceDealFloors: true,
 			},
 			want: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
 				"pubmatic": {
@@ -246,10 +250,348 @@ func TestEnforceFloorToBids(t *testing.T) {
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
 		},
+		{
+			name: "Bids with different currency with enforceDealFloor false",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					ID: "some-request-id",
+					Imp: []openrtb2.Imp{
+						{
+							ID:          "some-impression-id-1",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    60,
+							BidFloorCur: "INR",
+						},
+						{
+							ID:          "some-impression-id-2",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 400, H: 350}, {W: 200, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    100,
+							BidFloorCur: "INR",
+						},
+					},
+					Site: &openrtb2.Site{Page: "prebid.org", Ext: json.RawMessage(`{"amp":0}`)},
+					AT:   1,
+					TMax: 500,
+				},
+				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					"pubmatic": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:    "some-bid-1",
+									Price: 1.2,
+									ImpID: "some-impression-id-1",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:    "some-bid-2",
+									Price: 1.5,
+									ImpID: "some-impression-id-2",
+								},
+							},
+						},
+						currency: "USD",
+					},
+					"appnexus": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:    "some-bid-11",
+									Price: 0.5,
+									ImpID: "some-impression-id-1",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:    "some-bid-12",
+									Price: 2.2,
+									ImpID: "some-impression-id-2",
+								},
+							},
+						},
+						currency: "USD",
+					},
+				},
+				conversions:       currency.Conversions(convert{}),
+				enforceDealFloors: true,
+			},
+			want: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+				"pubmatic": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:    "some-bid-1",
+								Price: 1.2,
+								ImpID: "some-impression-id-1",
+							},
+						},
+						{
+							bid: &openrtb2.Bid{
+								ID:    "some-bid-2",
+								Price: 1.5,
+								ImpID: "some-impression-id-2",
+							},
+						},
+					},
+					currency: "USD",
+				},
+				"appnexus": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:    "some-bid-12",
+								Price: 2.2,
+								ImpID: "some-impression-id-2",
+							},
+						},
+					},
+					currency: "USD",
+				},
+			},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
+		},
+		{
+			name: "Dealid not empty, enforceDealFloors is true",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					ID: "some-request-id",
+					Imp: []openrtb2.Imp{
+						{
+							ID:          "some-impression-id-1",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    60,
+							BidFloorCur: "INR",
+						},
+						{
+							ID:          "some-impression-id-2",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 400, H: 350}, {W: 200, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    100,
+							BidFloorCur: "INR",
+						},
+					},
+					Site: &openrtb2.Site{Page: "prebid.org", Ext: json.RawMessage(`{"amp":0}`)},
+					AT:   1,
+					TMax: 500,
+				},
+				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					"pubmatic": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-1",
+									Price:  1.2,
+									ImpID:  "some-impression-id-1",
+									DealID: "1",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-2",
+									Price:  1.5,
+									ImpID:  "some-impression-id-2",
+									DealID: "2",
+								},
+							},
+						},
+						currency: "USD",
+					},
+					"appnexus": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-11",
+									Price:  0.5,
+									ImpID:  "some-impression-id-1",
+									DealID: "3",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-12",
+									Price:  2.2,
+									ImpID:  "some-impression-id-2",
+									DealID: "4",
+								},
+							},
+						},
+						currency: "USD",
+					},
+				},
+				conversions:       currency.Conversions(convert{}),
+				enforceDealFloors: true,
+			},
+			want: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+				"pubmatic": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-1",
+								Price:  1.2,
+								ImpID:  "some-impression-id-1",
+								DealID: "1",
+							},
+						},
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-2",
+								Price:  1.5,
+								ImpID:  "some-impression-id-2",
+								DealID: "2",
+							},
+						},
+					},
+					currency: "USD",
+				},
+				"appnexus": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-12",
+								Price:  2.2,
+								ImpID:  "some-impression-id-2",
+								DealID: "4",
+							},
+						},
+					},
+					currency: "USD",
+				},
+			},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
+		},
+		{
+			name: "Dealid not empty, enforceDealFloors is false",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					ID: "some-request-id",
+					Imp: []openrtb2.Imp{
+						{
+							ID:          "some-impression-id-1",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    60,
+							BidFloorCur: "INR",
+						},
+						{
+							ID:          "some-impression-id-2",
+							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 400, H: 350}, {W: 200, H: 600}}},
+							Ext:         json.RawMessage(`{"appnexus": {"placementId": 1}}`),
+							BidFloor:    100,
+							BidFloorCur: "INR",
+						},
+					},
+					Site: &openrtb2.Site{Page: "prebid.org", Ext: json.RawMessage(`{"amp":0}`)},
+					AT:   1,
+					TMax: 500,
+				},
+				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					"pubmatic": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-1",
+									Price:  1.2,
+									ImpID:  "some-impression-id-1",
+									DealID: "1",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-2",
+									Price:  1.5,
+									ImpID:  "some-impression-id-2",
+									DealID: "2",
+								},
+							},
+						},
+						currency: "USD",
+					},
+					"appnexus": {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-11",
+									Price:  0.5,
+									ImpID:  "some-impression-id-1",
+									DealID: "3",
+								},
+							},
+							{
+								bid: &openrtb2.Bid{
+									ID:     "some-bid-12",
+									Price:  2.2,
+									ImpID:  "some-impression-id-2",
+									DealID: "4",
+								},
+							},
+						},
+						currency: "USD",
+					},
+				},
+				conversions:       currency.Conversions(convert{}),
+				enforceDealFloors: false,
+			},
+			want: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+				"pubmatic": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-1",
+								Price:  1.2,
+								ImpID:  "some-impression-id-1",
+								DealID: "1",
+							},
+						},
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-2",
+								Price:  1.5,
+								ImpID:  "some-impression-id-2",
+								DealID: "2",
+							},
+						},
+					},
+					currency: "USD",
+				},
+				"appnexus": {
+					bids: []*pbsOrtbBid{
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-11",
+								Price:  0.5,
+								ImpID:  "some-impression-id-1",
+								DealID: "3",
+							},
+						},
+						{
+							bid: &openrtb2.Bid{
+								ID:     "some-bid-12",
+								Price:  2.2,
+								ImpID:  "some-impression-id-2",
+								DealID: "4",
+							},
+						},
+					},
+					currency: "USD",
+				},
+			},
+			want1: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := EnforceFloorToBids(tt.args.bidRequest, tt.args.seatBids, tt.args.conversions)
+			got, got1 := EnforceFloorToBids(tt.args.bidRequest, tt.args.seatBids, tt.args.conversions, tt.args.enforceDealFloors)
+			for k, v := range got {
+				fmt.Println(k)
+				bids := v.bids
+				for i := range bids {
+					fmt.Println(bids[i].bid)
+				}
+			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("EnforceFloorToBids() got = %v, want %v", got, tt.want)
 			}
