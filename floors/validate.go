@@ -23,19 +23,19 @@ func validateFloorRules(Schema openrtb_ext.PriceFloorSchema, delimiter string, R
 
 func validateFloorModelGroups(modelGroups []openrtb_ext.PriceFloorModelGroup) ([]openrtb_ext.PriceFloorModelGroup, []error) {
 	var errs []error
-
-	for i, modelGroup := range modelGroups {
+	var validModelGroups []openrtb_ext.PriceFloorModelGroup
+	for _, modelGroup := range modelGroups {
 		if modelGroup.SkipRate < SKIP_RATE_MIN || modelGroup.SkipRate > SKIP_RATE_MAX {
-			errs = append(errs, fmt.Errorf("Invalid Floor Model = '%v' due to SkipRate = '%v'", modelGroup.ModelVersion, modelGroup.SkipRate))
-			modelGroups = append(modelGroups[:i], modelGroups[i+1:]...)
+			errs = append(errs, fmt.Errorf("invalid Floor Model = '%v' due to SkipRate = '%v'", modelGroup.ModelVersion, modelGroup.SkipRate))
 			continue
 		}
 
 		if modelGroup.ModelWeight < MODEL_WEIGHT_MIN_VALUE || modelGroup.ModelWeight > MODEL_WEIGHT_MAX_VALUE {
-			errs = append(errs, fmt.Errorf("Invalid Floor Model = '%v' due to ModelWeight = '%v'", modelGroup.ModelVersion, modelGroup.ModelWeight))
-			modelGroups = append(modelGroups[:i], modelGroups[i+1:]...)
+			errs = append(errs, fmt.Errorf("invalid Floor Model = '%v' due to ModelWeight = '%v'", modelGroup.ModelVersion, modelGroup.ModelWeight))
 			continue
 		}
+
+		validModelGroups = append(validModelGroups, modelGroup)
 	}
-	return modelGroups, errs
+	return validModelGroups, errs
 }

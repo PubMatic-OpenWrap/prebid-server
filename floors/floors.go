@@ -59,10 +59,6 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 
 	floorData.ModelGroups, floorModelErrList = validateFloorModelGroups(floorData.ModelGroups)
 	if len(floorData.ModelGroups) == 0 {
-		if floorExt.Enforcement == nil {
-			floorExt.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
-		}
-		floorExt.Enforcement.EnforcePBS = false
 		return floorModelErrList
 	} else if len(floorData.ModelGroups) > 1 {
 		floorData.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
@@ -76,10 +72,6 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
 		*floorExt.Skipped = true
 		floorData.ModelGroups = nil
-		if floorExt.Enforcement == nil {
-			floorExt.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
-		}
-		floorExt.Enforcement.EnforcePBS = false
 		return floorModelErrList
 	}
 
