@@ -1,11 +1,15 @@
 package floors
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
+
+func getFalse() *bool {
+	b := false
+	return &b
+}
 
 func TestShouldEnforceFloors(t *testing.T) {
 	type args struct {
@@ -25,6 +29,7 @@ func TestShouldEnforceFloors(t *testing.T) {
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS: false,
 					},
+					Skipped: getFalse(),
 				},
 				configEnforceRate: 10,
 				f: func(n int) int {
@@ -37,13 +42,10 @@ func TestShouldEnforceFloors(t *testing.T) {
 			name: "enfocement of floors",
 			args: args{
 				requestExt: &openrtb_ext.PriceFloorRules{
-					Enforcement: &openrtb_ext.PriceFloorEnforcement{
-						EnforcePBS: true,
-					},
+					Skipped: getFalse(),
 				},
 				configEnforceRate: 98,
 				f: func(n int) int {
-					fmt.Println("vaal", n)
 					return n - 5
 				},
 			},

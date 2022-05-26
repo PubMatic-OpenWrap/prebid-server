@@ -115,14 +115,14 @@ func TestValidateFloorModelGroups(t *testing.T) {
 		{
 			name:         "Invalid Skip Rate in model Group 1, with banner|300x250|www.website.com",
 			floorExt:     floorExt,
-			ModelVersion: "Version 2",
-			Err:          "Invalid Floor Model = 'Version 1' due to SkipRate = '110'",
+			ModelVersion: "Version 1",
+			Err:          "invalid Floor Model = 'Version 1' due to SkipRate = '110'",
 		},
 		{
 			name:         "Invalid model weight Model Group 1, with banner|300x250|www.website.com",
 			floorExt:     floorExt2,
-			ModelVersion: "Version 2",
-			Err:          "Invalid Floor Model = 'Version 1' due to ModelWeight = '-1'",
+			ModelVersion: "Version 1",
+			Err:          "invalid Floor Model = 'Version 1' due to ModelWeight = '-1'",
 		},
 	}
 	for _, tc := range tt {

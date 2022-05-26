@@ -360,7 +360,7 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "pubDomain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorExt: floorExt3,
-			floorVal: 0.9,
+			floorVal: 1.1111,
 			floorCur: "USD",
 		},
 		{
@@ -373,7 +373,7 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "pubDomain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorExt: floorExt3,
-			floorVal: 0.9,
+			floorVal: 1.1111,
 			floorCur: "USD",
 		},
 		{
@@ -563,7 +563,7 @@ func TestUpdateImpsWithInvalidModelGroups(t *testing.T) {
 			floorExt: floorExt,
 			floorVal: 0.0,
 			floorCur: "",
-			Err:      "Invalid Floor Model = 'Version 1' due to SkipRate = '110'",
+			Err:      "invalid Floor Model = 'Version 1' due to SkipRate = '110'",
 		},
 	}
 	for _, tc := range tt {

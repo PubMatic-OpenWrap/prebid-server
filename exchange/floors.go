@@ -61,5 +61,3 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 
 	return seatBids, rejections
 }
-
-func EnfoceFloors()
