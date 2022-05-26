@@ -148,6 +148,9 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	if cfg.AccountDefaults.Events.Enabled {
 		glog.Warning(`account_defaults.events will currently not do anything as the feature is still under development. Please follow https://github.com/prebid/prebid-server/issues/1725 for more updates`)
 	}
+	if cfg.PriceFloors.Enabled {
+		glog.Warning(`PriceFloors.Enabled will enforce floor feature which is still under development.`)
+	}
 	return errs
 }
 

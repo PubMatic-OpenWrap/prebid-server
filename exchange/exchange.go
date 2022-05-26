@@ -91,12 +91,12 @@ type BidIDGenerator interface {
 	Enabled() bool
 }
 
-func (big *bidIDGenerator) Enabled() bool {
-	return big.enabled
-}
-
 type bidIDGenerator struct {
 	enabled bool
+}
+
+func (big *bidIDGenerator) Enabled() bool {
+	return big.enabled
 }
 
 func (big *bidIDGenerator) New() (string, error) {
@@ -144,12 +144,8 @@ func NewExchange(adapters map[openrtb_ext.BidderName]adaptedBidder, cache prebid
 		},
 		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
 		gvlVendorIDs:   infos.ToGVLVendorIDMap(),
-		floor: &floors.FloorConfig{
-			FloorEnabled:      cfg.PriceFloors.Enabled,
-			EnforceRate:       cfg.PriceFloors.EnforceFloorsRate,
-			EnforceDealFloors: cfg.PriceFloors.EnforceDealFloors,
-		},
-		trakerURL: cfg.TrackerURL,
+		floor:          floors.NewFloorConfig(cfg.PriceFloors),
+		trakerURL:      cfg.TrackerURL,
 	}
 }
 
@@ -194,7 +190,6 @@ type BidderRequest struct {
 }
 
 func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
-
 	var errs []error
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
@@ -258,8 +253,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		if err != nil {
 			errs = append(errs, err)
 		}
-		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
-		glog.Infof("\n Updated Floor Request after parsing floors = %v", string(updatedBidReq))
+		JLogf("Updated Floor Request after parsing floors", r.BidRequestWrapper.BidRequest)
 	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
@@ -323,7 +317,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
 		}
-
 		var bidCategory map[string]string
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {

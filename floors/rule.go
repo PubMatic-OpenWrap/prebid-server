@@ -29,15 +29,30 @@ const (
 	Phone      string = "phone"
 )
 
-func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currency.Conversions) float64 {
-	floorData := floorExt.Data
+func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
+	floorCur := "USD"
+	if floorExt.Data.Currency != "" {
+		floorCur = floorExt.Data.Currency
+	}
+
+	if floorExt.Data.ModelGroups[0].Currency != "" {
+		floorCur = floorExt.Data.ModelGroups[0].Currency
+	}
+	return floorCur
+}
+
+func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currency.Conversions) (float64, string, error) {
+	var err error
+	var rate float64
 	floorMin := floorExt.FloorMin
-	if floorExt.FloorMin > 0.0 && floorExt.FloorMinCur != "" && floorData.ModelGroups[0].Currency != "" &&
-		floorExt.FloorMinCur != floorData.ModelGroups[0].Currency {
-		rate, _ := conversions.GetRate(floorData.ModelGroups[0].Currency, floorExt.FloorMinCur)
+	floorCur := getFloorCurrency(floorExt)
+
+	if floorExt.FloorMin > 0.0 && floorExt.FloorMinCur != "" && floorCur != "" &&
+		floorExt.FloorMinCur != floorCur {
+		rate, err = conversions.GetRate(floorExt.FloorMinCur, floorCur)
 		floorMin = rate * floorExt.FloorMin
 	}
-	return floorMin
+	return floorMin, floorCur, err
 }
 
 func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb2.Imp, floorVal float64) {
@@ -132,9 +147,9 @@ func createRuleKey(floorSchema openrtb_ext.PriceFloorSchema, request *openrtb2.B
 
 func getDeviceType(request *openrtb2.BidRequest) string {
 	value := CATCH_ALL
-	if isMobileDevice(request.Device.UA) == true {
+	if isMobileDevice(request.Device.UA) {
 		value = Phone
-	} else if isTabletDevice(request.Device.UA) == true {
+	} else if isTabletDevice(request.Device.UA) {
 		value = Tablet
 	}
 	return value

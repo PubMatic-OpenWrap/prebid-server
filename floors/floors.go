@@ -1,10 +1,12 @@
 package floors
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -24,6 +26,17 @@ type FloorConfig struct {
 	FloorEnabled      bool
 	EnforceRate       int
 	EnforceDealFloors bool
+}
+
+func NewFloorConfig(priceFloor config.PriceFloors) *FloorConfig {
+
+	floorConfig := FloorConfig{
+		FloorEnabled:      priceFloor.Enabled,
+		EnforceRate:       priceFloor.EnforceFloorsRate,
+		EnforceDealFloors: priceFloor.EnforceDealFloors,
+	}
+
+	return &floorConfig
 }
 
 func (fc *FloorConfig) Enabled() bool {
@@ -52,9 +65,11 @@ func IsRequestEnabledWithFloor(Floors *openrtb_ext.PriceFloorRules) bool {
 // UpdateImpsWithFloors will validate floor rules, based on request and rules prepares various combinations
 // to match with floor rules and selects appripariate floor rule and update imp.bidfloor and imp.bidfloorcur
 func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
-	var floorErrList []error
-	var floorModelErrList []error
-	var floorVal float64
+	var (
+		floorErrList      []error
+		floorModelErrList []error
+		floorVal          float64
+	)
 	floorData := floorExt.Data
 
 	floorData.ModelGroups, floorModelErrList = validateFloorModelGroups(floorData.ModelGroups)
@@ -88,20 +103,20 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 
 			if floorVal > 0.0 {
 				request.Imp[i].BidFloor = math.Round(floorVal*10000) / 10000
-				floorMinVal := getMinFloorValue(floorExt, conversions)
-				if floorMinVal > 0.0 && floorVal < floorMinVal {
-					request.Imp[i].BidFloor = math.Round(floorMinVal*10000) / 10000
+				floorMinVal, floorCur, err := getMinFloorValue(floorExt, conversions)
+				if err == nil {
+					if floorMinVal > 0.0 && floorVal < floorMinVal {
+						request.Imp[i].BidFloor = math.Round(floorMinVal*10000) / 10000
+					}
+					request.Imp[i].BidFloorCur = floorCur
+					updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], floorVal)
+				} else {
+					floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in Currency Conversion  = '%v'", err.Error()))
 				}
-
-				request.Imp[i].BidFloorCur = floorData.ModelGroups[0].Currency
-				if floorData.ModelGroups[0].Currency == "" {
-					request.Imp[i].BidFloorCur = "USD"
-				}
-
-				updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], floorVal)
 			}
 		}
 	}
 	floorModelErrList = append(floorModelErrList, floorErrList...)
+
 	return floorModelErrList
 }
