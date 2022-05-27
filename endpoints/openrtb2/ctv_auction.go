@@ -746,6 +746,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 
 				impBids.Bids = append(impBids.Bids, &types.Bid{
 					Bid:               bid,
+					ExtBid:            ext,
 					Status:            status,
 					Duration:          int(duration),
 					DealTierSatisfied: util.GetDealTierSatisfied(&ext),
@@ -1044,8 +1045,14 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	}
 
 	for i, bid := range adpod.Bids {
+		//get unique bid id
+		bidID := bid.ID
+		if bid.ExtBid.Prebid != nil && bid.ExtBid.Prebid.BidId != "" {
+			bidID = bid.ExtBid.Prebid.BidId
+		}
+
 		//adding bid id in adpod.refbids
-		bidExt.AdPod.RefBids[i] = bid.ID
+		bidExt.AdPod.RefBids[i] = bidID
 
 		//updating exact duration of adpod creative
 		bidExt.Prebid.Video.Duration += int(bid.Duration)

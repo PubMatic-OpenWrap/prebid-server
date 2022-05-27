@@ -232,7 +232,6 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 	}
 }
 
-
 func TestGetVideoEventTracking(t *testing.T) {
 	type args struct {
 		trackerURL       string

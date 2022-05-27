@@ -6,7 +6,7 @@ import (
 
 func ShouldEnforceFloors(requestExt *openrtb_ext.PriceFloorRules, configEnforceRate int, f func(int) int) bool {
 
-	if *requestExt.Skipped {
+	if requestExt != nil && requestExt.Skipped != nil && *requestExt.Skipped {
 		return false
 	}
 
