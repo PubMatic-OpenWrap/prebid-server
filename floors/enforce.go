@@ -10,6 +10,10 @@ func ShouldEnforceFloors(requestExt *openrtb_ext.PriceFloorRules, configEnforceR
 		return false
 	}
 
+	if requestExt.Enforcement != nil && !requestExt.Enforcement.EnforcePBS {
+		return requestExt.Enforcement.EnforcePBS
+	}
+
 	if requestExt.Enforcement != nil && requestExt.Enforcement.EnforceRate > 0 {
 		configEnforceRate = requestExt.Enforcement.EnforceRate
 	}

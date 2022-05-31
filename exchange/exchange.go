@@ -159,6 +159,7 @@ type ImpExtInfo struct {
 type AuctionRequest struct {
 	BidRequestWrapper          *openrtb_ext.RequestWrapper
 	ResolvedBidRequest         json.RawMessage
+	UpdatedBidRequest          json.RawMessage
 	Account                    config.Account
 	UserSyncs                  IdFetcher
 	RequestType                metrics.RequestType
@@ -254,6 +255,14 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			errs = append(errs, err)
 		}
 		JLogf("Updated Floor Request after parsing floors", r.BidRequestWrapper.BidRequest)
+		if responseDebugAllow {
+			//save updated request after floors signalling
+			updatedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
+			if err != nil {
+				return nil, err
+			}
+			r.UpdatedBidRequest = updatedBidReq
+		}
 	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
@@ -1004,6 +1013,7 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*pb
 		bidResponseExt.Debug = &openrtb_ext.ExtResponseDebug{
 			HttpCalls:       make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall),
 			ResolvedRequest: r.ResolvedBidRequest,
+			UpdatedRequest:  r.UpdatedBidRequest,
 		}
 	}
 	if !r.StartTime.IsZero() {
