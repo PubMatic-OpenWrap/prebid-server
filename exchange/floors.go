@@ -49,7 +49,7 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 				bidPrice = rate * bid.bid.Price
 			}
 			if bidFloor.bidFloor > bidPrice {
-				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %f is less than bidFloor value %f for impression id %s", bidPrice, bidFloor.bidFloor, bid.bid.ImpID))
+				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %f is less than bidFloor value %f for impression id %s bidder %s", bidPrice, bidFloor.bidFloor, bid.bid.ImpID, bidderName))
 				continue
 			}
 			eligibleBids = append(eligibleBids, bid)
