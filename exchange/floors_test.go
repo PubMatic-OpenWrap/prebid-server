@@ -144,7 +144,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.500000 is less than bidFloor value 1.010000 for impression id some-impression-id-1", "bid rejected [bid ID: some-bid-2] reason: bid price value 1.500000 is less than bidFloor value 2.010000 for impression id some-impression-id-2"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.500000 is less than bidFloor value 1.010000 for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-2] reason: bid price value 1.500000 is less than bidFloor value 2.010000 for impression id some-impression-id-2 bidder pubmatic"},
 		},
 		{
 			name: "Bids with different currency",
@@ -247,7 +247,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Bids with different currency with enforceDealFloor false",
@@ -350,7 +350,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Dealid not empty, enforceDealFloors is true",
@@ -460,7 +460,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.795000 is less than bidFloor value 60.000000 for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Dealid not empty, enforceDealFloors is false",
