@@ -111,7 +111,7 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 					request.Imp[i].BidFloorCur = floorCur
 					updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], floorVal)
 				} else {
-					floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in Currency Conversion  = '%v'", err.Error()))
+					floorModelErrList = append(floorModelErrList, fmt.Errorf("error in Currency Conversion  = '%v'", err.Error()))
 				}
 			}
 		}

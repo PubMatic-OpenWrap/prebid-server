@@ -1,11 +1,13 @@
 package exchange
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -60,4 +62,34 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 	}
 
 	return seatBids, rejections
+}
+
+func SignalFloors(r *AuctionRequest, floor floors.Floor, conversions currency.Conversions, responseDebugAllow bool) []error {
+
+	var errs []error
+	requestExt, err := r.BidRequestWrapper.GetRequestExt()
+	if err != nil {
+		errs = append(errs, err)
+		return errs
+	}
+	prebidExt := requestExt.GetPrebid()
+	if floor != nil && floor.Enabled() && floors.IsRequestEnabledWithFloor(prebidExt.Floors) {
+		errs = floors.UpdateImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper.BidRequest, conversions)
+		requestExt.SetPrebid(prebidExt)
+		err := r.BidRequestWrapper.RebuildRequest()
+		if err != nil {
+			errs = append(errs, err)
+		}
+		JLogf("Updated Floor Request after parsing floors", r.BidRequestWrapper.BidRequest)
+		if responseDebugAllow {
+			//save updated request after floors signalling
+			updatedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
+			if err != nil {
+				errs = append(errs, err)
+			}
+			r.UpdatedBidRequest = updatedBidReq
+		}
+	}
+
+	return errs
 }
