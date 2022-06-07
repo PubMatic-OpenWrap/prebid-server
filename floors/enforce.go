@@ -12,6 +12,7 @@ func ShouldEnforceFloors(bidRequest *openrtb2.BidRequest, floorExt *openrtb_ext.
 		for i := range bidRequest.Imp {
 			if bidRequest.Imp[i].BidFloor > 0 {
 				floorInRequest = true
+				break
 			}
 		}
 		if !floorInRequest {
