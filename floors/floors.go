@@ -59,7 +59,10 @@ type Floor interface {
 
 // IsRequestEnabledWithFloor will check if floors is enabled in request
 func IsRequestEnabledWithFloor(Floors *openrtb_ext.PriceFloorRules) bool {
-	return Floors != nil && Floors.Enabled != nil && *Floors.Enabled
+	if Floors != nil && Floors.Enabled != nil && !*Floors.Enabled {
+		return *Floors.Enabled
+	}
+	return true
 }
 
 // UpdateImpsWithFloors will validate floor rules, based on request and rules prepares various combinations

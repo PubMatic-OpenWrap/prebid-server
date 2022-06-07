@@ -23,7 +23,7 @@ type PriceFloorData struct {
 }
 
 type PriceFloorEnforcement struct {
-	EnforcePBS    bool `json:"enforcepbs,omitempty"`
+	EnforcePBS    *bool `json:"enforcepbs,omitempty"`
 	FloorDeals    bool `json:"floordeals,omitempty"`
 	BidAdjustment bool `json:"bidadjustment,omitempty"`
 	EnforceRate   int  `json:"enforcerate,omitempty"`
