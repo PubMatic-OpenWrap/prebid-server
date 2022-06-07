@@ -80,6 +80,16 @@ func SignalFloors(r *AuctionRequest, floor floors.Floor, conversions currency.Co
 	if floor != nil && floor.Enabled() && floors.IsRequestEnabledWithFloor(prebidExt.Floors) {
 		errs = floors.UpdateImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper.BidRequest, conversions)
 		requestExt.SetPrebid(prebidExt)
+		err := r.BidRequestWrapper.RebuildRequest()
+		if err != nil {
+			errs = append(errs, err)
+		}
+		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
+		JLogf("Updated Floor Request after parsing floors", string(updatedBidReq))
+		if responseDebugAllow {
+			//save updated request after floors signalling
+			r.UpdatedBidRequest = updatedBidReq
+		}
 	}
 
 	return errs
@@ -101,17 +111,17 @@ func EnforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		}
 		seatBids, rejections = EnforceFloorToBids(r.BidRequestWrapper.BidRequest, seatBids, conversions, enforceDealFloors)
 		requestExt.SetPrebid(prebidExt)
-	}
-
-	err = r.BidRequestWrapper.RebuildRequest()
-	if err != nil {
-		rejections = append(rejections, err.Error())
-	}
-	updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
-	JLogf("Updated Floor Request after parsing floors", string(updatedBidReq))
-	if responseDebugAllow {
-		//save updated request
-		r.UpdatedBidRequest = updatedBidReq
+		err := r.BidRequestWrapper.RebuildRequest()
+		if err != nil {
+			rejections = append(rejections, err.Error())
+			return seatBids, rejections
+		}
+		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
+		JLogf("Updated Request after enforcing floors", string(updatedBidReq))
+		if responseDebugAllow {
+			//save updated request after floors enforcement
+			r.UpdatedBidRequest = updatedBidReq
+		}
 	}
 
 	return seatBids, rejections
