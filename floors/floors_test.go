@@ -22,7 +22,7 @@ func TestIsRequestEnabledWithFloor(t *testing.T) {
 		{
 			name: "Request With Nil Floors",
 			in:   &openrtb_ext.ExtRequest{},
-			out:  true,
+			out:  false,
 		},
 		{
 			name: "Request With Floors Disabled",
