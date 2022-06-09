@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/currency"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
