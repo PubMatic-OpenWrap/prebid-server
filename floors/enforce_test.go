@@ -111,7 +111,7 @@ func TestShouldEnforceFloors(t *testing.T) {
 				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
-						EnforcePBS: getTrue(),
+						EnforcePBS:  getTrue(),
 						EnforceRate: 10,
 					},
 					Skipped: getFalse(),
