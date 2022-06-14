@@ -33,6 +33,5 @@ func ShouldEnforceFloors(bidRequest *openrtb2.BidRequest, floorExt *openrtb_ext.
 		floorExt.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
 	}
 	floorExt.Enforcement.EnforcePBS = &shouldEnforce
-
 	return shouldEnforce
 }

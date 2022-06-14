@@ -9,7 +9,6 @@ import (
 
 func validateFloorRules(Schema openrtb_ext.PriceFloorSchema, delimiter string, RuleValues map[string]float64) []error {
 	var errs []error
-
 	for key, val := range RuleValues {
 		parsedKey := strings.Split(key, delimiter)
 		if len(parsedKey) != len(Schema.Fields) {
