@@ -76,6 +76,9 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 		floorVal          float64
 	)
 	floorData := floorExt.Data
+	if floorData == nil {
+		return floorModelErrList
+	}
 
 	floorModelErrList = validateFloorSpiRates(floorExt)
 	if len(floorModelErrList) > 0 {
