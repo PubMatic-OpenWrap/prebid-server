@@ -49,13 +49,15 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 			if seatBid.currency != bidFloor.bidFloorCur {
 				rate, err := conversions.GetRate(seatBid.currency, bidFloor.bidFloorCur)
 				if err != nil {
-					glog.Warningf("error in rate conversion with bidder %s for impression id %s and bid id %s", bidderName, bid.bid.ImpID, bidID)
+					errMsg := fmt.Sprintf("Error in rate conversion from = %s to %s with bidder %s for impression id %s and bid id %s", seatBid.currency, bidFloor.bidFloorCur, bidderName, bid.bid.ImpID, bidID)
+					glog.Errorf(errMsg)
+					rejections = append(rejections, errMsg)
 					continue
 				}
 				bidPrice = rate * bid.bid.Price
 			}
 			if bidFloor.bidFloor > bidPrice {
-				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bidPrice, seatBid.currency, bidFloor.bidFloor, bidFloor.bidFloorCur, bid.bid.ImpID, bidderName))
+				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bidPrice, bidFloor.bidFloorCur, bidFloor.bidFloor, bidFloor.bidFloorCur, bid.bid.ImpID, bidderName))
 				continue
 			}
 			eligibleBids = append(eligibleBids, bid)
