@@ -248,7 +248,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 USD is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 INR is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Bids with different currency with enforceDealFloor false",
@@ -351,7 +351,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 USD is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 INR is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Dealid not empty, enforceDealFloors is true",
@@ -461,7 +461,7 @@ func TestEnforceFloorToBids(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 USD is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
+			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 38.7950 INR is less than bidFloor value 60.0000 INR for impression id some-impression-id-1 bidder appnexus"},
 		},
 		{
 			name: "Dealid not empty, enforceDealFloors is false",
@@ -857,7 +857,7 @@ func TestEnforceFloorToBidsConversion(t *testing.T) {
 					currency: "EUR",
 				},
 			},
-			want1: nil,
+			want1: []string{"Error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-1 and bid id some-bid-1", "Error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-2 and bid id some-bid-2"},
 		},
 	}
 
