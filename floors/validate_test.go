@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func TestValidateFloorSpiRatess(t *testing.T) {
+func TestValidateFloorSkipRates(t *testing.T) {
 	floorExt1 := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{
 		ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
 			ModelVersion: "Version 1",
@@ -55,7 +55,7 @@ func TestValidateFloorSpiRatess(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			ErrList := validateFloorSpiRates(tc.floorExt)
+			ErrList := validateFloorSkipRates(tc.floorExt)
 
 			if len(ErrList) > 0 && !reflect.DeepEqual(ErrList[0].Error(), tc.Err) {
 				t.Errorf("Incorrect Error: \nreturn:\t%v\nwant:\t%v", ErrList[0].Error(), tc.Err)

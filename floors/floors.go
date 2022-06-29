@@ -80,7 +80,7 @@ func UpdateImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 		return floorModelErrList
 	}
 
-	floorModelErrList = validateFloorSpiRates(floorExt)
+	floorModelErrList = validateFloorSkipRates(floorExt)
 	if len(floorModelErrList) > 0 {
 		return floorModelErrList
 	}
