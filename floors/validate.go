@@ -23,7 +23,7 @@ func validateFloorRules(Schema openrtb_ext.PriceFloorSchema, delimiter string, R
 	return errs
 }
 
-func validateFloorSpiRates(floorExt *openrtb_ext.PriceFloorRules) []error {
+func validateFloorSkipRates(floorExt *openrtb_ext.PriceFloorRules) []error {
 	var errs []error
 
 	if floorExt.Data != nil && (floorExt.Data.SkipRate < SKIP_RATE_MIN || floorExt.Data.SkipRate > SKIP_RATE_MAX) {
