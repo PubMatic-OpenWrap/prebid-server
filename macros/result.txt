@@ -1,0 +1,12 @@
+start init
+Macroprocessor initialized 4 templatesgoos: darwin
+goarch: amd64
+pkg: github.com/prebid/prebid-server/macros
+cpu: Intel(R) Core(TM) i5-8259U CPU @ 2.30GHz
+BenchmarkStringBasedProcessor-8               	     199	   6071379 ns/op	 4501526 B/op	      19 allocs/op
+BenchmarkTemplateBasedProcessor-8             	     290	   3829685 ns/op	 1171942 B/op	   20018 allocs/op
+BenchmarkTemplateBasedProcessorInitAlways-8   	      30	  42406275 ns/op	 8412082 B/op	  120146 allocs/op
+BenchmarkStringIndexBasedMacroProcessor-8     	    1252	    865664 ns/op	  851728 B/op	      14 allocs/op
+BenchmarkStringCachedIndexBasedProcessor-8    	    1298	    924585 ns/op	  851728 B/op	      14 allocs/op
+PASS
+ok  	github.com/prebid/prebid-server/macros	9.498s

@@ -40,13 +40,16 @@ func TestTemplateBasedProcessor(t *testing.T) {
 func TestStringCachedIndexBasedProcessor(t *testing.T) {
 	delimiter := "##"
 	// tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE&%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter)
+	tURL, expected := buildLongInputURL(1000, delimiter)
+	// println(expected)
 	p, _ := NewProcessor(STRING_INDEX_CACHED, Config{
 		delimiter: delimiter,
 		Templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
-	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=&url=http://mydomain.com/myPage?key=value"
+	// expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=&url=http://mydomain.com/myPage?key=value"
 	actual, err := p.Replace(tURL, testData)
+	// println(actual)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -67,15 +70,19 @@ var tmplProcessorAlwaysInit IProcessor
 var StringIndexBasedMacroProcessor IProcessor
 var stringCachedIndexBasedProcessor IProcessor
 
-const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
+// const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
+var tURL = buildLongInputURL0(10000, "##")
 
-var URL2 = getSampleTemplateURL("##")
+var URL2 = buildLongInputURL0(5000, "##")
+var URL3 = buildLongInputURL0(10000, "##")
+var URL4 = buildLongInputURL0(15000, "##")
 
 func init() {
 	fmt.Println("start init")
+	//fmt.Println(tURL)
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
 		delimiter: "##",
-		Templates: []string{tURL},
+		Templates: []string{tURL, URL2, URL3, URL4},
 	})
 	stringBasedProcessor, _ = NewProcessor(STRING_BASED, Config{
 		delimiter: "##",
@@ -91,7 +98,7 @@ func init() {
 
 	stringCachedIndexBasedProcessor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
 		delimiter:   "##",
-		Templates:   []string{tURL},
+		Templates:   []string{tURL, URL2, URL3, URL4},
 		valueConfig: MacroValueConfig{
 			// UrlEscape: true,
 		},
@@ -170,4 +177,25 @@ func TestStringIndexBasedMacroProcessor(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 	assert.Equal(t, expected, actual, fmt.Sprintf("Expected [%s] found - %s", expected, actual))
+}
+
+func buildLongInputURL0(noOfMacros int, delimiter string) string {
+	url, _ := buildLongInputURL(noOfMacros, delimiter)
+	return url
+}
+func buildLongInputURL(noOfMacros int, delimiter string) (string, string) {
+	url := ""
+	cnt := 0
+	expected := ""
+	for cnt <= noOfMacros {
+		for macro, value := range testData {
+			url += fmt.Sprintf("key_%d=%s%s%s&", cnt, delimiter, macro, delimiter)
+			expected += fmt.Sprintf("key_%d=%s&", cnt, value)
+			cnt++
+			if cnt > noOfMacros {
+				break
+			}
+		}
+	}
+	return url, expected
 }

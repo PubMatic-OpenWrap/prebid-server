@@ -73,8 +73,7 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 			result.WriteString(value)
 		}
 		s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
-
 	}
-
+	result.WriteString(str[s:])
 	return result.String(), nil
 }
