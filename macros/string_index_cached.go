@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 )
 
 type StringIndexCached struct {
 	Processor
 	templates map[string]strMetaTemplate
 	dup       int
+	sync.RWMutex
 }
 
 type strMetaTemplate struct {
@@ -90,14 +92,23 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 }
 
 func (p *StringIndexCached) AddTemplates(templates ...string) {
+	p.dup = 0
 	for _, str := range templates {
+		p.RLock()
 		_, ok := p.templates[str]
+		p.RUnlock()
 
 		if !ok {
+			p.Lock()
 			p.templates[str] = constructTemplate(str, p.Cfg.delimiter)
+			fmt.Println("Template constructed")
+			p.Unlock()
 		} else {
 			p.dup++
 		}
+	}
+	if p.dup == len(templates) {
+		fmt.Printf("Templates already processed\n")
 	}
 	fmt.Printf("Macroprocessor initialized %d templates\nDuplicate=%d\n", len(p.templates), p.dup)
 }

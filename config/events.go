@@ -85,7 +85,7 @@ func (e Events) validate(errs []error) []error {
 		for _, vEvent := range e.VASTEvents {
 			templates = append(templates, vEvent.URLs...)
 		}
-		macroProcessor, err = macros.NewProcessor(macros.STRING_BASED, macros.Config{
+		macroProcessor, err = macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
 			Templates: templates,
 		})
 		// e.macroProcessor, err = e.initMacroProcessor()

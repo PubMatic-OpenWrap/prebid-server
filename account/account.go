@@ -46,11 +46,6 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		pubAccount := cfg.AccountDefaults
 		pubAccount.ID = accountID
 		account = &pubAccount
-
-		if account.Events.Enabled {
-			// process and event urls /templates to macroProcessor
-			updateMacroProcessor(account.Events)
-		}
 	} else {
 		// accountID resolved to a valid account, merge with AccountDefaults for a complete config
 		account = &config.Account{}
@@ -69,6 +64,10 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 
 		// Set derived fields
 		setDerivedConfig(account)
+		if account.Events.Enabled {
+			// process and event urls /templates to macroProcessor
+			updateMacroProcessor(account.Events)
+		}
 	}
 	if account.Disabled {
 		errs = append(errs, &errortypes.BlacklistedAcct{
@@ -140,7 +139,9 @@ func updateMacroProcessor(events config.Events) {
 	templates := make([]string, 0)
 	templates = append(templates, events.DefaultURL)
 	for _, vEvent := range events.VASTEvents {
-		templates = append(templates, vEvent.URLs...)
+		if vEvent.URLs != nil {
+			templates = append(templates, vEvent.URLs...)
+		}
 	}
 	config.GetMacroProcessor().AddTemplates(templates...)
 }
