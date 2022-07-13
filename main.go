@@ -21,8 +21,11 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+var StartTime = time.Now()
+
 func main() {
 	flag.Parse() // required for glog flags and testing package flags
+	flag.Lookup("log_dir").Value.Set("/tmp")
 	cfg, err := loadConfig()
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)

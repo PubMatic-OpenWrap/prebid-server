@@ -64,21 +64,23 @@ func BenchmarkStringBasedProcessor(b *testing.B) {
 	}
 }
 
+//const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
+
 var tmplProcessor IProcessor
 var stringBasedProcessor IProcessor
 var tmplProcessorAlwaysInit IProcessor
-var StringIndexBasedMacroProcessor IProcessor
+var stringIndexBasedMacroProcessor IProcessor
 var stringCachedIndexBasedProcessor IProcessor
-
-// const tURL = "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##&url=##PBS_PAGEURL##"
-var tURL = buildLongInputURL0(10000, "##")
-
-var URL2 = buildLongInputURL0(5000, "##")
-var URL3 = buildLongInputURL0(10000, "##")
-var URL4 = buildLongInputURL0(15000, "##")
+var tURL, URL2, URL3, URL4 string
 
 func init() {
-	fmt.Println("start init")
+
+	tURL = buildLongInputURL0(100, "##")
+
+	URL2 = buildLongInputURL0(5000, "##")
+	URL3 = buildLongInputURL0(10000, "##")
+	URL4 = buildLongInputURL0(15000, "##")
+
 	//fmt.Println(tURL)
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
 		delimiter: "##",
@@ -92,7 +94,7 @@ func init() {
 		delimiter: "##",
 	})
 
-	StringIndexBasedMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
+	stringIndexBasedMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
 		delimiter: "##",
 	})
 
@@ -103,8 +105,8 @@ func init() {
 			// UrlEscape: true,
 		},
 	})
-
 }
+
 func BenchmarkTemplateBasedProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		tmplProcessor.Replace(tURL, testData)
@@ -119,7 +121,7 @@ func BenchmarkTemplateBasedProcessorInitAlways(b *testing.B) {
 
 func BenchmarkStringIndexBasedMacroProcessor(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		StringIndexBasedMacroProcessor.Replace(tURL, testData)
+		stringIndexBasedMacroProcessor.Replace(tURL, testData)
 	}
 }
 

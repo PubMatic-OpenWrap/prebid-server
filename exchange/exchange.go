@@ -307,7 +307,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
-		// r.Account.Events.MacroProcessor().Replace()
+		config.GetMacroProcessor().Replace("", map[string]string{})
 		/* build macro value map */
 		// request := r.BidRequestWrapper.BidRequest
 		// var macroValues = map[string]string{

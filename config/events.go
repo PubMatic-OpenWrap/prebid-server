@@ -66,7 +66,7 @@ type Events struct {
 	DefaultURL string      `mapstructure:"default_url" json:"default_url"`
 	VASTEvents []VASTEvent `mapstructure:"vast_events" json:"vast_events,omitempty"`
 	// macroProcessor is responsible for replacing the macros present inside tracker events
-	macroProcessor macros.IProcessor
+	// macroProcessor macros.IProcessor
 }
 
 // validate verifies the events object  and returns error if at least one is invalid.
@@ -79,8 +79,17 @@ func (e Events) validate(errs []error) []error {
 		if err != nil {
 			return append(errs, err)
 		}
-		e.macroProcessor, err = e.initMacroProcessor()
-		macros.GProcessor, err = e.initMacroProcessor()
+
+		templates := make([]string, 0)
+		templates = append(templates, e.DefaultURL)
+		for _, vEvent := range e.VASTEvents {
+			templates = append(templates, vEvent.URLs...)
+		}
+		macroProcessor, err = macros.NewProcessor(macros.STRING_BASED, macros.Config{
+			Templates: templates,
+		})
+		// e.macroProcessor, err = e.initMacroProcessor()
+		// macros.GProcessor, err = e.initMacroProcessor()
 		if err != nil {
 			return append(errs, err)
 		}
@@ -156,20 +165,20 @@ func (e VASTEvent) isTrackingEvent() bool {
 	return e.CreateElement == TrackingVASTElement
 }
 
-func (e Events) initMacroProcessor() (macros.IProcessor, error) {
-	// init micro procesor
-	templates := make([]string, 0)
-	templates = append(templates, e.DefaultURL)
-	for _, vEvent := range e.VASTEvents {
-		for _, url := range vEvent.URLs {
-			templates = append(templates, url)
-		}
-	}
-	return macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
-		Templates: templates,
-	})
-}
+// func (e Events) initMacroProcessor() (macros.IProcessor, error) {
+// 	// init micro procesor
+// 	templates := make([]string, 0)
+// 	templates = append(templates, e.DefaultURL)
+// 	for _, vEvent := range e.VASTEvents {
+// 		for _, url := range vEvent.URLs {
+// 			templates = append(templates, url)
+// 		}
+// 	}
+// 	return macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
+// 		Templates: templates,
+// 	})
+// }
 
-func (e Events) MacroProcessor() macros.IProcessor {
-	return e.macroProcessor
-}
+// func (e Events) MacroProcessor() macros.IProcessor {
+// 	return e.macroProcessor
+// }

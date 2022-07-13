@@ -2,9 +2,6 @@ package macros
 
 import "errors"
 
-//GProcessor a global instance of macro processor
-var GProcessor IProcessor
-
 type Processor struct {
 	IProcessor
 	Cfg Config
@@ -14,6 +11,8 @@ type IProcessor interface {
 	// Replace the macros and returns replaced string
 	// if any error the error will be returned
 	Replace(string, map[string]string) (string, error)
+	// AddTemplates can add more templates to macro processor
+	AddTemplates(...string)
 }
 
 type Type int

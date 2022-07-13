@@ -10,13 +10,15 @@ import (
 type StringIndexCached struct {
 	Processor
 	templates map[string]strMetaTemplate
+	dup       int
 }
 
 type strMetaTemplate struct {
 	// macroSIndexMap  map[string]int
-	sIndexMacrosMap map[int]string
+	// sIndexMacrosMap map[int]string
 	// macroSIndexList []*string // ordered list of indices (useful for replace method)
-	indices []int
+	indices     []int
+	macroLength []int
 }
 
 func (p *StringIndexCached) initTemplate() {
@@ -26,43 +28,52 @@ func (p *StringIndexCached) initTemplate() {
 		panic("No input templates")
 	}
 	for _, str := range p.Processor.Cfg.Templates {
-		si := 0
-		tmplt := strMetaTemplate{
-			sIndexMacrosMap: make(map[int]string),
-			indices:         []int{},
-		}
-		for true {
-			si = si + strings.Index(str[si:], delim)
-			if si == -1 {
-				break
-			}
-			msi := si + len(delim)
-			ei := strings.Index(str[msi:], delim) // ending delimiter
-			if ei == -1 {
-				break
-			}
-			ei = ei + msi // offset adjustment (delimiter inclusive)
-			mei := ei     // just for readiability
-			// cache macro and its start index
-			tmplt.sIndexMacrosMap[si] = str[msi:mei]
-			tmplt.indices = append(tmplt.indices, si)
-			si = ei + 1
-			if si >= len(str) {
-				break
-			}
-		}
-		p.templates[str] = tmplt
+		p.templates[str] = constructTemplate(str, delim)
 	}
-	fmt.Printf("Macroprocessor initialized %d templates", len(p.templates))
+	fmt.Printf("Macroprocessor initialized %d templates\n", len(p.templates))
 }
+
+func constructTemplate(str string, delim string) strMetaTemplate {
+	si := 0
+	tmplt := strMetaTemplate{
+		// sIndexMacrosMap: make(map[int]string),
+		indices:     []int{},
+		macroLength: []int{},
+	}
+	for {
+		si = si + strings.Index(str[si:], delim)
+		if si == -1 {
+			break
+		}
+		msi := si + len(delim)
+		ei := strings.Index(str[msi:], delim) // ending delimiter
+		if ei == -1 {
+			break
+		}
+		ei = ei + msi // offset adjustment (delimiter inclusive)
+		mei := ei     // just for readiability
+		// cache macro and its start index
+		// tmplt.sIndexMacrosMap[si] = str[msi:mei]
+		tmplt.indices = append(tmplt.indices, si)
+		tmplt.macroLength = append(tmplt.macroLength, mei)
+		si = ei + 1
+		if si >= len(str) {
+			break
+		}
+	}
+	return tmplt
+}
+
 func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (string, error) {
 	tmplt := p.templates[str]
 	var result bytes.Buffer
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
 	s := 0
-	for _, index := range tmplt.indices {
-		macro := tmplt.sIndexMacrosMap[index]
+	delimLen := len(p.Cfg.delimiter)
+	for i, index := range tmplt.indices {
+		// macro := tmplt.sIndexMacrosMap[index]
+		macro := str[index+delimLen : tmplt.macroLength[i]]
 		// copy prev part
 		result.WriteString(str[s:index])
 		if value, found := macroValues[macro]; found {
@@ -76,4 +87,17 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 	}
 	result.WriteString(str[s:])
 	return result.String(), nil
+}
+
+func (p *StringIndexCached) AddTemplates(templates ...string) {
+	for _, str := range templates {
+		_, ok := p.templates[str]
+
+		if !ok {
+			p.templates[str] = constructTemplate(str, p.Cfg.delimiter)
+		} else {
+			p.dup++
+		}
+	}
+	fmt.Printf("Macroprocessor initialized %d templates\nDuplicate=%d\n", len(p.templates), p.dup)
 }
