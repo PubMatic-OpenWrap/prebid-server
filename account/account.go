@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -63,6 +64,10 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 
 		// Set derived fields
 		setDerivedConfig(account)
+		if account.Events.Enabled {
+			// process and event urls /templates to macroProcessor
+			updateMacroProcessor(account.Events)
+		}
 	}
 	if account.Disabled {
 		errs = append(errs, &errortypes.BlacklistedAcct{
@@ -70,6 +75,8 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		})
 		return nil, errs
 	}
+
+	glog.Infof("%v", account.Events)
 	return account, nil
 }
 
@@ -119,4 +126,22 @@ func setDerivedConfig(account *config.Account) {
 			account.GDPR.BasicEnforcementVendorsMap[v] = struct{}{}
 		}
 	}
+}
+
+func updateMacroProcessor(events config.Events) {
+	// add account specific templates to macroprocessor
+	// TODO: Check if multiple publishers have same template URL
+	// e.g.
+	// pub1 : http://example.com?k=${val} - T1
+	// pub2 : http://example.com?k=${val} /
+	// TODO: Do we need to introduce account context to maintain
+	// templates seperately though they might be same??
+	templates := make([]string, 0)
+	templates = append(templates, events.DefaultURL)
+	for _, vEvent := range events.VASTEvents {
+		if vEvent.URLs != nil {
+			templates = append(templates, vEvent.URLs...)
+		}
+	}
+	config.GetMacroProcessor().AddTemplates(templates...)
 }

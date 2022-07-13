@@ -1,0 +1,89 @@
+@startuml
+namespace macros {
+    class Config << (S,Aquamarine) >> {
+        - delimiter string
+        - valueConfig MacroValueConfig
+
+        + Templates []string
+
+    }
+    class EndpointTemplateParams << (S,Aquamarine) >> {
+        + Host string
+        + PublisherID string
+        + ZoneID string
+        + SourceId string
+        + AccountID string
+        + AdUnit string
+
+    }
+    interface IProcessor  {
+        + Replace( string,  <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class MacroValueConfig << (S,Aquamarine) >> {
+        + UrlEscape bool
+        + RemoveEmpty bool
+        + FailOnError bool
+
+    }
+    class Processor << (S,Aquamarine) >> {
+        + Cfg Config
+
+    }
+    class StringBased << (S,Aquamarine) >> {
+        + Replace(str string, macroValues <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class StringIndexCached << (S,Aquamarine) >> {
+        - templates <font color=blue>map</font>[string]strMetaTemplate
+
+        - initTemplate() 
+
+        + Replace(str string, macroValues <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class TemplateBased << (S,Aquamarine) >> {
+        - templates <font color=blue>map</font>[string]*template.Template
+
+        - init0(templates []string) 
+
+        + Replace(str string, macroValues <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class TemplateBasedInitAlways << (S,Aquamarine) >> {
+        + Replace(str string, macroValues <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class UserSyncTemplateParams << (S,Aquamarine) >> {
+        + GDPR string
+        + GDPRConsent string
+        + USPrivacy string
+
+    }
+    class VastBidderBased << (S,Aquamarine) >> {
+        + Replace(in string, macroValues <font color=blue>map</font>[string]string) (string, error)
+
+    }
+    class macros.Type << (T, #FF7700) >>  {
+    }
+    class strMetaTemplate << (S,Aquamarine) >> {
+        - sIndexMacrosMap <font color=blue>map</font>[int]string
+        - indices []int
+
+    }
+}
+"macros.IProcessor" *-- "macros.Processor"
+"macros.Processor" *-- "macros.StringBased"
+"macros.Processor" *-- "macros.StringIndexCached"
+"macros.Processor" *-- "macros.TemplateBased"
+"macros.TemplateBased" *-- "macros.TemplateBasedInitAlways"
+"macros.Processor" *-- "macros.VastBidderBased"
+
+"macros.IProcessor" <|-- "macros.StringBased"
+"macros.IProcessor" <|-- "macros.StringIndexCached"
+"macros.IProcessor" <|-- "macros.TemplateBased"
+"macros.IProcessor" <|-- "macros.TemplateBasedInitAlways"
+"macros.IProcessor" <|-- "macros.VastBidderBased"
+
+"__builtin__.int" #.. "macros.Type"
+@enduml

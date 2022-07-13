@@ -1,0 +1,7 @@
+{
+    "id": "pub1",
+    "disabled": false,
+    "events": {
+        "enabled" : true
+    }
+} 

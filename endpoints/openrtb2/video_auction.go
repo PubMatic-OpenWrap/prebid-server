@@ -285,6 +285,12 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	var inBidReq = &openrtb2.BidRequest{}
+	if err := json.Unmarshal(resolvedRequest, &inBidReq); err != nil {
+		return
+	}
+
+	bidReq.Ext = inBidReq.Ext
 	secGPC := r.Header.Get("Sec-GPC")
 
 	auctionRequest := exchange.AuctionRequest{

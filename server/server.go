@@ -177,6 +177,7 @@ func newUnixListener(address string, metrics metrics.MetricsEngine) (net.Listene
 }
 
 func wait(inbound <-chan os.Signal, done <-chan struct{}, outbound ...chan<- os.Signal) {
+	// glog.Info("prebid-server took %s\n", time.Since(main.StartTime))
 	sig := <-inbound
 
 	for i := 0; i < len(outbound); i++ {
