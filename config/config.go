@@ -1076,6 +1076,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.spotx.endpoint", "https://search.spotxchange.com/openrtb/2.3/dados")
 
 	v.SetDefault("adapters.sovrn.endpoint", "http://pbs.lijit.com/rtb/bid?src=prebid_server")
+	v.SetDefault("adapters.sspbc.endpoint", "https://ssp.wp.pl/bidder/")
 	v.SetDefault("adapters.streamkey.endpoint", "http://ghb.hb.streamkey.net/pbs/ortb")
 	v.SetDefault("adapters.stroeercore.disabled", true)
 	v.SetDefault("adapters.stroeercore.endpoint", "http://mhb.adscale.de/s2sdsh")
