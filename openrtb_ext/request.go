@@ -71,7 +71,18 @@ type TransparencyRule struct {
 }
 
 type TransparencyExt struct {
-	Content map[string]TransparencyRule `json:"content,omitempty"`
+	Content    map[string]TransparencyRule `json:"content,omitempty"`
+	Experiment *Experiment                 `json:"experiment,omitempty"`
+}
+
+// Experiment defines if experimental features are available for the request
+type Experiment struct {
+	AdsCert *AdsCert `json:"adscert,omitempty"`
+}
+
+// AdsCert defines if Call Sign feature is enabled for request
+type AdsCert struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 type BidderConfig struct {
