@@ -324,6 +324,8 @@ func CookieSyncStatuses() []CookieSyncStatus {
 		CookieSyncBadRequest,
 		CookieSyncOptOut,
 		CookieSyncGDPRHostCookieBlocked,
+		CookieSyncAccountBlocked,
+		CookieSyncAccountInvalid,
 	}
 }
 
@@ -356,6 +358,8 @@ const (
 	SetUidBadRequest            SetUidStatus = "bad_request"
 	SetUidOptOut                SetUidStatus = "opt_out"
 	SetUidGDPRHostCookieBlocked SetUidStatus = "gdpr_blocked_host_cookie"
+	SetUidAccountBlocked        SetUidStatus = "acct_blocked"
+	SetUidAccountInvalid        SetUidStatus = "acct_invalid"
 	SetUidSyncerUnknown         SetUidStatus = "syncer_unknown"
 )
 
@@ -366,6 +370,8 @@ func SetUidStatuses() []SetUidStatus {
 		SetUidBadRequest,
 		SetUidOptOut,
 		SetUidGDPRHostCookieBlocked,
+		SetUidAccountBlocked,
+		SetUidAccountInvalid,
 		SetUidSyncerUnknown,
 	}
 }
