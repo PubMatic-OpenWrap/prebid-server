@@ -464,4 +464,6 @@ type MetricsEngine interface {
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 	RecordStoredResponse(pubId string)
+	RecordAdsCertReq(success bool)
+	RecordAdsCertSignTime(adsCertSignTime time.Duration)
 }

@@ -53,6 +53,8 @@ type Metrics struct {
 	storedResponses              prometheus.Counter
 	storedResponsesFetchTimer    *prometheus.HistogramVec
 	storedResponsesErrors        *prometheus.CounterVec
+	adsCertRequests              *prometheus.CounterVec
+	adsCertSignTimer             prometheus.Histogram
 
 	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
@@ -443,6 +445,16 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"account_stored_responses",
 		"Count of total requests to Prebid Server that have stored responses labled by account",
 		[]string{accountLabel})
+
+	metrics.adsCertSignTimer = newHistogram(cfg, reg,
+		"ads_cert_sign_time",
+		"Seconds to generate an AdsCert header",
+		standardTimeBuckets)
+
+	metrics.adsCertRequests = newCounter(cfg, reg,
+		"ads_cert_requests",
+		"Count of AdsCert request, and if they were successfully sent.",
+		[]string{successLabel})
 
 	metrics.Gatherer = reg
 
@@ -930,4 +942,17 @@ func (m *Metrics) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, vi
 	if videoBidDuration > 0 {
 		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
 	}
+func (m *Metrics) RecordAdsCertReq(success bool) {
+	if success {
+		m.adsCertRequests.With(prometheus.Labels{
+			successLabel: requestSuccessful,
+		}).Inc()
+	} else {
+		m.adsCertRequests.With(prometheus.Labels{
+			successLabel: requestFailed,
+		}).Inc()
+	}
+}
+func (m *Metrics) RecordAdsCertSignTime(adsCertSignTime time.Duration) {
+	m.adsCertSignTimer.Observe(adsCertSignTime.Seconds())
 }
