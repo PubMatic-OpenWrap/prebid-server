@@ -236,8 +236,8 @@ log "Starting upgrade loop..."
 echo "Minor: $minor"
 echo "To_Minor : $to_minor"
 
-if [[ $minor -lt $to_minor ]]; then
-     echo "Already Upgraded to $to_minor or Verify the Target Version"
+if [[ $minor -gt $to_minor ]]; then
+     echo "Verify the Target Version"
      exit 0
 fi
 
