@@ -6,7 +6,6 @@ import (
 	"html"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
-	"github.com/prebid/prebid-server/file_uploader"
 )
 
 func GetVideoFilePathFromVAST(vastBody string) (string, error) {
@@ -106,14 +104,14 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 	if err := os.MkdirAll("/tmp", os.ModePerm); err != nil {
 		return "", err
 	}
-	mediaPath := filepath.Join("/tmp/", uuid.String(), ".mp4")
+	mediaPath := "/tmp/" + uuid.String() + ".mp4"
 	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], mediaPath, objectArray...)
 
-	uploadResponse, err := file_uploader.UploadAsset(mediaPath, uuid.String())
-	if err != nil {
-		return "", nil
-	}
-	vast := generateVASTXml("25", uploadResponse["url"])
+	// uploadResponse, err := file_uploader.UploadAsset(mediaPath, uuid.String())
+	// if err != nil {
+	// 	return "", nil
+	// }
+	vast := generateVASTXml("25", "https://tech-stack-mgmt.pubmatic.com/owtools/hackathon2k22/owtools/api/getbid?reqid=11")
 
 	return vast, nil
 }
