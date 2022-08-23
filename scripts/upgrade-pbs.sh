@@ -6,6 +6,8 @@ to_minor=217
 to_patch=0
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
+upgrade_version=$TargetVersion
+
 attempt=4
 
 usage="
