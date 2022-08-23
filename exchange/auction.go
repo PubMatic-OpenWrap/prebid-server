@@ -170,23 +170,27 @@ func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client,
 	}
 	for _, topBidsPerImp := range a.winningBidsByBidder {
 		for bidderName, topBidPerBidder := range topBidsPerImp {
-
 			if bidderName == "test_vast_bidder" {
 				fmt.Println("Preparing to store cache ids of won bidder")
-				impID := topBidPerBidder.bid.ImpID
-				toCache = append(toCache, prebid_cache_client.Cacheable{
-					Type:       prebid_cache_client.TypeXML,
-					Data:       []byte{},
-					TTLSeconds: cacheTTL(expByImp[impID], topBidPerBidder.bid.Exp, defTTL(topBidPerBidder.bidType, defaultTTLs), ttlBuffer),
-				})
+				vastXML := `<VAST version="3.0"></VAST>`
+				if jsonBytes, err := json.Marshal(vastXML); err == nil {
+					impID := topBidPerBidder.bid.ImpID
+					toCache = append(toCache, prebid_cache_client.Cacheable{
+						Type:       prebid_cache_client.TypeXML,
+						Data:       jsonBytes,
+						TTLSeconds: cacheTTL(expByImp[impID], topBidPerBidder.bid.Exp, defTTL(topBidPerBidder.bidType, defaultTTLs), ttlBuffer),
+					})
 
-				ids, err := cache.PutJson(ctx, toCache)
-				if err != nil {
-					errs = append(errs, err...)
+					ids, err := cache.PutJson(ctx, toCache)
+					if err != nil {
+						errs = append(errs, err...)
+					}
+
+					a.vastCacheIds = make(map[*openrtb2.Bid]string, 0)
+					a.vastCacheIds[topBidPerBidder.bid] = ids[0]
+				} else {
+					errs = append(errs, err)
 				}
-
-				a.vastCacheIds = make(map[*openrtb2.Bid]string, 0)
-				a.vastCacheIds[topBidPerBidder.bid] = ids[0]
 
 			}
 		}
