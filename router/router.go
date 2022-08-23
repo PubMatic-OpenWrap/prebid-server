@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/file_uploader"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 
 	"github.com/prebid/prebid-server/usersync"
@@ -123,6 +124,10 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	g_transport = getTransport(cfg, certPool)
 	generalHttpClient := &http.Client{
+		Transport: g_transport,
+	}
+
+	file_uploader.UploadClient = &http.Client{
 		Transport: g_transport,
 	}
 

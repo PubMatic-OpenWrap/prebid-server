@@ -8,7 +8,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/golang/glog"
 )
+
+var UploadClient *http.Client
 
 // Creates a new file upload http request with optional extra params
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
@@ -48,17 +53,19 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 }
 
 func UploadAsset(assetPath, storagePath string) (map[string]string, error) {
+	rqTime := time.Now()
 	var result map[string]string
 	params := map[string]string{"filePath": storagePath}
 	request, err := newfileUploadRequest("http://10.110.218.11/owtools/hackathon2k22/owtools/upload", params, "myFile", assetPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	client := &http.Client{}
-	resp, err := client.Do(request)
+
+	resp, err := UploadClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	glog.Infof("Time Taken for File Upload: %v", time.Since(rqTime))
 
 	if err != nil {
 		return nil, err
