@@ -24,17 +24,6 @@ Following list represents the assets required
 	4. Audio 2 (Optional)
 NOTE: Please ensure that Resolution and Duration of Main & Background Video is matching
 */
-const AdTemplate3 AdTemplate = `-y -i {{.BackgroundVideo}}
--i {{.MainVideo}}
--i {{.Audio1}}
-{{.Audio2}}
--filter_complex {{.FilterComplex}}
--map [out] -map [a]
--acodec ac3_fixed
--vcodec libx264
-{{.OutputFile}}
-`
-
 const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
 -i {{.MainVideo}}
 -filter_complex [1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out]
@@ -55,11 +44,23 @@ Following list represents the assets required
 */
 const AdTemplate2 AdTemplate = `-y -i {{.BackgroundImage}} 
 -i {{.MainVideo}} 
--i {{.Audio1}} 
--filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay[out]
+-filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay=0:130[out]
 -map [out]
--map 2
--shortest
+{{.OutputFile}}
+`
+
+/*
+AdTemplate3
+-----------
+Overlays Main video with Background Image. It replaces (0x42FB00) color.
+assets required are
+	1. Background - Image  (Mandatory)
+	2. Main - Video (Mandatory)
+*/
+const AdTemplate3 AdTemplate = `-y -i {{.BackgroundImage}}  
+-i {{.MainVideo}}  
+-filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay=800:[out] 
+-map [out] 
 {{.OutputFile}}
 `
 
@@ -68,6 +69,7 @@ const AdTemplate2 AdTemplate = `-y -i {{.BackgroundImage}}
 var templateIDMap = map[AdTemplate]*template.Template{
 	AdTemplate1: nil,
 	AdTemplate2: nil,
+	AdTemplate3: nil,
 }
 
 type Subtype int
@@ -102,6 +104,7 @@ type templateAttr struct {
 	Audio2          string
 	OutputFile      string
 	FilterComplex   string
+	Overlay         string
 }
 
 func init() {
