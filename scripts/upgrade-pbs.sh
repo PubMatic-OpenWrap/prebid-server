@@ -233,6 +233,12 @@ go_discard
 log "Starting upgrade loop..."
 echo "Minor: $minor"
 echo "To_Minor : $to_minor"
+
+if [[ $minor -ge $to_minor ]]
+then
+     echo "Already Upgraded to $to_minor or Verify the Target Version"
+     exit 0
+
 while [ "$minor" -le "$to_minor" ]; do
     # _upgrade_version="$prefix$major.$minor.$patch"
     _upgrade_version="$major.$minor.$patch"
