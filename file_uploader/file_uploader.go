@@ -50,7 +50,7 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 func UploadAsset(assetPath, storagePath string) (map[string]string, error) {
 	var result map[string]string
 	params := map[string]string{"filePath": storagePath}
-	request, err := newfileUploadRequest("https://tech-stack-mgmt.pubmatic.com/owtools/hackathon2k22/owtools/upload", params, "myFile", assetPath)
+	request, err := newfileUploadRequest("https://10.110.218.11/owtools/hackathon2k22/owtools/upload", params, "myFile", assetPath)
 	if err != nil {
 		log.Fatal(err)
 	}

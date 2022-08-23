@@ -2,15 +2,16 @@ package native_video
 
 import (
 	"encoding/json"
-	"fmt"
 	"html"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/beevik/etree"
 	"github.com/gofrs/uuid"
+	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/file_uploader"
@@ -57,10 +58,12 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 	var navtiveResponse NativeResp
 	unescaped, err := url.QueryUnescape(bid.AdM)
 	if err != nil {
+		glog.Error("Erro while unescaping Adm in bid", err.Error())
 		return "", err
 	}
 	err = json.Unmarshal([]byte(unescaped), &navtiveResponse)
 	if err != nil {
+		glog.Error("Error while Unmarshalling native response", err.Error())
 		return "", err
 	}
 
@@ -78,22 +81,24 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 		}
 
 		if asset.Title != nil {
-			fmt.Println("Title Object")
+			glog.Info("Will Support Title object soon")
 		} else if asset.Video != nil {
+			glog.Info("Found Video Asset in request")
 			filePath, err := GetVideoFilePathFromVAST(asset.Video.VASTTag)
 			if err != nil {
+				glog.Error("Error while getting filepath from VAST", err.Error())
 				return "", err
 			}
 			obj.FilePath = filePath
 		} else if asset.Img != nil {
-			fmt.Println("image Object")
+			glog.Info("Will Support Image object soon")
 		}
 		objectArray = append(objectArray, obj)
 	}
 
 	num, err := strconv.Atoi(reqId)
 	if err != nil {
-		fmt.Println("error while converting to number")
+		glog.Error("error while converting to number", err.Error())
 		return "", err
 	}
 
@@ -105,14 +110,23 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 	if err := os.MkdirAll("/tmp", os.ModePerm); err != nil {
 		return "", err
 	}
-	mediaPath := "/tmp/" + uuid.String() + ".mp4"
-	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], mediaPath, objectArray...)
 
+	mediaPath := "/tmp/" + uuid.String() + ".mp4"
+	glog.Info("Going to store merged mp4 at ", mediaPath)
+
+	currentTime := time.Now()
+	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], mediaPath, objectArray...)
+	glog.Info("Time Taken for Merge Process :: ", time.Since(currentTime).Seconds())
+
+	uploadCurrentTime := time.Now()
 	uploadResponse, err := file_uploader.UploadAsset(mediaPath, uuid.String())
 	if err != nil {
 		return "", nil
 	}
-	vast := generateVASTXml("25", uploadResponse["url"])
+	glog.Info("Time Taken for Upload Process :: ", time.Since(uploadCurrentTime).Seconds())
+	glog.Info("TIme taken for total process :: ", time.Since(currentTime).Seconds())
 
+	vast := generateVASTXml("25", uploadResponse["url"])
+	glog.Info("Final Vast Formed :: ", vast)
 	return vast, nil
 }
