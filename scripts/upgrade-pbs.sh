@@ -8,7 +8,7 @@ upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
 
-echo "Upgrade-Version : $upgrade_version"
+echo "Upgrade----Version : $upgrade_version"
 
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
