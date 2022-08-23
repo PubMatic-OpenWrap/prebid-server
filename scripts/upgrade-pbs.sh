@@ -8,7 +8,9 @@ upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
 
-echo "Upgrade----Version : $upgrade_version"
+to_major=${upgrade_version[0]}
+to_minor=${upgrade_version[1]}
+to_patch=${upgrade_version[2]}
 
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
@@ -234,7 +236,7 @@ log "Starting upgrade loop..."
 echo "Minor: $minor"
 echo "To_Minor : $to_minor"
 
-if [[ $minor -ge $to_minor ]]; then
+if [[ $minor -lt $to_minor ]]; then
      echo "Already Upgraded to $to_minor or Verify the Target Version"
      exit 0
 fi
