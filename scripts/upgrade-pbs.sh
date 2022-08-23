@@ -7,7 +7,6 @@ to_patch=0
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
-log "Got TargetVersion $TargetVersion from CI input"
 
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
@@ -181,6 +180,8 @@ go_discard() {
 }
 
 # --- main ---
+
+
 
 if [ "$RESTART" -eq "1" ]; then
     log "Restarting the upgrade: rm -rf /tmp/prebid-server /tmp/pbs-patch/"
