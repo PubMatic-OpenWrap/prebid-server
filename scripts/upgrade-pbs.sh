@@ -8,9 +8,9 @@ upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
 
-to_major=${upgrade_version[0]}
-to_minor=${upgrade_version[1]}
-to_patch=${upgrade_version[2]}
+to_major="$(cut -d'.' -f2 <<<"$upgrade_version")"
+to_minor="$(cut -d'.' -f3 <<<"$upgrade_version")"
+to_patch="$(cut -d'.' -f4 <<<"$upgrade_version")"
 
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
