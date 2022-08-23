@@ -121,7 +121,8 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 	uploadCurrentTime := time.Now()
 	uploadResponse, err := file_uploader.UploadAsset(mediaPath, uuid.String())
 	if err != nil {
-		return "", nil
+		glog.Error("Error while uploading merged video", err.Error())
+		return "", err
 	}
 	glog.Info("Time Taken for Upload Process :: ", time.Since(uploadCurrentTime).Seconds())
 	glog.Info("TIme taken for total process :: ", time.Since(currentTime).Seconds())
