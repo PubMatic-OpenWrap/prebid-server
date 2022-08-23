@@ -13,7 +13,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -83,53 +82,59 @@ func (handler *VASTTagResponseHandler) ParseExtension(version string, ad *etree.
 func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error
 
-	doc := etree.NewDocument()
-
-	//Read Document
-	if err := doc.ReadFromBytes(response.Body); err != nil {
+	var ortbResponse openrtb2.BidResponse
+	err := json.Unmarshal(response.Body, &ortbResponse)
+	if err != nil {
 		errs = append(errs, err)
 		return nil, errs[:]
 	}
+	// doc := etree.NewDocument()
 
-	//Check VAST Tag
-	vast := doc.Element.FindElement(`./VAST`)
-	if vast == nil {
-		errs = append(errs, errors.New("VAST Tag Not Found"))
-		return nil, errs[:]
-	}
+	// //Read Document
+	// if err := doc.ReadFromBytes(response.Body); err != nil {
+	// 	errs = append(errs, err)
+	// 	return nil, errs[:]
+	// }
 
-	//Check VAST/Ad Tag
-	adElement := getAdElement(vast)
-	if nil == adElement {
-		errs = append(errs, errors.New("VAST/Ad Tag Not Found"))
-		return nil, errs[:]
-	}
+	// //Check VAST Tag
+	// vast := doc.Element.FindElement(`./VAST`)
+	// if vast == nil {
+	// 	errs = append(errs, errors.New("VAST Tag Not Found"))
+	// 	return nil, errs[:]
+	// }
+
+	// //Check VAST/Ad Tag
+	// adElement := getAdElement(vast)
+	// if nil == adElement {
+	// 	errs = append(errs, errors.New("VAST/Ad Tag Not Found"))
+	// 	return nil, errs[:]
+	// }
 
 	typedBid := &adapters.TypedBid{
-		Bid:     &openrtb2.Bid{},
+		Bid:     &ortbResponse.SeatBid[0].Bid[0],
 		BidType: openrtb_ext.BidTypeVideo,
 		BidVideo: &openrtb_ext.ExtBidPrebidVideo{
 			VASTTagID: handler.VASTTag.TagID,
 		},
 	}
 
-	creatives := adElement.FindElements("Creatives/Creative")
-	if nil != creatives {
-		for _, creative := range creatives {
-			// get creative id
-			typedBid.Bid.CrID = getCreativeID(creative)
+	// creatives := adElement.FindElements("Creatives/Creative")
+	// if nil != creatives {
+	// 	for _, creative := range creatives {
+	// 		// get creative id
+	// 		typedBid.Bid.CrID = getCreativeID(creative)
 
-			// get duration from vast creative
-			dur, err := getDuration(creative)
-			if nil != err {
-				// get duration from input bidder vast tag
-				dur = getStaticDuration(handler.VASTTag)
-			}
-			if dur > 0 {
-				typedBid.BidVideo.Duration = int(dur) // prebid expects int value
-			}
-		}
-	}
+	// 		// get duration from vast creative
+	// 		dur, err := getDuration(creative)
+	// 		if nil != err {
+	// 			// get duration from input bidder vast tag
+	// 			dur = getStaticDuration(handler.VASTTag)
+	// 		}
+	// 		if dur > 0 {
+	// 			typedBid.BidVideo.Duration = int(dur) // prebid expects int value
+	// 		}
+	// 	}
+	// }
 
 	bidResponse := &adapters.BidderResponse{
 		Bids:     []*adapters.TypedBid{typedBid},
@@ -137,30 +142,30 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	}
 
 	//GetVersion
-	version := vast.SelectAttrValue(`version`, `2.0`)
+	// version := vast.SelectAttrValue(`version`, `2.0`)
 
-	if err := handler.IVASTTagResponseHandler.ParseExtension(version, adElement, typedBid); len(err) > 0 {
-		errs = append(errs, err...)
-		return nil, errs[:]
-	}
+	// if err := handler.IVASTTagResponseHandler.ParseExtension(version, adElement, typedBid); len(err) > 0 {
+	// 	errs = append(errs, err...)
+	// 	return nil, errs[:]
+	// }
 
 	//if bid.price is not set in ParseExtension
-	if typedBid.Bid.Price <= 0 {
-		price, currency := getPricingDetails(version, adElement)
-		if price <= 0 {
-			price, currency = getStaticPricingDetails(handler.VASTTag)
-			if price <= 0 {
-				errs = append(errs, &errortypes.NoBidPrice{Message: "Bid Price Not Present"})
-				return nil, errs[:]
-			}
-		}
-		typedBid.Bid.Price = price
-		if len(currency) > 0 {
-			bidResponse.Currency = currency
-		}
-	}
+	// if typedBid.Bid.Price <= 0 {
+	// 	price, currency := getPricingDetails(version, adElement)
+	// 	if price <= 0 {
+	// 		price, currency = getStaticPricingDetails(handler.VASTTag)
+	// 		if price <= 0 {
+	// 			errs = append(errs, &errortypes.NoBidPrice{Message: "Bid Price Not Present"})
+	// 			return nil, errs[:]
+	// 		}
+	// 	}
+	// 	typedBid.Bid.Price = price
+	// 	if len(currency) > 0 {
+	// 		bidResponse.Currency = currency
+	// 	}
+	// }
 
-	typedBid.Bid.ADomain = getAdvertisers(version, adElement)
+	// typedBid.Bid.ADomain = getAdvertisers(version, adElement)
 
 	//if bid.id is not set in ParseExtension
 	if len(typedBid.Bid.ID) == 0 {
