@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/file_uploader"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
+	"github.com/prebid/prebid-server/file_uploader"
 
 	"github.com/prebid/prebid-server/usersync"
 
