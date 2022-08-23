@@ -17,6 +17,7 @@ const (
 	MacroBlockedCategory   = `bcat`
 	MacroBlockedAdvertiser = `badv`
 	MacroBlockedApp        = `bapp`
+	MacroRequestId         = `reqid`
 
 	//Source
 	MacroFD             = `fd`

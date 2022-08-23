@@ -210,6 +210,10 @@ func (tag *BidderMacro) MacroBlockedApp(key string) string {
 	return strings.Join(tag.Request.BApp, comma)
 }
 
+func (tag *BidderMacro) MacroRequestId(key string) string {
+	return tag.Request.ID
+}
+
 /********************* Source *********************/
 
 //MacroFD contains definition for FD Parameter

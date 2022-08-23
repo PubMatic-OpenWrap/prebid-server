@@ -91,7 +91,7 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 			}
 			obj.FilePath = filePath
 		} else if asset.Img != nil {
-			glog.Info("Will Support Image object soon")
+			obj.FilePath = asset.Img.URL
 		}
 		objectArray = append(objectArray, obj)
 	}
