@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/file_uploader"
 	"github.com/beevik/etree"
 	"github.com/gofrs/uuid"
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/prebid-server/file_uploader"
 )
 
 func GetVideoFilePathFromVAST(vastBody string) (string, error) {
