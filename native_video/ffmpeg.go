@@ -24,12 +24,21 @@ Following list represents the assets required
 	4. Audio 2 (Optional)
 NOTE: Please ensure that Resolution and Duration of Main & Background Video is matching
 */
-const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
+const AdTemplate3 AdTemplate = `-y -i {{.BackgroundVideo}}
 -i {{.MainVideo}}
 -i {{.Audio1}}
 {{.Audio2}}
 -filter_complex {{.FilterComplex}}
 -map [out] -map [a]
+-acodec ac3_fixed
+-vcodec libx264
+{{.OutputFile}}
+`
+
+const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
+-i {{.MainVideo}}
+-filter_complex [1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out]
+-map [out]
 -acodec ac3_fixed
 -vcodec libx264
 {{.OutputFile}}

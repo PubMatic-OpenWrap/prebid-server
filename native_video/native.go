@@ -1,20 +1,25 @@
 package native_video
 
 import (
-	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
+	"html"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/file_uploader"
 	"github.com/beevik/etree"
+	"github.com/gofrs/uuid"
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 func GetVideoFilePathFromVAST(vastBody string) (string, error) {
+
+	vastBody = html.UnescapeString(vastBody)
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastBody)
 	if err != nil {
@@ -92,12 +97,23 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 		fmt.Println("error while converting to number")
 		return "", err
 	}
-	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], bid.ImpID, objectArray...)
 
-	vast := generateVASTXml("25", "https://tech-stack-mgmt.pubmatic.com/owtools/hackathon2k22/owtools/api/getbid?reqid=11")
+	uuid, err := uuid.NewV1()
+	if err != nil {
+		return "", err
+	}
 
-	w := new(bytes.Buffer)
-	enc := xml.NewEncoder(w)
-	enc.Encode(vast)
-	return w.String(), nil
+	if err := os.MkdirAll("/tmp", os.ModePerm); err != nil {
+		return "", err
+	}
+	mediaPath := filepath.Join("/tmp/", uuid.String(), ".mp4")
+	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], mediaPath, objectArray...)
+
+	uploadResponse, err := file_uploader.UploadAsset(mediaPath, uuid.String())
+	if err != nil {
+		return "", nil
+	}
+	vast := generateVASTXml("25", uploadResponse["url"])
+
+	return vast, nil
 }

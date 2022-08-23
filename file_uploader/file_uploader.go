@@ -1,7 +1,8 @@
+package file_uploader
+
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"mime/multipart"

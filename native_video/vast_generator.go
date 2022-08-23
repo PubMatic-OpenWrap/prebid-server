@@ -51,12 +51,12 @@ type content struct {
 	CreativeID   string
 }
 
-func generateVASTXml(price, httpFilePath string) string {
+func generateVASTXml(price, mediaPath string) string {
 
 	t, _ := template.New("test").Parse(vast)
 	c := content{}
-	c.MediaFileURL = "https://tech-stack-mgmt.pubmatic.com/owtools/hackathon2k22/owtools/api/getbid?reqid=11"
-	c.Duration = "12"
+	c.MediaFileURL = mediaPath
+	c.Duration = "15"
 	c.Price = "25"
 	c.Skip = "" // not skippable default
 	// generate random uniq id
