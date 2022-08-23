@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -43,21 +44,28 @@ func GetSubType(subtype string) Subtype {
 
 }
 
-func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) error {
+type NativeResp struct {
+	Native response.Response `json:"native"`
+}
 
-	var navtiveResponse response.Response
-	err := json.Unmarshal([]byte(bid.AdM), &navtiveResponse)
+func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (string, error) {
+
+	var navtiveResponse NativeResp
+	unescaped, err := url.QueryUnescape(bid.AdM)
 	if err != nil {
-		return err
+		return "", err
+	}
+	err = json.Unmarshal([]byte(unescaped), &navtiveResponse)
+	if err != nil {
+		return "", err
 	}
 
 	var objectArray []Object
-	for _, asset := range navtiveResponse.Assets {
-
+	for _, asset := range navtiveResponse.Native.Assets {
 		var assetExt map[string]interface{}
 		err := json.Unmarshal(asset.Ext, &assetExt)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		obj := Object{
@@ -70,7 +78,7 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) error 
 		} else if asset.Video != nil {
 			filePath, err := GetVideoFilePathFromVAST(asset.Video.VASTTag)
 			if err != nil {
-				return err
+				return "", err
 			}
 			obj.FilePath = filePath
 		} else if asset.Img != nil {
@@ -82,7 +90,7 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) error 
 	num, err := strconv.Atoi(reqId)
 	if err != nil {
 		fmt.Println("error while converting to number")
-		return err
+		return "", err
 	}
 	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], bid.ImpID, objectArray...)
 
@@ -91,6 +99,5 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) error 
 	w := new(bytes.Buffer)
 	enc := xml.NewEncoder(w)
 	enc.Encode(vast)
-	bid.AdM = w.String()
-	return nil
+	return w.String(), nil
 }

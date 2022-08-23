@@ -159,15 +159,31 @@ func (a *auction) setRoundedPrices(priceGranularity openrtb_ext.PriceGranularity
 	a.roundedPrices = roundedPrices
 }
 
-func (a *auction) CheckandProcessNativeVideo(reqId string) {
+func (a *auction) CheckandProcessNativeVideo(reqId string, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) []error {
 
+	var newvast string
+	var errs []error
 	for _, topBidsPerImp := range a.winningBidsByBidder {
 		for bidderName, topBidPerBidder := range topBidsPerImp {
 			if bidderName == "test_vast_bidder" {
-				native_video.ParseNativeVideoAdm(reqId, topBidPerBidder.bid, "12234444")
+				var err error
+				newvast, err = native_video.ParseNativeVideoAdm(reqId, topBidPerBidder.bid, "12234444")
+				if err != nil {
+					errs = append(errs, err)
+				}
 			}
 		}
 	}
+
+	if newvast != "" {
+		for bidderName, seatBid := range seatBids {
+			if bidderName == "test_vast_bidder" {
+				seatBid.bids[0].bid.AdM = newvast
+			}
+		}
+	}
+
+	return errs
 }
 
 func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client, targData *targetData, evTracking *eventTracking, bidRequest *openrtb2.BidRequest, ttlBuffer int64, defaultTTLs *config.DefaultTTLs, bidCategory map[string]string, debugLog *DebugLog) []error {
