@@ -29,7 +29,7 @@ var _defaultMapper = Mapper{
 	MacroBlockedCategory:   &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedCategory},
 	MacroBlockedAdvertiser: &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedAdvertiser},
 	MacroBlockedApp:        &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedApp},
-
+	MacroRequestId:         &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroRequestId},
 	//Source
 	MacroFD:             &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroFD},
 	MacroTransactionID:  &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroTransactionID},

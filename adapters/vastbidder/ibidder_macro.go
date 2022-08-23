@@ -31,6 +31,7 @@ type IBidderMacro interface {
 	MacroBlockedCategory(string) string
 	MacroBlockedAdvertiser(string) string
 	MacroBlockedApp(string) string
+	MacroRequestId(string) string
 
 	//Source
 	MacroFD(string) string
