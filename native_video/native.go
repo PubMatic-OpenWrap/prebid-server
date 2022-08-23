@@ -1,8 +1,11 @@
 package native_video
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/beevik/etree"
@@ -27,11 +30,11 @@ func GetSubType(subtype string) Subtype {
 	case "main":
 		return Main
 	case "background":
-		return Background
+		return BackgroundVideo
 	case "audio":
 		return Audio
 	case "image":
-		return Image
+		return BackgroundImage
 	case "title":
 		return Title
 	}
@@ -40,7 +43,7 @@ func GetSubType(subtype string) Subtype {
 
 }
 
-func ParseNativeVideoAdm(reqId int, Country string, bid *openrtb2.Bid, cacheId string) error {
+func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) error {
 
 	var navtiveResponse response.Response
 	err := json.Unmarshal([]byte(bid.AdM), &navtiveResponse)
@@ -76,7 +79,18 @@ func ParseNativeVideoAdm(reqId int, Country string, bid *openrtb2.Bid, cacheId s
 		objectArray = append(objectArray, obj)
 	}
 
-	Merge(reqId, bid.ImpID, objectArray...)
+	num, err := strconv.Atoi(reqId)
+	if err != nil {
+		fmt.Println("error while converting to number")
+		return err
+	}
+	Merge(AdTemplateMap[strconv.Itoa(int(num/10))], bid.ImpID, objectArray...)
 
+	vast := generateVASTXml("25", "https://tech-stack-mgmt.pubmatic.com/owtools/hackathon2k22/owtools/api/getbid?reqid=11")
+
+	w := new(bytes.Buffer)
+	enc := xml.NewEncoder(w)
+	enc.Encode(vast)
+	bid.AdM = w.String()
 	return nil
 }

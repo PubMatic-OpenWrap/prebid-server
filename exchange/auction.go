@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/native_video"
 	uuid "github.com/gofrs/uuid"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
@@ -157,12 +159,41 @@ func (a *auction) setRoundedPrices(priceGranularity openrtb_ext.PriceGranularity
 	a.roundedPrices = roundedPrices
 }
 
+func (a *auction) CheckandProcessNativeVideo(reqId string) {
+
+	for _, topBidsPerImp := range a.winningBidsByBidder {
+		for bidderName, topBidPerBidder := range topBidsPerImp {
+			if bidderName == "test_vast_bidder" {
+				native_video.ParseNativeVideoAdm(reqId, topBidPerBidder.bid, "12234444")
+			}
+		}
+	}
+}
+
 func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client, targData *targetData, evTracking *eventTracking, bidRequest *openrtb2.BidRequest, ttlBuffer int64, defaultTTLs *config.DefaultTTLs, bidCategory map[string]string, debugLog *DebugLog) []error {
 
+	var bids, vast, includeBidderKeys, includeWinners bool = targData.includeCacheBids, targData.includeCacheVast, targData.includeBidderKeys, targData.includeWinners
+	if !((bids || vast) && (includeBidderKeys || includeWinners)) {
+		return nil
+	}
 	var errs []error
-	toCache := make([]prebid_cache_client.Cacheable, 0, 1)
+	expectNumBids := valOrZero(bids, len(a.roundedPrices))
+	expectNumVast := valOrZero(vast, len(a.roundedPrices))
+	bidIndices := make(map[int]*openrtb2.Bid, expectNumBids)
+	vastIndices := make(map[int]*openrtb2.Bid, expectNumVast)
+	toCache := make([]prebid_cache_client.Cacheable, 0, expectNumBids+expectNumVast)
 	expByImp := make(map[string]int64)
+	competitiveExclusion := false
 	var hbCacheID string
+	if len(bidCategory) > 0 {
+		// assert:  category of winning bids never duplicated
+		if rawUuid, err := uuid.NewV4(); err == nil {
+			hbCacheID = rawUuid.String()
+			competitiveExclusion = true
+		} else {
+			errs = append(errs, errors.New("failed to create custom cache key"))
+		}
+	}
 
 	// Grab the imp TTLs
 	for _, imp := range bidRequest.Imp {
@@ -170,28 +201,63 @@ func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client,
 	}
 	for _, topBidsPerImp := range a.winningBidsByBidder {
 		for bidderName, topBidPerBidder := range topBidsPerImp {
-			if bidderName == "test_vast_bidder" {
-				fmt.Println("Preparing to store cache ids of won bidder")
-				vastXML := `<VAST version="3.0"></VAST>`
-				if jsonBytes, err := json.Marshal(vastXML); err == nil {
-					impID := topBidPerBidder.bid.ImpID
+			impID := topBidPerBidder.bid.ImpID
+			isOverallWinner := a.winningBids[impID] == topBidPerBidder
+			if !includeBidderKeys && !isOverallWinner {
+				continue
+			}
+			var customCacheKey string
+			var catDur string
+			useCustomCacheKey := false
+			if competitiveExclusion && isOverallWinner || includeBidderKeys {
+				// set custom cache key for winning bid when competitive exclusion applies
+				catDur = bidCategory[topBidPerBidder.bid.ID]
+				if len(catDur) > 0 {
+					customCacheKey = fmt.Sprintf("%s_%s", catDur, hbCacheID)
+					useCustomCacheKey = true
+				}
+			}
+			if bids {
+				if jsonBytes, err := json.Marshal(topBidPerBidder.bid); err == nil {
+					jsonBytes, err = evTracking.modifyBidJSON(topBidPerBidder, bidderName, jsonBytes)
+					if err != nil {
+						errs = append(errs, err)
+					}
+					if useCustomCacheKey {
+						// not allowed if bids is true; log error and cache normally
+						errs = append(errs, errors.New("cannot use custom cache key for non-vast bids"))
+					}
 					toCache = append(toCache, prebid_cache_client.Cacheable{
-						Type:       prebid_cache_client.TypeXML,
+						Type:       prebid_cache_client.TypeJSON,
 						Data:       jsonBytes,
 						TTLSeconds: cacheTTL(expByImp[impID], topBidPerBidder.bid.Exp, defTTL(topBidPerBidder.bidType, defaultTTLs), ttlBuffer),
 					})
-
-					ids, err := cache.PutJson(ctx, toCache)
-					if err != nil {
-						errs = append(errs, err...)
-					}
-
-					a.vastCacheIds = make(map[*openrtb2.Bid]string, 0)
-					a.vastCacheIds[topBidPerBidder.bid] = ids[0]
+					bidIndices[len(toCache)-1] = topBidPerBidder.bid
 				} else {
 					errs = append(errs, err)
 				}
-
+			}
+			if vast && topBidPerBidder.bidType == openrtb_ext.BidTypeVideo {
+				vastXML := makeVAST(topBidPerBidder.bid)
+				if jsonBytes, err := json.Marshal(vastXML); err == nil {
+					if useCustomCacheKey {
+						toCache = append(toCache, prebid_cache_client.Cacheable{
+							Type:       prebid_cache_client.TypeXML,
+							Data:       jsonBytes,
+							TTLSeconds: cacheTTL(expByImp[impID], topBidPerBidder.bid.Exp, defTTL(topBidPerBidder.bidType, defaultTTLs), ttlBuffer),
+							Key:        customCacheKey,
+						})
+					} else {
+						toCache = append(toCache, prebid_cache_client.Cacheable{
+							Type:       prebid_cache_client.TypeXML,
+							Data:       jsonBytes,
+							TTLSeconds: cacheTTL(expByImp[impID], topBidPerBidder.bid.Exp, defTTL(topBidPerBidder.bidType, defaultTTLs), ttlBuffer),
+						})
+					}
+					vastIndices[len(toCache)-1] = topBidPerBidder.bid
+				} else {
+					errs = append(errs, err)
+				}
 			}
 		}
 	}
@@ -209,6 +275,32 @@ func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client,
 		}
 	}
 
+	ids, err := cache.PutJson(ctx, toCache)
+	if err != nil {
+		errs = append(errs, err...)
+	}
+
+	if bids {
+		a.cacheIds = make(map[*openrtb2.Bid]string, len(bidIndices))
+		for index, bid := range bidIndices {
+			if ids[index] != "" {
+				a.cacheIds[bid] = ids[index]
+			}
+		}
+	}
+	if vast {
+		a.vastCacheIds = make(map[*openrtb2.Bid]string, len(vastIndices))
+		for index, bid := range vastIndices {
+			if ids[index] != "" {
+				if competitiveExclusion && strings.HasSuffix(ids[index], hbCacheID) {
+					// omit the pb_cat_dur_ portion of cache ID
+					a.vastCacheIds[bid] = hbCacheID
+				} else {
+					a.vastCacheIds[bid] = ids[index]
+				}
+			}
+		}
+	}
 	return errs
 }
 

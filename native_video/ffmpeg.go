@@ -3,22 +3,78 @@ package native_video
 import (
 	"bytes"
 	"fmt"
-	"os"
+	"html/template"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"text/template"
 )
+
+/*
+AdTemplate specifies the supported video native ad templates
+*/
+type AdTemplate string
+
+/*
+AdTemplate1
+-----------
+Overlays Main video with Background Video. It replaces (0x14db04) color. It also considers 2 audio streams
+Following list represents the assets required
+	1. Background - Video  (Mandatory)
+	2. Main - Video (Mandatory)
+	3. Audio1 (Mandatory)
+	4. Audio 2 (Optional)
+NOTE: Please ensure that Resolution and Duration of Main & Background Video is matching
+*/
+const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
+-i {{.MainVideo}}
+-i {{.Audio1}}
+{{.Audio2}}
+-filter_complex {{.FilterComplex}}
+-map [out] -map [a]
+-acodec ac3_fixed
+-vcodec libx264
+{{.OutputFile}}
+`
+
+/*
+AdTemplate2
+---------
+Overlays Main video with Background Image. It replaces (0x14db04) color. It also considers 1 audio stream
+Following list represents the assets required
+	1. Background - Image  (Mandatory)
+	2. Main - Video (Mandatory)
+	3. Audio 1 (Mandatory)
+*/
+const AdTemplate2 AdTemplate = `-y -i {{.BackgroundImage}} 
+-i {{.MainVideo}} 
+-i {{.Audio1}} 
+-filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay[out]
+-map [out]
+-map 2
+-shortest
+{{.OutputFile}}
+`
+
+// NOTE: if you are adding new template. Please add its entry in below templateIDMap
+
+var templateIDMap = map[AdTemplate]*template.Template{
+	AdTemplate1: nil,
+	AdTemplate2: nil,
+}
 
 type Subtype int
 
 const (
 	Main Subtype = iota
-	Background
+	BackgroundVideo
 	Audio
-	Image
+	BackgroundImage
 	Title
 )
+
+var AdTemplateMap = map[string]AdTemplate{
+	"1": AdTemplate1,
+	"2": AdTemplate2,
+}
 
 type Object struct {
 	ID       int
@@ -28,68 +84,63 @@ type Object struct {
 	Subtype  Subtype
 }
 
-/*
-Template 1
------------
-*/
-const template1Command string = `-y -i {{.BackgroundVideo}}
--i {{.MainVideo}}
--i {{.Audio1}}
--i {{.Audio2}}
--filter_complex [1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out];[2:a][3:a]amerge=inputs=2[a]
--map [out] -map [a]
--acodec ac3_fixed
--vcodec libx264
-{{.OutputFile}}
-`
-
 // template used for replacing values in go template
 type templateAttr struct {
 	BackgroundVideo string
+	BackgroundImage string
 	MainVideo       string
 	Audio1          string
 	Audio2          string
 	OutputFile      string
+	FilterComplex   string
 }
-
-var template1 *template.Template
-var err error
 
 func init() {
-	template1, err = template.New("template_1").Parse(template1Command)
-	if err != nil {
-		panic("Error in initializing template 1")
+	for tmpl := range templateIDMap {
+		adTemplateCompiled, err := template.New(string(tmpl)).Parse(string(tmpl))
+		if err != nil {
+			panic(fmt.Sprintf("Error in initializing template %v", tmpl))
+		}
+		templateIDMap[tmpl] = adTemplateCompiled
 	}
 }
 
-func Merge(templateId int, impId string, objects ...Object) {
-
-	mergedFilePath := filepath.Join("/tmp", impId)
-	_ = os.MkdirAll(mergedFilePath, os.ModePerm)
+/*
+Merge will compile multiple viodes, audios, images in one single mp4 file
+based on adTemplate. mp4 file will be generated at mergedFilePath
+*/
+func Merge(adTemplate AdTemplate, mergedFilePath string, objects ...Object) {
 	tattrbs := templateAttr{
-		OutputFile: mergedFilePath + "/test.mp4",
+		OutputFile: mergedFilePath,
 	}
+	audioCount := 0
 	for _, object := range objects {
 		switch object.Subtype {
-		case Background:
+		case BackgroundVideo:
 			tattrbs.BackgroundVideo = object.FilePath
 		case Main:
 			tattrbs.MainVideo = object.FilePath
-
 		case Audio:
-			if object.ID == 1 {
-				tattrbs.Audio1 = object.FilePath
+			audioCount++
+			tattrbs.Audio1 = object.FilePath
+			if audioCount > 1 {
+				tattrbs.Audio2 = "-i " + object.FilePath
+				if adTemplate == AdTemplate1 {
+					tattrbs.FilterComplex = "[1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out];[2:a][3:a]amerge=inputs=2[a]"
+				}
 			}
-			if object.ID == 2 {
-				tattrbs.Audio2 = object.FilePath
+			if adTemplate == AdTemplate1 {
+				tattrbs.FilterComplex = "[1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out];[2:a]amerge=inputs=1[a]"
 			}
+		case BackgroundImage:
+			tattrbs.BackgroundImage = object.FilePath
 		default:
 			panic("Invalid subtype")
 		}
 	}
 
 	var processedTemplate1 bytes.Buffer
-	template1.Execute(&processedTemplate1, tattrbs)
+	templateIDMap[adTemplate].Execute(&processedTemplate1, tattrbs)
 	fmt.Println(processedTemplate1.String())
 
 	str := strings.ReplaceAll(processedTemplate1.String(), "\n", " ")
@@ -116,8 +167,4 @@ func Merge(templateId int, impId string, objects ...Object) {
 	// output is stored inside stderr
 	fmt.Println(stderr.String())
 	fmt.Println(out.String())
-
-	/*
-		ffmpeg -y -i http://localhost/hack22/background_AdobeExpress.mp4 -i http://localhost/hack22/moving_car_AdobeExpress.mp4 -i http://localhost/hack22/moving_car.mp3 -i http://localhost/hack22/bmw_audio_ad.mp3 -filter_complex '[1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out];[2:a][3:a]amerge=inputs=2[a]' -map '[out]' -map "[a]" -acodec ac3_fixed -vcodec libx264  /tmp/out2_audio_http.mp4
-	*/
 }

@@ -157,6 +157,7 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 	// 		if price <= 0 {
 	// 			errs = append(errs, &errortypes.NoBidPrice{Message: "Bid Price Not Present"})
 	// 			return nil, errs[:]
+	
 	// 		}
 	// 	}
 	// 	typedBid.Bid.Price = price
