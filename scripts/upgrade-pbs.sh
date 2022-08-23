@@ -7,8 +7,13 @@ to_patch=0
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
+log "Got TargetVersion $TargetVersion from CI input"
 
-attempt=4
+if [ ! -d "/tmp/pbs-patch/" ]; then
+    mkdir /tmp/pbs-patch/
+fi
+
+attempt=5
 
 usage="
 Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch
