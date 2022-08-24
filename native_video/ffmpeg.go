@@ -28,7 +28,6 @@ const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
 -i {{.MainVideo}}
 -filter_complex [1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out]
 -map [out]
--acodec ac3_fixed
 -vcodec libx264
 {{.OutputFile}}
 `
