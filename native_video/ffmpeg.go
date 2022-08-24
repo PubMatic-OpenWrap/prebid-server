@@ -26,8 +26,9 @@ NOTE: Please ensure that Resolution and Duration of Main & Background Video is m
 */
 const AdTemplate1 AdTemplate = `-y -i {{.BackgroundVideo}}
 -i {{.MainVideo}}
--filter_complex [1:v]colorkey=0x14db04:0.3:0.2[ckout];[0:v][ckout]overlay[out]
--map [out]
+-filter_complex [1:v]colorkey=0x14db04:0.3:0.1[ckout];[0:v][ckout]overlay=0:50[out];[0:a]amerge=inputs=2[a]
+-map [out] 
+-map [a]
 -vcodec libx264
 {{.OutputFile}}
 `
@@ -43,11 +44,8 @@ Following list represents the assets required
 */
 const AdTemplate2 AdTemplate = `-y -i {{.BackgroundImage}} 
 -i {{.MainVideo}} 
--filter_complex [1:v]colorkey=0x14db04:0.3:0.1[ckout];[0:v][ckout]overlay=0:50[out];[0:a]amerge=inputs=2[a]
+-filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay=0:130[out]
 -map [out] 
--map [a]
--acodec ac3_fixed 
--vcodec libx264
 {{.OutputFile}}
 `
 
