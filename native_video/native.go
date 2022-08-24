@@ -2,7 +2,6 @@ package native_video
 
 import (
 	"encoding/json"
-	"errors"
 	"html"
 	"net/url"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/file_uploader"
-	"github.com/prebid/prebid-server/filedownloader"
 )
 
 func GetVideoFilePathFromVAST(vastBody string) (string, error) {
@@ -69,8 +67,6 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 		return "", err
 	}
 
-	assestUrls := []string{}
-
 	var objectArray []Object
 	for _, asset := range navtiveResponse.Native.Assets {
 		var assetExt map[string]interface{}
@@ -98,15 +94,8 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 			obj.FilePath = asset.Img.URL
 			obj.Subtype = BackgroundImage
 		}
-		assestUrls = append(assestUrls, obj.FilePath)
-		path := strings.Split(obj.FilePath, "/")
-		obj.FilePath = "/tmp/assets/" + path[len(path)-1]
-		objectArray = append(objectArray, obj)
-	}
 
-	errs := filedownloader.DownloadMultipleFiles(assestUrls)
-	if len(errs) != 0 {
-		return "", errors.New("Error downloading assets")
+		objectArray = append(objectArray, obj)
 	}
 
 	num, err := strconv.Atoi(reqId)
@@ -142,11 +131,6 @@ func ParseNativeVideoAdm(reqId string, bid *openrtb2.Bid, cacheId string) (strin
 
 	vast := generateVASTXml("25", uploadResponse["url"])
 	glog.Info("Final Vast Formed :: ", vast)
-
-	err = filedownloader.RemoveAssets()
-	if err != nil {
-		glog.Error("Failed to clean up downloaded assets")
-	}
 
 	return vast, nil
 }
