@@ -12,6 +12,10 @@ import (
 )
 
 func DownloadMultipleFiles(urls []string) []error {
+	if len(urls) == 0 {
+		return nil
+	}
+
 	client := http.Client{
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
@@ -24,7 +28,7 @@ func DownloadMultipleFiles(urls []string) []error {
 	}
 
 	t := time.Now()
-	if err := os.MkdirAll("/tmp/assests", os.ModePerm); err != nil {
+	if err := os.MkdirAll("/tmp/assets", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 
@@ -34,7 +38,7 @@ func DownloadMultipleFiles(urls []string) []error {
 
 			// Create blank file
 			fileName := strings.Split(URL, "/")
-			file, err := os.Create("/tmp/assests/" + fileName[len(fileName)-1])
+			file, err := os.Create("/tmp/assets/" + fileName[len(fileName)-1])
 			if err != nil {
 				errCh <- err
 				return
@@ -75,6 +79,6 @@ func DownloadMultipleFiles(urls []string) []error {
 	return nil
 }
 
-func RemoveAssests() error {
-	return os.RemoveAll("/tmp/assests")
+func RemoveAssets() error {
+	return os.RemoveAll("/tmp/assets")
 }
