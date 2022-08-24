@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/filedownloader"
 	"github.com/beevik/etree"
 	"github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/native1/response"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/file_uploader"
+	"github.com/prebid/prebid-server/filedownloader"
 )
 
 func GetVideoFilePathFromVAST(vastBody string) (string, error) {
