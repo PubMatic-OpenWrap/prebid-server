@@ -1,9 +1,7 @@
 #!/bin/bash -e
 
 prefix="v"
-to_major=0
-to_minor=217
-to_patch=0
+
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 upgrade_version=$TargetVersion
@@ -147,6 +145,11 @@ cmd_exe() {
     if ! $cmd; then
         log "Failure!!! creating checkpoint $cmd"
         echo "$cmd" > $CHECKLOG
+        
+         if [[ $cmd -eq "git merge master --no-edit" ]]; then
+            log "Creating Pull Request Against Current Upgrade Version Branch:"
+            gh pr create --title "OW Changes to be Merged in Branch"
+            #Pause till Conflicts are Resolved.
         exit 1
     fi
 }
@@ -237,7 +240,7 @@ echo "Minor: $minor"
 echo "To_Minor : $to_minor"
 
 if [[ $minor -gt $to_minor ]]; then
-     echo "Verify the Target Version"
+     echo "Please Verify the Target Version"
      exit 0
 fi
 
