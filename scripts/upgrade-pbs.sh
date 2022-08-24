@@ -146,7 +146,7 @@ cmd_exe() {
         log "Failure!!! creating checkpoint $cmd"
         echo "$cmd" > $CHECKLOG
         
-        if [[ $cmd -eq "git merge master --no-edit" ]]; then
+        if [ "$cmd"=="git merge master --no-edit" ]; then
             log "Creating Pull Request Against Current Upgrade Version Branch: $upgrade_branch_name"
             gh pr create --title "OW Changes to be Merged in Branch $upgrade_branch_name"
             #Pause till Conflicts are Resolved.
