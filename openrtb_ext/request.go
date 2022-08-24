@@ -61,6 +61,8 @@ type ExtRequestPrebid struct {
 
 	CurrencyConversions *ExtRequestCurrency `json:"currency,omitempty"`
 	BidderConfigs       []BidderConfig      `json:"bidderconfig,omitempty"`
+  Experiment          *Experiment         `json:"experiment,omitempty"`
+
 	Transparency        *TransparencyExt    `json:"transparency,omitempty"`
 	Floors              *PriceFloorRules    `json:"floors,omitempty"`
 }
@@ -71,7 +73,17 @@ type TransparencyRule struct {
 }
 
 type TransparencyExt struct {
-	Content map[string]TransparencyRule `json:"content,omitempty"`
+	Content map[string]TransparencyRule `json:"content,omitempty"`	
+}
+
+// Experiment defines if experimental features are available for the request
+type Experiment struct {
+	AdsCert *AdsCert `json:"adscert,omitempty"`
+}
+
+// AdsCert defines if Call Sign feature is enabled for request
+type AdsCert struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 type BidderConfig struct {
