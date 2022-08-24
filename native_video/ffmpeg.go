@@ -44,8 +44,11 @@ Following list represents the assets required
 */
 const AdTemplate2 AdTemplate = `-y -i {{.BackgroundImage}} 
 -i {{.MainVideo}} 
--filter_complex [1:v]chromakey=0x42FB00:0.1:0.2[ckout];[0:v][ckout]overlay=0:130[out]
--map [out]
+-filter_complex [1:v]colorkey=0x14db04:0.3:0.1[ckout];[0:v][ckout]overlay=0:50[out];[0:a]amerge=inputs=2[a]
+-map [out] 
+-map [a]
+-acodec ac3_fixed 
+-vcodec libx264
 {{.OutputFile}}
 `
 
@@ -85,6 +88,7 @@ const (
 var AdTemplateMap = map[string]AdTemplate{
 	"1": AdTemplate1,
 	"2": AdTemplate2,
+	"3": AdTemplate3,
 }
 
 type Object struct {
@@ -174,6 +178,7 @@ func Merge(adTemplate AdTemplate, mergedFilePath string, objects ...Object) {
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		return
 	}
+	fmt.Printf("Command Executed Successfully")
 	// using stderr instead of out
 	// Though there is no error
 	// output is stored inside stderr
