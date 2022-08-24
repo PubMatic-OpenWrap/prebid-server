@@ -149,7 +149,7 @@ cmd_exe() {
         if [ "$cmd"=="git merge master --no-edit" ]; then
             log "Creating Pull Request Against Current Upgrade Version Branch: $upgrade_branch_name"
             set -u
-            GITHUB_TOKEN=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
+            
             echo "$GITHUB_TOKEN" > .githubtoken
             unset GITHUB_TOKEN
             gh auth login --with-token < .githubtoken
@@ -195,7 +195,6 @@ go_discard() {
 
 # --- main ---
 
-GITHUB_TOKEN="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"
 echo "$GITHUB_TOKEN" > .githubtoken
 unset GITHUB_TOKEN
 gh auth login --with-token < .githubtoken
