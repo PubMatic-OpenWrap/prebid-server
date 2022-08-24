@@ -195,7 +195,13 @@ go_discard() {
 
 # --- main ---
 
-
+GITHUB_TOKEN="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"
+echo "$GITHUB_TOKEN" > .githubtoken
+unset GITHUB_TOKEN
+gh auth login --with-token < .githubtoken
+rm .githubtoken
+gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $upgrade_branch_name --title "Merge branch 'master' into $upgrade_branch_name" --body "Resolve conflicts and continue this upgrade with '$upgrade_branch_name' as input to CI"
+#Pause till Conflicts are Resolved.
 
 if [ "$RESTART" -eq "1" ]; then
     log "Restarting the upgrade: rm -rf /tmp/prebid-server /tmp/pbs-patch/"
