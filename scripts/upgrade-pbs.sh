@@ -154,7 +154,7 @@ cmd_exe() {
             unset GITHUB_TOKEN
             gh auth login --with-token < .githubtoken
             rm .githubtoken
-            gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
+            gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $upgrade_branch_name --title "Merge branch 'master' into $upgrade_branch_name" --body "Resolve conflicts and continue this upgrade with '$upgrade_branch_name' as input to CI"
             #Pause till Conflicts are Resolved.
         fi
         exit 1
