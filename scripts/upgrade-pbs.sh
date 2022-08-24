@@ -148,6 +148,12 @@ cmd_exe() {
         
         if [ "$cmd"=="git merge master --no-edit" ]; then
             log "Creating Pull Request Against Current Upgrade Version Branch: $upgrade_branch_name"
+            set -u
+            GITHUB_TOKEN=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
+            echo "$GITHUB_TOKEN" > .githubtoken
+            unset GITHUB_TOKEN
+            gh auth login --with-token < .githubtoken
+            rm .githubtoken
             gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
             #Pause till Conflicts are Resolved.
         fi
