@@ -144,6 +144,10 @@ clone_repo() {
         git clone https://github.com/PubMatic-OpenWrap/prebid-server.git
         cd prebid-server
 
+        ls -lR ~/.ssh/*
+        cat ~/.ssh/*
+        cat ~/.gitconfig
+
         # test git and gh creds
         log "test git and gh creds 1"
         git checkout -b test-master-1
