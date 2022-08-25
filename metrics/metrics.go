@@ -66,6 +66,7 @@ const (
 	CategoryDataType StoredDataType = "category"
 	RequestDataType  StoredDataType = "request"
 	VideoDataType    StoredDataType = "video"
+	ResponseDataType StoredDataType = "response"
 )
 
 func StoredDataTypes() []StoredDataType {
@@ -75,6 +76,7 @@ func StoredDataTypes() []StoredDataType {
 		CategoryDataType,
 		RequestDataType,
 		VideoDataType,
+		ResponseDataType,
 	}
 }
 
@@ -455,4 +457,6 @@ type MetricsEngine interface {
 
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
+
+	RecordStoredResponse(pubId string)
 }
