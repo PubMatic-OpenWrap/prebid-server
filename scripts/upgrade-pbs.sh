@@ -4,9 +4,10 @@ prefix="v"
 upgrade_version=$TARGET_VERSION
 attempt=$BUILD_NUMBER
 
-to_major="$(cut -d'.' -f2 <<<"$upgrade_version")"
-to_minor="$(cut -d'.' -f3 <<<"$upgrade_version")"
-to_patch="$(cut -d'.' -f4 <<<"$upgrade_version")"
+IFS='.' read -r -a _current_version <<< "$upgrade_version"
+to_major=${_current_version[0]}
+to_minor=${_current_version[1]}
+to_patch=${_current_version[2]}
 
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
