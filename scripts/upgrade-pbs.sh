@@ -293,7 +293,7 @@ if [ "$START_FROM" = "master" ]; then
 else
     log "Trying to continue upgrade from branch $START_FROM"
     # git checkout $START_FROM
-    checkpoint_run git merge $START_FROM --no-edit
+    checkpoint_run git merge origin/$START_FROM --no-edit
 fi
 
 log "Checking if last failure was for test case. Need this to pick correct"
