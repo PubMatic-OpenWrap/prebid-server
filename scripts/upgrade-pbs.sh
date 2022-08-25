@@ -8,6 +8,10 @@
 # gh auth login -p https --with-token < .githubtoken
 # rm .githubtoken
 
+# test git and gh creds
+gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B split-ow-go-1 --title "Merge branch 'master' into ci" --body "Resolve conflicts and continue this upgrade with 'ci' as input to CI"
+exit $?
+
 prefix="v"
 upgrade_version=$TARGET_VERSION
 attempt=$BUILD_NUMBER
