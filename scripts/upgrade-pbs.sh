@@ -66,6 +66,8 @@ done
 # --- start ---
 CHECKLOG=/tmp/pbs-patch/checkpoints.log
 
+rm -f $CHECKLOG #for CI job only or clean workspace everytime
+
 trap 'clear_log' EXIT
 
 log () {
