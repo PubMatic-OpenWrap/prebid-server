@@ -94,6 +94,7 @@ clear_log() {
         set -e
 
         git checkout -b prebid_$upgrade_version-$attempt-final
+        git push origin prebid_$upgrade_version-$attempt-final
         log "Raising PR master <- prebid_$upgrade_version-$attempt-final"
         gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B master --title "Prebid upgrade to $upgrade_version" --body "$PR_BODY"
     else
