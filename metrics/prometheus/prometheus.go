@@ -50,6 +50,9 @@ type Metrics struct {
 	privacyCOPPA                 *prometheus.CounterVec
 	privacyLMT                   *prometheus.CounterVec
 	privacyTCF                   *prometheus.CounterVec
+	storedResponses              prometheus.Counter
+	storedResponsesFetchTimer    *prometheus.HistogramVec
+	storedResponsesErrors        *prometheus.CounterVec
 
 	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
@@ -74,8 +77,9 @@ type Metrics struct {
 	syncerSets     *prometheus.CounterVec
 
 	// Account Metrics
-	accountRequests      *prometheus.CounterVec
-	accountDebugRequests *prometheus.CounterVec
+	accountRequests        *prometheus.CounterVec
+	accountDebugRequests   *prometheus.CounterVec
+	accountStoredResponses *prometheus.CounterVec
 
 	// Ad Pod Metrics
 
@@ -338,6 +342,21 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 			[]string{adapterLabel})
 	}
 
+	metrics.storedResponsesFetchTimer = newHistogramVec(cfg, reg,
+		"stored_response_fetch_time_seconds",
+		"Seconds to fetch stored responses labeled by fetch type",
+		[]string{storedDataFetchTypeLabel},
+		standardTimeBuckets)
+
+	metrics.storedResponsesErrors = newCounter(cfg, reg,
+		"stored_response_errors",
+		"Count of stored video errors by error type",
+		[]string{storedDataErrorLabel})
+
+	metrics.storedResponses = newCounterWithoutLabels(cfg, reg,
+		"stored_responses",
+		"Count of total requests to Prebid Server that have stored responses")
+
 	metrics.adapterBids = newCounter(cfg, reg,
 		"adapter_bids",
 		"Count of bids labeled by adapter and markup delivery type (adm or nurl).",
@@ -419,6 +438,11 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Seconds request was waiting in queue",
 		[]string{requestTypeLabel, requestStatusLabel},
 		queuedRequestTimeBuckets)
+
+	metrics.accountStoredResponses = newCounter(cfg, reg,
+		"account_stored_responses",
+		"Count of total requests to Prebid Server that have stored responses labled by account",
+		[]string{accountLabel})
 
 	metrics.Gatherer = reg
 
@@ -569,6 +593,15 @@ func (m *Metrics) RecordDebugRequest(debugEnabled bool, pubID string) {
 	}
 }
 
+func (m *Metrics) RecordStoredResponse(pubId string) {
+	m.storedResponses.Inc()
+	if !m.metricsDisabled.AccountStoredResponses && pubId != metrics.PublisherUnknown {
+		m.accountStoredResponses.With(prometheus.Labels{
+			accountLabel: pubId,
+		}).Inc()
+	}
+}
+
 func (m *Metrics) RecordImps(labels metrics.ImpLabels) {
 	m.impressions.With(prometheus.Labels{
 		isBannerLabel: strconv.FormatBool(labels.BannerImps),
@@ -608,6 +641,10 @@ func (m *Metrics) RecordStoredDataFetchTime(labels metrics.StoredDataLabels, len
 		m.storedVideoFetchTimer.With(prometheus.Labels{
 			storedDataFetchTypeLabel: string(labels.DataFetchType),
 		}).Observe(length.Seconds())
+	case metrics.ResponseDataType:
+		m.storedResponsesFetchTimer.With(prometheus.Labels{
+			storedDataFetchTypeLabel: string(labels.DataFetchType),
+		}).Observe(length.Seconds())
 	}
 }
 
@@ -631,6 +668,10 @@ func (m *Metrics) RecordStoredDataError(labels metrics.StoredDataLabels) {
 		}).Inc()
 	case metrics.VideoDataType:
 		m.storedVideoErrors.With(prometheus.Labels{
+			storedDataErrorLabel: string(labels.Error),
+		}).Inc()
+	case metrics.ResponseDataType:
+		m.storedResponsesErrors.With(prometheus.Labels{
 			storedDataErrorLabel: string(labels.Error),
 		}).Inc()
 	}
