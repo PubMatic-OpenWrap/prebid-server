@@ -34,6 +34,21 @@ TODO:
     - create ci branch PR
     - create header-bidding PR"
 
+
+ PR_BODY="
+ # Description
+
+ Please add change description or link to ticket, docs, etc.
+
+ # Checklist:
+
+ - [ ] PR commit list is unique (rebase/pull with the origin branch to keep master clean).
+ - [ ] JIRA number is added in the PR title and the commit message.
+ - [ ] Updated the \`header-bidding\` repo with appropiate commit id.
+ - [ ] Documented the new changes.
+
+ For Prebid upgrade, refer: https://inside.pubmatic.com:8443/confluence/display/Products/Prebid-server+upgrade"
+
 RESTART=0
 for i in "$@"; do
   case $i in
@@ -77,6 +92,10 @@ clear_log() {
         log "Commit final go.mod and go.sum"
         git commit go.mod go.sum --amend --no-edit
         set -e
+
+        git checkout -b prebid_$upgrade_version-$attempt-final
+        log "Raising PR master <- prebid_$upgrade_version-$attempt-final"
+        gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B master --title "Prebid upgrade to $upgrade_version" --body "$PR_BODY"
     else
         log "Exiting with failure!!!"
 
@@ -144,20 +163,6 @@ clone_repo() {
         git clone https://github.com/PubMatic-OpenWrap/prebid-server.git
         cd prebid-server
 
-        ls -lR ~/.ssh/*
-        cat ~/.ssh/*
-        cat ~/.gitconfig
-
-        # test git and gh creds
-        log "test git and gh creds 1"
-        git checkout -b test-master-1
-        log "test git and gh creds 2"
-        git push origin test-master-1
-        log "test git and gh creds 3"
-        gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B split-ow-go-1 --title "Merge branch 'master' into ci" --body "Resolve conflicts and continue this upgrade with 'ci' as input to CI"
-        log "test git and gh creds 4 $?"
-        exit $?
-
         git remote add prebid-upstream https://github.com/prebid/prebid-server.git
         git remote -v
         git fetch --all --tags --prune
@@ -194,11 +199,11 @@ checkpoint_run() {
         if grep -q "$cmd" "$CHECKLOG"; then
             log "Retry this checkpoint: $cmd"
 
-            if grep -q "git merge master --no-edit" "$CHECKLOG"; then # continue prebid upgrade
-                log "Trying to continue the upgrade..."
-                git fetch --all --tags --prune # pull resolved changes
-                git pull origin $(git rev-parse --abbrev-ref HEAD)
-            fi
+            # if grep -q "git merge master --no-edit" "$CHECKLOG"; then # continue prebid upgrade
+            #     log "Trying to continue the upgrade..."
+            #     git fetch --all --tags --prune # pull resolved changes
+            #     git pull origin $(git rev-parse --abbrev-ref HEAD)
+            # fi
 
             rm "$CHECKLOG"
             
