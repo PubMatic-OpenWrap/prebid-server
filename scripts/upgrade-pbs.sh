@@ -82,7 +82,7 @@ clear_log() {
 
             echo "Creating PR for $curr_branch <- $curr_branch-master. Please fix the conflicts"
 
-            gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
+            gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
 
             git checkout $target_branch # go back to the feature branch so that we pull the resolved changes
         elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
