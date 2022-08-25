@@ -1,12 +1,12 @@
 #!/bin/bash -e
 
 # TODO MOVE THIS TO CI SECRETS
-git config --global user.name "Nilesh Chate"
-git config --global user.email "nilesh.chate@pubmatic.com"
-echo "$GITHUB_TOKEN" > .githubtoken
-unset GITHUB_TOKEN
-gh auth login -p https --with-token < .githubtoken
-rm .githubtoken
+# git config --global user.name "Nilesh Chate"
+# git config --global user.email "nilesh.chate@pubmatic.com"
+# echo "$GITHUB_TOKEN" > .githubtoken
+# unset GITHUB_TOKEN
+# gh auth login -p https --with-token < .githubtoken
+# rm .githubtoken
 
 prefix="v"
 upgrade_version=$TARGET_VERSION
