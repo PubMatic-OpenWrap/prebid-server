@@ -2,11 +2,6 @@
 
 # TODO MOVE THIS TO CI SECRETS
 
-echo "$GITHUB_TOKEN" > .githubtoken
-unset GITHUB_TOKEN
-gh auth login -p https --with-token < .githubtoken
-rm .githubtoken
-
 prefix="v"
 upgrade_version=$TARGET_VERSION
 attempt=$BUILD_NUMBER
