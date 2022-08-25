@@ -102,6 +102,8 @@ clear_log() {
 
         # create PR for CI-CD run
         if grep -q "git merge master --no-edit" "$CHECKLOG"; then
+            git merge --abort
+
             target_branch=$(git rev-parse --abbrev-ref HEAD)
             git push origin $target_branch
             git checkout master
