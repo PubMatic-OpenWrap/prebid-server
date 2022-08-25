@@ -1,8 +1,7 @@
 #!/bin/bash -e
 
 # TODO MOVE THIS TO CI SECRETS
-git config --global user.name "pm-saurabh-narkhede"
-git config --global user.email "saurabh.narkhede@pubmatic.com"
+
 echo "$GITHUB_TOKEN" > .githubtoken
 unset GITHUB_TOKEN
 gh auth login -p https --with-token < .githubtoken
