@@ -268,7 +268,7 @@ go_mod
 checkpoint_run "./validate.sh --race 5"
 go_discard
 
-log "Starting upgrade loop..."
+log "Starting upgrade loop... from: $minor to: $to_minor"
 while [ "$minor" -le "$to_minor" ]; do
     # _upgrade_version="$prefix$major.$minor.$patch"
     _upgrade_version="$major.$minor.$patch"
