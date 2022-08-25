@@ -1,12 +1,17 @@
 #!/bin/bash -e
 
 prefix="v"
-to_major=0
-to_minor=217
-to_patch=0
-upgrade_version="$prefix$to_major.$to_minor.$to_patch"
+upgrade_version=$TARGET_VERSION
 
-attempt=4
+to_major="$(cut -d'.' -f2 <<<"$upgrade_version")"
+to_minor="$(cut -d'.' -f3 <<<"$upgrade_version")"
+to_patch="$(cut -d'.' -f4 <<<"$upgrade_version")"
+
+if [ ! -d "/tmp/pbs-patch/" ]; then
+    mkdir /tmp/pbs-patch/
+fi
+
+attempt=5
 
 usage="
 Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch
@@ -45,7 +50,6 @@ log () {
 }
 
 clear_log() {
-    log "clear_log()<-"
     major=0
     minor=0
     patch=0
@@ -67,6 +71,24 @@ clear_log() {
         set -e
     else
         log "Exiting with failure!!!"
+
+        # create PR for CI-CD run
+        if [ "$cmd" = "git merge master --no-edit" ]; then
+            git merge --abort
+
+            target_branch=$(git rev-parse --abbrev-ref HEAD)
+            git push origin $target_branch
+            git checkout master
+            git checkout -b $target_branch-master
+            git push origin $target_branch-master
+
+            echo "Creating PR for $curr_branch <- $curr_branch-master"
+
+            gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
+
+            git checkout $target_branch # go back to the feature branch so that we pull the resolved changes
+        fi
+
         exit 1
     fi
 }
@@ -114,10 +136,10 @@ clone_repo() {
         git remote add prebid-upstream https://github.com/prebid/prebid-server.git
         git remote -v
         git fetch --all --tags --prune
-    fi
 
-    if [ ! -d "/tmp/pbs-patch/" ]; then
-        mkdir -p /tmp/pbs-patch/
+        git merge origin/resolved-218-2 --no-edit  #ready 218 upgrade since it is a major change.
+        # git merge origin/resolved-218 --no-edit  #ready 218 upgrade since it is a major change.
+        # git merge origin/split-ow-go-1 --no-edit #merge minor improvements
     fi
 }
 
@@ -135,6 +157,8 @@ checkout_branch() {
 #        log "Failed to create branch $upgrade_branch_name. Already working on it???"
 #        exit 1
 #    fi
+
+    git checkout $TARGET_BRANCH
 }
 
 cmd_exe() {
@@ -151,11 +175,25 @@ checkpoint_run() {
     if [ -f $CHECKLOG ] ; then
         if grep -q "$cmd" "$CHECKLOG"; then
             log "Retry this checkpoint: $cmd"
+
+            if grep -q "git merge master --no-edit" "$CHECKLOG"; then # continue prebid upgrade
+                log "Trying to continue the upgrade..."
+                git fetch --all --tags --prune # pull resolved changes
+                git pull origin $(git rev-parse --abbrev-ref HEAD)
+            fi
+
             rm "$CHECKLOG"
-        elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
-            log "Special checkpoint. ./validate.sh --race 5 failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
-            cmd_exe $cmd
-            rm "$CHECKLOG"
+            
+        # elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
+        #     log "Special checkpoint. ./validate.sh --race 5 failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
+        #     cmd_exe $cmd
+        #     rm "$CHECKLOG"
+        # elif grep -q "git merge master --no-edit" "$CHECKLOG"; then # continue prebid upgrade
+        #     log "Trying to continue the upgrade..."
+        #     git fetch --all --tags --prune # pull resolved changes
+        #     git pull origin $(git rev-parse --abbrev-ref HEAD)
+        #     rm "$CHECKLOG"
+        #     return 901
         else
             log "Skip this checkpoint: $cmd"
             return
@@ -176,6 +214,8 @@ go_discard() {
     # git checkout master go.mod
     # git checkout master go.sum
     git checkout go.mod go.sum
+
+    git restore .
 }
 
 # --- main ---
@@ -263,6 +303,5 @@ done
 
 # TODO: automate go.mod conflicts
 # go mod edit -replace github.com/prebid/prebid-server=./
-# go mod edit -replace github.com/mxmCherry/openrtb/v15=github.com/PubMatic-OpenWrap/openrtb/v15@v15.0.0
+# go mod edit -replace github.com/mxmCherry/openrtb/v16=github.com/PubMatic-OpenWrap/openrtb/v15@v15.0.0
 # go mod edit -replace github.com/beevik/etree=github.com/PubMatic-OpenWrap/etree@latest
-#!/bin/bash -e
