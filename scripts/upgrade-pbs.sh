@@ -8,10 +8,6 @@
 # gh auth login -p https --with-token < .githubtoken
 # rm .githubtoken
 
-# test git and gh creds
-gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B split-ow-go-1 --title "Merge branch 'master' into ci" --body "Resolve conflicts and continue this upgrade with 'ci' as input to CI"
-exit $?
-
 prefix="v"
 upgrade_version=$TARGET_VERSION
 attempt=$BUILD_NUMBER
@@ -147,6 +143,16 @@ clone_repo() {
         cd /tmp
         git clone https://github.com/PubMatic-OpenWrap/prebid-server.git
         cd prebid-server
+
+        # test git and gh creds
+        log "test git and gh creds 1"
+        git checkout -b test-master-1
+        log "test git and gh creds 2"
+        git push origin test-master-1
+        log "test git and gh creds 3"
+        gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B split-ow-go-1 --title "Merge branch 'master' into ci" --body "Resolve conflicts and continue this upgrade with 'ci' as input to CI"
+        log "test git and gh creds 4 $?"
+        exit $?
 
         git remote add prebid-upstream https://github.com/prebid/prebid-server.git
         git remote -v
