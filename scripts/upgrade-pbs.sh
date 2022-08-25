@@ -398,6 +398,10 @@ clone_repo() {
         # git merge origin/resolved-218 --no-edit  #ready 218 upgrade since it is a major change.
         # git merge origin/split-ow-go-1 --no-edit #merge minor improvements
     fi
+
+    if [ ! -d "/tmp/pbs-patch/" ]; then
+        mkdir -p /tmp/pbs-patch/
+    fi
 }
 
 checkout_branch() {
