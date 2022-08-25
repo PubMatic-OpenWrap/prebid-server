@@ -5,7 +5,7 @@ git config --global user.name "Nilesh Chate"
 git config --global user.email "nilesh.chate@pubmatic.com"
 echo "$GITHUB_TOKEN" > .githubtoken
 unset GITHUB_TOKEN
-gh auth login --with-token < .githubtoken
+gh auth login -p https --with-token < .githubtoken
 rm .githubtoken
 
 prefix="v"
