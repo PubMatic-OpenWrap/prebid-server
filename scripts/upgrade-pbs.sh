@@ -1,5 +1,13 @@
 #!/bin/bash -e
 
+# TODO MOVE THIS TO CI SECRETS
+git config --global nilesh.chate "Nilesh Chate"
+git config --global user.email "nilesh.chate@pubmatic.com"
+echo "$GITHUB_TOKEN" > .githubtoken
+unset GITHUB_TOKEN
+gh auth login --with-token < .githubtoken
+rm .githubtoken
+
 prefix="v"
 upgrade_version=$TARGET_VERSION
 attempt=$BUILD_NUMBER
@@ -85,7 +93,7 @@ clear_log() {
             gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
 
             git checkout $target_branch # go back to the feature branch so that we pull the resolved changes
-        elif grep -q "git merge master --no-edit" "$CHECKLOG"; then
+        elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
             current_branch="$(git rev-parse --abbrev-ref HEAD)-fix-tests-$attempt"
             git checkout -b $current_branch
 
