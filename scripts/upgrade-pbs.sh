@@ -2,6 +2,7 @@
 
 prefix="v"
 upgrade_version=$TARGET_VERSION
+attempt=$BUILD_NUMBER
 
 to_major="$(cut -d'.' -f2 <<<"$upgrade_version")"
 to_minor="$(cut -d'.' -f3 <<<"$upgrade_version")"
@@ -10,8 +11,6 @@ to_patch="$(cut -d'.' -f4 <<<"$upgrade_version")"
 if [ ! -d "/tmp/pbs-patch/" ]; then
     mkdir /tmp/pbs-patch/
 fi
-
-attempt=5
 
 usage="
 Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch
@@ -73,20 +72,23 @@ clear_log() {
         log "Exiting with failure!!!"
 
         # create PR for CI-CD run
-        if [ "$cmd" = "git merge master --no-edit" ]; then
-            git merge --abort
-
+        if grep -q "git merge master --no-edit" "$CHECKLOG"; then
             target_branch=$(git rev-parse --abbrev-ref HEAD)
             git push origin $target_branch
             git checkout master
             git checkout -b $target_branch-master
             git push origin $target_branch-master
 
-            echo "Creating PR for $curr_branch <- $curr_branch-master"
+            echo "Creating PR for $curr_branch <- $curr_branch-master. Please fix the conflicts"
 
             gh pr create --repo PubMatic-OpenWrap/prebid-server -d -B $target_branch --title "Merge branch 'master' into $target_branch" --body "Resolve conflicts and continue this upgrade with '$target_branch' as input to CI"
 
             git checkout $target_branch # go back to the feature branch so that we pull the resolved changes
+        elif grep -q "git merge master --no-edit" "$CHECKLOG"; then
+            current_branch="$(git rev-parse --abbrev-ref HEAD)-fix-tests-$attempt"
+            git checkout -b $current_branch
+
+            echo "Please fix test cases in branch $current_branch and rerun this job with this branch as input"
         fi
 
         exit 1
@@ -152,13 +154,6 @@ checkout_branch() {
     # git push origin $upgrade_branch_name
 
     set -e
-#    if [ "$?" -ne 0 ]
-#    then
-#        log "Failed to create branch $upgrade_branch_name. Already working on it???"
-#        exit 1
-#    fi
-
-    git checkout $TARGET_BRANCH
 }
 
 cmd_exe() {
@@ -259,6 +254,14 @@ log "Starting with version split major:$major, minor:$minor, patch:$patch"
 #     git checkout tags/$current_fork_at_version go.sum
 #     git commit go.mod go.sum -m "[upgrade-start-checkpoint] tags/$current_fork_at_version go.mod go.sum"
 # fi
+
+if [ "$START_FROM" = "master" ]; then
+    log "Starting new prebid upgrade"
+else
+    log "Trying to continue upgrade from branch $START_FROM"
+    # git checkout $START_FROM
+    checkpoint_run git merge $START_FROM --no-edit
+fi
 
 log "Checking if last failure was for test case. Need this to pick correct"
 go_mod
