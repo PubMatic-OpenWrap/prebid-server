@@ -179,9 +179,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			if userExt != nil && userExt.Eids != nil {
 				var eidArr []openrtb2.EID
 				for _, eid := range userExt.Eids {
-					//var newEid openrtb2.EID
 					newEid := &openrtb2.EID{
-						// ID:     eid.ID,
+						ID:     eid.ID,
 						Source: eid.Source,
 						Ext:    eid.Ext,
 					}

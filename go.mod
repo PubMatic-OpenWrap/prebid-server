@@ -18,7 +18,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/copystructure v1.2.0
-	github.com/mxmCherry/openrtb/v16 v16.0.0-alpha.2
+	github.com/mxmCherry/openrtb/v16 v16.0.0
 	github.com/prebid/go-gdpr v1.11.0
 	github.com/prebid/prebid-server v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.12.1
@@ -41,6 +41,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-// replace github.com/mxmCherry/openrtb/v16 => github.com/PubMatic-OpenWrap/openrtb/v16 v16
+replace github.com/mxmCherry/openrtb/v16 => github.com/PubMatic-OpenWrap/openrtb/v16 v16.0.0-ow
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
