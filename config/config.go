@@ -767,6 +767,8 @@ func (cfg *Configuration) GetCachedAssetURL(uuid string) string {
 
 // Set the default config values for the viper object we are using.
 func SetupViper(v *viper.Viper, filename string) {
+	defer setupViperOW(v)
+
 	if filename != "" {
 		v.SetConfigName(filename)
 		v.AddConfigPath(".")
@@ -816,10 +818,6 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("http_client_cache.max_idle_connections", 10)
 	v.SetDefault("http_client_cache.max_idle_connections_per_host", 2)
 	v.SetDefault("http_client_cache.idle_connection_timeout_seconds", 60)
-	v.SetDefault("http_client.tls_handshake_timeout", 0)   //no timeout
-	v.SetDefault("http_client.response_header_timeout", 0) //unlimited
-	v.SetDefault("http_client.dial_timeout", 0)            //no timeout
-	v.SetDefault("http_client.dial_keepalive", 0)          //no restriction
 	// no metrics configured by default (metrics{host|database|username|password})
 	v.SetDefault("metrics.disabled_metrics.account_adapter_details", false)
 	v.SetDefault("metrics.disabled_metrics.account_debug", true)
@@ -838,7 +836,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("metrics.prometheus.subsystem", "")
 	v.SetDefault("metrics.prometheus.timeout_ms", 10000)
 	v.SetDefault("category_mapping.filesystem.enabled", true)
-	v.SetDefault("category_mapping.filesystem.directorypath", "/home/http/GO_SERVER/dmhbserver/static/category-mapping")
+	v.SetDefault("category_mapping.filesystem.directorypath", "./static/category-mapping")
 	v.SetDefault("category_mapping.http.endpoint", "")
 	v.SetDefault("stored_requests.filesystem.enabled", false)
 	v.SetDefault("stored_requests.filesystem.directorypath", "./stored_requests/data/by_id")
@@ -1108,14 +1106,12 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.unicorn.endpoint", "https://ds.uncn.jp/pb/0/bid.json")
 	v.SetDefault("adapters.unruly.endpoint", "https://targeting.unrulymedia.com/unruly_prebid_server")
 	v.SetDefault("adapters.valueimpression.endpoint", "http://useast.quantumdex.io/auction/pbs")
-	v.SetDefault("adapters.vastbidder.endpoint", "https://test.com")
 	v.SetDefault("adapters.verizonmedia.disabled", true)
 	v.SetDefault("adapters.videobyte.endpoint", "https://x.videobyte.com/ortbhb")
 	v.SetDefault("adapters.vidoomy.endpoint", "https://p.vidoomy.com/api/rtbserver/pbs")
 	v.SetDefault("adapters.viewdeos.endpoint", "http://ghb.sync.viewdeos.com/pbs/ortb")
 	v.SetDefault("adapters.visx.endpoint", "https://t.visx.net/s2s_bid?wrapperType=s2s_prebid_standard:0.1.1")
-	v.SetDefault("adapters.vrtcal.endpoint", "http://rtb.vrtcal.com/bidder_prebid.vap?ssp=1812")
-	v.SetDefault("adapters.yahoossp.disabled", true)
+	v.SetDefault("adapters.vrtcal.endpoint", "http://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804")
 	v.SetDefault("adapters.yahoossp.endpoint", "https://s2shb.ssp.yahoo.com/admax/bid/partners/PBS")
 	v.SetDefault("adapters.yeahmobi.endpoint", "https://{{.Host}}/prebid/bid")
 	v.SetDefault("adapters.yieldlab.endpoint", "https://ad.yieldlab.net/yp/")
@@ -1137,8 +1133,6 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)
 	v.SetDefault("gdpr.host_vendor_id", 0)
-	v.SetDefault("gdpr.default_value", "0")
-	v.SetDefault("gdpr.usersync_if_ambiguous", true)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})
