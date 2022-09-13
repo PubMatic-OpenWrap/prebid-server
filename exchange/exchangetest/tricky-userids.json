@@ -73,7 +73,11 @@
             }
           ],
           "ext": {
-            "prebid": {}
+            "prebid": {
+              "aliases": {
+                "districtm": "appnexus"
+              }
+            }
           }
         }
       },
@@ -107,7 +111,11 @@
             }
           ],
           "ext": {
-            "prebid": {}
+            "prebid": {
+              "aliases": {
+                "districtm": "appnexus"
+              }
+            }
           }
         }
       },
@@ -139,7 +147,11 @@
             }
           ],
           "ext": {
-            "prebid": {}
+            "prebid": {
+              "aliases": {
+                "districtm": "appnexus"
+              }
+            }
           }
         }
       },

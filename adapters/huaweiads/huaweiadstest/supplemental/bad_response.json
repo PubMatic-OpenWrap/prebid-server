@@ -132,8 +132,7 @@
           },
           "regs": {
           },
-          "version": "3.4",
-          "clientAdRequestId": "test-req-id"
+          "version": "3.4"
         }
       },
       "mockResponse": {
@@ -222,7 +221,7 @@
   "expectedMakeRequestsErrors": [],
   "expectedMakeBidsErrors": [
     {
-      "value": "convert huaweiads response to bidder response failed: multiad length is 0, get no ads from huawei side.",
+      "value": "convertHuaweiAdsResp2BidderResp: multiad length is 0, get no ads from huawei side.",
       "comparison": "literal"
     }
   ]

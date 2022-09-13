@@ -6,12 +6,10 @@ capabilities:
     mediaTypes:
       - banner
       - video
-      - native
   site:
     mediaTypes:
       - banner
       - video
-      - native
 userSync:
   iframe:
     url: "https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&predirect={{.RedirectURL}}"

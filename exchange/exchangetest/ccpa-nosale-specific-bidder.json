@@ -6,19 +6,17 @@
             "site": {
                 "page": "test.somepage.com"
             },
-            "imp": [
-                {
-                    "id": "my-imp-id",
-                    "video": {
-                        "mimes": ["video/mp4"]
-                    },
-                    "ext": {
-                        "appnexus": {
-                            "placementId": 1
-                        }
+            "imp": [{
+                "id": "my-imp-id",
+                "video": {
+                    "mimes": ["video/mp4"]
+                },
+                "ext": {
+                    "appnexus": {
+                        "placementId": 1
                     }
                 }
-            ],
+            }],
             "regs": {
                 "ext": {
                     "us_privacy": "1-Y-"
@@ -42,26 +40,26 @@
                     "site": {
                         "page": "test.somepage.com"
                     },
-                    "imp": [
-                        {
-                            "id": "my-imp-id",
-                            "video": {
-                                "mimes": ["video/mp4"]
-                            },
-                            "ext": {
-                                "bidder": {
-                                    "placementId": 1
-                                }
+                    "imp": [{
+                        "id": "my-imp-id",
+                        "video": {
+                            "mimes": ["video/mp4"]
+                        },
+                        "ext": {
+                            "bidder": {
+                                "placementId": 1
                             }
                         }
-                    ],
+                    }],
                     "regs": {
                         "ext": {
                             "us_privacy": "1-Y-"
                         }
                     },
                     "ext": {
-                        "prebid": {}
+                        "prebid": {
+                            "nosale": ["appnexus"]
+                        }
                     },
                     "user": {
                         "buyeruid": "some-buyer-id"

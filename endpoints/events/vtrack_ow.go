@@ -9,8 +9,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -95,9 +94,9 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 			// }
 
 			switch imp.Video.Linearity {
-			case adcom1.LinearityLinear:
+			case openrtb2.VideoLinearityLinearInStream:
 				creative.AddChild(doc.CreateElement("Linear"))
-			case adcom1.LinearityNonLinear:
+			case openrtb2.VideoLinearityNonLinearOverlay:
 				creative.AddChild(doc.CreateElement("NonLinearAds"))
 			default: // create both type of creatives
 				creative.AddChild(doc.CreateElement("Linear"))

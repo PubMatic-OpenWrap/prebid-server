@@ -11,8 +11,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/config"
 
 	"github.com/prebid/prebid-server/adapters"
@@ -311,9 +310,9 @@ func preprocess(imp *openrtb2.Imp, defaultDisplayManagerVer string) (string, boo
 	if imp.Banner != nil {
 		bannerCopy := *imp.Banner
 		if appnexusExt.Position == "above" {
-			bannerCopy.Pos = adcom1.PositionAboveFold.Ptr()
+			bannerCopy.Pos = openrtb2.AdPositionAboveTheFold.Ptr()
 		} else if appnexusExt.Position == "below" {
-			bannerCopy.Pos = adcom1.PositionBelowFold.Ptr()
+			bannerCopy.Pos = openrtb2.AdPositionBelowTheFold.Ptr()
 		}
 
 		// Fixes #307

@@ -19,7 +19,6 @@ const (
 	VideoDataType      DataType = "Video"
 	AMPRequestDataType DataType = "AMP Request"
 	AccountDataType    DataType = "Account"
-	ResponseDataType   DataType = "Response"
 )
 
 // Section returns the config section this type is defined in
@@ -30,7 +29,6 @@ func (dataType DataType) Section() string {
 		VideoDataType:      "stored_video_req",
 		AMPRequestDataType: "stored_amp_req",
 		AccountDataType:    "accounts",
-		ResponseDataType:   "stored_responses",
 	}[dataType]
 }
 
@@ -135,7 +133,6 @@ func resolvedStoredRequestsConfig(cfg *Configuration) {
 	cfg.StoredVideo.dataType = VideoDataType
 	cfg.CategoryMapping.dataType = CategoryDataType
 	cfg.Accounts.dataType = AccountDataType
-	cfg.StoredResponses.dataType = ResponseDataType
 }
 
 func (cfg *StoredRequests) validate(errs []error) []error {

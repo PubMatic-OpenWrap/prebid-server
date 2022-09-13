@@ -21,8 +21,8 @@
             }
           },
           "bidder": {
-            "accountId": 12345,
-            "publisherId": "123456",
+            "accountId": 199578,
+            "publisherId": 123456,
             "mediaId": "test_media",
             "placementId": "test_placement"
           }
@@ -88,9 +88,8 @@
                 "version": "1.9.0"
               }
             },
-            "id": "test_media",
             "publisher": {
-              "id": "123456"
+              "id": "test"
             },
             "ver": "1.9.0"
           },
@@ -118,7 +117,7 @@
                 "id": "test"
               }
             },
-            "accountId": 12345
+            "accountId": 199578
           },
           "id": "CFD24FB1-916F-467D-8825-34892B315DB7",
           "imp": [
@@ -134,8 +133,8 @@
               },
               "ext": {
                 "bidder": {
-                  "accountId": 12345,
-                  "publisherId": "123456",
+                  "accountId": 199578,
+                  "publisherId": 123456,
                   "mediaId": "test_media",
                   "placementId": "test_placement"
                 }

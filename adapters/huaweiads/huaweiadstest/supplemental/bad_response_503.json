@@ -132,8 +132,7 @@
           },
           "regs": {
           },
-          "version": "3.4",
-          "clientAdRequestId": "test-req-id"
+          "version": "3.4"
         }
       },
       "mockResponse": {

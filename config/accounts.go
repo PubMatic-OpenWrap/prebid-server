@@ -227,12 +227,11 @@ func (a *AccountIntegration) GetByIntegrationType(integrationType IntegrationTyp
 }
 
 type AlternateBidderCodes struct {
-	Enabled bool                                   `mapstructure:"enabled" json:"enabled"`
-	Bidders map[string]AdapterAlternateBidderCodes `mapstructure:"bidders" json:"bidders"`
+	Enabled  bool                                   `mapstructure:"enabled" json:"enabled"`
+	Adapters map[string]AdapterAlternateBidderCodes `mapstructure:"adapters" json:"adapters"`
 }
 
 type AdapterAlternateBidderCodes struct {
-	Enabled            bool     `mapstructure:"enabled" json:"enabled"`
 	AllowedBidderCodes []string `mapstructure:"allowedbiddercodes" json:"allowedbiddercodes"`
 }
 
@@ -247,21 +246,20 @@ func (bidderCodes *AlternateBidderCodes) IsValidBidderCode(bidder, alternateBidd
 		return false, nil
 	}
 
-	if bidderCodes.Bidders == nil {
+	if bidderCodes.Adapters == nil {
 		return false, fmt.Errorf(ErrAlternateBidderNotDefined, bidder, alternateBidder)
 	}
 
-	adapterCfg, ok := bidderCodes.Bidders[bidder]
+	adapterCfg, ok := bidderCodes.Adapters[bidder]
 	if !ok {
 		return false, fmt.Errorf(ErrAlternateBidderNotDefined, bidder, alternateBidder)
 	}
 
-	if !adapterCfg.Enabled {
-		// config has bidder entry but is not enabled, report it
+	if len(adapterCfg.AllowedBidderCodes) == 0 {
 		return false, fmt.Errorf("alternateBidderCodes disabled for %q, rejecting bids for %q", bidder, alternateBidder)
 	}
 
-	if adapterCfg.AllowedBidderCodes == nil || (len(adapterCfg.AllowedBidderCodes) == 1 && adapterCfg.AllowedBidderCodes[0] == "*") {
+	if adapterCfg.AllowedBidderCodes[0] == "*" {
 		return true, nil
 	}
 
