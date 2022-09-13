@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+
 	"github.com/lib/pq"
 
 	"github.com/golang/glog"
@@ -138,7 +139,7 @@ func (fetcher *dbFetcher) FetchResponses(ctx context.Context, ids []string) (dat
 
 }
 
-func (fetcher *dbFetcher) FetchAccount(ctx context.Context, accountID string) (json.RawMessage, []error) {
+func (fetcher *dbFetcher) FetchAccount(ctx context.Context, accountDefaultsJSON json.RawMessage, accountID string) (json.RawMessage, []error) {
 	return nil, []error{stored_requests.NotFoundError{accountID, "Account"}}
 }
 

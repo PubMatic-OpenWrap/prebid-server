@@ -134,7 +134,7 @@ func TestMultiFetcherAccountFoundInFirstFetcher(t *testing.T) {
 
 	f1.On("FetchAccount", ctx, "ONE").Once().Return(json.RawMessage(`{"id": "ONE"}`), []error{})
 
-	account, errs := fetcher.FetchAccount(ctx, "ONE")
+	account, errs := fetcher.FetchAccount(ctx, []byte(`{"disabled":false}`), "ONE")
 
 	f1.AssertExpectations(t)
 	f2.AssertNotCalled(t, "FetchAccount")
@@ -151,7 +151,7 @@ func TestMultiFetcherAccountFoundInSecondFetcher(t *testing.T) {
 	f1.On("FetchAccount", ctx, "TWO").Once().Return(json.RawMessage(``), []error{NotFoundError{"TWO", "Account"}})
 	f2.On("FetchAccount", ctx, "TWO").Once().Return(json.RawMessage(`{"id": "TWO"}`), []error{})
 
-	account, errs := fetcher.FetchAccount(ctx, "TWO")
+	account, errs := fetcher.FetchAccount(ctx, []byte(`{"disabled":false}`), "TWO")
 
 	f1.AssertExpectations(t)
 	f2.AssertExpectations(t)
@@ -168,7 +168,7 @@ func TestMultiFetcherAccountNotFound(t *testing.T) {
 	f1.On("FetchAccount", ctx, "MISSING").Once().Return(json.RawMessage(``), []error{NotFoundError{"TWO", "Account"}})
 	f2.On("FetchAccount", ctx, "MISSING").Once().Return(json.RawMessage(``), []error{NotFoundError{"TWO", "Account"}})
 
-	account, errs := fetcher.FetchAccount(ctx, "MISSING")
+	account, errs := fetcher.FetchAccount(ctx, []byte(`{"disabled":false}`), "MISSING")
 
 	f1.AssertExpectations(t)
 	f2.AssertExpectations(t)

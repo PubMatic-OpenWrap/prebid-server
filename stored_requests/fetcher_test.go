@@ -243,7 +243,7 @@ func TestAccountCacheHit(t *testing.T) {
 		})
 
 	metricsEngine.On("RecordAccountCacheResult", metrics.CacheHit, 1)
-	account, errs := aFetcherWithCache.FetchAccount(ctx, "known")
+	account, errs := aFetcherWithCache.FetchAccount(ctx, []byte(`{"disabled":false}`), "known")
 
 	accCache.AssertExpectations(t)
 	fetcher.AssertExpectations(t)
@@ -266,7 +266,7 @@ func TestAccountCacheMiss(t *testing.T) {
 	fetcher.On("FetchAccount", ctx, "uncached").Return(uncachedAccountsData["uncached"], []error{})
 	metricsEngine.On("RecordAccountCacheResult", metrics.CacheMiss, 1)
 
-	account, errs := aFetcherWithCache.FetchAccount(ctx, "uncached")
+	account, errs := aFetcherWithCache.FetchAccount(ctx, []byte(`{"disabled":false}`), "uncached")
 
 	accCache.AssertExpectations(t)
 	fetcher.AssertExpectations(t)
@@ -348,7 +348,7 @@ func (f *mockFetcher) FetchResponses(ctx context.Context, ids []string) (data ma
 	return args.Get(0).(map[string]json.RawMessage), args.Get(1).([]error)
 }
 
-func (a *mockFetcher) FetchAccount(ctx context.Context, accountID string) (json.RawMessage, []error) {
+func (a *mockFetcher) FetchAccount(ctx context.Context, accountDefaultJSON json.RawMessage, accountID string) (json.RawMessage, []error) {
 	args := a.Called(ctx, accountID)
 	return args.Get(0).(json.RawMessage), args.Get(1).([]error)
 }

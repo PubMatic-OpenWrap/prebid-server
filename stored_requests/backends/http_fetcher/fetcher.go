@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/stored_requests"
+	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context/ctxhttp"
@@ -149,7 +150,7 @@ func (fetcher *HttpFetcher) FetchAccounts(ctx context.Context, accountIDs []stri
 }
 
 // FetchAccount fetchers a single accountID and returns its corresponding json
-func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountID string) (accountJSON json.RawMessage, errs []error) {
+func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountDefaultsJSON json.RawMessage, accountID string) (accountJSON json.RawMessage, errs []error) {
 	accountData, errs := fetcher.FetchAccounts(ctx, []string{accountID})
 	if len(errs) > 0 {
 		return nil, errs
@@ -161,7 +162,11 @@ func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountID string) 
 			DataType: "Account",
 		}}
 	}
-	return accountJSON, nil
+	completeJSON, err := jsonpatch.MergePatch(accountDefaultsJSON, accountJSON)
+	if err != nil {
+		return nil, []error{fmt.Errorf("Unable to merge patch accunt json and account defatuls for accountID: %v | Error: %v", accountID, err)}
+	}
+	return completeJSON, nil
 }
 
 func (fetcher *HttpFetcher) FetchCategories(ctx context.Context, primaryAdServer, publisherId, iabCategory string) (string, error) {

@@ -11,7 +11,6 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
-	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 )
 
 // GetAccount looks up the config.Account object referenced by the given accountID, with access rules applied
@@ -27,7 +26,7 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 			Message: fmt.Sprintf("Prebid-server has been configured to discard requests without a valid Account ID. Please reach out to the prebid server host."),
 		}}
 	}
-	if accountJSON, accErrs := fetcher.FetchAccount(ctx, accountID); len(accErrs) > 0 || accountJSON == nil {
+	if accountJSON, accErrs := fetcher.FetchAccount(ctx, cfg.AccountDefaultsJSON(), accountID); len(accErrs) > 0 || accountJSON == nil {
 		// accountID does not reference a valid account
 		for _, e := range accErrs {
 			if _, ok := e.(stored_requests.NotFoundError); !ok {
@@ -48,10 +47,7 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 	} else {
 		// accountID resolved to a valid account, merge with AccountDefaults for a complete config
 		account = &config.Account{}
-		completeJSON, err := jsonpatch.MergePatch(cfg.AccountDefaultsJSON(), accountJSON)
-		if err == nil {
-			err = json.Unmarshal(completeJSON, account)
-		}
+		err := json.Unmarshal(accountJSON, account)
 		if err != nil {
 			errs = append(errs, err)
 			return nil, errs

@@ -1661,7 +1661,7 @@ type FakeAccountsFetcher struct {
 	AccountData map[string]json.RawMessage
 }
 
-func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountID string) (json.RawMessage, []error) {
+func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountDefaultJSON json.RawMessage, accountID string) (json.RawMessage, []error) {
 	if account, ok := f.AccountData[accountID]; ok {
 		return account, nil
 	}
