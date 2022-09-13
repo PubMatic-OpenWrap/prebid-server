@@ -33,8 +33,7 @@
 					"adUnits": [
 						{
 							"auId": "123",
-							"targetId": "123-test-network",
-							"dimensions": [[300,250],[300,600]]
+							"targetId": "123-test-network"
 						}
 					],
 					"context": "unknown",

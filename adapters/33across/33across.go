@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -48,7 +47,7 @@ type bidExt struct {
 }
 
 type bidTtxExt struct {
-	MediaType string `json:"mediaType,omitempty"`
+	MediaType string `json:mediaType,omitempty`
 }
 
 // MakeRequests create the object for TTX Reqeust.
@@ -262,7 +261,7 @@ func validateVideoParams(video *openrtb2.Video, prod string) (*openrtb2.Video, e
 		videoCopy.Placement = 1
 
 		if videoCopy.StartDelay == nil {
-			videoCopy.StartDelay = adcom1.StartDelay.Ptr(0)
+			videoCopy.StartDelay = openrtb2.StartDelay.Ptr(0)
 		}
 	}
 

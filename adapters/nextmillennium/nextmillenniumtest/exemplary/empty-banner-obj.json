@@ -26,20 +26,7 @@
                 "id": "g7819;;"
               }
             }
-          },
-          "imp": [
-            {
-              "banner": {},
-              "ext": {
-                "prebid": {
-                  "storedrequest": {
-                    "id": "g7819;;"
-                  }
-                }
-              },
-              "id": "testimpid"
-            }
-          ]
+          }
         }
       },
       "mockResponse": {

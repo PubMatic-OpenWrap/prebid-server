@@ -22,7 +22,7 @@
         "ext": {
           "bidder": {
             "slotid": "m8x9x3roll",
-            "adtype": "interstitial",
+            "adtype": "roll",
             "publisherid": "123123123",
             "signkey": "signkey",
             "keyid": "41",
@@ -98,11 +98,9 @@
           },
           "multislot": [
             {
-              "adtype": 12,
+              "adtype": 60,
               "slotid": "m8x9x3roll",
-              "test": 0,
-              "w": 300,
-              "h": 250
+              "test": 0
             }
           ],
           "device": {
@@ -130,8 +128,7 @@
           },
           "regs": {
           },
-          "version": "3.4",
-          "clientAdRequestId": "test-req-id"
+          "version": "3.4"
         }
       },
       "mockResponse": {
@@ -140,12 +137,13 @@
           "multiad": [
             {
               "adtype": 60,
+              "brsetting": "Y",
               "content": [
                 {
                   "contentid": "58001445",
                   "creativetype": 106,
                   "endtime": 1621344684645,
-                  "interactiontype": 1,
+                  "interactiontype": 2,
                   "landingTitle": 1,
                   "metaData": {
                     "adSign": "2",
@@ -286,6 +284,11 @@
                       ]
                     }
                   ],
+                  "paramfromserver": {
+                    "a": "1||test",
+                    "sig": "",
+                    "t": "99990101235959"
+                  },
                   "price": 2.8,
                   "starttime": 1620230400000,
                   "taskid": "48016632"
@@ -293,6 +296,14 @@
               ],
               "retcode30": 200,
               "slotid": "m8x9x3roll"
+            }
+          ],
+          "noReportAdTypeEventList": [
+            {
+              "adType": 8,
+              "eventTypeList": [
+                "exception_6"
+              ]
             }
           ],
           "retcode": 200,

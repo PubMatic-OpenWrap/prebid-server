@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -150,13 +149,13 @@ func (a *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	return bidResponse, nil
 }
 
-func getMediaTypeForBid(attr []adcom1.CreativeAttribute) openrtb_ext.BidType {
+func getMediaTypeForBid(attr []openrtb2.CreativeAttribute) openrtb_ext.BidType {
 	for i := 0; i < len(attr); i++ {
-		if attr[i] == adcom1.AttrHasSkipButton {
+		if attr[i] == openrtb2.CreativeAttribute(16) {
 			return openrtb_ext.BidTypeVideo
-		} else if attr[i] == adcom1.AttrVideoAuto {
+		} else if attr[i] == openrtb2.CreativeAttribute(6) {
 			return openrtb_ext.BidTypeVideo
-		} else if attr[i] == adcom1.AttrVideoUser {
+		} else if attr[i] == openrtb2.CreativeAttribute(7) {
 			return openrtb_ext.BidTypeVideo
 		}
 	}

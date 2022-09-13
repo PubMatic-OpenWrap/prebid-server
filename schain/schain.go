@@ -3,14 +3,12 @@ package schain
 import (
 	"fmt"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
-
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 // BidderToPrebidSChains organizes the ORTB 2.5 multiple root schain nodes into a map of schain nodes by bidder
-func BidderToPrebidSChains(sChains []*openrtb_ext.ExtRequestPrebidSChain) (map[string]*openrtb2.SupplyChain, error) {
-	bidderToSChains := make(map[string]*openrtb2.SupplyChain)
+func BidderToPrebidSChains(sChains []*openrtb_ext.ExtRequestPrebidSChain) (map[string]*openrtb_ext.ExtRequestPrebidSChainSChain, error) {
+	bidderToSChains := make(map[string]*openrtb_ext.ExtRequestPrebidSChainSChain)
 
 	for _, schainWrapper := range sChains {
 		for _, bidder := range schainWrapper.Bidders {

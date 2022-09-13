@@ -56,7 +56,15 @@
             }
           ],
           "ext": {
-            "prebid": {}
+            "prebid": {
+              "aliases": {
+                "districtm": "appnexus"
+              },
+              "bidadjustmentfactors": {
+                "appnexus": 2.5,
+                "districtm": 0.3
+              }
+            }
           }
         },
         "bidAdjustments": {
@@ -89,7 +97,15 @@
             }
           ],
           "ext": {
-            "prebid": {}
+            "prebid": {
+              "aliases": {
+                "districtm": "appnexus"
+              },
+              "bidadjustmentfactors": {
+                "appnexus": 2.5,
+                "districtm": 0.3
+              }
+            }
           }
         },
         "bidAdjustments": {

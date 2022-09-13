@@ -125,8 +125,7 @@
           },
           "regs": {
           },
-          "version": "3.4",
-          "clientAdRequestId": "test-req-id"
+          "version": "3.4"
         }
       },
       "mockResponse": {
@@ -141,7 +140,7 @@
                   "contentid": "58022259",
                   "creativetype": 106,
                   "endtime": 1621344684645,
-                  "interactiontype": 1,
+                  "interactiontype": 2,
                   "landingTitle": 1,
                   "metaData": {
                     "adSign": "2",

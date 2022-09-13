@@ -6,8 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
@@ -206,12 +205,12 @@ func Test_getBidType(t *testing.T) {
 	}{
 		{
 			name: "VPAID 1.0",
-			args: args{openrtb2.Bid{API: adcom1.APIVPAID10}, avocetBidExt{}},
+			args: args{openrtb2.Bid{API: openrtb2.APIFrameworkVPAID10}, avocetBidExt{}},
 			want: openrtb_ext.BidTypeVideo,
 		},
 		{
 			name: "VPAID 2.0",
-			args: args{openrtb2.Bid{API: adcom1.APIVPAID20}, avocetBidExt{}},
+			args: args{openrtb2.Bid{API: openrtb2.APIFrameworkVPAID20}, avocetBidExt{}},
 			want: openrtb_ext.BidTypeVideo,
 		},
 		{

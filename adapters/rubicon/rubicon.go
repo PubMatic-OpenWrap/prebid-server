@@ -14,8 +14,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 )
 
 const badvLimitSize = 50
@@ -98,12 +97,12 @@ type rubiconDataExt struct {
 }
 
 type rubiconUserExt struct {
-	Consent     string               `json:"consent,omitempty"`
-	Eids        []openrtb2.EID       `json:"eids,omitempty"`
-	TpID        []rubiconExtUserTpID `json:"tpid,omitempty"`
-	RP          rubiconUserExtRP     `json:"rp"`
-	LiverampIdl string               `json:"liveramp_idl,omitempty"`
-	Data        json.RawMessage      `json:"data,omitempty"`
+	Consent     string                   `json:"consent,omitempty"`
+	Eids        []openrtb_ext.ExtUserEid `json:"eids,omitempty"`
+	TpID        []rubiconExtUserTpID     `json:"tpid,omitempty"`
+	RP          rubiconUserExtRP         `json:"rp"`
+	LiverampIdl string                   `json:"liveramp_idl,omitempty"`
+	Data        json.RawMessage          `json:"data,omitempty"`
 }
 
 type rubiconSiteExtRP struct {
@@ -328,7 +327,7 @@ func parseRubiconSizes(sizes []openrtb2.Format) (primary int, alt []int, err err
 	return
 }
 
-func resolveVideoSizeId(placement adcom1.VideoPlacementSubtype, instl int8, impId string) (sizeID int, err error) {
+func resolveVideoSizeId(placement openrtb2.VideoPlacementType, instl int8, impId string) (sizeID int, err error) {
 	if placement != 0 {
 		if placement == 1 {
 			return 201, nil
@@ -899,13 +898,13 @@ func contains(s []int, e int) bool {
 	return false
 }
 
-func extractUserBuyerUID(eids []openrtb2.EID) string {
+func extractUserBuyerUID(eids []openrtb_ext.ExtUserEid) string {
 	for _, eid := range eids {
 		if eid.Source != "rubiconproject.com" {
 			continue
 		}
 
-		for _, uid := range eid.UIDs {
+		for _, uid := range eid.Uids {
 			var uidExt rubiconUserExtEidUidExt
 			err := json.Unmarshal(uid.Ext, &uidExt)
 			if err != nil {
@@ -921,7 +920,7 @@ func extractUserBuyerUID(eids []openrtb2.EID) string {
 	return ""
 }
 
-func getTpIdsAndSegments(eids []openrtb2.EID) (mappedRubiconUidsParam, []error) {
+func getTpIdsAndSegments(eids []openrtb_ext.ExtUserEid) (mappedRubiconUidsParam, []error) {
 	rubiconUidsParam := mappedRubiconUidsParam{
 		tpIds:    make([]rubiconExtUserTpID, 0),
 		segments: make([]string, 0),
@@ -931,7 +930,7 @@ func getTpIdsAndSegments(eids []openrtb2.EID) (mappedRubiconUidsParam, []error) 
 	for _, eid := range eids {
 		switch eid.Source {
 		case "adserver.org":
-			uids := eid.UIDs
+			uids := eid.Uids
 			if len(uids) > 0 {
 				uid := uids[0]
 
@@ -950,7 +949,7 @@ func getTpIdsAndSegments(eids []openrtb2.EID) (mappedRubiconUidsParam, []error) 
 				}
 			}
 		case "liveintent.com":
-			uids := eid.UIDs
+			uids := eid.Uids
 			if len(uids) > 0 {
 				uidId := uids[0].ID
 				if uidId != "" {
@@ -969,7 +968,7 @@ func getTpIdsAndSegments(eids []openrtb2.EID) (mappedRubiconUidsParam, []error) 
 				}
 			}
 		case "liveramp.com":
-			uids := eid.UIDs
+			uids := eid.Uids
 			if len(uids) > 0 {
 				uidId := uids[0].ID
 				if uidId != "" && rubiconUidsParam.liverampIdl == "" {

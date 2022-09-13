@@ -2,11 +2,10 @@ package spotx
 
 import (
 	"encoding/json"
-	"testing"
-
 	"github.com/magiconair/properties/assert"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"testing"
 )
 
 func TestSpotxMakeBid(t *testing.T) {
