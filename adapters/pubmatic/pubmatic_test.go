@@ -287,6 +287,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 		{
 			name: "happy path, valid response with all bid params",
 			args: args{
+				externalRequest: &adapters.RequestData{},
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
@@ -312,6 +313,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 						DealPriority: 1,
 						BidType:      openrtb_ext.BidTypeBanner,
 						BidVideo:     &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets:   make(map[string]string),
 					},
 				},
 				Currency: "USD",
@@ -320,6 +322,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 		{
 			name: "ignore invalid prebiddealpriority",
 			args: args{
+				externalRequest: &adapters.RequestData{},
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
@@ -342,8 +345,9 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							DealID:  "testdeal",
 							Ext:     json.RawMessage(`{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}`),
 						},
-						BidType:  openrtb_ext.BidTypeBanner,
-						BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: make(map[string]string),
 					},
 				},
 				Currency: "USD",
