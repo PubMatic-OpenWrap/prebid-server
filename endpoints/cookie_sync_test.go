@@ -766,9 +766,9 @@ func TestCookieSyncParseRequest(t *testing.T) {
 				gdprConfig:  test.givenGDPRConfig,
 				ccpaEnforce: test.givenCCPAEnabled,
 			},
-			accountsFetcher: FakeAccountsFetcher{AccountData: map[string]json.RawMessage{
-				"TestAccount":     json.RawMessage(`{"cookie_sync": {"default_limit": 20, "max_limit": 30, "default_coop_sync": true}}`),
-				"DisabledAccount": json.RawMessage(`{"disabled":true}`),
+			accountsFetcher: FakeAccountsFetcher{AccountData: map[string]*config.Account{
+				"TestAccount":     &config.Account{CookieSync: config.CookieSync{DefaultLimit: 20, MaxLimit: 30, DefaultCoopSync: true}},
+				"DisabledAccount": &config.Account{Disabled: true},
 			}},
 		}
 		assert.NoError(t, endpoint.config.MarshalAccountDefaults())
@@ -887,11 +887,12 @@ func TestSetLimit(t *testing.T) {
 			config: &config.Configuration{
 				UserSync: test.givenConfig,
 			},
-			accountsFetcher: FakeAccountsFetcher{AccountData: map[string]json.RawMessage{
-				"TestAccount":          json.RawMessage(`{"cookie_sync": {"default_limit": 20, "max_limit": 30, "default_coop_sync": true}}`),
-				"DisabledAccount":      json.RawMessage(`{"disabled":true}`),
-				"ZeroLimitAccount":     json.RawMessage(`{"cookie_sync": {"default_limit": 0, "max_limit": 30, "default_coop_sync": true}}`),
-				"NegativeLimitAccount": json.RawMessage(`{"cookie_sync": {"default_limit": -1, "max_limit": -1, "default_coop_sync": true}}`),
+			accountsFetcher: FakeAccountsFetcher{AccountData: map[string]*config.Account{
+				"TestAccount":     {CookieSync: config.CookieSync{DefaultLimit: 20, MaxLimit: 30, DefaultCoopSync: true}},
+				"DisabledAccount": {Disabled: true},
+
+				"ZeroLimitAccount":     {CookieSync: config.CookieSync{DefaultLimit: 0, MaxLimit: 30, DefaultCoopSync: true}},
+				"NegativeLimitAccount": {CookieSync: config.CookieSync{DefaultLimit: -1, MaxLimit: -1, DefaultCoopSync: true}},
 			}},
 		}
 		assert.NoError(t, endpoint.config.MarshalAccountDefaults())
@@ -1658,10 +1659,10 @@ func (m *MockGDPRPerms) AuctionActivitiesAllowed(ctx context.Context, bidderCore
 }
 
 type FakeAccountsFetcher struct {
-	AccountData map[string]json.RawMessage
+	AccountData map[string]*config.Account
 }
 
-func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountID string) (json.RawMessage, []error) {
+func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountDefaultJSON json.RawMessage, accountID string) (*config.Account, []error) {
 	if account, ok := f.AccountData[accountID]; ok {
 		return account, nil
 	}

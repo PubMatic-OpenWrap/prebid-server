@@ -10,7 +10,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/stored_requests"
+	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context/ctxhttp"
@@ -149,7 +151,7 @@ func (fetcher *HttpFetcher) FetchAccounts(ctx context.Context, accountIDs []stri
 }
 
 // FetchAccount fetchers a single accountID and returns its corresponding json
-func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountID string) (accountJSON json.RawMessage, errs []error) {
+func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountDefaultsJSON json.RawMessage, accountID string) (*config.Account, []error) {
 	accountData, errs := fetcher.FetchAccounts(ctx, []string{accountID})
 	if len(errs) > 0 {
 		return nil, errs
@@ -161,7 +163,25 @@ func (fetcher *HttpFetcher) FetchAccount(ctx context.Context, accountID string) 
 			DataType: "Account",
 		}}
 	}
-	return accountJSON, nil
+	// accountID resolved to a valid account, merge with AccountDefaults for a complete config
+	account := &config.Account{}
+	completeJSON, err := jsonpatch.MergePatch(accountDefaultsJSON, accountJSON)
+	if err == nil {
+		err = json.Unmarshal(completeJSON, account)
+	}
+	if err != nil {
+		errs = append(errs, err)
+		return nil, errs
+	}
+	// Fill in ID if needed, so it can be left out of account definition
+	if len(account.ID) == 0 {
+		account.ID = accountID
+	}
+	if account.Events.Enabled {
+		// process and event urls /templates to macroProcessor
+		config.UpdateMacroProcessor(account.Events)
+	}
+	return account, nil
 }
 
 func (fetcher *HttpFetcher) FetchCategories(ctx context.Context, primaryAdServer, publisherId, iabCategory string) (string, error) {

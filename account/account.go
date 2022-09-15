@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -12,7 +11,6 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
-	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 )
 
 // GetAccount looks up the config.Account object referenced by the given accountID, with access rules applied
@@ -28,7 +26,8 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 			Message: fmt.Sprintf("Prebid-server has been configured to discard requests without a valid Account ID. Please reach out to the prebid server host."),
 		}}
 	}
-	if accountJSON, accErrs := fetcher.FetchAccount(ctx, accountID); len(accErrs) > 0 || accountJSON == nil {
+	var accErrs []error
+	if account, accErrs = fetcher.FetchAccount(ctx, cfg.AccountDefaultsJSON(), accountID); len(accErrs) > 0 || account == nil {
 		// accountID does not reference a valid account
 		for _, e := range accErrs {
 			if _, ok := e.(stored_requests.NotFoundError); !ok {
@@ -47,27 +46,8 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		pubAccount.ID = accountID
 		account = &pubAccount
 	} else {
-		// accountID resolved to a valid account, merge with AccountDefaults for a complete config
-		account = &config.Account{}
-		completeJSON, err := jsonpatch.MergePatch(cfg.AccountDefaultsJSON(), accountJSON)
-		if err == nil {
-			err = json.Unmarshal(completeJSON, account)
-		}
-		if err != nil {
-			errs = append(errs, err)
-			return nil, errs
-		}
-		// Fill in ID if needed, so it can be left out of account definition
-		if len(account.ID) == 0 {
-			account.ID = accountID
-		}
-
 		// Set derived fields
 		setDerivedConfig(account)
-		if account.Events.Enabled {
-			// process and event urls /templates to macroProcessor
-			updateMacroProcessor(account.Events)
-		}
 	}
 	if account.Disabled {
 		errs = append(errs, &errortypes.BlacklistedAcct{
@@ -126,22 +106,4 @@ func setDerivedConfig(account *config.Account) {
 			account.GDPR.BasicEnforcementVendorsMap[v] = struct{}{}
 		}
 	}
-}
-
-func updateMacroProcessor(events config.Events) {
-	// add account specific templates to macroprocessor
-	// TODO: Check if multiple publishers have same template URL
-	// e.g.
-	// pub1 : http://example.com?k=${val} - T1
-	// pub2 : http://example.com?k=${val} /
-	// TODO: Do we need to introduce account context to maintain
-	// templates seperately though they might be same??
-	templates := make([]string, 0)
-	templates = append(templates, events.DefaultURL)
-	for _, vEvent := range events.VASTEvents {
-		if vEvent.URLs != nil {
-			templates = append(templates, vEvent.URLs...)
-		}
-	}
-	config.GetMacroProcessor().AddTemplates(templates...)
 }
