@@ -44,29 +44,29 @@ type dbConnection struct {
 // In the future we should look for ways to simplify this so that it's not doing two things.
 func CreateStoredRequests(cfg *config.StoredRequests, metricsEngine metrics.MetricsEngine, client *http.Client, router *httprouter.Router, dbc *dbConnection) (fetcher stored_requests.AllFetcher, shutdown func()) {
 	// Create database connection if given options for one
-	// if cfg.Postgres.ConnectionInfo.Database != "" {
-	// 	conn := cfg.Postgres.ConnectionInfo.ConnString()
+	if cfg.Postgres.ConnectionInfo.Database != "" {
+		conn := cfg.Postgres.ConnectionInfo.ConnString()
 
-	// 	if dbc.conn == "" {
-	// 		glog.Infof("Connecting to Postgres for Stored %s. DB=%s, host=%s, port=%d, user=%s",
-	// 			cfg.DataType(),
-	// 			cfg.Postgres.ConnectionInfo.Database,
-	// 			cfg.Postgres.ConnectionInfo.Host,
-	// 			cfg.Postgres.ConnectionInfo.Port,
-	// 			cfg.Postgres.ConnectionInfo.Username)
-	// 		db := newPostgresDB(cfg.DataType(), cfg.Postgres.ConnectionInfo)
-	// 		dbc.conn = conn
-	// 		dbc.db = db
-	// 	}
+		if dbc.conn == "" {
+			glog.Infof("Connecting to Postgres for Stored %s. DB=%s, host=%s, port=%d, user=%s",
+				cfg.DataType(),
+				cfg.Postgres.ConnectionInfo.Database,
+				cfg.Postgres.ConnectionInfo.Host,
+				cfg.Postgres.ConnectionInfo.Port,
+				cfg.Postgres.ConnectionInfo.Username)
+			db := newPostgresDB(cfg.DataType(), cfg.Postgres.ConnectionInfo)
+			dbc.conn = conn
+			dbc.db = db
+		}
 
-	// 	// Error out if config is trying to use multiple database connections for different stored requests (not supported yet)
-	// 	if conn != dbc.conn {
-	// 		glog.Fatal("Multiple database connection settings found in config, only a single database connection is currently supported.")
-	// 	}
-	// }
+		// Error out if config is trying to use multiple database connections for different stored requests (not supported yet)
+		if conn != dbc.conn {
+			glog.Fatal("Multiple database connection settings found in config, only a single database connection is currently supported.")
+		}
+	}
 
-	eventProducers := newEventProducers(cfg, client, nil, metricsEngine, router)
-	fetcher = newFetcher(cfg, client, nil)
+	eventProducers := newEventProducers(cfg, client, dbc.db, metricsEngine, router)
+	fetcher = newFetcher(cfg, client, dbc.db)
 
 	var shutdown1 func()
 
