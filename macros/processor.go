@@ -26,7 +26,7 @@ var VAST_BIDDER_MACRO_PROCESSOR Type = 3
 var STRING_INDEX_CACHED Type = 4
 
 type Config struct {
-	delimiter   string
+	Delimiter   string
 	valueConfig MacroValueConfig
 	Templates   []string // Required by TEMPLATE_BASED processors
 }
@@ -39,8 +39,8 @@ type MacroValueConfig struct {
 
 func NewProcessor(t Type, config Config) (IProcessor, error) {
 
-	if config.delimiter == "" {
-		config.delimiter = "##"
+	if config.Delimiter == "" {
+		config.Delimiter = "##"
 	}
 
 	switch t {

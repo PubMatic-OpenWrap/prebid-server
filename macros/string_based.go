@@ -9,10 +9,10 @@ type StringBased struct {
 }
 
 func (p *StringBased) Replace(str string, macroValues map[string]string) (string, error) {
-	return replaceStringBased(str, p.Cfg.delimiter, macroValues, p.Cfg.valueConfig)
+	return replaceStringBased(str, p.Cfg.Delimiter, macroValues, p.Cfg.valueConfig)
 }
 
-func replaceStringBased(str, delimiter string, macroValueMap map[string]string, valueConfig MacroValueConfig) (string, error) {
+func replaceStringBased(str, Delimiter string, macroValueMap map[string]string, valueConfig MacroValueConfig) (string, error) {
 	replacedStr := str
 	for macro, value := range macroValueMap {
 		// if valueConfig.UrlEscape {
@@ -22,9 +22,9 @@ func replaceStringBased(str, delimiter string, macroValueMap map[string]string, 
 		// if len(value) == 0 && valueConfig.FailOnError {
 		// 	return "", fmt.Errorf("Empty value for Macro '%s'", macro)
 		// }
-		replacedStr = strings.ReplaceAll(replacedStr, delimiter+macro+delimiter, value)
+		replacedStr = strings.ReplaceAll(replacedStr, Delimiter+macro+Delimiter, value)
 
-		// replacedStr = strings.ReplaceAll(replacedStr, fmt.Sprintf("%s%s%s", delimiter, macro, delimiter), value)
+		// replacedStr = strings.ReplaceAll(replacedStr, fmt.Sprintf("%s%s%s", Delimiter, macro, Delimiter), value)
 		// if replacedStr == str && valueConfig.FailOnError {
 		// 	return "", fmt.Errorf("Empty value for Macro '%s'", macro)
 		// }

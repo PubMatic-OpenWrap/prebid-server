@@ -10,7 +10,7 @@ import (
 // processors for benchmarking add templates
 var processor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
 	Templates:   []string{""},
-	delimiter:   "##",
+	Delimiter:   "##",
 	valueConfig: MacroValueConfig{},
 })
 
@@ -18,14 +18,14 @@ var processor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
 var totalAccounts = 10000
 var eventUrlsPerAccount = 20
 var noOfMacrosPerTemplate = 50
-var delimiter = "##"
+var Delimiter = "##"
 var templatesCount = totalAccounts * eventUrlsPerAccount
 var templates = make([]string, 0)
 
 func init() {
 	max := 0
 	for i := 1; i <= templatesCount; i++ {
-		url0 := buildLongInputURL0(noOfMacrosPerTemplate, delimiter) + strconv.Itoa(i)
+		url0 := buildLongInputURL0(noOfMacrosPerTemplate, Delimiter) + strconv.Itoa(i)
 		if len(url0) > max {
 			max = len(url0)
 		}

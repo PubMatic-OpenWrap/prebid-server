@@ -307,7 +307,20 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
-		config.GetMacroProcessor().Replace("", map[string]string{})
+		if r.Account.Events.Enabled {
+			eventMacros := e.formMacrosFromRequest(r.BidRequestWrapper.BidRequest)
+
+			for _, event := range r.Account.Events.VASTEvents {
+				if event.ExcludeDefaultURL == false {
+					config.GetMacroProcessor().Replace(r.Account.Events.DefaultURL, eventMacros)
+				} else {
+					for _, eventURL := range event.URLs {
+						config.GetMacroProcessor().Replace(eventURL, eventMacros)
+					}
+				}
+			}
+		}
+
 		/* build macro value map */
 		// request := r.BidRequestWrapper.BidRequest
 		// var macroValues = map[string]string{
@@ -397,6 +410,51 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	// Build the response
 	return e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper.BidRequest, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, errs)
+}
+
+func (e *exchange) formMacrosFromRequest(bidRequest *openrtb2.BidRequest) map[string]string {
+	marcosMap := map[string]string{}
+	if bidRequest.App != nil && bidRequest.App.Bundle != "" {
+		marcosMap["##PBS-APPBUNDLE##"] = bidRequest.App.Bundle
+	}
+
+	if bidRequest.Site != nil && bidRequest.Site.Domain != "" {
+		marcosMap["##PBS-DOMAIN##"] = bidRequest.Site.Domain
+	}
+	if bidRequest.App != nil && bidRequest.App.Domain != "" {
+		marcosMap["##PBS-DOMAIN##"] = bidRequest.App.Domain
+	}
+
+	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.Domain != "" {
+		marcosMap["##PBS-PUBDOMAIN##"] = bidRequest.Site.Domain
+	}
+
+	if bidRequest.App != nil && bidRequest.App.Publisher != nil && bidRequest.App.Publisher.Domain != "" {
+		marcosMap["##PBS-PUBDOMAIN##"] = bidRequest.Site.Domain
+	}
+
+	if bidRequest.Site != nil && bidRequest.Site.Page != "" {
+		marcosMap["##PBS-PAGEURL##"] = bidRequest.Site.Page
+	}
+
+	// if bidRequest.Regs != nil && bidRequest.Regs.Consent != "" {
+	// 	marcosMap["##PBS-GDPRCONSENT##"] = bidRequest.Site.Page
+	// }
+
+	if bidRequest.Device != nil && bidRequest.Device.Lmt != nil {
+		marcosMap["##PBS-GDPRCONSENT##"] = strconv.Itoa(int(*bidRequest.Device.Lmt))
+
+	}
+
+	if bidRequest.ID != "" {
+		marcosMap["##PBS-AUCTIONID##"] = bidRequest.ID
+	}
+
+	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
+		marcosMap["##PBS-AUCTIONID##"] = bidRequest.Site.Publisher.ID
+	}
+
+	return marcosMap
 }
 
 func (e *exchange) parseGDPRDefaultValue(bidRequest *openrtb2.BidRequest) gdpr.Signal {

@@ -17,14 +17,14 @@ func (p *TemplateBased) Replace(str string, macroValues map[string]string) (stri
 }
 
 func (p *TemplateBased) init0(templates []string) {
-	delimiter := p.Cfg.delimiter
+	Delimiter := p.Cfg.Delimiter
 	p.templates = make(map[string]*template.Template, len(p.Cfg.Templates))
 	for _, str := range templates {
 		tmpl := template.New("macro_replace")
 		tmpl.Option("missingkey=zero")
-		tmpl.Delims(delimiter, delimiter)
-		// collect all macros based on delimiters
-		regex := fmt.Sprintf("%s(.*?)%s", delimiter, delimiter)
+		tmpl.Delims(Delimiter, Delimiter)
+		// collect all macros based on Delimiters
+		regex := fmt.Sprintf("%s(.*?)%s", Delimiter, Delimiter)
 		re := regexp.MustCompile(regex)
 		// Example
 		// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##

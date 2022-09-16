@@ -10,7 +10,7 @@ import (
 func TestStringBasedProcessor(t *testing.T) {
 
 	p, _ := NewProcessor(STRING_BASED, Config{
-		delimiter: "##",
+		Delimiter: "##",
 	})
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=##shri##"
@@ -24,7 +24,7 @@ func TestStringBasedProcessor(t *testing.T) {
 func TestTemplateBasedProcessor(t *testing.T) {
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	p, _ := NewProcessor(TEMPLATE_BASED, Config{
-		delimiter: "##",
+		Delimiter: "##",
 		Templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
@@ -38,12 +38,12 @@ func TestTemplateBasedProcessor(t *testing.T) {
 }
 
 func TestStringCachedIndexBasedProcessor(t *testing.T) {
-	delimiter := "##"
-	// tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE&%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter, delimiter)
-	tURL, expected := buildLongInputURL(1000, delimiter)
+	Delimiter := "##"
+	// tURL := fmt.Sprintf("http://tracker.com?macro_1=%sPBS_EVENTTYPE&%smacro_2=%sPBS_GDPRCONSENT%s&custom=%sPBS_MACRO_profileid%s&custom=%sshri%s", Delimiter, Delimiter, Delimiter, Delimiter, Delimiter, Delimiter, Delimiter, Delimiter)
+	tURL, expected := buildLongInputURL(1000, Delimiter)
 	// println(expected)
 	p, _ := NewProcessor(STRING_INDEX_CACHED, Config{
-		delimiter: delimiter,
+		Delimiter: Delimiter,
 		Templates: []string{tURL},
 	})
 	// expect ##shri## is replaced with empty
@@ -83,23 +83,23 @@ func init() {
 
 	//fmt.Println(tURL)
 	tmplProcessor, _ = NewProcessor(TEMPLATE_BASED, Config{
-		delimiter: "##",
+		Delimiter: "##",
 		Templates: []string{tURL, URL2, URL3, URL4},
 	})
 	stringBasedProcessor, _ = NewProcessor(STRING_BASED, Config{
-		delimiter: "##",
+		Delimiter: "##",
 	})
 
 	tmplProcessorAlwaysInit, _ = NewProcessor(TEMPLATE_BASED_INIT_ALWAYS, Config{
-		delimiter: "##",
+		Delimiter: "##",
 	})
 
 	stringIndexBasedMacroProcessor, _ = NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
-		delimiter: "##",
+		Delimiter: "##",
 	})
 
 	stringCachedIndexBasedProcessor, _ = NewProcessor(STRING_INDEX_CACHED, Config{
-		delimiter:   "##",
+		Delimiter:   "##",
 		Templates:   []string{tURL, URL2, URL3, URL4},
 		valueConfig: MacroValueConfig{
 			// UrlEscape: true,
@@ -153,24 +153,24 @@ var testData = map[string]string{
 	"PBS_MACRO_profileid": "1234",
 }
 
-func getSampleTemplateURL(delimiter string) string {
+func getSampleTemplateURL(Delimiter string) string {
 	macros := make([]string, 0)
 	for macro := range testData {
 		macros = append(macros, macro)
 	}
 	sample := "http://tracker.com?"
 	for cnt, macro := range macros {
-		sample += fmt.Sprintf("macro_%d=%s%s%s&", cnt+1, delimiter, macro, delimiter)
+		sample += fmt.Sprintf("macro_%d=%s%s%s&", cnt+1, Delimiter, macro, Delimiter)
 		cnt += 1
 	}
 	// no macro value test sample
-	sample += fmt.Sprintf("no_macro=%sNO_MACRO%s", delimiter, delimiter)
+	sample += fmt.Sprintf("no_macro=%sNO_MACRO%s", Delimiter, Delimiter)
 	return sample
 }
 
 func TestStringIndexBasedMacroProcessor(t *testing.T) {
 	p, _ := NewProcessor(VAST_BIDDER_MACRO_PROCESSOR, Config{
-		delimiter: "##",
+		Delimiter: "##",
 	})
 	tURL := "http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##"
 	expected := "http://tracker.com?macro_1=vast&macro_2=consent&custom=1234&custom=##shri##"
@@ -181,17 +181,17 @@ func TestStringIndexBasedMacroProcessor(t *testing.T) {
 	assert.Equal(t, expected, actual, fmt.Sprintf("Expected [%s] found - %s", expected, actual))
 }
 
-func buildLongInputURL0(noOfMacros int, delimiter string) string {
-	url, _ := buildLongInputURL(noOfMacros, delimiter)
+func buildLongInputURL0(noOfMacros int, Delimiter string) string {
+	url, _ := buildLongInputURL(noOfMacros, Delimiter)
 	return url
 }
-func buildLongInputURL(noOfMacros int, delimiter string) (string, string) {
+func buildLongInputURL(noOfMacros int, Delimiter string) (string, string) {
 	url := ""
 	cnt := 0
 	expected := ""
 	for cnt <= noOfMacros {
 		for macro, value := range testData {
-			url += fmt.Sprintf("key_%d=%s%s%s&", cnt, delimiter, macro, delimiter)
+			url += fmt.Sprintf("key_%d=%s%s%s&", cnt, Delimiter, macro, Delimiter)
 			expected += fmt.Sprintf("key_%d=%s&", cnt, value)
 			cnt++
 			if cnt > noOfMacros {

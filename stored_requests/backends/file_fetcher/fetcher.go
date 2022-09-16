@@ -66,10 +66,10 @@ func (fetcher *eagerFetcher) FetchAccount(ctx context.Context, accountDefaultsJS
 	if len(account.ID) == 0 {
 		account.ID = accountID
 	}
-	// if account.Events.Enabled {
-	// 	// process and event urls /templates to macroProcessor
-	// 	config.UpdateMacroProcessor(account.Events)
-	// }
+
+	if account.Events.Enabled { // process and event urls /templates to macroProcessor
+		config.UpdateMacroProcessor(account.Events)
+	}
 	return account, nil
 }
 

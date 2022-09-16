@@ -24,10 +24,11 @@ type strMetaTemplate struct {
 }
 
 func (p *StringIndexCached) initTemplate() {
-	delim := p.Cfg.delimiter
+	delim := p.Cfg.Delimiter
 	p.templates = make(map[string]strMetaTemplate)
 	if nil == p.Processor.Cfg.Templates || len(p.Processor.Cfg.Templates) == 0 {
-		panic("No input templates")
+		//panic("No input templates")
+		return
 	}
 	for _, str := range p.Processor.Cfg.Templates {
 		p.templates[str] = constructTemplate(str, delim)
@@ -48,11 +49,11 @@ func constructTemplate(str string, delim string) strMetaTemplate {
 			break
 		}
 		msi := si + len(delim)
-		ei := strings.Index(str[msi:], delim) // ending delimiter
+		ei := strings.Index(str[msi:], delim) // ending Delimiter
 		if ei == -1 {
 			break
 		}
-		ei = ei + msi // offset adjustment (delimiter inclusive)
+		ei = ei + msi // offset adjustment (Delimiter inclusive)
 		mei := ei     // just for readiability
 		// cache macro and its start index
 		// tmplt.sIndexMacrosMap[si] = str[msi:mei]
@@ -72,7 +73,7 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
 	s := 0
-	delimLen := len(p.Cfg.delimiter)
+	delimLen := len(p.Cfg.Delimiter)
 	for i, index := range tmplt.indices {
 		// macro := tmplt.sIndexMacrosMap[index]
 		macro := str[index+delimLen : tmplt.macroLength[i]]
@@ -85,7 +86,7 @@ func (p *StringIndexCached) Replace(str string, macroValues map[string]string) (
 			}
 			result.WriteString(value)
 		}
-		s = index + len(macro) + len(p.Cfg.delimiter) + len(p.Cfg.delimiter)
+		s = index + len(macro) + len(p.Cfg.Delimiter) + len(p.Cfg.Delimiter)
 	}
 	result.WriteString(str[s:])
 	return result.String(), nil
@@ -100,7 +101,7 @@ func (p *StringIndexCached) AddTemplates(templates ...string) {
 
 		if !ok {
 			p.Lock()
-			p.templates[str] = constructTemplate(str, p.Cfg.delimiter)
+			p.templates[str] = constructTemplate(str, p.Cfg.Delimiter)
 			fmt.Println("Template constructed")
 			p.Unlock()
 		} else {
