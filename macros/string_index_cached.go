@@ -26,12 +26,10 @@ type strMetaTemplate struct {
 func (p *StringIndexCached) initTemplate() {
 	delim := p.Cfg.Delimiter
 	p.templates = make(map[string]strMetaTemplate)
-	if nil == p.Processor.Cfg.Templates || len(p.Processor.Cfg.Templates) == 0 {
-		//panic("No input templates")
-		return
-	}
-	for _, str := range p.Processor.Cfg.Templates {
-		p.templates[str] = constructTemplate(str, delim)
+	if p.Processor.Cfg.Templates != nil || len(p.Processor.Cfg.Templates) != 0 {
+		for _, str := range p.Processor.Cfg.Templates {
+			p.templates[str] = constructTemplate(str, delim)
+		}
 	}
 	fmt.Printf("Macroprocessor initialized %d templates\n", len(p.templates))
 }

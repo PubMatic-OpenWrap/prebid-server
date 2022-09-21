@@ -71,9 +71,18 @@ type Events struct {
 
 // validate verifies the events object  and returns error if at least one is invalid.
 func (e Events) validate(errs []error) []error {
+	var err error
+	if macroProcessor, err = macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
+		Templates: []string{},
+	}); err != nil {
+		return append(errs, err)
+	}
+	// e.macroProcessor, err = e.initMacroProcessor()
+	// macros.GProcessor, err = e.initMacroProcessor()
+
 	if e.Enabled {
 		if !isValidURL(e.DefaultURL) {
-			return append(errs, errors.New("Invalid events.default_url"))
+			return append(errs, errors.New("invalid events.default_url"))
 		}
 		err := validateVASTEvents(e.VASTEvents)
 		if err != nil {
@@ -85,14 +94,9 @@ func (e Events) validate(errs []error) []error {
 		for _, vEvent := range e.VASTEvents {
 			templates = append(templates, vEvent.URLs...)
 		}
-		macroProcessor, err = macros.NewProcessor(macros.STRING_INDEX_CACHED, macros.Config{
-			Templates: templates,
-		})
-		// e.macroProcessor, err = e.initMacroProcessor()
-		// macros.GProcessor, err = e.initMacroProcessor()
-		if err != nil {
-			return append(errs, err)
-		}
+
+		macroProcessor.AddTemplates(templates...)
+
 	}
 	return errs
 }

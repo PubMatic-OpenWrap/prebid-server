@@ -309,13 +309,22 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 		if r.Account.Events.Enabled {
 			eventMacros := e.formMacrosFromRequest(r.BidRequestWrapper.BidRequest)
-
+			macroProcessor := config.GetMacroProcessor()
 			for _, event := range r.Account.Events.VASTEvents {
-				if event.ExcludeDefaultURL == false {
-					config.GetMacroProcessor().Replace(r.Account.Events.DefaultURL, eventMacros)
+				if !event.ExcludeDefaultURL {
+					replacedURL, err := macroProcessor.Replace(r.Account.Events.DefaultURL, eventMacros)
+					if err != nil {
+						fmt.Println(err)
+					}
+					fmt.Println(replacedURL)
+
 				} else {
 					for _, eventURL := range event.URLs {
-						config.GetMacroProcessor().Replace(eventURL, eventMacros)
+						replacedURL, err := macroProcessor.Replace(eventURL, eventMacros)
+						if err != nil {
+							fmt.Println(err)
+						}
+						fmt.Println(replacedURL)
 					}
 				}
 			}
@@ -415,45 +424,44 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 func (e *exchange) formMacrosFromRequest(bidRequest *openrtb2.BidRequest) map[string]string {
 	marcosMap := map[string]string{}
 	if bidRequest.App != nil && bidRequest.App.Bundle != "" {
-		marcosMap["##PBS-APPBUNDLE##"] = bidRequest.App.Bundle
+		marcosMap["PBS-APPBUNDLE"] = bidRequest.App.Bundle
 	}
 
 	if bidRequest.Site != nil && bidRequest.Site.Domain != "" {
-		marcosMap["##PBS-DOMAIN##"] = bidRequest.Site.Domain
+		marcosMap["PBS-DOMAIN"] = bidRequest.Site.Domain
 	}
 	if bidRequest.App != nil && bidRequest.App.Domain != "" {
-		marcosMap["##PBS-DOMAIN##"] = bidRequest.App.Domain
+		marcosMap["PBS-DOMAIN"] = bidRequest.App.Domain
 	}
 
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.Domain != "" {
-		marcosMap["##PBS-PUBDOMAIN##"] = bidRequest.Site.Domain
+		marcosMap["PBS-PUBDOMAIN"] = bidRequest.Site.Domain
 	}
 
 	if bidRequest.App != nil && bidRequest.App.Publisher != nil && bidRequest.App.Publisher.Domain != "" {
-		marcosMap["##PBS-PUBDOMAIN##"] = bidRequest.Site.Domain
+		marcosMap["PBS-PUBDOMAIN"] = bidRequest.Site.Domain
 	}
 
 	if bidRequest.Site != nil && bidRequest.Site.Page != "" {
-		marcosMap["##PBS-PAGEURL##"] = bidRequest.Site.Page
+		marcosMap["PBS-PAGEURL"] = bidRequest.Site.Page
 	}
 
 	// if bidRequest.Regs != nil && bidRequest.Regs.Consent != "" {
-	// 	marcosMap["##PBS-GDPRCONSENT##"] = bidRequest.Site.Page
+	// 	marcosMap["PBS-GDPRCONSENT"] = bidRequest.Site.Page
 	// }
 
 	if bidRequest.Device != nil && bidRequest.Device.Lmt != nil {
-		marcosMap["##PBS-GDPRCONSENT##"] = strconv.Itoa(int(*bidRequest.Device.Lmt))
+		marcosMap["PBS-GDPRCONSENT"] = strconv.Itoa(int(*bidRequest.Device.Lmt))
 
 	}
 
 	if bidRequest.ID != "" {
-		marcosMap["##PBS-AUCTIONID##"] = bidRequest.ID
+		marcosMap["PBS-AUCTIONID"] = bidRequest.ID
 	}
 
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
-		marcosMap["##PBS-AUCTIONID##"] = bidRequest.Site.Publisher.ID
+		marcosMap["PBS-AUCTIONID"] = bidRequest.Site.Publisher.ID
 	}
-
 	return marcosMap
 }
 
