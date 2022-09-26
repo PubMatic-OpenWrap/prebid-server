@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -57,7 +58,10 @@ func EnforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 				bidPrice = rate * bid.bid.Price
 			}
 			if bidFloor.bidFloor > bidPrice {
-				rejections = updateRejections(rejections, bidID, fmt.Sprintf("bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bidPrice, bidFloor.bidFloorCur, bidFloor.bidFloor, bidFloor.bidFloorCur, bid.bid.ImpID, bidderName))
+				err := &errortypes.BidRejection{
+					Message: fmt.Sprintf("bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bidPrice, bidFloor.bidFloorCur, bidFloor.bidFloor, bidFloor.bidFloorCur, bid.bid.ImpID, bidderName),
+				}
+				rejections = updateRejections(rejections, bidID, err.Error())
 				continue
 			}
 			eligibleBids = append(eligibleBids, bid)

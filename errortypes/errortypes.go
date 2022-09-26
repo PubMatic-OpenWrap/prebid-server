@@ -252,3 +252,19 @@ func (err *AdpodPostFiltering) Code() int {
 func (err *AdpodPostFiltering) Severity() Severity {
 	return SeverityWarning
 }
+
+type BidRejection struct {
+	Message string
+}
+
+func (err *BidRejection) Error() string {
+	return err.Message
+}
+
+func (err *BidRejection) Code() int {
+	return PriceFloorBidRejectErrorCode
+}
+
+func (err *BidRejection) Severity() Severity {
+	return SeverityFatal
+}
