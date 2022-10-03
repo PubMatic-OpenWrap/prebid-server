@@ -752,6 +752,15 @@ func TestValidateConfig(t *testing.T) {
 			Files:         FileFetcherConfig{Enabled: true},
 			InMemoryCache: InMemoryCache{Type: "none"},
 		},
+		AccountDefaults: Account{
+			PriceFloors: AccountPriceFloors{
+				Fetch: AccountFloorFetch{
+					Period:  400,
+					Timeout: 20,
+					MaxAge:  500,
+				},
+			},
+		},
 	}
 
 	v := viper.New()
