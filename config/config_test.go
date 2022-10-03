@@ -161,6 +161,18 @@ func TestDefaults(t *testing.T) {
 	cmpInts(t, "price_floors.enforce_floors_rate", cfg.PriceFloors.EnforceFloorsRate, 100)
 	cmpBools(t, "price_floors.enforce_deal_floors", cfg.PriceFloors.EnforceDealFloors, false)
 
+	cmpBools(t, "account_defaults.price_floors.enabled", cfg.AccountDefaults.PriceFloors.Enabled, true)
+	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", cfg.AccountDefaults.PriceFloors.EnforceFloorRate, 100)
+	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", cfg.AccountDefaults.PriceFloors.BidAdjustment, true)
+	cmpBools(t, "account_defaults.price_floors.enforce_deal_floors", cfg.AccountDefaults.PriceFloors.EnforceDealFloors, false)
+	cmpBools(t, "account_defaults.price_floors.use_dynamic_data", cfg.AccountDefaults.PriceFloors.UseDynamicData, true)
+	cmpBools(t, "account_defaults.price_floors.fetch.enabled", cfg.AccountDefaults.PriceFloors.Fetch.Enabled, false)
+	cmpInts(t, "account_defaults.price_floors.fetch.timeout_ms", cfg.AccountDefaults.PriceFloors.Fetch.Timeout, 3000)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_file_size_kb", cfg.AccountDefaults.PriceFloors.Fetch.MaxFileSize, 100)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", cfg.AccountDefaults.PriceFloors.Fetch.MaxRules, 1000)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", cfg.AccountDefaults.PriceFloors.Fetch.MaxAge, 86400)
+	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", cfg.AccountDefaults.PriceFloors.Fetch.Period, 3600)
+
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
 		Enabled: true,
