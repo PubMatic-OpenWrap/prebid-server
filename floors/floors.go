@@ -59,7 +59,7 @@ func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 		return floorModelErrList
 	}
 
-	floorErrList = validateFloorRules(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
+	floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
 	if len(modelGroup.Values) > 0 {
 		for i := 0; i < len(request.Imp); i++ {
 			desiredRuleKey := createRuleKey(modelGroup.Schema, request, request.Imp[i])

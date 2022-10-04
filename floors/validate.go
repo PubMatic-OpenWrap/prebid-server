@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func validateFloorRules(schema openrtb_ext.PriceFloorSchema, delimiter string, ruleValues map[string]float64) []error {
+func validateFloorRulesAndLowerValidRuleKey(schema openrtb_ext.PriceFloorSchema, delimiter string, ruleValues map[string]float64) []error {
 	var errs []error
 	for key, val := range ruleValues {
 		parsedKey := strings.Split(key, delimiter)
