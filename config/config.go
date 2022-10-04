@@ -148,7 +148,7 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	errs = validateAdapters(cfg.Adapters, errs)
 	errs = cfg.Debug.validate(errs)
 	errs = cfg.ExtCacheURL.validate(errs)
-	errs = cfg.AccountDefaults.validate(errs)
+	errs = cfg.AccountDefaults.PriceFloors.validate(errs)
 	if cfg.AccountDefaults.Disabled {
 		glog.Warning(`With account_defaults.disabled=true, host-defined accounts must exist and have "disabled":false. All other requests will be rejected.`)
 	}
@@ -169,34 +169,34 @@ type AuctionTimeouts struct {
 	Max uint64 `mapstructure:"max"`
 }
 
-func (cfg *Account) validate(errs []error) []error {
+func (pf *AccountPriceFloors) validate(errs []error) []error {
 
-	if !(cfg.PriceFloors.EnforceFloorRate >= 0 && cfg.PriceFloors.EnforceFloorRate <= 100) {
+	if !(pf.EnforceFloorRate >= 0 && pf.EnforceFloorRate <= 100) {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.enforce_floors_rate should be between 0 and 100`))
 	}
 
-	if cfg.PriceFloors.Fetch.Period > cfg.PriceFloors.Fetch.MaxAge {
+	if pf.Fetch.Period > pf.Fetch.MaxAge {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.period_sec should be less than account_defaults.price_floors.fetch.max_age_sec`))
 	}
 
-	if cfg.PriceFloors.Fetch.Period < 300 {
+	if pf.Fetch.Period < 300 {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.period_sec should not be less than 300 seconds`))
 	}
 
-	if cfg.PriceFloors.Fetch.MaxAge < 600 && cfg.PriceFloors.Fetch.MaxAge > math.MaxInt {
+	if !(pf.Fetch.MaxAge > 600 && pf.Fetch.MaxAge < math.MaxInt) {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_age_sec should not be less than 600 seconds and greater than maximum integer value`))
 	}
 
-	if !(cfg.PriceFloors.Fetch.Timeout > 10 && cfg.PriceFloors.Fetch.Timeout < 10000) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.timeout-ms should be between 10 to 10,000 mili seconds`))
+	if !(pf.Fetch.Timeout > 10 && pf.Fetch.Timeout < 10000) {
+		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.timeout_ms should be between 10 to 10,000 mili seconds`))
 	}
 
-	if !(cfg.PriceFloors.Fetch.MaxRules >= 0 && cfg.PriceFloors.Fetch.MaxRules < math.MaxInt) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max-rules should not be less than 0 seconds and greater than maximum integer value`))
+	if !(pf.Fetch.MaxRules >= 0 && pf.Fetch.MaxRules < math.MaxInt) {
+		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_rules should not be less than 0 seconds and greater than maximum integer value`))
 	}
 
-	if !(cfg.PriceFloors.Fetch.MaxFileSize >= 0 && cfg.PriceFloors.Fetch.MaxFileSize < math.MaxInt) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max-rules should not be less than 0 seconds and greater than maximum integer value`))
+	if !(pf.Fetch.MaxFileSize >= 0 && pf.Fetch.MaxFileSize < math.MaxInt) {
+		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_file_size_kb should not be less than 0 seconds and greater than maximum integer value`))
 	}
 	return errs
 }
