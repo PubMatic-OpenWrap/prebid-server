@@ -126,11 +126,7 @@ func getFloorsFlagFromReqExt(prebidExt *openrtb_ext.ExtRequestPrebid) bool {
 }
 
 func getEnforceDealsFlag(Floors *openrtb_ext.PriceFloorRules) bool {
-	enforceDealFlag := false
-	if Floors != nil && Floors.Enforcement != nil && Floors.Enforcement.FloorDeals != nil {
-		enforceDealFlag = *Floors.Enforcement.FloorDeals
-	}
-	return enforceDealFlag
+	return Floors != nil && Floors.Enforcement != nil && Floors.Enforcement.FloorDeals != nil && *Floors.Enforcement.FloorDeals
 }
 
 // enforceFloors function does floors enforcement
