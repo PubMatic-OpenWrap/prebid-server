@@ -307,19 +307,19 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	if anyBidsReturned {
 
 		//If floor enforcement config enabled then filter bids
-		adapterBids, enforceErrs, rejectedBidders := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
+		adapterBids, enforceErrs, rejectedBids := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)
 
 		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 			// Record request count with non-zero imp.bidfloor value
 			e.me.RecordFloorsRequestForAccount(r.PubID)
 
-			if e.floor.Enabled && len(rejectedBidders) > 0 {
+			if e.floor.Enabled && len(rejectedBids) > 0 {
 				// Record rejected bid count at account level
 				e.me.RecordRejectedBidsForAccount(r.PubID)
 				// Record rejected bid count at adaptor/bidder level
-				for _, bidderName := range rejectedBidders {
-					e.me.RecordRejectedBidsForBidder(bidderName)
+				for _, rejectedBid := range rejectedBids {
+					e.me.RecordRejectedBidsForBidder(openrtb_ext.BidderName(rejectedBid.BidderName))
 				}
 			}
 		}
