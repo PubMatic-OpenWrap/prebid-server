@@ -2,7 +2,7 @@
 
 prefix="v"
 to_major=0
-to_minor=217
+to_minor=223
 to_patch=0
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
@@ -21,6 +21,21 @@ TODO:
     - create ci branch PR
     - create header-bidding PR"
 
+PR_BODY="
+# Description
+
+Please add change description or link to ticket, docs, etc.
+
+# Checklist:
+
+- [ ] PR commit list is unique (rebase/pull with the origin branch to keep master clean).
+- [ ] JIRA number is added in the PR title and the commit message.
+- [ ] Updated the \`header-bidding\` repo with appropiate commit id.
+- [ ] Documented the new changes.
+
+For Prebid upgrade, refer: https://inside.pubmatic.com:8443/confluence/display/Products/Prebid-server+upgrade"
+
+    
 RESTART=0
 for i in "$@"; do
   case $i in
@@ -64,6 +79,10 @@ clear_log() {
         log "Commit final go.mod and go.sum"
         git commit go.mod go.sum --amend --no-edit
         set -e
+
+        git checkout -b prebid_$upgrade_version-$attempt-final
+        log "Raising PR master <- prebid_$upgrade_version-$attempt-final"
+        gh pr create -a "@me" --repo PubMatic-OpenWrap/prebid-server -B master --title "Prebid upgrade to $upgrade_version" --body "$PR_BODY"
     else
         log "Exiting with failure!!!"
         exit 1
@@ -113,6 +132,8 @@ clone_repo() {
         git remote add prebid-upstream https://github.com/prebid/prebid-server.git
         git remote -v
         git fetch --all --tags --prune
+
+        git merge origin/resolved-218-2 --no-edit  #ready 218 upgrade since it is a major change.
     fi
 }
 
