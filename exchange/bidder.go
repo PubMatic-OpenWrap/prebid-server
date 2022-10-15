@@ -279,6 +279,13 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 					bidderRequest.BidRequest.Cur = []string{defaultCurrency}
 				}
 
+				// WL and WTK only accepts USD so we would need to convert prices to USD before sending data to them. But,
+				// PBS-Core's getAuctionCurrencyRates() is not exposed and would be too much work to do so. Also, would be a repeated work for SSHB to convert each bid's price
+				// Hence, we would send a USD conversion rate to SSHB for each bid beside prebid's origbidcpm and origbidcur
+				// Ex. req.cur=INR and resp.cur=JYP. Hence, we cannot use origbidcpm and origbidcur and would need a dedicated field for USD conversion rates
+				var conversionRateUSD float64
+				var reqCur string
+
 				// Try to get a conversion rate
 				// Try to get the first currency from request.cur having a match in the rate converter,
 				// and use it as currency
@@ -287,17 +294,17 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 				for _, bidReqCur := range bidderRequest.BidRequest.Cur {
 					if conversionRate, err = conversions.GetRate(bidResponse.Currency, bidReqCur); err == nil {
 						seatBidMap[bidderRequest.BidderName].currency = bidReqCur
+						reqCur = bidReqCur
 						break
 					}
 				}
 
-				// WL and WTK only accepts USD so we would need to convert prices to USD before sending data to them. But,
-				// PBS-Core's getAuctionCurrencyRates() is not exposed and would be too much work to do so. Also, would be a repeated work for SSHB to convert each bid's price
-				// Hence, we would send a USD conversion rate to SSHB for each bid beside prebid's origbidcpm and origbidcur
-				// Ex. req.cur=INR and resp.cur=JYP. Hence, we cannot use origbidcpm and origbidcur and would need a dedicated field for USD conversion rates
-				conversionRateUSD, err := conversions.GetRate(bidResponse.Currency, "USD")
-				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to get USD conversion rate for WL and WTK %v", err))
+				// skip this if bids are already in USD or if conversionRate is not available (as bids would be dropped).
+				if reqCur != "USD" && conversionRate != float64(0) {
+					conversionRateUSD, err = conversions.GetRate(bidResponse.Currency, "USD")
+					if err != nil {
+						errs = append(errs, fmt.Errorf("failed to get USD conversion rate for WL and WTK %v", err))
+					}
 				}
 
 				// Only do this for request from mobile app
@@ -366,8 +373,8 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							adjustmentFactor = givenAdjustment
 						}
 
-						originalBidCPMUSD := 0.0
 						originalBidCpm := 0.0
+						originalBidCPMUSD := 0.0
 						if bidResponse.Bids[i].Bid != nil {
 							originalBidCpm = bidResponse.Bids[i].Bid.Price
 							bidResponse.Bids[i].Bid.Price = bidResponse.Bids[i].Bid.Price * adjustmentFactor * conversionRate
