@@ -284,7 +284,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 				// Hence, we would send a USD conversion rate to SSHB for each bid beside prebid's origbidcpm and origbidcur
 				// Ex. req.cur=INR and resp.cur=JYP. Hence, we cannot use origbidcpm and origbidcur and would need a dedicated field for USD conversion rates
 				var conversionRateUSD float64
-				var reqCur string
+				selectedCur := "USD"
 
 				// Try to get a conversion rate
 				// Try to get the first currency from request.cur having a match in the rate converter,
@@ -294,13 +294,15 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 				for _, bidReqCur := range bidderRequest.BidRequest.Cur {
 					if conversionRate, err = conversions.GetRate(bidResponse.Currency, bidReqCur); err == nil {
 						seatBidMap[bidderRequest.BidderName].currency = bidReqCur
-						reqCur = bidReqCur
+						selectedCur = bidReqCur
 						break
 					}
 				}
 
-				// skip this if bids are already in USD or if conversionRate is not available (as bids would be dropped).
-				if reqCur != "USD" && conversionRate != float64(0) {
+				// no need of conversionRateUSD if
+				// - bids with conversionRate = 0 would be a dropped
+				// - response would be in USD
+				if conversionRate != float64(0) && selectedCur != "USD" {
 					conversionRateUSD, err = conversions.GetRate(bidResponse.Currency, "USD")
 					if err != nil {
 						errs = append(errs, fmt.Errorf("failed to get USD conversion rate for WL and WTK %v", err))
