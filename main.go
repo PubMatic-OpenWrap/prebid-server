@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -60,28 +59,4 @@ func serve(cfg *config.Configuration) error {
 	}
 
 	return nil
-}
-
-func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
-	return router.OrtbAuctionEndpointWrapper(w, r)
-}
-
-var VideoAuction = func(w http.ResponseWriter, r *http.Request) error {
-	return router.VideoAuctionEndpointWrapper(w, r)
-}
-
-func GetUIDS(w http.ResponseWriter, r *http.Request) {
-	router.GetUIDSWrapper(w, r)
-}
-
-func SetUIDS(w http.ResponseWriter, r *http.Request) {
-	router.SetUIDSWrapper(w, r)
-}
-
-func CookieSync(w http.ResponseWriter, r *http.Request) {
-	router.CookieSync(w, r)
-}
-
-func SyncerMap() map[string]usersync.Syncer {
-	return router.SyncerMap()
 }

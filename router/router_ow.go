@@ -136,3 +136,34 @@ func GetPrometheusGatherer() *prometheus.Registry {
 
 	return mEngine.PrometheusMetrics.Gatherer
 }
+
+// Temporary solution to address dependency injection for sshb.
+type OWPBSHandlersInterface interface {
+	OrtbAuction(w http.ResponseWriter, r *http.Request)
+	VideoAuction(w http.ResponseWriter, r *http.Request)
+	GetUIDS(w http.ResponseWriter, r *http.Request)
+	SetUIDS(w http.ResponseWriter, r *http.Request)
+	CookieSync(w http.ResponseWriter, r *http.Request)
+}
+
+type OWPBSHandlers struct{}
+
+func (OWPBSHandlers) OrtbAuction(w http.ResponseWriter, r *http.Request) {
+	OrtbAuctionEndpointWrapper(w, r)
+}
+
+func (OWPBSHandlers) VideoAuction(w http.ResponseWriter, r *http.Request) {
+	VideoAuctionEndpointWrapper(w, r)
+}
+
+func (OWPBSHandlers) GetUIDS(w http.ResponseWriter, r *http.Request) {
+	GetUIDSWrapper(w, r)
+}
+
+func (OWPBSHandlers) SetUIDS(w http.ResponseWriter, r *http.Request) {
+	SetUIDSWrapper(w, r)
+}
+
+func (OWPBSHandlers) CookieSync(w http.ResponseWriter, r *http.Request) {
+	CookieSync(w, r)
+}
