@@ -1,15 +1,41 @@
 package openrtb_ext
 
+// Defines numeric codes for PriceFloorLocation
+const (
+	NoData = iota
+	Request
+	Fetch
+)
+
+// Defines numeric codes for FetchStatus
+const (
+	FatechSuccess = iota
+	FatechTimeout
+	FatechError
+	FatechInprogress
+	FatechNone
+)
+
+// Defines strings for FloorProvider
+const (
+	NoDataLocation  = "noData"
+	RequestLocation = "Request"
+	CacheLocation   = "fetch"
+)
+
 // PriceFloorRules defines the contract for bidrequest.ext.prebid.floors
 type PriceFloorRules struct {
-	FloorMin    float64                `json:"floormin,omitempty"`
-	FloorMinCur string                 `json:"floormincur,omitempty"`
-	SkipRate    int                    `json:"skiprate,omitempty"`
-	Location    *PriceFloorEndpoint    `json:"location,omitempty"`
-	Data        *PriceFloorData        `json:"data,omitempty"`
-	Enforcement *PriceFloorEnforcement `json:"enforcement,omitempty"`
-	Enabled     *bool                  `json:"enabled,omitempty"`
-	Skipped     *bool                  `json:"skipped,omitempty"`
+	FloorMin           float64                `json:"floormin,omitempty"`
+	FloorMinCur        string                 `json:"floormincur,omitempty"`
+	SkipRate           int                    `json:"skiprate,omitempty"`
+	Location           *PriceFloorEndpoint    `json:"location,omitempty"`
+	Data               *PriceFloorData        `json:"data,omitempty"`
+	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
+	Enabled            *bool                  `json:"enabled,omitempty"`
+	Skipped            *bool                  `json:"skipped,omitempty"`
+	FloorProvider      string                 `json:"_,omitempty"`
+	FetchStatus        int                    `json:"_,omitempty"`
+	PriceFloorLocation int                    `json:"_,omitempty"`
 }
 
 type PriceFloorEndpoint struct {
@@ -40,6 +66,7 @@ type PriceFloorSchema struct {
 }
 
 type PriceFloorEnforcement struct {
+	EnforceJS     *bool `json:"enforcejs,omitempty"`
 	EnforcePBS    *bool `json:"enforcepbs,omitempty"`
 	FloorDeals    *bool `json:"floordeals,omitempty"`
 	BidAdjustment bool  `json:"bidadjustment,omitempty"`

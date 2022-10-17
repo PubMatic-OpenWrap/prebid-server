@@ -258,9 +258,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	// Get currency rates conversions for the auction
 	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
 
-	// If floors feature is enabled at server and request level, Update floors values in impression object
-	floorErrs := selectFloorsAndModifyImp(&r, e.floor, conversions, responseDebugAllow)
+	floorErrs := floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions)
 	errs = append(errs, floorErrs...)
+
+	// // If floors feature is enabled at server and request level, Update floors values in impression object
+	// floorErrs := selectFloorsAndModifyImp(&r, e.floor, conversions, responseDebugAllow)
+	// errs = append(errs, floorErrs...)
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
 
