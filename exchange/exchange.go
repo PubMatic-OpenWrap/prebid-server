@@ -1140,7 +1140,7 @@ func makeBidExtJSON(ext json.RawMessage, prebid *openrtb_ext.ExtBidPrebid, impEx
 	}
 
 	//ext.origbidcpmusd
-	if originalBidCpmUSD > 0 {
+	if originalBidCpmUSD > float64(0) {
 		extMap[openrtb_ext.OriginalBidCpmUsdKey] = originalBidCpmUSD
 	}
 
