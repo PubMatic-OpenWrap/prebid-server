@@ -308,7 +308,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		}
 
 		if r.Account.Events.Enabled {
-			eventMacros := e.formMacrosFromRequest(r.BidRequestWrapper.BidRequest)
+			eventMacros := e.formMacrosFromRequest(r.BidRequestWrapper)
 			macroProcessor := config.GetMacroProcessor()
 			for _, event := range r.Account.Events.VASTEvents {
 				if !event.ExcludeDefaultURL {
@@ -421,7 +421,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	return e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper.BidRequest, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, errs)
 }
 
-func (e *exchange) formMacrosFromRequest(bidRequest *openrtb2.BidRequest) map[string]string {
+func (e *exchange) formMacrosFromRequest(BidRequestWrapper *openrtb_ext.RequestWrapper) map[string]string {
+	bidRequest := BidRequestWrapper.BidRequest
 	marcosMap := map[string]string{}
 	if bidRequest.App != nil && bidRequest.App.Bundle != "" {
 		marcosMap["PBS-APPBUNDLE"] = bidRequest.App.Bundle
@@ -446,13 +447,8 @@ func (e *exchange) formMacrosFromRequest(bidRequest *openrtb2.BidRequest) map[st
 		marcosMap["PBS-PAGEURL"] = bidRequest.Site.Page
 	}
 
-	// if bidRequest.Regs != nil && bidRequest.Regs.Consent != "" {
-	// 	marcosMap["PBS-GDPRCONSENT"] = bidRequest.Site.Page
-	// }
-
-	if bidRequest.Device != nil && bidRequest.Device.Lmt != nil {
-		marcosMap["PBS-GDPRCONSENT"] = strconv.Itoa(int(*bidRequest.Device.Lmt))
-
+	if userExt, _ := BidRequestWrapper.GetUserExt(); userExt != nil && userExt.GetConsent() != nil {
+		marcosMap["PBS-GDPRCONSENT"] = *userExt.GetConsent()
 	}
 
 	if bidRequest.ID != "" {
@@ -460,7 +456,7 @@ func (e *exchange) formMacrosFromRequest(bidRequest *openrtb2.BidRequest) map[st
 	}
 
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
-		marcosMap["PBS-AUCTIONID"] = bidRequest.Site.Publisher.ID
+		marcosMap["PBS-ACCOUNTID"] = bidRequest.Site.Publisher.ID
 	}
 	return marcosMap
 }

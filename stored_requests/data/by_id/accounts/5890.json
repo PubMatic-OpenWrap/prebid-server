@@ -17,7 +17,7 @@
 			{
 				"create_element": "nonlinearclicktracking",
 				"exclude_default_url": true,
-				"urls": ["http://example.tracker.com?a=##PBS_DOMAIN##"]
+				"urls": ["http://example.tracker.com?a=##PBS-APPBUNDLE##&b=##PBS-DOMAIN##&c=##PBS-GDPRCONSENT##&d=##PBS-ACCOUNTID##"]
 			}
 		]
 	},
