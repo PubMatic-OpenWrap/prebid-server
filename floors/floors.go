@@ -28,81 +28,7 @@ const (
 	enforceRateMax   int    = 100
 )
 
-// ModifyImpsWithFloors will validate floor rules, based on request and rules prepares various combinations
-// to match with floor rules and selects appripariate floor rule and update imp.bidfloor and imp.bidfloorcur
-func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
-	var (
-		floorErrList      []error
-		floorModelErrList []error
-		floorVal          float64
-	)
-
-	if floorExt == nil || floorExt.Data == nil {
-		return nil
-	}
-
-	floorData := floorExt.Data
-	floorSkipRateErr := validateFloorSkipRates(floorExt)
-	if floorSkipRateErr != nil {
-		return append(floorModelErrList, floorSkipRateErr)
-	}
-
-	floorData.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floorData.ModelGroups)
-	if len(floorData.ModelGroups) == 0 {
-		return floorModelErrList
-	} else if len(floorData.ModelGroups) > 1 {
-		floorData.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
-	}
-
-	modelGroup := floorData.ModelGroups[0]
-	if modelGroup.Schema.Delimiter == "" {
-		modelGroup.Schema.Delimiter = defaultDelimiter
-	}
-
-	floorExt.Skipped = new(bool)
-	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
-		*floorExt.Skipped = true
-		floorData.ModelGroups = nil
-		return floorModelErrList
-	}
-
-	floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
-	if len(modelGroup.Values) > 0 {
-		for i := 0; i < len(request.Imp); i++ {
-			desiredRuleKey := createRuleKey(modelGroup.Schema, request, request.Imp[i])
-			matchedRule, isRuleMatched := findRule(modelGroup.Values, modelGroup.Schema.Delimiter, desiredRuleKey, len(modelGroup.Schema.Fields))
-
-			floorVal = modelGroup.Default
-			if isRuleMatched {
-				floorVal = modelGroup.Values[matchedRule]
-			}
-
-			floorMinVal, floorCur, err := getMinFloorValue(floorExt, conversions)
-			if err == nil {
-				bidFloor := floorVal
-				if floorMinVal > 0.0 && floorVal < floorMinVal {
-					bidFloor = floorMinVal
-				}
-
-				if bidFloor > 0.0 {
-					request.Imp[i].BidFloor = math.Round(bidFloor*10000) / 10000
-					request.Imp[i].BidFloorCur = floorCur
-				}
-				if isRuleMatched {
-					updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], modelGroup.Values[matchedRule])
-				}
-			} else {
-				floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
-			}
-
-		}
-	}
-	floorModelErrList = append(floorModelErrList, floorErrList...)
-	return floorModelErrList
-}
-
 func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions) []error {
-
 	err := []error{}
 	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil || isPriceFloorsDisabled(account, bidRequestWrapper) {
 		return err
@@ -123,7 +49,7 @@ func updateBidRequestWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *
 		floorVal          float64
 	)
 
-	if floorExt == nil || floorExt.Data == nil {
+	if floorExt == nil || floorExt.Data == nil || len(floorExt.Data.ModelGroups) == 0 {
 		return nil
 	}
 
@@ -195,11 +121,11 @@ func isPriceFloorsDisabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrapp
 
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions) (*openrtb_ext.PriceFloorRules, []error) {
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
-	fetchReult := fetchFloors(account)
+	fetchReult := fetchAccountFloors(account)
 
-	if reqFloor != nil && shouldUseDynamicFetched(account) && fetchReult != nil && fetchReult.fetchStatus == 0 {
-		mergedFloor := mergeFloors(*reqFloor, fetchReult.priceFloors, conversions)
-		return createFloorsFrom(&mergedFloor, fetchReult.fetchStatus, openrtb_ext.Fetch)
+	if shouldUseDynamicFetched(account) && fetchReult != nil && fetchReult.fetchStatus == 0 {
+		mergedFloor := mergeFloors(reqFloor, fetchReult.priceFloors, conversions)
+		return createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.Fetch)
 	}
 
 	if reqFloor != nil {
@@ -234,15 +160,18 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 		floors.FetchStatus = fetchStatus
 		floors.PriceFloorLocation = floorLocation
 
+	} else {
+		floors = new(openrtb_ext.PriceFloorRules)
+		floors.PriceFloorLocation = floorLocation
 	}
 	return floors, floorModelErrList
 }
 
-func mergeFloors(reqFloors openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) openrtb_ext.PriceFloorRules {
+func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) *openrtb_ext.PriceFloorRules {
 	var mergedFloors openrtb_ext.PriceFloorRules
 	var enforceRate int
 
-	floorsEnabledByRequest := getFloorsEnabledFlag(reqFloors)
+	floorsEnabledByRequest := reqFloors.GetEnabled()
 	floorMinPrice := resolveFloorMin(reqFloors, fetchFloors, conversions)
 
 	if reqFloors.Enforcement != nil {
@@ -262,7 +191,7 @@ func mergeFloors(reqFloors openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.
 		fetchFloors.FloorMin = floorMinPrice.FloorMin
 		fetchFloors.FloorMinCur = floorMinPrice.FloorMinCur
 	}
-	return mergedFloors
+	return &mergedFloors
 }
 
 func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceRate int) *openrtb_ext.PriceFloorEnforcement {
@@ -280,14 +209,19 @@ func getFloorsEnabledFlag(reqFloors openrtb_ext.PriceFloorRules) bool {
 	return true
 }
 
-func resolveFloorMin(reqFloors openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) Price {
+func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) Price {
 
-	floorCur := getFloorCurrency(&reqFloors)
-	reqFloorMinCur := reqFloors.FloorMinCur
-	if len(reqFloorMinCur) > 0 {
+	var floorCur, reqFloorMinCur string
+	var reqFloorMin float64
+	if reqFloors != nil {
+		floorCur = getFloorCurrency(reqFloors)
+		reqFloorMin = reqFloors.FloorMin
+		reqFloorMinCur = reqFloors.FloorMinCur
+	}
+
+	if len(reqFloorMinCur) == 0 {
 		reqFloorMinCur = floorCur
 	}
-	reqFloorMin := reqFloors.FloorMin
 
 	provFloorMinCur := fetchFloors.FloorMinCur
 	provFloorMin := fetchFloors.FloorMin
@@ -296,24 +230,25 @@ func resolveFloorMin(reqFloors openrtb_ext.PriceFloorRules, fetchFloors openrtb_
 		if reqFloorMin > float64(0.0) {
 			return Price{FloorMin: reqFloorMin, FloorMinCur: reqFloorMinCur}
 		} else if provFloorMin > float64(0.0) {
-			if strings.Compare(reqFloorMinCur, provFloorMinCur) == 0 {
+			if len(provFloorMinCur) == 0 || strings.Compare(reqFloorMinCur, provFloorMinCur) == 0 {
 				return Price{FloorMin: provFloorMin, FloorMinCur: reqFloorMinCur}
 			}
-			rate, _ := conversions.GetRate(provFloorMinCur, reqFloorMinCur)
-			return Price{FloorMinCur: reqFloorMinCur,
-				FloorMin: rate * provFloorMin}
+			rate, err := conversions.GetRate(provFloorMinCur, reqFloorMinCur)
+			if err == nil {
+				return Price{FloorMinCur: reqFloorMinCur,
+					FloorMin: math.Round(rate*provFloorMin*10000) / 10000}
+			}
 		}
 	}
 
 	if len(provFloorMinCur) > 0 {
-		if reqFloorMin > float64(0.0) {
-			rate, _ := conversions.GetRate(provFloorMinCur, reqFloorMinCur)
-			return Price{FloorMinCur: reqFloorMinCur,
-				FloorMin: rate * reqFloorMin}
+		if provFloorMin > float64(0.0) {
+			return Price{FloorMin: provFloorMin, FloorMinCur: provFloorMinCur}
+		} else if reqFloorMin > float64(0.0) {
+			return Price{FloorMin: reqFloorMin, FloorMinCur: provFloorMinCur}
 		}
-		return Price{FloorMin: provFloorMin, FloorMinCur: provFloorMinCur}
 	}
-	return Price{FloorMin: 0.0}
+	return Price{FloorMin: 0.0, FloorMinCur: floorCur}
 }
 
 func shouldUseDynamicFetched(Account config.Account) bool {

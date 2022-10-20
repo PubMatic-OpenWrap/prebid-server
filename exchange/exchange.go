@@ -261,10 +261,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	floorErrs := floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions)
 	errs = append(errs, floorErrs...)
 
-	// // If floors feature is enabled at server and request level, Update floors values in impression object
-	// floorErrs := selectFloorsAndModifyImp(&r, e.floor, conversions, responseDebugAllow)
-	// errs = append(errs, floorErrs...)
-
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
 
 	// Make our best guess if GDPR applies

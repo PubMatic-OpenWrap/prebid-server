@@ -135,7 +135,6 @@ func TestCreateRuleKeys(t *testing.T) {
 		name        string
 		floorSchema openrtb_ext.PriceFloorSchema
 		request     *openrtb2.BidRequest
-		imp         openrtb2.Imp
 		out         []string
 	}{
 		{
@@ -148,7 +147,6 @@ func TestCreateRuleKeys(t *testing.T) {
 				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "domain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			imp:         openrtb2.Imp{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}},
 			out:         []string{"banner", "300x250", "www.test.com"},
 		},
 		{
@@ -158,10 +156,8 @@ func TestCreateRuleKeys(t *testing.T) {
 					Domain: "www.test.com",
 				},
 				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480}}},
-				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "domain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			imp:         openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480}},
 			out:         []string{"video", "640x480", "www.test.com"},
 		},
 		{
@@ -171,16 +167,149 @@ func TestCreateRuleKeys(t *testing.T) {
 					Domain: "www.test.com",
 				},
 				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}}},
-				Ext: json.RawMessage(`{"prebid": { "floors": {"data": {"currency": "USD","skipRate": 0,"schema": {"fields": [ "mediaType", "size", "domain" ] },"values": {  "banner|300x250|www.website.com": 1.01, "banner|300x250|*": 2.01, "banner|300x600|www.website.com": 3.01,  "banner|300x600|*": 4.01, "banner|728x90|www.website.com": 5.01, "banner|728x90|*": 6.01, "banner|*|www.website.com": 7.01, "banner|*|*": 8.01, "*|300x250|www.website.com": 9.01, "*|300x250|*": 10.01, "*|300x600|www.website.com": 11.01,  "*|300x600|*": 12.01,  "*|728x90|www.website.com": 13.01, "*|728x90|*": 14.01,  "*|*|www.website.com": 15.01, "*|*|*": 16.01  }, "default": 1}}}}`),
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			imp:         openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}},
 			out:         []string{"video", "300x250", "www.test.com"},
+		},
+		{
+			name: "CreateRule with audio mediatype, adUnitCode and domain",
+			request: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Domain: "www.test.com",
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", TagID: "tag123", Audio: &openrtb2.Audio{MaxDuration: 300}}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "adUnitCode", "siteDomain"}},
+			out:         []string{"audio", "tag123", "www.test.com"},
+		},
+		{
+			name: "CreateRule with native mediatype, bundle and domain",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain: "www.test.com",
+					Bundle: "bundle123",
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "bundle", "siteDomain"}},
+			out:         []string{"native", "bundle123", "www.test.com"},
+		},
+		{
+			name: "CreateRule with channel, country, deviceType",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "tablet"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+				Ext:    json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
+			out:         []string{"chName", "USA", "tablet"},
+		},
+		{
+			name: "CreateRule with pubDomain, country, deviceType",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "Phone"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+				Ext:    json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"pubDomain", "country", "deviceType"}},
+			out:         []string{"www.test.com", "USA", "phone"},
+		},
+		{
+			name: "CreateRule with pubDomain, gptSlot, deviceType",
+			request: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp: []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"},
+					Ext: json.RawMessage(`{"data": {"adserver": {"name": "gam","adslot": "adslot123"}, "pbadslot": "pbadslot123"}}`),
+				}},
+				Ext: json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"pubDomain", "gptSlot", "deviceType"}},
+			out:         []string{"www.test.com", "adslot123", "*"},
+		},
+		{
+			name: "CreateRule with pubDomain, gptSlot, deviceType",
+			request: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp: []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"},
+					Ext: json.RawMessage(`{"data": {"adserver": {"name": "test","adslot": "adslot123"}, "pbadslot": "pbadslot123"}}`),
+				}},
+				Ext: json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"pubDomain", "gptSlot", "deviceType"}},
+			out:         []string{"www.test.com", "pbadslot123", "*"},
+		},
+		{
+			name: "CreateRule with domain, adUnitCode, channel",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp: []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"},
+					Ext: json.RawMessage(`{"data": {"adserver": {"name": "test","adslot": "adslot123"}, "pbadslot": "pbadslot123"}}`),
+				}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"domain", "adUnitCode", "channel"}},
+			out:         []string{"www.test.com", "pbadslot123", "*"},
+		},
+		{
+			name: "CreateRule with domain, adUnitCode, channel",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp: []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"},
+					Ext: json.RawMessage(`{"gpid":  "gpid_134"}`),
+				}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"domain", "adUnitCode", "channel"}},
+			out:         []string{"www.test.com", "gpid_134", "*"},
+		},
+		{
+			name: "CreateRule with domain, adUnitCode, channel",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{}, Ext: json.RawMessage(`{"prebid": {"storedrequest": {"id": "storedid_123"}}}`)}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"domain", "adUnitCode", "channel"}},
+			out:         []string{"www.test.com", "storedid_123", "*"},
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			out := createRuleKey(tc.floorSchema, tc.request, tc.imp)
+			out := createRuleKey(tc.floorSchema, tc.request, tc.request.Imp[0])
 			if !reflect.DeepEqual(out, tc.out) {
 				t.Errorf("error: \nreturn:\t%v\nwant:\t%v", out, tc.out)
 			}
