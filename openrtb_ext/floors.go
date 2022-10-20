@@ -75,7 +75,7 @@ type PriceFloorEnforcement struct {
 
 // GetEnabled will check if floors is enabled in request
 func (Floors *PriceFloorRules) GetEnabled() bool {
-	if Floors != nil && Floors.Enabled != nil && !*Floors.Enabled {
+	if Floors != nil && Floors.Enabled != nil {
 		return *Floors.Enabled
 	}
 	return true
