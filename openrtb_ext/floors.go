@@ -9,11 +9,11 @@ const (
 
 // Defines numeric codes for FetchStatus
 const (
-	FatechSuccess = iota
-	FatechTimeout
-	FatechError
-	FatechInprogress
-	FatechNone
+	FetchSuccess = iota
+	FetchTimeout
+	FetchError
+	FetchInprogress
+	FetchNone
 )
 
 // Defines strings for FloorProvider
@@ -32,7 +32,7 @@ type PriceFloorRules struct {
 	Data               *PriceFloorData        `json:"data,omitempty"`
 	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
 	Enabled            *bool                  `json:"enabled,omitempty"`
-	Skipped            *bool                  `json:"skipped,omitempty"`
+	Skipped            *bool                  `json:"_,omitempty"`
 	FloorProvider      string                 `json:"_,omitempty"`
 	FetchStatus        int                    `json:"_,omitempty"`
 	PriceFloorLocation int                    `json:"_,omitempty"`

@@ -123,7 +123,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	fetchReult := fetchAccountFloors(account)
 
-	if shouldUseDynamicFetched(account) && fetchReult != nil && fetchReult.fetchStatus == 0 {
+	if shouldUseDynamicFetched(account) && fetchReult != nil && fetchReult.fetchStatus == openrtb_ext.FetchSuccess {
 		mergedFloor := mergeFloors(reqFloor, fetchReult.priceFloors, conversions)
 		return createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.Fetch)
 	}
@@ -168,13 +168,13 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 }
 
 func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) *openrtb_ext.PriceFloorRules {
-	var mergedFloors openrtb_ext.PriceFloorRules
+
 	var enforceRate int
 
 	floorsEnabledByRequest := reqFloors.GetEnabled()
 	floorMinPrice := resolveFloorMin(reqFloors, fetchFloors, conversions)
 
-	if reqFloors.Enforcement != nil {
+	if reqFloors != nil && reqFloors.Enforcement != nil {
 		enforceRate = reqFloors.Enforcement.EnforceRate
 	}
 
@@ -188,10 +188,12 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 		}
 		*fetchFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
 		fetchFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
-		fetchFloors.FloorMin = floorMinPrice.FloorMin
-		fetchFloors.FloorMinCur = floorMinPrice.FloorMinCur
+		if floorMinPrice.FloorMin > float64(0) {
+			fetchFloors.FloorMin = floorMinPrice.FloorMin
+			fetchFloors.FloorMinCur = floorMinPrice.FloorMinCur
+		}
 	}
-	return &mergedFloors
+	return &fetchFloors
 }
 
 func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceRate int) *openrtb_ext.PriceFloorEnforcement {
