@@ -133,8 +133,8 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		var floorsEnfocement bool
 		floorsEnfocement = floors.RequestHasFloors(r.BidRequestWrapper.BidRequest)
 		if prebidExt != nil && floorsEnfocement {
-			if floorsEnfocement = floors.ShouldEnforce(r.BidRequestWrapper.BidRequest, prebidExt.Floors, floor.EnforceFloorsRate, rand.Intn); floorsEnfocement {
-				enforceDealFloors = floor.EnforceDealFloors && getEnforceDealsFlag(prebidExt.Floors)
+			if floorsEnfocement = floors.ShouldEnforce(r.BidRequestWrapper.BidRequest, prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
+				enforceDealFloors = r.Account.PriceFloors.EnforceDealFloors && getEnforceDealsFlag(prebidExt.Floors)
 			}
 		}
 

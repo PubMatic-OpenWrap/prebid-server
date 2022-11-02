@@ -53,7 +53,6 @@ type PriceFloorData struct {
 type PriceFloorModelGroup struct {
 	Currency     string             `json:"currency,omitempty"`
 	ModelWeight  int                `json:"modelweight,omitempty"`
-	DebugWeight  int                `json:"debugweight,omitempty"` // Added for Debug purpose, shall be removed
 	ModelVersion string             `json:"modelversion,omitempty"`
 	SkipRate     int                `json:"skiprate,omitempty"`
 	Schema       PriceFloorSchema   `json:"schema,omitempty"`

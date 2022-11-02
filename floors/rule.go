@@ -86,12 +86,10 @@ func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f fun
 	})
 
 	winWeight := f(totalModelWeight + 1)
-	debugWeight := winWeight
 	for i, modelGroup := range modelGroups {
 		winWeight -= modelGroup.ModelWeight
 		if winWeight <= 0 {
 			modelGroups[0], modelGroups[i] = modelGroups[i], modelGroups[0]
-			modelGroups[0].DebugWeight = debugWeight
 			return modelGroups[:1]
 		}
 	}

@@ -80,11 +80,11 @@ func updateBidRequestWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *
 			floorMinVal, floorCur, err := getMinFloorValue(floorExt, conversions)
 			if err == nil {
 				bidFloor := floorVal
-				if floorMinVal > 0.0 && floorVal < floorMinVal {
+				if floorMinVal > float64(0) && floorVal < floorMinVal {
 					bidFloor = floorMinVal
 				}
 
-				if bidFloor > 0.0 {
+				if bidFloor > float64(0) {
 					request.Imp[i].BidFloor = math.Round(bidFloor*10000) / 10000
 					request.Imp[i].BidFloorCur = floorCur
 				}
@@ -178,7 +178,7 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 		enforceRate = reqFloors.Enforcement.EnforceRate
 	}
 
-	if floorsEnabledByRequest || enforceRate > 0 || floorMinPrice.FloorMin > float64(0.0) {
+	if floorsEnabledByRequest || enforceRate > 0 || floorMinPrice.FloorMin > float64(0) {
 
 		floorsEnabledByProvider := getFloorsEnabledFlag(fetchFloors)
 		floorsProviderEnforcement := fetchFloors.Enforcement
@@ -229,9 +229,9 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 	provFloorMin := fetchFloors.FloorMin
 
 	if len(reqFloorMinCur) > 0 {
-		if reqFloorMin > float64(0.0) {
+		if reqFloorMin > float64(0) {
 			return Price{FloorMin: reqFloorMin, FloorMinCur: reqFloorMinCur}
-		} else if provFloorMin > float64(0.0) {
+		} else if provFloorMin > float64(0) {
 			if len(provFloorMinCur) == 0 || strings.Compare(reqFloorMinCur, provFloorMinCur) == 0 {
 				return Price{FloorMin: provFloorMin, FloorMinCur: reqFloorMinCur}
 			}
@@ -244,9 +244,9 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 	}
 
 	if len(provFloorMinCur) > 0 {
-		if provFloorMin > float64(0.0) {
+		if provFloorMin > float64(0) {
 			return Price{FloorMin: provFloorMin, FloorMinCur: provFloorMinCur}
-		} else if reqFloorMin > float64(0.0) {
+		} else if reqFloorMin > float64(0) {
 			return Price{FloorMin: reqFloorMin, FloorMinCur: provFloorMinCur}
 		}
 	}
