@@ -32,10 +32,10 @@ type PriceFloorRules struct {
 	Data               *PriceFloorData        `json:"data,omitempty"`
 	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
 	Enabled            *bool                  `json:"enabled,omitempty"`
-	Skipped            *bool                  `json:"_,omitempty"`
-	FloorProvider      string                 `json:"_,omitempty"`
-	FetchStatus        int                    `json:"_,omitempty"`
-	PriceFloorLocation int                    `json:"_,omitempty"`
+	Skipped            *bool                  `json:"skipped,omitempty"`
+	FloorProvider      string                 `json:"floorprovider,omitempty"`
+	FetchStatus        int                    `json:"fetchstatus,omitempty"`
+	PriceFloorLocation int                    `json:"floorlocation,omitempty"`
 }
 
 type PriceFloorEndpoint struct {
@@ -52,7 +52,7 @@ type PriceFloorData struct {
 
 type PriceFloorModelGroup struct {
 	Currency     string             `json:"currency,omitempty"`
-	ModelWeight  int                `json:"modelweight,omitempty"`
+	ModelWeight  *int               `json:"modelweight,omitempty"`
 	ModelVersion string             `json:"modelversion,omitempty"`
 	SkipRate     int                `json:"skiprate,omitempty"`
 	Schema       PriceFloorSchema   `json:"schema,omitempty"`
@@ -68,8 +68,14 @@ type PriceFloorEnforcement struct {
 	EnforceJS     *bool `json:"enforcejs,omitempty"`
 	EnforcePBS    *bool `json:"enforcepbs,omitempty"`
 	FloorDeals    *bool `json:"floordeals,omitempty"`
-	BidAdjustment bool  `json:"bidadjustment,omitempty"`
+	BidAdjustment *bool `json:"bidadjustment,omitempty"`
 	EnforceRate   int   `json:"enforcerate,omitempty"`
+}
+
+type ImpFloorExt struct {
+	FloorRule      string  `json:"floorRule,omitempty"`
+	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorValue     float64 `json:"floorValue,omitempty"`
 }
 
 // GetEnabled will check if floors is enabled in request

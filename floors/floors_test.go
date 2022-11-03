@@ -136,7 +136,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			expPriceFlrLoc: openrtb_ext.Request,
 		},
 		{
-			name: "Skiprate = 100, Floors enaabled in  req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
+			name: "Skiprate = 100, Floors enabled in  req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -177,7 +177,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
-			err: "Invalid SkipRate at root level = '110'",
+			err: "Invalid SkipRate = '110' at ext.floors.skiprate",
 		},
 		{
 			name: "Rule selection with Site object, banner|300x600|www.website.com",

@@ -95,6 +95,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 		name         string
 		matchedRule  string
 		floorRuleVal float64
+		floorVal     float64
 		imp          openrtb2.Imp
 		expected     json.RawMessage
 	}{
@@ -102,27 +103,30 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			name:         "Nil ImpExt",
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
+			floorVal:     5.5,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}},
-			expected:     json.RawMessage{},
+			expected:     []byte(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5,"floorValue":5.5}}}`),
 		},
 		{
 			name:         "Empty ImpExt",
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
+			floorVal:     5.5,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: json.RawMessage{}},
-			expected:     json.RawMessage{},
+			expected:     []byte(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5,"floorValue":5.5}}}`),
 		},
 		{
 			name:         "With prebid Ext",
 			matchedRule:  "banner|www.test.com|*",
 			floorRuleVal: 5.5,
+			floorVal:     15.5,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)},
-			expected:     []byte(`{"prebid": {"test": true,"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5000}}}`),
+			expected:     []byte(`{"prebid":{"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5,"floorValue":15.5},"test":true}}`),
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			updateImpExtWithFloorDetails(tc.matchedRule, &tc.imp, tc.floorRuleVal)
+			updateImpExtWithFloorDetails(&tc.imp, tc.matchedRule, tc.floorRuleVal, tc.floorVal)
 			if tc.imp.Ext != nil && !reflect.DeepEqual(tc.imp.Ext, tc.expected) {
 				t.Errorf("error: \nreturn:\t%v\n want:\t%v", string(tc.imp.Ext), string(tc.expected))
 			}
@@ -155,10 +159,10 @@ func TestCreateRuleKeys(t *testing.T) {
 				Site: &openrtb2.Site{
 					Domain: "www.test.com",
 				},
-				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480}}},
+				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480, Placement: 1}}},
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			out:         []string{"video", "640x480", "www.test.com"},
+			out:         []string{"video-instream", "640x480", "www.test.com"},
 		},
 		{
 			name: "CreateRule with video mediatype, size and domain",
@@ -166,10 +170,10 @@ func TestCreateRuleKeys(t *testing.T) {
 				Site: &openrtb2.Site{
 					Domain: "www.test.com",
 				},
-				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}}},
+				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250, Placement: 2}}},
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			out:         []string{"video", "300x250", "www.test.com"},
+			out:         []string{"video-outstream", "300x250", "www.test.com"},
 		},
 		{
 			name: "CreateRule with audio mediatype, adUnitCode and domain",
@@ -395,11 +399,15 @@ func TestShouldSkipFloors(t *testing.T) {
 
 }
 
+func getIntPtr(v int) *int {
+	return &v
+}
+
 func TestSelectFloorModelGroup(t *testing.T) {
 	floorExt := &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{
 		SkipRate: 30,
 		ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
-			ModelWeight:  50,
+			ModelWeight:  getIntPtr(50),
 			SkipRate:     10,
 			ModelVersion: "Version 1",
 			Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
@@ -422,7 +430,7 @@ func TestSelectFloorModelGroup(t *testing.T) {
 				"*|*|*":                          16.01,
 			}, Default: 0.01},
 			{
-				ModelWeight:  25,
+				ModelWeight:  getIntPtr(25),
 				SkipRate:     20,
 				ModelVersion: "Version 2",
 				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},

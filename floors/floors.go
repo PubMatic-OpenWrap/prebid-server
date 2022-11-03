@@ -23,7 +23,7 @@ const (
 	skipRateMin      int    = 0
 	skipRateMax      int    = 100
 	modelWeightMax   int    = 100
-	modelWeightMin   int    = 0
+	modelWeightMin   int    = 1
 	enforceRateMin   int    = 0
 	enforceRateMax   int    = 100
 )
@@ -42,26 +42,26 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 }
 
 // updateBidRequestWithFloors will update imp.bidfloor and imp.bidfloorcur based on rules matching
-func updateBidRequestWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
+func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
 	var (
 		floorErrList      []error
 		floorModelErrList []error
 		floorVal          float64
 	)
 
-	if floorExt == nil || floorExt.Data == nil || len(floorExt.Data.ModelGroups) == 0 {
+	if extFloorRules == nil || extFloorRules.Data == nil || len(extFloorRules.Data.ModelGroups) == 0 {
 		return nil
 	}
 
-	floorData := floorExt.Data
+	floorData := extFloorRules.Data
 	modelGroup := floorData.ModelGroups[0]
 	if modelGroup.Schema.Delimiter == "" {
 		modelGroup.Schema.Delimiter = defaultDelimiter
 	}
 
-	floorExt.Skipped = new(bool)
-	if shouldSkipFloors(floorExt.Data.ModelGroups[0].SkipRate, floorExt.Data.SkipRate, floorExt.SkipRate, rand.Intn) {
-		*floorExt.Skipped = true
+	extFloorRules.Skipped = new(bool)
+	if shouldSkipFloors(extFloorRules.Data.ModelGroups[0].SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
+		*extFloorRules.Skipped = true
 		floorData.ModelGroups = nil
 		return floorModelErrList
 	}
@@ -77,7 +77,7 @@ func updateBidRequestWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *
 				floorVal = modelGroup.Values[matchedRule]
 			}
 
-			floorMinVal, floorCur, err := getMinFloorValue(floorExt, conversions)
+			floorMinVal, floorCur, err := getMinFloorValue(extFloorRules, conversions)
 			if err == nil {
 				bidFloor := floorVal
 				if floorMinVal > float64(0) && floorVal < floorMinVal {
@@ -89,7 +89,7 @@ func updateBidRequestWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *
 					request.Imp[i].BidFloorCur = floorCur
 				}
 				if isRuleMatched {
-					updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], modelGroup.Values[matchedRule])
+					updateImpExtWithFloorDetails(&request.Imp[i], matchedRule, floorVal, bidFloor)
 				}
 			} else {
 				floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
@@ -141,7 +141,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 	if floors != nil && floors.Data != nil {
 		floorData := floors.Data
 
-		floorSkipRateErr := validateFloorSkipRates(floors)
+		floorSkipRateErr := validateFloorParams(floors)
 		if floorSkipRateErr != nil {
 			return floors, append(floorModelErrList, floorSkipRateErr)
 		}

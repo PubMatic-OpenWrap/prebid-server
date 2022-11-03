@@ -151,7 +151,7 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		if responseDebugAllow {
 			updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
 			//save updated request after floors enforcement
-			r.UpdatedBidRequest = updatedBidReq
+			r.ResolvedBidRequest = updatedBidReq
 		}
 	}
 	return seatBids, rejectionsErrs, rejecteBids
