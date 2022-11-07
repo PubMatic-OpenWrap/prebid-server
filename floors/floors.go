@@ -123,7 +123,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	fetchReult := fetchAccountFloors(account)
 
-	if shouldUseDynamicFetched(account) && fetchReult != nil && fetchReult.fetchStatus == openrtb_ext.FetchSuccess {
+	if shouldUseDynamicFetchedFloor(account) && fetchReult != nil && fetchReult.fetchStatus == openrtb_ext.FetchSuccess {
 		mergedFloor := mergeFloors(reqFloor, fetchReult.priceFloors, conversions)
 		return createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.Fetch)
 	}
@@ -253,7 +253,7 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 	return Price{FloorMin: 0.0, FloorMinCur: floorCur}
 }
 
-func shouldUseDynamicFetched(Account config.Account) bool {
+func shouldUseDynamicFetchedFloor(Account config.Account) bool {
 	return Account.PriceFloors.UseDynamicData
 }
 
