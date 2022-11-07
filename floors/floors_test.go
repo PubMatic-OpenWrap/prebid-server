@@ -89,6 +89,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					Enabled: false,
 				},
 			},
+			err: "Floors feature is disbaled at account level or request",
 		},
 		{
 			name: "Floors disbaled in req.ext.prebid.floors.Enabled=false config",
@@ -110,6 +111,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
+			err: "Floors feature is disbaled at account level or request",
 		},
 		{
 			name: "Floors enabled in req.ext.prebid.floors.Enabled and account config",
@@ -250,6 +252,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			expFloorVal:    10,
 			expFloorCur:    "EUR",
 			expPriceFlrLoc: openrtb_ext.NoData,
+			err:            "Empty Floors data",
 		},
 		{
 			name: "BidFloor(USD) Less than MinBidFloor(INR) with different currency",
@@ -392,7 +395,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			expPriceFlrLoc: openrtb_ext.Request,
 		},
 		{
-			name: "imp.bidfloor provided, No Rule matching, MinBidFloor provided and , default values not provided in floor JSON",
+			name: "imp.bidfloor provided, No Rule matching, MinBidFloor provided and default values not provided in floor JSON",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{

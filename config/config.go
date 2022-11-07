@@ -1203,10 +1203,10 @@ func SetupViper(v *viper.Viper, filename string) {
 
 	v.SetDefault("account_defaults.disabled", false)
 	v.SetDefault("account_defaults.debug_allow", true)
-	v.SetDefault("account_defaults.price_floors.enabled", false)
+	v.SetDefault("account_defaults.price_floors.enabled", true)
 	v.SetDefault("account_defaults.price_floors.enforce_floors_rate", 100)
 	v.SetDefault("account_defaults.price_floors.adjust_for_bid_adjustment", true)
-	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", true)
+	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", false)
 	v.SetDefault("account_defaults.price_floors.use_dynamic_data", false)
 	v.SetDefault("account_defaults.price_floors.fetch.enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.timeout_ms", 3000)

@@ -30,8 +30,12 @@ const (
 
 func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions) []error {
 	err := []error{}
-	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil || isPriceFloorsDisabled(account, bidRequestWrapper) {
-		return err
+	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil {
+		return []error{fmt.Errorf("Empty bidrequest")}
+	}
+
+	if isPriceFloorsDisabled(account, bidRequestWrapper) {
+		return []error{fmt.Errorf("Floors feature is disbaled at account level or request")}
 	}
 
 	floors, err := resolveFloors(account, bidRequestWrapper, conversions)
@@ -50,7 +54,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	)
 
 	if extFloorRules == nil || extFloorRules.Data == nil || len(extFloorRules.Data.ModelGroups) == 0 {
-		return nil
+		return []error{fmt.Errorf("Empty Floors data")}
 	}
 
 	floorData := extFloorRules.Data
