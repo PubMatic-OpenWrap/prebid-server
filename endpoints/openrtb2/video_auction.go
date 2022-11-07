@@ -297,9 +297,10 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		PubID:                      labels.PubID,
 	}
 
-	response, err := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
+	response, err, rejectedBids := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
 	vo.Request = bidReq
 	vo.Response = response
+	vo.RejectedBids = rejectedBids
 	if err != nil {
 		errL := []error{err}
 		handleError(&labels, w, errL, &vo, &debugLog)

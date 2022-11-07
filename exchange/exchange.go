@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
@@ -42,7 +43,7 @@ type extCacheInstructions struct {
 // Exchange runs Auctions. Implementations must be threadsafe, and will be shared across many goroutines.
 type Exchange interface {
 	// HoldAuction executes an OpenRTB v2.5 Auction.
-	HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error)
+	HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error, []analytics.RejectedBid)
 }
 
 // IdFetcher can find the user's ID for a specific Bidder.
@@ -191,15 +192,15 @@ type BidderRequest struct {
 	BidderStoredResponses map[string]json.RawMessage
 }
 
-func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
+func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error, []analytics.RejectedBid) {
 	var errs []error
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 	requestExt, err := extractBidRequestExt(r.BidRequestWrapper.BidRequest)
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	cacheInstructions := getExtCacheInstructions(requestExt)
@@ -212,7 +213,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//save incoming request with stored requests (if applicable) to return in debug logs
 		resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
 		if err != nil {
-			return nil, err
+			return nil, err, nil
 		}
 		r.ResolvedBidRequest = resolvedBidReq
 	}
@@ -228,18 +229,18 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 			return nil, &errortypes.BadInput{
 				Message: strings.Join(errMessages, ","),
-			}
+			}, nil
 		}
 		r.FirstPartyData = resolvedFPD
 		if len(resolvedFPD) > 0 {
 			// rebuild/resync the request in the request wrapper.
 			// it needs to be here to update ReqWrapper and requestExt because req.ext was modified after FPD extraction
 			if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
-				return nil, err
+				return nil, err, nil
 			}
 			requestExt, err = extractBidRequestExt(r.BidRequestWrapper.BidRequest)
 			if err != nil {
-				return nil, err
+				return nil, err, nil
 			}
 		}
 	}
@@ -278,7 +279,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	if len(r.StoredAuctionResponses) > 0 {
 		adapterBids, liveAdapters, err = buildStoredAuctionResponse(r.StoredAuctionResponses)
 		if err != nil {
-			return nil, err
+			return nil, err, nil
 		}
 		anyBidsReturned = true
 
@@ -311,7 +312,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			var rejections []string
 			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 			if err != nil {
-				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
+				return nil, fmt.Errorf("Error in category mapping : %s", err.Error()), nil
 			}
 			for _, message := range rejections {
 				errs = append(errs, errors.New(message))
@@ -704,7 +705,7 @@ func errsToBidderWarnings(errs []error) []openrtb_ext.ExtBidderMessage {
 }
 
 // This piece takes all the bids supplied by the adapters and crafts an openRTB response to send back to the requester
-func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterSeatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, bidRequest *openrtb2.BidRequest, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, errList []error) (*openrtb2.BidResponse, error) {
+func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterSeatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, bidRequest *openrtb2.BidRequest, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, errList []error) (*openrtb2.BidResponse, error, []analytics.RejectedBid) {
 	bidResponse := new(openrtb2.BidResponse)
 	var err error
 
@@ -729,7 +730,7 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	bidResponse.SeatBid = seatBids
 	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
 
-	return bidResponse, err
+	return bidResponse, err, nil
 }
 
 func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, error) {

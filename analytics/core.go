@@ -17,9 +17,9 @@ import (
 */
 
 type PBSAnalyticsModule interface {
-	LogAuctionObject(*AuctionObject)
-	LogVideoObject(*VideoObject)
-	LogCookieSyncObject(*CookieSyncObject)
+	LogAuctionObject(*AuctionObject)       // /auction
+	LogVideoObject(*VideoObject)           // /video
+	LogCookieSyncObject(*CookieSyncObject) //
 	LogSetUIDObject(*SetUIDObject)
 	LogAmpObject(*AmpObject)
 	LogNotificationEventObject(*NotificationEvent)
@@ -27,12 +27,13 @@ type PBSAnalyticsModule interface {
 
 //Loggable object of a transaction at /openrtb2/auction endpoint
 type AuctionObject struct {
-	Status    int
-	Errors    []error
-	Request   *openrtb2.BidRequest
-	Response  *openrtb2.BidResponse
-	Account   *config.Account
-	StartTime time.Time
+	Status       int
+	Errors       []error
+	Request      *openrtb2.BidRequest
+	Response     *openrtb2.BidResponse
+	Account      *config.Account
+	StartTime    time.Time
+	RejectedBids []RejectedBid
 }
 
 //Loggable object of a transaction at /openrtb2/amp endpoint
@@ -44,6 +45,7 @@ type AmpObject struct {
 	AmpTargetingValues map[string]string
 	Origin             string
 	StartTime          time.Time
+	RejectedBids       []RejectedBid
 }
 
 //Loggable object of a transaction at /openrtb2/video endpoint
@@ -55,6 +57,7 @@ type VideoObject struct {
 	VideoRequest  *openrtb_ext.BidRequestVideo
 	VideoResponse *openrtb_ext.BidResponseVideo
 	StartTime     time.Time
+	RejectedBids  []RejectedBid
 }
 
 //Loggable object of a transaction at /setuid
@@ -89,4 +92,10 @@ type UsersyncInfo struct {
 type NotificationEvent struct {
 	Request *EventRequest   `json:"request"`
 	Account *config.Account `json:"account"`
+}
+
+type RejectedBid struct {
+	RejectionReason int
+	Bid             openrtb2.Bid
+	Reject          *openrtb2.BidResponse // appnx : 2 bids, pub 1: rej
 }
