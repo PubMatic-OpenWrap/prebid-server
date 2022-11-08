@@ -129,17 +129,17 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 
 	if shouldUseDynamicFetchedFloor(account) && fetchReult != nil && fetchReult.fetchStatus == openrtb_ext.FetchSuccess {
 		mergedFloor := mergeFloors(reqFloor, fetchReult.priceFloors, conversions)
-		return createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.Fetch)
+		return createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.FetchLocation)
 	}
 
 	if reqFloor != nil {
-		return createFloorsFrom(reqFloor, fetchReult.fetchStatus, openrtb_ext.Request)
+		return createFloorsFrom(reqFloor, fetchReult.fetchStatus, openrtb_ext.RequestLocation)
 	}
 
-	return createFloorsFrom(nil, fetchReult.fetchStatus, openrtb_ext.NoData)
+	return createFloorsFrom(nil, fetchReult.fetchStatus, openrtb_ext.NoDataLocation)
 }
 
-func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLocation int) (*openrtb_ext.PriceFloorRules, []error) {
+func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus int, floorLocation string) (*openrtb_ext.PriceFloorRules, []error) {
 
 	var floorModelErrList []error
 	if floors != nil && floors.Data != nil {

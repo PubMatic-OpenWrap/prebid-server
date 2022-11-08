@@ -71,7 +71,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 		err               string
 		expFloorVal       float64
 		expFloorCur       string
-		expPriceFlrLoc    int
+		expPriceFlrLoc    string
 	}{
 		{
 			name: "Floors disbaled in account config",
@@ -135,7 +135,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    5,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "Skiprate = 100, Floors enabled in req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
@@ -203,7 +203,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    5,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "Rule selection with App object, *|*|www.test.com",
@@ -227,7 +227,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    15,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "Floors Signalling not done as req.ext.prebid.floors not provided",
@@ -251,7 +251,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    10,
 			expFloorCur:    "EUR",
-			expPriceFlrLoc: openrtb_ext.NoData,
+			expPriceFlrLoc: openrtb_ext.NoDataLocation,
 			err:            "Empty Floors data",
 		},
 		{
@@ -272,7 +272,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    1.1429,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "BidFloor(INR) Less than MinBidFloor(USD) with different currency",
@@ -292,7 +292,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    70,
 			expFloorCur:    "INR",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "BidFloor is greater than MinBidFloor with same currency",
@@ -312,7 +312,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    2,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "BidFloor Less than MinBidFloor with same currency",
@@ -332,7 +332,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    3,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "No rule matched, Default value  greater than MinBidFloor with same currency",
@@ -352,7 +352,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    15,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "No rule matched, Default value  less than MinBidFloor with same currency",
@@ -372,7 +372,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    5,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "imp.bidfloor provided, No Rule matching and MinBidFloor, default values not provided in floor JSON",
@@ -392,7 +392,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    1.5,
 			expFloorCur:    "INR",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "imp.bidfloor provided, No Rule matching, MinBidFloor provided and default values not provided in floor JSON",
@@ -412,7 +412,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			},
 			expFloorVal:    2,
 			expFloorCur:    "USD",
-			expPriceFlrLoc: openrtb_ext.Request,
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 	}
 
@@ -585,7 +585,7 @@ func TestResolveFloors(t *testing.T) {
 		fetchedResults.fetchStatus = 0
 		fetchedResults.priceFloors = openrtb_ext.PriceFloorRules{
 			Enabled:            getTrue(),
-			PriceFloorLocation: openrtb_ext.Request,
+			PriceFloorLocation: openrtb_ext.RequestLocation,
 			Enforcement: &openrtb_ext.PriceFloorEnforcement{
 				EnforcePBS:  getTrue(),
 				EnforceRate: 100,
@@ -639,7 +639,7 @@ func TestResolveFloors(t *testing.T) {
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
-				PriceFloorLocation: openrtb_ext.Request,
+				PriceFloorLocation: openrtb_ext.RequestLocation,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
@@ -682,7 +682,7 @@ func TestResolveFloors(t *testing.T) {
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
-				PriceFloorLocation: openrtb_ext.Fetch,
+				PriceFloorLocation: openrtb_ext.FetchLocation,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS: getTrue(),
 					FloorDeals: getTrue(),
@@ -726,7 +726,7 @@ func TestResolveFloors(t *testing.T) {
 				Enabled:            getTrue(),
 				FloorMin:           10.11,
 				FloorMinCur:        "EUR",
-				PriceFloorLocation: openrtb_ext.Fetch,
+				PriceFloorLocation: openrtb_ext.FetchLocation,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,

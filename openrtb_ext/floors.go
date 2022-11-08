@@ -1,12 +1,5 @@
 package openrtb_ext
 
-// Defines numeric codes for PriceFloorLocation
-const (
-	NoData = iota
-	Request
-	Fetch
-)
-
 // Defines numeric codes for FetchStatus
 const (
 	FetchSuccess = iota
@@ -16,11 +9,11 @@ const (
 	FetchNone
 )
 
-// Defines strings for FloorProvider
+// Defines strings for PriceFloorLocation
 const (
 	NoDataLocation  = "noData"
-	RequestLocation = "Request"
-	CacheLocation   = "fetch"
+	RequestLocation = "request"
+	FetchLocation   = "fetch"
 )
 
 // PriceFloorRules defines the contract for bidrequest.ext.prebid.floors
@@ -28,14 +21,14 @@ type PriceFloorRules struct {
 	FloorMin           float64                `json:"floormin,omitempty"`
 	FloorMinCur        string                 `json:"floormincur,omitempty"`
 	SkipRate           int                    `json:"skiprate,omitempty"`
-	Location           *PriceFloorEndpoint    `json:"location,omitempty"`
+	Location           *PriceFloorEndpoint    `json:"floorendpoint,omitempty"`
 	Data               *PriceFloorData        `json:"data,omitempty"`
 	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
 	Enabled            *bool                  `json:"enabled,omitempty"`
 	Skipped            *bool                  `json:"skipped,omitempty"`
 	FloorProvider      string                 `json:"floorprovider,omitempty"`
 	FetchStatus        int                    `json:"fetchstatus,omitempty"`
-	PriceFloorLocation int                    `json:"floorlocation,omitempty"`
+	PriceFloorLocation string                 `json:"location,omitempty"`
 }
 
 type PriceFloorEndpoint struct {
