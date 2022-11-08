@@ -138,7 +138,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			expPriceFlrLoc: openrtb_ext.Request,
 		},
 		{
-			name: "Skiprate = 100, Floors enabled in  req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
+			name: "Skiprate = 100, Floors enabled in req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -179,7 +179,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
-			err: "Invalid SkipRate = '110' at ext.floors.skiprate",
+			err: "Invalid SkipRate at root level = '110'",
 		},
 		{
 			name: "Rule selection with Site object, banner|300x600|www.website.com",
@@ -467,7 +467,7 @@ func TestResolveFloorMin(t *testing.T) {
 		expPrice    Price
 	}{
 		{
-			name: "FloorsMin presnet in request Floors only",
+			name: "FloorsMin present in request Floors only",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMin:    10,
 				FloorMinCur: "JPY",
@@ -476,7 +476,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice:    Price{FloorMin: 10, FloorMinCur: "JPY"},
 		},
 		{
-			name: "FloorsMin presnet in request Floors and data currency presnet",
+			name: "FloorsMin present in request Floors and data currency present",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMin:    10,
 				FloorMinCur: "JPY",
@@ -488,7 +488,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice:    Price{FloorMin: 10, FloorMinCur: "JPY"},
 		},
 		{
-			name: "FloorsMin presnet in request Floors and fetched floors",
+			name: "FloorsMin present in request Floors and fetched floors",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMin:    10,
 				FloorMinCur: "USD",
@@ -500,7 +500,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice: Price{FloorMin: 10, FloorMinCur: "USD"},
 		},
 		{
-			name:      "FloorsMin presnet fetched floors only",
+			name:      "FloorsMin present fetched floors only",
 			reqFloors: openrtb_ext.PriceFloorRules{},
 			fetchFloors: openrtb_ext.PriceFloorRules{
 				FloorMin:    15,
@@ -509,7 +509,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice: Price{FloorMin: 15, FloorMinCur: "EUR"},
 		},
 		{
-			name: "FloorMinCur presnet in reqFloors And FloorsMin, FloorMinCur presnet fetched floors (Same Currency)",
+			name: "FloorMinCur present in reqFloors And FloorsMin, FloorMinCur present fetched floors (Same Currency)",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMinCur: "EUR",
 			},
@@ -520,7 +520,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice: Price{FloorMin: 15, FloorMinCur: "EUR"},
 		},
 		{
-			name: "FloorMinCur presnet in reqFloors And FloorsMin, FloorMinCur presnet fetched floors (Different Currency)",
+			name: "FloorMinCur present in reqFloors And FloorsMin, FloorMinCur present fetched floors (Different Currency)",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMinCur: "USD",
 			},
@@ -531,7 +531,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice: Price{FloorMin: 16.6667, FloorMinCur: "USD"},
 		},
 		{
-			name: "FloorMin presnet in reqFloors And FloorMinCur presnet fetched floors",
+			name: "FloorMin present in reqFloors And FloorMinCur present fetched floors",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMin: 11,
 			},
@@ -541,7 +541,7 @@ func TestResolveFloorMin(t *testing.T) {
 			expPrice: Price{FloorMin: 11, FloorMinCur: "EUR"},
 		},
 		{
-			name: "FloorMinCur presnet in reqFloors And FloorMin presnet fetched floors",
+			name: "FloorMinCur present in reqFloors And FloorMin present fetched floors",
 			reqFloors: openrtb_ext.PriceFloorRules{
 				FloorMinCur: "INR",
 			},

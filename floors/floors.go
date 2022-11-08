@@ -23,7 +23,7 @@ const (
 	skipRateMin      int    = 0
 	skipRateMax      int    = 100
 	modelWeightMax   int    = 100
-	modelWeightMin   int    = 1
+	modelWeightMin   int    = 0
 	enforceRateMin   int    = 0
 	enforceRateMax   int    = 100
 )
@@ -93,7 +93,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 					request.Imp[i].BidFloorCur = floorCur
 				}
 				if isRuleMatched {
-					updateImpExtWithFloorDetails(&request.Imp[i], matchedRule, floorVal, bidFloor)
+					updateImpExtWithFloorDetails(&request.Imp[i], matchedRule, floorVal)
 				}
 			} else {
 				floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
@@ -145,7 +145,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 	if floors != nil && floors.Data != nil {
 		floorData := floors.Data
 
-		floorSkipRateErr := validateFloorParams(floors)
+		floorSkipRateErr := validateFloorSkipRates(floors)
 		if floorSkipRateErr != nil {
 			return floors, append(floorModelErrList, floorSkipRateErr)
 		}
