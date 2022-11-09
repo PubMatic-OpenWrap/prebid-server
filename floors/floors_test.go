@@ -74,7 +74,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 		expPriceFlrLoc    string
 	}{
 		{
-			name: "Floors disbaled in account config",
+			name: "Floors disabled in account config",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -89,10 +89,10 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					Enabled: false,
 				},
 			},
-			err: "Floors feature is disbaled at account level or request",
+			err: "Floors feature is disabled at account level or request",
 		},
 		{
-			name: "Floors disbaled in req.ext.prebid.floors.Enabled=false config",
+			name: "Floors disabled in req.ext.prebid.floors.Enabled=false config",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -111,7 +111,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
-			err: "Floors feature is disbaled at account level or request",
+			err: "Floors feature is disabled at account level or request",
 		},
 		{
 			name: "Floors enabled in req.ext.prebid.floors.Enabled and account config",
@@ -640,6 +640,7 @@ func TestResolveFloors(t *testing.T) {
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
 				PriceFloorLocation: openrtb_ext.RequestLocation,
+				FetchStatus:        openrtb_ext.FetchNone,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
@@ -748,6 +749,26 @@ func TestResolveFloors(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			name: "Dynamic fetch disabled, floors not present in req.ext",
+			bidRequestWrapper: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+					},
+					Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+				},
+			},
+			account: config.Account{
+				PriceFloors: config.AccountPriceFloors{
+					Enabled:        true,
+					UseDynamicData: false,
+				},
+			},
+			expFloors: &openrtb_ext.PriceFloorRules{
+				PriceFloorLocation: openrtb_ext.NoDataLocation,
 			},
 		},
 	}

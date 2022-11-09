@@ -142,17 +142,18 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 			seatBids, rejectionsErrs, rejecteBids = enforceFloorToBids(r.BidRequestWrapper.BidRequest, seatBids, conversions, enforceDealFloors)
 		}
 		requestExt.SetPrebid(prebidExt)
-		err = r.BidRequestWrapper.RebuildRequest()
-		if err != nil {
-			rejectionsErrs = append(rejectionsErrs, err)
-			return seatBids, rejectionsErrs, rejecteBids
-		}
 
-		if responseDebugAllow {
-			updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
-			//save updated request after floors enforcement
-			r.ResolvedBidRequest = updatedBidReq
-		}
+	}
+
+	err = r.BidRequestWrapper.RebuildRequest()
+	if err != nil {
+		rejectionsErrs = append(rejectionsErrs, err)
+		return seatBids, rejectionsErrs, rejecteBids
+	}
+
+	if responseDebugAllow {
+		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
+		r.ResolvedBidRequest = updatedBidReq
 	}
 	return seatBids, rejectionsErrs, rejecteBids
 }
