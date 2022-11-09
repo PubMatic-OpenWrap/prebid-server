@@ -15,10 +15,15 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-// fetchReult defines the contract for fetched floors results
-type fetchReult struct {
-	priceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
-	fetchStatus int                         `json:"fetchstatus,omitempty"`
+// fetchResult defines the contract for fetched floors results
+type fetchedFloors struct {
+	FetchedJSON []fetchResult `json:"fetchresult,omitempty"`
+}
+
+// fetchResult defines the contract for fetched floors results
+type fetchResult struct {
+	PriceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
+	FetchStatus int                         `json:"fetchstatus,omitempty"`
 }
 
 var fetchInProgress map[string]bool
@@ -31,143 +36,48 @@ func getBoolPtr(val bool) *bool {
 	return &val
 }
 
-// fetchAccountFloors this function fetch floors JSON for given account
-var fetchAccountFloors = func(account config.Account) *fetchReult {
-
-	maxFetchResults := 3
-	sampleFloors := [3]fetchReult{
-		{
-			fetchStatus: openrtb_ext.FetchSuccess,
-			priceFloors: openrtb_ext.PriceFloorRules{
-				FloorMin:           3,
-				FloorMinCur:        "INR",
-				Enabled:            getBoolPtr(true),
-				PriceFloorLocation: openrtb_ext.FetchLocation,
-				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  getBoolPtr(true),
-					EnforceRate: 100,
-					FloorDeals:  getBoolPtr(true),
-				},
-				Data: &openrtb_ext.PriceFloorData{
-					Currency: "USD",
-					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
-						{
-							ModelVersion: "1 dynamic model 1",
-							Currency:     "USD",
-							Values: map[string]float64{
-								"banner|300x600|www.website5.com": 5,
-								"*|*|*":                           7,
-							},
-							Schema: openrtb_ext.PriceFloorSchema{
-								Fields:    []string{"mediaType", "size", "domain"},
-								Delimiter: "|",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			fetchStatus: openrtb_ext.FetchSuccess,
-			priceFloors: openrtb_ext.PriceFloorRules{
-				FloorMin:           5,
-				FloorMinCur:        "EUR",
-				Enabled:            getBoolPtr(true),
-				PriceFloorLocation: openrtb_ext.FetchLocation,
-				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  getBoolPtr(true),
-					EnforceRate: 100,
-					FloorDeals:  getBoolPtr(true),
-				},
-				Data: &openrtb_ext.PriceFloorData{
-					Currency: "USD",
-					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
-						{
-							ModelVersion: "2 dynamic model 1",
-							Currency:     "USD",
-							Values: map[string]float64{
-								"banner|300x600|*": 5,
-								"*|*|*":            7,
-							},
-							Schema: openrtb_ext.PriceFloorSchema{
-								Fields:    []string{"mediaType", "size", "domain"},
-								Delimiter: "|",
-							},
-						},
-						{
-							ModelVersion: "2 dynamic model 2",
-							Currency:     "USD",
-							Values: map[string]float64{
-								"banner|300x250|www.website.com": 15,
-								"*|*|*":                          17,
-							},
-							Schema: openrtb_ext.PriceFloorSchema{
-								Fields:    []string{"mediaType", "size", "domain"},
-								Delimiter: "|",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			fetchStatus: openrtb_ext.FetchSuccess,
-			priceFloors: openrtb_ext.PriceFloorRules{
-				FloorMin:           7,
-				FloorMinCur:        "USD",
-				Enabled:            getBoolPtr(false),
-				PriceFloorLocation: openrtb_ext.FetchLocation,
-				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  getBoolPtr(true),
-					EnforceRate: 100,
-					FloorDeals:  getBoolPtr(true),
-				},
-				Data: &openrtb_ext.PriceFloorData{
-					Currency: "USD",
-					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
-						{
-							ModelVersion: "3 dynamic model 1",
-							Currency:     "USD",
-							Values: map[string]float64{
-								"banner|300x600|www.website5.com": 5,
-								"*|*|*":                           7,
-							},
-							Schema: openrtb_ext.PriceFloorSchema{
-								Fields:    []string{"mediaType", "size", "domain"},
-								Delimiter: "|",
-							},
-						},
-					},
-				},
-			},
-		},
+func loadFloorsJSONFromFileSystem() *fetchResult {
+	opts, err := ioutil.ReadFile("/home/qateam/floors.json")
+	if err != nil {
+		opts, err = ioutil.ReadFile("/tmp/floors.json")
+	}
+	if err == nil {
+		var fetchedFloors fetchedFloors
+		err := json.Unmarshal(opts, &fetchedFloors)
+		if err == nil {
+			index := rand.Intn(len(fetchedFloors.FetchedJSON))
+			return &fetchedFloors.FetchedJSON[index]
+		}
 	}
 
-	index := rand.Intn(maxFetchResults)
-	return &sampleFloors[index]
+	return nil
+}
 
+// fetchAccountFloors this function fetch floors JSON for given account
+var fetchAccountFloors = func(account config.Account) *fetchResult {
+
+	return loadFloorsJSONFromFileSystem()
 	// Above code is added for testing purpose, shall be removed once sanity testing is done
 
-	//	var fetchedResults fetchReult
-
+	//	var fetchedResults fetchResult
 	// Check for Rules in cache
 
 	// fetch floors JSON
 	//return fetchPriceFloorRules(account)
 }
 
-func fetchPriceFloorRules(account config.Account) *fetchReult {
+func fetchPriceFloorRules(account config.Account) *fetchResult {
 	// If fetch is disabled
 	fetchConfig := account.PriceFloors.Fetch
 	if !fetchConfig.Enabled {
-		return &fetchReult{
-			fetchStatus: openrtb_ext.FetchNone,
+		return &fetchResult{
+			FetchStatus: openrtb_ext.FetchNone,
 		}
 	}
 
 	if !validator.IsURL(fetchConfig.URL) {
-		return &fetchReult{
-			fetchStatus: openrtb_ext.FetchError,
+		return &fetchResult{
+			FetchStatus: openrtb_ext.FetchError,
 		}
 	}
 
@@ -177,8 +87,8 @@ func fetchPriceFloorRules(account config.Account) *fetchReult {
 	}
 
 	// Rules not present in cache, fetch rules asynchronously
-	return &fetchReult{
-		fetchStatus: openrtb_ext.FetchInprogress,
+	return &fetchResult{
+		FetchStatus: openrtb_ext.FetchInprogress,
 	}
 }
 

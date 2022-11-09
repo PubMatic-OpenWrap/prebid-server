@@ -134,9 +134,9 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	fetchReult := fetchAccountFloors(account)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchReult != nil && fetchReult.fetchStatus == openrtb_ext.FetchSuccess {
-		mergedFloor := mergeFloors(reqFloor, fetchReult.priceFloors, conversions)
-		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchReult.fetchStatus, openrtb_ext.FetchLocation)
+	if shouldUseDynamicFetchedFloor(account) && fetchReult != nil && fetchReult.FetchStatus == openrtb_ext.FetchSuccess {
+		mergedFloor := mergeFloors(reqFloor, fetchReult.PriceFloors, conversions)
+		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchReult.FetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
 		floorsJson, errlist = createFloorsFrom(reqFloor, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
 	} else {
@@ -168,7 +168,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus int, floo
 		if modelGroup.Schema.Delimiter == "" {
 			modelGroup.Schema.Delimiter = defaultDelimiter
 		}
-		floors.FetchStatus = fetchStatus
+		floors.FetchStatus = &fetchStatus
 		floors.PriceFloorLocation = floorLocation
 
 	} else {

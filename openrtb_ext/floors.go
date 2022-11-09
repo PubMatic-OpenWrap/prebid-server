@@ -27,7 +27,7 @@ type PriceFloorRules struct {
 	Enabled            *bool                  `json:"enabled,omitempty"`
 	Skipped            *bool                  `json:"skipped,omitempty"`
 	FloorProvider      string                 `json:"floorprovider,omitempty"`
-	FetchStatus        int                    `json:"fetchstatus,omitempty"`
+	FetchStatus        *int                   `json:"fetchstatus,omitempty"`
 	PriceFloorLocation string                 `json:"location,omitempty"`
 }
 

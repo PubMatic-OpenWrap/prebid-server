@@ -11,6 +11,10 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+func getIntPtr(v int) *int {
+	return &v
+}
+
 func TestIsRequestEnabledWithFloor(t *testing.T) {
 	FalseFlag := false
 	TrueFlag := true
@@ -580,10 +584,10 @@ func TestResolveFloors(t *testing.T) {
 		},
 	}
 
-	fetchAccountFloors = func(account config.Account) *fetchReult {
-		var fetchedResults fetchReult
-		fetchedResults.fetchStatus = 0
-		fetchedResults.priceFloors = openrtb_ext.PriceFloorRules{
+	fetchAccountFloors = func(account config.Account) *fetchResult {
+		var fetchedResults fetchResult
+		fetchedResults.FetchStatus = 0
+		fetchedResults.PriceFloors = openrtb_ext.PriceFloorRules{
 			Enabled:            getTrue(),
 			PriceFloorLocation: openrtb_ext.RequestLocation,
 			Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -640,7 +644,7 @@ func TestResolveFloors(t *testing.T) {
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
 				PriceFloorLocation: openrtb_ext.RequestLocation,
-				FetchStatus:        openrtb_ext.FetchNone,
+				FetchStatus:        getIntPtr(openrtb_ext.FetchNone),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
@@ -684,6 +688,7 @@ func TestResolveFloors(t *testing.T) {
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
 				PriceFloorLocation: openrtb_ext.FetchLocation,
+				FetchStatus:        getIntPtr(openrtb_ext.FetchSuccess),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS: getTrue(),
 					FloorDeals: getTrue(),
@@ -728,6 +733,7 @@ func TestResolveFloors(t *testing.T) {
 				FloorMin:           10.11,
 				FloorMinCur:        "EUR",
 				PriceFloorLocation: openrtb_ext.FetchLocation,
+				FetchStatus:        getIntPtr(openrtb_ext.FetchSuccess),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
