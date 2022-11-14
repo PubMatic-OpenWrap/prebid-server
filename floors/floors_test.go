@@ -78,6 +78,16 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 		expPriceFlrLoc    string
 	}{
 		{
+			name:              "Empty bidrequest",
+			bidRequestWrapper: &openrtb_ext.RequestWrapper{},
+			account: config.Account{
+				PriceFloors: config.AccountPriceFloors{
+					Enabled: false,
+				},
+			},
+			err: "Empty bidrequest",
+		},
+		{
 			name: "Floors disabled in account config",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
@@ -423,10 +433,10 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates))
-			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal) {
+			if tc.bidRequestWrapper.BidRequest != nil && !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal)
 			}
-			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur) {
+			if tc.bidRequestWrapper.BidRequest != nil && len(tc.bidRequestWrapper.Imp) > 0 && !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur) {
 				t.Errorf("Floor Currency error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorCur)
 			}
 
