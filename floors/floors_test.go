@@ -787,6 +787,32 @@ func TestResolveFloors(t *testing.T) {
 				PriceFloorLocation: openrtb_ext.NoDataLocation,
 			},
 		},
+		{
+			name: "Dynamic fetch disabled, only enforcement object present in req.ext",
+			bidRequestWrapper: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+					},
+					Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+					Ext: json.RawMessage(`{"prebid":{"floors":{"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+				},
+			},
+			account: config.Account{
+				PriceFloors: config.AccountPriceFloors{
+					Enabled:        true,
+					UseDynamicData: false,
+				},
+			},
+			expFloors: &openrtb_ext.PriceFloorRules{
+				Enforcement: &openrtb_ext.PriceFloorEnforcement{
+					EnforcePBS:  getTrue(),
+					EnforceRate: 100,
+					FloorDeals:  getTrue(),
+				},
+				PriceFloorLocation: openrtb_ext.RequestLocation,
+			},
+		},
 	}
 
 	for _, tc := range tt {

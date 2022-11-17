@@ -54,7 +54,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	)
 
 	if extFloorRules == nil || extFloorRules.Data == nil || len(extFloorRules.Data.ModelGroups) == 0 {
-		return []error{fmt.Errorf("Empty Floors data")}
+		return []error{}
 	}
 
 	if !extFloorRules.GetEnabled() {
@@ -169,12 +169,11 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus int, floo
 			modelGroup.Schema.Delimiter = defaultDelimiter
 		}
 		floors.FetchStatus = &fetchStatus
-		floors.PriceFloorLocation = floorLocation
 
-	} else {
+	} else if floors == nil {
 		floors = new(openrtb_ext.PriceFloorRules)
-		floors.PriceFloorLocation = floorLocation
 	}
+	floors.PriceFloorLocation = floorLocation
 	return floors, floorModelErrList
 }
 
