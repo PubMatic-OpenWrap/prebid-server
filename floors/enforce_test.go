@@ -17,6 +17,41 @@ func getTrue() *bool {
 	return &b
 }
 
+func TestRequestHasFloors(t *testing.T) {
+
+	tests := []struct {
+		name       string
+		bidRequest *openrtb2.BidRequest
+		want       bool
+	}{
+		{
+			bidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+			},
+			want: false,
+		},
+		{
+			bidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", BidFloor: 10, BidFloorCur: "USD", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RequestHasFloors(tt.bidRequest); got != tt.want {
+				t.Errorf("RequestHasFloors() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 func TestShouldEnforceFloors(t *testing.T) {
 	type args struct {
 		bidRequest        *openrtb2.BidRequest
@@ -29,6 +64,32 @@ func TestShouldEnforceFloors(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "enfocement = true of enforcement object not provided",
+			args: args{
+				bidRequest: func() *openrtb2.BidRequest {
+					r := openrtb2.BidRequest{
+						Imp: []openrtb2.Imp{
+							{
+								BidFloor:    2.2,
+								BidFloorCur: "USD",
+							},
+							{
+								BidFloor:    0,
+								BidFloorCur: "USD",
+							},
+						},
+					}
+					return &r
+				}(),
+				configEnforceRate: 100,
+				f: func(n int) int {
+					return n - 1
+				},
+			},
+			want: true,
+		},
+
 		{
 			name: "No enfocement of floors when enforcePBS is false",
 			args: args{
