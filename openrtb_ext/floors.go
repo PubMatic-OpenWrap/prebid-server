@@ -1,15 +1,34 @@
 package openrtb_ext
 
+// Defines numeric codes for FetchStatus
+const (
+	FetchSuccess = iota
+	FetchTimeout
+	FetchError
+	FetchInprogress
+	FetchNone
+)
+
+// Defines strings for PriceFloorLocation
+const (
+	NoDataLocation  = "noData"
+	RequestLocation = "request"
+	FetchLocation   = "fetch"
+)
+
 // PriceFloorRules defines the contract for bidrequest.ext.prebid.floors
 type PriceFloorRules struct {
-	FloorMin    float64                `json:"floormin,omitempty"`
-	FloorMinCur string                 `json:"floormincur,omitempty"`
-	SkipRate    int                    `json:"skiprate,omitempty"`
-	Location    *PriceFloorEndpoint    `json:"location,omitempty"`
-	Data        *PriceFloorData        `json:"data,omitempty"`
-	Enforcement *PriceFloorEnforcement `json:"enforcement,omitempty"`
-	Enabled     *bool                  `json:"enabled,omitempty"`
-	Skipped     *bool                  `json:"skipped,omitempty"`
+	FloorMin           float64                `json:"floormin,omitempty"`
+	FloorMinCur        string                 `json:"floormincur,omitempty"`
+	SkipRate           int                    `json:"skiprate,omitempty"`
+	Location           *PriceFloorEndpoint    `json:"floorendpoint,omitempty"`
+	Data               *PriceFloorData        `json:"data,omitempty"`
+	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
+	Enabled            *bool                  `json:"enabled,omitempty"`
+	Skipped            *bool                  `json:"skipped,omitempty"`
+	FloorProvider      string                 `json:"floorprovider,omitempty"`
+	FetchStatus        *int                   `json:"fetchstatus,omitempty"`
+	PriceFloorLocation string                 `json:"location,omitempty"`
 }
 
 type PriceFloorEndpoint struct {
@@ -40,15 +59,22 @@ type PriceFloorSchema struct {
 }
 
 type PriceFloorEnforcement struct {
+	EnforceJS     *bool `json:"enforcejs,omitempty"`
 	EnforcePBS    *bool `json:"enforcepbs,omitempty"`
 	FloorDeals    *bool `json:"floordeals,omitempty"`
-	BidAdjustment bool  `json:"bidadjustment,omitempty"`
+	BidAdjustment *bool `json:"bidadjustment,omitempty"`
 	EnforceRate   int   `json:"enforcerate,omitempty"`
+}
+
+type ImpFloorExt struct {
+	FloorRule      string  `json:"floorRule,omitempty"`
+	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorValue     float64 `json:"floorValue,omitempty"`
 }
 
 // GetEnabled will check if floors is enabled in request
 func (Floors *PriceFloorRules) GetEnabled() bool {
-	if Floors != nil && Floors.Enabled != nil && !*Floors.Enabled {
+	if Floors != nil && Floors.Enabled != nil {
 		return *Floors.Enabled
 	}
 	return true

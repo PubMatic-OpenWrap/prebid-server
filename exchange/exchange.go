@@ -171,7 +171,6 @@ type ImpExtInfo struct {
 type AuctionRequest struct {
 	BidRequestWrapper          *openrtb_ext.RequestWrapper
 	ResolvedBidRequest         json.RawMessage
-	UpdatedBidRequest          json.RawMessage
 	Account                    config.Account
 	UserSyncs                  IdFetcher
 	RequestType                metrics.RequestType
@@ -207,6 +206,7 @@ type BidderRequest struct {
 
 func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
 	var errs []error
+	var floorErrs []error
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
 		return nil, err
@@ -266,9 +266,9 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	// Get currency rates conversions for the auction
 	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
 
-	// If floors feature is enabled at server and request level, Update floors values in impression object
-	floorErrs := selectFloorsAndModifyImp(&r, e.floor, conversions, responseDebugAllow)
-	errs = append(errs, floorErrs...)
+	if e.floor.Enabled {
+		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions)
+	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)
 
@@ -277,6 +277,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	// Slice of BidRequests, each a copy of the original cleaned to only contain bidder data for the named bidder
 	bidderRequests, privacyLabels, errs := cleanOpenRTBRequests(ctx, r, requestExt, e.bidderToSyncerKey, e.me, gdprDefaultValue, e.privacyConfig, e.gdprPermsBuilder, e.tcf2ConfigBuilder, e.hostSChainNode)
+	errs = append(errs, floorErrs...)
 
 	e.me.RecordRequestPrivacy(privacyLabels)
 
@@ -1057,7 +1058,6 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*pb
 		bidResponseExt.Debug = &openrtb_ext.ExtResponseDebug{
 			HttpCalls:       make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall),
 			ResolvedRequest: r.ResolvedBidRequest,
-			UpdatedRequest:  r.UpdatedBidRequest,
 		}
 	}
 	if !r.StartTime.IsZero() {
