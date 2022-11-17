@@ -105,10 +105,7 @@ type Configuration struct {
 }
 
 type PriceFloors struct {
-	Enabled           bool `mapstructure:"enabled"`
-	UseDynamicData    bool `mapstructure:"use_dynamic_data"`
-	EnforceFloorsRate int  `mapstructure:"enforce_floors_rate"`
-	EnforceDealFloors bool `mapstructure:"enforce_deal_floors"`
+	Enabled bool `mapstructure:"enabled"`
 }
 
 type VendorListScheduler struct {
@@ -1210,7 +1207,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("account_defaults.price_floors.enforce_floors_rate", 100)
 	v.SetDefault("account_defaults.price_floors.adjust_for_bid_adjustment", true)
 	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", false)
-	v.SetDefault("account_defaults.price_floors.use_dynamic_data", true)
+	v.SetDefault("account_defaults.price_floors.use_dynamic_data", false)
 	v.SetDefault("account_defaults.price_floors.fetch.enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.timeout_ms", 3000)
 	v.SetDefault("account_defaults.price_floors.fetch.max_file_size_kb", 100)
@@ -1287,9 +1284,6 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("gdpr.tcf2.special_feature1.enforce", true)
 	v.SetDefault("gdpr.tcf2.special_feature1.vendor_exceptions", []openrtb_ext.BidderName{})
 	v.SetDefault("price_floors.enabled", false)
-	v.SetDefault("price_floors.use_dynamic_data", false)
-	v.SetDefault("price_floors.enforce_floors_rate", 100)
-	v.SetDefault("price_floors.enforce_deal_floors", false)
 
 	// Defaults for account_defaults.events.default_url
 	v.SetDefault("account_defaults.events.default_url", "https://PBS_HOST/event?t=##PBS-EVENTTYPE##&vtype=##PBS-VASTEVENT##&b=##PBS-BIDID##&f=i&a=##PBS-ACCOUNTID##&ts=##PBS-TIMESTAMP##&bidder=##PBS-BIDDER##&int=##PBS-INTEGRATION##&mt=##PBS-MEDIATYPE##&ch=##PBS-CHANNEL##&aid=##PBS-AUCTIONID##&l=##PBS-LINEID##")

@@ -31,7 +31,7 @@ const (
 )
 
 func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
-	floorCur := "USD"
+	var floorCur string
 	if floorExt == nil || floorExt.Data == nil {
 		return floorCur
 	}
@@ -40,7 +40,7 @@ func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
 		floorCur = floorExt.Data.Currency
 	}
 
-	if floorExt.Data.ModelGroups[0].Currency != "" {
+	if len(floorExt.Data.ModelGroups) > 0 && floorExt.Data.ModelGroups[0].Currency != "" {
 		floorCur = floorExt.Data.ModelGroups[0].Currency
 	}
 	return floorCur
@@ -55,6 +55,9 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currenc
 	}
 	floorMin := floorExt.FloorMin
 	floorCur := getFloorCurrency(floorExt)
+	if len(floorCur) == 0 {
+		floorCur = "USD"
+	}
 
 	if floorExt.FloorMin > 0.0 && floorExt.FloorMinCur != "" && floorCur != "" &&
 		floorExt.FloorMinCur != floorCur {
@@ -64,7 +67,7 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currenc
 	return floorMin, floorCur, err
 }
 
-func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb2.Imp, floorVal float64) {
+func updateImpExtWithFloorDetails(imp *openrtb2.Imp, matchedRule string, floorVal float64) {
 	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
 	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", floorVal)), "prebid", "floors", "floorRuleValue")
 }
