@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -36,34 +35,14 @@ func getBoolPtr(val bool) *bool {
 	return &val
 }
 
-func loadFloorsJSONFromFileSystem() *fetchResult {
-	opts, err := ioutil.ReadFile("/home/qateam/floors.json")
-	if err != nil {
-		opts, err = ioutil.ReadFile("/tmp/floors.json")
-	}
-	if err == nil {
-		var fetchedFloors fetchedFloors
-		err := json.Unmarshal(opts, &fetchedFloors)
-		if err == nil {
-			index := rand.Intn(len(fetchedFloors.FetchedJSON))
-			return &fetchedFloors.FetchedJSON[index]
-		}
-	}
-
-	return nil
-}
-
 // fetchAccountFloors this function fetch floors JSON for given account
 var fetchAccountFloors = func(account config.Account) *fetchResult {
-
-	return loadFloorsJSONFromFileSystem()
-	// Above code is added for testing purpose, shall be removed once sanity testing is done
 
 	//	var fetchedResults fetchResult
 	// Check for Rules in cache
 
 	// fetch floors JSON
-	//return fetchPriceFloorRules(account)
+	return fetchPriceFloorRules(account)
 }
 
 func fetchPriceFloorRules(account config.Account) *fetchResult {
