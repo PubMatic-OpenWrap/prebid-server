@@ -779,6 +779,7 @@ func TestResolveFloors(t *testing.T) {
 					EnforceRate: 100,
 					FloorDeals:  getTrue(),
 				},
+				FetchStatus:        openrtb_ext.FetchNone,
 				PriceFloorLocation: openrtb_ext.RequestLocation,
 			},
 		},
