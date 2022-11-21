@@ -167,11 +167,10 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 		if modelGroup.Schema.Delimiter == "" {
 			modelGroup.Schema.Delimiter = defaultDelimiter
 		}
-		floors.FetchStatus = fetchStatus
-
 	} else if floors == nil {
 		floors = new(openrtb_ext.PriceFloorRules)
 	}
+	floors.FetchStatus = fetchStatus
 	floors.PriceFloorLocation = floorLocation
 	return floors, floorModelErrList
 }
