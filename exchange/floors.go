@@ -148,7 +148,6 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		}
 
 		requestExt.SetPrebid(prebidExt)
-
 	}
 
 	err = r.BidRequestWrapper.RebuildRequest()

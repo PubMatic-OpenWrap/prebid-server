@@ -15,14 +15,9 @@ import (
 )
 
 // fetchResult defines the contract for fetched floors results
-type fetchedFloors struct {
-	FetchedJSON []fetchResult `json:"fetchresult,omitempty"`
-}
-
-// fetchResult defines the contract for fetched floors results
 type fetchResult struct {
-	PriceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
-	FetchStatus int                         `json:"fetchstatus,omitempty"`
+	priceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
+	fetchStatus string                      `json:"fetchstatus,omitempty"`
 }
 
 var fetchInProgress map[string]bool
@@ -31,14 +26,10 @@ func fetchInit() {
 	fetchInProgress = make(map[string]bool)
 }
 
-func getBoolPtr(val bool) *bool {
-	return &val
-}
-
 // fetchAccountFloors this function fetch floors JSON for given account
 var fetchAccountFloors = func(account config.Account) *fetchResult {
-
 	//	var fetchedResults fetchResult
+
 	// Check for Rules in cache
 
 	// fetch floors JSON
@@ -50,13 +41,13 @@ func fetchPriceFloorRules(account config.Account) *fetchResult {
 	fetchConfig := account.PriceFloors.Fetch
 	if !fetchConfig.Enabled {
 		return &fetchResult{
-			FetchStatus: openrtb_ext.FetchNone,
+			fetchStatus: openrtb_ext.FetchNone,
 		}
 	}
 
 	if !validator.IsURL(fetchConfig.URL) {
 		return &fetchResult{
-			FetchStatus: openrtb_ext.FetchError,
+			fetchStatus: openrtb_ext.FetchError,
 		}
 	}
 
@@ -67,7 +58,7 @@ func fetchPriceFloorRules(account config.Account) *fetchResult {
 
 	// Rules not present in cache, fetch rules asynchronously
 	return &fetchResult{
-		FetchStatus: openrtb_ext.FetchInprogress,
+		fetchStatus: openrtb_ext.FetchInprogress,
 	}
 }
 
