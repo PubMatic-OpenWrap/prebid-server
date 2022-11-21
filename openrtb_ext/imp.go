@@ -31,6 +31,7 @@ type ExtImpPrebid struct {
 type ExtImpPrebidFloors struct {
 	FloorRule      string  `json:"floorRule,omitempty"`
 	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorValue     float64 `json:"floorValue,omitempty"`
 }
 
 // ExtStoredRequest defines the contract for bidrequest.imp[i].ext.prebid.storedrequest

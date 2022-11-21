@@ -2204,9 +2204,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 			ID:            "testaccount",
 			EventsEnabled: spec.EventsEnabled,
 			DebugAllow:    true,
-			PriceFloors: config.AccountPriceFloors{
-				Enabled: true,
-			},
+			PriceFloors:   config.AccountPriceFloors{Enabled: true},
 		},
 		UserSyncs:      mockIdFetcher(spec.IncomingRequest.Usersyncs),
 		ImpExtInfoMap:  impExtInfoMap,
