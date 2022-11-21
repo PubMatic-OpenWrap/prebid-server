@@ -85,7 +85,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				floorVal = modelGroup.Values[matchedRule]
 			}
 
-			floorMinVal, floorCur, err := getMinFloorValue(extFloorRules, conversions)
+			floorMinVal, floorCur, err := getMinFloorValue(extFloorRules, request.Imp[i], conversions)
 			if err == nil {
 				bidFloor := floorVal
 				if floorMinVal > float64(0) && floorVal < floorMinVal {
