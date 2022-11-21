@@ -580,8 +580,8 @@ func TestResolveFloors(t *testing.T) {
 		},
 	}
 
-	fetchAccountFloors = func(account config.Account) *fetchReult {
-		var fetchedResults fetchReult
+	fetchAccountFloors = func(account config.Account) *fetchResult {
+		var fetchedResults fetchResult
 		if !account.PriceFloors.UseDynamicData {
 			fetchedResults.fetchStatus = openrtb_ext.FetchNone
 		} else {

@@ -210,39 +210,33 @@ func getDeviceCountry(request *openrtb2.BidRequest) string {
 	return value
 }
 
-func isImpMultiformat(imp openrtb2.Imp) bool {
+func getMediaType(imp openrtb2.Imp) string {
+	value := catchAll
 	formatCount := 0
+
 	if imp.Banner != nil {
 		formatCount++
+		value = BannerMedia
 	}
-	if imp.Video != nil {
+	if imp.Video != nil && imp.Video.Placement != 1 {
 		formatCount++
+		value = VideoOutstreamMedia
+	}
+	if imp.Video != nil && imp.Video.Placement == 1 {
+		formatCount++
+		value = VideoMedia
 	}
 	if imp.Audio != nil {
 		formatCount++
+		value = AudioMedia
 	}
 	if imp.Native != nil {
 		formatCount++
+		value = NativeMedia
 	}
 
-	return formatCount > 1
-}
-
-func getMediaType(imp openrtb2.Imp) string {
-	value := catchAll
-
-	if isImpMultiformat(imp) {
-		return value
-	} else if imp.Banner != nil {
-		value = BannerMedia
-	} else if imp.Video != nil && imp.Video.Placement != 1 {
-		value = VideoOutstreamMedia
-	} else if imp.Video != nil && imp.Video.Placement == 1 {
-		value = VideoMedia
-	} else if imp.Audio != nil {
-		value = AudioMedia
-	} else if imp.Native != nil {
-		value = NativeMedia
+	if formatCount > 1 {
+		return catchAll
 	}
 	return value
 }

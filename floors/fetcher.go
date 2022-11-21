@@ -14,8 +14,8 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-// fetchReult defines the contract for fetched floors results
-type fetchReult struct {
+// fetchResult defines the contract for fetched floors results
+type fetchResult struct {
 	priceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
 	fetchStatus string                      `json:"fetchstatus,omitempty"`
 }
@@ -27,8 +27,8 @@ func fetchInit() {
 }
 
 // fetchAccountFloors this function fetch floors JSON for given account
-var fetchAccountFloors = func(account config.Account) *fetchReult {
-	//	var fetchedResults fetchReult
+var fetchAccountFloors = func(account config.Account) *fetchResult {
+	//	var fetchedResults fetchResult
 
 	// Check for Rules in cache
 
@@ -36,17 +36,17 @@ var fetchAccountFloors = func(account config.Account) *fetchReult {
 	return fetchPriceFloorRules(account)
 }
 
-func fetchPriceFloorRules(account config.Account) *fetchReult {
+func fetchPriceFloorRules(account config.Account) *fetchResult {
 	// If fetch is disabled
 	fetchConfig := account.PriceFloors.Fetch
 	if !fetchConfig.Enabled {
-		return &fetchReult{
+		return &fetchResult{
 			fetchStatus: openrtb_ext.FetchNone,
 		}
 	}
 
 	if !validator.IsURL(fetchConfig.URL) {
-		return &fetchReult{
+		return &fetchResult{
 			fetchStatus: openrtb_ext.FetchError,
 		}
 	}
@@ -57,7 +57,7 @@ func fetchPriceFloorRules(account config.Account) *fetchReult {
 	}
 
 	// Rules not present in cache, fetch rules asynchronously
-	return &fetchReult{
+	return &fetchResult{
 		fetchStatus: openrtb_ext.FetchInprogress,
 	}
 }

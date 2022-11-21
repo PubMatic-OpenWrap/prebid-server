@@ -187,6 +187,17 @@ func TestCreateRuleKeys(t *testing.T) {
 			out:         []string{"audio", "tag123", "www.test.com"},
 		},
 		{
+			name: "CreateRule with audio mediatype, adUnitCode=* and domain",
+			request: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Domain: "www.test.com",
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", Audio: &openrtb2.Audio{MaxDuration: 300}}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "adUnitCode", "siteDomain"}},
+			out:         []string{"audio", "*", "www.test.com"},
+		},
+		{
 			name: "CreateRule with native mediatype, bundle and domain",
 			request: &openrtb2.BidRequest{
 				App: &openrtb2.App{
@@ -197,6 +208,18 @@ func TestCreateRuleKeys(t *testing.T) {
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "bundle", "siteDomain"}},
 			out:         []string{"native", "bundle123", "www.test.com"},
+		},
+		{
+			name: "CreateRule with native, banner mediatype, bundle and domain",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain: "www.test.com",
+					Bundle: "bundle123",
+				},
+				Imp: []openrtb2.Imp{{ID: "1234", Audio: &openrtb2.Audio{MaxDuration: 300}, Native: &openrtb2.Native{Request: "Test"}}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "bundle", "siteDomain"}},
+			out:         []string{"*", "bundle123", "www.test.com"},
 		},
 		{
 			name: "CreateRule with channel, country, deviceType",
@@ -213,6 +236,22 @@ func TestCreateRuleKeys(t *testing.T) {
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
 			out:         []string{"chName", "USA", "tablet"},
+		},
+		{
+			name: "CreateRule with channel, size, deviceType=desktop",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "SomeDevice"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 100, H: 200}, {W: 200, H: 300}}}}},
+				Ext:    json.RawMessage(`{"prebid": {"test": "1}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "size", "deviceType"}},
+			out:         []string{"*", "*", "desktop"},
 		},
 		{
 			name: "CreateRule with pubDomain, country, deviceType",
