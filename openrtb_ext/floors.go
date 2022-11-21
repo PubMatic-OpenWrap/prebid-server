@@ -1,12 +1,12 @@
 package openrtb_ext
 
-// Defines numeric codes for FetchStatus
+// Defines strings for FetchStatus
 const (
-	FetchSuccess = iota
-	FetchTimeout
-	FetchError
-	FetchInprogress
-	FetchNone
+	FetchSuccess    = "success"
+	FetchTimeout    = "timeout"
+	FetchError      = "error"
+	FetchInprogress = "inprogress"
+	FetchNone       = "none"
 )
 
 // Defines strings for PriceFloorLocation
@@ -27,7 +27,7 @@ type PriceFloorRules struct {
 	Enabled            *bool                  `json:"enabled,omitempty"`
 	Skipped            *bool                  `json:"skipped,omitempty"`
 	FloorProvider      string                 `json:"floorprovider,omitempty"`
-	FetchStatus        *int                   `json:"fetchstatus,omitempty"`
+	FetchStatus        string                 `json:"fetchstatus,omitempty"`
 	PriceFloorLocation string                 `json:"location,omitempty"`
 }
 
@@ -45,8 +45,7 @@ type PriceFloorData struct {
 
 type PriceFloorModelGroup struct {
 	Currency     string             `json:"currency,omitempty"`
-	ModelWeight  int                `json:"modelweight,omitempty"`
-	DebugWeight  int                `json:"debugweight,omitempty"` // Added for Debug purpose, shall be removed
+	ModelWeight  *int               `json:"modelweight,omitempty"`
 	ModelVersion string             `json:"modelversion,omitempty"`
 	SkipRate     int                `json:"skiprate,omitempty"`
 	Schema       PriceFloorSchema   `json:"schema,omitempty"`
