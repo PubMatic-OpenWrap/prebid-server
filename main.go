@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/prebid/prebid-server/config"
@@ -54,7 +55,9 @@ func serve(cfg *config.Configuration) error {
 	currencyConverterTickerTask := task.NewTickerTask(fetchingInterval, currencyConverter)
 	currencyConverterTickerTask.Start()
 
-	_, err := router.New(cfg, currencyConverter)
+	priceFloorFetcher := floors.NewPriceFloorFetcher(20, 1000)
+
+	_, err := router.New(cfg, currencyConverter, priceFloorFetcher)
 	if err != nil {
 		return err
 	}

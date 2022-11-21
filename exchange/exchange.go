@@ -70,9 +70,9 @@ type exchange struct {
 	bidIDGenerator    BidIDGenerator
 	hostSChainNode    *openrtb2.SupplyChainNode
 	adsCertSigner     adscert.Signer
-
-	floor     config.PriceFloors
-	trakerURL string
+	floor             config.PriceFloors
+	trakerURL         string
+	priceFloorFetcher *floors.PriceFloorFetcher
 }
 
 // Container to pass out response ext data from the GetAllBids goroutines back into the main thread
@@ -119,7 +119,7 @@ func (randomDeduplicateBidBooleanGenerator) Generate() bool {
 	return rand.Intn(100) < 50
 }
 
-func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, tcf2CfgBuilder gdpr.TCF2ConfigBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer) Exchange {
+func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, tcf2CfgBuilder gdpr.TCF2ConfigBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, floorFetcher *floors.PriceFloorFetcher) Exchange {
 	bidderToSyncerKey := map[string]string{}
 	for bidder, syncer := range syncersByBidder {
 		bidderToSyncerKey[bidder] = syncer.Key()
@@ -148,12 +148,12 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 			GDPR: cfg.GDPR,
 			LMT:  cfg.LMT,
 		},
-		bidIDGenerator: &bidIDGenerator{cfg.GenerateBidID},
-		hostSChainNode: cfg.HostSChainNode,
-		adsCertSigner:  adsCertSigner,
-
-		floor:     cfg.PriceFloors,
-		trakerURL: cfg.TrackerURL,
+		bidIDGenerator:    &bidIDGenerator{cfg.GenerateBidID},
+		hostSChainNode:    cfg.HostSChainNode,
+		adsCertSigner:     adsCertSigner,
+		floor:             cfg.PriceFloors,
+		trakerURL:         cfg.TrackerURL,
+		priceFloorFetcher: floorFetcher,
 	}
 }
 
@@ -259,7 +259,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
 
 	if e.floor.Enabled {
-		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions)
+		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
 	}
 
 	recordImpMetrics(r.BidRequestWrapper.BidRequest, e.me)

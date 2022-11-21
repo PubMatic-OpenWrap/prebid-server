@@ -28,7 +28,7 @@ const (
 	enforceRateMax   int    = 100
 )
 
-func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions) []error {
+func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions, priceFloorFetcher FloorFetcher) []error {
 	err := []error{}
 	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil {
 		return []error{fmt.Errorf("Empty bidrequest")}
@@ -38,7 +38,7 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 		return []error{fmt.Errorf("Floors feature is disabled at account level or request")}
 	}
 
-	floors, err := resolveFloors(account, bidRequestWrapper, conversions)
+	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher)
 	if len(err) == 0 {
 		err = updateBidRequestWithFloors(floors, bidRequestWrapper.BidRequest, conversions)
 	}
@@ -127,16 +127,16 @@ func isPriceFloorsDisabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrapp
 	return false
 }
 
-func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions) (*openrtb_ext.PriceFloorRules, []error) {
+func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
 	var errlist []error
 	var floorsJson *openrtb_ext.PriceFloorRules
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
-	fetchResult := fetchAccountFloors(account)
+	fetchResult := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchResult.fetchStatus == openrtb_ext.FetchSuccess {
-		mergedFloor := mergeFloors(reqFloor, fetchResult.priceFloors, conversions)
-		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchResult.fetchStatus, openrtb_ext.FetchLocation)
+	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil {
+		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
+		floorsJson, errlist = createFloorsFrom(mergedFloor, openrtb_ext.FetchSuccess, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
 		floorsJson, errlist = createFloorsFrom(reqFloor, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
 	} else {

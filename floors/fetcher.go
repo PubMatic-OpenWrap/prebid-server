@@ -1,135 +1,189 @@
 package floors
 
 import (
+	"container/heap"
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/alitto/pond"
 	validator "github.com/asaskevich/govalidator"
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"golang.org/x/net/context/ctxhttp"
 )
 
-// fetchResult defines the contract for fetched floors results
-type fetchResult struct {
-	priceFloors openrtb_ext.PriceFloorRules `json:"pricefloors,omitempty"`
-	fetchStatus string                      `json:"fetchstatus,omitempty"`
+type FloorFetcher interface {
+	Fetch(configs config.AccountPriceFloors) *openrtb_ext.PriceFloorRules
 }
 
-var fetchInProgress map[string]bool
-
-func fetchInit() {
-	fetchInProgress = make(map[string]bool)
+type PriceFloorFetcher struct {
+	pool                *pond.WorkerPool
+	fetchQueue          FetchQueue
+	floorFetcherChannel chan FetchInfo
+	done                chan struct{}
 }
 
-// fetchAccountFloors this function fetch floors JSON for given account
-var fetchAccountFloors = func(account config.Account) *fetchResult {
-	//	var fetchedResults fetchResult
+func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 
-	// Check for Rules in cache
+	floorFetcher := PriceFloorFetcher{
+		pool:                pond.New(maxWorkers, maxCapacity),
+		fetchQueue:          make(FetchQueue, 0),
+		floorFetcherChannel: make(chan FetchInfo, 1000),
+		done:                make(chan struct{}),
+	}
 
-	// fetch floors JSON
-	return fetchPriceFloorRules(account)
+	go floorFetcher.priceFloorFetcher()
+
+	return &floorFetcher
 }
 
-func fetchPriceFloorRules(account config.Account) *fetchResult {
-	// If fetch is disabled
-	fetchConfig := account.PriceFloors.Fetch
-	if !fetchConfig.Enabled {
-		return &fetchResult{
-			fetchStatus: openrtb_ext.FetchNone,
+func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) *openrtb_ext.PriceFloorRules {
+
+	//check in cache: hit/miss
+	//hit: directly return
+
+	//miss: push to channel to fetch and return empty response
+	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
+		fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchPeriod: time.Now().Unix()}
+		f.floorFetcherChannel <- fetchInfo
+	}
+
+	return nil
+}
+
+func (f *PriceFloorFetcher) floorfetcherWorker(configs config.AccountFloorFetch) {
+
+	floorData := floorFetcherAndValidator(configs)
+	if floorData != nil {
+		// Update cache with new floor rules
+		glog.Info("Updating Value in cache")
+	}
+
+	// Send to refetch channel
+	f.floorFetcherChannel <- FetchInfo{AccountFloorFetch: configs, FetchPeriod: time.Now().Add(time.Duration(configs.Period) * time.Second).Unix()}
+
+}
+
+func (f *PriceFloorFetcher) Stop() {
+	close(f.done)
+}
+
+func (f *PriceFloorFetcher) priceFloorFetcher() {
+
+	//Create Ticker of 5 seconds
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case fetchInfo := <-f.floorFetcherChannel:
+			// TODO :: Add check to get if URL is present in cache
+			heap.Push(&f.fetchQueue, &fetchInfo)
+		case <-ticker.C:
+			currentTime := time.Now().Unix()
+			for top := f.fetchQueue.Top(); top.FetchPeriod < currentTime; {
+				nextFetch := heap.Pop(&f.fetchQueue)
+				status := f.pool.TrySubmit(func() {
+					f.floorfetcherWorker(nextFetch.(*FetchInfo).AccountFloorFetch)
+				})
+				if !status {
+					heap.Push(&f.fetchQueue, &nextFetch)
+				}
+			}
+		case <-f.done:
+			glog.Info("Price Floor fetcher terminated")
 		}
 	}
-
-	if !validator.IsURL(fetchConfig.URL) {
-		return &fetchResult{
-			fetchStatus: openrtb_ext.FetchError,
-		}
-	}
-
-	_, fetchInprogress := fetchInProgress[fetchConfig.URL]
-	if !fetchInprogress {
-		fetchPriceFloorRulesAsynchronous(account)
-	}
-
-	// Rules not present in cache, fetch rules asynchronously
-	return &fetchResult{
-		fetchStatus: openrtb_ext.FetchInprogress,
-	}
 }
 
-func fetchPriceFloorRulesAsynchronous(account config.Account) []error {
+func floorFetcherAndValidator(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorRules {
 
-	var errList []error
-	start := time.Now()
-
-	ctx := context.Background()
-
-	timeout := (time.Duration(account.PriceFloors.Fetch.Timeout) * time.Millisecond)
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, start.Add(timeout))
-		defer cancel()
-	}
-
-	httpReq, err := http.NewRequest("GET", account.PriceFloors.Fetch.URL, nil)
+	floorResp, err := fetchPriceFloorRulesFromURL(configs.URL, configs.Timeout)
 	if err != nil {
-		return []error{err}
+		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
+		return nil
 	}
 
-	httpResp, err := ctxhttp.Do(ctx, &http.Client{}, httpReq)
-	if err != nil {
-		return []error{err}
+	if len(floorResp) > configs.MaxFileSize {
+		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
+		return nil
 	}
 
-	if httpResp.StatusCode == 200 {
-		respBody, err := ioutil.ReadAll(httpResp.Body)
+	var priceFloors openrtb_ext.PriceFloorRules
+	if err = json.Unmarshal(floorResp, &priceFloors); err != nil {
+		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
+		return nil
+	} else {
+		err := validatePriceFloorRules(configs, &priceFloors)
 		if err != nil {
-			return []error{err}
-		}
-		defer httpResp.Body.Close()
-
-		if len(respBody) > account.PriceFloors.Fetch.MaxFileSize {
-			return []error{fmt.Errorf("Receieved more than MaxFileSize")}
-		}
-
-		var priceFloors openrtb_ext.PriceFloorRules
-
-		err = json.Unmarshal(respBody, &priceFloors)
-		if err != nil {
-			return []error{fmt.Errorf("Error in JSON Unmarshall ")}
-		}
-
-		errList = validatePriceFloorRules(priceFloors, account.PriceFloors.Fetch)
-
-		if priceFloors.Data != nil && len(priceFloors.Data.ModelGroups) > 0 {
-			// Push floors JSON to cache
-
-			// Create periodic fetching JOB
+			glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", configs.URL, err.Error())
+			return nil
 		}
 	}
-	return errList
+
+	return &priceFloors
 }
 
-func validatePriceFloorRules(priceFloors openrtb_ext.PriceFloorRules, fetchConfig config.AccountFloorFetch) []error {
-	floorData := priceFloors.Data
+func fetchPriceFloorRulesFromURL(URL string, timeout int) ([]byte, error) {
 
-	var err []error
-	if floorData == nil {
-		return []error{fmt.Errorf("Empty data in floors JSON  in JSON Unmarshall ")}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, URL, nil)
+	if err != nil {
+		return nil, errors.New("error while forming http fetch request : " + err.Error())
 	}
 
-	var validModelGroups []openrtb_ext.PriceFloorModelGroup
-	for _, modelGroup := range floorData.ModelGroups {
-		if len(modelGroup.Values) > fetchConfig.MaxRules {
-			err = append(err, fmt.Errorf("Number of rules = %v in modelgroup are greater than limit = %v", len(modelGroup.Values), fetchConfig.MaxRules))
+	httpResp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, errors.New("error while getting response from url : " + err.Error())
+	}
+
+	if httpResp.StatusCode != 200 {
+		return nil, errors.New("no response from server")
+	}
+
+	respBody, err := ioutil.ReadAll(httpReq.Body)
+	if err != nil {
+		return nil, errors.New("unable to read response")
+	}
+	defer httpResp.Body.Close()
+
+	return respBody, nil
+}
+
+func validatePriceFloorRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.PriceFloorRules) error {
+
+	if priceFloors.Data == nil {
+		return errors.New("empty data in floor JSON")
+	}
+
+	if len(priceFloors.Data.ModelGroups) < 1 {
+		return errors.New("no model groups found in price floor data")
+	}
+
+	for _, modelGroup := range priceFloors.Data.ModelGroups {
+		if len(modelGroup.Values) < 1 || len(modelGroup.Values) > configs.MaxRules {
+			return errors.New("invalid number of floor rules, floor rules should be greater than zero and less than MaxRules specified in account config")
 		}
-		validModelGroups = append(validModelGroups, modelGroup)
+
+		if modelGroup.ModelWeight != nil {
+			if *modelGroup.ModelWeight < 1 || *modelGroup.ModelWeight > 100 {
+				return errors.New("modelGroup[].modelWeight should be greater than or equal to 1 and less than 100")
+			}
+		}
+
+		if modelGroup.SkipRate < 0 || modelGroup.SkipRate > 100 {
+			return errors.New("skip rate should be greater than or equal to 0 and less than 100")
+		}
+
+		if modelGroup.Default < 0 {
+			return errors.New("modelGroup.Default should be greater than 0")
+		}
 	}
-	floorData.ModelGroups = validModelGroups
-	return err
+
+	return nil
 }

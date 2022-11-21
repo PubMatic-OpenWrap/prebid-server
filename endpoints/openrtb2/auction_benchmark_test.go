@@ -3,13 +3,15 @@ package openrtb2
 import (
 	"bytes"
 	"fmt"
-	"github.com/prebid/prebid-server/experiment/adscert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/prebid/prebid-server/experiment/adscert"
+	"github.com/prebid/prebid-server/floors"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
@@ -97,6 +99,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
 		empty_fetcher.EmptyFetcher{},
 		&adscert.NilSigner{},
+		&floors.PriceFloorFetcher{},
 	)
 
 	endpoint, _ := NewEndpoint(

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
+	"github.com/prebid/prebid-server/floors"
 
 	"github.com/prebid/prebid-server/usersync"
 
@@ -107,7 +108,7 @@ type Router struct {
 var schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 var infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
 
-func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
+func New(cfg *config.Configuration, rateConvertor *currency.RateConverter, priceFloorFetcher *floors.PriceFloorFetcher) (r *Router, err error) {
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -234,7 +235,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatalf("Failed to create ads cert signer: %v", err)
 	}
 
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, bidderInfos, gdprPermsBuilder, tcf2CfgBuilder, rateConvertor, categoriesFetcher, adsCertSigner)
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, bidderInfos, gdprPermsBuilder, tcf2CfgBuilder, rateConvertor, categoriesFetcher, adsCertSigner, priceFloorFetcher)
 	/*var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher)
 	if err != nil {
