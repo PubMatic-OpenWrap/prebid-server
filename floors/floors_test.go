@@ -11,10 +11,6 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func getIntPtr(v int) *int {
-	return &v
-}
-
 func TestIsRequestEnabledWithFloor(t *testing.T) {
 	FalseFlag := false
 	TrueFlag := true
@@ -78,16 +74,6 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 		expPriceFlrLoc    string
 	}{
 		{
-			name:              "Empty bidrequest",
-			bidRequestWrapper: &openrtb_ext.RequestWrapper{},
-			account: config.Account{
-				PriceFloors: config.AccountPriceFloors{
-					Enabled: false,
-				},
-			},
-			err: "Empty bidrequest",
-		},
-		{
 			name: "Floors disabled in account config",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
@@ -128,7 +114,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			err: "Floors feature is disabled at account level or request",
 		},
 		{
-			name: "Floors enabled in req.ext.prebid.floors.Enabled and account config",
+			name: "Floors enabled in req.ext.prebid.floors.Enabled and enabled account config",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -152,7 +138,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
-			name: "Skiprate = 100, Floors enabled in req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
+			name: "Skiprate = 100, Floors enabled in  req.ext.prebid.floors.Enabled and account config: Floors singalling skipped ",
 			bidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{
 					Site: &openrtb2.Site{
@@ -193,7 +179,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
-			err: "Invalid SkipRate at root level = '110'",
+			err: "Invalid SkipRate = '110' at ext.floors.skiprate",
 		},
 		{
 			name: "Rule selection with Site object, banner|300x600|www.website.com",
@@ -433,10 +419,10 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates))
-			if tc.bidRequestWrapper.BidRequest != nil && !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal) {
+			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal)
 			}
-			if tc.bidRequestWrapper.BidRequest != nil && len(tc.bidRequestWrapper.Imp) > 0 && !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur) {
+			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur) {
 				t.Errorf("Floor Currency error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorCur)
 			}
 
@@ -596,33 +582,36 @@ func TestResolveFloors(t *testing.T) {
 
 	fetchAccountFloors = func(account config.Account) *fetchResult {
 		var fetchedResults fetchResult
-		fetchedResults.FetchStatus = 0
-		fetchedResults.PriceFloors = openrtb_ext.PriceFloorRules{
-			Enabled:            getTrue(),
-			PriceFloorLocation: openrtb_ext.RequestLocation,
-			Enforcement: &openrtb_ext.PriceFloorEnforcement{
-				EnforcePBS:  getTrue(),
-				EnforceRate: 100,
-				FloorDeals:  getTrue(),
-			},
-			Data: &openrtb_ext.PriceFloorData{
-				Currency: "USD",
-				ModelGroups: []openrtb_ext.PriceFloorModelGroup{
-					{
-						ModelVersion: "model from fetched",
-						Currency:     "USD",
-						Values: map[string]float64{
-							"banner|300x600|www.website5.com": 15,
-							"*|*|*":                           25,
-						},
-						Schema: openrtb_ext.PriceFloorSchema{
-							Fields: []string{"mediaType", "size", "domain"},
+		if !account.PriceFloors.UseDynamicData {
+			fetchedResults.fetchStatus = openrtb_ext.FetchNone
+		} else {
+			fetchedResults.fetchStatus = openrtb_ext.FetchSuccess
+			fetchedResults.priceFloors = openrtb_ext.PriceFloorRules{
+				Enabled:            getTrue(),
+				PriceFloorLocation: openrtb_ext.RequestLocation,
+				Enforcement: &openrtb_ext.PriceFloorEnforcement{
+					EnforcePBS:  getTrue(),
+					EnforceRate: 100,
+					FloorDeals:  getTrue(),
+				},
+				Data: &openrtb_ext.PriceFloorData{
+					Currency: "USD",
+					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+						{
+							ModelVersion: "model from fetched",
+							Currency:     "USD",
+							Values: map[string]float64{
+								"banner|300x600|www.website5.com": 15,
+								"*|*|*":                           25,
+							},
+							Schema: openrtb_ext.PriceFloorSchema{
+								Fields: []string{"mediaType", "size", "domain"},
+							},
 						},
 					},
 				},
-			},
+			}
 		}
-
 		return &fetchedResults
 	}
 
@@ -653,8 +642,8 @@ func TestResolveFloors(t *testing.T) {
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
+				FetchStatus:        openrtb_ext.FetchNone,
 				PriceFloorLocation: openrtb_ext.RequestLocation,
-				FetchStatus:        getIntPtr(openrtb_ext.FetchNone),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
@@ -697,8 +686,8 @@ func TestResolveFloors(t *testing.T) {
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
+				FetchStatus:        openrtb_ext.FetchSuccess,
 				PriceFloorLocation: openrtb_ext.FetchLocation,
-				FetchStatus:        getIntPtr(openrtb_ext.FetchSuccess),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS: getTrue(),
 					FloorDeals: getTrue(),
@@ -742,8 +731,8 @@ func TestResolveFloors(t *testing.T) {
 				Enabled:            getTrue(),
 				FloorMin:           10.11,
 				FloorMinCur:        "EUR",
+				FetchStatus:        openrtb_ext.FetchSuccess,
 				PriceFloorLocation: openrtb_ext.FetchLocation,
-				FetchStatus:        getIntPtr(openrtb_ext.FetchSuccess),
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,
@@ -765,26 +754,6 @@ func TestResolveFloors(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name: "Dynamic fetch disabled, floors not present in req.ext",
-			bidRequestWrapper: &openrtb_ext.RequestWrapper{
-				BidRequest: &openrtb2.BidRequest{
-					Site: &openrtb2.Site{
-						Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
-					},
-					Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
-				},
-			},
-			account: config.Account{
-				PriceFloors: config.AccountPriceFloors{
-					Enabled:        true,
-					UseDynamicData: false,
-				},
-			},
-			expFloors: &openrtb_ext.PriceFloorRules{
-				PriceFloorLocation: openrtb_ext.NoDataLocation,
 			},
 		},
 		{
