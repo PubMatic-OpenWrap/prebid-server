@@ -528,7 +528,6 @@ func (c convert) GetRates() *map[string]map[string]float64 {
 	return &map[string]map[string]float64{}
 }
 func Test_getMinFloorValue(t *testing.T) {
-
 	type args struct {
 		floorExt    *openrtb_ext.PriceFloorRules
 		imp         openrtb2.Imp
@@ -551,23 +550,33 @@ func Test_getMinFloorValue(t *testing.T) {
 			want1:   "EUR",
 			wantErr: false,
 		},
-		// {
-		// 	name: "TEST2 Floor min is available in floor ext only ",
-		// 	args: args{
-		// 		floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 1.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
-		// 		imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": ""}}}`)},
-		// 	},
-		// 	want:    1.0,
-		// 	want1:   "EUR",
-		// 	wantErr: false,
-		// },
 		{
-			name: "TEST3 Floor min is available in imp only ",
+			name: "Floor min is available in floor ext only ",
+			args: args{
+				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 1.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
+				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": ""}}}`)},
+			},
+			want:    1.0,
+			want1:   "EUR",
+			wantErr: false,
+		},
+		{
+			name: "Floor min is available in imp only ",
 			args: args{
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":1.0}}}`)},
 			},
 			want:    1.0,
+			want1:   "EUR",
+			wantErr: false,
+		},
+		{
+			name: "Floor min is 0 in imp ",
+			args: args{
+				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 2.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
+				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":0.0}}}`)},
+			},
+			want:    2.0,
 			want1:   "EUR",
 			wantErr: false,
 		},
@@ -605,23 +614,24 @@ func Test_getMinFloorValue(t *testing.T) {
 		{
 			name: "Floor currency is not avaibale in floor ext",
 			args: args{
-				floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{}},
-				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":0.0}}}`)},
+				floorExt:    &openrtb_ext.PriceFloorRules{FloorMinCur: "USD", Data: &openrtb_ext.PriceFloorData{}},
+				imp:         openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "EUR","floorMin":1.0}}}`)},
+				conversions: convert{},
 			},
-			want:    0.0,
+			want:    1.0,
 			want1:   "USD",
 			wantErr: false,
 		},
-		// {
-		// 	name: "Invalid input",
-		// 	args: args{
-		// 		floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{}},
-		// 		imp:      openrtb2.Imp{Ext:  json.RawMessage(``)},
-		// 	},
-		// 	want:    0.0,
-		// 	want1:   "USD",
-		// 	wantErr: true,
-		// },
+		{
+			name: "Invalid input",
+			args: args{
+				floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{}},
+				imp:      openrtb2.Imp{Ext: json.RawMessage(`{`)},
+			},
+			want:    0.0,
+			want1:   "USD",
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -57,9 +57,9 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, c
 	if len(floorCur) == 0 {
 		floorCur = "USD"
 	}
-	floorMinValue, floorCurValue, err := getFloorMinFromImp(imp)
+	floorMinValue, floorCurValue, err := getFloorMinAndCurFromImp(imp)
 	if err == nil {
-		if floorMinValue >= 0.0 {
+		if floorMinValue > 0.0 {
 			floorMin = floorMinValue
 		}
 		floorMinCur = floorCurValue
@@ -75,9 +75,9 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, c
 	return floorMin, floorCur, err
 }
 
-func getFloorMinFromImp(imp openrtb2.Imp) (float64, string, error) {
+func getFloorMinAndCurFromImp(imp openrtb2.Imp) (float64, string, error) {
 	impExt := &openrtb_ext.ExtRequest{}
-	floorMin := -1.0
+	var floorMin float64
 	var floorMinCur string
 	if len(imp.Ext) > 0 {
 		err := json.Unmarshal(imp.Ext, &impExt)
@@ -86,7 +86,7 @@ func getFloorMinFromImp(imp openrtb2.Imp) (float64, string, error) {
 		}
 	}
 	if &impExt.Prebid != nil && &impExt.Prebid.Floors != nil {
-		if impExt.Prebid.Floors.FloorMin >= 0.0 {
+		if impExt.Prebid.Floors.FloorMin > 0.0 {
 			floorMin = impExt.Prebid.Floors.FloorMin
 		}
 		if impExt.Prebid.Floors.FloorMinCur != "" {
