@@ -31,7 +31,7 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 
 	floorFetcher := PriceFloorFetcher{
 		pool:                pond.New(maxWorkers, maxCapacity),
-		fetchQueue:          make(FetchQueue, 0),
+		fetchQueue:          make(FetchQueue, 0, 100),
 		floorFetcherChannel: make(chan FetchInfo, 1000),
 		done:                make(chan struct{}),
 	}
@@ -45,7 +45,9 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) *openrtb_ex
 
 	//check in cache: hit/miss
 	//hit: directly return
-	// if _, err := os.Stat("floor.json"); err == nil {
+	// pwd, _ := os.Getwd()
+	// path := filepath.Join(pwd, "floor.json")
+	// if _, err := os.Stat(path); err == nil {
 	// 	content, err := ioutil.ReadFile("floor.json")
 	// 	if err != nil {
 	// 		fmt.Println(err)
@@ -72,12 +74,14 @@ func (f *PriceFloorFetcher) floorfetcherWorker(configs config.AccountFloorFetch)
 	floorData := floorFetcherAndValidator(configs)
 	if floorData != nil {
 		// Update cache with new floor rules
-		// glog.Info("Updating Value in cache")
+		glog.Info("Updating Value in cache")
+		// pwd, _ := os.Getwd()
 		// content, err := json.Marshal(floorData)
 		// if err != nil {
 		// 	fmt.Println(err)
 		// }
-		// err = ioutil.WriteFile("floor.json", content, 0644)
+		// path := filepath.Join(pwd, "floor.json")
+		// err = ioutil.WriteFile(path, content, 0644)
 		// if err != nil {
 		// 	fmt.Println(err)
 		// }
@@ -104,7 +108,7 @@ func (f *PriceFloorFetcher) priceFloorFetcher() {
 			heap.Push(&f.fetchQueue, &fetchInfo)
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
-			for top := f.fetchQueue.Top(); top != nil && top.FetchPeriod < currentTime; {
+			for top := f.fetchQueue.Top(); top != nil && top.FetchPeriod < currentTime; top = f.fetchQueue.Top() {
 				nextFetch := heap.Pop(&f.fetchQueue)
 				status := f.pool.TrySubmit(func() {
 					f.floorfetcherWorker(nextFetch.(*FetchInfo).AccountFloorFetch)
@@ -166,7 +170,7 @@ func fetchPriceFloorRulesFromURL(URL string, timeout int) ([]byte, error) {
 		return nil, errors.New("no response from server")
 	}
 
-	respBody, err := ioutil.ReadAll(httpReq.Body)
+	respBody, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
 		return nil, errors.New("unable to read response")
 	}
