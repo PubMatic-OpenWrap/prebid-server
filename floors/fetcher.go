@@ -45,6 +45,18 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) *openrtb_ex
 
 	//check in cache: hit/miss
 	//hit: directly return
+	// if _, err := os.Stat("floor.json"); err == nil {
+	// 	content, err := ioutil.ReadFile("floor.json")
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+	// 	var data openrtb_ext.PriceFloorRules
+	// 	err = json.Unmarshal(content, &data)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+	// 	return &data
+	// }
 
 	//miss: push to channel to fetch and return empty response
 	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
@@ -60,7 +72,15 @@ func (f *PriceFloorFetcher) floorfetcherWorker(configs config.AccountFloorFetch)
 	floorData := floorFetcherAndValidator(configs)
 	if floorData != nil {
 		// Update cache with new floor rules
-		glog.Info("Updating Value in cache")
+		// glog.Info("Updating Value in cache")
+		// content, err := json.Marshal(floorData)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// err = ioutil.WriteFile("floor.json", content, 0644)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
 	}
 
 	// Send to refetch channel
@@ -84,7 +104,7 @@ func (f *PriceFloorFetcher) priceFloorFetcher() {
 			heap.Push(&f.fetchQueue, &fetchInfo)
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
-			for top := f.fetchQueue.Top(); top.FetchPeriod < currentTime; {
+			for top := f.fetchQueue.Top(); top != nil && top.FetchPeriod < currentTime; {
 				nextFetch := heap.Pop(&f.fetchQueue)
 				status := f.pool.TrySubmit(func() {
 					f.floorfetcherWorker(nextFetch.(*FetchInfo).AccountFloorFetch)

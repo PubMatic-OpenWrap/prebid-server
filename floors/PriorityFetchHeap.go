@@ -37,5 +37,8 @@ func (fq *FetchQueue) Pop() interface{} {
 
 func (fq *FetchQueue) Top() *FetchInfo {
 	old := *fq
+	if len(old) == 0 {
+		return nil
+	}
 	return old[0]
 }
