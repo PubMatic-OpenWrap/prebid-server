@@ -14,7 +14,7 @@ func (fq FetchQueue) Len() int {
 }
 
 func (fq FetchQueue) Less(i, j int) bool {
-	return fq[i].Period < fq[j].Period
+	return fq[i].FetchPeriod < fq[j].FetchPeriod
 }
 
 func (fq FetchQueue) Swap(i, j int) {
