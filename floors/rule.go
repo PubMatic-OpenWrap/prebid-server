@@ -3,6 +3,7 @@ package floors
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/bits"
 	"regexp"
 	"sort"
@@ -69,6 +70,7 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currenc
 		rate, err = conversions.GetRate(floorExt.FloorMinCur, floorCur)
 		floorMin = rate * floorMin
 	}
+	floorMin = math.Round(floorMin*10000) / 10000
 	return floorMin, floorCur, err
 }
 
