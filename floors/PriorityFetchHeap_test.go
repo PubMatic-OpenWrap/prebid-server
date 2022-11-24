@@ -46,13 +46,13 @@ func TestFetchQueueLess(t *testing.T) {
 	}{
 		{
 			name: "first fetchperiod is less than second",
-			fq:   FetchQueue{&FetchInfo{FetchPeriod: 10}, &FetchInfo{FetchPeriod: 20}},
+			fq:   FetchQueue{&FetchInfo{FetchTime: 10}, &FetchInfo{FetchTime: 20}},
 			args: args{i: 0, j: 1},
 			want: true,
 		},
 		{
 			name: "first fetchperiod is greater than second",
-			fq:   FetchQueue{&FetchInfo{FetchPeriod: 30}, &FetchInfo{FetchPeriod: 10}},
+			fq:   FetchQueue{&FetchInfo{FetchTime: 30}, &FetchInfo{FetchTime: 10}},
 			args: args{i: 0, j: 1},
 			want: false,
 		},
@@ -78,7 +78,7 @@ func TestFetchQueueSwap(t *testing.T) {
 	}{
 		{
 			name: "Swap two elements at index i and j",
-			fq:   FetchQueue{&FetchInfo{FetchPeriod: 30}, &FetchInfo{FetchPeriod: 10}},
+			fq:   FetchQueue{&FetchInfo{FetchTime: 30}, &FetchInfo{FetchTime: 10}},
 			args: args{i: 0, j: 1},
 		},
 	}
@@ -104,14 +104,14 @@ func TestFetchQueuePush(t *testing.T) {
 		{
 			name: "Push element to queue",
 			fq:   &FetchQueue{},
-			args: args{element: &FetchInfo{FetchPeriod: 10}},
+			args: args{element: &FetchInfo{FetchTime: 10}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.fq.Push(tt.args.element)
 			q := *tt.fq
-			assert.Equal(t, q[0], &FetchInfo{FetchPeriod: 10})
+			assert.Equal(t, q[0], &FetchInfo{FetchTime: 10})
 		})
 	}
 }
@@ -124,8 +124,8 @@ func TestFetchQueuePop(t *testing.T) {
 	}{
 		{
 			name: "Pop element from queue",
-			fq:   &FetchQueue{&FetchInfo{FetchPeriod: 10}},
-			want: &FetchInfo{FetchPeriod: 10},
+			fq:   &FetchQueue{&FetchInfo{FetchTime: 10}},
+			want: &FetchInfo{FetchTime: 10},
 		},
 	}
 	for _, tt := range tests {
@@ -145,8 +145,8 @@ func TestFetchQueueTop(t *testing.T) {
 	}{
 		{
 			name: "Get top element from queue",
-			fq:   &FetchQueue{&FetchInfo{FetchPeriod: 20}},
-			want: &FetchInfo{FetchPeriod: 20},
+			fq:   &FetchQueue{&FetchInfo{FetchTime: 20}},
+			want: &FetchInfo{FetchTime: 20},
 		},
 	}
 	for _, tt := range tests {

@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			_, err := New(tt.args.cfg, tt.args.rateConvertor, tt.args.floorFetcher)
+			_, err := New(tt.args.cfg, tt.args.rateConvertor)
 			assert.Equal(t, tt.wantErr, err != nil, err)
 
 			assert.NotNil(t, g_syncers)

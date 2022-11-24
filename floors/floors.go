@@ -132,11 +132,11 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	var floorsJson *openrtb_ext.PriceFloorRules
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
-	fetchResult := priceFloorFetcher.Fetch(account.PriceFloors)
+	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
 	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
-		floorsJson, errlist = createFloorsFrom(mergedFloor, openrtb_ext.FetchSuccess, openrtb_ext.FetchLocation)
+		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
 		floorsJson, errlist = createFloorsFrom(reqFloor, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
 	} else {

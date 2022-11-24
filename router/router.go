@@ -108,7 +108,7 @@ type Router struct {
 var schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
 var infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
 
-func New(cfg *config.Configuration, rateConvertor *currency.RateConverter, priceFloorFetcher *floors.PriceFloorFetcher) (r *Router, err error) {
+func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -194,6 +194,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter, price
 	_, fetcher, _, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 	// todo(zachbadgett): better shutdown
 	// r.Shutdown = shutdown
+
+	//Price Floor Fetcher
+	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloorFetcher.Worker, cfg.PriceFloorFetcher.Capacity)
 
 	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 

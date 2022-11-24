@@ -4,7 +4,7 @@ import "github.com/prebid/prebid-server/config"
 
 type FetchInfo struct {
 	config.AccountFloorFetch
-	FetchPeriod int64
+	FetchTime int64
 }
 
 type FetchQueue []*FetchInfo
@@ -14,7 +14,7 @@ func (fq FetchQueue) Len() int {
 }
 
 func (fq FetchQueue) Less(i, j int) bool {
-	return fq[i].FetchPeriod < fq[j].FetchPeriod
+	return fq[i].FetchTime < fq[j].FetchTime
 }
 
 func (fq FetchQueue) Swap(i, j int) {
