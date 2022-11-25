@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"context"
 	"time"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
@@ -25,22 +26,26 @@ type PBSAnalyticsModule interface {
 	LogNotificationEventObject(*NotificationEvent)
 }
 
+//
+type LoggableAuctionObject struct {
+	Context      context.Context
+	Status       int
+	Errors       []error
+	Request      *openrtb2.BidRequest
+	Response     *openrtb2.BidResponse
+	RejectedBids []RejectedBid
+}
+
 //Loggable object of a transaction at /openrtb2/auction endpoint
 type AuctionObject struct {
-	Status    int
-	Errors    []error
-	Request   *openrtb2.BidRequest
-	Response  *openrtb2.BidResponse
+	LoggableAuctionObject
 	Account   *config.Account
 	StartTime time.Time
 }
 
 //Loggable object of a transaction at /openrtb2/amp endpoint
 type AmpObject struct {
-	Status             int
-	Errors             []error
-	Request            *openrtb2.BidRequest
-	AuctionResponse    *openrtb2.BidResponse
+	LoggableAuctionObject
 	AmpTargetingValues map[string]string
 	Origin             string
 	StartTime          time.Time
@@ -48,10 +53,7 @@ type AmpObject struct {
 
 //Loggable object of a transaction at /openrtb2/video endpoint
 type VideoObject struct {
-	Status        int
-	Errors        []error
-	Request       *openrtb2.BidRequest
-	Response      *openrtb2.BidResponse
+	LoggableAuctionObject
 	VideoRequest  *openrtb_ext.BidRequestVideo
 	VideoResponse *openrtb_ext.BidResponseVideo
 	StartTime     time.Time

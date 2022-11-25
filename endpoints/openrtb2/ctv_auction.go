@@ -115,8 +115,11 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var errL []error
 
 	ao := analytics.AuctionObject{
-		Status: http.StatusOK,
-		Errors: make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context: r.Context(),
+			Status:  http.StatusOK,
+			Errors:  make([]error, 0),
+		},
 	}
 
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
@@ -273,7 +276,8 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs
 		PubID:             deps.labels.PubID,
 	}
 
-	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)
+	holdAuctionContext := context.WithValue(deps.ctx, "rejectedbids", make([]analytics.RejectedBid, 0))
+	return deps.ex.HoldAuction(holdAuctionContext, auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/

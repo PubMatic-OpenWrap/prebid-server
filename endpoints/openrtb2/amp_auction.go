@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/amp"
@@ -105,13 +106,15 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	start := time.Now()
 
 	ao := analytics.AmpObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context: r.Context(),
+			Status:  http.StatusOK,
+			Errors:  make([]error, 0),
+		},
 		StartTime: start,
 	}
 
 	// Set this as an AMP request in Metrics.
-
 	labels := metrics.Labels{
 		Source:        metrics.DemandWeb,
 		RType:         metrics.ReqTypeAMP,
@@ -209,7 +212,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
-	ao.AuctionResponse = response
+	ao.Response = response
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

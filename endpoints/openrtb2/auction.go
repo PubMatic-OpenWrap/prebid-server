@@ -131,8 +131,11 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	start := time.Now()
 
 	ao := analytics.AuctionObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context: r.Context(),
+			Status:  http.StatusOK,
+			Errors:  make([]error, 0),
+		},
 		StartTime: start,
 	}
 
@@ -213,6 +216,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		StoredBidResponses:         storedBidResponses,
 		BidderImpReplaceImpID:      bidderImpReplaceImp,
 		PubID:                      labels.PubID,
+		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
 	ao.Request = req.BidRequest
