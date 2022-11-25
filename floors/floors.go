@@ -61,16 +61,14 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 		return []error{fmt.Errorf("Floors disabled in request")}
 	}
 
-	floorData := extFloorRules.Data
-	modelGroup := floorData.ModelGroups[0]
+	modelGroup := extFloorRules.Data.ModelGroups[0]
 	if modelGroup.Schema.Delimiter == "" {
 		modelGroup.Schema.Delimiter = defaultDelimiter
 	}
 
 	extFloorRules.Skipped = new(bool)
-	if shouldSkipFloors(extFloorRules.Data.ModelGroups[0].SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
+	if shouldSkipFloors(modelGroup.SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		//	floorData.ModelGroups = nil
 		return floorModelErrList
 	}
 
@@ -149,6 +147,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 
 func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLocation string) (*openrtb_ext.PriceFloorRules, []error) {
 
+	finFloors := floors
 	var floorModelErrList []error
 	if floors != nil && floors.Data != nil {
 		floorData := floors.Data
@@ -158,23 +157,24 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 			return floors, append(floorModelErrList, floorSkipRateErr)
 		}
 
-		floorData.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floorData.ModelGroups)
+		finFloors.Data = new(openrtb_ext.PriceFloorData)
+		finFloors.Data.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floorData.ModelGroups)
 		if len(floorData.ModelGroups) == 0 {
 			return floors, floorModelErrList
 		} else if len(floorData.ModelGroups) > 1 {
-			floorData.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
+			finFloors.Data.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
 		}
 
 		modelGroup := floorData.ModelGroups[0]
 		if modelGroup.Schema.Delimiter == "" {
 			modelGroup.Schema.Delimiter = defaultDelimiter
 		}
-	} else if floors == nil {
-		floors = new(openrtb_ext.PriceFloorRules)
+	} else {
+		finFloors = new(openrtb_ext.PriceFloorRules)
 	}
-	floors.FetchStatus = fetchStatus
-	floors.PriceFloorLocation = floorLocation
-	return floors, floorModelErrList
+	finFloors.FetchStatus = fetchStatus
+	finFloors.PriceFloorLocation = floorLocation
+	return finFloors, floorModelErrList
 }
 
 func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) *openrtb_ext.PriceFloorRules {
