@@ -108,12 +108,12 @@ func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
 func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
 	// Check for floors JSON in cache
-	var fetcheRes openrtb_ext.PriceFloorRules
+	var fetcheRes *openrtb_ext.PriceFloorRules
 	result, ret := f.Get(configs.Fetch.URL)
 	if ret {
-		fetcheRes = result.(openrtb_ext.PriceFloorRules)
+		fetcheRes = result.(*openrtb_ext.PriceFloorRules)
 		if fetcheRes.Data != nil {
-			return &fetcheRes, openrtb_ext.FetchSuccess
+			return fetcheRes, openrtb_ext.FetchSuccess
 		} else {
 			return nil, openrtb_ext.FetchError
 		}
@@ -214,13 +214,13 @@ func fetchAndValidate(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorR
 		return nil
 	}
 
-	if len(floorResp) > configs.MaxFileSize {
+	if len(floorResp) > (configs.MaxFileSize * 1024) {
 		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
 		return nil
 	}
 
 	var priceFloors openrtb_ext.PriceFloorRules
-	if err = json.Unmarshal(floorResp, &priceFloors); err != nil {
+	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
 		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
 		return nil
 	} else {

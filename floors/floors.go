@@ -70,7 +70,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	extFloorRules.Skipped = new(bool)
 	if shouldSkipFloors(extFloorRules.Data.ModelGroups[0].SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		floorData.ModelGroups = nil
+		//	floorData.ModelGroups = nil
 		return floorModelErrList
 	}
 
