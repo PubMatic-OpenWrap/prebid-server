@@ -21,6 +21,7 @@ require (
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/mxmCherry/openrtb/v16 v16.0.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prebid/go-gdpr v1.11.0
 	github.com/prebid/prebid-server v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.12.1

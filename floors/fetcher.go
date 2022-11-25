@@ -12,8 +12,14 @@ import (
 	"github.com/alitto/pond"
 	validator "github.com/asaskevich/govalidator"
 	"github.com/golang/glog"
+	"github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
+)
+
+const (
+	CACHE_EXPIRY_ROUTINE_RUN_INTERVAL = 60 * time.Minute
+	CACHE_DEFAULT_EXPIRY_INTERVAL     = 360 * time.Minute
 )
 
 type FloorFetcher interface {
@@ -26,6 +32,7 @@ type PriceFloorFetcher struct {
 	fetchInprogress map[string]bool  // Map of URL with fetch status
 	configReceiver  chan FetchInfo   // Channel which recieves URLs to be fetched
 	done            chan struct{}    // Channel to close fetcher
+	cache           *cache.Cache     // cache
 }
 
 type FetchInfo struct {
@@ -78,13 +85,39 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 		fetchInprogress: make(map[string]bool),
 		configReceiver:  make(chan FetchInfo, maxCapacity),
 		done:            make(chan struct{}),
+		cache:           cache.New(CACHE_DEFAULT_EXPIRY_INTERVAL, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL),
 	}
+
 	go floorFetcher.Fetcher()
 
 	return &floorFetcher
 }
 
+func (f *PriceFloorFetcher) SetWithExpiry(key string, value interface{}, expiry time.Duration) {
+	f.cache.Set(key, value, expiry)
+}
+
+func (f *PriceFloorFetcher) Set(key string, value interface{}) {
+	f.cache.Set(key, value, CACHE_DEFAULT_EXPIRY_INTERVAL)
+}
+
+func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
+	return f.cache.Get(key)
+}
+
 func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
+
+	// Check for floors JSON in cache
+	var fetcheRes openrtb_ext.PriceFloorRules
+	result, ret := f.Get(configs.Fetch.URL)
+	if ret {
+		fetcheRes = result.(openrtb_ext.PriceFloorRules)
+		if fetcheRes.Data != nil {
+			return &fetcheRes, openrtb_ext.FetchSuccess
+		} else {
+			return nil, openrtb_ext.FetchError
+		}
+	}
 
 	//check in cache: hit/miss
 	//hit: directly return
@@ -118,6 +151,7 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 	if floorData != nil {
 		// Update cache with new floor rules
 		glog.Info("Updating Value in cache")
+		f.Set(configs.URL, floorData)
 		// pwd, _ := os.Getwd()
 		// content, err := json.Marshal(floorData)
 		// if err != nil {
