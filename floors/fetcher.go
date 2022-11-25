@@ -28,6 +28,48 @@ type PriceFloorFetcher struct {
 	done            chan struct{}    // Channel to close fetcher
 }
 
+type FetchInfo struct {
+	config.AccountFloorFetch
+	FetchTime      int64
+	RefetchRequest bool
+}
+
+type FetchQueue []*FetchInfo
+
+func (fq FetchQueue) Len() int {
+	return len(fq)
+}
+
+func (fq FetchQueue) Less(i, j int) bool {
+	return fq[i].FetchTime < fq[j].FetchTime
+}
+
+func (fq FetchQueue) Swap(i, j int) {
+	fq[i], fq[j] = fq[j], fq[i]
+}
+
+func (fq *FetchQueue) Push(element interface{}) {
+	fetchInfo := element.(*FetchInfo)
+	*fq = append(*fq, fetchInfo)
+}
+
+func (fq *FetchQueue) Pop() interface{} {
+	old := *fq
+	n := len(old)
+	fetchInfo := old[n-1]
+	old[n-1] = nil // avoid memory leak
+	*fq = old[0 : n-1]
+	return fetchInfo
+}
+
+func (fq *FetchQueue) Top() *FetchInfo {
+	old := *fq
+	if len(old) == 0 {
+		return nil
+	}
+	return old[0]
+}
+
 func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 
 	floorFetcher := PriceFloorFetcher{
@@ -63,10 +105,8 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 
 	//miss: push to channel to fetch and return empty response
 	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
-		if _, ok := f.fetchInprogress[configs.Fetch.URL]; !ok {
-			fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchTime: time.Now().Unix()}
-			f.configReceiver <- fetchInfo
-		}
+		fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchTime: time.Now().Unix(), RefetchRequest: false}
+		f.configReceiver <- fetchInfo
 	}
 
 	return nil, openrtb_ext.FetchInprogress
@@ -91,7 +131,7 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 	}
 
 	// Send to refetch channel
-	f.configReceiver <- FetchInfo{AccountFloorFetch: configs, FetchTime: time.Now().Add(time.Duration(configs.Period) * time.Second).Unix()}
+	f.configReceiver <- FetchInfo{AccountFloorFetch: configs, FetchTime: time.Now().Add(time.Duration(configs.Period) * time.Second).Unix(), RefetchRequest: true}
 
 }
 
@@ -107,9 +147,13 @@ func (f *PriceFloorFetcher) Fetcher() {
 	for {
 		select {
 		case fetchInfo := <-f.configReceiver:
-			if _, ok := f.fetchInprogress[fetchInfo.URL]; !ok {
-				f.fetchInprogress[fetchInfo.URL] = true
+			if fetchInfo.RefetchRequest {
 				heap.Push(&f.fetchQueue, &fetchInfo)
+			} else {
+				if _, ok := f.fetchInprogress[fetchInfo.URL]; !ok {
+					f.fetchInprogress[fetchInfo.URL] = true
+					heap.Push(&f.fetchQueue, &fetchInfo)
+				}
 			}
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
