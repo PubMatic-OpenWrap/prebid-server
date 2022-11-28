@@ -107,6 +107,9 @@ func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
 
 func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
+	if !configs.UseDynamicData {
+		return nil, openrtb_ext.FetchNone
+	}
 	// Check for floors JSON in cache
 	var fetcheRes *openrtb_ext.PriceFloorRules
 	result, ret := f.Get(configs.Fetch.URL)
@@ -118,23 +121,6 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 			return nil, openrtb_ext.FetchError
 		}
 	}
-
-	//check in cache: hit/miss
-	//hit: directly return
-	// pwd, _ := os.Getwd()
-	// path := filepath.Join(pwd, "floor.json")
-	// if _, err := os.Stat(path); err == nil {
-	// 	content, err := ioutil.ReadFile("floor.json")
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// 	var data openrtb_ext.PriceFloorRules
-	// 	err = json.Unmarshal(content, &data)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// 	return &data, openrtb_ext.FetchSuccess
-	// }
 
 	//miss: push to channel to fetch and return empty response
 	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
@@ -152,16 +138,6 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 		// Update cache with new floor rules
 		glog.Info("Updating Value in cache")
 		f.Set(configs.URL, floorData)
-		// pwd, _ := os.Getwd()
-		// content, err := json.Marshal(floorData)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// path := filepath.Join(pwd, "floor.json")
-		// err = ioutil.WriteFile(path, content, 0644)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
 	}
 
 	// Send to refetch channel

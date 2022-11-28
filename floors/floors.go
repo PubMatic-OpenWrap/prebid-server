@@ -156,7 +156,6 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 		if floorSkipRateErr != nil {
 			return floors, append(floorModelErrList, floorSkipRateErr)
 		}
-
 		finFloors.Data = new(openrtb_ext.PriceFloorData)
 		finFloors.Data.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floorData.ModelGroups)
 		if len(floorData.ModelGroups) == 0 {
@@ -178,9 +177,9 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 }
 
 func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) *openrtb_ext.PriceFloorRules {
-
 	var enforceRate int
 
+	mergedFloors := fetchFloors
 	floorsEnabledByRequest := reqFloors.GetEnabled()
 	floorMinPrice := resolveFloorMin(reqFloors, fetchFloors, conversions)
 
@@ -192,17 +191,17 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 		floorsEnabledByProvider := getFloorsEnabledFlag(fetchFloors)
 		floorsProviderEnforcement := fetchFloors.Enforcement
 
-		if fetchFloors.Enabled == nil {
-			fetchFloors.Enabled = new(bool)
+		if mergedFloors.Enabled == nil {
+			mergedFloors.Enabled = new(bool)
 		}
-		*fetchFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
-		fetchFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
+		*mergedFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
+		mergedFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
 		if floorMinPrice.FloorMin > float64(0) {
-			fetchFloors.FloorMin = floorMinPrice.FloorMin
-			fetchFloors.FloorMinCur = floorMinPrice.FloorMinCur
+			mergedFloors.FloorMin = floorMinPrice.FloorMin
+			mergedFloors.FloorMinCur = floorMinPrice.FloorMinCur
 		}
 	}
-	return &fetchFloors
+	return &mergedFloors
 }
 
 func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceRate int) *openrtb_ext.PriceFloorEnforcement {
