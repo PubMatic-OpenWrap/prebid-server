@@ -110,6 +110,7 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 	if !configs.UseDynamicData {
 		return nil, openrtb_ext.FetchNone
 	}
+
 	// Check for floors JSON in cache
 	var fetcheRes *openrtb_ext.PriceFloorRules
 	result, ret := f.Get(configs.Fetch.URL)
@@ -151,8 +152,8 @@ func (f *PriceFloorFetcher) Stop() {
 
 func (f *PriceFloorFetcher) Fetcher() {
 
-	//Create Ticker of 5 seconds
-	ticker := time.NewTicker(5 * time.Second)
+	//Create Ticker of 5 minutes
+	ticker := time.NewTicker(300 * time.Second)
 
 	for {
 		select {
@@ -210,6 +211,7 @@ func fetchAndValidate(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorR
 	return &priceFloors
 }
 
+// fetchFloorRulesFromURL returns a price floor JSON from provided URL with timeout constraints
 func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
