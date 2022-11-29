@@ -40,6 +40,8 @@ type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace       string               `json:"marketplace,omitempty"`
+	DspId             *int                 `json:"dspid,omitempty"`
+	AdvertiserID      *int                 `json:"advid,omitempty"`
 }
 
 type pubmaticWrapperExt struct {
@@ -496,6 +498,8 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			seat := ""
 			var bidExt *pubmaticBidExt
 			bidType := openrtb_ext.BidTypeBanner
+			prebidMeta := &openrtb_ext.ExtBidPrebidMeta{}
+
 			err := json.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
 				errs = append(errs, err)
@@ -505,6 +509,8 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					impVideo.Duration = *bidExt.VideoCreativeInfo.Duration
 				}
 				bidType = getBidType(bidExt)
+				//prepares ExtBidPrebidMeta with Values got from bidresponse
+				prepareMetaObject(bid, bidExt, prebidMeta)
 			}
 
 			if bidType == openrtb_ext.BidTypeNative {
@@ -520,14 +526,45 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				BidVideo:   impVideo,
 				Seat:       openrtb_ext.BidderName(seat),
 				BidTargets: targets,
+				BidMeta:    prebidMeta,
 			})
-
 		}
 	}
 	if bidResp.Cur != "" {
 		bidResponse.Currency = bidResp.Cur
 	}
 	return bidResponse, errs
+}
+
+//prepareMetaObject prepares the Meta structure using Bid Response
+func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_ext.ExtBidPrebidMeta) {
+
+	if bidExt.DspId != nil {
+		meta.NetworkID = *bidExt.DspId
+		meta.DemandSource = strconv.Itoa(*bidExt.DspId)
+	}
+
+	if bidExt.AdvertiserID != nil {
+		meta.AdvertiserID = *bidExt.AdvertiserID
+		meta.AgencyID = *bidExt.AdvertiserID
+	}
+	if len(bid.ADomain) > 0 {
+		meta.BrandID, _ = strconv.Atoi(bid.ADomain[0])
+	}
+
+	if len(bid.Cat) > 0 {
+		meta.PrimaryCategoryID = bid.Cat[0]
+		meta.SecondaryCategoryIDs = bid.Cat
+	}
+
+	// NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
+	// when we needed we can add it back.
+	// New fields added, assignee fields name may change
+	// meta.NetworkName = bidExt.NetworkName;
+	// meta.AdvertiserName = bidExt.AdvertiserName;
+	// meta.AgencyName = bidExt.AgencyName;
+	// meta.BrandName = bidExt.BrandName;
+	// meta.DChain = bidExt.DChain;
 }
 
 func getNativeAdm(adm string) (string, error) {
