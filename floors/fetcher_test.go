@@ -610,7 +610,7 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 	mockHttpServer := httptest.NewServer(mockHandler(response, 200))
 	defer mockHttpServer.Close()
 
-	fectherInstance := NewPriceFloorFetcher(5, 10)
+	fectherInstance := NewPriceFloorFetcher(5, 10, 600, 36000)
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 

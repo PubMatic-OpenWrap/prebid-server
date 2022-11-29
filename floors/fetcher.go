@@ -17,11 +17,6 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-const (
-	CACHE_EXPIRY_ROUTINE_RUN_INTERVAL = 60 * time.Minute
-	CACHE_DEFAULT_EXPIRY_INTERVAL     = 360 * time.Minute
-)
-
 type FloorFetcher interface {
 	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
 }
@@ -33,6 +28,7 @@ type PriceFloorFetcher struct {
 	configReceiver  chan FetchInfo   // Channel which recieves URLs to be fetched
 	done            chan struct{}    // Channel to close fetcher
 	cache           *cache.Cache     // cache
+	cacheExpiry     time.Duration    // cache expiry time
 }
 
 type FetchInfo struct {
@@ -77,7 +73,7 @@ func (fq *FetchQueue) Top() *FetchInfo {
 	return old[0]
 }
 
-func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
+func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry int) *PriceFloorFetcher {
 
 	floorFetcher := PriceFloorFetcher{
 		pool:            pond.New(maxWorkers, maxCapacity),
@@ -85,7 +81,8 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 		fetchInprogress: make(map[string]bool),
 		configReceiver:  make(chan FetchInfo, maxCapacity),
 		done:            make(chan struct{}),
-		cache:           cache.New(CACHE_DEFAULT_EXPIRY_INTERVAL, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL),
+		cacheExpiry:     time.Duration(cacheExpiry) * time.Second,
+		cache:           cache.New(time.Duration(cacheExpiry)*time.Second, time.Duration(cacheCleanUpInt)*time.Second),
 	}
 
 	go floorFetcher.Fetcher()
@@ -93,12 +90,8 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity int) *PriceFloorFetcher {
 	return &floorFetcher
 }
 
-func (f *PriceFloorFetcher) SetWithExpiry(key string, value interface{}, expiry time.Duration) {
-	f.cache.Set(key, value, expiry)
-}
-
 func (f *PriceFloorFetcher) Set(key string, value interface{}) {
-	f.cache.Set(key, value, CACHE_DEFAULT_EXPIRY_INTERVAL)
+	f.cache.Set(key, value, f.cacheExpiry)
 }
 
 func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {

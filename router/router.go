@@ -196,7 +196,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	// r.Shutdown = shutdown
 
 	//Price Floor Fetcher
-	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloorFetcher.Worker, cfg.PriceFloorFetcher.Capacity)
+	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloorFetcher.Worker, cfg.PriceFloorFetcher.Capacity,
+		cfg.AccountDefaults.PriceFloors.Fetch.Period, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
 
 	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 
