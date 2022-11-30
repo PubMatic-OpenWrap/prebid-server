@@ -553,10 +553,6 @@ func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_e
 	meta.AdvertiserID = advid
 	meta.AgencyID = advid
 
-	if len(bid.ADomain) > 0 {
-		meta.BrandID, _ = strconv.Atoi(bid.ADomain[0])
-	}
-
 	if len(bid.Cat) > 0 {
 		meta.PrimaryCategoryID = bid.Cat[0]
 		meta.SecondaryCategoryIDs = bid.Cat
@@ -565,6 +561,7 @@ func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_e
 	// NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
 	// when we needed we can add it back.
 	// New fields added, assignee fields name may change
+	// Assign meta.BrandId to bidExt.ADomain[0]  //BrandID is of Type int and ADomain values if string type like "mystartab.com"
 	// meta.NetworkName = bidExt.NetworkName;
 	// meta.AdvertiserName = bidExt.AdvertiserName;
 	// meta.AgencyName = bidExt.AgencyName;
