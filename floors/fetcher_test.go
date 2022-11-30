@@ -532,14 +532,14 @@ func TestFetchAndValidate(t *testing.T) {
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
 					Timeout:     30,
-					MaxFileSize: 100,
+					MaxFileSize: 1,
 					MaxRules:    30,
 					MaxAge:      60,
 					Period:      40,
 				},
 			},
 			response: func() []byte {
-				data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
+				data := `{"currency":"USD","floorProvider":"PM","floorsSchemaVersion":2,"modelGroups":[{"modelVersion":"M_0","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":0.85,"www.missyusa.com":0.7}},{"modelVersion":"M_1","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":1,"www.missyusa.com":1.85}},{"modelVersion":"M_2","modelWeight":5,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.6,"www.missyusa.com":0.7}},{"modelVersion":"M_3","modelWeight":2,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.9,"www.missyusa.com":0.75}},{"modelVersion":"M_4","modelWeight":1,"schema":{"fields":["domain"]},"values":{"www.missyusa.com":1.35,"missyusa.com":1.75}},{"modelVersion":"M_5","modelWeight":2,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.4,"www.missyusa.com":0.9}},{"modelVersion":"M_6","modelWeight":43,"schema":{"fields":["domain"]},"values":{"www.missyusa.com":2,"missyusa.com":2}},{"modelVersion":"M_7","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.4,"www.missyusa.com":1.85}},{"modelVersion":"M_8","modelWeight":3,"schema":{"fields":["domain"]},"values":{"www.missyusa.com":1.7,"missyusa.com":0.1}},{"modelVersion":"M_9","modelWeight":7,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.9,"www.missyusa.com":1.05}},{"modelVersion":"M_10","modelWeight":9,"schema":{"fields":["domain"]},"values":{"www.missyusa.com":2,"missyusa.com":0.1}},{"modelVersion":"M_11","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":0.45,"www.missyusa.com":1.5}},{"modelVersion":"M_12","modelWeight":8,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.2,"www.missyusa.com":1.7}},{"modelVersion":"M_13","modelWeight":8,"schema":{"fields":["domain"]},"values":{"missyusa.com":0.85,"www.missyusa.com":0.75}},{"modelVersion":"M_14","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.8,"www.missyusa.com":1}},{"modelVersion":"M_15","modelWeight":1,"schema":{"fields":["domain"]},"values":{"www.missyusa.com":1.2,"missyusa.com":1.75}},{"modelVersion":"M_16","modelWeight":2,"schema":{"fields":["domain"]},"values":{"missyusa.com":1,"www.missyusa.com":0.7}},{"modelVersion":"M_17","modelWeight":1,"schema":{"fields":["domain"]},"values":{"missyusa.com":0.45,"www.missyusa.com":0.35}},{"modelVersion":"M_18","modelWeight":3,"schema":{"fields":["domain"]},"values":{"missyusa.com":1.2,"www.missyusa.com":1.05}}],"skipRate":10}`
 				return []byte(data)
 			}(),
 			responseStatus: 200,
@@ -599,6 +599,8 @@ func TestFetchAndValidate(t *testing.T) {
 
 func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 
+	refetchCheckInterval = 1
+
 	response := []byte(`{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]}`)
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -610,12 +612,13 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 	mockHttpServer := httptest.NewServer(mockHandler(response, 200))
 	defer mockHttpServer.Close()
 
-	fectherInstance := NewPriceFloorFetcher(5, 10, 600, 36000)
+	fectherInstance := NewPriceFloorFetcher(5, 10, 1, 20)
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 
 	fetchConfig := config.AccountPriceFloors{
-		Enabled: true,
+		Enabled:        true,
+		UseDynamicData: true,
 		Fetch: config.AccountFloorFetch{
 			Enabled:     true,
 			URL:         mockHttpServer.URL,

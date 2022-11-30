@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -20,6 +21,8 @@ import (
 type FloorFetcher interface {
 	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
 }
+
+var refetchCheckInterval = 300
 
 type PriceFloorFetcher struct {
 	pool            *pond.WorkerPool // Goroutines worker pool
@@ -143,10 +146,19 @@ func (f *PriceFloorFetcher) Stop() {
 	close(f.done)
 }
 
+func (f *PriceFloorFetcher) submit(fetchInfo *FetchInfo) {
+	status := f.pool.TrySubmit(func() {
+		f.worker(fetchInfo.AccountFloorFetch)
+	})
+	if !status {
+		heap.Push(&f.fetchQueue, fetchInfo)
+	}
+}
+
 func (f *PriceFloorFetcher) Fetcher() {
 
 	//Create Ticker of 5 minutes
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(time.Duration(refetchCheckInterval) * time.Second)
 
 	for {
 		select {
@@ -156,19 +168,14 @@ func (f *PriceFloorFetcher) Fetcher() {
 			} else {
 				if _, ok := f.fetchInprogress[fetchInfo.URL]; !ok {
 					f.fetchInprogress[fetchInfo.URL] = true
-					heap.Push(&f.fetchQueue, &fetchInfo)
+					f.submit(&fetchInfo)
 				}
 			}
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
 			for top := f.fetchQueue.Top(); top != nil && top.FetchTime < currentTime; top = f.fetchQueue.Top() {
 				nextFetch := heap.Pop(&f.fetchQueue)
-				status := f.pool.TrySubmit(func() {
-					f.worker(nextFetch.(*FetchInfo).AccountFloorFetch)
-				})
-				if !status {
-					heap.Push(&f.fetchQueue, &nextFetch)
-				}
+				f.submit(nextFetch.(*FetchInfo))
 			}
 		case <-f.done:
 			glog.Info("Price Floor fetcher terminated")
@@ -183,7 +190,7 @@ func fetchAndValidate(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorR
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
 		return nil
 	}
-
+	fmt.Println(len(floorResp))
 	if len(floorResp) > (configs.MaxFileSize * 1024) {
 		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
 		return nil
