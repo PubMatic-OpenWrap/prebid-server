@@ -510,7 +510,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 				bidType = getBidType(bidExt)
 				//prepares ExtBidPrebidMeta with Values got from bidresponse
-				prepareMetaObject(bid, bidExt, prebidMeta)
+				prepareMetaObject(bid, bidExt, prebidMeta, sb.Seat)
 			}
 
 			if bidType == openrtb_ext.BidTypeNative {
@@ -537,17 +537,22 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 }
 
 //prepareMetaObject prepares the Meta structure using Bid Response
-func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_ext.ExtBidPrebidMeta) {
+func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_ext.ExtBidPrebidMeta, seat string) {
 
 	if bidExt.DspId != nil {
 		meta.NetworkID = *bidExt.DspId
 		meta.DemandSource = strconv.Itoa(*bidExt.DspId)
 	}
 
-	if bidExt.AdvertiserID != nil {
-		meta.AdvertiserID = *bidExt.AdvertiserID
-		meta.AgencyID = *bidExt.AdvertiserID
+	var advid int
+	if len(seat) > 0 {
+		advid, _ = strconv.Atoi(seat)
+	} else if bidExt.AdvertiserID != nil {
+		advid = *bidExt.AdvertiserID
 	}
+	meta.AdvertiserID = advid
+	meta.AgencyID = advid
+
 	if len(bid.ADomain) > 0 {
 		meta.BrandID, _ = strconv.Atoi(bid.ADomain[0])
 	}
