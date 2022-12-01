@@ -40,8 +40,8 @@ type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace       string               `json:"marketplace,omitempty"`
-	DspId             *int                 `json:"dspid,omitempty"`
-	AdvertiserID      *int                 `json:"advid,omitempty"`
+	DspId             int                  `json:"dspid,omitempty"`
+	AdvertiserID      int                  `json:"advid,omitempty"`
 }
 
 type pubmaticWrapperExt struct {
@@ -539,16 +539,14 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 //prepareMetaObject prepares the Meta structure using Bid Response
 func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, meta *openrtb_ext.ExtBidPrebidMeta, seat string) {
 
-	if bidExt.DspId != nil {
-		meta.NetworkID = *bidExt.DspId
-		meta.DemandSource = strconv.Itoa(*bidExt.DspId)
-	}
+	meta.NetworkID = bidExt.DspId
+	meta.DemandSource = strconv.Itoa(bidExt.DspId)
 
 	var advid int
 	if len(seat) > 0 {
 		advid, _ = strconv.Atoi(seat)
-	} else if bidExt.AdvertiserID != nil {
-		advid = *bidExt.AdvertiserID
+	} else {
+		advid = bidExt.AdvertiserID
 	}
 	meta.AdvertiserID = advid
 	meta.AgencyID = advid
