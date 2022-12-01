@@ -1,5 +1,7 @@
 package openrtb_ext
 
+import "encoding/json"
+
 // Defines strings for FetchStatus
 const (
 	FetchSuccess    = "success"
@@ -69,6 +71,21 @@ type ImpFloorExt struct {
 	FloorRule      string  `json:"floorRule,omitempty"`
 	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
 	FloorValue     float64 `json:"floorValue,omitempty"`
+}
+type Price struct {
+	FloorMin    float64 `json:"floormin,omitempty"`
+	FloorMinCur string  `json:"floormincur,omitempty"`
+}
+
+type ExtImp struct {
+	Prebid *ImpExtPrebid `json:"prebid,omitempty"`
+}
+
+// ExtImpPrebid defines the contract for bidrequest.imp[i].ext.prebid
+type ImpExtPrebid struct {
+	Options     *Options        `json:"options,omitempty"`
+	Passthrough json.RawMessage `json:"passthrough,omitempty"`
+	Floors      Price           `json:"floors,omitempty"`
 }
 
 // GetEnabled will check if floors is enabled in request
