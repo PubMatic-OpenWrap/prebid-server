@@ -154,6 +154,11 @@ func TestFetchQueueTop(t *testing.T) {
 			fq:   &FetchQueue{&FetchInfo{FetchTime: 20}},
 			want: &FetchInfo{FetchTime: 20},
 		},
+		{
+			name: "Queue is empty",
+			fq:   &FetchQueue{},
+			want: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -600,7 +605,6 @@ func TestFetchAndValidate(t *testing.T) {
 func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 
 	refetchCheckInterval = 1
-
 	response := []byte(`{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]}`)
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -637,4 +641,60 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 	assert.Never(t, func() bool { return len(fectherInstance.fetchQueue) > 1 }, time.Duration(5*time.Second), 100*time.Millisecond, "Queue Got more than one entry")
 	assert.Never(t, func() bool { return len(fectherInstance.fetchInprogress) > 1 }, time.Duration(5*time.Second), 100*time.Millisecond, "Map Got more than one entry")
 
+}
+
+func TestFetcherDataPresentInCache(t *testing.T) {
+
+	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20)
+	defer fectherInstance.Stop()
+	defer fectherInstance.pool.Stop()
+
+	fetchConfig := config.AccountPriceFloors{
+		Enabled:        true,
+		UseDynamicData: true,
+		Fetch: config.AccountFloorFetch{
+			Enabled:     true,
+			URL:         "http://test.com/floor",
+			Timeout:     100,
+			MaxFileSize: 1000,
+			MaxRules:    100,
+			MaxAge:      20,
+			Period:      5,
+		},
+	}
+	var res *openrtb_ext.PriceFloorRules
+	data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
+	_ = json.Unmarshal([]byte(data), &res)
+	fectherInstance.Set("http://test.com/floor", res)
+
+	val, status := fectherInstance.Fetch(fetchConfig)
+	assert.Equal(t, res, val, "Invalid value in cache or cache is empty")
+	assert.Equal(t, "success", status, "Floor fetch should be success")
+}
+
+func TestFetcherDataNotPresentInCache(t *testing.T) {
+
+	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20)
+	defer fectherInstance.Stop()
+	defer fectherInstance.pool.Stop()
+
+	fetchConfig := config.AccountPriceFloors{
+		Enabled:        true,
+		UseDynamicData: true,
+		Fetch: config.AccountFloorFetch{
+			Enabled:     true,
+			URL:         "http://test.com/floor",
+			Timeout:     100,
+			MaxFileSize: 1000,
+			MaxRules:    100,
+			MaxAge:      20,
+			Period:      5,
+		},
+	}
+	fectherInstance.Set("http://test.com/floor", nil)
+
+	val, status := fectherInstance.Fetch(fetchConfig)
+
+	assert.Equal(t, (*openrtb_ext.PriceFloorRules)(nil), val, "Floor data should be nil")
+	assert.Equal(t, "error", status, "Floor fetch should be error")
 }

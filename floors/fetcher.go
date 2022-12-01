@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -108,15 +107,13 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 	}
 
 	// Check for floors JSON in cache
-	var fetcheRes *openrtb_ext.PriceFloorRules
-	result, ret := f.Get(configs.Fetch.URL)
-	if ret {
-		fetcheRes = result.(*openrtb_ext.PriceFloorRules)
-		if fetcheRes.Data != nil {
-			return fetcheRes, openrtb_ext.FetchSuccess
-		} else {
+	result, found := f.Get(configs.Fetch.URL)
+	if found {
+		fetcheRes, ok := result.(*openrtb_ext.PriceFloorRules)
+		if !ok || fetcheRes.Data == nil {
 			return nil, openrtb_ext.FetchError
 		}
+		return fetcheRes, openrtb_ext.FetchSuccess
 	}
 
 	//miss: push to channel to fetch and return empty response
@@ -179,6 +176,7 @@ func (f *PriceFloorFetcher) Fetcher() {
 			}
 		case <-f.done:
 			glog.Info("Price Floor fetcher terminated")
+			return
 		}
 	}
 }
@@ -190,7 +188,7 @@ func fetchAndValidate(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorR
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
 		return nil
 	}
-	fmt.Println(len(floorResp))
+
 	if len(floorResp) > (configs.MaxFileSize * 1024) {
 		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
 		return nil
