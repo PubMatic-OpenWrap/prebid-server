@@ -665,7 +665,7 @@ func TestFetcherDataPresentInCache(t *testing.T) {
 	var res *openrtb_ext.PriceFloorRules
 	data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
 	_ = json.Unmarshal([]byte(data), &res)
-	fectherInstance.Set("http://test.com/floor", res)
+	fectherInstance.SetWithExpiry("http://test.com/floor", res, fectherInstance.cacheExpiry)
 
 	val, status := fectherInstance.Fetch(fetchConfig)
 	assert.Equal(t, res, val, "Invalid value in cache or cache is empty")
@@ -691,7 +691,7 @@ func TestFetcherDataNotPresentInCache(t *testing.T) {
 			Period:      5,
 		},
 	}
-	fectherInstance.Set("http://test.com/floor", nil)
+	fectherInstance.SetWithExpiry("http://test.com/floor", nil, fectherInstance.cacheExpiry)
 
 	val, status := fectherInstance.Fetch(fetchConfig)
 

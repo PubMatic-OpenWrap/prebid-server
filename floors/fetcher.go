@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/alitto/pond"
@@ -92,8 +94,8 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry 
 	return &floorFetcher
 }
 
-func (f *PriceFloorFetcher) Set(key string, value interface{}) {
-	f.cache.Set(key, value, f.cacheExpiry)
+func (f *PriceFloorFetcher) SetWithExpiry(key string, value interface{}, cacheExpiry time.Duration) {
+	f.cache.Set(key, value, cacheExpiry)
 }
 
 func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
@@ -127,11 +129,15 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 
 func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 
-	floorData := fetchAndValidate(configs)
+	floorData, fetchedMaxAge := fetchAndValidate(configs)
 	if floorData != nil {
 		// Update cache with new floor rules
 		glog.Info("Updating Value in cache")
-		f.Set(configs.URL, floorData)
+		cacheExpiry := f.cacheExpiry
+		if fetchedMaxAge != 0 && fetchedMaxAge > configs.Period && fetchedMaxAge < math.MaxInt32 {
+			cacheExpiry = time.Duration(fetchedMaxAge)
+		}
+		f.SetWithExpiry(configs.URL, floorData, cacheExpiry)
 	}
 
 	// Send to refetch channel
@@ -181,61 +187,66 @@ func (f *PriceFloorFetcher) Fetcher() {
 	}
 }
 
-func fetchAndValidate(configs config.AccountFloorFetch) *openrtb_ext.PriceFloorRules {
+func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
 
-	floorResp, err := fetchFloorRulesFromURL(configs.URL, configs.Timeout)
+	floorResp, maxAge, err := fetchFloorRulesFromURL(configs.URL, configs.Timeout)
 	if err != nil {
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
-		return nil
+		return nil, 0
 	}
 
 	if len(floorResp) > (configs.MaxFileSize * 1024) {
 		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
-		return nil
+		return nil, 0
 	}
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
 		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
-		return nil
+		return nil, 0
 	} else {
 		err := validateRules(configs, &priceFloors)
 		if err != nil {
 			glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", configs.URL, err.Error())
-			return nil
+			return nil, 0
 		}
 	}
 
-	return &priceFloors
+	return &priceFloors, maxAge
 }
 
 // fetchFloorRulesFromURL returns a price floor JSON from provided URL with timeout constraints
-func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, error) {
+func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, int, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
 	defer cancel()
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, URL, nil)
 	if err != nil {
-		return nil, errors.New("error while forming http fetch request : " + err.Error())
+		return nil, 0, errors.New("error while forming http fetch request : " + err.Error())
 	}
 
 	httpResp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		return nil, errors.New("error while getting response from url : " + err.Error())
+		return nil, 0, errors.New("error while getting response from url : " + err.Error())
 	}
 
 	if httpResp.StatusCode != 200 {
-		return nil, errors.New("no response from server")
+		return nil, 0, errors.New("no response from server")
+	}
+
+	var maxAge int
+	if maxAgeStr := httpResp.Header.Get("max-age"); maxAgeStr != "" {
+		maxAge, _ = strconv.Atoi(maxAgeStr)
 	}
 
 	respBody, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, errors.New("unable to read response")
+		return nil, 0, errors.New("unable to read response")
 	}
 	defer httpResp.Body.Close()
 
-	return respBody, nil
+	return respBody, maxAge, nil
 }
 
 func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.PriceFloorRules) error {
