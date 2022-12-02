@@ -181,6 +181,27 @@ func TestPrepareMetaObject(t *testing.T) {
 			},
 		},
 		{
+			name: "Valid Meta Object with Single CategoryId",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1"},
+				AdvertiserID:         124,
+				AgencyID:             124,
+			},
+		},
+		{
 			name: "Valid Meta Object",
 			args: args{
 				bid: openrtb2.Bid{

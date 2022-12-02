@@ -42,20 +42,20 @@ func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMe
 func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *openrtb_ext.ExtBidPrebidMeta {
 
 	meta := &openrtb_ext.ExtBidPrebidMeta{}
+
+	meta.NetworkID = bidExt.DspId
+
 	if bidExt.DspId != 0 {
-		meta.NetworkID = bidExt.DspId
 		meta.DemandSource = strconv.Itoa(bidExt.DspId)
 	}
 
 	if len(seat) > 0 {
 		meta.AdvertiserID, _ = strconv.Atoi(seat)
-	} else if bidExt.AdvertiserID != 0 {
+	} else {
 		meta.AdvertiserID = bidExt.AdvertiserID
 	}
 
-	if meta.AdvertiserID != 0 {
-		meta.AgencyID = meta.AdvertiserID
-	}
+	meta.AgencyID = meta.AdvertiserID
 
 	if len(bid.Cat) > 0 {
 		meta.PrimaryCategoryID = bid.Cat[0]

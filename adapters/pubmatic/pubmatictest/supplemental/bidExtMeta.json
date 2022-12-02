@@ -107,26 +107,17 @@
                                         "pubmatic.com"
                                     ],
                                     "crid": "29681110",
+                                    "cat":[
+                                        "IAB-1",
+                                        "IAB-2"
+                                    ],
                                     "h": 250,
                                     "w": 300,
                                     "dealid": "test deal",
                                     "ext": {
                                         "dspid": 6,
                                         "advid": 125,
-                                        "deal_channel": 1,
-                                        "prebid":{
-                                            "meta": {
-                                                "advertiserId": 958,
-                                                "agencyId": 958,
-                                                "networkId": 6,
-                                                "demandSource": "6",
-                                                "primaryCatId": "IAB-1",
-                                                "secondaryCatIds": [
-                                                    "IAB-1",
-                                                    "IAB-2"
-                                                ]
-                                            }
-                                        }
+                                        "deal_channel": 1
                                     }
                                 }
                             ]
@@ -153,29 +144,30 @@
                             "pubmatic.com"
                         ],
                         "crid": "29681110",
+                        "cat":[
+                            "IAB-1"
+                        ],
                         "w": 300,
                         "h": 250,
                         "dealid": "test deal",
                         "ext": {
                             "dspid": 6,
                             "advid": 125,
-                            "deal_channel": 1,
-                            "prebid":{
-                                "meta": {
-                                    "advertiserId": 958,
-                                    "agencyId": 958,
-                                    "networkId": 6,
-                                    "demandSource": "6",
-                                    "primaryCatId": "IAB-1",
-                                    "secondaryCatIds": [
-                                        "IAB-1",
-                                        "IAB-2"
-                                    ]
-                                }
-                            }
+                            "deal_channel": 1
                         }
                     },
-                    "type": "banner"
+                    "type": "banner",
+                    "meta": {
+                        "advertiserId": 958,
+                        "agencyId": 958,
+                        "networkId": 6,
+                        "demandSource": "6",
+                        "primaryCatId": "IAB-1",
+                        "secondaryCatIds": [
+                            "IAB-1",
+                            "IAB-2"
+                        ]
+                    }
                 }
             ]
         }
