@@ -477,6 +477,7 @@ type LMT struct {
 type Analytics struct {
 	File     FileLogs `mapstructure:"file"`
 	Pubstack Pubstack `mapstructure:"pubstack"`
+	PubMatic PubMatic `mapstructure:"pubmatic"`
 }
 
 type CurrencyConverter struct {
@@ -503,6 +504,10 @@ type Pubstack struct {
 	IntakeUrl   string         `mapstructure:"endpoint"`
 	Buffers     PubstackBuffer `mapstructure:"buffers"`
 	ConfRefresh string         `mapstructure:"configuration_refresh_delay"`
+}
+
+type PubMatic struct {
+	Enabled bool `mapstructure:"enabled"`
 }
 
 type PubstackBuffer struct {
@@ -1159,6 +1164,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("analytics.pubstack.buffers.size", "2MB")
 	v.SetDefault("analytics.pubstack.buffers.count", 100)
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
+	v.SetDefault("analytics.pubmatic.enabled", false)
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)

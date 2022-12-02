@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/analytics"
+	analytic_cfg "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/prebid/prebid-server/config"
@@ -36,6 +38,14 @@ func InitPrebidServer(configFile string) {
 	if err != nil {
 		glog.Exitf("prebid-server failed: %v", err)
 	}
+}
+
+func RegisterPubMaticsAnalytic(pubm analytics.PBSAnalyticsModule) error {
+	modules, err := analytic_cfg.AddAnalyticsModule(router.GetPBSAnalyticsModule(), pubm)
+	if err != nil {
+		return err
+	}
+	return router.SetPBSAnalyticsModule(modules)
 }
 
 func loadConfig(configFileName string) (*config.Configuration, error) {

@@ -3,11 +3,13 @@ package router
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/prebid/prebid-server/analytics"
+
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints"
 	"github.com/prebid/prebid-server/endpoints/openrtb2"
@@ -42,6 +44,21 @@ var (
 	g_gdprPermsBuilder  gdpr.PermissionsBuilder
 	g_tcf2CfgBuilder    gdpr.TCF2ConfigBuilder
 )
+
+func GetPBSAnalyticsModule() analytics.PBSAnalyticsModule {
+	if g_analytics != nil {
+		return *g_analytics
+	}
+	return nil
+}
+
+func SetPBSAnalyticsModule(module analytics.PBSAnalyticsModule) error {
+	if g_analytics != nil {
+		*g_analytics = module
+		return nil
+	}
+	return fmt.Errorf("g_analytics is nil")
+}
 
 func getTransport(cfg *config.Configuration, certPool *x509.CertPool) *http.Transport {
 	transport := &http.Transport{

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/prebid/prebid-server/analytics/filesystem"
 	"github.com/prebid/prebid-server/config"
 	"github.com/stretchr/testify/assert"
 
@@ -64,4 +65,27 @@ func TestViperEnv(t *testing.T) {
 	assert.Equal(t, "not_an_endpoint", v.Get("adapters.pubmatic.endpoint"), "Nested Config")
 	assert.Equal(t, 60, v.Get("host_cookie.ttl_days"), "Config With Underscores")
 	assert.ElementsMatch(t, []string{"1.1.1.1/24", "2.2.2.2/24"}, v.Get("request_validation.ipv4_private_networks"), "Arrays")
+}
+
+func TestRegisterPubMaticsAnalytic(t *testing.T) {
+	// set default values for router
+	v := viper.New()
+	config.SetupViper(v, "")
+	cfg, _ := config.New(v)
+	serve(cfg)
+
+	file, err := filesystem.NewFileLogger("xyz1.txt")
+	if err != nil {
+		t.Errorf("NewFileLogger returned error - %v", err.Error())
+	}
+
+	err = RegisterPubMaticsAnalytic(file)
+	if err != nil {
+		t.Errorf("Expecting no error from RegisterPubMaticsAnalytic, but got - %v", err.Error())
+	}
+
+	err = RegisterPubMaticsAnalytic(nil)
+	if err == nil {
+		t.Errorf("Expecting error from RegisterPubMaticsAnalytic, but not received any")
+	}
 }

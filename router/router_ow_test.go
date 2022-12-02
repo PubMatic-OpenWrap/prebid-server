@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-server/analytics/filesystem"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/stretchr/testify/assert"
@@ -83,5 +84,44 @@ func TestNew(t *testing.T) {
 			assert.NotNil(t, g_gdprPermsBuilder)
 			assert.NotNil(t, g_tcf2CfgBuilder)
 		})
+	}
+}
+
+func TestSetPBSAnalyticsModule(t *testing.T) {
+
+	// initialize g_analytics module
+	g_analytics = nil
+	file, _ := filesystem.NewFileLogger("xyz")
+	err := SetPBSAnalyticsModule(file)
+	if err == nil {
+		t.Errorf("SetPBSAnalyticsModule should return an error")
+	}
+
+	g_analytics = &file
+	new_file, _ := filesystem.NewFileLogger("abc")
+	err = SetPBSAnalyticsModule(new_file)
+	if err != nil {
+		t.Errorf("SetPBSAnalyticsModule returned an error - [%v]", err.Error())
+	}
+	if *g_analytics == nil {
+		t.Errorf("*g_analytics should not be nil")
+	}
+}
+
+func TestGetPBSAnalyticsModule(t *testing.T) {
+
+	// initialize g_analytics module
+	g_analytics = nil
+	module := GetPBSAnalyticsModule()
+	if module != nil {
+		t.Errorf("GetPBSAnalyticsModule should return nil")
+	}
+
+	file, _ := filesystem.NewFileLogger("xyz")
+	g_analytics = &file
+
+	module = GetPBSAnalyticsModule()
+	if module == nil {
+		t.Errorf("GetPBSAnalyticsModule should not return nil")
 	}
 }
