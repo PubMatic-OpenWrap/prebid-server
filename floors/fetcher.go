@@ -215,7 +215,8 @@ func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloor
 	return &priceFloors, maxAge
 }
 
-// fetchFloorRulesFromURL returns a price floor JSON from provided URL with timeout constraints
+// fetchFloorRulesFromURL returns a price floor JSON and time for which this JSON is valid
+// from provided URL with timeout constraints
 func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, int, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)

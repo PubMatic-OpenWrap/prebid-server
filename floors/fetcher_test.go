@@ -377,6 +377,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Content-Length", "645")
+			w.Header().Add("max-age", "20")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -392,6 +393,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		response       []byte
 		responseStatus int
 		want           []byte
+		want1          int
 		wantErr        bool
 	}{
 		{
@@ -409,6 +411,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 				data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
 				return []byte(data)
 			}(),
+			want1:   20,
 			wantErr: false,
 		},
 		{
@@ -417,6 +420,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 				URL:     "",
 				timeout: 0,
 			},
+			want1:          0,
 			responseStatus: 200,
 			wantErr:        true,
 		},
@@ -426,6 +430,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 				URL:     "%%",
 				timeout: 10,
 			},
+			want1:          0,
 			responseStatus: 200,
 			wantErr:        true,
 		},
@@ -435,6 +440,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 				URL:     "",
 				timeout: 10,
 			},
+			want1:          0,
 			responseStatus: 500,
 			wantErr:        true,
 		},
@@ -444,6 +450,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 				URL:     "",
 				timeout: 10,
 			},
+			want1:          0,
 			response:       []byte("1"),
 			responseStatus: 200,
 			wantErr:        true,
@@ -460,13 +467,16 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 			} else {
 				url = mockHttpServer.URL
 			}
-			got, err := fetchFloorRulesFromURL(url, tt.args.timeout)
+			got, got1, err := fetchFloorRulesFromURL(url, tt.args.timeout)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fetchFloorRulesFromURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Success fetchFloorRulesFromURL() = %v, want %v", got, tt.want)
+				t.Errorf("fetchFloorRulesFromURL() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("fetchFloorRulesFromURL() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
@@ -476,6 +486,7 @@ func TestFetchAndValidate(t *testing.T) {
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("max-age", "30")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -490,6 +501,7 @@ func TestFetchAndValidate(t *testing.T) {
 		response       []byte
 		responseStatus int
 		want           *openrtb_ext.PriceFloorRules
+		want1          int
 	}{
 		{
 			name: "Recieved valid price floor rules response",
@@ -514,6 +526,7 @@ func TestFetchAndValidate(t *testing.T) {
 				_ = json.Unmarshal([]byte(data), &res.Data)
 				return &res
 			}(),
+			want1: 30,
 		},
 		{
 			name: "No response from server",
@@ -530,6 +543,7 @@ func TestFetchAndValidate(t *testing.T) {
 			response:       []byte{},
 			responseStatus: 500,
 			want:           nil,
+			want1:          0,
 		},
 		{
 			name: "File is greater than MaxFileSize",
@@ -549,6 +563,7 @@ func TestFetchAndValidate(t *testing.T) {
 			}(),
 			responseStatus: 200,
 			want:           nil,
+			want1:          0,
 		},
 		{
 			name: "Malformed response : json unmarshalling failed",
@@ -568,6 +583,7 @@ func TestFetchAndValidate(t *testing.T) {
 			}(),
 			responseStatus: 200,
 			want:           nil,
+			want1:          0,
 		},
 		{
 			name: "Validations failed for price floor rules response",
@@ -587,6 +603,7 @@ func TestFetchAndValidate(t *testing.T) {
 			}(),
 			responseStatus: 200,
 			want:           nil,
+			want1:          0,
 		},
 	}
 	for _, tt := range tests {
@@ -595,8 +612,12 @@ func TestFetchAndValidate(t *testing.T) {
 			defer mockHttpServer.Close()
 
 			tt.args.configs.URL = mockHttpServer.URL
-			if got := fetchAndValidate(tt.args.configs); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("fetchAndValidate() = %v, want %v", got, tt.want)
+			got, got1 := fetchAndValidate(tt.args.configs)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("fetchAndValidate() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("fetchAndValidate() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
