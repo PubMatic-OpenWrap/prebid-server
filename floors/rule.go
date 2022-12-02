@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -53,25 +54,57 @@ func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
 	return floorCur
 }
 
-func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currency.Conversions) (float64, string, error) {
+func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, conversions currency.Conversions) (float64, string, error) {
 	var err error
 	var rate float64
 
-	if floorExt == nil {
-		return 0, "USD", err
-	}
 	floorMin := floorExt.FloorMin
+	floorMinCur := floorExt.FloorMinCur
 	floorCur := getFloorCurrency(floorExt)
 	if len(floorCur) == 0 {
 		floorCur = "USD"
 	}
-	if floorMin > float64(0) && floorExt.FloorMinCur != "" && floorCur != "" &&
-		floorExt.FloorMinCur != floorCur {
-		rate, err = conversions.GetRate(floorExt.FloorMinCur, floorCur)
-		floorMin = rate * floorMin
+	floorMinValue, floorCurValue, err := getFloorMinAndCurFromImp(imp)
+	if err == nil {
+		if floorMinValue > 0.0 {
+			floorMin = floorMinValue
+		}
+		if floorCurValue != "" {
+			floorMinCur = floorCurValue
+		}
+	}
+	if floorMin > float64(0) && floorMinCur != "" {
+		if floorExt.FloorMinCur != "" && floorCurValue != "" && floorExt.FloorMinCur != floorCurValue {
+			glog.Warning("FloorMinCur are different in floorExt and ImpExt")
+		}
+		if floorCur != "" && floorMinCur != floorCur {
+			rate, err = conversions.GetRate(floorMinCur, floorCur)
+			floorMin = rate * floorMin
+		}
 	}
 	floorMin = math.Round(floorMin*10000) / 10000
 	return floorMin, floorCur, err
+}
+
+func getFloorMinAndCurFromImp(imp openrtb2.Imp) (float64, string, error) {
+	impExt := openrtb_ext.ExtImp{}
+	var floorMin float64
+	var floorMinCur string
+	if len(imp.Ext) > 0 {
+		err := json.Unmarshal(imp.Ext, &impExt)
+		if err != nil {
+			return floorMin, "", fmt.Errorf("error decoding Request.ext : %s", err.Error())
+		}
+	}
+	if impExt.Prebid != nil {
+		if impExt.Prebid.Floors.FloorMin > float64(0) {
+			floorMin = impExt.Prebid.Floors.FloorMin
+		}
+		if impExt.Prebid.Floors.FloorMinCur != "" {
+			floorMinCur = impExt.Prebid.Floors.FloorMinCur
+		}
+	}
+	return floorMin, floorMinCur, nil
 }
 
 func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule string, floorRuleVal, floorVal float64) {

@@ -70,6 +70,18 @@ type ImpFloorExt struct {
 	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
 	FloorValue     float64 `json:"floorValue,omitempty"`
 }
+type Price struct {
+	FloorMin    float64 `json:"floormin,omitempty"`
+	FloorMinCur string  `json:"floormincur,omitempty"`
+}
+
+type ExtImp struct {
+	Prebid *ImpExtPrebid `json:"prebid,omitempty"`
+}
+
+type ImpExtPrebid struct {
+	Floors Price `json:"floors,omitempty"`
+}
 
 // GetEnabled will check if floors is enabled in request
 func (Floors *PriceFloorRules) GetEnabled() bool {
