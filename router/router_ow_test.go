@@ -9,6 +9,7 @@ import (
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,6 +28,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		cfg           *config.Configuration
 		rateConvertor *currency.RateConverter
+		floorFetcher  *floors.PriceFloorFetcher
 	}
 	tests := []struct {
 		name    string
@@ -40,6 +42,7 @@ func TestNew(t *testing.T) {
 			args: args{
 				cfg:           &config.Configuration{},
 				rateConvertor: &currency.RateConverter{},
+				floorFetcher:  &floors.PriceFloorFetcher{},
 			},
 			wantR:   &Router{Router: &httprouter.Router{}},
 			wantErr: false,

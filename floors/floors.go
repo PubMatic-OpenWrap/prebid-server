@@ -27,7 +27,9 @@ const (
 	enforceRateMax   int    = 100
 )
 
-func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions) []error {
+// EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched floors JSON if present
+// else selects floors JOSN from req.ext.prebid.floors and update request with selected floors details
+func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions, priceFloorFetcher FloorFetcher) []error {
 	err := []error{}
 	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil {
 		return []error{fmt.Errorf("Empty bidrequest")}
@@ -37,7 +39,7 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 		return []error{fmt.Errorf("Floors feature is disabled at account level or request")}
 	}
 
-	floors, err := resolveFloors(account, bidRequestWrapper, conversions)
+	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher)
 	if len(err) == 0 {
 		err = updateBidRequestWithFloors(floors, bidRequestWrapper, conversions)
 	}
@@ -60,16 +62,14 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 		return []error{fmt.Errorf("Floors disabled in request")}
 	}
 
-	floorData := extFloorRules.Data
-	modelGroup := floorData.ModelGroups[0]
+	modelGroup := extFloorRules.Data.ModelGroups[0]
 	if modelGroup.Schema.Delimiter == "" {
 		modelGroup.Schema.Delimiter = defaultDelimiter
 	}
 
 	extFloorRules.Skipped = new(bool)
-	if shouldSkipFloors(extFloorRules.Data.ModelGroups[0].SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
+	if shouldSkipFloors(modelGroup.SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		floorData.ModelGroups = nil
 		return floorModelErrList
 	}
 
@@ -109,14 +109,17 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	return floorModelErrList
 }
 
+// isPriceFloorsDisabled check for floors are disabled at account or request level
 func isPriceFloorsDisabled(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper) bool {
 	return isPriceFloorsDisabledForAccount(account) || isPriceFloorsDisabledForRequest(bidRequestWrapper)
 }
 
+// isPriceFloorsDisabledForAccount check for floors are disabled at account
 func isPriceFloorsDisabledForAccount(account config.Account) bool {
 	return !account.PriceFloors.Enabled
 }
 
+// isPriceFloorsDisabledForRequest check for floors are disabled at request
 func isPriceFloorsDisabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrapper) bool {
 	requestExt, err := bidRequestWrapper.GetRequestExt()
 	if err == nil {
@@ -127,16 +130,17 @@ func isPriceFloorsDisabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrapp
 	return false
 }
 
-func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions) (*openrtb_ext.PriceFloorRules, []error) {
+// resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled
+func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
 	var errlist []error
 	var floorsJson *openrtb_ext.PriceFloorRules
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
-	fetchResult := fetchAccountFloors(account)
+	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchResult.fetchStatus == openrtb_ext.FetchSuccess {
-		mergedFloor := mergeFloors(reqFloor, fetchResult.priceFloors, conversions)
-		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchResult.fetchStatus, openrtb_ext.FetchLocation)
+	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess {
+		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
+		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
 		floorsJson, errlist = createFloorsFrom(reqFloor, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
 	} else {
@@ -146,40 +150,39 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	return floorsJson, errlist
 }
 
+// createFloorsFrom does preparation of floors data which shall be used for further processing
 func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLocation string) (*openrtb_ext.PriceFloorRules, []error) {
-
 	var floorModelErrList []error
-	if floors != nil && floors.Data != nil {
-		floorData := floors.Data
+	finFloors := new(openrtb_ext.PriceFloorRules)
 
+	if floors != nil {
+		*finFloors = *floors
 		floorSkipRateErr := validateFloorParams(floors)
 		if floorSkipRateErr != nil {
 			return floors, append(floorModelErrList, floorSkipRateErr)
 		}
 
-		floorData.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floorData.ModelGroups)
-		if len(floorData.ModelGroups) == 0 {
-			return floors, floorModelErrList
-		} else if len(floorData.ModelGroups) > 1 {
-			floorData.ModelGroups = selectFloorModelGroup(floorData.ModelGroups, rand.Intn)
+		if floors.Data != nil {
+			finFloors.Data = new(openrtb_ext.PriceFloorData)
+			*finFloors.Data = *floors.Data
+			finFloors.Data.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floors.Data.ModelGroups)
+			if len(finFloors.Data.ModelGroups) == 0 {
+				return floors, floorModelErrList
+			} else if len(finFloors.Data.ModelGroups) > 1 {
+				finFloors.Data.ModelGroups = selectFloorModelGroup(finFloors.Data.ModelGroups, rand.Intn)
+			}
 		}
-
-		modelGroup := floorData.ModelGroups[0]
-		if modelGroup.Schema.Delimiter == "" {
-			modelGroup.Schema.Delimiter = defaultDelimiter
-		}
-	} else if floors == nil {
-		floors = new(openrtb_ext.PriceFloorRules)
 	}
-	floors.FetchStatus = fetchStatus
-	floors.PriceFloorLocation = floorLocation
-	return floors, floorModelErrList
+	finFloors.FetchStatus = fetchStatus
+	finFloors.PriceFloorLocation = floorLocation
+	return finFloors, floorModelErrList
 }
 
+// mergeFloors does merging for floors data from request and dynamic fetch
 func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) *openrtb_ext.PriceFloorRules {
-
 	var enforceRate int
 
+	mergedFloors := fetchFloors
 	floorsEnabledByRequest := reqFloors.GetEnabled()
 	floorMinPrice := resolveFloorMin(reqFloors, fetchFloors, conversions)
 
@@ -191,19 +194,20 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 		floorsEnabledByProvider := getFloorsEnabledFlag(fetchFloors)
 		floorsProviderEnforcement := fetchFloors.Enforcement
 
-		if fetchFloors.Enabled == nil {
-			fetchFloors.Enabled = new(bool)
+		if mergedFloors.Enabled == nil {
+			mergedFloors.Enabled = new(bool)
 		}
-		*fetchFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
-		fetchFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
+		*mergedFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
+		mergedFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
 		if floorMinPrice.FloorMin > float64(0) {
-			fetchFloors.FloorMin = floorMinPrice.FloorMin
-			fetchFloors.FloorMinCur = floorMinPrice.FloorMinCur
+			mergedFloors.FloorMin = floorMinPrice.FloorMin
+			mergedFloors.FloorMinCur = floorMinPrice.FloorMinCur
 		}
 	}
-	return &fetchFloors
+	return &mergedFloors
 }
 
+// resolveEnforcement does retrieval of enforceRate from request
 func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceRate int) *openrtb_ext.PriceFloorEnforcement {
 	if enforcement == nil {
 		enforcement = new(openrtb_ext.PriceFloorEnforcement)
@@ -212,6 +216,7 @@ func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceR
 	return enforcement
 }
 
+// getFloorsEnabledFlag gets floors enabled flag from request
 func getFloorsEnabledFlag(reqFloors openrtb_ext.PriceFloorRules) bool {
 	if reqFloors.Enabled != nil {
 		return *reqFloors.Enabled
@@ -219,8 +224,8 @@ func getFloorsEnabledFlag(reqFloors openrtb_ext.PriceFloorRules) bool {
 	return true
 }
 
+// resolveFloorMin gets floorMin valud from request and dynamic fetched data
 func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext.PriceFloorRules, conversions currency.Conversions) Price {
-
 	var floorCur, reqFloorMinCur string
 	var reqFloorMin float64
 	if reqFloors != nil {
@@ -261,10 +266,12 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 	return Price{FloorMin: 0.0, FloorMinCur: floorCur}
 }
 
+// shouldUseDynamicFetchedFloor gets UseDynamicData flag from account level config
 func shouldUseDynamicFetchedFloor(Account config.Account) bool {
 	return Account.PriceFloors.UseDynamicData
 }
 
+// extractFloorsFromRequest gets floors data from req.ext.prebid.floors
 func extractFloorsFromRequest(bidRequestWrapper *openrtb_ext.RequestWrapper) *openrtb_ext.PriceFloorRules {
 	requestExt, err := bidRequestWrapper.GetRequestExt()
 	if err == nil {
@@ -276,6 +283,7 @@ func extractFloorsFromRequest(bidRequestWrapper *openrtb_ext.RequestWrapper) *op
 	return nil
 }
 
+// updateFloorsInRequest updates floors data into req.ext.prebid.floors
 func updateFloorsInRequest(bidRequestWrapper *openrtb_ext.RequestWrapper, priceFloors *openrtb_ext.PriceFloorRules) {
 	requestExt, err := bidRequestWrapper.GetRequestExt()
 	if err == nil {

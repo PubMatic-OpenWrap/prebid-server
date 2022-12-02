@@ -188,6 +188,8 @@ func TestDefaults(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", cfg.AccountDefaults.PriceFloors.Fetch.MaxRules, 1000)
 	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", cfg.AccountDefaults.PriceFloors.Fetch.MaxAge, 86400)
 	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", cfg.AccountDefaults.PriceFloors.Fetch.Period, 3600)
+	cmpInts(t, "price_floor_fetcher.worker", cfg.PriceFloorFetcher.Worker, 20)
+	cmpInts(t, "price_floor_fetcher.capacity", cfg.PriceFloorFetcher.Capacity, 20000)
 
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
@@ -436,6 +438,9 @@ account_defaults:
             max_rules: 1000
             max_age_sec: 36000
             period_sec: 7200
+price_floor_fetcher:
+  worker: 10
+  capacity: 20
 `)
 
 var oldStoredRequestsConfig = []byte(`
@@ -525,6 +530,8 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", cfg.AccountDefaults.PriceFloors.Fetch.MaxRules, 1000)
 	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", cfg.AccountDefaults.PriceFloors.Fetch.MaxAge, 36000)
 	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", cfg.AccountDefaults.PriceFloors.Fetch.Period, 7200)
+	cmpInts(t, "price_floor_fetcher.worker", cfg.PriceFloorFetcher.Worker, 10)
+	cmpInts(t, "price_floor_fetcher.capacity", cfg.PriceFloorFetcher.Capacity, 20)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
