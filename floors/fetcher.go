@@ -23,16 +23,21 @@ type FloorFetcher interface {
 	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
 }
 
+type WorkerPool interface {
+	TrySubmit(task func()) bool
+	Stop()
+}
+
 var refetchCheckInterval = 300
 
 type PriceFloorFetcher struct {
-	pool            *pond.WorkerPool // Goroutines worker pool
-	fetchQueue      FetchQueue       // Priority Queue to fetch floor data
-	fetchInprogress map[string]bool  // Map of URL with fetch status
-	configReceiver  chan FetchInfo   // Channel which recieves URLs to be fetched
-	done            chan struct{}    // Channel to close fetcher
-	cache           *cache.Cache     // cache
-	cacheExpiry     time.Duration    // cache expiry time
+	pool            WorkerPool      // Goroutines worker pool
+	fetchQueue      FetchQueue      // Priority Queue to fetch floor data
+	fetchInprogress map[string]bool // Map of URL with fetch status
+	configReceiver  chan FetchInfo  // Channel which recieves URLs to be fetched
+	done            chan struct{}   // Channel to close fetcher
+	cache           *cache.Cache    // cache
+	cacheExpiry     time.Duration   // cache expiry time
 }
 
 type FetchInfo struct {
@@ -133,9 +138,12 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 	if floorData != nil {
 		// Update cache with new floor rules
 		glog.Info("Updating Value in cache")
-		cacheExpiry := f.cacheExpiry
+		var cacheExpiry time.Duration
 		if fetchedMaxAge != 0 && fetchedMaxAge > configs.Period && fetchedMaxAge < math.MaxInt32 {
-			cacheExpiry = time.Duration(fetchedMaxAge)
+			cacheExpiry = time.Duration(fetchedMaxAge) * time.Second
+		} else {
+			glog.Errorf("Invalid max-age = %v provided, should be within (%v, %v)", fetchedMaxAge, configs.Period, math.MaxInt32)
+			cacheExpiry = f.cacheExpiry * time.Second
 		}
 		f.SetWithExpiry(configs.URL, floorData, cacheExpiry)
 	}
