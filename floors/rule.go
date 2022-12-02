@@ -96,7 +96,7 @@ func getFloorMinAndCurFromImp(imp openrtb2.Imp) (float64, string, error) {
 		}
 	}
 	if impExt.Prebid != nil && &impExt.Prebid.Floors != nil {
-		if impExt.Prebid.Floors.FloorMin > 0.0 {
+		if impExt.Prebid.Floors.FloorMin > float64(0) {
 			floorMin = impExt.Prebid.Floors.FloorMin
 		}
 		if impExt.Prebid.Floors.FloorMinCur != "" {

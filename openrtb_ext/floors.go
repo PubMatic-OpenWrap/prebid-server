@@ -81,7 +81,6 @@ type ExtImp struct {
 	Prebid *ImpExtPrebid `json:"prebid,omitempty"`
 }
 
-// ExtImpPrebid defines the contract for bidrequest.imp[i].ext.prebid
 type ImpExtPrebid struct {
 	Options     *Options        `json:"options,omitempty"`
 	Passthrough json.RawMessage `json:"passthrough,omitempty"`
