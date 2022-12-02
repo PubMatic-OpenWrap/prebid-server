@@ -11,6 +11,7 @@ import (
 	"time"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
+	"github.com/prebid/prebid-server/floors"
 
 	"github.com/prebid/prebid-server/usersync"
 
@@ -194,6 +195,10 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	// todo(zachbadgett): better shutdown
 	// r.Shutdown = shutdown
 
+	//Price Floor Fetcher
+	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloorFetcher.Worker, cfg.PriceFloorFetcher.Capacity,
+		cfg.AccountDefaults.PriceFloors.Fetch.Period, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
+
 	pbsAnalytics := analyticsConf.NewPBSAnalytics(&cfg.Analytics)
 
 	paramsValidator, err := openrtb_ext.NewBidderParamsValidator(schemaDirectory)
@@ -234,7 +239,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatalf("Failed to create ads cert signer: %v", err)
 	}
 
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, bidderInfos, gdprPermsBuilder, tcf2CfgBuilder, rateConvertor, categoriesFetcher, adsCertSigner)
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, bidderInfos, gdprPermsBuilder, tcf2CfgBuilder, rateConvertor, categoriesFetcher, adsCertSigner, priceFloorFetcher)
 	/*var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher)
 	if err != nil {

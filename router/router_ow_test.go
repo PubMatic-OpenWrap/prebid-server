@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +23,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		cfg           *config.Configuration
 		rateConvertor *currency.RateConverter
+		floorFetcher  *floors.PriceFloorFetcher
 	}
 	tests := []struct {
 		name    string
@@ -35,6 +37,7 @@ func TestNew(t *testing.T) {
 			args: args{
 				cfg:           &config.Configuration{Adapters: map[string]config.Adapter{"pubmatic": {}}},
 				rateConvertor: &currency.RateConverter{},
+				floorFetcher:  &floors.PriceFloorFetcher{},
 			},
 			wantR:   &Router{Router: &httprouter.Router{}},
 			wantErr: false,
