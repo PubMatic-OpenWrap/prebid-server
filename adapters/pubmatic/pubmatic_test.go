@@ -2,7 +2,6 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -499,59 +498,6 @@ func TestGetMapFromJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getMapFromJSON(tt.input)
 			assert.Equal(t, tt.output, got)
-		})
-	}
-}
-
-func TestPrepareMetaObject(t *testing.T) {
-	type args struct {
-		bid    openrtb2.Bid
-		bidExt *pubmaticBidExt
-		seat   string
-	}
-	tests := []struct {
-		name string
-		args args
-		want openrtb_ext.ExtBidPrebidMeta
-	}{
-		{
-			name: "Empty Meta Object",
-			args: args{
-				bid: openrtb2.Bid{
-					Cat: []string{},
-				},
-				bidExt: &pubmaticBidExt{},
-				seat:   "",
-			},
-			want: openrtb_ext.ExtBidPrebidMeta{},
-		},
-		{
-			name: "Valid Meta Object",
-			args: args{
-				bid: openrtb2.Bid{
-					Cat: []string{"mystartab.com", "pubmatic.com"},
-				},
-				bidExt: &pubmaticBidExt{
-					DspId:        80,
-					AdvertiserID: 124,
-				},
-				seat: "124",
-			},
-			want: openrtb_ext.ExtBidPrebidMeta{
-				NetworkID:            80,
-				DemandSource:         "80",
-				PrimaryCategoryID:    "mystartab.com",
-				SecondaryCategoryIDs: []string{"mystartab.com", "pubmatic.com"},
-				AdvertiserID:         124,
-				AgencyID:             124,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := prepareMetaObject(tt.args.bid, tt.args.bidExt, tt.args.seat); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("prepareMetaObject() = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }

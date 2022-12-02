@@ -491,14 +491,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
-			if len(bid.Cat) > 1 {
-				bid.Cat = bid.Cat[0:1]
-			}
-
 			seat := ""
 			var bidExt *pubmaticBidExt
 			bidType := openrtb_ext.BidTypeBanner
-			var prebidMeta openrtb_ext.ExtBidPrebidMeta
+			var prebidMeta *openrtb_ext.ExtBidPrebidMeta
 
 			err := json.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
@@ -511,6 +507,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bidType = getBidType(bidExt)
 				//prepares ExtBidPrebidMeta with Values got from bidresponse
 				prebidMeta = prepareMetaObject(bid, bidExt, sb.Seat)
+			}
+
+			if len(bid.Cat) > 1 {
+				bid.Cat = bid.Cat[0:1]
 			}
 
 			if bidType == openrtb_ext.BidTypeNative {
@@ -526,7 +526,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				BidVideo:   impVideo,
 				Seat:       openrtb_ext.BidderName(seat),
 				BidTargets: targets,
-				BidMeta:    &prebidMeta,
+				BidMeta:    prebidMeta,
 			})
 		}
 	}
@@ -534,42 +534,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		bidResponse.Currency = bidResp.Cur
 	}
 	return bidResponse, errs
-}
-
-//prepareMetaObject prepares the Meta structure using Bid Response
-func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) openrtb_ext.ExtBidPrebidMeta {
-
-	var meta openrtb_ext.ExtBidPrebidMeta
-	meta.NetworkID = bidExt.DspId
-	if bidExt.DspId != 0 {
-		meta.DemandSource = strconv.Itoa(bidExt.DspId)
-	}
-
-	var advid int
-	if len(seat) > 0 {
-		advid, _ = strconv.Atoi(seat)
-	} else {
-		advid = bidExt.AdvertiserID
-	}
-	meta.AdvertiserID = advid
-	meta.AgencyID = advid
-
-	if len(bid.Cat) > 0 {
-		meta.PrimaryCategoryID = bid.Cat[0]
-		meta.SecondaryCategoryIDs = bid.Cat
-	}
-
-	// NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
-	// when we needed we can add it back.
-	// New fields added, assignee fields name may change
-	// Assign meta.BrandId to bidExt.ADomain[0]  //BrandID is of Type int and ADomain values if string type like "mystartab.com"
-	// meta.NetworkName = bidExt.NetworkName;
-	// meta.AdvertiserName = bidExt.AdvertiserName;
-	// meta.AgencyName = bidExt.AgencyName;
-	// meta.BrandName = bidExt.BrandName;
-	// meta.DChain = bidExt.DChain;
-
-	return meta
 }
 
 func getNativeAdm(adm string) (string, error) {
