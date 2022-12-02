@@ -418,12 +418,12 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates))
+			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates), &PriceFloorFetcher{})
 			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal)
 			}
 			if !reflect.DeepEqual(tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur) {
-				t.Errorf("Floor Currency error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorCur)
+				t.Errorf("Floor Currency error: \nreturn:\t%v\nwant:\t%v", tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur)
 			}
 
 			if len(ErrList) > 0 && !reflect.DeepEqual(ErrList[0].Error(), tc.err) {
@@ -571,6 +571,43 @@ func TestResolveFloorMin(t *testing.T) {
 	}
 }
 
+type MockFetch struct {
+	FakeFetch func(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
+}
+
+func (m *MockFetch) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
+
+	if !configs.UseDynamicData {
+		return nil, openrtb_ext.FetchNone
+	}
+	priceFloors := openrtb_ext.PriceFloorRules{
+		Enabled:            getTrue(),
+		PriceFloorLocation: openrtb_ext.RequestLocation,
+		Enforcement: &openrtb_ext.PriceFloorEnforcement{
+			EnforcePBS:  getTrue(),
+			EnforceRate: 100,
+			FloorDeals:  getTrue(),
+		},
+		Data: &openrtb_ext.PriceFloorData{
+			Currency: "USD",
+			ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+				{
+					ModelVersion: "model from fetched",
+					Currency:     "USD",
+					Values: map[string]float64{
+						"banner|300x600|www.website5.com": 15,
+						"*|*|*":                           25,
+					},
+					Schema: openrtb_ext.PriceFloorSchema{
+						Fields: []string{"mediaType", "size", "domain"},
+					},
+				},
+			},
+		},
+	}
+	return &priceFloors, openrtb_ext.FetchSuccess
+}
+
 func TestResolveFloors(t *testing.T) {
 	rates := map[string]map[string]float64{
 		"USD": {
@@ -578,41 +615,6 @@ func TestResolveFloors(t *testing.T) {
 			"EUR": 0.9,
 			"JPY": 5.09,
 		},
-	}
-
-	fetchAccountFloors = func(account config.Account) *fetchResult {
-		var fetchedResults fetchResult
-		if !account.PriceFloors.UseDynamicData {
-			fetchedResults.fetchStatus = openrtb_ext.FetchNone
-		} else {
-			fetchedResults.fetchStatus = openrtb_ext.FetchSuccess
-			fetchedResults.priceFloors = openrtb_ext.PriceFloorRules{
-				Enabled:            getTrue(),
-				PriceFloorLocation: openrtb_ext.RequestLocation,
-				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  getTrue(),
-					EnforceRate: 100,
-					FloorDeals:  getTrue(),
-				},
-				Data: &openrtb_ext.PriceFloorData{
-					Currency: "USD",
-					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
-						{
-							ModelVersion: "model from fetched",
-							Currency:     "USD",
-							Values: map[string]float64{
-								"banner|300x600|www.website5.com": 15,
-								"*|*|*":                           25,
-							},
-							Schema: openrtb_ext.PriceFloorSchema{
-								Fields: []string{"mediaType", "size", "domain"},
-							},
-						},
-					},
-				},
-			}
-		}
-		return &fetchedResults
 	}
 
 	tt := []struct {
@@ -787,7 +789,7 @@ func TestResolveFloors(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates))
+			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), &MockFetch{})
 			if !reflect.DeepEqual(resolvedFloors, tc.expFloors) {
 				t.Errorf("resolveFloors  error: \nreturn:\t%v\nwant:\t%v", printFloors(resolvedFloors), printFloors(tc.expFloors))
 			}

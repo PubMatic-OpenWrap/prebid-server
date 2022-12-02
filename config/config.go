@@ -104,6 +104,7 @@ type Configuration struct {
 	TrackerURL          string              `mapstructure:"tracker_url"`
 	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
 	PriceFloors         PriceFloors         `mapstructure:"price_floors"`
+	PriceFloorFetcher   PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
 }
 
 type PriceFloors struct {
@@ -489,6 +490,11 @@ func (cfg *CurrencyConverter) validate(errs []error) []error {
 		errs = append(errs, fmt.Errorf("currency_converter.fetch_interval_seconds must be in the range [0, %d]. Got %d", 0xffff, cfg.FetchIntervalSeconds))
 	}
 	return errs
+}
+
+type PriceFloorFetcher struct {
+	Worker   int `mapstructure:"worker"`
+	Capacity int `mapstructure:"capacity"`
 }
 
 // FileLogs Corresponding config for FileLogger as a PBS Analytics Module
@@ -1147,6 +1153,9 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	for bidderName := range bidderInfos {
 		setBidderDefaults(v, strings.ToLower(bidderName))
 	}
+	//Defaults for Price floor fetcher
+	v.SetDefault("price_floor_fetcher.worker", 20)
+	v.SetDefault("price_floor_fetcher.capacity", 20000)
 }
 
 func migrateConfig(v *viper.Viper) {

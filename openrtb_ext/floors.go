@@ -38,7 +38,7 @@ type PriceFloorEndpoint struct {
 type PriceFloorData struct {
 	Currency            string                 `json:"currency,omitempty"`
 	SkipRate            int                    `json:"skiprate,omitempty"`
-	FloorsSchemaVersion string                 `json:"floorsschemaversion,omitempty"`
+	FloorsSchemaVersion string                 `json:"_,omitempty"`
 	ModelTimestamp      int                    `json:"modeltimestamp,omitempty"`
 	ModelGroups         []PriceFloorModelGroup `json:"modelgroups,omitempty"`
 }
