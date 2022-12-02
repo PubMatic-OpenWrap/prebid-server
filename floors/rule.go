@@ -74,7 +74,7 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, c
 		}
 	}
 	if floorMin > float64(0) && floorMinCur != "" && floorExt.FloorMinCur != floorCurValue {
-		glog.Warning("FloorMinCur doesn't match")
+		glog.Warning("FloorMinCur are different in floorExt and ImpExt")
 	}
 	if floorMin > float64(0) && floorMinCur != "" && floorCur != "" &&
 		floorMinCur != floorCur {
