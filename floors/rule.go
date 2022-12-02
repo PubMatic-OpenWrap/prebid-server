@@ -73,13 +73,14 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, c
 			floorMinCur = floorCurValue
 		}
 	}
-	if floorMin > float64(0) && floorMinCur != "" && floorExt.FloorMinCur != floorCurValue {
-		glog.Warning("FloorMinCur are different in floorExt and ImpExt")
-	}
-	if floorMin > float64(0) && floorMinCur != "" && floorCur != "" &&
-		floorMinCur != floorCur {
-		rate, err = conversions.GetRate(floorMinCur, floorCur)
-		floorMin = rate * floorMin
+	if floorMin > float64(0) && floorMinCur != "" {
+		if floorExt.FloorMinCur != floorCurValue {
+			glog.Warning("FloorMinCur are different in floorExt and ImpExt")
+		}
+		if floorCur != "" && floorMinCur != floorCur {
+			rate, err = conversions.GetRate(floorMinCur, floorCur)
+			floorMin = rate * floorMin
+		}
 	}
 	floorMin = math.Round(floorMin*10000) / 10000
 	return floorMin, floorCur, err
@@ -95,7 +96,7 @@ func getFloorMinAndCurFromImp(imp openrtb2.Imp) (float64, string, error) {
 			return floorMin, "", fmt.Errorf("error decoding Request.ext : %s", err.Error())
 		}
 	}
-	if impExt.Prebid != nil && &impExt.Prebid.Floors != nil {
+	if impExt.Prebid != nil {
 		if impExt.Prebid.Floors.FloorMin > float64(0) {
 			floorMin = impExt.Prebid.Floors.FloorMin
 		}

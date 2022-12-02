@@ -1,7 +1,5 @@
 package openrtb_ext
 
-import "encoding/json"
-
 // Defines strings for FetchStatus
 const (
 	FetchSuccess    = "success"
@@ -82,9 +80,7 @@ type ExtImp struct {
 }
 
 type ImpExtPrebid struct {
-	Options     *Options        `json:"options,omitempty"`
-	Passthrough json.RawMessage `json:"passthrough,omitempty"`
-	Floors      Price           `json:"floors,omitempty"`
+	Floors Price `json:"floors,omitempty"`
 }
 
 // GetEnabled will check if floors is enabled in request
