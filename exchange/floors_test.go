@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v16/openrtb3"
 
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -1034,10 +1036,11 @@ func TestEnforceFloors(t *testing.T) {
 		responseDebugAllow bool
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  map[openrtb_ext.BidderName]*pbsOrtbSeatBid
-		want1 []string
+		name                 string
+		args                 args
+		want                 map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		want1                []string
+		expectedRejectedBids []analytics.RejectedBid
 	}{
 		{
 			name: "Should enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=true and floors enabled = true",
@@ -1096,6 +1099,30 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:     "some-bid-11",
+						Price:  0.5,
+						ImpID:  "some-impression-id-1",
+						DealID: "3",
+					},
+					Seat:       "",
+					BidderName: "appnexus",
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:     "some-bid-1",
+						Price:  1.2,
+						ImpID:  "some-impression-id-1",
+						DealID: "1",
+					},
+					Seat:       "",
+					BidderName: "pubmatic",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals not provided",
@@ -1162,6 +1189,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					Seat:       "",
+					BidderName: "appnexus",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=false is set",
@@ -1228,6 +1267,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=true and EnforceDealFloors = false from config",
@@ -1294,6 +1345,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors when imp.bidfloor provided and req.ext.prebid not provided",
@@ -1360,6 +1423,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 5.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors when imp.bidfloor not provided and req.ext.prebid not provided",
@@ -1433,7 +1508,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when  config flag Enabled = false",
@@ -1509,7 +1585,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when req.ext.prebid.floors.enabled = false ",
@@ -1585,7 +1662,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when req.ext.prebid.floors.enforcement.enforcepbs = false ",
@@ -1661,7 +1739,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors for deals as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1729,6 +1808,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1785,6 +1876,28 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1841,6 +1954,28 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext not provided and imp.bidfloor provided",
@@ -1897,16 +2032,48 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+				}, {
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seatbid, errs, _ := enforceFloors(tt.args.r, tt.args.seatBids, tt.args.floor, tt.args.conversions, tt.args.responseDebugAllow)
+			seatbid, errs, rejectedBids := enforceFloors(tt.args.r, tt.args.seatBids, tt.args.floor, tt.args.conversions, tt.args.responseDebugAllow)
 			for biderName, seat := range seatbid {
 				if len(seat.bids) != len(tt.want[biderName].bids) {
 					t.Errorf("enforceFloors() got = %v bids, want %v bids for BidderCode = %v ", len(seat.bids), len(tt.want[biderName].bids), biderName)
 				}
 			}
+
+			sort.Slice(rejectedBids, func(i, j int) bool {
+				return rejectedBids[i].Bid.ID > rejectedBids[j].Bid.ID
+			})
+
+			sort.Slice(tt.expectedRejectedBids, func(i, j int) bool {
+				return tt.expectedRejectedBids[i].Bid.ID > tt.expectedRejectedBids[j].Bid.ID
+			})
+
+			assert.Equal(t, tt.expectedRejectedBids, rejectedBids, "Rejected Bids not matching")
+
 			assert.Equal(t, tt.want1, ErrToString(errs))
 		})
 	}

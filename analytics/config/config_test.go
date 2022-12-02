@@ -18,10 +18,12 @@ func TestSampleModule(t *testing.T) {
 	var count int
 	am := initAnalytics(&count)
 	am.LogAuctionObject(&analytics.AuctionObject{
-		Status:   http.StatusOK,
-		Errors:   nil,
-		Request:  &openrtb2.BidRequest{},
-		Response: &openrtb2.BidResponse{},
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status:   http.StatusOK,
+			Errors:   nil,
+			Request:  &openrtb2.BidRequest{},
+			Response: &openrtb2.BidResponse{},
+		},
 	})
 	if count != 1 {
 		t.Errorf("PBSAnalyticsModule failed at LogAuctionObject")

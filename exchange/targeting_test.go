@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/gdpr"
@@ -124,7 +125,9 @@ func runTargetingAuction(t *testing.T, mockBids map[openrtb_ext.BidderName][]*op
 	}
 
 	debugLog := DebugLog{}
-	bidResp, err := ex.HoldAuction(context.Background(), auctionRequest, &debugLog)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+	bidResp, err := ex.HoldAuction(ctx, auctionRequest, &debugLog)
 
 	if err != nil {
 		t.Fatalf("Unexpected errors running auction: %v", err)

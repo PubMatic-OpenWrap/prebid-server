@@ -165,6 +165,8 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 	defer cancel()
 
+	ctx = context.WithValue(ctx, "rejectedBids", &ao.RejectedBids)
+
 	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
 	if usersyncs.HasAnyLiveSyncs() {
 		labels.CookieFlag = metrics.CookieFlagYes

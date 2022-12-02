@@ -159,6 +159,10 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		return
 	}
 
+	defer func() {
+		glog.Infof("RequestID: %v | RejectedBids: %v", req.BidRequest.ID, ao.RejectedBids)
+	}()
+
 	ctx := context.Background()
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
@@ -168,6 +172,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		defer cancel()
 	}
 
+	ctx = context.WithValue(ctx, "rejectedBids", &ao.RejectedBids)
 	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
 	if req.App != nil {
 		labels.Source = metrics.DemandApp

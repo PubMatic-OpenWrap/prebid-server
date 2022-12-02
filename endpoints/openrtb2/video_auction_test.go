@@ -811,8 +811,10 @@ func TestMergeOpenRTBToVideoRequest(t *testing.T) {
 
 func TestHandleError(t *testing.T) {
 	vo := analytics.VideoObject{
-		Status: 200,
-		Errors: make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status: 200,
+			Errors: make([]error, 0),
+		},
 	}
 
 	labels := metrics.Labels{
@@ -948,8 +950,10 @@ func TestParseVideoRequestWithDecodedUserAgentInHeader(t *testing.T) {
 
 func TestHandleErrorDebugLog(t *testing.T) {
 	vo := analytics.VideoObject{
-		Status: 200,
-		Errors: make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status: 200,
+			Errors: make([]error, 0),
+		},
 	}
 
 	labels := metrics.Labels{

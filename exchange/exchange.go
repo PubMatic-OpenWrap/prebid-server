@@ -307,14 +307,15 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var auc *auction
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
-	rejectedBids := ctx.Value("rejectedbid").([]RejectedBid)
-	rejectedBids = rejectedBids
+	analyticsRejectedBids := ctx.Value("rejectedBids").(*[]analytics.RejectedBid)
 	if anyBidsReturned {
 
 		//If floor enforcement config enabled then filter bids
 		adapterBids, enforceErrs, rejectedBids := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)
-
+		if len(rejectedBids) > 0 {
+			*analyticsRejectedBids = append(*analyticsRejectedBids, rejectedBids...)
+		}
 		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 			// Record request count with non-zero imp.bidfloor value
 			e.me.RecordFloorsRequestForAccount(r.PubID)
@@ -329,7 +330,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids)
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids, analyticsRejectedBids)
 
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
@@ -339,7 +340,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, analyticsRejectedBids)
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
@@ -779,7 +780,7 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, rejectedBids *[]analytics.RejectedBid) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
 	res := make(map[string]string)
 
 	type bidDedupe struct {
@@ -801,11 +802,13 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 	var includeBrandCategory = brandCatExt != nil //if not present - category will no be appended
 	appendBidderNames := requestExt.Prebid.Targeting.AppendBidderNames
 
-	var primaryAdServer string
-	var publisher string
-	var err error
-	var rejections []string
-	var translateCategories = true
+	var (
+		primaryAdServer     string
+		publisher           string
+		err                 error
+		rejections          []string
+		translateCategories = true
+	)
 
 	//Maintaining BidRequest Impression Map
 	for i := range bidRequest.Imp {
@@ -834,14 +837,17 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 		for bidInd := range seatBid.bids {
 			bid := seatBid.bids[bidInd]
 			bidID := bid.bid.ID
-			var duration int
-			var category string
-			var pb string
+			var (
+				duration int
+				category string
+				pb       string
+			)
 
 			if bid.bidVideo != nil {
 				duration = bid.bidVideo.Duration
 				category = bid.bidVideo.PrimaryCategory
 			}
+
 			if brandCatExt.WithCategory && category == "" {
 				bidIabCat := bid.bid.Cat
 				if len(bidIabCat) != 1 {
@@ -966,11 +972,25 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 			sort.Ints(bidsToRemove)
 			if len(bidsToRemove) == len(seatBid.bids) {
 				//if all bids are invalid - remove entire seat bid
+				for _, bid := range seatBid.bids {
+					*rejectedBids = append(*rejectedBids, analytics.RejectedBid{
+						Bid:             bid.bid,
+						RejectionReason: openrtb3.LossCategoryExclusions,
+						Seat:            seatBid.seat,
+						BidderName:      string(bidderName),
+					})
+				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
+					*rejectedBids = append(*rejectedBids, analytics.RejectedBid{
+						Bid:             bids[remInd].bid,
+						RejectionReason: openrtb3.LossCategoryExclusions,
+						Seat:            seatBid.seat,
+						BidderName:      string(bidderName),
+					})
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.bids = bids
