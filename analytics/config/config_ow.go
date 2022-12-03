@@ -6,6 +6,14 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 )
 
+// contextKey will be used to pass the object through request.Context
+type contextKey string
+
+const (
+	CtxWLRecord    contextKey = "wrapperLoggerRecord"
+	CtxRejectedBid contextKey = "rejectedBids"
+)
+
 func AddAnalyticsModule(moduleList, module analytics.PBSAnalyticsModule) (analytics.PBSAnalyticsModule, error) {
 	if module == nil {
 		return nil, fmt.Errorf("module to be added is nil")
