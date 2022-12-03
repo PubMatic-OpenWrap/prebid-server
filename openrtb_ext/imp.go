@@ -25,7 +25,7 @@ type ExtImpPrebid struct {
 
 	Passthrough json.RawMessage `json:"passthrough,omitempty"`
 
-	Floors ExtImpPrebidFloors `json:"floors,omitempty"`
+	Floors *ExtImpPrebidFloors `json:"floors,omitempty"`
 }
 
 type ExtImpPrebidFloors struct {
