@@ -114,7 +114,7 @@ func selectFloorsAndModifyImp(r *AuctionRequest, floor config.PriceFloors, conve
 	}
 	prebidExt := requestExt.GetPrebid()
 	if floor.Enabled && prebidExt != nil && prebidExt.Floors != nil && prebidExt.Floors.GetEnabled() {
-		errs = floors.ModifyImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper.BidRequest, conversions)
+		errs = floors.ModifyImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper, conversions)
 		requestExt.SetPrebid(prebidExt)
 		err := r.BidRequestWrapper.RebuildRequest()
 		if err != nil {
