@@ -65,13 +65,17 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currenc
 }
 
 func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrapper, floorVal float64) {
-	impExt, _ := imp.GetImpExt()
+	impExt, err := imp.GetImpExt()
+	if err != nil {
+		return
+	}
 	extImpPrebid := impExt.GetPrebid()
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
 		FloorRuleValue: fmt.Sprintf("%.4f", floorVal),
 	}
 	impExt.SetPrebid(extImpPrebid)
+	_ = imp.RebuildImp()
 }
 
 func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {

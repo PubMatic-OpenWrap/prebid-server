@@ -2166,7 +2166,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 	if spec.BidIDGenerator != nil {
 		*bidIdGenerator = *spec.BidIDGenerator
 	}
-	ex := newExchangeForTests(t, filename, spec.OutgoingRequests, aliases, privacyConfig, bidIdGenerator, spec.HostSChainFlag)
+	ex := newExchangeForTests(t, filename, spec.OutgoingRequests, aliases, privacyConfig, bidIdGenerator, spec.HostSChainFlag, spec.FloorEnabled)
 	biddersInAuction := findBiddersInAuction(t, filename, &spec.IncomingRequest.OrtbRequest)
 	debugLog := &DebugLog{}
 	if spec.DebugLog != nil {
@@ -2313,7 +2313,7 @@ func extractResponseTimes(t *testing.T, context string, bid *openrtb2.BidRespons
 	}
 }
 
-func newExchangeForTests(t *testing.T, filename string, expectations map[string]*bidderSpec, aliases map[string]string, privacyConfig config.Privacy, bidIDGenerator BidIDGenerator, hostSChainFlag bool) Exchange {
+func newExchangeForTests(t *testing.T, filename string, expectations map[string]*bidderSpec, aliases map[string]string, privacyConfig config.Privacy, bidIDGenerator BidIDGenerator, hostSChainFlag, floorEnabled bool) Exchange {
 	bidderAdapters := make(map[openrtb_ext.BidderName]AdaptedBidder, len(expectations))
 	bidderInfos := make(config.BidderInfos, len(expectations))
 	for _, bidderName := range openrtb_ext.CoreBidderNames() {
@@ -2396,6 +2396,9 @@ func newExchangeForTests(t *testing.T, filename string, expectations map[string]
 		bidIDGenerator:    bidIDGenerator,
 		hostSChainNode:    hostSChainNode,
 		server:            config.Server{ExternalUrl: "http://hosturl.com", GvlID: 1, DataCenter: "Datacenter"},
+		floor: config.PriceFloors{
+			Enabled: floorEnabled,
+		},
 	}
 }
 
@@ -4409,6 +4412,7 @@ type exchangeSpec struct {
 	RequestType       *metrics.RequestType   `json:"requestType,omitempty"`
 	PassthroughFlag   bool                   `json:"passthrough_flag,omitempty"`
 	HostSChainFlag    bool                   `json:"host_schain_flag,omitempty"`
+	FloorEnabled      bool                   `json:"floor_enabled"`
 }
 
 type exchangeRequest struct {

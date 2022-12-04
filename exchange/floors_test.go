@@ -882,6 +882,7 @@ func TestEnforceFloorToBidsConversion(t *testing.T) {
 	}
 }
 
+// This test updates the request. Why not assert?
 func TestSelectFloorsAndModifyImp(t *testing.T) {
 	type args struct {
 		r                  *AuctionRequest
