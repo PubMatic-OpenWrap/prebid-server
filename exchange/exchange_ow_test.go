@@ -484,10 +484,9 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				seatBids[adaptor.BidderName] = sbids
 			}
 
-			rejectedBids := []analytics.RejectedBid{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
-			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &rejectedBids)
+			seatBids, rejections, rejectedBids := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids)
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
 				// verify only eligible bids are returned

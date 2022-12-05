@@ -63,9 +63,10 @@ func normalizeDomain(domain string) (string, error) {
 //applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 //the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, rejectedBids *[]analytics.RejectedBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, []analytics.RejectedBid) {
 	rejections := []string{}
 	nBadvs := []string{}
+	rejectedBids := []analytics.RejectedBid{}
 	if nil != bidRequest.BAdv {
 		for _, domain := range bidRequest.BAdv {
 			nDomain, err := normalizeDomain(domain)
@@ -76,7 +77,7 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 	}
 
 	if len(nBadvs) == 0 {
-		return seatBids, rejections
+		return seatBids, rejections, rejectedBids
 	}
 
 	for bidderName, seatBid := range seatBids {
@@ -106,7 +107,7 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 					}
 					if rejectBid {
 						// Add rejectedBid for analytics logging.
-						*rejectedBids = append(*rejectedBids, analytics.RejectedBid{
+						rejectedBids = append(rejectedBids, analytics.RejectedBid{
 							RejectionReason: openrtb3.LossAdvertiserExclusions,
 							Bid:             bid.bid,
 							Seat:            seatBid.seat,
@@ -121,5 +122,5 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 			}
 		}
 	}
-	return seatBids, rejections
+	return seatBids, rejections, rejectedBids
 }

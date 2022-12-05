@@ -313,9 +313,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If floor enforcement config enabled then filter bids
 		adapterBids, enforceErrs, rejectedBids := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)
-		if len(rejectedBids) > 0 {
+		if r.LoggableObject != nil && len(rejectedBids) > 0 {
 			r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
 		}
+
 		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 			// Record request count with non-zero imp.bidfloor value
 			e.me.RecordFloorsRequestForAccount(r.PubID)
@@ -330,7 +331,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids, &r.LoggableObject.RejectedBids)
+		adapterBids, rejections, rejectedBids := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids)
+		if r.LoggableObject != nil && len(rejectedBids) > 0 {
+			r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
+		}
 
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
@@ -340,12 +344,17 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &r.LoggableObject.RejectedBids)
+			rejectedBids := []analytics.RejectedBid{}
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
 			for _, message := range rejections {
 				errs = append(errs, errors.New(message))
+			}
+
+			if r.LoggableObject != nil && len(rejectedBids) > 0 {
+				r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
 			}
 		}
 

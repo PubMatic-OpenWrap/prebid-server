@@ -298,7 +298,6 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		LegacyLabels:               labels,
 		GlobalPrivacyControlHeader: secGPC,
 		PubID:                      labels.PubID,
-		LoggableObject:             &vo.LoggableAuctionObject,
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
