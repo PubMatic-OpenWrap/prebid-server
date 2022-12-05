@@ -345,7 +345,7 @@ func TestDebugBehaviour(t *testing.T) {
 	e.categoriesFetcher = categoriesFetcher
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	// Run tests
 	for _, test := range testCases {
 
@@ -366,6 +366,7 @@ func TestDebugBehaviour(t *testing.T) {
 			Account:           config.Account{DebugAllow: test.debugData.accountLevelDebugAllowed},
 			UserSyncs:         &emptyUsersync{},
 			StartTime:         time.Now(),
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 		if test.generateWarnings {
 			var errL []error
@@ -531,6 +532,7 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 			Account:           config.Account{DebugAllow: true},
 			UserSyncs:         &emptyUsersync{},
 			StartTime:         time.Now(),
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 
 		e.adapterMap = map[openrtb_ext.BidderName]AdaptedBidder{
@@ -540,7 +542,6 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 		// Run test
 
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
 
 		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &debugLog)
 		// Assert no HoldAuction err
@@ -713,10 +714,10 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 			BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
 			Account:           config.Account{},
 			UserSyncs:         &emptyUsersync{},
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
 		// Run test
 		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
 
@@ -804,10 +805,11 @@ func TestAdapterCurrency(t *testing.T) {
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	response, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
 	assert.NoError(t, err)
 	assert.Equal(t, "some-request-id", response.ID, "Response ID")
@@ -1199,12 +1201,13 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 				BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
 				Account:           config.Account{},
 				UserSyncs:         &emptyUsersync{},
+				LoggableObject:    &analytics.LoggableAuctionObject{},
 			}
 
 			// Run test
 			debugLog := DebugLog{}
 			ctx := context.Background()
-			ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 			outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &debugLog)
 
 			// Assert return error, if any
@@ -1893,6 +1896,7 @@ func TestRaceIntegration(t *testing.T) {
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: getTestBuildRequest(t)},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
@@ -1907,7 +1911,7 @@ func TestRaceIntegration(t *testing.T) {
 	}.Builder
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, tcf2CfgBuilder, currencyConverter, &nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
 	_, err = ex.HoldAuction(ctx, auctionRequest, &debugLog)
 	if err != nil {
@@ -2128,10 +2132,11 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 	debugLog := DebugLog{}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	_, err = e.HoldAuction(ctx, auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
@@ -2251,8 +2256,9 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 			EventsEnabled: spec.EventsEnabled,
 			DebugAllow:    true,
 		},
-		UserSyncs:     mockIdFetcher(spec.IncomingRequest.Usersyncs),
-		ImpExtInfoMap: impExtInfoMap,
+		UserSyncs:      mockIdFetcher(spec.IncomingRequest.Usersyncs),
+		ImpExtInfoMap:  impExtInfoMap,
+		LoggableObject: &analytics.LoggableAuctionObject{},
 	}
 
 	if spec.StartTime > 0 {
@@ -2262,7 +2268,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		auctionRequest.RequestType = *spec.RequestType
 	}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	bid, err := ex.HoldAuction(ctx, auctionRequest, debugLog)
 	if len(spec.Response.Error) > 0 && spec.Response.Bids == nil {
 		if err.Error() != spec.Response.Error {
@@ -3964,10 +3970,11 @@ func TestStoredAuctionResponses(t *testing.T) {
 			Account:                config.Account{},
 			UserSyncs:              &emptyUsersync{},
 			StoredAuctionResponses: test.storedAuctionResp,
+			LoggableObject:         &analytics.LoggableAuctionObject{},
 		}
 		// Run test
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
 		if test.errorExpected {
 			assert.Error(t, err, "Error should be returned")
@@ -4163,10 +4170,11 @@ func TestAuctionDebugEnabled(t *testing.T) {
 		UserSyncs:         &emptyUsersync{},
 		StartTime:         time.Now(),
 		RequestType:       metrics.ReqTypeORTB2Web,
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := &DebugLog{DebugOverride: true, DebugEnabledOrOverridden: true}
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	resp, err := e.HoldAuction(ctx, auctionRequest, debugLog)
 
 	assert.NoError(t, err, "error should be nil")
@@ -4231,11 +4239,12 @@ func TestPassExperimentConfigsToHoldAuction(t *testing.T) {
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	_, err = e.HoldAuction(ctx, auctionRequest, &debugLog)
 
 	assert.NoError(t, err, "unexpected error occured")

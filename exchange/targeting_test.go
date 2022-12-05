@@ -122,11 +122,12 @@ func runTargetingAuction(t *testing.T, mockBids map[openrtb_ext.BidderName][]*op
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "rejectedBids", &[]analytics.RejectedBid{})
+
 	bidResp, err := ex.HoldAuction(ctx, auctionRequest, &debugLog)
 
 	if err != nil {

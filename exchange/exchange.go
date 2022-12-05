@@ -307,14 +307,14 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var auc *auction
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
-	analyticsRejectedBids := ctx.Value("rejectedBids").(*[]analytics.RejectedBid)
+
 	if anyBidsReturned {
 
 		//If floor enforcement config enabled then filter bids
 		adapterBids, enforceErrs, rejectedBids := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)
 		if len(rejectedBids) > 0 {
-			*analyticsRejectedBids = append(*analyticsRejectedBids, rejectedBids...)
+			r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
 		}
 		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 			// Record request count with non-zero imp.bidfloor value
@@ -330,7 +330,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids, analyticsRejectedBids)
+		adapterBids, rejections := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids, &r.LoggableObject.RejectedBids)
 
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
@@ -340,7 +340,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, analyticsRejectedBids)
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &r.LoggableObject.RejectedBids)
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}

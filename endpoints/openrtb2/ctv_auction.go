@@ -208,8 +208,18 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		defer cancel()
 	}
 
-	ctx = context.WithValue(ctx, "rejectedBids", &ao.RejectedBids)
-	response, err = deps.holdAuction(ctx, request, usersyncs, account, start)
+	auctionRequest := exchange.AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:           *account,
+		UserSyncs:         usersyncs,
+		RequestType:       deps.labels.RType,
+		StartTime:         start,
+		LegacyLabels:      deps.labels,
+		PubID:             deps.labels.PubID,
+		LoggableObject:    &ao.LoggableAuctionObject,
+	}
+
+	response, err = deps.holdAuction(ctx, auctionRequest, usersyncs, account)
 
 	ao.Request = request
 	ao.Response = response
@@ -259,23 +269,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, request *openrtb2.BidRequest, usersyncs *usersync.Cookie, account *config.Account, startTime time.Time) (*openrtb2.BidResponse, error) {
+func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest, usersyncs *usersync.Cookie, account *config.Account) (*openrtb2.BidResponse, error) {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v CTVHoldAuction", deps.request.ID))
 
 	//Hold OpenRTB Standard Auction
-	if len(request.Imp) == 0 {
+	if len(deps.request.Imp) == 0 {
 		//Dummy Response Object
-		return &openrtb2.BidResponse{ID: request.ID}, nil
-	}
-
-	auctionRequest := exchange.AuctionRequest{
-		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
-		Account:           *account,
-		UserSyncs:         usersyncs,
-		RequestType:       deps.labels.RType,
-		StartTime:         startTime,
-		LegacyLabels:      deps.labels,
-		PubID:             deps.labels.PubID,
+		return &openrtb2.BidResponse{ID: deps.request.ID}, nil
 	}
 
 	return deps.ex.HoldAuction(ctx, auctionRequest, nil)
