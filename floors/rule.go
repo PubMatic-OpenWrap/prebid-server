@@ -3,6 +3,7 @@ package floors
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/bits"
 	"regexp"
 	"sort"
@@ -70,9 +71,12 @@ func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrappe
 		return
 	}
 	extImpPrebid := impExt.GetPrebid()
+	if extImpPrebid == nil {
+		return
+	}
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
-		FloorRuleValue: fmt.Sprintf("%.4f", floorVal),
+		FloorRuleValue: math.Floor(floorVal*10000) / 10000,
 	}
 	impExt.SetPrebid(extImpPrebid)
 	_ = imp.RebuildImp()

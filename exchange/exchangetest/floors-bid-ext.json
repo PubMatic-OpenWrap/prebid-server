@@ -1,5 +1,5 @@
 {
-    "description": "Verifies bid.ext values are left alone from the adapter, except for adding in bid.ext.prebid.",
+    "description": "Verifies bid.ext.prebid for floors",
     "floor_enabled": true,
     "incomingRequest": {
       "ortbRequest": {

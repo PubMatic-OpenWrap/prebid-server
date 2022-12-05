@@ -229,7 +229,8 @@ func TestUpdateImpsWithFloorsVariousRuleKeys(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = ModifyImpsWithFloors(tc.floorExt, tc.request, nil)
+			rw := &openrtb_ext.RequestWrapper{BidRequest: tc.request}
+			_ = ModifyImpsWithFloors(tc.floorExt, rw, nil)
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
 			}
@@ -458,7 +459,8 @@ func TestUpdateImpsWithFloors(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = ModifyImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
+			rw := &openrtb_ext.RequestWrapper{BidRequest: tc.request}
+			_ = ModifyImpsWithFloors(tc.floorExt, rw, getCurrencyRates(rates))
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
 			}
@@ -556,7 +558,8 @@ func TestUpdateImpsWithModelGroups(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = ModifyImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
+			rw := &openrtb_ext.RequestWrapper{BidRequest: tc.request}
+			_ = ModifyImpsWithFloors(tc.floorExt, rw, getCurrencyRates(rates))
 			if tc.floorExt.Skipped != nil && *tc.floorExt.Skipped != true {
 				if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 					t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
@@ -633,7 +636,8 @@ func TestUpdateImpsWithInvalidModelGroups(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			ErrList := ModifyImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
+			rw := &openrtb_ext.RequestWrapper{BidRequest: tc.request}
+			ErrList := ModifyImpsWithFloors(tc.floorExt, rw, getCurrencyRates(rates))
 
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
@@ -823,7 +827,8 @@ func TestUpdateImpsWithFloorsCurrecnyConversion(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_ = ModifyImpsWithFloors(tc.floorExt, tc.request, getCurrencyRates(rates))
+			rw := &openrtb_ext.RequestWrapper{BidRequest: tc.request}
+			_ = ModifyImpsWithFloors(tc.floorExt, rw, getCurrencyRates(rates))
 			if !reflect.DeepEqual(tc.request.Imp[0].BidFloor, tc.floorVal) {
 				t.Errorf("Floor Value error: \nreturn:\t%v\nwant:\t%v", tc.request.Imp[0].BidFloor, tc.floorVal)
 			}
