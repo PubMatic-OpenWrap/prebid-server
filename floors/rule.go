@@ -72,7 +72,7 @@ func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrappe
 	}
 	extImpPrebid := impExt.GetPrebid()
 	if extImpPrebid == nil {
-		return
+		extImpPrebid = &openrtb_ext.ExtImpPrebid{}
 	}
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
