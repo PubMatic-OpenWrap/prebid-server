@@ -160,7 +160,10 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 
 	defer func() {
-		glog.Infof("RequestID: %v | RejectedBids: %v", req.BidRequest.ID, ao.RejectedBids)
+		glog.Infof("Logging Rejected Bids for RequestID: %v  %v", req.BidRequest.ID)
+		for index, rejectedBid := range ao.RejectedBids {
+			glog.Infof(" Rejected Bid no: %v | RejectedBid: %v", index+1, *rejectedBid.Bid)
+		}
 	}()
 
 	ctx := context.Background()
