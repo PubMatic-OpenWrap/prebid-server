@@ -79,6 +79,7 @@ func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 				if bidFloor > 0.0 {
 					imp.BidFloor = math.Round(bidFloor*10000) / 10000
 					imp.BidFloorCur = floorCur
+					_ = imp.RebuildImp()
 				}
 				if isRuleMatched {
 					updateImpExtWithFloorDetails(matchedRule, imp, modelGroup.Values[matchedRule])

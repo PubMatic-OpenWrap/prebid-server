@@ -80,12 +80,6 @@
                 "ext": {
                   "bidder": {
                     "placementId": 1
-                  },
-                  "prebid": {
-                    "floors": {
-                      "floorRule": "video|*|test.somedomain.com",
-                      "floorRuleValue": "16.0000"
-                    }
                   }
                 }
               }
