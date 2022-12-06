@@ -26,7 +26,7 @@ type PBSAnalyticsModule interface {
 	LogNotificationEventObject(*NotificationEvent)
 }
 
-//
+// LoggableAuctionObject contains common attributes between AuctionObject, AmpObject, VideoObject
 type LoggableAuctionObject struct {
 	Context      context.Context
 	Status       int

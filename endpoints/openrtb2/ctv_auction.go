@@ -276,8 +276,7 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs
 		PubID:             deps.labels.PubID,
 	}
 
-	holdAuctionContext := context.WithValue(deps.ctx, "rejectedbids", make([]analytics.RejectedBid, 0))
-	return deps.ex.HoldAuction(holdAuctionContext, auctionRequest, nil)
+	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/

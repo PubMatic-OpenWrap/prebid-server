@@ -204,6 +204,7 @@ type BidderRequest struct {
 }
 
 func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
+
 	var errs []error
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
@@ -307,8 +308,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var auc *auction
 	var cacheErrs []error
 	var bidResponseExt *openrtb_ext.ExtBidResponse
-	rejectedBids := ctx.Value("rejectedbid").([]RejectedBid)
-	rejectedBids = rejectedBids
+
 	if anyBidsReturned {
 
 		//If floor enforcement config enabled then filter bids
