@@ -132,9 +132,10 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	ao := analytics.AuctionObject{
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context: r.Context(),
-			Status:  http.StatusOK,
-			Errors:  make([]error, 0),
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
 		},
 		StartTime: start,
 	}

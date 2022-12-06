@@ -78,9 +78,9 @@ func enforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 					if reqImp.BidFloor > bidPrice {
 						rejectedBid := analytics.RejectedBid{
 							Bid:             bid.bid,
-							BidderName:      string(bidderName),
 							Seat:            seatBid.seat,
 							RejectionReason: openrtb3.LossBelowAuctionFloor,
+							BidderName:      string(bidderName),
 						}
 						rejectedBids = append(rejectedBids, rejectedBid)
 						errs = append(errs, fmt.Errorf("bid rejected [bid ID: %s] reason: bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bid.bid.ID, bidPrice, reqImpCur, reqImp.BidFloor, reqImpCur, bid.bid.ImpID, bidderName))
@@ -147,18 +147,16 @@ func getEnforceDealsFlag(Floors *openrtb_ext.PriceFloorRules) bool {
 }
 
 // eneforceFloors function does floors enforcement
-func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, floor config.PriceFloors, conversions currency.Conversions, responseDebugAllow bool) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []error, []analytics.RejectedBid) {
-
+func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, floor config.PriceFloors, conversions currency.Conversions, responseDebugAllow bool) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []error) {
 	rejectionsErrs := []error{}
-	rejecteBids := []analytics.RejectedBid{}
 	if r == nil || r.BidRequestWrapper == nil {
-		return seatBids, rejectionsErrs, rejecteBids
+		return seatBids, rejectionsErrs
 	}
 
 	requestExt, err := r.BidRequestWrapper.GetRequestExt()
 	if err != nil {
 		rejectionsErrs = append(rejectionsErrs, err)
-		return seatBids, rejectionsErrs, rejecteBids
+		return seatBids, rejectionsErrs
 	}
 	prebidExt := requestExt.GetPrebid()
 	reqFloorEnable := getFloorsFlagFromReqExt(prebidExt)
@@ -173,13 +171,18 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		}
 
 		if floorsEnfocement {
-			seatBids, rejectionsErrs, rejecteBids = enforceFloorToBids(r.BidRequestWrapper.BidRequest, seatBids, conversions, enforceDealFloors)
+			rejectedBids := []analytics.RejectedBid{}
+			seatBids, rejectionsErrs, rejectedBids = enforceFloorToBids(r.BidRequestWrapper.BidRequest, seatBids, conversions, enforceDealFloors)
+			if r.LoggableObject != nil {
+				r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
+			}
 		}
+
 		requestExt.SetPrebid(prebidExt)
 		err = r.BidRequestWrapper.RebuildRequest()
 		if err != nil {
 			rejectionsErrs = append(rejectionsErrs, err)
-			return seatBids, rejectionsErrs, rejecteBids
+			return seatBids, rejectionsErrs
 		}
 
 		if responseDebugAllow {
@@ -188,5 +191,5 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 			r.UpdatedBidRequest = updatedBidReq
 		}
 	}
-	return seatBids, rejectionsErrs, rejecteBids
+	return seatBids, rejectionsErrs
 }

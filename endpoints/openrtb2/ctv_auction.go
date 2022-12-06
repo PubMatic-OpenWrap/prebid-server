@@ -148,13 +148,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	request = reqWrapper.BidRequest
 
-	defer func() {
-		glog.Infof("Logging Rejected Bids for RequestID: %v", request.ID)
-		for index, rejectedBid := range ao.RejectedBids {
-			glog.Infof(" Rejected Bid no: %v | RejectedBid: %+v", index+1, *rejectedBid.Bid)
-		}
-	}()
-
 	util.JLogf("Original BidRequest", request) //TODO: REMOVE LOG
 
 	//init
@@ -219,7 +212,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
-		LoggableObject:    &ao.LoggableAuctionObject,
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest, usersyncs, account)

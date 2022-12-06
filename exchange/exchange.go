@@ -311,31 +311,24 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	if anyBidsReturned {
 
 		//If floor enforcement config enabled then filter bids
-		adapterBids, enforceErrs, rejectedBids := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
+		adapterBids, enforceErrs := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)
-		if r.LoggableObject != nil && len(rejectedBids) > 0 {
-			r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
-		}
 
 		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 			// Record request count with non-zero imp.bidfloor value
 			e.me.RecordFloorsRequestForAccount(r.PubID)
 
-			if e.floor.Enabled && len(rejectedBids) > 0 {
+			if e.floor.Enabled && r.LoggableObject != nil && len(r.LoggableObject.RejectedBids) > 0 {
 				// Record rejected bid count at account level
 				e.me.RecordRejectedBidsForAccount(r.PubID)
 				// Record rejected bid count at adaptor/bidder level
-				for _, rejectedBid := range rejectedBids {
+				for _, rejectedBid := range r.LoggableObject.RejectedBids {
 					e.me.RecordRejectedBidsForBidder(openrtb_ext.BidderName(rejectedBid.BidderName))
 				}
 			}
 		}
 
-		adapterBids, rejections, rejectedBids := applyAdvertiserBlocking(r.BidRequestWrapper.BidRequest, adapterBids)
-		if r.LoggableObject != nil && len(rejectedBids) > 0 {
-			r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
-		}
-
+		adapterBids, rejections := applyAdvertiserBlocking(&r, adapterBids)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -344,8 +337,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExt.Prebid.Targeting != nil && requestExt.Prebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			rejectedBids := []analytics.RejectedBid{}
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r.BidRequestWrapper.BidRequest, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, &r, requestExt, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
@@ -353,9 +345,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 				errs = append(errs, errors.New(message))
 			}
 
-			if r.LoggableObject != nil && len(rejectedBids) > 0 {
-				r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, rejectedBids...)
-			}
 		}
 
 		if e.bidIDGenerator.Enabled() {
@@ -789,7 +778,8 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, rejectedBids *[]analytics.RejectedBid) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *openrtb_ext.ExtRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator) (map[string]string, map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, error) {
+	bidRequest := r.BidRequestWrapper.BidRequest
 	res := make(map[string]string)
 
 	type bidDedupe struct {
@@ -982,24 +972,28 @@ func applyCategoryMapping(ctx context.Context, bidRequest *openrtb2.BidRequest, 
 			if len(bidsToRemove) == len(seatBid.bids) {
 				//if all bids are invalid - remove entire seat bid
 				for _, bid := range seatBid.bids {
-					*rejectedBids = append(*rejectedBids, analytics.RejectedBid{
-						Bid:             bid.bid,
-						RejectionReason: openrtb3.LossCategoryExclusions,
-						Seat:            seatBid.seat,
-						BidderName:      string(bidderName),
-					})
+					if r.LoggableObject != nil {
+						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+							Bid:             bid.bid,
+							RejectionReason: openrtb3.LossCategoryExclusions,
+							Seat:            seatBid.seat,
+							BidderName:      string(bidderName),
+						})
+					}
 				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
-					*rejectedBids = append(*rejectedBids, analytics.RejectedBid{
-						Bid:             bids[remInd].bid,
-						RejectionReason: openrtb3.LossCategoryExclusions,
-						Seat:            seatBid.seat,
-						BidderName:      string(bidderName),
-					})
+					if r.LoggableObject != nil {
+						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+							Bid:             bids[remInd].bid,
+							RejectionReason: openrtb3.LossCategoryExclusions,
+							Seat:            seatBid.seat,
+							BidderName:      string(bidderName),
+						})
+					}
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.bids = bids

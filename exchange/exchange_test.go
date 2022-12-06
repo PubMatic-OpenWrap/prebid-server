@@ -2538,7 +2538,12 @@ func TestCategoryMapping(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2575,8 +2580,7 @@ func TestCategoryMapping(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -2586,7 +2590,7 @@ func TestCategoryMapping(t *testing.T) {
 	assert.Equal(t, "20.00_AdapterOverride_30s", bidCategory["bid_id3"], "Category mapping override from adapter didn't take")
 	assert.Equal(t, 3, len(adapterBids[bidderName1].bids), "Bidders number doesn't match")
 	assert.Equal(t, 3, len(bidCategory), "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{{RejectionReason: 209, Bid: bid1_4.bid, Seat: "", BidderName: "appnexus"}}, rejectedBids, "Rejected bids for analytics don't match")
+	assert.Equal(t, []analytics.RejectedBid{{RejectionReason: 209, Bid: bid1_4.bid, Seat: "", BidderName: "appnexus"}}, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
 }
 
 func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
@@ -2596,7 +2600,12 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2633,7 +2642,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -2653,7 +2662,13 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
+
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -2686,8 +2701,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -2696,8 +2710,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	assert.Equal(t, "20.00_Sports_50s", bidCategory["bid_id2"], "Category mapping doesn't match")
 	assert.Equal(t, 2, len(adapterBids[bidderName1].bids), "Bidders number doesn't match")
 	assert.Equal(t, 2, len(bidCategory), "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{{Bid: &bid3, BidderName: "appnexus", RejectionReason: openrtb3.LossCategoryExclusions}}, rejectedBids, "Rejected Bids not matching")
-
+	assert.Equal(t, []analytics.RejectedBid{{Bid: &bid3, BidderName: "appnexus", RejectionReason: openrtb3.LossCategoryExclusions}}, r.LoggableObject.RejectedBids, "Rejected Bids not matching")
 }
 
 func newExtRequestTranslateCategories(translateCategories *bool) openrtb_ext.ExtRequest {
@@ -2738,7 +2751,13 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	}
 
 	translateCategories := false
-	bidRequest := openrtb2.BidRequest{}
+
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestTranslateCategories(&translateCategories)
 
 	targData := &targetData{
@@ -2772,7 +2791,7 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -2792,7 +2811,12 @@ func TestCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2845,7 +2869,7 @@ func TestCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &[]analytics.RejectedBid{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 3, len(rejections), "There should be 2 bid rejection messages")
@@ -2873,7 +2897,12 @@ func TestNoCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2926,7 +2955,7 @@ func TestNoCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &[]analytics.RejectedBid{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 2, len(rejections), "There should be 2 bid rejection messages")
@@ -2963,7 +2992,14 @@ func TestCategoryMappingBidderName(t *testing.T) {
 		includeWinners:   true,
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{
+			RejectedBids: []analytics.RejectedBid{},
+		},
+	}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
@@ -2991,8 +3027,8 @@ func TestCategoryMappingBidderName(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
-	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be 0 bid rejection messages")
@@ -3001,7 +3037,7 @@ func TestCategoryMappingBidderName(t *testing.T) {
 	assert.Len(t, adapterBids[bidderName1].bids, 1, "Bidders number doesn't match")
 	assert.Len(t, adapterBids[bidderName2].bids, 1, "Bidders number doesn't match")
 	assert.Len(t, bidCategory, 2, "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{}, rejectedBids, "Rejected Bids don't match")
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Rejected Bids don't match")
 }
 
 func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
@@ -3019,7 +3055,12 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 		includeWinners:   true,
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}},
+	}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
@@ -3048,8 +3089,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
 
-	rejectedBids := []analytics.RejectedBid{}
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be 0 bid rejection messages")
@@ -3058,7 +3098,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	assert.Len(t, adapterBids[bidderName1].bids, 1, "Bidders number doesn't match")
 	assert.Len(t, adapterBids[bidderName2].bids, 1, "Bidders number doesn't match")
 	assert.Len(t, bidCategory, 2, "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{}, rejectedBids, "Rejected bids don't match")
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Rejected bids don't match")
 }
 
 func TestBidRejectionErrors(t *testing.T) {
@@ -3183,9 +3223,13 @@ func TestBidRejectionErrors(t *testing.T) {
 		seatBid := pbsOrtbSeatBid{bids: innerBids, currency: "USD"}
 
 		adapterBids[bidderName] = &seatBid
-		bidRequest := openrtb2.BidRequest{}
-		rejectedBids := []analytics.RejectedBid{}
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &test.reqExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &rejectedBids)
+		r := &AuctionRequest{
+			BidRequestWrapper: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{},
+			},
+			LoggableObject: &analytics.LoggableAuctionObject{},
+		}
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &test.reqExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		if len(test.expectedCatDur) > 0 {
 			// Bid deduplication case
@@ -3199,7 +3243,7 @@ func TestBidRejectionErrors(t *testing.T) {
 
 		assert.Empty(t, err, "Category mapping error should be empty")
 		assert.Equal(t, test.expectedRejections, rejections, test.description)
-		assert.Equal(t, test.expectedRejectedBids, rejectedBids, "Rejected Bids did not match")
+		assert.Equal(t, test.expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids did not match")
 	}
 }
 
@@ -3210,7 +3254,15 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{
+			RejectedBids: []analytics.RejectedBid{},
+		},
+	}
+
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -3250,7 +3302,7 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		adapterBids[bidderNameApn1] = &seatBidApn1
 		adapterBids[bidderNameApn2] = &seatBidApn2
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &[]analytics.RejectedBid{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.NoError(t, err, "Category mapping error should be empty")
 		assert.Len(t, rejections, 1, "There should be 1 bid rejection message")
@@ -3288,7 +3340,12 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	bidRequest := openrtb2.BidRequest{}
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}},
+	}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -3335,8 +3392,7 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 	adapterBids[bidderNameApn1] = &seatBidApn1
 	adapterBids[bidderNameApn2] = &seatBidApn2
 
-	rejectedBids := []analytics.RejectedBid{}
-	_, adapterBids, rejections, err := applyCategoryMapping(nil, &bidRequest, &requestExt, adapterBids, categoriesFetcher, targData, &fakeRandomDeduplicateBidBooleanGenerator{true}, &rejectedBids)
+	_, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &fakeRandomDeduplicateBidBooleanGenerator{true})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 
@@ -3360,7 +3416,7 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 
 	assert.Equal(t, 2, totalNumberOfbids, "2 bids total should be returned")
 	assert.Len(t, rejections, 2, "2 bids should be de-duplicated")
-	assert.Equal(t, []analytics.RejectedBid{}, rejectedBids, "Bid Rejections not matching")
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Bid Rejections not matching")
 	if firstBidderIndicator {
 		assert.Len(t, adapterBids[bidderNameApn1].bids, 2)
 		assert.Len(t, adapterBids[bidderNameApn2].bids, 0)

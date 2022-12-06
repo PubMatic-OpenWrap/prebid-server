@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/mxmCherry/openrtb/v16/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/metrics"
@@ -63,10 +62,10 @@ func normalizeDomain(domain string) (string, error) {
 //applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 //the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 //it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string, []analytics.RejectedBid) {
+func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}
 	nBadvs := []string{}
-	rejectedBids := []analytics.RejectedBid{}
 	if nil != bidRequest.BAdv {
 		for _, domain := range bidRequest.BAdv {
 			nDomain, err := normalizeDomain(domain)
@@ -77,7 +76,7 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 	}
 
 	if len(nBadvs) == 0 {
-		return seatBids, rejections, rejectedBids
+		return seatBids, rejections
 	}
 
 	for bidderName, seatBid := range seatBids {
@@ -107,12 +106,14 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 					}
 					if rejectBid {
 						// Add rejectedBid for analytics logging.
-						rejectedBids = append(rejectedBids, analytics.RejectedBid{
-							RejectionReason: openrtb3.LossAdvertiserExclusions,
-							Bid:             bid.bid,
-							Seat:            seatBid.seat,
-							BidderName:      string(bidderName),
-						})
+						if r.LoggableObject != nil {
+							r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+								RejectionReason: openrtb3.LossAdvertiserExclusions,
+								Bid:             bid.bid,
+								Seat:            seatBid.seat,
+								BidderName:      string(bidderName),
+							})
+						}
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -122,5 +123,5 @@ func applyAdvertiserBlocking(bidRequest *openrtb2.BidRequest, seatBids map[openr
 			}
 		}
 	}
-	return seatBids, rejections, rejectedBids
+	return seatBids, rejections
 }
