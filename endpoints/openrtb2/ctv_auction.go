@@ -21,7 +21,6 @@ import (
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
-	analyticCfg "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
@@ -277,8 +276,7 @@ func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs
 		PubID:             deps.labels.PubID,
 	}
 
-	holdAuctionContext := context.WithValue(deps.ctx, analyticCfg.CtxRejectedBid, make([]analytics.RejectedBid, 0))
-	return deps.ex.HoldAuction(holdAuctionContext, auctionRequest, nil)
+	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/

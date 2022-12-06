@@ -10,6 +10,7 @@ import (
 
 	"github.com/prebid/prebid-server/analytics"
 
+	analyticCfg "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints"
 	"github.com/prebid/prebid-server/endpoints/openrtb2"
@@ -44,21 +45,6 @@ var (
 	g_gdprPermsBuilder  gdpr.PermissionsBuilder
 	g_tcf2CfgBuilder    gdpr.TCF2ConfigBuilder
 )
-
-func GetPBSAnalyticsModule() analytics.PBSAnalyticsModule {
-	if g_analytics != nil {
-		return *g_analytics
-	}
-	return nil
-}
-
-func SetPBSAnalyticsModule(module analytics.PBSAnalyticsModule) error {
-	if g_analytics != nil {
-		*g_analytics = module
-		return nil
-	}
-	return fmt.Errorf("g_analytics is nil")
-}
 
 func getTransport(cfg *config.Configuration, certPool *x509.CertPool) *http.Transport {
 	transport := &http.Transport{
@@ -102,6 +88,18 @@ func GetPrebidCacheURL() string {
 	return g_cfg.ExternalURL
 }
 
+func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
+	if g_analytics == nil {
+		return fmt.Errorf("g_analytics is nil")
+	}
+	modules, err := analyticCfg.EnableAnalyticsModule(anlt, *g_analytics)
+	if err != nil {
+		return err
+	}
+	g_analytics = &modules
+	return nil
+}
+
 //OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
 func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher)
@@ -136,6 +134,11 @@ func SetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
 
 //CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
 func CookieSync(w http.ResponseWriter, r *http.Request) {
+	if g_analytics != nil {
+	}
+	if g_accounts != nil {
+
+	}
 	cookiesync := endpoints.NewCookieSyncEndpoint(g_syncers, g_cfg, g_gdprPermsBuilder, g_tcf2CfgBuilder, g_metrics, *g_analytics, *g_accounts, g_activeBidders)
 	cookiesync.Handle(w, r, nil)
 }

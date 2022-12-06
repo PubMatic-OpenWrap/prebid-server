@@ -1164,7 +1164,6 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("analytics.pubstack.buffers.size", "2MB")
 	v.SetDefault("analytics.pubstack.buffers.count", 100)
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
-	v.SetDefault("analytics.pubmatic.enabled", false)
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)

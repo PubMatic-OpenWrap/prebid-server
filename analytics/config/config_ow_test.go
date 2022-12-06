@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/analytics/filesystem"
 )
 
-func TestAddAnalyticModules(t *testing.T) {
+func TestEnableAnalyticsModule(t *testing.T) {
 
 	modules := enabledAnalytics{}
 	file, err := filesystem.NewFileLogger("xyz1.txt")
@@ -15,51 +15,55 @@ func TestAddAnalyticModules(t *testing.T) {
 		t.Errorf("NewFileLogger returned error - %v", err.Error())
 	}
 
+	type arg struct {
+		moduleList analytics.PBSAnalyticsModule
+		module     analytics.PBSAnalyticsModule
+	}
+
+	type want struct {
+		len    int
+		errMsg string
+	}
+
 	tests := []struct {
 		description string
-		modules     analytics.PBSAnalyticsModule
-		module      analytics.PBSAnalyticsModule
-		len         int
-		expectErr   bool
+		args        arg
+		wants       want
 	}{
 		{
 			description: "add non-nil module to nil module-list",
-			modules:     nil,
-			module:      file,
-			len:         0,
-			expectErr:   true,
+			args:        arg{moduleList: nil, module: file},
+			wants:       want{len: 0, errMsg: "failed to convert moduleList interface from analytics.PBSAnalyticsModule to analytics.enabledAnalytics"},
 		},
 		{
 			description: "add nil module to non-nil module-list",
-			modules:     modules,
-			module:      nil,
-			len:         0,
-			expectErr:   true,
+			args:        arg{moduleList: modules, module: nil},
+			wants:       want{len: 0, errMsg: "module to be added is nil"},
 		},
 		{
 			description: "add non-nil module to non-nil module-list",
-			modules:     modules,
-			module:      file,
-			len:         1,
-			expectErr:   false,
+			args:        arg{moduleList: modules, module: file},
+			wants:       want{len: 1, errMsg: ""},
 		},
 	}
 
 	for _, tt := range tests {
-		actual, err := AddAnalyticsModule(tt.modules, tt.module)
-		if err != nil && tt.expectErr {
-			continue
+		actual, err := EnableAnalyticsModule(tt.args.module, tt.args.moduleList)
+
+		if err != nil {
+			if err.Error() != tt.wants.errMsg {
+				t.Errorf("Expected error - [%v], got error - [%v] ,for test-case : [%v]", tt.wants.errMsg, err.Error(), tt.description)
+			}
+			continue // error message is same i.e. test case passed
 		}
-		if err == nil && tt.expectErr {
-			t.Errorf("Expecting an error but not received any for test-case : [%v]", tt.description)
-		}
+
 		list, ok := actual.(enabledAnalytics)
 		if !ok {
 			t.Errorf("Failed to convert interface to enabledAnalytics for test case - [%v]", tt.description)
 		}
 
-		if len(list) != tt.len {
-			t.Errorf("Expected len=%d , got=%d", tt.len, len(list))
+		if len(list) != tt.wants.len {
+			t.Errorf("length of enabled modules mismatched, expected - [%d] , got - [%d]", tt.wants.len, len(list))
 		}
 	}
 }
