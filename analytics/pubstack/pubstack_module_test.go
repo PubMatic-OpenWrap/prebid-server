@@ -55,7 +55,8 @@ func TestNewModuleSuccess(t *testing.T) {
 			description: "auction events are only published when logging an auction object with auction feature on",
 			feature:     auction,
 			logObject: func(module analytics.PBSAnalyticsModule) {
-				module.LogAuctionObject(&analytics.AuctionObject{LoggableAuctionObject: analytics.LoggableAuctionObject{Status: http.StatusOK}})
+				module.LogAuctionObject(&analytics.AuctionObject{
+					LoggableAuctionObject: analytics.LoggableAuctionObject{Status: http.StatusOK}})
 			},
 		},
 		{
