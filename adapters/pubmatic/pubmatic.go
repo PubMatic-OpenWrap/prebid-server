@@ -559,7 +559,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			if len(bid.Cat) > 1 {
 				bid.Cat = bid.Cat[0:1]
 			}
-			typedBid.Bid = &bid
 
 			if typedBid.BidType == openrtb_ext.BidTypeNative {
 				bid.AdM, err = getNativeAdm(bid.AdM)
