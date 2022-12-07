@@ -214,7 +214,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		PubID:             deps.labels.PubID,
 	}
 
-	response, err = deps.holdAuction(ctx, auctionRequest, usersyncs, account)
+	response, err = deps.holdAuction(ctx, auctionRequest)
 
 	ao.Request = request
 	ao.Response = response
@@ -264,7 +264,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest, usersyncs *usersync.Cookie, account *config.Account) (*openrtb2.BidResponse, error) {
+func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*openrtb2.BidResponse, error) {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v CTVHoldAuction", deps.request.ID))
 
 	//Hold OpenRTB Standard Auction
