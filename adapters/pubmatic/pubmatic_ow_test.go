@@ -2,7 +2,11 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
+
+	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func TestGetAdServerTargetingForEmptyExt(t *testing.T) {
@@ -68,5 +72,162 @@ func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
 	bidextnew := copySBExtToBidExt(nil, bidext)
 	if bidextnew == nil {
 		t.Errorf("it should not be nil")
+	}
+}
+
+func TestPrepareMetaObject(t *testing.T) {
+	type args struct {
+		bid    openrtb2.Bid
+		bidExt *pubmaticBidExt
+		seat   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb_ext.ExtBidPrebidMeta
+	}{
+		{
+			name: "Empty Meta Object",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{},
+				},
+				bidExt: &pubmaticBidExt{},
+				seat:   "",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{},
+		},
+		{
+			name: "Valid Meta Object with Empty Seatbid.seat",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1", "IAB-2"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
+				AdvertiserID:         139,
+				AgencyID:             139,
+			},
+		},
+		{
+			name: "Valid Meta Object with Empty bidExt.DspId",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1", "IAB-2"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        0,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            0,
+				DemandSource:         "",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
+				AdvertiserID:         124,
+				AgencyID:             124,
+			},
+		},
+		{
+			name: "Valid Meta Object with Empty Seatbid.seat and Empty bidExt.AdvertiserID",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1", "IAB-2"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 0,
+				},
+				seat: "",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
+				AdvertiserID:         0,
+				AgencyID:             0,
+			},
+		},
+		{
+			name: "Valid Meta Object with Empty CategoryIds",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:         80,
+				DemandSource:      "80",
+				PrimaryCategoryID: "",
+				AdvertiserID:      124,
+				AgencyID:          124,
+			},
+		},
+		{
+			name: "Valid Meta Object with Single CategoryId",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1"},
+				AdvertiserID:         124,
+				AgencyID:             124,
+			},
+		},
+		{
+			name: "Valid Meta Object",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB-1", "IAB-2"},
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
+				AdvertiserID:         124,
+				AgencyID:             124,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := prepareMetaObject(tt.args.bid, tt.args.bidExt, tt.args.seat); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("prepareMetaObject() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

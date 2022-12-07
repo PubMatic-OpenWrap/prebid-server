@@ -2,6 +2,10 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"strconv"
+
+	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
@@ -32,4 +36,41 @@ func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMe
 		return json.RawMessage(byteAra)
 	}
 	return bidExt
+}
+
+//prepareMetaObject prepares the Meta structure using Bid Response
+func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *openrtb_ext.ExtBidPrebidMeta {
+
+	meta := &openrtb_ext.ExtBidPrebidMeta{}
+
+	meta.NetworkID = bidExt.DspId
+
+	if bidExt.DspId != 0 {
+		meta.DemandSource = strconv.Itoa(bidExt.DspId)
+	}
+
+	if len(seat) > 0 {
+		meta.AdvertiserID, _ = strconv.Atoi(seat)
+	} else {
+		meta.AdvertiserID = bidExt.AdvertiserID
+	}
+
+	meta.AgencyID = meta.AdvertiserID
+
+	if len(bid.Cat) > 0 {
+		meta.PrimaryCategoryID = bid.Cat[0]
+		meta.SecondaryCategoryIDs = bid.Cat
+	}
+
+	// NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
+	// when we needed we can add it back.
+	// New fields added, assignee fields name may change
+	// Assign meta.BrandId to bidExt.ADomain[0]  //BrandID is of Type int and ADomain values if string type like "mystartab.com"
+	// meta.NetworkName = bidExt.NetworkName;
+	// meta.AdvertiserName = bidExt.AdvertiserName;
+	// meta.AgencyName = bidExt.AgencyName;
+	// meta.BrandName = bidExt.BrandName;
+	// meta.DChain = bidExt.DChain;
+
+	return meta
 }

@@ -40,6 +40,8 @@ type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace       string               `json:"marketplace,omitempty"`
+	DspId             int                  `json:"dspid,omitempty"`
+	AdvertiserID      int                  `json:"advid,omitempty"`
 }
 
 type pubmaticWrapperExt struct {
@@ -489,13 +491,11 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
-			if len(bid.Cat) > 1 {
-				bid.Cat = bid.Cat[0:1]
-			}
-
 			seat := ""
 			var bidExt *pubmaticBidExt
 			bidType := openrtb_ext.BidTypeBanner
+			var prebidMeta *openrtb_ext.ExtBidPrebidMeta
+
 			err := json.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
 				errs = append(errs, err)
@@ -505,6 +505,12 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					impVideo.Duration = *bidExt.VideoCreativeInfo.Duration
 				}
 				bidType = getBidType(bidExt)
+				//prepares ExtBidPrebidMeta with Values got from bidresponse
+				prebidMeta = prepareMetaObject(bid, bidExt, sb.Seat)
+			}
+
+			if len(bid.Cat) > 1 {
+				bid.Cat = bid.Cat[0:1]
 			}
 
 			if bidType == openrtb_ext.BidTypeNative {
@@ -520,8 +526,8 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				BidVideo:   impVideo,
 				Seat:       openrtb_ext.BidderName(seat),
 				BidTargets: targets,
+				BidMeta:    prebidMeta,
 			})
-
 		}
 	}
 	if bidResp.Cur != "" {
