@@ -1281,6 +1281,7 @@ func TestBuildAmpObject(t *testing.T) {
 						Ext: json.RawMessage(`{ "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
 					},
 				},
+
 				AmpTargetingValues: map[string]string{
 					"hb_appnexus_pb": "1.20",
 					"hb_cache_id":    "some_id",

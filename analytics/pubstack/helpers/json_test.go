@@ -55,7 +55,6 @@ func TestJsonifySetUIDObject(t *testing.T) {
 func TestJsonifyAmpObject(t *testing.T) {
 	ao := &analytics.AmpObject{
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-
 			Status:   http.StatusOK,
 			Errors:   make([]error, 0),
 			Response: &openrtb2.BidResponse{},

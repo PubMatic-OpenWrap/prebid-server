@@ -3,11 +3,14 @@ package router
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/prebid/prebid-server/analytics"
+
+	analyticCfg "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints"
 	"github.com/prebid/prebid-server/endpoints/openrtb2"
@@ -83,6 +86,19 @@ func GetCacheClient() *pbc.Client {
 
 func GetPrebidCacheURL() string {
 	return g_cfg.ExternalURL
+}
+
+//RegisterAnalyticsModule function registers the PBSAnalyticsModule
+func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
+	if g_analytics == nil {
+		return fmt.Errorf("g_analytics is nil")
+	}
+	modules, err := analyticCfg.EnableAnalyticsModule(anlt, *g_analytics)
+	if err != nil {
+		return err
+	}
+	g_analytics = &modules
+	return nil
 }
 
 //OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
