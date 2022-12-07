@@ -541,9 +541,7 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 		}
 		// Run test
 
-		ctx := context.Background()
-
-		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &debugLog)
+		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 		// Assert no HoldAuction err
 		assert.NoErrorf(t, err, "ex.HoldAuction returned an err")
 		assert.NotNilf(t, outBidResponse.Ext, "outBidResponse.Ext should not be nil")
@@ -717,9 +715,8 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 
-		ctx := context.Background()
 		// Run test
-		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
+		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 
 		// Assertions
 		assert.NoErrorf(t, err, "%s. HoldAuction error: %v \n", test.desc, err)
@@ -808,9 +805,7 @@ func TestAdapterCurrency(t *testing.T) {
 		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
-	ctx := context.Background()
-
-	response, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
+	response, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 	assert.NoError(t, err)
 	assert.Equal(t, "some-request-id", response.ID, "Response ID")
 	assert.Empty(t, response.SeatBid, "Response Bids")
@@ -1206,9 +1201,8 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 
 			// Run test
 			debugLog := DebugLog{}
-			ctx := context.Background()
 
-			outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &debugLog)
+			outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 
 			// Assert return error, if any
 			if testGroup.expectError {
@@ -1910,10 +1904,8 @@ func TestRaceIntegration(t *testing.T) {
 		cfg: gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
 	}.Builder
 
-	ctx := context.Background()
-
 	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, tcf2CfgBuilder, currencyConverter, &nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
-	_, err = ex.HoldAuction(ctx, auctionRequest, &debugLog)
+	_, err = ex.HoldAuction(context.Background(), auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
 	}
@@ -2135,9 +2127,8 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 	debugLog := DebugLog{}
-	ctx := context.Background()
 
-	_, err = e.HoldAuction(ctx, auctionRequest, &debugLog)
+	_, err = e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
 	}
@@ -4029,9 +4020,8 @@ func TestStoredAuctionResponses(t *testing.T) {
 			LoggableObject:         &analytics.LoggableAuctionObject{},
 		}
 		// Run test
-		ctx := context.Background()
 
-		outBidResponse, err := e.HoldAuction(ctx, auctionRequest, &DebugLog{})
+		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 		if test.errorExpected {
 			assert.Error(t, err, "Error should be returned")
 		} else {
@@ -4299,9 +4289,8 @@ func TestPassExperimentConfigsToHoldAuction(t *testing.T) {
 	}
 
 	debugLog := DebugLog{}
-	ctx := context.Background()
 
-	_, err = e.HoldAuction(ctx, auctionRequest, &debugLog)
+	_, err = e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 
 	assert.NoError(t, err, "unexpected error occured")
 	assert.Equal(t, "test.com", signer.data, "incorrect signer data")
