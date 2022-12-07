@@ -801,13 +801,11 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 	var includeBrandCategory = brandCatExt != nil //if not present - category will no be appended
 	appendBidderNames := requestExt.Prebid.Targeting.AppendBidderNames
 
-	var (
-		primaryAdServer     string
-		publisher           string
-		err                 error
-		rejections          []string
-		translateCategories = true
-	)
+	var primaryAdServer string
+	var publisher string
+	var err error
+	var rejections []string
+	var translateCategories = true
 
 	//Maintaining BidRequest Impression Map
 	for i := range bidRequest.Imp {
@@ -836,11 +834,9 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 		for bidInd := range seatBid.bids {
 			bid := seatBid.bids[bidInd]
 			bidID := bid.bid.ID
-			var (
-				duration int
-				category string
-				pb       string
-			)
+			var duration int
+			var category string
+			var pb string
 
 			if bid.bidVideo != nil {
 				duration = bid.bidVideo.Duration
