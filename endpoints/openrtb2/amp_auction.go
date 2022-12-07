@@ -107,9 +107,10 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 
 	ao := analytics.AmpObject{
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context: r.Context(),
-			Status:  http.StatusOK,
-			Errors:  make([]error, 0),
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
 		},
 		StartTime: start,
 	}
@@ -209,6 +210,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		StoredBidResponses:         storedBidResponses,
 		BidderImpReplaceImpID:      bidderImpReplaceImp,
 		PubID:                      labels.PubID,
+		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)

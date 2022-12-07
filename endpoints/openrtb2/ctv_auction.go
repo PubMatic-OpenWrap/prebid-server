@@ -51,8 +51,6 @@ type ctvEndpointDeps struct {
 	impsExt                   map[string]map[string]map[string]interface{}
 	impPartnerBlockedTagIDMap map[string]map[string][]string
 
-	//Prebid Specific
-	ctx    context.Context
 	labels metrics.Labels
 }
 
@@ -188,11 +186,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		}
 		deps.labels.PubID = getAccountID(request.Site.Publisher)
 	}
-
-	deps.ctx = context.Background()
+	ctx := context.Background()
 
 	// Look up account now that we have resolved the pubID value
-	account, acctIDErrs := accountService.GetAccount(deps.ctx, deps.cfg, deps.accounts, deps.labels.PubID)
+	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID)
 	if len(acctIDErrs) > 0 {
 		errL = append(errL, acctIDErrs...)
 		writeError(errL, w, &deps.labels)
@@ -203,11 +200,21 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(request.TMax) * time.Millisecond)
 	if timeout > 0 {
 		var cancel context.CancelFunc
-		deps.ctx, cancel = context.WithDeadline(deps.ctx, start.Add(timeout))
+		ctx, cancel = context.WithDeadline(ctx, start.Add(timeout))
 		defer cancel()
 	}
 
-	response, err = deps.holdAuction(request, usersyncs, account, start)
+	auctionRequest := exchange.AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:           *account,
+		UserSyncs:         usersyncs,
+		RequestType:       deps.labels.RType,
+		StartTime:         start,
+		LegacyLabels:      deps.labels,
+		PubID:             deps.labels.PubID,
+	}
+
+	response, err = deps.holdAuction(ctx, auctionRequest)
 
 	ao.Request = request
 	ao.Response = response
@@ -257,26 +264,16 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (deps *ctvEndpointDeps) holdAuction(request *openrtb2.BidRequest, usersyncs *usersync.Cookie, account *config.Account, startTime time.Time) (*openrtb2.BidResponse, error) {
+func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*openrtb2.BidResponse, error) {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v CTVHoldAuction", deps.request.ID))
 
 	//Hold OpenRTB Standard Auction
-	if len(request.Imp) == 0 {
+	if len(deps.request.Imp) == 0 {
 		//Dummy Response Object
-		return &openrtb2.BidResponse{ID: request.ID}, nil
+		return &openrtb2.BidResponse{ID: deps.request.ID}, nil
 	}
 
-	auctionRequest := exchange.AuctionRequest{
-		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
-		Account:           *account,
-		UserSyncs:         usersyncs,
-		RequestType:       deps.labels.RType,
-		StartTime:         startTime,
-		LegacyLabels:      deps.labels,
-		PubID:             deps.labels.PubID,
-	}
-
-	return deps.ex.HoldAuction(deps.ctx, auctionRequest, nil)
+	return deps.ex.HoldAuction(ctx, auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/

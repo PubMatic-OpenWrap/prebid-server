@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/mxmCherry/openrtb/v16/openrtb3"
 
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -1034,10 +1036,11 @@ func TestEnforceFloors(t *testing.T) {
 		responseDebugAllow bool
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  map[openrtb_ext.BidderName]*pbsOrtbSeatBid
-		want1 []string
+		name                 string
+		args                 args
+		want                 map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		want1                []string
+		expectedRejectedBids []analytics.RejectedBid
 	}{
 		{
 			name: "Should enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=true and floors enabled = true",
@@ -1046,7 +1049,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1096,6 +1099,30 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:     "some-bid-11",
+						Price:  0.5,
+						ImpID:  "some-impression-id-1",
+						DealID: "3",
+					},
+					Seat:       "",
+					BidderName: "appnexus",
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:     "some-bid-1",
+						Price:  1.2,
+						ImpID:  "some-impression-id-1",
+						DealID: "1",
+					},
+					Seat:       "",
+					BidderName: "pubmatic",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals not provided",
@@ -1104,7 +1131,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true},"enabled":true,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1162,6 +1189,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					Seat:       "",
+					BidderName: "appnexus",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=false is set",
@@ -1170,7 +1209,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":false},"enabled":true,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1228,6 +1267,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors for deals, ext.prebid.floors.enforcement.floorDeals=true and EnforceDealFloors = false from config",
@@ -1236,7 +1287,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1294,6 +1345,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors when imp.bidfloor provided and req.ext.prebid not provided",
@@ -1302,7 +1365,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":5.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1360,6 +1423,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 5.0100 USD for impression id some-impression-id-1 bidder appnexus"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should not enforce floors when imp.bidfloor not provided and req.ext.prebid not provided",
@@ -1368,7 +1443,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1433,7 +1508,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when  config flag Enabled = false",
@@ -1442,7 +1518,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1509,7 +1585,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when req.ext.prebid.floors.enabled = false ",
@@ -1518,7 +1595,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":false,"skipped":false}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1585,7 +1662,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors when req.ext.prebid.floors.enforcement.enforcepbs = false ",
@@ -1594,7 +1672,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","bidfloor":20.01,"bidfloorcur":"USD","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}},"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelweight":40,"debugweight":75,"modelversion":"version2","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":17.01,"*|*|www.website1.com":16.01,"*|300x250|*":11.01,"*|300x250|www.website1.com":100.01,"*|300x600|*":13.01,"*|300x600|www.website1.com":12.01,"*|728x90|*":15.01,"*|728x90|www.website1.com":14.01,"banner|*|*":90.01,"banner|*|www.website1.com":80.01,"banner|300x250|*":30.01,"banner|300x250|www.website1.com":20.01,"banner|300x600|*":50.01,"banner|300x600|www.website1.com":40.01,"banner|728x90|*":70.01,"banner|728x90|www.website1.com":60.01},"default":21}]},"enforcement":{"enforcepbs":false,"floordeals":false}}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1661,7 +1739,8 @@ func TestEnforceFloors(t *testing.T) {
 					currency: "USD",
 				},
 			},
-			want1: nil,
+			want1:                nil,
+			expectedRejectedBids: []analytics.RejectedBid{},
 		},
 		{
 			name: "Should not enforce floors for deals as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1670,7 +1749,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","bidfloor":20.01,"bidfloorcur":"USD","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1729,6 +1808,18 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1737,7 +1828,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","bidfloor":20.01,"bidfloorcur":"USD","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"aliases":{"adg":"adgeneration","andbeyond":"adkernel","appnexus-1":"appnexus","appnexus-2":"appnexus","districtm":"appnexus","districtmDMX":"dmx","pubmatic2":"pubmatic"},"channel":{"name":"app","version":""},"debug":true,"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true,"includebrandcategory":null,"includeformat":false,"durationrangesec":null,"preferdeals":false},"bidderparams":{"pubmatic":{"wiid":"42faaac0-9134-41c2-a283-77f1302d00ac"}}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1785,6 +1876,28 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext.prebid.floors not provided and imp.bidfloor provided",
@@ -1793,7 +1906,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","bidfloor":20.01,"bidfloorcur":"USD","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}},"ext":{"prebid":{"floors": {}}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1841,6 +1954,28 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+				},
+			},
 		},
 		{
 			name: "Should enforce floors as req.ext not provided and imp.bidfloor provided",
@@ -1849,7 +1984,7 @@ func TestEnforceFloors(t *testing.T) {
 					var wrapper openrtb_ext.RequestWrapper
 					strReq := `{"id":"95d6643c-3da6-40a2-b9ca-12279393ffbf","imp":[{"id":"some-impression-id-1","bidfloor":20.01,"bidfloorcur":"USD","banner":{"format":[{"w":300,"h":250}],"pos":7,"api":[5,6,7]},"displaymanager":"PubMatic_OpenBid_SDK","displaymanagerver":"1.4.0","instl":1,"tagid":"/43743431/DMDemo","secure":0,"ext":{"appnexus-1":{"placementId":234234},"appnexus-2":{"placementId":9880618},"pubmatic":{"adSlot":"/43743431/DMDemo@300x250","publisherId":"5890","wiid":"42faaac0-9134-41c2-a283-77f1302d00ac","wrapper":{"version":1,"profile":7255}},"prebid":{"floors":{"floorRule":"banner|300x250|www.website1.com","floorRuleValue":20.01}}}}],"app":{"name":"OpenWrapperSample","bundle":"com.pubmatic.openbid.app","domain":"www.website1.com","storeurl":"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1","ver":"1.0","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36","geo":{"lat":37.421998333333335,"lon":-122.08400000000002,"type":1},"lmt":0,"ip":"192.0.2.1","devicetype":4,"make":"Google","model":"Android SDK built for x86","os":"Android","osv":"9","h":1794,"w":1080,"pxratio":2.625,"js":1,"language":"en","carrier":"Android","mccmnc":"310-260","connectiontype":6,"ifa":"07c387f2-e030-428f-8336-42f682150759"},"user":{},"at":1,"tmax":1891525,"cur":["USD"],"source":{"tid":"95d6643c-3da6-40a2-b9ca-12279393ffbf","ext":{"omidpn":"PubMatic","omidpv":"1.2.11-Pubmatic"}}}`
 					_ = json.Unmarshal([]byte(strReq), &wrapper)
-					ar := AuctionRequest{BidRequestWrapper: &wrapper}
+					ar := AuctionRequest{BidRequestWrapper: &wrapper, LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}}}
 					return &ar
 				}(),
 				seatBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
@@ -1897,16 +2032,48 @@ func TestEnforceFloors(t *testing.T) {
 				},
 			},
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-1",
+						Price: 1.2,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "pubmatic",
+				}, {
+					Bid: &openrtb2.Bid{
+						ID:    "some-bid-11",
+						Price: 0.5,
+						ImpID: "some-impression-id-1",
+					},
+					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					Seat:            "",
+					BidderName:      "appnexus",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seatbid, errs, _ := enforceFloors(tt.args.r, tt.args.seatBids, tt.args.floor, tt.args.conversions, tt.args.responseDebugAllow)
+			seatbid, errs := enforceFloors(tt.args.r, tt.args.seatBids, tt.args.floor, tt.args.conversions, tt.args.responseDebugAllow)
 			for biderName, seat := range seatbid {
 				if len(seat.bids) != len(tt.want[biderName].bids) {
 					t.Errorf("enforceFloors() got = %v bids, want %v bids for BidderCode = %v ", len(seat.bids), len(tt.want[biderName].bids), biderName)
 				}
 			}
+
+			sort.Slice(tt.args.r.LoggableObject.RejectedBids, func(i, j int) bool {
+				return tt.args.r.LoggableObject.RejectedBids[i].Bid.ID > tt.args.r.LoggableObject.RejectedBids[j].Bid.ID
+			})
+
+			sort.Slice(tt.expectedRejectedBids, func(i, j int) bool {
+				return tt.expectedRejectedBids[i].Bid.ID > tt.expectedRejectedBids[j].Bid.ID
+			})
+
+			assert.Equal(t, tt.expectedRejectedBids, tt.args.r.LoggableObject.RejectedBids, "Rejected Bids not matching")
+
 			assert.Equal(t, tt.want1, ErrToString(errs))
 		})
 	}

@@ -1238,7 +1238,6 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"ext":{"appnexus":{"placementId":12883451}}}],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-
 				LoggableAuctionObject: analytics.LoggableAuctionObject{
 					Status: http.StatusOK,
 					Errors: nil,

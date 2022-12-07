@@ -811,9 +811,8 @@ func TestMergeOpenRTBToVideoRequest(t *testing.T) {
 
 func TestHandleError(t *testing.T) {
 	vo := analytics.VideoObject{
-
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status: http.StatusOK,
+			Status: 200,
 			Errors: make([]error, 0),
 		},
 	}
