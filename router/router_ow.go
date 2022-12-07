@@ -88,6 +88,7 @@ func GetPrebidCacheURL() string {
 	return g_cfg.ExternalURL
 }
 
+//RegisterAnalyticsModule function registers the PBSAnalyticsModule
 func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
 	if g_analytics == nil {
 		return fmt.Errorf("g_analytics is nil")
