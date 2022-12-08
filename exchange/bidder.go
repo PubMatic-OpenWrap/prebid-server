@@ -697,7 +697,7 @@ type httpCallInfo struct {
 // endpoint is established, we can keep track of whether the connection was newly created, reused, and
 // the time from the connection request, to the connection creation.
 func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context {
-	var connStart, dnsStart, tlsStart time.Time
+	var connStart, dnsStart, tlsStart, connectStart time.Time
 
 	trace := &httptrace.ClientTrace{
 		// GetConn is called before a connection is created or retrieved from an idle pool
@@ -707,7 +707,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		// GotConn is called after a successful connection is obtained
 		GotConn: func(info httptrace.GotConnInfo) {
 			connWaitTime := time.Now().Sub(connStart)
-
+			ctvutil.Logf("[TIMETRACK] connWaitTime took %s", connWaitTime)
 			bidder.me.RecordAdapterConnections(bidder.BidderName, info.Reused, connWaitTime)
 		},
 		// DNSStart is called when a DNS lookup begins.
@@ -717,8 +717,17 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		// DNSDone is called when a DNS lookup ends.
 		DNSDone: func(info httptrace.DNSDoneInfo) {
 			dnsLookupTime := time.Now().Sub(dnsStart)
-
+			ctvutil.Logf("[TIMETRACK] dnsLookupTime took %s", dnsLookupTime)
 			bidder.me.RecordDNSTime(dnsLookupTime)
+		},
+		//
+		ConnectStart: func(network, addr string) {
+			connectStart = time.Now()
+		},
+		// when a new connection's Dial
+		ConnectDone: func(network, addr string, err error) {
+			connectStop := time.Now().Sub(connectStart)
+			ctvutil.Logf("[TIMETRACK] ConnectDone took %s", connectStop)
 		},
 
 		TLSHandshakeStart: func() {
@@ -727,7 +736,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
 			tlsHandshakeTime := time.Now().Sub(tlsStart)
-
+			ctvutil.Logf("[TIMETRACK] tlsHandshakeTime took %s", tlsHandshakeTime)
 			bidder.me.RecordTLSHandshakeTime(bidder.BidderName, tlsHandshakeTime)
 		},
 	}
