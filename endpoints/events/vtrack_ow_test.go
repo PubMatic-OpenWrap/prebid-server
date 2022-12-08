@@ -330,7 +330,8 @@ func TestGetVideoEventTracking(t *testing.T) {
 					"start":         "http://company.tracker.com?eventId=2&appbundle=my_custom_value",
 					"complete":      "http://company.tracker.com?eventId=6&appbundle=my_custom_value"},
 			},
-		}, {
+		},
+		{
 			name: "multireplace_macro",
 			args: args{
 				trackerURL: "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]&parameter2=[DOMAIN]",
@@ -601,7 +602,7 @@ func TestReplaceMacro(t *testing.T) {
 		{name: "empty_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: ""}, want: want{trackerURL: "http://something.com?test="}},
 		{name: "nested_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "[TEST][TEST]"}, want: want{trackerURL: "http://something.com?test=%5BTEST%5D%5BTEST%5D"}},
 		{name: "url_as_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}},
-		{name: "macro_with_spaces", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "  [TEST]  ", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}},
+		// {name: "macro_with_spaces", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "  [TEST]  ", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}}, NYC move this to GetVideoEventTracking
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

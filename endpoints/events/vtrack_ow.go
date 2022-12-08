@@ -141,93 +141,88 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 // and ensure that your macro is part of trackerURL configuration
 func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
 	eventURLMap := make(map[string]string)
-	if "" == strings.TrimSpace(trackerURL) {
+	if strings.TrimSpace(trackerURL) == "" {
 		return eventURLMap
 	}
 
-	// lookup custom macros
-	var customMacroMap map[string]string
-	if nil != req.Ext {
-		reqExt := new(openrtb_ext.ExtRequest)
-		err := json.Unmarshal(req.Ext, &reqExt)
-		if err == nil {
-			customMacroMap = reqExt.Prebid.Macros
-		} else {
-			glog.Warningf("Error in unmarshling req.Ext.Prebid.Vast: [%s]", err.Error())
+	// replace standard macros
+	// NYC shall we put all macros with their default values here?
+	macroMap := map[string]string{
+		PBSAdUnitIDMacro:       "",
+		PBSBidIDMacro:          bid.ID,
+		PBSOrigBidIDMacro:      bid.ID,
+		PBSBidderMacro:         bidderCoreName,
+		PBSBidderCodeMacro:     requestingBidder,
+		PBSAdvertiserNameMacro: "",
+		VASTAdTypeMacro:        string(openrtb_ext.BidTypeVideo),
+	}
+
+	/* Use generated bidId if present, else use bid.ID */
+	if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
+		macroMap[PBSBidIDMacro] = prebidGenBidId
+	}
+
+	if imp, ok := impMap[bid.ImpID]; ok {
+		macroMap[PBSAdUnitIDMacro] = imp.TagID
+	} else {
+		glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
+	}
+
+	if len(bid.ADomain) > 0 {
+		var err error
+		//macroMap[PBSAdvertiserNameMacro] = strings.Join(bid.ADomain, ",")
+		macroMap[PBSAdvertiserNameMacro], err = extractDomain(bid.ADomain[0])
+		if err != nil {
+			glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
 		}
 	}
 
-	for _, event := range trackingEvents {
-		eventURL := trackerURL
-		// lookup in custom macros
-		if nil != customMacroMap {
-			for customMacro, value := range customMacroMap {
-				eventURL = replaceMacro(eventURL, customMacro, value)
+	if req != nil {
+		if req.App != nil {
+			// macroMap[VASTAppBundleMacro] = req.App.Bundle
+			macroMap[VASTDomainMacro] = req.App.Bundle
+			if req.App.Publisher != nil {
+				macroMap[PBSAccountMacro] = req.App.Publisher.ID
 			}
 		}
-		// replace standard macros
-		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
-		if nil != req && nil != req.App {
-			// eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.App.Bundle)
-			if nil != req.App.Publisher {
-				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.App.Publisher.ID)
+		if req.Site != nil {
+			macroMap[VASTDomainMacro] = getDomain(req.Site)
+			macroMap[VASTPageURLMacro] = req.Site.Page
+			if req.Site.Publisher != nil {
+				macroMap[PBSAccountMacro] = req.Site.Publisher.ID
 			}
 		}
-		if nil != req && nil != req.Site {
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, getDomain(req.Site))
-			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
-			if nil != req.Site.Publisher {
-				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
-			}
+	}
+
+	// lookup in custom macros - keep this block at last for highest priority
+	reqExt := new(openrtb_ext.ExtRequest)
+	if req.Ext != nil {
+		err := json.Unmarshal(req.Ext, &reqExt)
+		if err != nil {
+			glog.Warningf("Error in unmarshling req.Ext.Prebid.Vast: [%s]", err.Error())
 		}
+	}
+	for key, value := range reqExt.Prebid.Macros {
+		macroMap[strings.TrimSpace(key)] = strings.TrimSpace(value)
+	}
 
-		domain := ""
-		if len(bid.ADomain) > 0 {
-			var err error
-			//eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
-			domain, err = extractDomain(bid.ADomain[0])
-			if err != nil {
-				glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
-			}
-		}
-
-		eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, domain)
-
-		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidderCoreName)
-		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, requestingBidder)
-
-		/* Use generated bidId if present, else use bid.ID */
-		if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
-			eventURL = replaceMacro(eventURL, PBSBidIDMacro, prebidGenBidId)
-		} else {
-			eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
-		}
-		eventURL = replaceMacro(eventURL, PBSOrigBidIDMacro, bid.ID)
-
+	for _, event := range trackingEvents { //NYC check if trackingEvents and macroMap can be clubbed
 		// replace [EVENT_ID] macro with PBS defined event ID
-		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
+		macroMap[PBSEventIDMacro] = eventIDMap[event]
 
-		if imp, ok := impMap[bid.ImpID]; ok {
-			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
-		} else {
-			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
-			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, "")
+		eventURLMap[event] = trackerURL //NYC use string builder here
+		for key, value := range macroMap {
+			eventURLMap[event] = replaceMacro(eventURLMap[event], key, value)
 		}
-
-		eventURLMap[event] = eventURL
 	}
 	return eventURLMap
 }
 
 func replaceMacro(trackerURL, macro, value string) string {
-	macro = strings.TrimSpace(macro)
 	trimmedValue := strings.TrimSpace(value)
 
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) > 0 {
-		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
-	} else if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) == 0 {
-		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(""))
+	if len(macro) > 2 && macro[0] == '[' && macro[len(macro)-1] == ']' {
+		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(trimmedValue))
 	} else {
 		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
 	}
