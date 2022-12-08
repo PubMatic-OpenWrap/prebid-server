@@ -667,15 +667,77 @@ func BenchmarkGetVideoEventTracking(b *testing.B) {
 	}
 }
 
+func Test_replaceMacros(t *testing.T) {
+	type args struct {
+		trackerURL string
+		macroMap   map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "empty_tracker_url",
+			args: args{
+				trackerURL: "",
+				macroMap: map[string]string{
+					"[TEST]": "testme",
+				},
+			},
+			want: "",
+		},
+		{
+			name: "tracker_url_with_macro",
+			args: args{
+				trackerURL: "http://something.com?test=[TEST]",
+				macroMap: map[string]string{
+					"[TEST]": "testme",
+				},
+			},
+			want: "http://something.com?test=testme",
+		},
+		// {name: "tracker_url_with_invalid_macro", args: args{trackerURL: "http://something.com?test=TEST]", macro: "[TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=TEST]"}},
+		// {name: "tracker_url_with_repeating_macro", args: args{trackerURL: "http://something.com?test=[TEST]&test1=[TEST]", macro: "[TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=testme&test1=testme"}},
+		// {name: "empty_macro", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		// {name: "macro_without_[", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "TEST]", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		// {name: "macro_without_]", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST", value: "testme"}, want: want{trackerURL: "http://something.com?test=[TEST]"}},
+		// {name: "empty_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: ""}, want: want{trackerURL: "http://something.com?test="}},
+		// {name: "nested_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "[TEST][TEST]"}, want: want{trackerURL: "http://something.com?test=%5BTEST%5D%5BTEST%5D"}},
+		// {name: "url_as_macro_value", args: args{trackerURL: "http://something.com?test=[TEST]", macro: "[TEST]", value: "http://iamurl.com"}, want: want{trackerURL: "http://something.com?test=http%3A%2F%2Fiamurl.com"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := replaceMacros(tt.args.trackerURL, tt.args.macroMap)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+// Original:
 // Running tool: /usr/local/go/bin/go test -benchmem -run=^$ -bench ^BenchmarkGetVideoEventTracking$ github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
 
 // goos: linux
 // goarch: arm64
 // pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
+// BenchmarkGetVideoEventTracking-8   	   19048	     78882 ns/op	   31590 B/op	     128 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   27333	     40491 ns/op	   31589 B/op	     128 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   28392	     45111 ns/op	   31586 B/op	     128 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   18160	     83581 ns/op	   31585 B/op	     128 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   16633	     77993 ns/op	   31591 B/op	     128 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/endpoints/events	1.807s
+
+// Refactored-GetVideoEventTracking:
 // BenchmarkGetVideoEventTracking-8   	   10000	    108697 ns/op	   33489 B/op	     131 allocs/op
 // BenchmarkGetVideoEventTracking-8   	   10000	    115349 ns/op	   33489 B/op	     131 allocs/op
 // BenchmarkGetVideoEventTracking-8   	   12678	     80833 ns/op	   33486 B/op	     131 allocs/op
 // BenchmarkGetVideoEventTracking-8   	   18840	     60841 ns/op	   33493 B/op	     131 allocs/op
 // BenchmarkGetVideoEventTracking-8   	   20086	     57733 ns/op	   33482 B/op	     131 allocs/op
-// PASS
-// ok  	github.com/PubMatic-OpenWrap/prebid-server/endpoints/events	1.807s
+
+// Refactored-GetVideoEventTracking-using-replaceMacros:
+// BenchmarkGetVideoEventTracking-8   	   65928	     16866 ns/op	   10434 B/op	      96 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   66710	     18611 ns/op	   10433 B/op	      96 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   66448	     17244 ns/op	   10433 B/op	      96 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   35112	     38085 ns/op	   10433 B/op	      96 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   40941	     27584 ns/op	   10434 B/op	      96 allocs/op

@@ -213,11 +213,46 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId,
 		macroMap[PBSEventIDMacro] = eventIDMap[event]
 
 		eventURLMap[event] = trackerURL //NYC use string builder here
-		for key, value := range macroMap {
-			eventURLMap[event] = replaceMacro(eventURLMap[event], key, value)
-		}
+		// for key, value := range macroMap {
+		// 	eventURLMap[event] = replaceMacro(eventURLMap[event], key, value)
+		// }
+
+		eventURLMap[event] = replaceMacros(trackerURL, macroMap)
 	}
 	return eventURLMap
+}
+
+func replaceMacros(trackerURL string, macroMap map[string]string) string {
+	var builder strings.Builder
+
+	for i := 0; i < len(trackerURL); i++ {
+		if trackerURL[i] == '[' {
+			found := false
+			j := i + 1
+			for ; j < len(trackerURL); j++ {
+				if trackerURL[j] == ']' {
+					found = true
+					break
+				}
+			}
+			if found {
+				n := j + 1
+				k := trackerURL[i:n]
+				if v, ok := macroMap[k]; ok {
+					v = url.QueryEscape(v) // NYC move QueryEscape while creating map, no need to do this everytime
+					_, _ = builder.Write([]byte(v))
+					i = n
+					if i < len(trackerURL)-1 {
+						_ = builder.WriteByte('&')
+					}
+					continue
+				}
+			}
+		}
+		_ = builder.WriteByte(trackerURL[i])
+	}
+
+	return builder.String()
 }
 
 func replaceMacro(trackerURL, macro, value string) string {
