@@ -635,3 +635,47 @@ func TestExtractDomain(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkGetVideoEventTracking(b *testing.B) {
+	//  all_macros with generated_bidId
+	trackerURL := "https://company.tracker.com?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&advertiser_id=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&origbidid=[PBS-ORIG_BIDID]&bc=[BIDDER_CODE]"
+	req := &openrtb2.BidRequest{
+		App: &openrtb2.App{Bundle: "com.someapp.com", Publisher: &openrtb2.Publisher{ID: "5890"}},
+		Ext: []byte(`{
+				"prebid": {
+						"macros": {
+							"[PROFILE_ID]": "100",
+							"[PROFILE_VERSION]": "2",
+							"[UNIX_TIMESTAMP]": "1234567890",
+							"[PLATFORM]": "7",
+							"[WRAPPER_IMPRESSION_ID]": "abc~!@#$%^&&*()_+{}|:\"<>?[]\\;',./"
+						}
+				}
+			}`),
+		Imp: []openrtb2.Imp{
+			{TagID: "/testadunit/1", ID: "imp_1"},
+		},
+	}
+	bid := &openrtb2.Bid{ADomain: []string{"http://a.com/32?k=v", "b.com"}, ImpID: "imp_1", ID: "test_bid_id"}
+	gen_bidid := "random_bid_id"
+	requestingBidder := "test_bidder:234"
+	bidderCoreName := "test_core_bidder:234"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetVideoEventTracking(trackerURL, bid, gen_bidid, requestingBidder, bidderCoreName, "", 0, req, nil, nil)
+	}
+}
+
+// Running tool: /usr/local/go/bin/go test -benchmem -run=^$ -bench ^BenchmarkGetVideoEventTracking$ github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
+
+// goos: linux
+// goarch: arm64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
+// BenchmarkGetVideoEventTracking-8   	   10000	    108697 ns/op	   33489 B/op	     131 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   10000	    115349 ns/op	   33489 B/op	     131 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   12678	     80833 ns/op	   33486 B/op	     131 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   18840	     60841 ns/op	   33493 B/op	     131 allocs/op
+// BenchmarkGetVideoEventTracking-8   	   20086	     57733 ns/op	   33482 B/op	     131 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/endpoints/events	1.807s

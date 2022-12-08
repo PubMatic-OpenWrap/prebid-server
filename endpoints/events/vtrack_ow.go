@@ -162,10 +162,12 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId,
 		macroMap[PBSBidIDMacro] = prebidGenBidId
 	}
 
-	if imp, ok := impMap[bid.ImpID]; ok {
-		macroMap[PBSAdUnitIDMacro] = imp.TagID
-	} else {
-		glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
+	if impMap != nil {
+		if imp, ok := impMap[bid.ImpID]; ok {
+			macroMap[PBSAdUnitIDMacro] = imp.TagID
+		} else {
+			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
+		}
 	}
 
 	if len(bid.ADomain) > 0 {
