@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v16/adcom1"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/adcom1"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/stretchr/testify/assert"
 )

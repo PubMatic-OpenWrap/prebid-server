@@ -5,7 +5,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -23,7 +22,7 @@ const (
 
 // ModifyImpsWithFloors will validate floor rules, based on request and rules prepares various combinations
 // to match with floor rules and selects appripariate floor rule and update imp.bidfloor and imp.bidfloorcur
-func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb2.BidRequest, conversions currency.Conversions) []error {
+func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrtb_ext.RequestWrapper, conversions currency.Conversions) []error {
 	var (
 		floorErrList      []error
 		floorModelErrList []error
@@ -61,8 +60,8 @@ func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 
 	floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
 	if len(modelGroup.Values) > 0 {
-		for i := 0; i < len(request.Imp); i++ {
-			desiredRuleKey := createRuleKey(modelGroup.Schema, request, request.Imp[i])
+		for i, imp := range request.GetImp() {
+			desiredRuleKey := createRuleKey(modelGroup.Schema, request.BidRequest, request.Imp[i])
 			matchedRule, isRuleMatched := findRule(modelGroup.Values, modelGroup.Schema.Delimiter, desiredRuleKey, len(modelGroup.Schema.Fields))
 
 			floorVal = modelGroup.Default
@@ -78,11 +77,12 @@ func ModifyImpsWithFloors(floorExt *openrtb_ext.PriceFloorRules, request *openrt
 				}
 
 				if bidFloor > 0.0 {
-					request.Imp[i].BidFloor = math.Round(bidFloor*10000) / 10000
-					request.Imp[i].BidFloorCur = floorCur
+					imp.BidFloor = math.Round(bidFloor*10000) / 10000
+					imp.BidFloorCur = floorCur
+					_ = imp.RebuildImp()
 				}
 				if isRuleMatched {
-					updateImpExtWithFloorDetails(matchedRule, &request.Imp[i], modelGroup.Values[matchedRule])
+					updateImpExtWithFloorDetails(matchedRule, imp, modelGroup.Values[matchedRule])
 				}
 			} else {
 				floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))

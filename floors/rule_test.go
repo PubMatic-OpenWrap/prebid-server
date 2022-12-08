@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -103,26 +103,27 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}},
-			expected:     json.RawMessage{},
+			expected:     json.RawMessage(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5}}}`),
 		},
 		{
 			name:         "Empty ImpExt",
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: json.RawMessage{}},
-			expected:     json.RawMessage{},
+			expected:     json.RawMessage(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5}}}`),
 		},
 		{
 			name:         "With prebid Ext",
 			matchedRule:  "banner|www.test.com|*",
-			floorRuleVal: 5.5,
+			floorRuleVal: 5.500123,
 			imp:          openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)},
-			expected:     []byte(`{"prebid": {"test": true,"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5000}}}`),
+			expected:     []byte(`{"prebid":{"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5001}}}`),
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			updateImpExtWithFloorDetails(tc.matchedRule, &tc.imp, tc.floorRuleVal)
+			iw := &openrtb_ext.ImpWrapper{Imp: &tc.imp}
+			updateImpExtWithFloorDetails(tc.matchedRule, iw, tc.floorRuleVal)
 			if tc.imp.Ext != nil && !reflect.DeepEqual(tc.imp.Ext, tc.expected) {
 				t.Errorf("error: \nreturn:\t%v\n want:\t%v", string(tc.imp.Ext), string(tc.expected))
 			}

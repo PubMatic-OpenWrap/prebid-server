@@ -7,8 +7,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
-	"github.com/mxmCherry/openrtb/v16/openrtb3"
+	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
 
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -884,6 +884,7 @@ func TestEnforceFloorToBidsConversion(t *testing.T) {
 	}
 }
 
+// This test updates the request. Why not assert?
 func TestSelectFloorsAndModifyImp(t *testing.T) {
 	type args struct {
 		r                  *AuctionRequest

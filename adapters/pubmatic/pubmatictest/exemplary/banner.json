@@ -91,7 +91,13 @@
                     "version":1,
                     "wiid" : "dwzafakjflan-tygannnvlla-mlljvj"
                 },
-                "acat": ["drg","dlu","ssr"]
+                "acat": ["drg","dlu","ssr"],
+                "prebid": {
+                  "bidderparams": {
+                    "acat": ["drg","dlu","ssr"],
+                    "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
+                  }
+                }
             }
           }
         },
@@ -115,7 +121,8 @@
                   "dealid":"test deal",
                   "ext": {
                     "dspid": 6,
-                    "deal_channel": 1
+                    "deal_channel": 1,
+                    "prebiddealpriority": 1
                   }
                 }]
               }
@@ -145,7 +152,8 @@
               "dealid":"test deal",
               "ext": {
                 "dspid": 6,
-                "deal_channel": 1
+                "deal_channel": 1,
+                "prebiddealpriority": 1
               }
             },
             "type": "banner"

@@ -3,13 +3,14 @@ package floors
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/bits"
 	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -64,9 +65,21 @@ func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currenc
 	return floorMin, floorCur, err
 }
 
-func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb2.Imp, floorVal float64) {
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(`"`+matchedRule+`"`), "prebid", "floors", "floorRule")
-	imp.Ext, _ = jsonparser.Set(imp.Ext, []byte(fmt.Sprintf("%.4f", floorVal)), "prebid", "floors", "floorRuleValue")
+func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrapper, floorVal float64) {
+	impExt, err := imp.GetImpExt()
+	if err != nil {
+		return
+	}
+	extImpPrebid := impExt.GetPrebid()
+	if extImpPrebid == nil {
+		extImpPrebid = &openrtb_ext.ExtImpPrebid{}
+	}
+	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
+		FloorRule:      matchedRule,
+		FloorRuleValue: math.Floor(floorVal*10000) / 10000,
+	}
+	impExt.SetPrebid(extImpPrebid)
+	_ = imp.RebuildImp()
 }
 
 func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {

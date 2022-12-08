@@ -64,7 +64,8 @@
                   "publisher": {
                       "id": "999"
                   }
-              }
+              },
+              "ext":{"prebid": {}}
             }
           },
           "mockResponse": {

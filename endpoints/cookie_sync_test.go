@@ -1098,6 +1098,13 @@ func TestCookieSyncWriteParseRequestErrorMetrics(t *testing.T) {
 			},
 		},
 		{
+			description: "Account Malformed",
+			err:         errCookieSyncAccountConfigMalformed,
+			setExpectations: func(m *metrics.MetricsEngineMock) {
+				m.On("RecordCookieSync", metrics.CookieSyncAccountConfigMalformed).Once()
+			},
+		},
+		{
 			description: "No Special Case",
 			err:         errors.New("any error"),
 			setExpectations: func(m *metrics.MetricsEngineMock) {
@@ -1714,8 +1721,13 @@ func TestCombineErrors(t *testing.T) {
 			expectedError:  errCookieSyncAccountInvalid,
 		},
 		{
+			description:    "Special Case: malformed account config",
+			givenErrorList: []error{&errortypes.MalformedAcct{}},
+			expectedError:  errCookieSyncAccountConfigMalformed,
+		},
+		{
 			description:    "Special Case: multiple special cases, first one wins",
-			givenErrorList: []error{&errortypes.BlacklistedAcct{}, &errortypes.AcctRequired{}},
+			givenErrorList: []error{&errortypes.BlacklistedAcct{}, &errortypes.AcctRequired{}, &errortypes.MalformedAcct{}},
 			expectedError:  errCookieSyncAccountBlocked,
 		},
 	}

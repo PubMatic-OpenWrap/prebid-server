@@ -19,8 +19,8 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/copystructure v1.2.0
-	github.com/mxmCherry/openrtb/v16 v16.0.0
 	github.com/prebid/go-gdpr v1.11.0
+	github.com/prebid/openrtb/v17 v17.0.0
 	github.com/prebid/prebid-server v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
@@ -33,8 +33,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yudai/gojsondiff v1.0.0
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
 	golang.org/x/text v0.3.7
 	google.golang.org/grpc v1.46.2
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
@@ -43,6 +42,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-replace github.com/mxmCherry/openrtb/v16 => github.com/PubMatic-OpenWrap/openrtb/v16 v16.0.0-ow2
+replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20221031060308-044ec760b89f
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4

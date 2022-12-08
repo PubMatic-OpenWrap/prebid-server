@@ -7,7 +7,7 @@ import (
 // ExtImpPrebid defines the contract for bidrequest.imp[i].ext.prebid
 type ExtImpPrebid struct {
 	// StoredRequest specifies which stored impression to use, if any.
-	StoredRequest *ExtStoredRequest `json:"storedrequest"`
+	StoredRequest *ExtStoredRequest `json:"storedrequest,omitempty"`
 
 	// StoredResponse specifies which stored impression to use, if any.
 	StoredAuctionResponse *ExtStoredAuctionResponse `json:"storedauctionresponse,omitempty"`
@@ -16,14 +16,21 @@ type ExtImpPrebid struct {
 	StoredBidResponse []ExtStoredBidResponse `json:"storedbidresponse,omitempty"`
 
 	// IsRewardedInventory is a signal intended for video impressions. Must be 0 or 1.
-	IsRewardedInventory int8 `json:"is_rewarded_inventory"`
+	IsRewardedInventory *int8 `json:"is_rewarded_inventory,omitempty"`
 
-	// Bidder is the preferred approach for providing paramters to be interepreted by the bidder's adapter.
-	Bidder map[string]json.RawMessage `json:"bidder"`
+	// Bidder is the preferred approach for providing parameters to be interpreted by the bidder's adapter.
+	Bidder map[string]json.RawMessage `json:"bidder,omitempty"`
 
 	Options *Options `json:"options,omitempty"`
 
 	Passthrough json.RawMessage `json:"passthrough,omitempty"`
+
+	Floors *ExtImpPrebidFloors `json:"floors,omitempty"`
+}
+
+type ExtImpPrebidFloors struct {
+	FloorRule      string  `json:"floorRule,omitempty"`
+	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
 }
 
 // ExtStoredRequest defines the contract for bidrequest.imp[i].ext.prebid.storedrequest

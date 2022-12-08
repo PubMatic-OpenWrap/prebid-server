@@ -211,12 +211,13 @@ func CookieTypes() []CookieFlag {
 
 // Request/return status
 const (
-	RequestStatusOK           RequestStatus = "ok"
-	RequestStatusBadInput     RequestStatus = "badinput"
-	RequestStatusErr          RequestStatus = "err"
-	RequestStatusNetworkErr   RequestStatus = "networkerr"
-	RequestStatusBlacklisted  RequestStatus = "blacklistedacctorapp"
-	RequestStatusQueueTimeout RequestStatus = "queuetimeout"
+	RequestStatusOK               RequestStatus = "ok"
+	RequestStatusBadInput         RequestStatus = "badinput"
+	RequestStatusErr              RequestStatus = "err"
+	RequestStatusNetworkErr       RequestStatus = "networkerr"
+	RequestStatusBlacklisted      RequestStatus = "blacklistedacctorapp"
+	RequestStatusQueueTimeout     RequestStatus = "queuetimeout"
+	RequestStatusAccountConfigErr RequestStatus = "acctconfigerr"
 )
 
 func RequestStatuses() []RequestStatus {
@@ -227,6 +228,7 @@ func RequestStatuses() []RequestStatus {
 		RequestStatusNetworkErr,
 		RequestStatusBlacklisted,
 		RequestStatusQueueTimeout,
+		RequestStatusAccountConfigErr,
 	}
 }
 
@@ -309,12 +311,13 @@ func TCFVersionToValue(version int) TCFVersionValue {
 type CookieSyncStatus string
 
 const (
-	CookieSyncOK                    CookieSyncStatus = "ok"
-	CookieSyncBadRequest            CookieSyncStatus = "bad_request"
-	CookieSyncOptOut                CookieSyncStatus = "opt_out"
-	CookieSyncGDPRHostCookieBlocked CookieSyncStatus = "gdpr_blocked_host_cookie"
-	CookieSyncAccountBlocked        CookieSyncStatus = "acct_blocked"
-	CookieSyncAccountInvalid        CookieSyncStatus = "acct_invalid"
+	CookieSyncOK                     CookieSyncStatus = "ok"
+	CookieSyncBadRequest             CookieSyncStatus = "bad_request"
+	CookieSyncOptOut                 CookieSyncStatus = "opt_out"
+	CookieSyncGDPRHostCookieBlocked  CookieSyncStatus = "gdpr_blocked_host_cookie"
+	CookieSyncAccountBlocked         CookieSyncStatus = "acct_blocked"
+	CookieSyncAccountConfigMalformed CookieSyncStatus = "acct_config_malformed"
+	CookieSyncAccountInvalid         CookieSyncStatus = "acct_invalid"
 )
 
 // CookieSyncStatuses returns possible cookie sync statuses.
@@ -325,6 +328,7 @@ func CookieSyncStatuses() []CookieSyncStatus {
 		CookieSyncOptOut,
 		CookieSyncGDPRHostCookieBlocked,
 		CookieSyncAccountBlocked,
+		CookieSyncAccountConfigMalformed,
 		CookieSyncAccountInvalid,
 	}
 }
@@ -354,13 +358,14 @@ type SetUidStatus string
 
 // /setuid action labels
 const (
-	SetUidOK                    SetUidStatus = "ok"
-	SetUidBadRequest            SetUidStatus = "bad_request"
-	SetUidOptOut                SetUidStatus = "opt_out"
-	SetUidGDPRHostCookieBlocked SetUidStatus = "gdpr_blocked_host_cookie"
-	SetUidAccountBlocked        SetUidStatus = "acct_blocked"
-	SetUidAccountInvalid        SetUidStatus = "acct_invalid"
-	SetUidSyncerUnknown         SetUidStatus = "syncer_unknown"
+	SetUidOK                     SetUidStatus = "ok"
+	SetUidBadRequest             SetUidStatus = "bad_request"
+	SetUidOptOut                 SetUidStatus = "opt_out"
+	SetUidGDPRHostCookieBlocked  SetUidStatus = "gdpr_blocked_host_cookie"
+	SetUidAccountBlocked         SetUidStatus = "acct_blocked"
+	SetUidAccountConfigMalformed SetUidStatus = "acct_config_malformed"
+	SetUidAccountInvalid         SetUidStatus = "acct_invalid"
+	SetUidSyncerUnknown          SetUidStatus = "syncer_unknown"
 )
 
 // SetUidStatuses returns possible setuid statuses.
@@ -371,6 +376,7 @@ func SetUidStatuses() []SetUidStatus {
 		SetUidOptOut,
 		SetUidGDPRHostCookieBlocked,
 		SetUidAccountBlocked,
+		SetUidAccountConfigMalformed,
 		SetUidAccountInvalid,
 		SetUidSyncerUnknown,
 	}

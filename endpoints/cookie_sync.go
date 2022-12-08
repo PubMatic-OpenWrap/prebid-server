@@ -34,6 +34,7 @@ var (
 	errCookieSyncGDPRMandatoryByHost               = errors.New("gdpr_consent is required. gdpr exemption disabled by host")
 	errCookieSyncInvalidBiddersType                = errors.New("invalid bidders type. must either be a string '*' or a string array of bidders")
 	errCookieSyncAccountBlocked                    = errors.New("account is disabled, please reach out to the prebid server host")
+	errCookieSyncAccountConfigMalformed            = errors.New("account config is malformed and could not be read")
 	errCookieSyncAccountInvalid                    = errors.New("account must be valid if provided, please reach out to the prebid server host")
 )
 
@@ -205,6 +206,8 @@ func (c *cookieSyncEndpoint) writeParseRequestErrorMetrics(err error) {
 	switch err {
 	case errCookieSyncAccountBlocked:
 		c.metrics.RecordCookieSync(metrics.CookieSyncAccountBlocked)
+	case errCookieSyncAccountConfigMalformed:
+		c.metrics.RecordCookieSync(metrics.CookieSyncAccountConfigMalformed)
 	case errCookieSyncAccountInvalid:
 		c.metrics.RecordCookieSync(metrics.CookieSyncAccountInvalid)
 	default:
@@ -311,6 +314,8 @@ func combineErrors(errs []error) error {
 			return errCookieSyncAccountBlocked
 		case errortypes.AcctRequiredErrorCode:
 			return errCookieSyncAccountInvalid
+		case errortypes.MalformedAcctErrorCode:
+			return errCookieSyncAccountConfigMalformed
 		}
 
 		errorStrings = append(errorStrings, err.Error())

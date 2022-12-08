@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "Happy path",
 			args: args{
-				cfg:           &config.Configuration{Adapters: map[string]config.Adapter{"pubmatic": {}}},
+				cfg:           &config.Configuration{},
 				rateConvertor: &currency.RateConverter{},
 			},
 			wantR:   &Router{Router: &httprouter.Router{}},

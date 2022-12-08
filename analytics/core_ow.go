@@ -1,8 +1,8 @@
 package analytics
 
 import (
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
-	"github.com/mxmCherry/openrtb/v16/openrtb3"
+	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
 )
 
 // RejectedBid contains oRTB Bid object with

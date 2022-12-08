@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -66,7 +66,7 @@ const defaultSite = "unknown"
 const minutesInHour = 60
 
 // Builder builds a new instance of the Adnuntius adapter for the given bidder with the given config.
-func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters.Bidder, error) {
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
 	bidder := &adapter{
 		time:     &timeutil.RealTime{},
 		endpoint: config.Endpoint,
@@ -95,7 +95,7 @@ func setHeaders(ortbRequest openrtb2.BidRequest) http.Header {
 	return headers
 }
 
-func makeEndpointUrl(ortbRequest openrtb2.BidRequest, a *adapter) (string, []error) {
+func makeEndpointUrl(ortbRequest openrtb2.BidRequest, a *adapter, noCookies bool) (string, []error) {
 	uri, err := url.Parse(a.endpoint)
 	if err != nil {
 		return "", []error{fmt.Errorf("failed to parse Adnuntius endpoint: %v", err)}
@@ -106,11 +106,18 @@ func makeEndpointUrl(ortbRequest openrtb2.BidRequest, a *adapter) (string, []err
 		return "", []error{fmt.Errorf("failed to parse Adnuntius endpoint: %v", err)}
 	}
 
-	var deviceExt extDeviceAdnuntius
-	if ortbRequest.Device != nil && ortbRequest.Device.Ext != nil {
-		if err := json.Unmarshal(ortbRequest.Device.Ext, &deviceExt); err != nil {
-			return "", []error{fmt.Errorf("failed to parse Adnuntius endpoint: %v", err)}
+	if !noCookies {
+		var deviceExt extDeviceAdnuntius
+		if ortbRequest.Device != nil && ortbRequest.Device.Ext != nil {
+			if err := json.Unmarshal(ortbRequest.Device.Ext, &deviceExt); err != nil {
+				return "", []error{fmt.Errorf("failed to parse Adnuntius endpoint: %v", err)}
+			}
 		}
+
+		if deviceExt.NoCookies {
+			noCookies = true
+		}
+
 	}
 
 	_, offset := a.time.Now().Zone()
@@ -122,7 +129,7 @@ func makeEndpointUrl(ortbRequest openrtb2.BidRequest, a *adapter) (string, []err
 		q.Set("consentString", consent)
 	}
 
-	if deviceExt.NoCookies {
+	if noCookies {
 		q.Set("noCookies", "true")
 	}
 
@@ -154,19 +161,13 @@ func getImpSizes(imp openrtb2.Imp) [][]int64 {
 }
 
 /*
-	Generate the requests to Adnuntius to reduce the amount of requests going out.
+Generate the requests to Adnuntius to reduce the amount of requests going out.
 */
 func (a *adapter) generateRequests(ortbRequest openrtb2.BidRequest) ([]*adapters.RequestData, []error) {
 	var requestData []*adapters.RequestData
 	networkAdunitMap := make(map[string][]adnAdunit)
 	headers := setHeaders(ortbRequest)
-
-	endpoint, err := makeEndpointUrl(ortbRequest, a)
-	if err != nil {
-		return nil, []error{&errortypes.BadInput{
-			Message: fmt.Sprintf("failed to parse URL: %s", err),
-		}}
-	}
+	var noCookies bool = false
 
 	for _, imp := range ortbRequest.Imp {
 		if imp.Banner == nil {
@@ -188,6 +189,10 @@ func (a *adapter) generateRequests(ortbRequest openrtb2.BidRequest) ([]*adapters
 			}}
 		}
 
+		if adnuntiusExt.NoCookies == true {
+			noCookies = true
+		}
+
 		network := defaultNetwork
 		if adnuntiusExt.Network != "" {
 			network = adnuntiusExt.Network
@@ -200,6 +205,13 @@ func (a *adapter) generateRequests(ortbRequest openrtb2.BidRequest) ([]*adapters
 				TargetId:   fmt.Sprintf("%s-%s", adnuntiusExt.Auid, imp.ID),
 				Dimensions: getImpSizes(imp),
 			})
+	}
+
+	endpoint, err := makeEndpointUrl(ortbRequest, a, noCookies)
+	if err != nil {
+		return nil, []error{&errortypes.BadInput{
+			Message: fmt.Sprintf("failed to parse URL: %s", err),
+		}}
 	}
 
 	site := defaultSite

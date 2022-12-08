@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v16/openrtb3"
+	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"

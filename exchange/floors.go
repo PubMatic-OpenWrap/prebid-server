@@ -6,8 +6,8 @@ import (
 	"math/rand"
 
 	"github.com/golang/glog"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
-	"github.com/mxmCherry/openrtb/v16/openrtb3"
+	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -116,7 +116,7 @@ func selectFloorsAndModifyImp(r *AuctionRequest, floor config.PriceFloors, conve
 	}
 	prebidExt := requestExt.GetPrebid()
 	if floor.Enabled && prebidExt != nil && prebidExt.Floors != nil && prebidExt.Floors.GetEnabled() {
-		errs = floors.ModifyImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper.BidRequest, conversions)
+		errs = floors.ModifyImpsWithFloors(prebidExt.Floors, r.BidRequestWrapper, conversions)
 		requestExt.SetPrebid(prebidExt)
 		err := r.BidRequestWrapper.RebuildRequest()
 		if err != nil {
