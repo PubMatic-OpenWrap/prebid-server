@@ -122,7 +122,6 @@ func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule strin
 		FloorValue:     floorVal,
 	}
 	impExt.SetPrebid(extImpPrebid)
-	_ = imp.RebuildImp()
 }
 
 func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {
