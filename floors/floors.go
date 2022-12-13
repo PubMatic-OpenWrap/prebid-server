@@ -238,7 +238,7 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 		reqFloorMinCur = reqFloors.FloorMinCur
 	}
 
-	if len(reqFloorMinCur) == 0 {
+	if len(reqFloorMinCur) == 0 && fetchFloors.Data == nil {
 		reqFloorMinCur = floorCur
 	}
 
@@ -259,7 +259,9 @@ func resolveFloorMin(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb
 			}
 		}
 	}
-
+	if len(provFloorMinCur) == 0 {
+		provFloorMinCur = getFloorCurrency(&fetchFloors)
+	}
 	if len(provFloorMinCur) > 0 {
 		if provFloorMin > float64(0) {
 			return Price{FloorMin: provFloorMin, FloorMinCur: provFloorMinCur}
