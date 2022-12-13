@@ -15,6 +15,8 @@ func TestGetPriceBucketString(t *testing.T) {
 	auto := openrtb_ext.PriceGranularityFromString("auto")
 	dense := openrtb_ext.PriceGranularityFromString("dense")
 	testPG := openrtb_ext.PriceGranularityFromString("testpg")
+	ctv_med := openrtb_ext.PriceGranularityFromString("ow-ctv-med")
+
 	custom1 := openrtb_ext.PriceGranularity{
 		Precision: 2,
 		Ranges: []openrtb_ext.GranularityRange{
@@ -67,6 +69,7 @@ func TestGetPriceBucketString(t *testing.T) {
 				{"high", high, "1.87"},
 				{"auto", auto, "1.85"},
 				{"dense", dense, "1.87"},
+				{"ctv-medium", ctv_med, "1.50"},
 				{"testpg", testPG, "50.00"},
 				{"custom1", custom1, "1.86"},
 				{"custom2", custom2, "1.00"},
@@ -81,6 +84,7 @@ func TestGetPriceBucketString(t *testing.T) {
 				{"high", high, "5.72"},
 				{"auto", auto, "5.70"},
 				{"dense", dense, "5.70"},
+				{"ctv-medium", ctv_med, "5.50"},
 				{"testpg", testPG, "50.00"},
 				{"custom1", custom1, "5.70"},
 				{"custom2", custom2, "4.90"},
