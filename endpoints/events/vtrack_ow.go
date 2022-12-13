@@ -241,10 +241,7 @@ func replaceMacros(trackerURL string, macroMap map[string]string) string {
 				if v, ok := macroMap[k]; ok {
 					v = url.QueryEscape(v) // NYC move QueryEscape while creating map, no need to do this everytime
 					_, _ = builder.Write([]byte(v))
-					i = n
-					if i < len(trackerURL)-1 {
-						_ = builder.WriteByte('&')
-					}
+					i = j
 					continue
 				}
 			}
