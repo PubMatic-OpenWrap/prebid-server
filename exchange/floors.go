@@ -152,7 +152,7 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		requestExt.SetPrebid(prebidExt)
 	}
 
-	err = r.BidRequestWrapper.RebuildRequest()
+	err = r.BidRequestWrapper.RebuildRequestExt()
 	if err != nil {
 		rejectionsErrs = append(rejectionsErrs, err)
 		return seatBids, rejectionsErrs
@@ -162,5 +162,6 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
 		r.ResolvedBidRequest = updatedBidReq
 	}
+
 	return seatBids, rejectionsErrs
 }
