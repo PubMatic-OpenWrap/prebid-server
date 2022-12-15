@@ -134,9 +134,10 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 	if floor.Enabled && reqFloorEnable {
 		var enforceDealFloors bool
 		var floorsEnfocement bool
+		var updateReqExt bool
 		floorsEnfocement = floors.RequestHasFloors(r.BidRequestWrapper.BidRequest)
 		if prebidExt != nil && floorsEnfocement {
-			if floorsEnfocement = floors.ShouldEnforce(r.BidRequestWrapper.BidRequest, prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
+			if floorsEnfocement, updateReqExt = floors.ShouldEnforce(r.BidRequestWrapper.BidRequest, prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
 				enforceDealFloors = r.Account.PriceFloors.EnforceDealFloors && getEnforceDealsFlag(prebidExt.Floors)
 			}
 		}
@@ -149,18 +150,19 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 			}
 		}
 
-		requestExt.SetPrebid(prebidExt)
-	}
+		if updateReqExt {
+			requestExt.SetPrebid(prebidExt)
+			err = r.BidRequestWrapper.RebuildRequestExt()
+			if err != nil {
+				rejectionsErrs = append(rejectionsErrs, err)
+				return seatBids, rejectionsErrs
+			}
 
-	err = r.BidRequestWrapper.RebuildRequestExt()
-	if err != nil {
-		rejectionsErrs = append(rejectionsErrs, err)
-		return seatBids, rejectionsErrs
-	}
-
-	if responseDebugAllow {
-		updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
-		r.ResolvedBidRequest = updatedBidReq
+			if responseDebugAllow {
+				updatedBidReq, _ := json.Marshal(r.BidRequestWrapper.BidRequest)
+				r.ResolvedBidRequest = updatedBidReq
+			}
+		}
 	}
 
 	return seatBids, rejectionsErrs
