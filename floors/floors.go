@@ -40,18 +40,16 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 	}
 
 	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher)
-	if len(err) == 0 {
-		err = updateBidRequestWithFloors(floors, bidRequestWrapper, conversions)
-	}
-	return err
+
+	uprateReqErrs := updateBidRequestWithFloors(floors, bidRequestWrapper, conversions)
+	return append(err, uprateReqErrs...)
 }
 
 // updateBidRequestWithFloors will update imp.bidfloor and imp.bidfloorcur based on rules matching
 func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, request *openrtb_ext.RequestWrapper, conversions currency.Conversions) []error {
 	var (
-		floorErrList      []error
-		floorModelErrList []error
-		floorVal          float64
+		floorErrList []error
+		floorVal     float64
 	)
 
 	if extFloorRules == nil || extFloorRules.Data == nil || len(extFloorRules.Data.ModelGroups) == 0 {
@@ -70,7 +68,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	extFloorRules.Skipped = new(bool)
 	if shouldSkipFloors(modelGroup.SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		return floorModelErrList
+		return []error{}
 	}
 
 	floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
@@ -100,17 +98,15 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 					updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
 				}
 			} else {
-				floorModelErrList = append(floorModelErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
+				floorErrList = append(floorErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
 			}
 		}
 		err := request.RebuildImp()
 		if err != nil {
-			floorModelErrList = append(floorErrList, err)
-			return floorModelErrList
+			return append(floorErrList, err)
 		}
 	}
-	floorModelErrList = append(floorModelErrList, floorErrList...)
-	return floorModelErrList
+	return floorErrList
 }
 
 // isPriceFloorsDisabled check for floors are disabled at account or request level
@@ -297,6 +293,7 @@ func updateFloorsInRequest(bidRequestWrapper *openrtb_ext.RequestWrapper, priceF
 		if prebidExt != nil {
 			prebidExt.Floors = priceFloors
 			requestExt.SetPrebid(prebidExt)
+			bidRequestWrapper.RebuildRequestExt()
 		}
 	}
 }
