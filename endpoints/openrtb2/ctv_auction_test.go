@@ -709,7 +709,7 @@ func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
 			deps := &ctvEndpointDeps{
 				impData: tt.fields.impData,
 			}
-			deps.updateRejectedBids(tt.args.loggableObject)
+			deps.updateAdpodAuctionRejectedBids(tt.args.loggableObject)
 			assert.Equal(t, tt.expectedRejectedBids, tt.args.loggableObject.RejectedBids, "Rejected Bids not matching")
 
 		})
