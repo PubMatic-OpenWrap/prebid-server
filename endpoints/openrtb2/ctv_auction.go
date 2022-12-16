@@ -115,9 +115,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	ao := analytics.AuctionObject{
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context: r.Context(),
-			Status:  http.StatusOK,
-			Errors:  make([]error, 0),
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
 		},
 	}
 
@@ -1169,7 +1170,7 @@ func (deps *ctvEndpointDeps) updateRejectedBids(loggableObject *analytics.Loggab
 					loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
 						RejectionReason: getRejectionReason(bid.Status),
 						Bid:             bid.Bid,
-						Seat:            imp.Bid.SeatName,
+						Seat:            bid.Seat,
 						BidderName:      "",
 					})
 				}
@@ -1191,6 +1192,5 @@ func getRejectionReason(bidStatus int) openrtb3.LossReason {
 	case constant.StatusDurationMismatch:
 		reason = openrtb3.LossCreativeFiltered
 	}
-
 	return reason
 }

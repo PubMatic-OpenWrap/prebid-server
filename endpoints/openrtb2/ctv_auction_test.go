@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -564,6 +566,152 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			duration, status := getDurationBasedOnDurationMatchingPolicy(tt.args.duration, tt.args.policy, tt.args.config)
 			assert.Equal(t, tt.want.duration, duration)
 			assert.Equal(t, tt.want.status, status)
+		})
+	}
+}
+
+func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
+	type fields struct {
+		impData []*types.ImpData
+	}
+	type args struct {
+		loggableObject *analytics.LoggableAuctionObject
+	}
+	tests := []struct {
+		name                 string
+		fields               fields
+		args                 args
+		expectedRejectedBids []analytics.RejectedBid
+	}{
+		{
+			name: "Empty impdata",
+			fields: fields{
+				impData: []*types.ImpData{},
+			},
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{},
+				},
+			},
+			expectedRejectedBids: []analytics.RejectedBid{},
+		},
+		{
+			name: "Nil AdpodBid",
+			fields: fields{
+				impData: []*types.ImpData{
+					{
+						Bid: nil,
+					},
+				},
+			},
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{},
+				},
+			},
+			expectedRejectedBids: []analytics.RejectedBid{},
+		},
+		{
+			name: "No Bids",
+			fields: fields{
+				impData: []*types.ImpData{
+					{
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{},
+						},
+					},
+				},
+			},
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{},
+				},
+			},
+			expectedRejectedBids: []analytics.RejectedBid{},
+		},
+		{
+			name: "2 bids",
+			fields: fields{
+				impData: []*types.ImpData{
+					{
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{
+								{
+									Seat: "pubmatic",
+									Bid: &openrtb2.Bid{
+										ID: "123",
+									},
+									Status: constant.StatusCategoryExclusion,
+								},
+								{
+									Seat: "vast-bidder",
+									Bid: &openrtb2.Bid{
+										ID: "1234",
+									},
+									Status: constant.StatusDomainExclusion,
+								},
+								{
+									Seat: "appnexus",
+									Bid: &openrtb2.Bid{
+										ID: "12345",
+									},
+									Status: constant.StatusDurationMismatch,
+								},
+								{
+									Seat: "openx",
+									Bid: &openrtb2.Bid{
+										ID: "123456",
+									},
+									Status: constant.StatusOK,
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{},
+			},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossCategoryExclusions,
+					Seat:            "pubmatic",
+					Bid: &openrtb2.Bid{
+						ID: "123",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossAdvertiserExclusions,
+					Seat:            "vast-bidder",
+					Bid: &openrtb2.Bid{
+						ID: "1234",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossCreativeFiltered,
+					Seat:            "appnexus",
+					Bid: &openrtb2.Bid{
+						ID: "12345",
+					},
+				},
+				{
+					RejectionReason: openrtb3.LossLostToHigherBid,
+					Seat:            "openx",
+					Bid: &openrtb2.Bid{
+						ID: "123456",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deps := &ctvEndpointDeps{
+				impData: tt.fields.impData,
+			}
+			deps.updateRejectedBids(tt.args.loggableObject)
+			assert.Equal(t, tt.expectedRejectedBids, tt.args.loggableObject.RejectedBids, "Rejected Bids not matching")
+
 		})
 	}
 }
