@@ -2,13 +2,20 @@ package openrtb2
 
 import (
 	"encoding/json"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	analyticsConf "github.com/prebid/prebid-server/analytics/config"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAddTargetingKeys(t *testing.T) {
@@ -566,4 +573,45 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			assert.Equal(t, tt.want.status, status)
 		})
 	}
+}
+
+func TestCallToRecordRejectedBidsForCTV(t *testing.T) {
+
+	// mock all functions called by metric-engine
+	metricsMock := &metrics.MetricsEngineMock{}
+	metricsMock.Mock.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+	metricsMock.Mock.On("RecordRequest", mock.Anything).Return()
+	metricsMock.Mock.On("RecordRequestTime", mock.Anything, mock.Anything).Return()
+
+	reqBody := validRequest(t, "site.json")
+
+	deps := ctvEndpointDeps{
+		endpointDeps: endpointDeps{
+			fakeUUIDGenerator{},
+			&nobidExchange{},
+			mockBidderParamValidator{},
+			&mockStoredReqFetcher{},
+			empty_fetcher.EmptyFetcher{},
+			empty_fetcher.EmptyFetcher{},
+			&config.Configuration{MaxRequestSize: int64(len(reqBody))},
+			metricsMock,
+			analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+			map[string]string{},
+			false,
+			[]byte{},
+			openrtb_ext.BuildBidderMap(),
+			nil,
+			nil,
+			hardcodedResponseIPValidator{response: true},
+			empty_fetcher.EmptyFetcher{},
+		},
+	}
+
+	req := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(reqBody))
+	recorder := httptest.NewRecorder()
+	deps.CTVAuctionEndpoint(recorder, req, nil)
+
+	// function will confirm if there is any call to RecordRejectedBids from CTVAuctionEndpoint method
+	// it will panic in case of failure
+	metricsMock.AssertExpectations(t)
 }

@@ -21,6 +21,7 @@ import (
 	nativeRequests "github.com/prebid/openrtb/v17/native1/request"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
@@ -2024,6 +2025,49 @@ func TestRequestSizeEdgeCase(t *testing.T) {
 	if bytesRead, err := req.Body.Read(make([]byte, 1)); bytesRead != 0 || err != io.EOF {
 		t.Errorf("The request body should have been read to completion.")
 	}
+}
+
+func TestCallToRecordRejectionBids(t *testing.T) {
+	reqBody := validRequest(t, "site.json")
+	deps := &endpointDeps{
+		fakeUUIDGenerator{},
+		&nobidExchange{},
+		mockBidderParamValidator{},
+		&mockStoredReqFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		&config.Configuration{MaxRequestSize: int64(len(reqBody))},
+		&metricsConfig.NilMetricsEngine{},
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		false,
+		[]byte{},
+		openrtb_ext.BuildBidderMap(),
+		nil,
+		nil,
+		hardcodedResponseIPValidator{response: true},
+		empty_fetcher.EmptyFetcher{},
+	}
+
+	req := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(reqBody))
+	recorder := httptest.NewRecorder()
+
+	// mock all functions called by metric-engine
+	metricsMock := &metrics.MetricsEngineMock{}
+	metricsMock.Mock.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+	metricsMock.Mock.On("RecordRequest", mock.Anything).Return()
+	metricsMock.Mock.On("RecordRequestTime", mock.Anything, mock.Anything).Return()
+
+	deps.metricsEngine = metricsMock
+
+	deps.Auction(recorder, req, nil)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("Endpoint should return a 200")
+	}
+
+	// function will confirm if there is any call to RecordRejectedBids from Auction method
+	// it will panic in case of failure
+	metricsMock.AssertExpectations(t)
 }
 
 // TestNoEncoding prevents #231.

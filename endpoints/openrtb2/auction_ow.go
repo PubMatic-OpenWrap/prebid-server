@@ -20,6 +20,6 @@ func recordRejectedBids(pubID string, rejBids []analytics.RejectedBid, metricEng
 			codeLabel = strconv.FormatInt(int64(bid.RejectionReason), 10)
 			reasonCodeMap[bid.RejectionReason] = codeLabel
 		}
-		metricEngine.RecordRejectedBids(pubID, bid.BidderName, codeLabel)
+		metricEngine.RecordRejectedBids(pubID, bid.Seat, codeLabel)
 	}
 }

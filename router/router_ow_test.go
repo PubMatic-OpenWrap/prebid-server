@@ -2,18 +2,16 @@ package router
 
 import (
 	"errors"
-	"strconv"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/metrics"
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNew(t *testing.T) {
@@ -184,12 +182,10 @@ func TestCallRecordRejectedBids(t *testing.T) {
 
 	type args struct {
 		pubid, bidder, code string
-		metricEngine        metrics.MetricsEngine
 	}
 
 	type want struct {
 		expectToGetRecord bool
-		bidderLossCount   map[string]map[openrtb3.LossReason]float64
 	}
 
 	tests := []struct {
@@ -199,9 +195,7 @@ func TestCallRecordRejectedBids(t *testing.T) {
 	}{
 		{
 			description: "nil g_metric",
-			arg: args{
-				metricEngine: nil,
-			},
+			arg:         args{},
 			want: want{
 				expectToGetRecord: false,
 			},
@@ -209,73 +203,26 @@ func TestCallRecordRejectedBids(t *testing.T) {
 		{
 			description: "non-nil g_metric",
 			arg: args{
-				metricEngine: metricsConf.NewMetricsEngine(&config.Configuration{
-					Metrics: config.Metrics{Prometheus: config.PrometheusMetrics{Port: 1}},
-				}, nil, nil),
 				pubid:  "11",
 				bidder: "Pubmatic",
 				code:   "102",
 			},
 			want: want{
 				expectToGetRecord: true,
-				bidderLossCount: map[string]map[openrtb3.LossReason]float64{
-					"Pubmatic": map[openrtb3.LossReason]float64{
-						openrtb3.LossLostToHigherBid: 1,
-					},
-				},
 			},
 		},
 	}
 
 	for _, test := range tests {
-		g_metrics = test.arg.metricEngine
+
+		metricsMock := &metrics.MetricsEngineMock{}
+		if test.want.expectToGetRecord {
+			metricsMock.Mock.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+		}
+		if test.description != "nil g_metric" {
+			g_metrics = metricsMock
+		}
+		// CallRecordRejectedBids will panic if g_metrics is non-nil and if there is no call to RecordRejectedBids
 		CallRecordRejectedBids(test.arg.pubid, test.arg.bidder, test.arg.code)
-
-		detailedEngine, ok := g_metrics.(*metricsConf.DetailedMetricsEngine)
-		if !ok {
-			if test.want.expectToGetRecord {
-				t.Errorf("Failed to get metric-engine for test case - [%s]", test.description)
-			}
-			continue
-		}
-		metricFamilies, _ := detailedEngine.PrometheusMetrics.Gatherer.Gather()
-		isRecorded := false
-
-		for _, metricFamily := range metricFamilies {
-			if metricFamily.GetName() == "rejected_bids" {
-				for _, metric := range metricFamily.GetMetric() {
-					counter := metric.GetCounter().Value
-					current_bidder := ""
-					current_code := 0
-
-					// verify labels
-					for _, label := range metric.GetLabel() {
-						switch *label.Name {
-						case "pubid":
-							if *label.Value != test.arg.pubid {
-								t.Errorf("Expected pubid=[%s], got- [%s]", test.arg.pubid, *label.Value)
-							}
-						case "bidder":
-							current_bidder = *label.Value
-						case "code":
-							current_code, _ = strconv.Atoi(*label.Value)
-						default:
-							t.Errorf("Unexpected label %s found in metric", *label.Name)
-						}
-					}
-					lossCount := test.want.bidderLossCount[current_bidder]
-
-					// verify counter value
-					if *counter != lossCount[openrtb3.LossReason(current_code)] {
-						t.Errorf("Counter value mismatch for bidder- [%s], code - [%d], expected - [%f], got - [%f]", current_bidder, current_code, lossCount[openrtb3.LossReason(current_code)], *counter)
-					}
-					isRecorded = true
-				}
-			}
-		}
-		// verify if metric got recorded by metric-engine.
-		if test.want.expectToGetRecord != isRecorded {
-			t.Errorf("Failed to record rejected_bids for test case - [%s]", test.description)
-		}
 	}
 }

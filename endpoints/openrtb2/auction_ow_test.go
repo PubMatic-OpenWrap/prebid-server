@@ -145,19 +145,19 @@ func TestRecordRejectedBids(t *testing.T) {
 				pubid: "1010",
 				rejBids: []analytics.RejectedBid{
 					analytics.RejectedBid{
-						BidderName:      "pubmatic",
+						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossAdvertiserExclusions,
 					},
 					analytics.RejectedBid{
-						BidderName:      "pubmatic",
+						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossBelowDealFloor,
 					},
 					analytics.RejectedBid{
-						BidderName:      "pubmatic",
+						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossAdvertiserExclusions,
 					},
 					analytics.RejectedBid{
-						BidderName:      "appnexus",
+						Seat:            "appnexus",
 						RejectionReason: openrtb3.LossBelowDealFloor,
 					},
 				},
@@ -197,21 +197,22 @@ func TestRecordRejectedBids(t *testing.T) {
 						switch *label.Name {
 						case "pubid":
 							if *label.Value != test.arg.pubid {
-								t.Errorf("Expected pubid=[%s], got- [%s]", test.arg.pubid, *label.Value)
+								t.Errorf("Expected pubid=[%s], got- [%s] for test - [%s]", test.arg.pubid, *label.Value, test.description)
 							}
 						case "bidder":
 							current_bidder = *label.Value
 						case "code":
 							current_code, _ = strconv.Atoi(*label.Value)
 						default:
-							t.Errorf("Unexpected label %s found in metric", *label.Name)
+							t.Errorf("Unexpected label %s found in metric for test - [%s]", *label.Name, test.description)
 						}
 					}
 					lossCount := test.want.bidderLossCount[current_bidder]
 
 					// verify counter value
 					if *counter != lossCount[openrtb3.LossReason(current_code)] {
-						t.Errorf("Counter value mismatch for bidder- [%s], code - [%d], expected - [%f], got - [%f]", current_bidder, current_code, lossCount[openrtb3.LossReason(current_code)], *counter)
+						t.Errorf("Counter value mismatch for bidder- [%s], code - [%d], expected - [%f], got - [%f], for test - [%s]",
+							current_bidder, current_code, lossCount[openrtb3.LossReason(current_code)], *counter, test.description)
 					}
 					isRecorded = true
 				}
