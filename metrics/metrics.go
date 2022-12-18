@@ -475,4 +475,7 @@ type MetricsEngine interface {
 
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
+
+	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
+	RecordRejectedBids(pubid, bidder, code string)
 }

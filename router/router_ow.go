@@ -152,3 +152,10 @@ func GetPrometheusGatherer() *prometheus.Registry {
 
 	return mEngine.PrometheusMetrics.Gatherer
 }
+
+// CallRecordRejectedBids calls RecordRejectedBids function on prebid's metric-engine
+func CallRecordRejectedBids(pubId, bidder, code string) {
+	if g_metrics != nil {
+		g_metrics.RecordRejectedBids(pubId, bidder, code)
+	}
+}

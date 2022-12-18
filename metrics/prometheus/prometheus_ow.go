@@ -8,6 +8,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	pubIDLabel      = "pubid"
+	bidderLabel     = "bidder"
+	reasonCodeLabel = "code"
+)
+
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 // gives the bid response with multiple bids containing  same bid.ID
 // ensure collisions value is greater than 1. This function will not give any error
@@ -70,4 +76,13 @@ func (m *Metrics) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, vi
 	if videoBidDuration > 0 {
 		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
 	}
+}
+
+//RecordRejectedBids records rejected bids labeled by pubid, bidder and reason code
+func (m *Metrics) RecordRejectedBids(pubid, biddder, code string) {
+	m.rejectedBids.With(prometheus.Labels{
+		pubIDLabel:      pubid,
+		bidderLabel:     biddder,
+		reasonCodeLabel: code,
+	}).Inc()
 }

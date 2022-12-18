@@ -150,6 +150,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
+		recordRejectedBids(labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
