@@ -126,7 +126,6 @@ func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule strin
 
 func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {
 	totalModelWeight := 0
-	//check here for model weight
 	for i := 0; i < len(modelGroups); i++ {
 		if modelGroups[i].ModelWeight == nil {
 			modelGroups[i].ModelWeight = new(int)

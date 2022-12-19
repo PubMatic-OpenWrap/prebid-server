@@ -815,7 +815,7 @@ func Test_createFloorsFrom(t *testing.T) {
 		want1 []error
 	}{
 		{
-			name: "TEST1",
+			name: "floor provider should be selected from floor json",
 			args: args{
 				floors: &openrtb_ext.PriceFloorRules{
 					Enabled:            getTrue(),
@@ -880,7 +880,7 @@ func Test_createFloorsFrom(t *testing.T) {
 			},	
 		},
 		{
-			name: "TEST2",
+			name: "floor provider will be empty if no value provided in floor json",
 			args: args{
 				floors: &openrtb_ext.PriceFloorRules{
 					Enabled:            getTrue(),
