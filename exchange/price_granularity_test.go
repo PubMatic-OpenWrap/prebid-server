@@ -48,6 +48,21 @@ func TestGetPriceBucketString(t *testing.T) {
 			},
 		},
 	}
+	custom3 := openrtb_ext.PriceGranularity{
+		Precision: 2,
+		Ranges: []openrtb_ext.GranularityRange{
+			{
+				Min:       0.0,
+				Max:       5.0,
+				Increment: 1.0,
+			},
+			{
+				Min:       5.0,
+				Max:       10.0,
+				Increment: 1.2,
+			},
+		},
+	}
 
 	// Define test cases
 	type aTest struct {
@@ -61,18 +76,25 @@ func TestGetPriceBucketString(t *testing.T) {
 		testCases []aTest
 	}{
 		{
+			groupDesc: "cpm between bucket min and max",
+			cpm:       10,
+			testCases: []aTest{
+				{"custom3", custom3, "9.80"},
+			},
+		},
+		{
 			groupDesc: "cpm below the max in every price bucket",
 			cpm:       1.87,
 			testCases: []aTest{
-				// {"low", low, "1.50"},
-				// {"medium", medium, "1.80"},
-				// {"high", high, "1.87"},
-				// {"auto", auto, "1.85"},
-				// {"dense", dense, "1.87"},
-				// {"ctv-medium", ctv_med, "1.50"},
-				// {"testpg", testPG, "50.00"},
+				{"low", low, "1.50"},
+				{"medium", medium, "1.80"},
+				{"high", high, "1.87"},
+				{"auto", auto, "1.85"},
+				{"dense", dense, "1.87"},
+				{"ctv-medium", ctv_med, "1.50"},
+				{"testpg", testPG, "50.00"},
 				{"custom1", custom1, "1.86"},
-				// {"custom2", custom2, "1.00"},
+				{"custom2", custom2, "1.00"},
 			},
 		},
 		{
