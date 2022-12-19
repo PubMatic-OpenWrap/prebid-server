@@ -3,7 +3,6 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"testing"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestValidateImpExtOW(t *testing.T) {
@@ -109,39 +109,32 @@ func TestValidateImpExtOW(t *testing.T) {
 
 func TestRecordRejectedBids(t *testing.T) {
 
-	me := metricsConfig.NewMetricsEngine(&config.Configuration{
-		Metrics: config.Metrics{Prometheus: config.PrometheusMetrics{Port: 1}},
-	}, nil, nil)
-
 	type args struct {
 		pubid   string
 		rejBids []analytics.RejectedBid
-		engine  metrics.MetricsEngine
 	}
 
 	type want struct {
-		bidderLossCount   map[string]map[openrtb3.LossReason]float64
-		expectToGetRecord bool
+		expectedCalls int
 	}
 
 	tests := []struct {
 		description string
-		arg         args
+		args        args
 		want        want
 	}{
 		{
 			description: "empty rejected bids",
-			arg: args{
+			args: args{
 				rejBids: []analytics.RejectedBid{},
-				engine:  me,
 			},
 			want: want{
-				expectToGetRecord: false,
+				expectedCalls: 0,
 			},
 		},
 		{
 			description: "rejected bids",
-			arg: args{
+			args: args{
 				pubid: "1010",
 				rejBids: []analytics.RejectedBid{
 					analytics.RejectedBid{
@@ -161,66 +154,18 @@ func TestRecordRejectedBids(t *testing.T) {
 						RejectionReason: openrtb3.LossBelowDealFloor,
 					},
 				},
-				engine: me,
 			},
 			want: want{
-				bidderLossCount: map[string]map[openrtb3.LossReason]float64{
-					"pubmatic": map[openrtb3.LossReason]float64{
-						openrtb3.LossAdvertiserExclusions: 2,
-						openrtb3.LossBelowDealFloor:       1,
-					},
-					"appnexus": map[openrtb3.LossReason]float64{
-						openrtb3.LossBelowDealFloor: 1,
-					},
-				},
-				expectToGetRecord: true,
+				expectedCalls: 4,
 			},
 		},
 	}
 
 	for _, test := range tests {
-		recordRejectedBids(test.arg.pubid, test.arg.rejBids, test.arg.engine)
+		me := &metrics.MetricsEngineMock{}
+		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
 
-		detailedEngine, _ := test.arg.engine.(*metricsConfig.DetailedMetricsEngine)
-		metricFamilies, _ := detailedEngine.PrometheusMetrics.Gatherer.Gather()
-		isRecorded := false
-
-		for _, metricFamily := range metricFamilies {
-			if metricFamily.GetName() == "rejected_bids" {
-				for _, metric := range metricFamily.GetMetric() {
-					counter := metric.GetCounter().Value
-					current_bidder := ""
-					current_code := 0
-
-					// verify labels
-					for _, label := range metric.GetLabel() {
-						switch *label.Name {
-						case "pubid":
-							if *label.Value != test.arg.pubid {
-								t.Errorf("Expected pubid=[%s], got- [%s] for test - [%s]", test.arg.pubid, *label.Value, test.description)
-							}
-						case "bidder":
-							current_bidder = *label.Value
-						case "code":
-							current_code, _ = strconv.Atoi(*label.Value)
-						default:
-							t.Errorf("Unexpected label %s found in metric for test - [%s]", *label.Name, test.description)
-						}
-					}
-					lossCount := test.want.bidderLossCount[current_bidder]
-
-					// verify counter value
-					if *counter != lossCount[openrtb3.LossReason(current_code)] {
-						t.Errorf("Counter value mismatch for bidder- [%s], code - [%d], expected - [%f], got - [%f], for test - [%s]",
-							current_bidder, current_code, lossCount[openrtb3.LossReason(current_code)], *counter, test.description)
-					}
-					isRecorded = true
-				}
-			}
-		}
-		// verify if metric got recorded by metric-engine.
-		if test.want.expectToGetRecord != isRecorded {
-			t.Errorf("Failed to record rejected_bids for test case - [%s]", test.description)
-		}
+		recordRejectedBids(test.args.pubid, test.args.rejBids, me)
+		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }

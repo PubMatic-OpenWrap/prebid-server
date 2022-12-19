@@ -464,8 +464,8 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 
 	metrics.rejectedBids = newCounter(cfg, reg,
 		"rejected_bids",
-		"Count of rejected bids labled by publisher id, bidder and rejection reason code",
-		[]string{pubIDLabel, bidderLabel, reasonCodeLabel})
+		"Count of rejected bids by publisher id, bidder and rejection reason code",
+		[]string{pubIDLabel, bidderLabel, codeLabel})
 
 	metrics.adsCertSignTimer = newHistogram(cfg, reg,
 		"ads_cert_sign_time",

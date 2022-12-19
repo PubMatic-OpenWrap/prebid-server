@@ -893,13 +893,6 @@ type nobidExchange struct {
 }
 
 func (e *nobidExchange) HoldAuction(ctx context.Context, auctionRequest exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
-	// add few rejected bids
-	auctionRequest.LoggableObject.RejectedBids = []analytics.RejectedBid{
-		analytics.RejectedBid{
-			RejectionReason: openrtb3.LossBelowAuctionFloor,
-			Seat:            "pubmatic",
-			Bid:             &openrtb2.Bid{}},
-	}
 	r := auctionRequest.BidRequestWrapper
 	e.gotRequest = r.BidRequest
 	return &openrtb2.BidResponse{

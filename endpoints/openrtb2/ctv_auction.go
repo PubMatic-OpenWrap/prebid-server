@@ -213,7 +213,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
-		LoggableObject:    &ao.LoggableAuctionObject,
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest)

@@ -190,19 +190,19 @@ func TestCallRecordRejectedBids(t *testing.T) {
 
 	tests := []struct {
 		description string
-		arg         args
+		args        args
 		want        want
 	}{
 		{
 			description: "nil g_metric",
-			arg:         args{},
+			args:        args{},
 			want: want{
 				expectToGetRecord: false,
 			},
 		},
 		{
 			description: "non-nil g_metric",
-			arg: args{
+			args: args{
 				pubid:  "11",
 				bidder: "Pubmatic",
 				code:   "102",
@@ -223,6 +223,6 @@ func TestCallRecordRejectedBids(t *testing.T) {
 			g_metrics = metricsMock
 		}
 		// CallRecordRejectedBids will panic if g_metrics is non-nil and if there is no call to RecordRejectedBids
-		CallRecordRejectedBids(test.arg.pubid, test.arg.bidder, test.arg.code)
+		CallRecordRejectedBids(test.args.pubid, test.args.bidder, test.args.code)
 	}
 }
