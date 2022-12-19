@@ -41,6 +41,7 @@ type PriceFloorData struct {
 	FloorsSchemaVersion string                 `json:"_,omitempty"`
 	ModelTimestamp      int                    `json:"modeltimestamp,omitempty"`
 	ModelGroups         []PriceFloorModelGroup `json:"modelgroups,omitempty"`
+	FloorProvider       string                 `json:"floorprovider,omitempty"`
 }
 
 type PriceFloorModelGroup struct {
