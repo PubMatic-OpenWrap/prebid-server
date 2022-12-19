@@ -1171,7 +1171,6 @@ func (deps *ctvEndpointDeps) updateAdpodAuctionRejectedBids(loggableObject *anal
 						RejectionReason: getRejectionReason(bid.Status),
 						Bid:             bid.Bid,
 						Seat:            bid.Seat,
-						BidderName:      "",
 					})
 				}
 			}
