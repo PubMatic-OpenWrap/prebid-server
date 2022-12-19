@@ -13,6 +13,7 @@ func GetPriceBucket(cpm float64, config openrtb_ext.PriceGranularity) string {
 	bucketMax := 0.0
 	increment := 0.0
 	precision := config.Precision
+	bucketFloor := 0.0
 	bucketMin := 0.0
 	for i := 0; i < len(config.Ranges); i++ {
 		if config.Ranges[i].Max > bucketMax {
@@ -21,7 +22,9 @@ func GetPriceBucket(cpm float64, config openrtb_ext.PriceGranularity) string {
 		// find what range cpm is in
 		if cpm >= config.Ranges[i].Min && cpm <= config.Ranges[i].Max {
 			increment = config.Ranges[i].Increment
-			bucketMin = config.Ranges[i].Min
+			bucketMin = bucketFloor
+		} else {
+			bucketFloor = config.Ranges[i].Max
 		}
 	}
 
