@@ -185,7 +185,7 @@ func (pf *AccountPriceFloors) validate(errs []error) []error {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.period_sec should not be less than 300 seconds`))
 	}
 
-	if !(pf.Fetch.MaxAge > 600 && pf.Fetch.MaxAge < math.MaxInt32) {
+	if !(pf.Fetch.MaxAge >= 600 && pf.Fetch.MaxAge < math.MaxInt32) {
 		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_age_sec should not be less than 600 seconds and greater than maximum integer value`))
 	}
 
