@@ -174,11 +174,6 @@ func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.Ad
 	//Get Max Response
 	var maxResult *highestCombination
 	for _, result := range results {
-		for _, rc := range result.filteredBids {
-			if constant.StatusOK == rc.bid.Status {
-				rc.bid.Status = rc.status
-			}
-		}
 		if len(result.bidIDs) == 0 {
 			continue
 		}
@@ -192,9 +187,15 @@ func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.Ad
 
 	if nil == maxResult {
 		util.Logf("Tid:%v ImpId:%v All Combination Filtered in Ad Exclusion", o.request.ID, o.request.Imp[o.impIndex].ID)
+		// if all the combinations are filtered then update rejections reason for all
+		// the combinations. In case same bids is rejected in multiple combination
+		// then reason from the last combination in iteration will be used.
+		updateRejectionStatus(results)
 		return nil
 	}
 
+	// Update the rejection reason for bids filters in winning combination
+	updateRejectionStatus([]*highestCombination{maxResult})
 	adpodBid := &types.AdPodBid{
 		Bids:    maxResult.bids[:],
 		Price:   maxResult.price,
@@ -215,6 +216,16 @@ func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.Ad
 	util.Logf("Tid:%v ImpId:%v Selected Durations:%v Price:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, maxResult.durations[:], maxResult.price, maxResult.bidIDs[:])
 
 	return adpodBid
+}
+
+func updateRejectionStatus(results []*highestCombination) {
+	for _, result := range results {
+		for _, rc := range result.filteredBids {
+			if constant.StatusOK == rc.bid.Status {
+				rc.bid.Status = rc.status
+			}
+		}
+	}
 }
 
 func (o *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombination {
