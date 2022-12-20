@@ -189,6 +189,7 @@ func (f *PriceFloorFetcher) Fetcher() {
 				f.submit(nextFetch.(*FetchInfo))
 			}
 		case <-f.done:
+			f.pool.Stop()
 			glog.Info("Price Floor fetcher terminated")
 			return
 		}
