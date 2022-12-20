@@ -131,7 +131,7 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOr
 	}
 	prebidExt := requestExt.GetPrebid()
 	reqFloorEnable := getFloorsFlagFromReqExt(prebidExt)
-	if floor.Enabled && reqFloorEnable {
+	if floor.Enabled && reqFloorEnable && r.Account.PriceFloors.Enabled {
 		var enforceDealFloors bool
 		var floorsEnfocement bool
 		var updateReqExt bool

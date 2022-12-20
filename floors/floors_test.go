@@ -851,6 +851,49 @@ func TestResolveFloors(t *testing.T) {
 				PriceFloorLocation: openrtb_ext.RequestLocation,
 			},
 		},
+		{
+			name: "Dynamic fetch enabled, floors from fetched selected and new URL is updated",
+			bidRequestWrapper: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+					},
+					Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+					Ext: json.RawMessage(`{"prebid":{"floors":{"floorendpoint":{"url":"http://test.cpm/floor"},"enabled":true}}}`),
+				},
+			},
+			account: config.Account{
+				PriceFloors: config.AccountPriceFloors{
+					Enabled:        true,
+					UseDynamicData: true,
+				},
+			},
+			expFloors: &openrtb_ext.PriceFloorRules{
+				Enabled:            getTrue(),
+				FetchStatus:        openrtb_ext.FetchSuccess,
+				PriceFloorLocation: openrtb_ext.FetchLocation,
+				Enforcement: &openrtb_ext.PriceFloorEnforcement{
+					EnforcePBS: getTrue(),
+					FloorDeals: getTrue(),
+				},
+				Data: &openrtb_ext.PriceFloorData{
+					Currency: "USD",
+					ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+						{
+							ModelVersion: "model from fetched",
+							Currency:     "USD",
+							Values: map[string]float64{
+								"banner|300x600|www.website5.com": 15,
+								"*|*|*":                           25,
+							},
+							Schema: openrtb_ext.PriceFloorSchema{
+								Fields: []string{"mediaType", "size", "domain"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
