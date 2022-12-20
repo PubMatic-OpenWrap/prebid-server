@@ -80,7 +80,6 @@ func enforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 							Bid:             bid.bid,
 							Seat:            seatBid.seat,
 							RejectionReason: openrtb3.LossBelowAuctionFloor,
-							BidderName:      string(bidderName),
 						}
 						rejectedBids = append(rejectedBids, rejectedBid)
 						errs = append(errs, fmt.Errorf("bid rejected [bid ID: %s] reason: bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bid.bid.ID, bidPrice, reqImpCur, reqImp.BidFloor, reqImpCur, bid.bid.ImpID, bidderName))

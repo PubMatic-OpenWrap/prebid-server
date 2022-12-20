@@ -19,6 +19,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -114,9 +115,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	ao := analytics.AuctionObject{
 		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context: r.Context(),
-			Status:  http.StatusOK,
-			Errors:  make([]error, 0),
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
 		},
 	}
 
@@ -212,6 +214,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
+		LoggableObject:    &ao.LoggableAuctionObject,
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest)
@@ -243,6 +246,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		//Do AdPod Exclusions
 		bids := deps.doAdPodExclusions()
 
+		// Log bids rejected due to advertiser/catergory exclusion or bids lossed to higher price
+		deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
 		//Create Bid Response
 		response = deps.createBidResponse(response, bids)
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
@@ -1154,4 +1159,37 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 			}
 		}
 	}
+}
+
+func (deps *ctvEndpointDeps) updateAdpodAuctionRejectedBids(loggableObject *analytics.LoggableAuctionObject) {
+
+	for _, imp := range deps.impData {
+		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
+			for _, bid := range imp.Bid.Bids {
+				if bid.Status != constant.StatusWinningBid {
+					loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
+						RejectionReason: getRejectionReason(bid.Status),
+						Bid:             bid.Bid,
+						Seat:            bid.Seat,
+					})
+				}
+			}
+		}
+	}
+}
+
+func getRejectionReason(bidStatus int) openrtb3.LossReason {
+	reason := openrtb3.LossWon
+
+	switch bidStatus {
+	case constant.StatusOK:
+		reason = openrtb3.LossLostToHigherBid
+	case constant.StatusCategoryExclusion:
+		reason = openrtb3.LossCategoryExclusions
+	case constant.StatusDomainExclusion:
+		reason = openrtb3.LossAdvertiserExclusions
+	case constant.StatusDurationMismatch:
+		reason = openrtb3.LossCreativeFiltered
+	}
+	return reason
 }

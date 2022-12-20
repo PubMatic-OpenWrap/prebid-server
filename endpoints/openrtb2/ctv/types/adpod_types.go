@@ -13,6 +13,7 @@ type Bid struct {
 	Duration          int
 	Status            constant.BidStatus
 	DealTierSatisfied bool
+	Seat              string
 }
 
 //ExtCTVBidResponse object for ctv bid resposne object

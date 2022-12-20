@@ -4,11 +4,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 )
 
@@ -95,13 +94,15 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 		impIndex int
 	}
 	type args struct {
-		results []*highestCombination
+		results         []*highestCombination
+		getFilteredBids func(results []*highestCombination) []*types.Bid
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *types.AdPodBid
+		name                 string
+		fields               fields
+		args                 args
+		want                 *types.AdPodBid
+		expectedFilteredBids []*types.Bid
 	}{
 		{
 			name: `EmptyResults`,
@@ -111,8 +112,20 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 			},
 			args: args{
 				results: nil,
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{}
+					bids := []*types.Bid{}
+
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							bids = append(bids, result.filteredBids[fb].bid)
+						}
+					}
+					return bids
+				},
 			},
-			want: nil,
+			want:                 nil,
+			expectedFilteredBids: []*types.Bid{},
 		},
 		{
 			name: `AllBidsFiltered`,
@@ -130,8 +143,19 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						},
 					},
 				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-1", "bid-2", "bid-3"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							bids = append(bids, result.filteredBids[fb].bid)
+						}
+					}
+					return bids
+				},
 			},
-			want: nil,
+			want:                 nil,
+			expectedFilteredBids: []*types.Bid{{Bid: &openrtb2.Bid{ID: `bid-1`}, Status: constant.StatusCategoryExclusion}, {Bid: &openrtb2.Bid{ID: `bid-2`}, Status: constant.StatusCategoryExclusion}, {Bid: &openrtb2.Bid{ID: `bid-3`}, Status: constant.StatusCategoryExclusion}},
 		},
 		{
 			name: `SingleResponse`,
@@ -163,6 +187,16 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						},
 					},
 				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-4"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							bids = append(bids, result.filteredBids[fb].bid)
+						}
+					}
+					return bids
+				},
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
@@ -174,6 +208,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				ADomain: []string{`domain-1`, `domain-2`},
 				Price:   20,
 			},
+			expectedFilteredBids: []*types.Bid{{Bid: &openrtb2.Bid{ID: `bid-4`}, Status: constant.StatusCategoryExclusion}},
 		},
 		{
 			name: `MultiResponse-AllNonDealBids`,
@@ -190,6 +225,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 0,
+						filteredBids: map[string]*filteredBid{
+							`bid-12`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-12`}}, status: constant.StatusCategoryExclusion},
+						},
 					},
 					{
 						bids: []*types.Bid{
@@ -198,6 +236,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-21`},
 						price:     20,
 						nDealBids: 0,
+						filteredBids: map[string]*filteredBid{
+							`bid-22`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-22`}}, status: constant.StatusCategoryExclusion},
+						},
 					},
 					{
 						bids: []*types.Bid{
@@ -206,6 +247,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 0,
+						filteredBids: map[string]*filteredBid{
+							`bid-32`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-32`}}, status: constant.StatusCategoryExclusion},
+						},
 					},
 					{
 						bids: []*types.Bid{
@@ -214,7 +258,22 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-41`},
 						price:     15,
 						nDealBids: 0,
+						filteredBids: map[string]*filteredBid{
+							`bid-42`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-42`}}, status: constant.StatusCategoryExclusion},
+						},
 					},
+				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-22"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							if _, ok := result.filteredBids[fb]; ok {
+								bids = append(bids, result.filteredBids[fb].bid)
+							}
+						}
+					}
+					return bids
 				},
 			},
 			want: &types.AdPodBid{
@@ -225,6 +284,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				ADomain: []string{},
 				Price:   20,
 			},
+			expectedFilteredBids: []*types.Bid{{Bid: &openrtb2.Bid{ID: `bid-22`}, Status: constant.StatusCategoryExclusion}},
 		},
 		{
 			name: `MultiResponse-AllDealBids-SameCount`,
@@ -241,6 +301,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-11`},
 						price:     10,
 						nDealBids: 1,
+						filteredBids: map[string]*filteredBid{
+							`bid-12`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-12`}}, status: constant.StatusDomainExclusion},
+						},
 					},
 					{
 						bids: []*types.Bid{
@@ -267,6 +330,18 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						nDealBids: 1,
 					},
 				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-22"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							if _, ok := result.filteredBids[fb]; ok {
+								bids = append(bids, result.filteredBids[fb].bid)
+							}
+						}
+					}
+					return bids
+				},
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
@@ -276,6 +351,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				ADomain: []string{},
 				Price:   20,
 			},
+			expectedFilteredBids: []*types.Bid{},
 		},
 		{
 			name: `MultiResponse-AllDealBids-DifferentCount`,
@@ -318,6 +394,18 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						nDealBids: 2,
 					},
 				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-22"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							if _, ok := result.filteredBids[fb]; ok {
+								bids = append(bids, result.filteredBids[fb].bid)
+							}
+						}
+					}
+					return bids
+				},
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
@@ -327,6 +415,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				ADomain: []string{},
 				Price:   10,
 			},
+			expectedFilteredBids: []*types.Bid{},
 		},
 		{
 			name: `MultiResponse-Mixed-DealandNonDealBids`,
@@ -359,6 +448,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						bidIDs:    []string{`bid-31`},
 						price:     10,
 						nDealBids: 3,
+						filteredBids: map[string]*filteredBid{
+							`bid-32`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-32`}}, status: constant.StatusDomainExclusion},
+						},
 					},
 					{
 						bids: []*types.Bid{
@@ -369,6 +461,18 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 						nDealBids: 0,
 					},
 				},
+				getFilteredBids: func(results []*highestCombination) []*types.Bid {
+					filteredIds := []string{"bid-32"}
+					bids := []*types.Bid{}
+					for _, result := range results {
+						for _, fb := range filteredIds {
+							if _, ok := result.filteredBids[fb]; ok {
+								bids = append(bids, result.filteredBids[fb].bid)
+							}
+						}
+					}
+					return bids
+				},
 			},
 			want: &types.AdPodBid{
 				Bids: []*types.Bid{
@@ -378,8 +482,8 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				ADomain: []string{},
 				Price:   10,
 			},
+			expectedFilteredBids: []*types.Bid{{Bid: &openrtb2.Bid{ID: `bid-32`}, Status: constant.StatusDomainExclusion}},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -393,6 +497,8 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				sort.Strings(got.Cat)
 			}
 			assert.Equal(t, tt.want, got)
+			filteredBids := tt.args.getFilteredBids(tt.args.results)
+			assert.Equal(t, tt.expectedFilteredBids, filteredBids, "Filtered Bids mismatch")
 		})
 	}
 }
