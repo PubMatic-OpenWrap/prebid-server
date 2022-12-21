@@ -982,7 +982,6 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 							Bid:             bid.bid,
 							RejectionReason: openrtb3.LossCategoryExclusions,
 							Seat:            seatBid.seat,
-							BidderName:      string(bidderName),
 						})
 					}
 				}
@@ -996,7 +995,6 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 							Bid:             bids[remInd].bid,
 							RejectionReason: openrtb3.LossCategoryExclusions,
 							Seat:            seatBid.seat,
-							BidderName:      string(bidderName),
 						})
 					}
 					bids = append(bids[:remInd], bids[remInd+1:]...)

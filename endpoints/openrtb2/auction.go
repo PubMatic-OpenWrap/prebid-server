@@ -162,13 +162,6 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		return
 	}
 
-	defer func() {
-		glog.Infof("Logging Rejected Bids for RequestID: %v", req.BidRequest.ID)
-		for index, rejectedBid := range ao.RejectedBids {
-			glog.Infof("Rejected Bid no: %v | BidderName: %v | Seat: %v | Rejection Reason: %v | RejectedBid: %+v", index+1, rejectedBid.BidderName, rejectedBid.Seat, rejectedBid.RejectionReason, *rejectedBid.Bid)
-		}
-	}()
-
 	ctx := context.Background()
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
