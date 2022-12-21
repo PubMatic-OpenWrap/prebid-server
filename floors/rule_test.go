@@ -454,36 +454,6 @@ func TestSelectFloorModelGroup(t *testing.T) {
 		expectedModelWeight int
 	}{
 		{
-			name:                "Version 4 Selection",
-			ModelGroup:[]openrtb_ext.PriceFloorModelGroup{{
-				ModelWeight:  getIntPtr(0),
-				SkipRate:     20,
-				ModelVersion: "Version 4",
-				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-				Values: map[string]float64{
-					"banner|300x250|www.website.com": 1.01,
-					"banner|300x250|*":               2.01,
-					"banner|300x600|www.website.com": 3.01,
-					"banner|300x600|*":               4.01,
-					"banner|728x90|www.website.com":  5.01,
-					"banner|728x90|*":                6.01,
-					"banner|*|www.website.com":       7.01,
-					"banner|*|*":                     8.01,
-					"*|300x250|www.website.com":      9.01,
-					"*|300x250|*":                    10.01,
-					"*|300x600|www.website.com":      11.01,
-					"*|300x600|*":                    12.01,
-					"*|728x90|www.website.com":       13.01,
-					"*|728x90|*":                     14.01,
-					"*|*|www.website.com":            15.01,
-					"*|*|*":                          16.01,
-				}, Default: 0.01},},
-								ModelVersion: "Version 4",
-
-			fn:                  func(i int) int { return 0 },
-			expectedModelWeight: 1,
-		},
-		{
 			name:                "Version 3 Selection",
 			ModelGroup:[]openrtb_ext.PriceFloorModelGroup{{
 				ModelWeight:  nil,
