@@ -142,7 +142,6 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 		if fetchedMaxAge != 0 && fetchedMaxAge > configs.Period && fetchedMaxAge < math.MaxInt32 {
 			cacheExpiry = time.Duration(fetchedMaxAge) * time.Second
 		} else {
-			glog.Errorf("Invalid max-age = %v provided, should be within (%v, %v)", fetchedMaxAge, configs.Period, math.MaxInt32)
 			cacheExpiry = f.cacheExpiry * time.Second
 		}
 		f.SetWithExpiry(configs.URL, floorData, cacheExpiry)
@@ -184,7 +183,7 @@ func (f *PriceFloorFetcher) Fetcher() {
 			}
 		case <-ticker.C:
 			currentTime := time.Now().Unix()
-			for top := f.fetchQueue.Top(); top != nil && top.FetchTime < currentTime; top = f.fetchQueue.Top() {
+			for top := f.fetchQueue.Top(); top != nil && top.FetchTime <= currentTime; top = f.fetchQueue.Top() {
 				nextFetch := heap.Pop(&f.fetchQueue)
 				f.submit(nextFetch.(*FetchInfo))
 			}
@@ -198,7 +197,7 @@ func (f *PriceFloorFetcher) Fetcher() {
 
 func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
 
-	floorResp, maxAge, err := fetchFloorRulesFromURL(configs.URL, configs.Timeout)
+	floorResp, maxAge, err := fetchFloorRulesFromURL(configs)
 	if err != nil {
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
 		return nil, 0
@@ -226,12 +225,12 @@ func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloor
 
 // fetchFloorRulesFromURL returns a price floor JSON and time for which this JSON is valid
 // from provided URL with timeout constraints
-func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, int, error) {
+func fetchFloorRulesFromURL(configs config.AccountFloorFetch) ([]byte, int, error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configs.Timeout)*time.Millisecond)
 	defer cancel()
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, URL, nil)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, configs.URL, nil)
 	if err != nil {
 		return nil, 0, errors.New("error while forming http fetch request : " + err.Error())
 	}
@@ -248,6 +247,9 @@ func fetchFloorRulesFromURL(URL string, timeout int) ([]byte, int, error) {
 	var maxAge int
 	if maxAgeStr := httpResp.Header.Get("max-age"); maxAgeStr != "" {
 		maxAge, _ = strconv.Atoi(maxAgeStr)
+		if maxAge < configs.Period || maxAge > math.MaxInt32 {
+			glog.Errorf("Invalid max-age = %s provided, value should be valid integer and should be within (%v, %v)", maxAgeStr, configs.Period, math.MaxInt32)
+		}
 	}
 
 	respBody, err := ioutil.ReadAll(httpResp.Body)
@@ -269,6 +271,10 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		return errors.New("no model groups found in price floor data")
 	}
 
+	if priceFloors.Data.SkipRate < 0 || priceFloors.Data.SkipRate > 100 {
+		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
+	}
+
 	for _, modelGroup := range priceFloors.Data.ModelGroups {
 		if len(modelGroup.Values) == 0 || len(modelGroup.Values) > configs.MaxRules {
 			return errors.New("invalid number of floor rules, floor rules should be greater than zero and less than MaxRules specified in account config")
@@ -279,7 +285,7 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		}
 
 		if modelGroup.SkipRate < 0 || modelGroup.SkipRate > 100 {
-			return errors.New("skip rate should be greater than or equal to 0 and less than 100")
+			return errors.New("model group skip rate should be greater than or equal to 0 and less than 100")
 		}
 
 		if modelGroup.Default < 0 {
