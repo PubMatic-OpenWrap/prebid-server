@@ -905,7 +905,7 @@ func TestPriceFloorFetcherWorkerDefaultCacheExpiry(t *testing.T) {
 		configReceiver:  make(chan FetchInfo, 1),
 		done:            nil,
 		cache:           cache.New(time.Duration(5)*time.Second, time.Duration(2)*time.Second),
-		cacheExpiry:     5,
+		cacheExpiry:     time.Duration(10) * time.Second,
 	}
 
 	fetchConfig := config.AccountFloorFetch{

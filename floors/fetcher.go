@@ -245,7 +245,7 @@ func fetchFloorRulesFromURL(configs config.AccountFloorFetch) ([]byte, int, erro
 	var maxAge int
 	if maxAgeStr := httpResp.Header.Get("max-age"); maxAgeStr != "" {
 		maxAge, _ = strconv.Atoi(maxAgeStr)
-		if maxAge < configs.Period || maxAge > math.MaxInt32 {
+		if maxAge <= configs.Period || maxAge > math.MaxInt32 {
 			glog.Errorf("Invalid max-age = %s provided, value should be valid integer and should be within (%v, %v)", maxAgeStr, configs.Period, math.MaxInt32)
 		}
 	}

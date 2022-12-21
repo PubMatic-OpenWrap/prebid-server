@@ -859,7 +859,7 @@ func TestResolveFloors(t *testing.T) {
 						Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
 					},
 					Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
-					Ext: json.RawMessage(`{"prebid":{"floors":{"floorendpoint":{"url":"http://test.cpm/floor"},"enabled":true}}}`),
+					Ext: json.RawMessage(`{"prebid":{"floors":{"floorendpoint":{"url":"http://test.com/floor"},"enabled":true}}}`),
 				},
 			},
 			account: config.Account{
@@ -875,6 +875,9 @@ func TestResolveFloors(t *testing.T) {
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS: getTrue(),
 					FloorDeals: getTrue(),
+				},
+				Location: &openrtb_ext.PriceFloorEndpoint{
+					URL: "http://test.com/floor",
 				},
 				Data: &openrtb_ext.PriceFloorData{
 					Currency: "USD",

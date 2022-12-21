@@ -207,7 +207,13 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 			mergedFloors.FloorMinCur = floorMinPrice.FloorMinCur
 		}
 	}
-	mergedFloors.Location = reqFloors.Location
+	if reqFloors != nil && reqFloors.Location != nil {
+		if mergedFloors.Location == nil {
+			mergedFloors.Location = new(openrtb_ext.PriceFloorEndpoint)
+		}
+		(*mergedFloors.Location).URL = (*reqFloors.Location).URL
+	}
+
 	return &mergedFloors
 }
 
