@@ -3,16 +3,21 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
+
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/metrics"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestValidateImpExtOW(t *testing.T) {
@@ -99,5 +104,68 @@ func TestValidateImpExtOW(t *testing.T) {
 			}
 			assert.ElementsMatch(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
 		}
+	}
+}
+
+func TestRecordRejectedBids(t *testing.T) {
+
+	type args struct {
+		pubid   string
+		rejBids []analytics.RejectedBid
+	}
+
+	type want struct {
+		expectedCalls int
+	}
+
+	tests := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "empty rejected bids",
+			args: args{
+				rejBids: []analytics.RejectedBid{},
+			},
+			want: want{
+				expectedCalls: 0,
+			},
+		},
+		{
+			description: "rejected bids",
+			args: args{
+				pubid: "1010",
+				rejBids: []analytics.RejectedBid{
+					analytics.RejectedBid{
+						Seat:            "pubmatic",
+						RejectionReason: openrtb3.LossAdvertiserExclusions,
+					},
+					analytics.RejectedBid{
+						Seat:            "pubmatic",
+						RejectionReason: openrtb3.LossBelowDealFloor,
+					},
+					analytics.RejectedBid{
+						Seat:            "pubmatic",
+						RejectionReason: openrtb3.LossAdvertiserExclusions,
+					},
+					analytics.RejectedBid{
+						Seat:            "appnexus",
+						RejectionReason: openrtb3.LossBelowDealFloor,
+					},
+				},
+			},
+			want: want{
+				expectedCalls: 4,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		me := &metrics.MetricsEngineMock{}
+		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+
+		recordRejectedBids(test.args.pubid, test.args.rejBids, me)
+		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }

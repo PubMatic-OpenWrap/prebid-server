@@ -334,10 +334,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 			if e.floor.Enabled && r.LoggableObject != nil && len(r.LoggableObject.RejectedBids) > 0 {
 				// Record rejected bid count at account level
 				e.me.RecordRejectedBidsForAccount(r.PubID)
-				// Record rejected bid count at adaptor/bidder level
-				for _, rejectedBid := range r.LoggableObject.RejectedBids {
-					e.me.RecordRejectedBidsForBidder(openrtb_ext.BidderName(rejectedBid.Seat))
-				}
 			}
 		}
 

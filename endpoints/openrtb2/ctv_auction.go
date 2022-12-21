@@ -139,6 +139,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(deps.labels)
+		recordRejectedBids(deps.labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(deps.labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
