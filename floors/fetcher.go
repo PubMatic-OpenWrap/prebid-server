@@ -138,11 +138,9 @@ func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 	if floorData != nil {
 		// Update cache with new floor rules
 		glog.Info("Updating Value in cache")
-		var cacheExpiry time.Duration
+		cacheExpiry := f.cacheExpiry
 		if fetchedMaxAge != 0 && fetchedMaxAge > configs.Period && fetchedMaxAge < math.MaxInt32 {
 			cacheExpiry = time.Duration(fetchedMaxAge) * time.Second
-		} else {
-			cacheExpiry = f.cacheExpiry * time.Second
 		}
 		f.SetWithExpiry(configs.URL, floorData, cacheExpiry)
 	}
