@@ -366,6 +366,31 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Invalid skip rate in data",
+			args: args{
+				configs: config.AccountFloorFetch{
+					Enabled:     true,
+					URL:         "abc.com",
+					Timeout:     5,
+					MaxFileSize: 20,
+					MaxRules:    1,
+					MaxAge:      20,
+					Period:      10,
+				},
+				priceFloors: &openrtb_ext.PriceFloorRules{
+					Data: &openrtb_ext.PriceFloorData{
+						SkipRate: -44,
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
+							Values: map[string]float64{
+								"*|*|www.website.com": 15.01,
+							},
+						}},
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -388,8 +413,7 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 	}
 
 	type args struct {
-		URL     string
-		timeout int
+		configs config.AccountFloorFetch
 	}
 	tests := []struct {
 		name           string
@@ -403,8 +427,11 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		{
 			name: "Floor data is successfully returned",
 			args: args{
-				URL:     "",
-				timeout: 60,
+				configs: config.AccountFloorFetch{
+					URL:     "",
+					Timeout: 60,
+					Period:  300,
+				},
 			},
 			response: func() []byte {
 				data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
@@ -421,8 +448,11 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		{
 			name: "Time out occured",
 			args: args{
-				URL:     "",
-				timeout: 0,
+				configs: config.AccountFloorFetch{
+					URL:     "",
+					Timeout: 0,
+					Period:  300,
+				},
 			},
 			want1:          0,
 			responseStatus: 200,
@@ -431,8 +461,11 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		{
 			name: "Invalid URL",
 			args: args{
-				URL:     "%%",
-				timeout: 10,
+				configs: config.AccountFloorFetch{
+					URL:     "%%",
+					Timeout: 10,
+					Period:  300,
+				},
 			},
 			want1:          0,
 			responseStatus: 200,
@@ -441,8 +474,11 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		{
 			name: "No response from server",
 			args: args{
-				URL:     "",
-				timeout: 10,
+				configs: config.AccountFloorFetch{
+					URL:     "",
+					Timeout: 10,
+					Period:  300,
+				},
 			},
 			want1:          0,
 			responseStatus: 500,
@@ -451,8 +487,11 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 		{
 			name: "Invalid response",
 			args: args{
-				URL:     "",
-				timeout: 10,
+				configs: config.AccountFloorFetch{
+					URL:     "",
+					Timeout: 10,
+					Period:  300,
+				},
 			},
 			want1:          0,
 			response:       []byte("1"),
@@ -465,13 +504,10 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 			mockHttpServer := httptest.NewServer(mockHandler(tt.response, tt.responseStatus))
 			defer mockHttpServer.Close()
 
-			var url string
-			if tt.args.URL != "" {
-				url = tt.args.URL
-			} else {
-				url = mockHttpServer.URL
+			if tt.args.configs.URL == "" {
+				tt.args.configs.URL = mockHttpServer.URL
 			}
-			got, got1, err := fetchFloorRulesFromURL(url, tt.args.timeout)
+			got, got1, err := fetchFloorRulesFromURL(tt.args.configs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fetchFloorRulesFromURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -498,8 +534,7 @@ func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 	}
 
 	type args struct {
-		URL     string
-		timeout int
+		configs config.AccountFloorFetch
 	}
 	tests := []struct {
 		name           string
@@ -513,8 +548,11 @@ func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 		{
 			name: "Floor data is successfully returned",
 			args: args{
-				URL:     "",
-				timeout: 60,
+				configs: config.AccountFloorFetch{
+					URL:     "",
+					Timeout: 60,
+					Period:  300,
+				},
 			},
 			response: func() []byte {
 				data := `{"data":{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
@@ -534,7 +572,11 @@ func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 			mockHttpServer := httptest.NewServer(mockHandler(tt.response, tt.responseStatus))
 			defer mockHttpServer.Close()
 
-			got, got1, err := fetchFloorRulesFromURL(mockHttpServer.URL, tt.args.timeout)
+			if tt.args.configs.URL == "" {
+				tt.args.configs.URL = mockHttpServer.URL
+			}
+
+			got, got1, err := fetchFloorRulesFromURL(tt.args.configs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fetchFloorRulesFromURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -863,7 +905,7 @@ func TestPriceFloorFetcherWorkerDefaultCacheExpiry(t *testing.T) {
 		configReceiver:  make(chan FetchInfo, 1),
 		done:            nil,
 		cache:           cache.New(time.Duration(5)*time.Second, time.Duration(2)*time.Second),
-		cacheExpiry:     5,
+		cacheExpiry:     time.Duration(10) * time.Second,
 	}
 
 	fetchConfig := config.AccountFloorFetch{
