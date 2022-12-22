@@ -247,10 +247,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		//Do AdPod Exclusions
 		bids := deps.doAdPodExclusions()
 
-		// Log bids rejected due to advertiser/catergory exclusion or bids lossed to higher price
-		deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
 		//Create Bid Response
 		response = deps.createBidResponse(response, bids)
+
+		// Log bids rejected due to advertiser/catergory exclusion or bids lossed to higher price
+		deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
+
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
 
@@ -754,6 +756,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 					Status:            status,
 					Duration:          int(duration),
 					DealTierSatisfied: util.GetDealTierSatisfied(&ext),
+					Seat:              seat.Seat,
 				})
 			}
 		}
