@@ -77,9 +77,8 @@ func enforceFloorToBids(bidRequest *openrtb2.BidRequest, seatBids map[openrtb_ex
 					bidPrice := rate * bid.bid.Price
 					if reqImp.BidFloor > bidPrice {
 						rejectedBid := analytics.RejectedBid{
-							Bid:        bid.bid,
-							Seat:       seatBid.seat,
-							BidderName: string(bidderName),
+							Bid:  bid.bid,
+							Seat: seatBid.seat,
 						}
 						rejectedBid.RejectionReason = openrtb3.LossBelowAuctionFloor
 						if bid.bid.DealID != "" {

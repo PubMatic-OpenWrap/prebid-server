@@ -11,5 +11,4 @@ type RejectedBid struct {
 	RejectionReason openrtb3.LossReason
 	Bid             *openrtb2.Bid
 	Seat            string
-	BidderName      string
 }
