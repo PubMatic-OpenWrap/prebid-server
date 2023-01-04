@@ -42,6 +42,7 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher)
 
 	uprateReqErrs := updateBidRequestWithFloors(floors, bidRequestWrapper, conversions)
+	updateFloorsInRequest(bidRequestWrapper, floors)
 	return append(err, uprateReqErrs...)
 }
 
@@ -149,7 +150,6 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	} else {
 		floorsJson, errlist = createFloorsFrom(nil, openrtb_ext.FetchNone, openrtb_ext.NoDataLocation)
 	}
-	updateFloorsInRequest(bidRequestWrapper, floorsJson)
 	return floorsJson, errlist
 }
 
