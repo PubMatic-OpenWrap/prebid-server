@@ -160,9 +160,9 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 
 	if floors != nil {
 		*finFloors = *floors
-		floorSkipRateErr := validateFloorParams(floors)
-		if floorSkipRateErr != nil {
-			return floors, append(floorModelErrList, floorSkipRateErr)
+		floorValidationErr := validateFloorParams(floors)
+		if floorValidationErr != nil {
+			return nil, append(floorModelErrList, floorValidationErr)
 		}
 
 		if floors.Data != nil {
@@ -170,7 +170,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 			*finFloors.Data = *floors.Data
 			finFloors.Data.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floors.Data.ModelGroups)
 			if len(finFloors.Data.ModelGroups) == 0 {
-				return floors, floorModelErrList
+				return finFloors, floorModelErrList
 			} else if len(finFloors.Data.ModelGroups) > 1 {
 				finFloors.Data.ModelGroups = selectFloorModelGroup(finFloors.Data.ModelGroups, rand.Intn)
 			}
