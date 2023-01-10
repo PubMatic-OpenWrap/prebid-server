@@ -179,7 +179,8 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 					},
 				},
 			},
-			err: "Invalid SkipRate = '110' at ext.floors.skiprate",
+			err:            "Invalid SkipRate = '110' at ext.floors.skiprate",
+			expPriceFlrLoc: openrtb_ext.RequestLocation,
 		},
 		{
 			name: "Multiple ModelGroups, Invalid Skiprate = 110: in one group, Floors singalling done using second ModelGroup",
@@ -842,11 +843,6 @@ func TestResolveFloors(t *testing.T) {
 				},
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
-				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  getTrue(),
-					EnforceRate: 100,
-					FloorDeals:  getTrue(),
-				},
 				FetchStatus:        openrtb_ext.FetchNone,
 				PriceFloorLocation: openrtb_ext.RequestLocation,
 			},
@@ -957,8 +953,8 @@ func Test_createFloorsFrom(t *testing.T) {
 						},
 						FloorProvider: "PM",
 					},
-					},
-				fetchStatus: openrtb_ext.FetchSuccess,
+				},
+				fetchStatus:   openrtb_ext.FetchSuccess,
 				floorLocation: openrtb_ext.FetchLocation,
 			},
 			want: &openrtb_ext.PriceFloorRules{
@@ -989,7 +985,7 @@ func Test_createFloorsFrom(t *testing.T) {
 					},
 					FloorProvider: "PM",
 				},
-			},	
+			},
 		},
 		{
 			name: "floor provider will be empty if no value provided in floor json",
@@ -1022,8 +1018,8 @@ func Test_createFloorsFrom(t *testing.T) {
 						},
 						FloorProvider: "",
 					},
-					},
-				fetchStatus: openrtb_ext.FetchSuccess,
+				},
+				fetchStatus:   openrtb_ext.FetchSuccess,
 				floorLocation: openrtb_ext.FetchLocation,
 			},
 			want: &openrtb_ext.PriceFloorRules{
@@ -1054,7 +1050,7 @@ func Test_createFloorsFrom(t *testing.T) {
 					},
 					FloorProvider: "",
 				},
-			},	
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -1066,7 +1062,7 @@ func Test_createFloorsFrom(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createFloorsFrom() got = %v, want %v", got, tt.want)
 			}
-			
+
 		})
 	}
 }
