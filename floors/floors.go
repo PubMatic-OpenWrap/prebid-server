@@ -159,20 +159,28 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 	finFloors := new(openrtb_ext.PriceFloorRules)
 
 	if floors != nil {
-		*finFloors = *floors
 		floorValidationErr := validateFloorParams(floors)
 		if floorValidationErr != nil {
-			return nil, append(floorModelErrList, floorValidationErr)
+			finFloors.FetchStatus = fetchStatus
+			finFloors.PriceFloorLocation = floorLocation
+			return finFloors, append(floorModelErrList, floorValidationErr)
 		}
 
 		if floors.Data != nil {
-			finFloors.Data = new(openrtb_ext.PriceFloorData)
-			*finFloors.Data = *floors.Data
-			finFloors.Data.ModelGroups, floorModelErrList = selectValidFloorModelGroups(floors.Data.ModelGroups)
-			if len(finFloors.Data.ModelGroups) == 0 {
+			validModelGroups, floorModelErrList := selectValidFloorModelGroups(floors.Data.ModelGroups)
+			if len(validModelGroups) == 0 {
+				finFloors.FetchStatus = fetchStatus
+				finFloors.PriceFloorLocation = floorLocation
 				return finFloors, floorModelErrList
-			} else if len(finFloors.Data.ModelGroups) > 1 {
-				finFloors.Data.ModelGroups = selectFloorModelGroup(finFloors.Data.ModelGroups, rand.Intn)
+			} else {
+				*finFloors = *floors
+				finFloors.Data = new(openrtb_ext.PriceFloorData)
+				*finFloors.Data = *floors.Data
+				if len(validModelGroups) > 1 {
+					finFloors.Data.ModelGroups = selectFloorModelGroup(validModelGroups, rand.Intn)
+				} else {
+					finFloors.Data.ModelGroups = validModelGroups
+				}
 			}
 		}
 	}
