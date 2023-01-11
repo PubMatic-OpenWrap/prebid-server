@@ -137,19 +137,19 @@ func TestRecordRejectedBids(t *testing.T) {
 			args: args{
 				pubid: "1010",
 				rejBids: []analytics.RejectedBid{
-					analytics.RejectedBid{
+					{
 						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossAdvertiserExclusions,
 					},
-					analytics.RejectedBid{
+					{
 						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossBelowDealFloor,
 					},
-					analytics.RejectedBid{
+					{
 						Seat:            "pubmatic",
 						RejectionReason: openrtb3.LossAdvertiserExclusions,
 					},
-					analytics.RejectedBid{
+					{
 						Seat:            "appnexus",
 						RejectionReason: openrtb3.LossBelowDealFloor,
 					},
