@@ -30,6 +30,7 @@ const (
 	urlEncodedEqualChar = "%3D"
 	AdServerKey         = "adserver"
 	PBAdslotKey         = "pbadslot"
+	bidViewability      = "bidViewability"
 )
 
 type PubmaticAdapter struct {
@@ -60,6 +61,7 @@ type ExtImpBidderPubmatic struct {
 	adapters.ExtImpBidder
 	Data        json.RawMessage `json:"data,omitempty"`
 	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
+	BidViewabilityScore *openrtb_ext.ExtBidViewabilityScore `json:"bidViewability,omitempty"`
 }
 
 type ExtAdServer struct {
@@ -379,6 +381,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	if len(bidderExt.Data) > 0 {
 		populateFirstPartyDataImpAttributes(bidderExt.Data, extMap)
+	}
+	// If bidViewabilityScore param is populated, pass it to imp[i].ext
+	if pubmaticExt.BidViewabilityScore != nil {
+		extMap[bidViewability] = *pubmaticExt.BidViewabilityScore
 	}
 
 	imp.Ext = nil
