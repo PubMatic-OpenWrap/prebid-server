@@ -88,6 +88,7 @@ func TestParseImpressionObject(t *testing.T) {
 		expectedPublisherId string
 		wantErr             bool
 		expectedBidfloor    float64
+		expectedImpExt      json.RawMessage
 	}{
 		{
 			name: "imp.bidfloor empty and kadfloor set",
@@ -98,6 +99,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor empty",
@@ -109,6 +111,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor invalid",
@@ -120,6 +123,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor set, preference to kadfloor",
@@ -131,6 +135,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.11,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "kadfloor string set with whitespace",
@@ -142,6 +147,17 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.13,
+			expectedImpExt:   json.RawMessage(nil),
+		},
+		{
+			name: "bidViewability Object is set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}}`),
+				},
+			},
+			expectedImpExt: json.RawMessage(`{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}`),
 		},
 	}
 	for _, tt := range tests {
@@ -151,6 +167,7 @@ func TestParseImpressionObject(t *testing.T) {
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
 			assert.Equal(t, tt.expectedBidfloor, tt.args.imp.BidFloor)
+			assert.Equal(t, tt.expectedImpExt, tt.args.imp.Ext)
 		})
 	}
 }
