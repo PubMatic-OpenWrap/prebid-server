@@ -9,13 +9,13 @@ import "encoding/json"
 // WrapExt needs to be sent once per bid request
 
 type ExtImpPubmatic struct {
-	PublisherId string                  `json:"publisherId"`
-	AdSlot      string                  `json:"adSlot"`
-	Dctr        string                  `json:"dctr,omitempty"`
-	PmZoneID    string                  `json:"pmzoneid,omitempty"`
-	WrapExt     json.RawMessage         `json:"wrapper,omitempty"`
-	Keywords    []*ExtImpPubmaticKeyVal `json:"keywords,omitempty"`
-	Kadfloor    string                  `json:"kadfloor,omitempty"`
+	PublisherId         string                  `json:"publisherId"`
+	AdSlot              string                  `json:"adSlot"`
+	Dctr                string                  `json:"dctr,omitempty"`
+	PmZoneID            string                  `json:"pmzoneid,omitempty"`
+	WrapExt             json.RawMessage         `json:"wrapper,omitempty"`
+	Keywords            []*ExtImpPubmaticKeyVal `json:"keywords,omitempty"`
+	Kadfloor            string                  `json:"kadfloor,omitempty"`
 	BidViewabilityScore *ExtBidViewabilityScore `json:"bidViewability,omitempty"`
 }
 

@@ -61,7 +61,6 @@ type ExtImpBidderPubmatic struct {
 	adapters.ExtImpBidder
 	Data        json.RawMessage `json:"data,omitempty"`
 	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
-	BidViewabilityScore *openrtb_ext.ExtBidViewabilityScore `json:"bidViewability,omitempty"`
 }
 
 type ExtAdServer struct {
