@@ -351,6 +351,12 @@ func (me *MultiMetricsEngine) RecordAdsCertSignTime(adsCertSignTime time.Duratio
 	}
 }
 
+func (me *MultiMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
+	for _, thisME := range *me {
+		thisME.RecordRejectedBids(pubid, bidder, code)
+	}
+}
+
 // NilMetricsEngine implements the MetricsEngine interface where no metrics are actually captured. This is
 // used if no metric backend is configured and also for tests.
 type NilMetricsEngine struct{}
@@ -504,4 +510,7 @@ func (me *NilMetricsEngine) RecordAdsCertSignTime(adsCertSignTime time.Duration)
 
 // RecordDynamicFetchFailure as a noop
 func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId string) {
+}
+// RecordRejectedBids as a noop
+func (me *NilMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
 }

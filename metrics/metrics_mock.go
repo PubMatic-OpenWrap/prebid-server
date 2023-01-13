@@ -178,3 +178,7 @@ func (me *MetricsEngineMock) RecordAdsCertReq(success bool) {
 func (me *MetricsEngineMock) RecordAdsCertSignTime(adsCertSignTime time.Duration) {
 	me.Called(adsCertSignTime)
 }
+
+func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
+	me.Called(pubid, bidder, code)
+}

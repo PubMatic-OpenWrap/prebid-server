@@ -122,8 +122,9 @@ type accountMetrics struct {
 	bidsReceivedMeter  metrics.Meter
 	priceHistogram     metrics.Histogram
 	// store account by adapter metrics. Type is map[PBSBidder.BidderCode]
-	adapterMetrics       map[openrtb_ext.BidderName]*AdapterMetrics
-	storedResponsesMeter metrics.Meter
+	adapterMetrics           map[openrtb_ext.BidderName]*AdapterMetrics
+	storedResponsesMeter     metrics.Meter
+	dynamicFetchFailureMeter metrics.Meter
 }
 
 // NewBlankMetrics creates a new Metrics object with all blank metrics object. This may also be useful for
@@ -435,6 +436,7 @@ func (me *Metrics) getAccountMetrics(id string) *accountMetrics {
 	am = &accountMetrics{}
 	am.requestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.requests", id), me.MetricsRegistry)
 	am.rejecteBidMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.rejected_bidrequests", id), me.MetricsRegistry)
+	am.dynamicFetchFailureMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.floors_account_fetch_err", id), me.MetricsRegistry)
 	am.floorsRequestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.bidfloor_requests", id), me.MetricsRegistry)
 	am.debugRequestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.debug_requests", id), me.MetricsRegistry)
 	am.bidsReceivedMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.bids_received", id), me.MetricsRegistry)
@@ -499,6 +501,12 @@ func (me *Metrics) RecordRejectedBidsForAccount(pubId string) {
 	}
 }
 
+// RecordDynamicFetchFailure implements a part of the MetricsEngine interface. Records dynamic fetch failure
+func (me *Metrics) RecordDynamicFetchFailure(pubId string) {
+	if pubId != PublisherUnknown {
+		me.getAccountMetrics(pubId).dynamicFetchFailureMeter.Mark(1)
+	}
+}
 func (me *Metrics) RecordFloorsRequestForAccount(pubId string) {
 	if pubId != PublisherUnknown {
 		me.getAccountMetrics(pubId).floorsRequestMeter.Mark(1)

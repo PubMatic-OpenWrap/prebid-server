@@ -79,7 +79,8 @@ type Metrics struct {
 	syncerSets     *prometheus.CounterVec
 
 	// Rejected Bids
-	rejectedBids         *prometheus.CounterVec
+	rejectedBids *prometheus.CounterVec
+	//rejectedBids         *prometheus.CounterVec
 	accountRejectedBid   *prometheus.CounterVec
 	accountFloorsRequest *prometheus.CounterVec
 
@@ -465,9 +466,9 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		[]string{accountLabel})
 
 	metrics.rejectedBids = newCounter(cfg, reg,
-		"floors_partner_rejected_bids",
-		"Count of rejected bids due to floors enforcement per partner.",
-		[]string{adapterLabel})
+		"rejected_bids",
+		"Count of rejected bids by publisher id, bidder and rejection reason code",
+		[]string{pubIDLabel, bidderLabel, codeLabel})
 
 	metrics.dynamicFetchFailure = newCounter(cfg, reg,
 		"floors_account_fetch_err",

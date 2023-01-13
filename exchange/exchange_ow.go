@@ -111,7 +111,6 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 								RejectionReason: openrtb3.LossAdvertiserExclusions,
 								Bid:             bid.bid,
 								Seat:            seatBid.seat,
-								BidderName:      string(bidderName),
 							})
 						}
 						// reject the bid. bid belongs to blocked advertisers list

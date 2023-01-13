@@ -10,7 +10,9 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/floors"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNew(t *testing.T) {
@@ -172,5 +174,58 @@ func TestRegisterAnalyticsModule(t *testing.T) {
 			tmp, _ := (*g_analytics).(mockAnalytics)
 			assert.Equal(t, tt.want.registeredModules, len(tmp))
 		}
+	}
+}
+
+func TestCallRecordRejectedBids(t *testing.T) {
+	metricEngine := g_metrics
+	defer func() {
+		g_metrics = metricEngine
+	}()
+
+	type args struct {
+		pubid, bidder, code string
+	}
+
+	type want struct {
+		expectToGetRecord bool
+	}
+
+	tests := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "nil g_metric",
+			args:        args{},
+			want: want{
+				expectToGetRecord: false,
+			},
+		},
+		{
+			description: "non-nil g_metric",
+			args: args{
+				pubid:  "11",
+				bidder: "Pubmatic",
+				code:   "102",
+			},
+			want: want{
+				expectToGetRecord: true,
+			},
+		},
+	}
+
+	for _, test := range tests {
+
+		metricsMock := &metrics.MetricsEngineMock{}
+		if test.want.expectToGetRecord {
+			metricsMock.Mock.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+		}
+		if test.description != "nil g_metric" {
+			g_metrics = metricsMock
+		}
+		// CallRecordRejectedBids will panic if g_metrics is non-nil and if there is no call to RecordRejectedBids
+		CallRecordRejectedBids(test.args.pubid, test.args.bidder, test.args.code)
 	}
 }

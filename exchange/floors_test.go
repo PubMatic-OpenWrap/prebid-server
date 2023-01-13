@@ -965,26 +965,24 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					RejectionReason: openrtb3.LossBelowDealFloor,
 					Bid: &openrtb2.Bid{
 						ID:     "some-bid-11",
 						Price:  0.5,
 						ImpID:  "some-impression-id-1",
 						DealID: "3",
 					},
-					Seat:       "",
-					BidderName: "appnexus",
+					Seat: "",
 				},
 				{
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					RejectionReason: openrtb3.LossBelowDealFloor,
 					Bid: &openrtb2.Bid{
 						ID:     "some-bid-1",
 						Price:  1.2,
 						ImpID:  "some-impression-id-1",
 						DealID: "1",
 					},
-					Seat:       "",
-					BidderName: "pubmatic",
+					Seat: "",
 				},
 			},
 		},
@@ -1068,8 +1066,7 @@ func TestEnforceFloors(t *testing.T) {
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
 					},
-					Seat:       "",
-					BidderName: "appnexus",
+					Seat: "",
 				},
 			},
 		},
@@ -1154,7 +1151,6 @@ func TestEnforceFloors(t *testing.T) {
 					},
 					RejectionReason: openrtb3.LossBelowAuctionFloor,
 					Seat:            "",
-					BidderName:      "appnexus",
 				},
 			},
 		},
@@ -1234,7 +1230,6 @@ func TestEnforceFloors(t *testing.T) {
 				{
 					RejectionReason: openrtb3.LossBelowAuctionFloor,
 					Seat:            "",
-					BidderName:      "appnexus",
 					Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
@@ -1318,7 +1313,6 @@ func TestEnforceFloors(t *testing.T) {
 				{
 					RejectionReason: openrtb3.LossBelowAuctionFloor,
 					Seat:            "",
-					BidderName:      "appnexus",
 					Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
@@ -1727,7 +1721,6 @@ func TestEnforceFloors(t *testing.T) {
 					},
 					RejectionReason: openrtb3.LossBelowAuctionFloor,
 					Seat:            "",
-					BidderName:      "pubmatic",
 				}, {
 					Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
@@ -1736,7 +1729,6 @@ func TestEnforceFloors(t *testing.T) {
 					},
 					RejectionReason: openrtb3.LossBelowAuctionFloor,
 					Seat:            "",
-					BidderName:      "appnexus",
 				},
 			},
 		},

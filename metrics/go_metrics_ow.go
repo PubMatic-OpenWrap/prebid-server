@@ -25,3 +25,7 @@ func (me *Metrics) RecordPodCompititveExclusionTime(labels PodLabels, elapsedTim
 // RecordAdapterVideoBidDuration as a noop
 func (me *Metrics) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int) {
 }
+
+// RecordAdapterVideoBidDuration as a noop
+func (me *Metrics) RecordRejectedBids(pubid, biddder, code string) {
+}
