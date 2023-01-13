@@ -501,3 +501,7 @@ func (me *NilMetricsEngine) RecordAdsCertReq(success bool) {
 func (me *NilMetricsEngine) RecordAdsCertSignTime(adsCertSignTime time.Duration) {
 
 }
+
+// RecordDynamicFetchFailure as a noop
+func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId string) {
+}
