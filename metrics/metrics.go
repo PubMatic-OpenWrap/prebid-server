@@ -475,4 +475,5 @@ type MetricsEngine interface {
 
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
+	RecordDynamicFetchFailure(pubId string)
 }

@@ -83,6 +83,9 @@ type Metrics struct {
 	accountRejectedBid   *prometheus.CounterVec
 	accountFloorsRequest *prometheus.CounterVec
 
+	//Dynamic Fetch Failure
+	dynamicFetchFailure *prometheus.CounterVec
+
 	// Account Metrics
 	accountRequests        *prometheus.CounterVec
 	accountDebugRequests   *prometheus.CounterVec
@@ -466,6 +469,11 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Count of rejected bids due to floors enforcement per partner.",
 		[]string{adapterLabel})
 
+	metrics.dynamicFetchFailure = newCounter(cfg, reg,
+		"floors_account_fetch_err",
+		"Count of failures in case of dynamic fetch labeled by account",
+		[]string{accountLabel})
+
 	metrics.adsCertSignTimer = newHistogram(cfg, reg,
 		"ads_cert_sign_time",
 		"Seconds to generate an AdsCert header",
@@ -750,6 +758,14 @@ func (m *Metrics) RecordRejectedBidsForBidder(Adapter openrtb_ext.BidderName) {
 	if m.rejectedBids != nil {
 		m.rejectedBids.With(prometheus.Labels{
 			adapterLabel: string(Adapter),
+		}).Inc()
+	}
+}
+
+func (m *Metrics) RecordDynamicFetchFailure(pubId string) {
+	if pubId != metrics.PublisherUnknown {
+		m.dynamicFetchFailure.With(prometheus.Labels{
+			accountLabel: pubId,
 		}).Inc()
 	}
 }

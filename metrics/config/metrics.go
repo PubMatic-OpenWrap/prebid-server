@@ -135,6 +135,13 @@ func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.Bid
 	}
 }
 
+// RecordDynamicFetchFailure across all engines
+func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId string) {
+	for _, thisME := range *me {
+		thisME.RecordDynamicFetchFailure(pubId)
+	}
+}
+
 // Keeps track of created and reused connections to adapter bidders and the time from the
 // connection request, to the connection creation, or reuse from the pool across all engines
 func (me *MultiMetricsEngine) RecordAdapterConnections(bidderName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration) {
