@@ -473,7 +473,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	metrics.dynamicFetchFailure = newCounter(cfg, reg,
 		"floors_account_fetch_err",
 		"Count of failures in case of dynamic fetch labeled by account",
-		[]string{accountLabel})
+		[]string{codeLabel, accountLabel})
 
 	metrics.adsCertSignTimer = newHistogram(cfg, reg,
 		"ads_cert_sign_time",
