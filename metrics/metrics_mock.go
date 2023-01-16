@@ -110,10 +110,6 @@ func (me *MetricsEngineMock) RecordRejectedBidsForBidder(bidder openrtb_ext.Bidd
 	me.Called(bidder)
 }
 
-func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId string) {
-	me.Called(pubId)
-}
-
 // RecordStoredReqCacheResult mock
 func (me *MetricsEngineMock) RecordStoredReqCacheResult(cacheResult CacheResult, inc int) {
 	me.Called(cacheResult, inc)
@@ -181,4 +177,7 @@ func (me *MetricsEngineMock) RecordAdsCertSignTime(adsCertSignTime time.Duration
 
 func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 	me.Called(pubid, bidder, code)
+}
+func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId, code string) {
+	me.Called(pubId, code)
 }

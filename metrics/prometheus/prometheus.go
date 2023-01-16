@@ -763,10 +763,11 @@ func (m *Metrics) RecordRejectedBidsForBidder(Adapter openrtb_ext.BidderName) {
 	}
 }
 
-func (m *Metrics) RecordDynamicFetchFailure(pubId string) {
+func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
 	if pubId != metrics.PublisherUnknown {
 		m.dynamicFetchFailure.With(prometheus.Labels{
 			accountLabel: pubId,
+			codeLabel:    code,
 		}).Inc()
 	}
 }
