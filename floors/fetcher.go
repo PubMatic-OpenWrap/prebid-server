@@ -200,7 +200,7 @@ func fetchAndValidate(configs config.AccountFloorFetch, metricEngine metrics.Met
 
 	floorResp, maxAge, err := fetchFloorRulesFromURL(configs)
 	if err != nil {
-		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "0")
+		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "1")
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
 		return nil, 0
 	}
@@ -212,13 +212,13 @@ func fetchAndValidate(configs config.AccountFloorFetch, metricEngine metrics.Met
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
-		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "1")
+		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "2")
 		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
 		return nil, 0
 	} else {
 		err := validateRules(configs, &priceFloors)
 		if err != nil {
-			metricEngine.RecordDynamicFetchFailure(configs.AccountID, "2")
+			metricEngine.RecordDynamicFetchFailure(configs.AccountID, "3")
 			glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", configs.URL, err.Error())
 			return nil, 0
 		}
