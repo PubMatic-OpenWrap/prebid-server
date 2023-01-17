@@ -137,8 +137,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	var floorsJson *openrtb_ext.PriceFloorRules
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
-	accountId := account.ID
-	account.PriceFloors.Fetch.AccountID = accountId
+	account.PriceFloors.Fetch.AccountID = account.ID
 	if reqFloor != nil && reqFloor.Location != nil && reqFloor.Location.URL != "" {
 		account.PriceFloors.Fetch.URL = reqFloor.Location.URL
 	}
