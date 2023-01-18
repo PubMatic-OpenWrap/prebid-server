@@ -112,7 +112,7 @@ func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
 
 func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
-	if !configs.UseDynamicData {
+	if !configs.UseDynamicData || len(configs.Fetch.URL) == 0 || !validator.IsURL(configs.Fetch.URL) {
 		return nil, openrtb_ext.FetchNone
 	}
 
@@ -127,7 +127,7 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 	}
 
 	//miss: push to channel to fetch and return empty response
-	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
+	if configs.Enabled && configs.Fetch.Enabled && configs.Fetch.Timeout > 0 {
 		fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchTime: time.Now().Unix(), RefetchRequest: false}
 		f.configReceiver <- fetchInfo
 	}
