@@ -1995,8 +1995,8 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 		{
 			description: "record dynamic fetch failure",
 			in: testIn{
-				pubid:  "1010",
-				code:   "100",
+				pubid: "5890",
+				code:  "1",
 			},
 			out: testOut{
 				expCount: 1,
