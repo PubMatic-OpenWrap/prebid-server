@@ -9,7 +9,6 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/adcom1"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -38,6 +37,9 @@ const (
 	PBSAdUnitIDMacro = "[AD_UNIT]"
 	//PBSBidderCodeMacro represents an alias id or core bidder id.
 	PBSBidderCodeMacro = "[BIDDER_CODE]"
+
+	//PubMaticEventTracking placeholder to inject pubmatic tracking events
+	PubMaticEventTracking = "[PUBMATIC_EVENT_TRACKING]"
 )
 
 var trackingEvents = []string{"start", "firstQuartile", "midpoint", "thirdQuartile", "complete"}
@@ -80,32 +82,22 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 
 	creatives := FindCreatives(doc)
 
-	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
-		// determine which creative type to be created based on linearity
-		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
-			// create creative object
-			creatives = doc.FindElements("VAST/Ad/Wrapper/Creatives")
-			// var creative *etree.Element
-			// if len(creatives) > 0 {
-			// 	creative = creatives[0] // consider only first creative
-			// } else {
-			creative := doc.CreateElement("Creative")
-			creatives[0].AddChild(creative)
-
-			// }
-
-			switch imp.Video.Linearity {
-			case adcom1.LinearityLinear:
-				creative.AddChild(doc.CreateElement("Linear"))
-			case adcom1.LinearityNonLinear:
-				creative.AddChild(doc.CreateElement("NonLinearAds"))
-			default: // create both type of creatives
-				creative.AddChild(doc.CreateElement("Linear"))
-				creative.AddChild(doc.CreateElement("NonLinearAds"))
-			}
-			creatives = creative.ChildElements() // point to actual cratives
-		}
+	var pubmaticTrackingEvents strings.Builder
+	for _, name := range trackingEvents {
+		_, _ = pubmaticTrackingEvents.Write([]byte(`<Tracking event="`))
+		_, _ = pubmaticTrackingEvents.Write([]byte(name))
+		_, _ = pubmaticTrackingEvents.Write([]byte(`"><![CDATA[`))
+		_, _ = pubmaticTrackingEvents.Write([]byte(eventURLMap[name]))
+		_, _ = pubmaticTrackingEvents.Write([]byte(`]]></Tracking>`))
 	}
+
+	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
+		// modifyBidVAST create a template vastXML if bid.AdM is empty, rely on the same!
+		// Video bid or not, template is same and the same trackers were being injected.
+		// Inject both in Wrapper and InLine, no harm???
+		return replaceMacros(vastXML, map[string]string{PubMaticEventTracking: pubmaticTrackingEvents.String()}), nil
+	}
+
 	for _, creative := range creatives {
 		trackingEventsXML := creative.SelectElement("TrackingEvents")
 		if trackingEventsXML == nil {
@@ -207,6 +199,11 @@ func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId,
 		macroMap[strings.TrimSpace(key)] = strings.TrimSpace(value)
 	}
 
+	// for backward compatibility, do we need this for all???
+	for key, value := range macroMap {
+		macroMap[key] = url.QueryEscape(value)
+	}
+
 	eventURLMap := make(map[string]string)
 	for name, id := range trackingEventIDMap { // NYC check if trackingEvents and macroMap can be clubbed
 		// replace [EVENT_ID] macro with PBS defined event ID
@@ -233,7 +230,6 @@ func replaceMacros(trackerURL string, macroMap map[string]string) string {
 				n := j + 1
 				k := trackerURL[i:n]
 				if v, ok := macroMap[k]; ok {
-					v = url.QueryEscape(v) // NYC move QueryEscape while creating map, no need to do this everytime
 					_, _ = builder.Write([]byte(v))
 					i = j
 					continue
