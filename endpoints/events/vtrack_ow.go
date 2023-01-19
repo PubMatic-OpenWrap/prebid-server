@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/url"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/adcom1"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -52,18 +52,9 @@ var trackingEventIDMap = map[string]string{
 	"complete":      "6",
 }
 
-//InjectVideoEventTrackers injects the video tracking events
-//Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
+// InjectVideoEventTrackers injects the video tracking events
+// Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
 func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) (string, error) {
-	// parse VAST
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(vastXML)
-	if nil != err {
-		err = fmt.Errorf("error parsing VAST XML. '%v'", err.Error())
-		glog.Errorf(err.Error())
-		return vastXML, err // false indicates events trackers are not injected
-	}
-
 	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
 	//TODO: It should be optimized by forming once and reusing
 	impMap := make(map[string]*openrtb2.Imp)
@@ -72,57 +63,71 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 	}
 
 	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, impMap)
-	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
 		return vastXML, errors.New("event URLs not found")
 	}
 
-	creatives := FindCreatives(doc)
+	var pubmaticTrackingEvents []Tracking
+	for _, name := range trackingEvents {
+		pubmaticTrackingEvents = append(pubmaticTrackingEvents, Tracking{Event: name, URI: eventURLMap[name]})
+	}
 
+	// we already auto handle this case. We inject pubmaticTrackingEvents for all available creatives. Too much duplicate possible, Is this OK?
+	// this is added only to 1st creative, any harm if injected in all the creatives?
+	// createAndInjectCreative := 0
+	createAndInjectCreative := false
 	if adm := strings.TrimSpace(bid.AdM); adm == "" || strings.HasPrefix(adm, "http") {
-		// determine which creative type to be created based on linearity
-		if imp, ok := impMap[bid.ImpID]; ok && nil != imp.Video {
-			// create creative object
-			creatives = doc.FindElements("VAST/Ad/Wrapper/Creatives")
-			// var creative *etree.Element
-			// if len(creatives) > 0 {
-			// 	creative = creatives[0] // consider only first creative
-			// } else {
-			creative := doc.CreateElement("Creative")
-			creatives[0].AddChild(creative)
-
-			// }
-
-			switch imp.Video.Linearity {
-			case adcom1.LinearityLinear:
-				creative.AddChild(doc.CreateElement("Linear"))
-			case adcom1.LinearityNonLinear:
-				creative.AddChild(doc.CreateElement("NonLinearAds"))
-			default: // create both type of creatives
-				creative.AddChild(doc.CreateElement("Linear"))
-				creative.AddChild(doc.CreateElement("NonLinearAds"))
-			}
-			creatives = creative.ChildElements() // point to actual cratives
+		if imp, ok := impMap[bid.ImpID]; ok && imp.Video != nil {
+			// createAndInjectCreative = adcom1.LinearityMode(imp.Video.Linearity)
+			createAndInjectCreative = true
 		}
 	}
-	for _, creative := range creatives {
-		trackingEventsXML := creative.SelectElement("TrackingEvents")
-		if trackingEventsXML == nil {
-			trackingEventsXML = creative.CreateElement("TrackingEvents")
-			creative.AddChild(trackingEventsXML)
+
+	vast := VAST{}
+	err := xml.Unmarshal([]byte(vastXML), &vast)
+	if err != nil {
+		err = fmt.Errorf("error parsing VAST XML. '%v'", err.Error())
+		glog.Errorf(err.Error())
+		return vastXML, err
+	}
+
+	trackersInjected := false
+	for _, ads := range vast.Ads {
+		if ads.InLine != nil {
+			for _, inLineCreatives := range ads.InLine.Creatives {
+				if inLineCreatives.Linear != nil { // VAST/Ad/InLine/Creatives/Creative/Linear
+					inLineCreatives.Linear.TrackingEvents = append(inLineCreatives.Linear.TrackingEvents, pubmaticTrackingEvents...)
+					trackersInjected = true
+				}
+				if inLineCreatives.NonLinearAds != nil { // VAST/Ad/InLine/Creatives/Creative/NonLinearAds
+					inLineCreatives.NonLinearAds.TrackingEvents = append(inLineCreatives.NonLinearAds.TrackingEvents, pubmaticTrackingEvents...)
+					trackersInjected = true
+				}
+			}
 		}
-		// Inject - using trackingEvents instead of map to keep output xml predictable. (sequencing in map is not guaranteed)
-		for _, event := range trackingEvents {
-			trackingEle := trackingEventsXML.CreateElement("Tracking")
-			trackingEle.CreateAttr("event", event)
-			trackingEle.SetText(eventURLMap[event])
-			trackersInjected = true
+		if ads.Wrapper != nil {
+			if createAndInjectCreative {
+				if len(ads.Wrapper.Creatives) == 0 {
+					ads.Wrapper.Creatives = append(ads.Wrapper.Creatives, CreativeWrapper{Linear: &LinearWrapper{}, NonLinearAds: &NonLinearAdsWrapper{}})
+				}
+			}
+
+			for _, wrapperCreatives := range ads.Wrapper.Creatives {
+				if wrapperCreatives.Linear != nil { // VAST/Ad/Wrapper/Creatives/Creative/Linear
+					wrapperCreatives.Linear.TrackingEvents = append(wrapperCreatives.Linear.TrackingEvents, pubmaticTrackingEvents...)
+					trackersInjected = true
+				}
+				if wrapperCreatives.NonLinearAds != nil { // VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds
+					wrapperCreatives.NonLinearAds.TrackingEvents = append(wrapperCreatives.NonLinearAds.TrackingEvents, pubmaticTrackingEvents...)
+					trackersInjected = true
+				}
+			}
 		}
 	}
 
 	if trackersInjected {
-		out, err := doc.WriteToBytes()
+		out, err := xml.Marshal(vast)
 		if err != nil {
 			glog.Errorf("%v", err.Error())
 		}
