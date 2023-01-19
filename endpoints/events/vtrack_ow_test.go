@@ -654,29 +654,17 @@ func BenchmarkGetVideoEventTracking(b *testing.B) {
 }
 
 // BenchmarkInjectVideoEventTrackers
-//
-// Refactored-BenchmarkGetVideoEventTracking-with-xml-struct-defined
-//
-// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee old2.txt
-// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee new-with-old-InjectVideoEventTrackers.txt
-//
-// Run 1
-// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ benchstat old2.txt new-with-old-InjectVideoEventTrackers.txt
+// nilesh@9fc43242aec1: git checkout origin/ci
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee old1.txt
+// nilesh@9fc43242aec1: git checkout origin/UOE-8632-ci-1
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee new1.txt
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ benchstat old1.txt new1.txt
 // goos: linux
 // goarch: arm64
 // pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
-//                            │  old2.txt   │ new-with-old-InjectVideoEventTrackers.txt │
-//                            │   sec/op    │      sec/op        vs base                │
-// InjectVideoEventTrackers-8   107.7µ ± 1%         100.7µ ± 2%  -6.52% (p=0.000 n=200)
-//
-// Run 2
-// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ benchstat old2.txt new-with-old-InjectVideoEventTrackers-2.txt
-// goos: linux
-// goarch: arm64
-// pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
-//                            │  old2.txt   │ new-with-old-InjectVideoEventTrackers-2.txt │
-//                            │   sec/op    │       sec/op         vs base                │
-// InjectVideoEventTrackers-8   107.7µ ± 1%           102.5µ ± 2%  -4.83% (p=0.000 n=200)
+//                            │   old1.txt   │          new1.txt           │
+//                            │    sec/op    │   sec/op     vs base        │
+// InjectVideoEventTrackers-8   107.83µ ± 1%   97.62µ ± 1%  -9.47% (n=200)
 func BenchmarkInjectVideoEventTrackers(b *testing.B) {
 	trackerURL := "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]"
 	vastXML := `<VAST version="3.0"><Ad><InLine><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></InLine><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></Wrapper></Ad></VAST>`
