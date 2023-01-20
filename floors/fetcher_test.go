@@ -13,6 +13,7 @@ import (
 	"github.com/alitto/pond"
 	"github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/config"
+	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -721,7 +722,7 @@ func TestFetchAndValidate(t *testing.T) {
 			defer mockHttpServer.Close()
 
 			tt.args.configs.URL = mockHttpServer.URL
-			got, got1 := fetchAndValidate(tt.args.configs)
+			got, got1 := fetchAndValidate(tt.args.configs, &metricsConf.NilMetricsEngine{})
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("fetchAndValidate() got = %v, want %v", got, tt.want)
 			}
@@ -746,7 +747,7 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 	mockHttpServer := httptest.NewServer(mockHandler(response, 200))
 	defer mockHttpServer.Close()
 
-	fectherInstance := NewPriceFloorFetcher(5, 10, 1, 20)
+	fectherInstance := NewPriceFloorFetcher(5, 10, 1, 20, &metricsConf.NilMetricsEngine{})
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 
@@ -775,7 +776,7 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 
 func TestFetcherDataPresentInCache(t *testing.T) {
 
-	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20)
+	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20, &metricsConf.NilMetricsEngine{})
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 
@@ -804,7 +805,7 @@ func TestFetcherDataPresentInCache(t *testing.T) {
 
 func TestFetcherDataNotPresentInCache(t *testing.T) {
 
-	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20)
+	fectherInstance := NewPriceFloorFetcher(2, 5, 5, 20, &metricsConf.NilMetricsEngine{})
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 
@@ -1036,7 +1037,7 @@ func TestFetcherWhenRequestGetDifferentURLInrequest(t *testing.T) {
 	mockHttpServer := httptest.NewServer(mockHandler(response, 200))
 	defer mockHttpServer.Close()
 
-	fectherInstance := NewPriceFloorFetcher(5, 10, 1, 20)
+	fectherInstance := NewPriceFloorFetcher(5, 10, 1, 20, &metricsConf.NilMetricsEngine{})
 	defer fectherInstance.Stop()
 	defer fectherInstance.pool.Stop()
 
