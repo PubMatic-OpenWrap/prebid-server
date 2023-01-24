@@ -58,6 +58,7 @@ type AccountFloorFetch struct {
 	MaxRules    int    `mapstructure:"max_rules" json:"max_rules"`
 	MaxAge      int    `mapstructure:"max_age_sec" json:"max_age_sec"`
 	Period      int    `mapstructure:"period_sec" json:"period_sec"`
+	AccountID   string `mapstructure:"accountID" json:"accountID"`
 }
 
 // AccountCCPA represents account-specific CCPA configuration

@@ -16,6 +16,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -38,6 +39,7 @@ type PriceFloorFetcher struct {
 	done            chan struct{}   // Channel to close fetcher
 	cache           *cache.Cache    // cache
 	cacheExpiry     time.Duration   // cache expiry time
+	metricEngine    metrics.MetricsEngine
 }
 
 type FetchInfo struct {
@@ -82,7 +84,7 @@ func (fq *FetchQueue) Top() *FetchInfo {
 	return old[0]
 }
 
-func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry int) *PriceFloorFetcher {
+func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry int, metricEngine metrics.MetricsEngine) *PriceFloorFetcher {
 
 	floorFetcher := PriceFloorFetcher{
 		pool:            pond.New(maxWorkers, maxCapacity),
@@ -92,6 +94,7 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry 
 		done:            make(chan struct{}),
 		cacheExpiry:     time.Duration(cacheExpiry) * time.Second,
 		cache:           cache.New(time.Duration(cacheExpiry)*time.Second, time.Duration(cacheCleanUpInt)*time.Second),
+		metricEngine:    metricEngine,
 	}
 
 	go floorFetcher.Fetcher()
@@ -109,7 +112,7 @@ func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
 
 func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
-	if !configs.UseDynamicData {
+	if !configs.UseDynamicData || len(configs.Fetch.URL) == 0 || !validator.IsURL(configs.Fetch.URL) {
 		return nil, openrtb_ext.FetchNone
 	}
 
@@ -124,7 +127,7 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 	}
 
 	//miss: push to channel to fetch and return empty response
-	if configs.Enabled && configs.Fetch.Enabled && len(configs.Fetch.URL) > 0 && validator.IsURL(configs.Fetch.URL) && configs.Fetch.Timeout > 0 {
+	if configs.Enabled && configs.Fetch.Enabled && configs.Fetch.Timeout > 0 {
 		fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchTime: time.Now().Unix(), RefetchRequest: false}
 		f.configReceiver <- fetchInfo
 	}
@@ -134,7 +137,7 @@ func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_e
 
 func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
 
-	floorData, fetchedMaxAge := fetchAndValidate(configs)
+	floorData, fetchedMaxAge := fetchAndValidate(configs, f.metricEngine)
 	if floorData != nil {
 		// Update cache with new floor rules
 		glog.Infof("Updating Value in cache for URL %s", configs.URL)
@@ -193,10 +196,11 @@ func (f *PriceFloorFetcher) Fetcher() {
 	}
 }
 
-func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
+func fetchAndValidate(configs config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
 
 	floorResp, maxAge, err := fetchFloorRulesFromURL(configs)
 	if err != nil {
+		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "1")
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
 		return nil, 0
 	}
@@ -208,11 +212,13 @@ func fetchAndValidate(configs config.AccountFloorFetch) (*openrtb_ext.PriceFloor
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
+		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "2")
 		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
 		return nil, 0
 	} else {
 		err := validateRules(configs, &priceFloors)
 		if err != nil {
+			metricEngine.RecordDynamicFetchFailure(configs.AccountID, "3")
 			glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", configs.URL, err.Error())
 			return nil, 0
 		}
