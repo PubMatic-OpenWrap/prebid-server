@@ -118,7 +118,8 @@
                                     "ext": {
                                         "dspid": 6,
                                         "advid": 125,
-                                        "deal_channel": 1
+                                        "deal_channel": 1,
+                                        "BidType":0
                                     }
                                 }
                             ]
@@ -154,7 +155,8 @@
                         "ext": {
                             "dspid": 6,
                             "advid": 125,
-                            "deal_channel": 1
+                            "deal_channel": 1,
+                            "BidType":0
                         }
                     },
                     "type": "banner",
@@ -167,7 +169,8 @@
                         "secondaryCatIds": [
                             "IAB-1",
                             "IAB-2"
-                        ]
+                        ],
+                        "mediaType":"banner"
                     }
                 }
             ]
