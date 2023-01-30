@@ -1,15 +1,25 @@
 package openrtb2
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"header-bidding/openrtb"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
+	analyticsConf "github.com/prebid/prebid-server/analytics/config"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/exchange"
+	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -570,135 +580,96 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 }
 
-func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
-	type fields struct {
-		impData []*types.ImpData
-	}
+func TestCreateBidResponse(t *testing.T) {
 	type args struct {
-		loggableObject *analytics.LoggableAuctionObject
+		resp *openrtb2.BidResponse
+	}
+	type want struct {
+		resp *openrtb2.BidResponse
 	}
 	tests := []struct {
-		name                 string
-		fields               fields
-		args                 args
-		expectedRejectedBids []analytics.RejectedBid
+		name string
+		args args
+		want want
 	}{
 		{
-			name: "Empty impdata",
-			fields: fields{
-				impData: []*types.ImpData{},
-			},
+			name: "sample bidresponse",
 			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
 				},
 			},
-			expectedRejectedBids: []analytics.RejectedBid{},
+			want: want{
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
+					SeatBid:    make([]openrtb2.SeatBid, 0),
+				},
+			},
 		},
-		{
-			name: "Nil AdpodBid",
-			fields: fields{
-				impData: []*types.ImpData{
-					{
-						Bid: nil,
-					},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deps := ctvEndpointDeps{
+				request: &openrtb2.BidRequest{
+					ID: "1",
 				},
-			},
+			}
+			actual := deps.createBidResponse(tt.args.resp, nil)
+			assert.Equal(t, tt.want.resp, actual)
+		})
+
+	}
+}
+
+func TestSetBidExtParams(t *testing.T) {
+	type args struct {
+		impData []*types.ImpData
+	}
+	type want struct {
+		impData []*types.ImpData
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "sample",
 			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
-				},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{},
-		},
-		{
-			name: "No Bids",
-			fields: fields{
-				impData: []*types.ImpData{
-					{
-						Bid: &types.AdPodBid{
-							Bids: []*types.Bid{},
-						},
-					},
-				},
-			},
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
-				},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{},
-		},
-		{
-			name: "2 bids",
-			fields: fields{
 				impData: []*types.ImpData{
 					{
 						Bid: &types.AdPodBid{
 							Bids: []*types.Bid{
 								{
-									Seat: "pubmatic",
 									Bid: &openrtb2.Bid{
-										ID: "123",
+										Ext: json.RawMessage(`{"prebid": {"video": {} },"adpod": {}}`),
 									},
-									Status: constant.StatusCategoryExclusion,
-								},
-								{
-									Seat: "vast-bidder",
-									Bid: &openrtb2.Bid{
-										ID: "1234",
-									},
-									Status: constant.StatusDomainExclusion,
-								},
-								{
-									Seat: "appnexus",
-									Bid: &openrtb2.Bid{
-										ID: "12345",
-									},
-									Status: constant.StatusDurationMismatch,
-								},
-								{
-									Seat: "openx",
-									Bid: &openrtb2.Bid{
-										ID: "123456",
-									},
-									Status: constant.StatusOK,
+									Duration: 10,
+									Status:   1,
 								},
 							},
 						},
 					},
 				},
 			},
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{
-				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Seat:            "pubmatic",
-					Bid: &openrtb2.Bid{
-						ID: "123",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossAdvertiserExclusions,
-					Seat:            "vast-bidder",
-					Bid: &openrtb2.Bid{
-						ID: "1234",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossCreativeFiltered,
-					Seat:            "appnexus",
-					Bid: &openrtb2.Bid{
-						ID: "12345",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossLostToHigherBid,
-					Seat:            "openx",
-					Bid: &openrtb2.Bid{
-						ID: "123456",
+			want: want{
+				impData: []*types.ImpData{
+					{
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{
+								{
+									Bid: &openrtb2.Bid{
+										Ext: json.RawMessage(`{"prebid": {"video": {"duration":10} },"adpod": {"aprc":1}}`),
+									},
+									Duration: 10,
+									Status:   1,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -706,12 +677,556 @@ func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deps := &ctvEndpointDeps{
-				impData: tt.fields.impData,
-			}
-			deps.updateAdpodAuctionRejectedBids(tt.args.loggableObject)
-			assert.Equal(t, tt.expectedRejectedBids, tt.args.loggableObject.RejectedBids, "Rejected Bids not matching")
 
+			deps := ctvEndpointDeps{
+				impData: tt.args.impData,
+			}
+			deps.setBidExtParams()
+			assert.Equal(t, tt.want.impData[0].Bid.Bids[0].Ext, deps.impData[0].Bid.Bids[0].Ext)
 		})
 	}
+}
+
+func TestGetAdPodExt(t *testing.T) {
+	type args struct {
+		resp *openrtb2.BidResponse
+	}
+	type want struct {
+		data json.RawMessage
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "nil-ext",
+			args: args{
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "b1",
+								},
+								{
+									ID: "b2",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+			},
+		},
+		{
+			name: "non-nil-ext",
+			args: args{
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "b1",
+								},
+								{
+									ID: "b2",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Ext: json.RawMessage(`{"xyz":10}`),
+				},
+			},
+			want: want{
+				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			deps := ctvEndpointDeps{
+				impData: []*types.ImpData{
+					{
+						ImpID: "imp1",
+						VideoExt: &openrtb_ext.ExtVideoAdPod{
+							AdPod: &openrtb_ext.VideoAdPod{},
+						},
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{},
+						},
+					},
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+			}
+			actual := deps.getAdPodExt(tt.args.resp)
+			assert.Equal(t, string(tt.want.data), string(actual))
+		})
+	}
+}
+
+func TestFilterRejectedBids(t *testing.T) {
+	type args struct {
+		resp           *openrtb2.BidResponse
+		loggableObject *analytics.LoggableAuctionObject
+	}
+	type want struct {
+		RejectedBids []analytics.RejectedBid
+		SeatBids     []openrtb2.SeatBid
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+
+		{
+			name: "single-bidder",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{},
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "b1",
+									Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+								},
+								{
+									ID:  "b2",
+									Ext: json.RawMessage(`{"adpod": {"aprc":0}}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				RejectedBids: []analytics.RejectedBid{
+					{
+						RejectionReason: openrtb3.LossLostToHigherBid,
+						Seat:            "pubmatic",
+						Bid: &openrtb2.Bid{
+							ID:  "b2",
+							Ext: json.RawMessage(`{"adpod": {"aprc":0}}`),
+						},
+					},
+				},
+				SeatBids: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "b1",
+								Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "bidder-without-aprc",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{},
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "b1",
+									Ext: json.RawMessage(`{"adpod": {"noaprc":1}}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				RejectedBids: nil,
+				SeatBids: []openrtb2.SeatBid{
+					{
+						Bid:  []openrtb2.Bid{}, //empty-bid-array
+						Seat: "pubmatic",
+					},
+				},
+			},
+		},
+		{
+			name: "multiple-bidders",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{},
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "b1",
+									Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+								},
+								{
+									ID:  "b2",
+									Ext: json.RawMessage(`{"adpod": {"aprc":0}}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "b3",
+									Ext: json.RawMessage(`{"adpod": {"aprc":3}}`),
+								},
+								{
+									ID:  "b4",
+									Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+								},
+							},
+							Seat: "appnexus",
+						},
+					},
+				},
+			},
+			want: want{
+				RejectedBids: []analytics.RejectedBid{
+					{
+						RejectionReason: openrtb3.LossLostToHigherBid,
+						Seat:            "pubmatic",
+						Bid: &openrtb2.Bid{
+							ID:  "b2",
+							Ext: json.RawMessage(`{"adpod": {"aprc":0}}`),
+						},
+					},
+					{
+						RejectionReason: openrtb3.LossAdvertiserExclusions,
+						Seat:            "appnexus",
+						Bid: &openrtb2.Bid{
+							ID:  "b3",
+							Ext: json.RawMessage(`{"adpod": {"aprc":3}}`),
+						},
+					},
+				},
+				SeatBids: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "b1",
+								Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+							},
+						},
+						Seat: "pubmatic",
+					},
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "b4",
+								Ext: json.RawMessage(`{"adpod": {"aprc":1}}`),
+							},
+						},
+						Seat: "appnexus",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			oldRespSeatBid := make([]openrtb2.SeatBid, 0)
+			oldRespSeatBid = append(oldRespSeatBid, tt.args.resp.SeatBid...)
+
+			filterRejectedBids(tt.args.resp, tt.args.loggableObject)
+			assert.Equal(t, tt.want.RejectedBids, tt.args.loggableObject.RejectedBids)
+			assert.Equal(t, tt.want.SeatBids, tt.args.resp.SeatBid)
+		})
+	}
+}
+func formORtbV25Request(formatFlag bool, videoFlag bool) *openrtb.BidRequest {
+	request := new(openrtb.BidRequest)
+	banner := new(openrtb.Banner)
+	if formatFlag == true {
+		formatObj1 := new(openrtb.Format) // openrtb.Format{728, 90, nil}
+		formatObj1.W = new(int)
+		*formatObj1.W = 728
+		formatObj1.H = new(int)
+		*formatObj1.H = 90
+
+		formatObj2 := new(openrtb.Format) // openrtb.Format{728, 90, nil}
+		formatObj2.W = new(int)
+		*formatObj2.W = 300
+		formatObj2.H = new(int)
+		*formatObj2.H = 250
+
+		formatArray := []*openrtb.Format{formatObj1, formatObj2}
+		banner.Format = formatArray
+
+		banner.W = new(int)
+		*banner.W = 700
+		banner.H = new(int)
+		*banner.H = 900
+
+	} else {
+		banner.W = new(int)
+		*banner.W = 728
+		banner.H = new(int)
+		*banner.H = 90
+	}
+
+	imp := new(openrtb.Imp)
+	if videoFlag == true {
+		video := formVideoObject()
+		imp.Video = video
+	}
+
+	imp.Id = new(string)
+	*imp.Id = "1"
+	imp.Banner = banner
+	imp.TagId = new(string)
+	*imp.TagId = "adunit"
+
+	impWrapExt := new(openrtb.ExtImpWrapper)
+	impWrapExt.Div = new(string)
+	*impWrapExt.Div = "div"
+
+	inImpExt := new(openrtb.ImpExtension)
+
+	//inImpExt.Wrapper = impWrapExt
+
+	// bidderExt := map[string]*openrtb.BidderExtension{
+	// 	"appnexus": &openrtb.BidderExtension{
+	// 		KeyWords: []openrtb.KeyVal{
+	// 			{
+	// 				Key:    "pmzoneid",
+	// 				Values: []string{"val1", "val2"},
+	// 			},
+	// 		},
+	// 	},
+	// }
+	//inImpExt.Bidder = bidderExt
+
+	imp.Ext = inImpExt
+	impArr := make([]*openrtb.Imp, 0)
+	impArr = append(impArr, imp)
+	request.Id = new(string)
+	*request.Id = "123-456-789"
+	request.Imp = impArr
+
+	inImpExt.Prebid = new(openrtb_ext.ExtImpPrebid)
+	inImpExt.Prebid.Bidder = map[string]json.RawMessage{
+		"pubmatic": json.RawMessage(`""`),
+	}
+
+	len := 2
+	request.Wseat = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Wseat[i] = fmt.Sprintf("Wseat_%d", i)
+	}
+
+	request.Cur = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Cur[i] = fmt.Sprintf("cur_%d", i)
+	}
+
+	request.Badv = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Badv[i] = fmt.Sprintf("badv_%d", i)
+	}
+
+	request.Bapp = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Bapp[i] = fmt.Sprintf("bapp_%d", i)
+	}
+
+	request.Bcat = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Bcat[i] = fmt.Sprintf("bcat_%d", i)
+	}
+
+	request.Wlang = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Wlang[i] = fmt.Sprintf("Wlang_%d", i)
+	}
+
+	request.Bseat = make([]string, len)
+	for i := 0; i < len; i++ {
+		request.Bseat[i] = fmt.Sprintf("Bseat_%d", i)
+	}
+
+	site := new(openrtb.Site)
+	publisher := new(openrtb.Publisher)
+	publisher.Id = new(string)
+	*publisher.Id = "5890"
+	site.Publisher = publisher
+	site.Page = new(string)
+	*site.Page = "www.test.com"
+
+	site.Domain = new(string)
+	*site.Domain = "test.com"
+
+	request.Site = site
+
+	request.Device = new(openrtb.Device)
+	request.Device.IP = new(string)
+	*request.Device.IP = "123.145.167.10"
+	request.Device.Ua = new(string)
+	*request.Device.Ua = "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36"
+
+	request.User = new(openrtb.User)
+	request.User.ID = new(string)
+	*request.User.ID = "119208432"
+
+	request.User.BuyerUID = new(string)
+	*request.User.BuyerUID = "1rwe432"
+
+	request.User.Yob = new(int)
+	*request.User.Yob = 1980
+
+	request.User.Gender = new(string)
+	*request.User.Gender = "F"
+
+	request.User.Geo = new(openrtb.Geo)
+	request.User.Geo.Country = new(string)
+	*request.User.Geo.Country = "US"
+
+	request.User.Geo.Region = new(string)
+	*request.User.Geo.Region = "CA"
+
+	request.User.Geo.Metro = new(string)
+	*request.User.Geo.Metro = "90001"
+
+	request.User.Geo.City = new(string)
+	*request.User.Geo.City = "Alamo"
+
+	request.Source = new(openrtb.Source)
+	request.Source.Ext = map[string]interface{}{
+		"omidpn": "MyIntegrationPartner",
+		"omidpv": "7.1",
+	}
+
+	wExt := new(openrtb.ExtRequest)
+	dmExt := new(openrtb.ExtRequestWrapper)
+	dmExt.ProfileId = new(int)
+	*dmExt.ProfileId = 123
+	dmExt.VersionId = new(int)
+	*dmExt.VersionId = 1
+	dmExt.LoggerImpressionID = new(string)
+	*dmExt.LoggerImpressionID = "test_display_wiid"
+	wExt.Wrapper = dmExt
+
+	request.Ext = wExt
+
+	request.Test = new(int)
+	*request.Test = 0
+	return request
+
+}
+
+func formVideoObject() *openrtb.Video {
+	video := new(openrtb.Video)
+	video.Mimes = []string{"video/mp4", "video/mpeg"}
+	video.W = new(int)
+	*video.W = 640
+	video.H = new(int)
+	*video.H = 480
+
+	video.Ext = map[string]interface{}{
+		"adpod": map[string]int{
+			"minads":        1,
+			"adminduration": 5,
+			"excladv":       50,
+			"maxads":        3,
+			"excliabcat":    100,
+			"admaxduration": 40,
+		},
+		"offset": 20,
+	}
+	video.MaxDuration = new(int)
+	video.MinDuration = new(int)
+	*video.MaxDuration = 50
+	*video.MinDuration = 5
+
+	return video
+}
+
+type mockExchangeCTV struct {
+	lastRequest *openrtb2.BidRequest
+}
+
+func (m *mockExchangeCTV) HoldAuction(ctx context.Context, auctionRequest exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+
+	ext := []byte(`{"prebid":{"targeting":{"hb_bidder_appnexus":"appnexus","hb_pb_appnexus":"20.00","hb_pb_cat_dur_appnex":"20.00_395_30s","hb_size":"1x1", "hb_uuid_appnexus":"837ea3b7-5598-4958-8c45-8e9ef2bf7cc1"},"type":"video","dealpriority":0,"dealtiersatisfied":false},"bidder":{"appnexus":{"brand_id":1,"auction_id":7840037870526938650,"bidder_id":2,"bid_ad_type":1,"creative_info":{"video":{"duration":30,"mimes":["video\/mp4"]}}}}}`)
+	return &openrtb2.BidResponse{
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Seat: "appnexus",
+				Bid: []openrtb2.Bid{
+					{ID: "01", ImpID: "1_0", Price: 10, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "02", ImpID: "1_1", Price: 10, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "03", ImpID: "1_2", Price: 10, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "04", ImpID: "1_3", Price: 10, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "05", ImpID: "2_0", Price: 10, AdM: "<VAST></VAST>", Ext: ext},
+				},
+			},
+			{
+				Seat: "pubmatic",
+				Bid: []openrtb2.Bid{
+					{ID: "01", ImpID: "1_0", Price: 20, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "02", ImpID: "1_1", Price: 20, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "03", ImpID: "1_2", Price: 20, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "04", ImpID: "1_3", Price: 20, AdM: "<VAST></VAST>", Ext: ext},
+					{ID: "05", ImpID: "2_0", Price: 20, AdM: "<VAST></VAST>", Ext: ext},
+				},
+			},
+		},
+	}, nil
+}
+
+func TestCTVRequests(t *testing.T) {
+
+	mockExchange := mockExchangeCTV{}
+	endpoint, _ := NewCTVEndpoint(
+		&mockExchange,
+		mockBidderParamValidator{},
+		&mockVideoStoredReqFetcher{},
+		&mockVideoStoredReqFetcher{},
+		empty_fetcher.EmptyFetcher{},
+		&config.Configuration{MaxRequestSize: maxSize},
+		&metricsConfig.NilMetricsEngine{},
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		[]byte{},
+		openrtb_ext.BuildBidderMap(),
+	)
+
+	pbReq := formORtbV25Request(false, true)
+	body := new(bytes.Buffer)
+	_ = json.NewEncoder(body).Encode(pbReq)
+
+	request := httptest.NewRequest("POST", "/openrtb2/video", body)
+	//request := httptest.NewRequest("GET", fmt.Sprintf("/openrtb2/auction/amp", requestID), nil)
+	recorder := httptest.NewRecorder()
+
+	endpoint(recorder, request, nil)
+
+	if recorder.Code != 200 {
+		t.Errorf("Expected status")
+	}
+
 }

@@ -248,10 +248,16 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		bids := deps.doAdPodExclusions()
 
 		//Create Bid Response
-		response = deps.createBidResponse(response, bids)
+		adPodBidResponse := deps.createBidResponse(response, bids)
+
+		deps.setBidExtParams()
+		filterRejectedBids(response, auctionRequest.LoggableObject)
+
+		adPodBidResponse.Ext = deps.getAdPodExt(response)
+		response = adPodBidResponse
 
 		// Log bids rejected due to advertiser/catergory exclusion or bids lossed to higher price
-		deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
+		//deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
 
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
@@ -847,11 +853,11 @@ func (deps *ctvEndpointDeps) createBidResponse(resp *openrtb2.BidResponse, adpod
 		ID:         resp.ID,
 		Cur:        resp.Cur,
 		CustomData: resp.CustomData,
-		SeatBid:    deps.getBidResponseSeatBids(adpods),
+		SeatBid:    deps.getBidResponseSeatBids(adpods), /// builds prebid_Ctv bid && sets the wining-bid-status for winner-bids
 	}
 
 	//NOTE: this should be called at last
-	bidResp.Ext = deps.getBidResponseExt(resp)
+	//bidResp.Ext = deps.getBidResponseExt(resp)
 	return bidResp
 }
 
@@ -882,7 +888,7 @@ func (deps *ctvEndpointDeps) getBidResponseSeatBids(adpods types.AdPodBids) []op
 	if nil != adpodSeat {
 		seats = append(seats, *adpodSeat)
 	}
-	return seats[:]
+	return seats[:] /// builds prebid_Ctv bid
 }
 
 //getBidResponseExt will return extension object
@@ -890,7 +896,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 	var err error
 
 	adpodExt := types.BidResponseAdPodExt{
-		Response: *resp,
+		Response: *resp, /// AAA : Remove rejected-bids from resp
 		Config:   make(map[string]*types.ImpData, len(deps.impData)),
 	}
 
@@ -1165,22 +1171,22 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 	}
 }
 
-func (deps *ctvEndpointDeps) updateAdpodAuctionRejectedBids(loggableObject *analytics.LoggableAuctionObject) {
+// func (deps *ctvEndpointDeps) updateAdpodAuctionRejectedBids(loggableObject *analytics.LoggableAuctionObject) {
 
-	for _, imp := range deps.impData {
-		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
-			for _, bid := range imp.Bid.Bids {
-				if bid.Status != constant.StatusWinningBid {
-					loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-						RejectionReason: getRejectionReason(bid.Status),
-						Bid:             bid.Bid,
-						Seat:            bid.Seat,
-					})
-				}
-			}
-		}
-	}
-}
+// 	for _, imp := range deps.impData {
+// 		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
+// 			for _, bid := range imp.Bid.Bids {
+// 				if bid.Status != constant.StatusWinningBid {
+// 					loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
+// 						RejectionReason: getRejectionReason(bid.Status),
+// 						Bid:             bid.Bid,
+// 						Seat:            bid.Seat,
+// 					})
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 func getRejectionReason(bidStatus int) openrtb3.LossReason {
 	reason := openrtb3.LossWon
@@ -1196,4 +1202,100 @@ func getRejectionReason(bidStatus int) openrtb3.LossReason {
 		reason = openrtb3.LossCreativeFiltered
 	}
 	return reason
+}
+
+// filterRejectedBids removes rejected bids from BidResponse and add it into the RejectedBids array along with reason-code.
+func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.LoggableAuctionObject) {
+
+	for index, seatbid := range resp.SeatBid {
+		winningBid := make([]openrtb2.Bid, 0)
+		for bidIndex, bid := range seatbid.Bid {
+			aprc, err := jsonparser.GetInt(bid.Ext, "adpod", "aprc")
+			if err != nil {
+				glog.Warningf("JSONParser GetInt Error: %s", err.Error())
+				continue
+			}
+			if aprc != int64(constant.StatusWinningBid) {
+				loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
+					RejectionReason: getRejectionReason(int(aprc)),
+					Bid:             &seatbid.Bid[bidIndex],
+					Seat:            seatbid.Seat,
+				})
+				continue
+			}
+			winningBid = append(winningBid, bid) //TODO ; what if no win bid
+		}
+		resp.SeatBid[index].Bid = winningBid
+	}
+}
+
+// rename to getBidResponseExt
+func (deps *ctvEndpointDeps) getAdPodExt(resp *openrtb2.BidResponse) (data json.RawMessage) {
+
+	var err error
+
+	adpodExt := types.BidResponseAdPodExt{
+		Response: *resp,
+		Config:   make(map[string]*types.ImpData, len(deps.impData)),
+	}
+
+	for index, imp := range deps.impData {
+		if nil != imp.VideoExt && nil != imp.VideoExt.AdPod {
+			adpodExt.Config[deps.request.Imp[index].ID] = imp
+		}
+	}
+
+	//Remove extension parameter
+	adpodExt.Response.Ext = nil
+
+	if resp.Ext == nil {
+		bidResponseExt := &types.ExtCTVBidResponse{
+			AdPod: &adpodExt,
+		}
+
+		data, err = json.Marshal(bidResponseExt)
+		if err != nil {
+			glog.Errorf("JSON Marshal Error: %v", err.Error())
+			return nil
+		}
+	} else {
+		data, err = json.Marshal(adpodExt)
+		if err != nil {
+			glog.Errorf("JSON Marshal Error: %v", err.Error())
+			return nil
+		}
+
+		data, err = jsonparser.Set(resp.Ext, data, constant.CTVAdpod)
+		if err != nil {
+			glog.Errorf("JSONParser Set Error: %v", err.Error())
+			return nil
+		}
+	}
+	return data[:]
+}
+
+//getBidResponseExt will return extension object
+func (deps *ctvEndpointDeps) setBidExtParams() {
+
+	for _, imp := range deps.impData {
+		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
+			for _, bid := range imp.Bid.Bids {
+
+				//update adm
+				//bid.AdM = constant.VASTDefaultTag
+
+				//add duration value
+				raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Itoa(int(bid.Duration))), "prebid", "video", "duration")
+				if nil == err {
+					bid.Ext = raw
+				}
+
+				//add bid filter reason value
+				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.Status)), "adpod", "aprc")
+				if nil == err {
+					bid.Ext = raw
+				}
+			}
+		}
+	}
 }
