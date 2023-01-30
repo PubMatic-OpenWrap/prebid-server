@@ -851,7 +851,7 @@ func (deps *ctvEndpointDeps) createBidResponse(resp *openrtb2.BidResponse, adpod
 		ID:         resp.ID,
 		Cur:        resp.Cur,
 		CustomData: resp.CustomData,
-		SeatBid:    deps.getBidResponseSeatBids(adpods), /// builds prebid_Ctv bid && sets the wining-bid-status for winner-bids
+		SeatBid:    deps.getBidResponseSeatBids(adpods),
 	}
 	return bidResp
 }
@@ -1102,7 +1102,7 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 	}
 }
 
-func getRejectionReason(bidStatus int) openrtb3.LossReason {
+func getRejectionReason(bidStatus int64) openrtb3.LossReason {
 	reason := openrtb3.LossWon
 
 	switch bidStatus {
@@ -1131,7 +1131,7 @@ func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.Lo
 			}
 			if aprc != int64(constant.StatusWinningBid) {
 				loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-					RejectionReason: getRejectionReason(int(aprc)),
+					RejectionReason: getRejectionReason(aprc),
 					Bid:             &seatbid.Bid[bidIndex],
 					Seat:            seatbid.Seat,
 				})
@@ -1192,7 +1192,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 func (deps *ctvEndpointDeps) setBidExtParams() {
 
 	for _, imp := range deps.impData {
-		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
+		if imp.Bid != nil {
 			for _, bid := range imp.Bid.Bids {
 
 				//update adm
@@ -1205,7 +1205,7 @@ func (deps *ctvEndpointDeps) setBidExtParams() {
 				}
 
 				//add bid filter reason value
-				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.Status)), "adpod", "aprc")
+				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.FormatInt(bid.Status, 10)), "adpod", "aprc")
 				if nil == err {
 					bid.Ext = raw
 				}
