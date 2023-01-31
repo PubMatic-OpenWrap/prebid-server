@@ -27,7 +27,7 @@ var (
 )
 
 //BidStatus contains bids filtering reason
-type BidStatus = int
+type BidStatus = int64
 
 const (
 	//StatusOK ...
