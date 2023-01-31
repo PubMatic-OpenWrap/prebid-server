@@ -248,7 +248,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		bids := deps.doAdPodExclusions()
 
 		//Create Bid Response
-		adPodBidResponse := deps.createBidResponse(response, bids)
+		adPodBidResponse := deps.createAdPodBidResponse(response, bids)
 
 		//Set bid.Ext params - adpod.aprc, prebid.video.duration
 		deps.setBidExtParams()
@@ -843,9 +843,9 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 
 /********************* Creating CTV BidResponse *********************/
 
-//createBidResponse
-func (deps *ctvEndpointDeps) createBidResponse(resp *openrtb2.BidResponse, adpods types.AdPodBids) *openrtb2.BidResponse {
-	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v createBidResponse", deps.request.ID))
+//createAdPodBidResponse
+func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse, adpods types.AdPodBids) *openrtb2.BidResponse {
+	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v createAdPodBidResponse", deps.request.ID))
 
 	bidResp := &openrtb2.BidResponse{
 		ID:         resp.ID,

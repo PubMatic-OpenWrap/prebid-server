@@ -576,7 +576,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 }
 
-func TestCreateBidResponse(t *testing.T) {
+func TestCreateAdPodBidResponse(t *testing.T) {
 	type args struct {
 		resp *openrtb2.BidResponse
 	}
@@ -614,7 +614,7 @@ func TestCreateBidResponse(t *testing.T) {
 					ID: "1",
 				},
 			}
-			actual := deps.createBidResponse(tt.args.resp, nil)
+			actual := deps.createAdPodBidResponse(tt.args.resp, nil)
 			assert.Equal(t, tt.want.resp, actual)
 		})
 
