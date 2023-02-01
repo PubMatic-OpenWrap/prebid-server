@@ -57,14 +57,6 @@ var trackingEventIDMap = map[string]string{
 //InjectVideoEventTrackers injects the video tracking events
 //Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
 func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) (string, error) {
-	// parse VAST
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(vastXML)
-	if nil != err {
-		err = fmt.Errorf("error parsing VAST XML. '%v'", err.Error())
-		glog.Errorf(err.Error())
-		return vastXML, err // false indicates events trackers are not injected
-	}
 
 	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
 	//TODO: It should be optimized by forming once and reusing
@@ -74,13 +66,10 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 	}
 
 	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, impMap)
-	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
 		return vastXML, errors.New("event URLs not found")
 	}
-
-	creatives := FindCreatives(doc)
 
 	var pubmaticTrackingEvents strings.Builder
 	for _, name := range trackingEvents {
@@ -98,6 +87,29 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 		return replaceMacros(vastXML, map[string]string{PubMaticEventTracking: pubmaticTrackingEvents.String()}), nil
 	}
 
+	newVastXML, trackersInjected, err := injectTrackersWithCustomXMLParser(vastXML, pubmaticTrackingEvents.String())
+	// if err == nil {
+	return newVastXML, err
+	// }
+
+	if !trackersInjected {
+		return vastXML, nil
+	}
+
+	// fallback to old method
+
+	// parse VAST
+	doc := etree.NewDocument()
+	err = doc.ReadFromString(vastXML)
+	if nil != err {
+		err = fmt.Errorf("error parsing VAST XML. '%v'", err.Error())
+		glog.Errorf(err.Error())
+		return vastXML, err // false indicates events trackers are not injected
+	}
+
+	creatives := FindCreatives(doc)
+
+	// trackersInjected := false
 	for _, creative := range creatives {
 		trackingEventsXML := creative.SelectElement("TrackingEvents")
 		if trackingEventsXML == nil {
