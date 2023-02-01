@@ -253,7 +253,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		//Set bid.Ext params - adpod.aprc, prebid.video.duration
 		deps.setBidExtParams()
 
+		startT := time.Now()
 		filterRejectedBids(response, auctionRequest.LoggableObject)
+		//filterRejectedBidsWithoutJson(response, bids, auctionRequest.LoggableObject)
+		elapsedT := time.Since(startT)
+		fmt.Printf("elapsedT=  %s", elapsedT)
+
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
 
@@ -1138,6 +1143,35 @@ func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.Lo
 				continue
 			}
 			winningBid = append(winningBid, bid) //TODO ; what if no win bid
+		}
+		resp.SeatBid[index].Bid = winningBid
+	}
+}
+
+// filterRejectedBids removes rejected bids from BidResponse and add it into the RejectedBids array along with reason-code.
+func filterRejectedBidsWithoutJson(resp *openrtb2.BidResponse, winBids types.AdPodBids, loggableObject *analytics.LoggableAuctionObject) {
+
+	for index, seatbid := range resp.SeatBid {
+		winningBid := make([]openrtb2.Bid, 0)
+		for _, bid := range seatbid.Bid {
+			found := false
+			for _, win := range winBids {
+				for _, wbid := range win.Bids {
+					if wbid.Bid.ID == bid.ID &&
+						wbid.Seat == seatbid.Seat &&
+						wbid.ImpID == bid.ImpID {
+						//winning bid found
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			if found {
+				winningBid = append(winningBid, bid)
+			}
 		}
 		resp.SeatBid[index].Bid = winningBid
 	}
