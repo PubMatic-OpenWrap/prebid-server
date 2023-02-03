@@ -448,14 +448,14 @@ func getIntPtr(v int) *int {
 func TestSelectFloorModelGroup(t *testing.T) {
 	tt := []struct {
 		name                string
-		ModelGroup []openrtb_ext.PriceFloorModelGroup
+		ModelGroup          []openrtb_ext.PriceFloorModelGroup
 		ModelVersion        string
 		fn                  func(int) int
 		expectedModelWeight int
 	}{
 		{
-			name:                "Version 3 Selection",
-			ModelGroup:[]openrtb_ext.PriceFloorModelGroup{{
+			name: "Version 3 Selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
 				ModelWeight:  nil,
 				SkipRate:     20,
 				ModelVersion: "Version 3",
@@ -477,14 +477,14 @@ func TestSelectFloorModelGroup(t *testing.T) {
 					"*|728x90|*":                     14.01,
 					"*|*|www.website.com":            15.01,
 					"*|*|*":                          16.01,
-				}, Default: 0.01},},
-				ModelVersion: "Version 3",
+				}, Default: 0.01}},
+			ModelVersion:        "Version 3",
 			fn:                  func(i int) int { return 0 },
 			expectedModelWeight: 1,
 		},
 		{
-			name:                "Version 2 Selection",
-			ModelGroup:[]openrtb_ext.PriceFloorModelGroup{{
+			name: "Version 2 Selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
 				ModelWeight:  getIntPtr(25),
 				SkipRate:     20,
 				ModelVersion: "Version 2",
@@ -508,36 +508,36 @@ func TestSelectFloorModelGroup(t *testing.T) {
 					"*|*|*":                          16.01,
 				}, Default: 0.01},
 				{
-			ModelWeight:  getIntPtr(50),
-			SkipRate:     10,
-			ModelVersion: "Version 1",
-			Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-			Values: map[string]float64{
-				"banner|300x250|www.website.com": 1.01,
-				"banner|300x250|*":               2.01,
-				"banner|300x600|www.website.com": 3.01,
-				"banner|300x600|*":               4.01,
-				"banner|728x90|www.website.com":  5.01,
-				"banner|728x90|*":                6.01,
-				"banner|*|www.website.com":       7.01,
-				"banner|*|*":                     8.01,
-				"*|300x250|www.website.com":      9.01,
-				"*|300x250|*":                    10.01,
-				"*|300x600|www.website.com":      11.01,
-				"*|300x600|*":                    12.01,
-				"*|728x90|www.website.com":       13.01,
-				"*|728x90|*":                     14.01,
-				"*|*|www.website.com":            15.01,
-				"*|*|*":                          16.01,
-			}, Default: 0.01},
+					ModelWeight:  getIntPtr(50),
+					SkipRate:     10,
+					ModelVersion: "Version 1",
+					Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
+					Values: map[string]float64{
+						"banner|300x250|www.website.com": 1.01,
+						"banner|300x250|*":               2.01,
+						"banner|300x600|www.website.com": 3.01,
+						"banner|300x600|*":               4.01,
+						"banner|728x90|www.website.com":  5.01,
+						"banner|728x90|*":                6.01,
+						"banner|*|www.website.com":       7.01,
+						"banner|*|*":                     8.01,
+						"*|300x250|www.website.com":      9.01,
+						"*|300x250|*":                    10.01,
+						"*|300x600|www.website.com":      11.01,
+						"*|300x600|*":                    12.01,
+						"*|728x90|www.website.com":       13.01,
+						"*|728x90|*":                     14.01,
+						"*|*|www.website.com":            15.01,
+						"*|*|*":                          16.01,
+					}, Default: 0.01},
 			},
-			ModelVersion: "Version 2",
+			ModelVersion:        "Version 2",
 			fn:                  func(i int) int { return 5 },
 			expectedModelWeight: 25,
-			},
+		},
 		{
-			name:                "Version 1 Selection",
-			ModelGroup:[]openrtb_ext.PriceFloorModelGroup{{
+			name: "Version 1 Selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
 				ModelWeight:  getIntPtr(50),
 				SkipRate:     10,
 				ModelVersion: "Version 1",
@@ -582,8 +582,8 @@ func TestSelectFloorModelGroup(t *testing.T) {
 						"*|728x90|*":                     14.01,
 						"*|*|www.website.com":            15.01,
 						"*|*|*":                          16.01,
-					}, Default: 0.01},},
-				ModelVersion: "Version 1",
+					}, Default: 0.01}},
+			ModelVersion:        "Version 1",
 			fn:                  func(i int) int { return 55 },
 			expectedModelWeight: 50,
 		},
@@ -591,11 +591,11 @@ func TestSelectFloorModelGroup(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			resp := selectFloorModelGroup(tc.ModelGroup,tc.fn)
+			resp := selectFloorModelGroup(tc.ModelGroup, tc.fn)
 
 			assert.Equal(t, *resp[0].ModelWeight, tc.expectedModelWeight)
 
-					if !reflect.DeepEqual(tc.ModelGroup[0].ModelVersion, tc.ModelVersion) {
+			if !reflect.DeepEqual(tc.ModelGroup[0].ModelVersion, tc.ModelVersion) {
 				t.Errorf("Floor Model Version mismatch error: \nreturn:\t%v\nwant:\t%v", tc.ModelGroup[0].ModelVersion, tc.ModelVersion)
 			}
 

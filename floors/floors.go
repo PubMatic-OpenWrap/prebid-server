@@ -167,6 +167,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 			return finFloors, append(floorModelErrList, floorValidationErr)
 		}
 
+		finFloors.Enforcement = floors.Enforcement
 		if floors.Data != nil {
 			validModelGroups, floorModelErrList := selectValidFloorModelGroups(floors.Data.ModelGroups)
 			if len(validModelGroups) == 0 {

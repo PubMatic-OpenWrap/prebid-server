@@ -843,6 +843,11 @@ func TestResolveFloors(t *testing.T) {
 				},
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
+				Enforcement: &openrtb_ext.PriceFloorEnforcement{
+					EnforcePBS:  getTrue(),
+					EnforceRate: 100,
+					FloorDeals:  getTrue(),
+				},
 				FetchStatus:        openrtb_ext.FetchNone,
 				PriceFloorLocation: openrtb_ext.RequestLocation,
 			},
@@ -1049,6 +1054,30 @@ func Test_createFloorsFrom(t *testing.T) {
 						},
 					},
 					FloorProvider: "",
+				},
+			},
+		},
+		{
+			name: "only floor enforcement object present",
+			args: args{
+				floors: &openrtb_ext.PriceFloorRules{
+					Enabled: getTrue(),
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+				},
+				fetchStatus:   openrtb_ext.FetchNone,
+				floorLocation: openrtb_ext.RequestLocation,
+			},
+			want: &openrtb_ext.PriceFloorRules{
+				FetchStatus:        openrtb_ext.FetchNone,
+				PriceFloorLocation: openrtb_ext.RequestLocation,
+				Enforcement: &openrtb_ext.PriceFloorEnforcement{
+					EnforcePBS:  getTrue(),
+					EnforceRate: 100,
+					FloorDeals:  getTrue(),
 				},
 			},
 		},
