@@ -36,14 +36,14 @@ type LoggableAuctionObject struct {
 	RejectedBids []RejectedBid
 }
 
-//Loggable object of a transaction at /openrtb2/auction endpoint
+// Loggable object of a transaction at /openrtb2/auction endpoint
 type AuctionObject struct {
 	LoggableAuctionObject
 	Account   *config.Account
 	StartTime time.Time
 }
 
-//Loggable object of a transaction at /openrtb2/amp endpoint
+// Loggable object of a transaction at /openrtb2/amp endpoint
 type AmpObject struct {
 	LoggableAuctionObject
 	AmpTargetingValues map[string]string
@@ -51,7 +51,7 @@ type AmpObject struct {
 	StartTime          time.Time
 }
 
-//Loggable object of a transaction at /openrtb2/video endpoint
+// Loggable object of a transaction at /openrtb2/video endpoint
 type VideoObject struct {
 	LoggableAuctionObject
 	VideoRequest  *openrtb_ext.BidRequestVideo
@@ -59,7 +59,7 @@ type VideoObject struct {
 	StartTime     time.Time
 }
 
-//Loggable object of a transaction at /setuid
+// Loggable object of a transaction at /setuid
 type SetUIDObject struct {
 	Status  int
 	Bidder  string
@@ -68,7 +68,7 @@ type SetUIDObject struct {
 	Success bool
 }
 
-//Loggable object of a transaction at /cookie_sync
+// Loggable object of a transaction at /cookie_sync
 type CookieSyncObject struct {
 	Status       int
 	Errors       []error

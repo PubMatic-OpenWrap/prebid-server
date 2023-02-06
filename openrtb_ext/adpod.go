@@ -58,13 +58,13 @@ type ExtOWRequest struct {
 	AdPod *ExtRequestAdPod `json:"adpod,omitempty"`
 }
 
-//ExtVideoAdPod structure to accept video specific more parameters like adpod
+// ExtVideoAdPod structure to accept video specific more parameters like adpod
 type ExtVideoAdPod struct {
 	Offset *int        `json:"offset,omitempty"` // Minutes from start where this ad is intended to show
 	AdPod  *VideoAdPod `json:"adpod,omitempty"`
 }
 
-//ExtRequestAdPod holds AdPod specific extension parameters at request level
+// ExtRequestAdPod holds AdPod specific extension parameters at request level
 type ExtRequestAdPod struct {
 	VideoAdPod
 	CrossPodAdvertiserExclusionPercent  *int                        `json:"crosspodexcladv,omitempty"`     //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
@@ -75,7 +75,7 @@ type ExtRequestAdPod struct {
 	VideoLengthMatching                 OWVideoLengthMatchingPolicy `json:"videolengthmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
-//VideoAdPod holds Video AdPod specific extension parameters at impression level
+// VideoAdPod holds Video AdPod specific extension parameters at impression level
 type VideoAdPod struct {
 	MinAds                      *int `json:"minads,omitempty"`        //Default 1 if not specified
 	MaxAds                      *int `json:"maxads,omitempty"`        //Default 1 if not specified
@@ -101,7 +101,7 @@ func getRequestAdPodError(err error) error {
 	return errors.New(strings.Replace(err.Error(), "%key%", "req.ext", -1))
 }
 
-//getVideoAdPodError will return video adpod level error message
+// getVideoAdPodError will return video adpod level error message
 func getVideoAdPodError(err error) error {
 	return errors.New(strings.Replace(err.Error(), "%key%", "imp.video.ext", -1))
 }
@@ -110,7 +110,7 @@ func getIntPtr(v int) *int {
 	return &v
 }
 
-//Validate will validate AdPod object
+// Validate will validate AdPod object
 func (pod *VideoAdPod) Validate() (err []error) {
 	if nil != pod.MinAds && *pod.MinAds <= 0 {
 		err = append(err, errInvalidMinAds)
@@ -147,7 +147,7 @@ func (pod *VideoAdPod) Validate() (err []error) {
 	return
 }
 
-//Validate will validate ExtRequestAdPod object
+// Validate will validate ExtRequestAdPod object
 func (ext *ExtRequestAdPod) Validate() (err []error) {
 	if nil == ext {
 		return
@@ -184,7 +184,7 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 	return
 }
 
-//Validate will validate video extension object
+// Validate will validate video extension object
 func (ext *ExtVideoAdPod) Validate() (err []error) {
 	if nil != ext.Offset && *ext.Offset < 0 {
 		err = append(err, errInvalidAdPodOffset)
@@ -201,7 +201,7 @@ func (ext *ExtVideoAdPod) Validate() (err []error) {
 	return
 }
 
-//SetDefaultValue will set default values if not present
+// SetDefaultValue will set default values if not present
 func (pod *VideoAdPod) SetDefaultValue() {
 	//pod.MinAds setting default value
 	if nil == pod.MinAds {
@@ -224,7 +224,7 @@ func (pod *VideoAdPod) SetDefaultValue() {
 	}
 }
 
-//SetDefaultValue will set default values if not present
+// SetDefaultValue will set default values if not present
 func (ext *ExtRequestAdPod) SetDefaultValue() {
 	//ext.VideoAdPod setting default value
 	ext.VideoAdPod.SetDefaultValue()
@@ -250,7 +250,7 @@ func (ext *ExtRequestAdPod) SetDefaultValue() {
 	}
 }
 
-//SetDefaultValue will set default values if not present
+// SetDefaultValue will set default values if not present
 func (ext *ExtVideoAdPod) SetDefaultValue() {
 	//ext.Offset setting default values
 	if nil == ext.Offset {
@@ -264,7 +264,7 @@ func (ext *ExtVideoAdPod) SetDefaultValue() {
 	ext.AdPod.SetDefaultValue()
 }
 
-//SetDefaultAdDuration will set default pod ad slot durations
+// SetDefaultAdDuration will set default pod ad slot durations
 func (pod *VideoAdPod) SetDefaultAdDurations(podMinDuration, podMaxDuration int64) {
 	//pod.MinDuration setting default adminduration
 	if nil == pod.MinDuration {
@@ -279,7 +279,7 @@ func (pod *VideoAdPod) SetDefaultAdDurations(podMinDuration, podMaxDuration int6
 	}
 }
 
-//Merge VideoAdPod Values
+// Merge VideoAdPod Values
 func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
 	//pod.MinAds setting default value
 	if nil == pod.MinAds {
@@ -302,7 +302,7 @@ func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
 	}
 }
 
-//ValidateAdPodDurations will validate adpod min,max durations
+// ValidateAdPodDurations will validate adpod min,max durations
 func (pod *VideoAdPod) ValidateAdPodDurations(minDuration, maxDuration, maxExtended int64) (err []error) {
 	if minDuration < 0 {
 		err = append(err, errInvalidAdPodMinDuration)

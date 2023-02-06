@@ -120,6 +120,7 @@ func getImpression(key string) [2]int64 {
 // maxExpectedDurationMap value contains 2 types of storage
 //  1. value[0] - represents current counter where final repeataions are stored
 //  2. value[1] - local storage used by each impression object to add more repeatations if required
+//
 // impKey - key used to obtained already added repeatations for given impression
 // updateCurrentCounter - if true and if current local storage value  > repeatations then repeations will be
 // updated as current counter

@@ -10,7 +10,7 @@ import (
 
 // Algorithm indicates type of algorithms supported
 // Currently it supports
-//	1. MaximizeForDuration
+//  1. MaximizeForDuration
 //  2. MinMaxAlgorithm
 type Algorithm int
 
@@ -91,8 +91,8 @@ func NewImpressions(podMinDuration, podMaxDuration int64, reqAdPod *openrtb_ext.
 
 // SelectAlgorithm is factory function which will return valid Algorithm based on adpod parameters
 // Return Value:
-//  - MinMaxAlgorithm (default)
-//  - ByDurationRanges: if reqAdPod extension has VideoLengths and VideoLengthMatchingPolicy is "exact" algorithm
+//   - MinMaxAlgorithm (default)
+//   - ByDurationRanges: if reqAdPod extension has VideoLengths and VideoLengthMatchingPolicy is "exact" algorithm
 func SelectAlgorithm(reqAdPod *openrtb_ext.ExtRequestAdPod) Algorithm {
 	if nil != reqAdPod {
 		if len(reqAdPod.VideoLengths) > 0 &&

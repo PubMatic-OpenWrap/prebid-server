@@ -19,8 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//TestApplyAdvertiserBlocking verifies advertiser blocking
-//Currently it is expected to work only with TagBidders and not woth
+// TestApplyAdvertiserBlocking verifies advertiser blocking
+// Currently it is expected to work only with TagBidders and not woth
 // normal bidders
 func TestApplyAdvertiserBlocking(t *testing.T) {
 	type args struct {
