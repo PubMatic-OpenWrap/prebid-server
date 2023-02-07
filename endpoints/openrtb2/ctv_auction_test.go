@@ -377,7 +377,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: "",
+					VideoAdDurationMatching: "",
 				},
 				config:          nil,
 				defaultDuration: 100,
@@ -394,7 +394,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
 				},
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
@@ -416,7 +416,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":35}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
 				},
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
@@ -444,7 +444,7 @@ func TestGetBidDuration(t *testing.T) {
 func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	type args struct {
 		duration int64
-		policy   openrtb_ext.OWVideoLengthMatchingPolicy
+		policy   openrtb_ext.OWVideoAdDurationMatchingPolicy
 		config   []*types.ImpAdPodConfig
 	}
 	type want struct {
@@ -477,7 +477,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_exact",
 			args: args{
 				duration: 10,
-				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -494,7 +494,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_exact_didnot_match",
 			args: args{
 				duration: 15,
-				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -511,7 +511,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup_exact",
 			args: args{
 				duration: 20,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -528,7 +528,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup",
 			args: args{
 				duration: 25,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -545,7 +545,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup_didnot_match",
 			args: args{
 				duration: 45,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},

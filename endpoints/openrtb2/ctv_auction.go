@@ -1072,16 +1072,16 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 }
 
 // getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoLengthMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
 	switch policy {
-	case openrtb_ext.OWExactVideoLengthsMatching:
+	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp != duration {
 			return duration, constant.StatusDurationMismatch
 		}
 		//its and valid duration return it with StatusOK
 
-	case openrtb_ext.OWRoundupVideoLengthMatching:
+	case openrtb_ext.OWRoundupVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp == -1 {
 			return duration, constant.StatusDurationMismatch
@@ -1110,8 +1110,8 @@ func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, conf
 	}
 
 	// C2: Based on video lengths matching policy validate and return duration
-	if nil != reqExt && len(reqExt.VideoLengthMatching) > 0 {
-		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoLengthMatching, config)
+	if nil != reqExt && len(reqExt.VideoAdDurationMatching) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoAdDurationMatching, config)
 	}
 
 	//default return duration which is present in bid.ext.prebid.vide.duration field

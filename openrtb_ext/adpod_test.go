@@ -158,7 +158,7 @@ func TestExtRequestAdPod_Validate(t *testing.T) {
 		CrossPodIABCategoryExclusionPercent *int
 		IABCategoryExclusionWindow          *int
 		AdvertiserExclusionWindow           *int
-		VideoLengthMatching                 string
+		VideoAdDurationMatching             string
 	}
 	tests := []struct {
 		name    string
@@ -208,11 +208,11 @@ func TestExtRequestAdPod_Validate(t *testing.T) {
 			wantErr: []error{errInvalidAdvertiserExclusionWindow},
 		},
 		{
-			name: "ErrInvalidVideoLengthMatching",
+			name: "ErrInvalidVideoAdDurationMatching",
 			fields: fields{
-				VideoLengthMatching: "invalid",
+				VideoAdDurationMatching: "invalid",
 			},
-			wantErr: []error{errInvalidVideoLengthMatching},
+			wantErr: []error{errInvalidVideoAdDurationMatching},
 		},
 		{
 			name: "InvalidAdPod",
@@ -251,7 +251,7 @@ func TestExtRequestAdPod_Validate(t *testing.T) {
 				CrossPodIABCategoryExclusionPercent: tt.fields.CrossPodIABCategoryExclusionPercent,
 				IABCategoryExclusionWindow:          tt.fields.IABCategoryExclusionWindow,
 				AdvertiserExclusionWindow:           tt.fields.AdvertiserExclusionWindow,
-				VideoLengthMatching:                 tt.fields.VideoLengthMatching,
+				VideoAdDurationMatching:             tt.fields.VideoAdDurationMatching,
 			}
 			actualErr := ext.Validate()
 			assert.Equal(t, tt.wantErr, actualErr)

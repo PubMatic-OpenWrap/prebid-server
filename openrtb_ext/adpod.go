@@ -19,7 +19,7 @@ var (
 	errInvalidCrossPodIABCategoryExclusionPercent = errors.New("request.ext.adpod.crosspodexcliabcat must be a number between 0 and 100")
 	errInvalidIABCategoryExclusionWindow          = errors.New("request.ext.adpod.excliabcatwindow must be postive number")
 	errInvalidAdvertiserExclusionWindow           = errors.New("request.ext.adpod.excladvwindow must be postive number")
-	errInvalidVideoLengthMatching                 = errors.New("request.ext.adpod.videolengthmatching must be exact|roundup")
+	errInvalidVideoAdDurationMatching             = errors.New("request.ext.adpod.videoaddurationmatching must be exact|roundup")
 	errInvalidAdPodOffset                         = errors.New("request.imp.video.ext.offset must be postive number")
 	errInvalidMinAds                              = errors.New("%key%.ext.adpod.minads must be positive number")
 	errInvalidMaxAds                              = errors.New("%key%.ext.adpod.maxads must be positive number")
@@ -32,11 +32,11 @@ var (
 	errInvalidMinMaxDurationRange                 = errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 )
 
-type OWVideoLengthMatchingPolicy = string
+type OWVideoAdDurationMatchingPolicy = string
 
 const (
-	OWExactVideoLengthsMatching  OWVideoLengthMatchingPolicy = `exact`
-	OWRoundupVideoLengthMatching OWVideoLengthMatchingPolicy = `roundup`
+	OWExactVideoAdDurationMatching   OWVideoAdDurationMatchingPolicy = `exact`
+	OWRoundupVideoAdDurationMatching OWVideoAdDurationMatchingPolicy = `roundup`
 )
 
 // ExtCTVBid defines the contract for bidresponse.seatbid.bid[i].ext
@@ -67,12 +67,12 @@ type ExtVideoAdPod struct {
 // ExtRequestAdPod holds AdPod specific extension parameters at request level
 type ExtRequestAdPod struct {
 	VideoAdPod
-	CrossPodAdvertiserExclusionPercent  *int                        `json:"crosspodexcladv,omitempty"`     //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
-	CrossPodIABCategoryExclusionPercent *int                        `json:"crosspodexcliabcat,omitempty"`  //Percent Value - Across multiple impression there will be no ads from same advertiser
-	IABCategoryExclusionWindow          *int                        `json:"excliabcatwindow,omitempty"`    //Duration in minute between pods where exclusive IAB rule needs to be applied
-	AdvertiserExclusionWindow           *int                        `json:"excladvwindow,omitempty"`       //Duration in minute between pods where exclusive advertiser rule needs to be applied
-	VideoLengths                        []int                       `json:"videolengths,omitempty"`        //Range of ad durations allowed in the response
-	VideoLengthMatching                 OWVideoLengthMatchingPolicy `json:"videolengthmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
+	CrossPodAdvertiserExclusionPercent  *int                            `json:"crosspodexcladv,omitempty"`         //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
+	CrossPodIABCategoryExclusionPercent *int                            `json:"crosspodexcliabcat,omitempty"`      //Percent Value - Across multiple impression there will be no ads from same advertiser
+	IABCategoryExclusionWindow          *int                            `json:"excliabcatwindow,omitempty"`        //Duration in minute between pods where exclusive IAB rule needs to be applied
+	AdvertiserExclusionWindow           *int                            `json:"excladvwindow,omitempty"`           //Duration in minute between pods where exclusive advertiser rule needs to be applied
+	VideoAdDuration                     []int                           `json:"VideoAdDuration,omitempty"`         //Range of ad durations allowed in the response
+	VideoAdDurationMatching             OWVideoAdDurationMatchingPolicy `json:"VideoAdDurationMatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 // VideoAdPod holds Video AdPod specific extension parameters at impression level
@@ -171,8 +171,8 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 		err = append(err, errInvalidAdvertiserExclusionWindow)
 	}
 
-	if len(ext.VideoLengthMatching) > 0 && !(OWExactVideoLengthsMatching == ext.VideoLengthMatching || OWRoundupVideoLengthMatching == ext.VideoLengthMatching) {
-		err = append(err, errInvalidVideoLengthMatching)
+	if len(ext.VideoAdDurationMatching) > 0 && !(OWExactVideoAdDurationMatching == ext.VideoAdDurationMatching || OWRoundupVideoAdDurationMatching == ext.VideoAdDurationMatching) {
+		err = append(err, errInvalidVideoAdDurationMatching)
 	}
 
 	if errL := ext.VideoAdPod.Validate(); nil != errL {
