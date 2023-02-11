@@ -2,7 +2,11 @@ package openrtb_ext
 
 import (
 	"encoding/json"
+
+	"github.com/prebid/openrtb/v17/openrtb3"
 )
+
+type NonBidStatusCode openrtb3.LossReason
 
 // ExtBidResponse defines the contract for bidresponse.ext
 type ExtBidResponse struct {
@@ -83,3 +87,23 @@ const (
 	UserSyncIframe UserSyncType = "iframe"
 	UserSyncPixel  UserSyncType = "pixel"
 )
+
+type SeatNonBidResponse struct {
+	SeatNonBids []SeatNonBid `json:"seatnonbid,omitempty"`
+}
+type SeatNonBid struct {
+	NonBids []NonBid `json:"nonbid,omitempty"`
+	Seat    string   `json:"seat,omitempty"`
+}
+type NonBid struct {
+	ImpId      string           `json:"impid,omitempty"`
+	StatusCode NonBidStatusCode `json:"statuscode,omitempty"`
+	Ext        *ExtNonBid       `json:"ext,omitempty"`
+}
+type ExtNonBid struct {
+	Prebid  *ExtNonBidPrebid `json:"prebid,omitempty"`
+	IsAdPod *bool            `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
+}
+type ExtNonBidPrebid struct {
+	Bid interface{} `json:"bid,omitempty"` // To be removed once we start using single "Bid" data-type (unlike V25.Bid and openrtb2.Bid)
+}
