@@ -222,7 +222,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	ao.Request = request
 	ao.Response = response
-
 	if err != nil || nil == response {
 		deps.labels.RequestStatus = metrics.RequestStatusErr
 		w.WriteHeader(http.StatusInternalServerError)
@@ -255,12 +254,11 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.setBidExtParams()
 
 		filterRejectedBids(response, auctionRequest.LoggableObject)
-
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
+
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
-
 	ao.Response = response
 
 	// Response Generation
