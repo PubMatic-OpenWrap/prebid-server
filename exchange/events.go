@@ -38,6 +38,7 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
 		macrosBuilder:      macros.NewBuilder(),
+		events:             account.Events,
 	}
 }
 
