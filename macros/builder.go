@@ -36,6 +36,11 @@ func NewBuilder() Builder {
 }
 
 func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
+	reqExt, _ := reqWrapper.GetRequestExt()
+	if reqExt != nil && reqExt.GetPrebid() != nil {
+		maps.Copy(b.requestMacros, reqExt.GetPrebid().Macros)
+	}
+
 	b.requestMacros["##PBS-APPBUNDLE##"] = reqWrapper.App.Bundle
 
 	if reqWrapper.App.Domain != "" {
