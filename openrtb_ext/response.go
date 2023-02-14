@@ -88,22 +88,31 @@ const (
 	UserSyncPixel  UserSyncType = "pixel"
 )
 
+// SeatNonBidResponse defines the contract for bidresponse.ext.debug.seatnonbid
 type SeatNonBidResponse struct {
 	SeatNonBids []SeatNonBid `json:"seatnonbid,omitempty"`
 }
+
+// SeatNonBid defines the contract to hold all elements of single seatnonbid
 type SeatNonBid struct {
 	NonBids []NonBid `json:"nonbid,omitempty"`
 	Seat    string   `json:"seat,omitempty"`
 }
+
+// NonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid
 type NonBid struct {
 	ImpId      string           `json:"impid,omitempty"`
 	StatusCode NonBidStatusCode `json:"statuscode,omitempty"`
 	Ext        *ExtNonBid       `json:"ext,omitempty"`
 }
+
+// ExtNonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext
 type ExtNonBid struct {
 	Prebid  *ExtNonBidPrebid `json:"prebid,omitempty"`
 	IsAdPod *bool            `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
 }
+
+// ExtNonBidPrebid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext.prebid
 type ExtNonBidPrebid struct {
 	Bid interface{} `json:"bid,omitempty"` // To be removed once we start using single "Bid" data-type (unlike V25.Bid and openrtb2.Bid)
 }
