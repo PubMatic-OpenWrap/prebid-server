@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/exchange/entities"
+	"github.com/prebid/prebid-server/macros"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/prebid/prebid-server/analytics"
@@ -22,27 +23,35 @@ type eventTracking struct {
 	integrationType    string
 	bidderInfos        config.BidderInfos
 	externalURL        string
+	macrosBuilder      macros.Builder
+	events             config.Events
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
 func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.EventsEnabled,
+		enabledForAccount:  account.Events.Enabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    requestExtPrebid.Integration,
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
+		macrosBuilder:      macros.NewBuilder(),
 	}
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
-func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
+func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, requestWrapper *openrtb_ext.RequestWrapper) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
+
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
+		if modifyingVastXMLAllowed {
+			ev.macrosBuilder.WithBidRequest(requestWrapper)
+		}
 		for _, pbsBid := range seatBid.Bids {
 			if modifyingVastXMLAllowed {
+				ev.macrosBuilder.WithBidResponse(pbsBid.Bid, bidderName.String())
 				ev.modifyBidVAST(pbsBid, bidderName)
 			}
 			pbsBid.BidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
@@ -70,6 +79,14 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs, ev.integrationType); ok {
 		bid.AdM = newVastXML
 	}
+
+	ev.printUpdateEventURLs()
+	// Tracker Injector should be called here
+	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
+	// if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+	// 	bid.AdM = string(newVastXML)
+	// }
+
 }
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json
@@ -121,4 +138,17 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 			Timestamp:   ev.auctionTimestampMs,
 			Integration: ev.integrationType,
 		})
+}
+
+func (ev *eventTracking) printUpdateEventURLs() {
+
+	for _, event := range ev.events.VASTEvents {
+		if event.ExcludeDefaultURL {
+			macros.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build())
+		} else {
+			for _, eventURL := range event.URLs {
+				macros.Replace(eventURL, ev.macrosBuilder.Build())
+			}
+		}
+	}
 }
