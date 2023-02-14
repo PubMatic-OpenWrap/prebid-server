@@ -175,9 +175,11 @@ func (f *PriceFloorFetcher) Fetcher() {
 		select {
 		case fetchInfo := <-f.configReceiver:
 			if fetchInfo.RefetchRequest {
+				glog.Infof("++++ Got Refetch request with url %s ++++", fetchInfo.URL)
 				heap.Push(&f.fetchQueue, &fetchInfo)
 			} else {
 				if _, ok := f.fetchInprogress[fetchInfo.URL]; !ok {
+					glog.Infof("**** First fetch request with url %s ****", fetchInfo.URL)
 					f.fetchInprogress[fetchInfo.URL] = true
 					f.submit(&fetchInfo)
 				}

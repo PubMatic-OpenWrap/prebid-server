@@ -1,11 +1,13 @@
 package floors
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -72,7 +74,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 		return []error{}
 	}
 
-	floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
+	// floorErrList = validateFloorRulesAndLowerValidRuleKey(modelGroup.Schema, modelGroup.Schema.Delimiter, modelGroup.Values)
 	if len(modelGroup.Values) > 0 {
 		for i, imp := range request.GetImp() {
 			desiredRuleKey := createRuleKey(modelGroup.Schema, request.BidRequest, request.Imp[i])
@@ -146,6 +148,8 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, fetchStatus, openrtb_ext.FetchLocation)
+		data, _ := json.Marshal(floorsJson)
+		glog.Infof("Final Floor JSON ----->  %s", string(data))
 	} else if reqFloor != nil {
 		floorsJson, errlist = createFloorsFrom(reqFloor, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
 	} else {
