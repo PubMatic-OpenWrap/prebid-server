@@ -40,7 +40,7 @@ import (
 	"github.com/prebid/prebid-server/util/uuidutil"
 )
 
-//CTV Specific Endpoint
+// CTV Specific Endpoint
 type ctvEndpointDeps struct {
 	endpointDeps
 	request                   *openrtb2.BidRequest
@@ -55,7 +55,7 @@ type ctvEndpointDeps struct {
 	labels metrics.Labels
 }
 
-//NewCTVEndpoint new ctv endpoint object
+// NewCTVEndpoint new ctv endpoint object
 func NewCTVEndpoint(
 	ex exchange.Exchange,
 	validator openrtb_ext.BidderParamValidator,
@@ -390,7 +390,7 @@ func (deps *ctvEndpointDeps) setIsAdPodRequest() {
 	}
 }
 
-//setDefaultValues will set adpod and other default values
+// setDefaultValues will set adpod and other default values
 func (deps *ctvEndpointDeps) setDefaultValues() {
 	//read and set extension values
 	deps.readExtensions()
@@ -403,7 +403,7 @@ func (deps *ctvEndpointDeps) setDefaultValues() {
 	}
 }
 
-//validateBidRequest will validate AdPod specific mandatory Parameters and returns error
+// validateBidRequest will validate AdPod specific mandatory Parameters and returns error
 func (deps *ctvEndpointDeps) validateBidRequest() (err []error) {
 	//validating video extension adpod configurations
 	if nil != deps.reqExt {
@@ -428,7 +428,7 @@ func (deps *ctvEndpointDeps) validateBidRequest() (err []error) {
 	return
 }
 
-//readImpExtensionsAndTags will read the impression extensions
+// readImpExtensionsAndTags will read the impression extensions
 func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 	deps.impsExt = make(map[string]map[string]map[string]interface{})
 	deps.impPartnerBlockedTagIDMap = make(map[string]map[string][]string) //Initially this will have all tags, eligible tags will be filtered in filterImpsVastTagsByDuration
@@ -466,7 +466,7 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 
 /********************* Creating CTV BidRequest *********************/
 
-//createBidRequest will return new bid request with all things copy from bid request except impression objects
+// createBidRequest will return new bid request with all things copy from bid request except impression objects
 func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb2.BidRequest {
 	ctvRequest := *req
 
@@ -482,7 +482,7 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	return &ctvRequest
 }
 
-//filterImpsVastTagsByDuration checks if a Vast tag should be called for a generated impression based on the duration of tag and impression
+// filterImpsVastTagsByDuration checks if a Vast tag should be called for a generated impression based on the duration of tag and impression
 func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRequest) {
 
 	for impCount, imp := range bidReq.Imp {
@@ -568,7 +568,7 @@ func remove(slice []string, item string) []string {
 	return append(slice[:index], slice[index+1:]...)
 }
 
-//getAllAdPodImpsConfigs will return all impression adpod configurations
+// getAllAdPodImpsConfigs will return all impression adpod configurations
 func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 	for index, imp := range deps.request.Imp {
 		if nil == imp.Video || nil == deps.impData[index].VideoExt || nil == deps.impData[index].VideoExt.AdPod {
@@ -585,7 +585,7 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 	}
 }
 
-//getAdPodImpsConfigs will return number of impressions configurations within adpod
+// getAdPodImpsConfigs will return number of impressions configurations within adpod
 func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openrtb_ext.VideoAdPod) ([]*types.ImpAdPodConfig, error) {
 	// monitor
 	start := time.Now()
@@ -615,7 +615,7 @@ func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openr
 	return config[:], nil
 }
 
-//createImpressions will create multiple impressions based on adpod configurations
+// createImpressions will create multiple impressions based on adpod configurations
 func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	impCount := 0
 	for _, imp := range deps.impData {
@@ -649,7 +649,7 @@ func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	return imps[:]
 }
 
-//newImpression will clone existing impression object and create video object with ImpAdPodConfig.
+// newImpression will clone existing impression object and create video object with ImpAdPodConfig.
 func newImpression(imp *openrtb2.Imp, config *types.ImpAdPodConfig) *openrtb2.Imp {
 	video := *imp.Video
 	video.MinDuration = config.MinDuration
@@ -667,14 +667,14 @@ func newImpression(imp *openrtb2.Imp, config *types.ImpAdPodConfig) *openrtb2.Im
 
 /********************* Prebid BidResponse Processing *********************/
 
-//validateBidResponse
+// validateBidResponse
 func (deps *ctvEndpointDeps) validateBidResponse(req *openrtb2.BidRequest, resp *openrtb2.BidResponse) error {
 	//remove bids withoug cat and adomain
 
 	return nil
 }
 
-//getBids reads bids from bidresponse object
+// getBids reads bids from bidresponse object
 func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 	var vseat *openrtb2.SeatBid
 	result := make(map[string]*types.AdPodBid)
@@ -777,7 +777,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 	}
 }
 
-//getImpressionID will return impression id and sequence number
+// getImpressionID will return impression id and sequence number
 func (deps *ctvEndpointDeps) getImpressionID(id string) (string, int) {
 	//get original impression id and sequence number
 	originalImpID, sequenceNumber := util.DecodeImpressionID(id)
@@ -800,7 +800,7 @@ func (deps *ctvEndpointDeps) getImpressionID(id string) (string, int) {
 	return originalImpID, sequenceNumber
 }
 
-//doAdPodExclusions
+// doAdPodExclusions
 func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v doAdPodExclusions", deps.request.ID))
 
@@ -886,7 +886,7 @@ func (deps *ctvEndpointDeps) getBidResponseSeatBids(adpods types.AdPodBids) []op
 	return seats[:]
 }
 
-//getAdPodBid
+// getAdPodBid
 func (deps *ctvEndpointDeps) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	bid := types.Bid{
 		Bid: &openrtb2.Bid{},
@@ -909,7 +909,7 @@ func (deps *ctvEndpointDeps) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	return &bid
 }
 
-//getAdPodBidCreative get commulative adpod bid details
+// getAdPodBidCreative get commulative adpod bid details
 func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generatedBidID bool) *string {
 	doc := etree.NewDocument()
 	vast := doc.CreateElement(constant.VASTElement)
@@ -974,7 +974,7 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generated
 	return &bidAdM
 }
 
-//getAdPodBidExtension get commulative adpod bid details
+// getAdPodBidExtension get commulative adpod bid details
 func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	bidExt := &openrtb_ext.ExtOWBid{
 		ExtBid: openrtb_ext.ExtBid{
@@ -1008,17 +1008,17 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	return rawExt
 }
 
-//getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoLengthMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
+// getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
 	switch policy {
-	case openrtb_ext.OWExactVideoLengthsMatching:
+	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp != duration {
 			return duration, constant.StatusDurationMismatch
 		}
 		//its and valid duration return it with StatusOK
 
-	case openrtb_ext.OWRoundupVideoLengthMatching:
+	case openrtb_ext.OWRoundupVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp == -1 {
 			return duration, constant.StatusDurationMismatch
@@ -1047,8 +1047,8 @@ func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, conf
 	}
 
 	// C2: Based on video lengths matching policy validate and return duration
-	if nil != reqExt && len(reqExt.VideoLengthMatching) > 0 {
-		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoLengthMatching, config)
+	if nil != reqExt && len(reqExt.VideoAdDurationMatching) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoAdDurationMatching, config)
 	}
 
 	//default return duration which is present in bid.ext.prebid.vide.duration field

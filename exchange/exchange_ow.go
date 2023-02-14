@@ -37,11 +37,11 @@ func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBi
 	return bidIDCollisionFound
 }
 
-//normalizeDomain validates, normalizes and returns valid domain or error if failed to validate
-//checks if domain starts with http by lowercasing entire domain
-//if not it prepends it before domain. This is required for obtaining the url
-//using url.parse method. on successfull url parsing, it will replace first occurance of www.
-//from the domain
+// normalizeDomain validates, normalizes and returns valid domain or error if failed to validate
+// checks if domain starts with http by lowercasing entire domain
+// if not it prepends it before domain. This is required for obtaining the url
+// using url.parse method. on successfull url parsing, it will replace first occurance of www.
+// from the domain
 func normalizeDomain(domain string) (string, error) {
 	domain = strings.Trim(strings.ToLower(domain), " ")
 	// not checking if it belongs to icann
@@ -59,9 +59,9 @@ func normalizeDomain(domain string) (string, error) {
 	return "", err
 }
 
-//applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
-//the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
-//it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
+// applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
+// the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
+// it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
 func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}

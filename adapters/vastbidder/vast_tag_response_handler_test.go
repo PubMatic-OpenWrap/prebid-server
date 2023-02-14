@@ -92,7 +92,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 	}
 }
 
-//TestGetDurationInSeconds ...
+// TestGetDurationInSeconds ...
 // hh:mm:ss.mmm => 3:40:43.5 => 3 hours, 40 minutes, 43 seconds and 5 milliseconds
 // => 3*60*60 + 40*60 + 43 + 5*0.001 => 10800 + 2400 + 43 + 0.005 => 13243.005
 func TestGetDurationInSeconds(t *testing.T) {

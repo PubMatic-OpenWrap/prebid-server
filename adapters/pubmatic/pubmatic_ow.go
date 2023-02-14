@@ -38,12 +38,13 @@ func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMe
 	return bidExt
 }
 
-//prepareMetaObject prepares the Meta structure using Bid Response
+// prepareMetaObject prepares the Meta structure using Bid Response
 func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *openrtb_ext.ExtBidPrebidMeta {
 
 	meta := &openrtb_ext.ExtBidPrebidMeta{
 		NetworkID:    bidExt.DspId,
 		AdvertiserID: bidExt.AdvertiserID,
+		MediaType:    string(getBidType(bidExt)),
 	}
 
 	if meta.NetworkID != 0 {

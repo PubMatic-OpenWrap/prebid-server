@@ -334,7 +334,7 @@ func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/test-version"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/test-version"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -386,7 +386,7 @@ func TestSetGPCHeader(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -436,7 +436,7 @@ func TestSetGPCHeaderNil(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},

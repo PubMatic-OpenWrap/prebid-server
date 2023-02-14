@@ -25,7 +25,7 @@ type ExtImpPubmaticKeyVal struct {
 	Values []string `json:"value,omitempty"`
 }
 
-//ExtBidViewabilityScore defines the contract for bidrequest.imp[i].ext.pubmatic.bidViewability
+// ExtBidViewabilityScore defines the contract for bidrequest.imp[i].ext.pubmatic.bidViewability
 type ExtBidViewabilityScore struct {
 	Rendered      int     `json:"rendered,omitempty"`
 	Viewed        int     `json:"viewed,omitempty"`

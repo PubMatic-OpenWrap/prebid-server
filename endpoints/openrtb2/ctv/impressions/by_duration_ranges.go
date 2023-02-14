@@ -7,16 +7,16 @@ import (
 
 // byDurRangeConfig struct will be used for creating impressions object based on list of duration ranges
 type byDurRangeConfig struct {
-	IImpressions                                          //IImpressions interface
-	policy        openrtb_ext.OWVideoLengthMatchingPolicy //duration matching algorithm round/exact
-	durations     []int                                   //durations list of durations in seconds used for creating impressions object
-	maxAds        int                                     //maxAds is number of max impressions can be created
-	adMinDuration int                                     //adpod slot mininum duration
-	adMaxDuration int                                     //adpod slot maximum duration
+	IImpressions                                              //IImpressions interface
+	policy        openrtb_ext.OWVideoAdDurationMatchingPolicy //duration matching algorithm round/exact
+	durations     []int                                       //durations list of durations in seconds used for creating impressions object
+	maxAds        int                                         //maxAds is number of max impressions can be created
+	adMinDuration int                                         //adpod slot mininum duration
+	adMaxDuration int                                         //adpod slot maximum duration
 }
 
 // newByDurationRanges will create new object ob byDurRangeConfig for creating impressions for adpod request
-func newByDurationRanges(policy openrtb_ext.OWVideoLengthMatchingPolicy, durations []int,
+func newByDurationRanges(policy openrtb_ext.OWVideoAdDurationMatchingPolicy, durations []int,
 	maxAds, adMinDuration, adMaxDuration int) byDurRangeConfig {
 
 	return byDurRangeConfig{
@@ -37,7 +37,7 @@ func (c *byDurRangeConfig) Get() [][2]int64 {
 		return make([][2]int64, 0)
 	}
 
-	isRoundupDurationMatchingPolicy := (openrtb_ext.OWRoundupVideoLengthMatching == c.policy)
+	isRoundupDurationMatchingPolicy := (openrtb_ext.OWRoundupVideoAdDurationMatching == c.policy)
 	var minDuration = -1
 	var validDurations []int
 

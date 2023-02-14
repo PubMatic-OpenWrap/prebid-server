@@ -1185,7 +1185,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_valid_sample.json",
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		}, {
@@ -1193,7 +1193,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_invalid_sample.json",
 			expectedStatus: 500,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}

@@ -27,7 +27,7 @@ func (me *MetricsEngineMock) RecordPodCompititveExclusionTime(labels PodLabels, 
 	me.Called(labels, elapsedTime)
 }
 
-//RecordAdapterVideoBidDuration mock
+// RecordAdapterVideoBidDuration mock
 func (me *MetricsEngineMock) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int) {
 	me.Called(labels, videoBidDuration)
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//generator holds all the combinations based
-//on Video Ad Pod request and Bid Response Max duration
+// generator holds all the combinations based
+// on Video Ad Pod request and Bid Response Max duration
 type generator struct {
 	podMinDuration      uint64            // Pod Minimum duration value present in origin Video Ad Pod Request
 	podMaxDuration      uint64            // Pod Maximum duration value present in origin Video Ad Pod Request
@@ -100,8 +100,8 @@ func (c *generator) Init(podMinDuration, podMaxDuration uint64, config *openrtb_
 	c.state.resetFlags = true
 }
 
-//Next - Get next ad slot combination
-//returns empty array if next combination is not present
+// Next - Get next ad slot combination
+// returns empty array if next combination is not present
 func (c *generator) Next() []uint64 {
 	var comb []uint64
 	if len(c.slotDurations) <= 0 {
@@ -150,11 +150,11 @@ func isValidCombination(c *generator, combination []uint64) bool {
 	return true
 }
 
-//compute - number of combinations that can be generated based on
-//1. minads
-//2. maxads
-//3. Ordering of durations not matters. i.e. 4,5,6 will not be considered again as 5,4,6 or 6,5,4
-//4. Repeatations are allowed only for those durations where multiple ads are present
+// compute - number of combinations that can be generated based on
+// 1. minads
+// 2. maxads
+// 3. Ordering of durations not matters. i.e. 4,5,6 will not be considered again as 5,4,6 or 6,5,4
+// 4. Repeatations are allowed only for those durations where multiple ads are present
 // Sum ups number of combinations for each noOfAds (r) based on above criteria and returns the total
 // It operates recursively
 // c - algorithm config, noOfAds (r) - maxads requested (if recursion=true otherwise any valid value), recursion - whether to do recursion or not. if false then only single combination
@@ -196,7 +196,7 @@ func compute(c *generator, noOfAds uint64, recursion bool) uint64 {
 	return noOfCombinations.Uint64()
 }
 
-//fact computes factorial of given number.
+// fact computes factorial of given number.
 // It is used by compute function
 func fact(no uint64) big.Int {
 	if no == 0 {
@@ -211,7 +211,7 @@ func fact(no uint64) big.Int {
 	return *mult
 }
 
-//searchAll - searches all valid combinations
+// searchAll - searches all valid combinations
 // valid combinations are those which satisifies following
 // 1. sum of duration is within range of pod min and max values
 // 2. Each duration within combination honours number of ads value given in the request
@@ -242,7 +242,7 @@ func (c *generator) searchAll() [][]uint64 {
 	return result
 }
 
-//reset the internal counters
+// reset the internal counters
 func reset(c *generator) {
 	c.stats.currentCombinationCount = 0
 	c.stats.validCombinationCount = 0
@@ -250,8 +250,8 @@ func reset(c *generator) {
 	c.stats.outOfRangeCount = 0
 }
 
-//lazyNext performs stateful iteration. Instead of returning all valid combinations
-//in one gp, it will return each combination on demand basis.
+// lazyNext performs stateful iteration. Instead of returning all valid combinations
+// in one gp, it will return each combination on demand basis.
 // valid combinations are those which satisifies following
 // 1. sum of duration is within range of pod min and max values
 // 2. Each duration within combination honours number of ads value given in the request
@@ -283,7 +283,7 @@ func (c *generator) lazyNext() []uint64 {
 	return result
 }
 
-//search generates the combinations based on min and max number of ads
+// search generates the combinations based on min and max number of ads
 func (c *generator) search(data []uint64, start, index, r uint64, lazyLoad bool, reursionCount int) []uint64 {
 
 	end := uint64(len(c.slotDurations) - 1)
@@ -392,8 +392,8 @@ func updateState(c *generator, lazyLoad bool, r uint64, reursionCount int, end u
 	}
 }
 
-//shouldUpdateAndReturn checks if states should be updated in case of lazy loading
-//If required it updates the state
+// shouldUpdateAndReturn checks if states should be updated in case of lazy loading
+// If required it updates the state
 func shouldUpdateAndReturn(c *generator, start, index, r uint64, lazyLoad bool, reursionCount int, i, end uint64) bool {
 	if lazyLoad && c.state.valueUpdated {
 		if uint64(reursionCount) <= r && !c.state.stateUpdated {
@@ -404,7 +404,7 @@ func shouldUpdateAndReturn(c *generator, start, index, r uint64, lazyLoad bool, 
 	return false
 }
 
-//getOccurance checks how many time given number is occured in c.state.lastCombination
+// getOccurance checks how many time given number is occured in c.state.lastCombination
 func getOccurance(c *generator, valToCheck uint64) uint64 {
 	occurance := uint64(0)
 	for i := len(c.state.lastCombination) - 1; i >= 0; i-- {
@@ -524,7 +524,7 @@ func subtractUnwantedRepeatations(c *generator) {
 	c.stats.totalExpectedCombinations -= totalUnwantedRepeatitions
 }
 
-//getRepeatitionBreakUp
+// getRepeatitionBreakUp
 func getRepeatitionBreakUp(c *generator) map[uint64]uint64 {
 	series := make(map[uint64]uint64, c.maxAds) // not using index 0
 	ads := c.maxAds
@@ -573,8 +573,8 @@ func (c *generator) GetOutOfRangeCombinationsCount() int {
 	return c.stats.outOfRangeCount
 }
 
-//GetRepeatedDurationCombinationCount returns number of combinations currently rejected because of containing
-//one or more repeatations of duration values, for which partners returned only single ad
+// GetRepeatedDurationCombinationCount returns number of combinations currently rejected because of containing
+// one or more repeatations of duration values, for which partners returned only single ad
 func (c *generator) GetRepeatedDurationCombinationCount() int {
 	return c.stats.repeatationsCount
 }

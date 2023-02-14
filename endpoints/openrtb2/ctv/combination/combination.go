@@ -32,6 +32,7 @@ type Combination struct {
 //  2. minAds <= size(combination) <= maxads
 //  3. If  Combination contains repeatition for given duration then
 //     repeatitions are <= no of ads received for the duration
+//
 // Use Get method to start getting valid combinations
 func NewCombination(buckets types.BidsBuckets, podMinDuration, podMaxDuration uint64, config *openrtb_ext.VideoAdPod) *Combination {
 	generator := new(generator)

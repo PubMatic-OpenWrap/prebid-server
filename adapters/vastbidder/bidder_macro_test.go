@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//TestSetDefaultHeaders verifies SetDefaultHeaders
+// TestSetDefaultHeaders verifies SetDefaultHeaders
 func TestSetDefaultHeaders(t *testing.T) {
 	type args struct {
 		req *openrtb2.BidRequest
@@ -206,7 +206,7 @@ func TestSetDefaultHeaders(t *testing.T) {
 	}
 }
 
-//TestGetAllHeaders verifies default and custom headers are returned
+// TestGetAllHeaders verifies default and custom headers are returned
 func TestGetAllHeaders(t *testing.T) {
 	type args struct {
 		req      *openrtb2.BidRequest

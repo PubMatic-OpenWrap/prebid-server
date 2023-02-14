@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//TestMakeRequests verifies
+// TestMakeRequests verifies
 // 1. default and custom headers are set
 func TestMakeRequests(t *testing.T) {
 

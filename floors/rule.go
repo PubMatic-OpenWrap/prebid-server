@@ -10,29 +10,36 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 const (
-	SiteDomain string = "siteDomain"
-	PubDomain  string = "pubDomain"
-	Domain     string = "domain"
-	Bundle     string = "bundle"
-	Channel    string = "channel"
-	MediaType  string = "mediaType"
-	Size       string = "size"
-	GptSlot    string = "gptSlot"
-	AdUnitCode string = "adUnitCode"
-	Country    string = "country"
-	DeviceType string = "deviceType"
-	Tablet     string = "tablet"
-	Phone      string = "phone"
+	SiteDomain          string = "siteDomain"
+	PubDomain           string = "pubDomain"
+	Domain              string = "domain"
+	Bundle              string = "bundle"
+	Channel             string = "channel"
+	MediaType           string = "mediaType"
+	Size                string = "size"
+	GptSlot             string = "gptSlot"
+	AdUnitCode          string = "adUnitCode"
+	Country             string = "country"
+	DeviceType          string = "deviceType"
+	Tablet              string = "tablet"
+	Desktop             string = "desktop"
+	Phone               string = "phone"
+	BannerMedia         string = "banner"
+	VideoMedia          string = "video-instream"
+	VideoOutstreamMedia string = "video-outstream"
+	AudioMedia          string = "audio"
+	NativeMedia         string = "native"
 )
 
 func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
-	floorCur := "USD"
+	var floorCur string
 	if floorExt == nil || floorExt.Data == nil {
 		return floorCur
 	}
@@ -41,31 +48,66 @@ func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
 		floorCur = floorExt.Data.Currency
 	}
 
-	if floorExt.Data.ModelGroups[0].Currency != "" {
+	if len(floorExt.Data.ModelGroups) > 0 && floorExt.Data.ModelGroups[0].Currency != "" {
 		floorCur = floorExt.Data.ModelGroups[0].Currency
 	}
 	return floorCur
 }
 
-func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, conversions currency.Conversions) (float64, string, error) {
+func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp openrtb2.Imp, conversions currency.Conversions) (float64, string, error) {
 	var err error
 	var rate float64
 
-	if floorExt == nil {
-		return 0, "USD", err
-	}
 	floorMin := floorExt.FloorMin
+	floorMinCur := floorExt.FloorMinCur
 	floorCur := getFloorCurrency(floorExt)
-
-	if floorExt.FloorMin > 0.0 && floorExt.FloorMinCur != "" && floorCur != "" &&
-		floorExt.FloorMinCur != floorCur {
-		rate, err = conversions.GetRate(floorExt.FloorMinCur, floorCur)
-		floorMin = rate * floorExt.FloorMin
+	if len(floorCur) == 0 {
+		floorCur = "USD"
 	}
+	floorMinValue, floorCurValue, err := getFloorMinAndCurFromImp(imp)
+	if err == nil {
+		if floorMinValue > 0.0 {
+			floorMin = floorMinValue
+		}
+		if floorCurValue != "" {
+			floorMinCur = floorCurValue
+		}
+	}
+	if floorMin > float64(0) && floorMinCur != "" {
+		if floorExt.FloorMinCur != "" && floorCurValue != "" && floorExt.FloorMinCur != floorCurValue {
+			glog.Warning("FloorMinCur are different in floorExt and ImpExt")
+		}
+		if floorCur != "" && floorMinCur != floorCur {
+			rate, err = conversions.GetRate(floorMinCur, floorCur)
+			floorMin = rate * floorMin
+		}
+	}
+	floorMin = math.Round(floorMin*10000) / 10000
 	return floorMin, floorCur, err
 }
 
-func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrapper, floorVal float64) {
+func getFloorMinAndCurFromImp(imp openrtb2.Imp) (float64, string, error) {
+	impExt := openrtb_ext.ExtImp{}
+	var floorMin float64
+	var floorMinCur string
+	if len(imp.Ext) > 0 {
+		err := json.Unmarshal(imp.Ext, &impExt)
+		if err != nil {
+			return floorMin, "", fmt.Errorf("error decoding Request.ext : %s", err.Error())
+		}
+	}
+	if impExt.Prebid != nil {
+		if impExt.Prebid.Floors.FloorMin > float64(0) {
+			floorMin = impExt.Prebid.Floors.FloorMin
+		}
+		if impExt.Prebid.Floors.FloorMinCur != "" {
+			floorMinCur = impExt.Prebid.Floors.FloorMinCur
+		}
+	}
+	return floorMin, floorMinCur, nil
+}
+
+func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule string, floorRuleVal, floorVal float64) {
 	impExt, err := imp.GetImpExt()
 	if err != nil {
 		return
@@ -76,34 +118,39 @@ func updateImpExtWithFloorDetails(matchedRule string, imp *openrtb_ext.ImpWrappe
 	}
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
-		FloorRuleValue: math.Floor(floorVal*10000) / 10000,
+		FloorRuleValue: math.Floor(floorRuleVal*10000) / 10000,
+		FloorValue:     floorVal,
 	}
 	impExt.SetPrebid(extImpPrebid)
-	_ = imp.RebuildImp()
 }
 
 func selectFloorModelGroup(modelGroups []openrtb_ext.PriceFloorModelGroup, f func(int) int) []openrtb_ext.PriceFloorModelGroup {
 	totalModelWeight := 0
-
 	for i := 0; i < len(modelGroups); i++ {
-		if modelGroups[i].ModelWeight == 0 {
-			modelGroups[i].ModelWeight = 1
+		if modelGroups[i].ModelWeight == nil {
+			modelGroups[i].ModelWeight = new(int)
+			*modelGroups[i].ModelWeight = 1
 		}
-		totalModelWeight += modelGroups[i].ModelWeight
+		if modelGroups[i].ModelWeight != nil {
+			totalModelWeight += *modelGroups[i].ModelWeight
+		}
 	}
 
 	sort.SliceStable(modelGroups, func(i, j int) bool {
-		return modelGroups[i].ModelWeight < modelGroups[j].ModelWeight
+		if modelGroups[i].ModelWeight != nil && modelGroups[j].ModelWeight != nil {
+			return *modelGroups[i].ModelWeight < *modelGroups[j].ModelWeight
+		}
+		return false
 	})
 
 	winWeight := f(totalModelWeight + 1)
-	debugWeight := winWeight
 	for i, modelGroup := range modelGroups {
-		winWeight -= modelGroup.ModelWeight
-		if winWeight <= 0 {
-			modelGroups[0], modelGroups[i] = modelGroups[i], modelGroups[0]
-			modelGroups[0].DebugWeight = debugWeight
-			return modelGroups[:1]
+		if modelGroup.ModelWeight != nil {
+			winWeight -= *modelGroup.ModelWeight
+			if winWeight <= 0 {
+				modelGroups[0], modelGroups[i] = modelGroups[i], modelGroups[0]
+				return modelGroups[:1]
+			}
 		}
 	}
 	return modelGroups[:1]
@@ -176,6 +223,8 @@ func getDeviceType(request *openrtb2.BidRequest) string {
 		value = Phone
 	} else if isTabletDevice(request.Device.UA) {
 		value = Tablet
+	} else {
+		value = Desktop
 	}
 	return value
 }
@@ -190,14 +239,31 @@ func getDeviceCountry(request *openrtb2.BidRequest) string {
 
 func getMediaType(imp openrtb2.Imp) string {
 	value := catchAll
+	formatCount := 0
+
 	if imp.Banner != nil {
-		value = string(openrtb_ext.BidTypeBanner)
-	} else if imp.Video != nil {
-		value = string(openrtb_ext.BidTypeVideo)
-	} else if imp.Audio != nil {
-		value = string(openrtb_ext.BidTypeAudio)
-	} else if imp.Native != nil {
-		value = string(openrtb_ext.BidTypeNative)
+		formatCount++
+		value = BannerMedia
+	}
+	if imp.Video != nil && imp.Video.Placement != 1 {
+		formatCount++
+		value = VideoOutstreamMedia
+	}
+	if imp.Video != nil && imp.Video.Placement == 1 {
+		formatCount++
+		value = VideoMedia
+	}
+	if imp.Audio != nil {
+		formatCount++
+		value = AudioMedia
+	}
+	if imp.Native != nil {
+		formatCount++
+		value = NativeMedia
+	}
+
+	if formatCount > 1 {
+		return catchAll
 	}
 	return value
 }
@@ -206,15 +272,10 @@ func getSizeValue(imp openrtb2.Imp) string {
 	size := catchAll
 	width := int64(0)
 	height := int64(0)
+
 	if imp.Banner != nil {
-		if len(imp.Banner.Format) > 0 {
-			width = imp.Banner.Format[0].W
-			height = imp.Banner.Format[0].H
-		} else if imp.Banner.W != nil && imp.Banner.H != nil {
-			width = *imp.Banner.W
-			height = *imp.Banner.H
-		}
-	} else {
+		width, height = getBannerSize(imp)
+	} else if imp.Video != nil {
 		width = imp.Video.W
 		height = imp.Video.H
 	}
@@ -225,8 +286,22 @@ func getSizeValue(imp openrtb2.Imp) string {
 	return size
 }
 
+func getBannerSize(imp openrtb2.Imp) (int64, int64) {
+	width := int64(0)
+	height := int64(0)
+
+	if len(imp.Banner.Format) == 1 {
+		return imp.Banner.Format[0].W, imp.Banner.Format[0].H
+	} else if len(imp.Banner.Format) > 1 {
+		return width, height
+	} else if imp.Banner.W != nil && imp.Banner.H != nil {
+		width = *imp.Banner.W
+		height = *imp.Banner.H
+	}
+	return width, height
+}
 func getDomain(request *openrtb2.BidRequest) string {
-	value := catchAll
+	var value string
 	if request.Site != nil {
 		if len(request.Site.Domain) > 0 {
 			value = request.Site.Domain
@@ -364,8 +439,8 @@ func prepareRuleCombinations(keys []string, numSchemaFields int, delimiter strin
 		comb = append(comb, i)
 	}
 	desiredkeys = append(desiredkeys, subset)
-	for numWildCart := 1; numWildCart <= numSchemaFields; numWildCart++ {
-		newComb := generateCombinations(comb, numWildCart, segNum)
+	for numWildCard := 1; numWildCard <= numSchemaFields; numWildCard++ {
+		newComb := generateCombinations(comb, numWildCard, segNum)
 		for i := 0; i < len(newComb); i++ {
 			eachSet := make([]string, len(desiredkeys[0]))
 			_ = copy(eachSet, desiredkeys[0])
@@ -391,15 +466,15 @@ func prepareRuleKeys(desiredkeys [][]string, delimiter string) []string {
 	return ruleKeys
 }
 
-func generateCombinations(set []int, numWildCart int, segNum int) (comb [][]int) {
+func generateCombinations(set []int, numWildCard int, segNum int) (comb [][]int) {
 	length := uint(len(set))
 
-	if numWildCart > len(set) {
-		numWildCart = len(set)
+	if numWildCard > len(set) {
+		numWildCard = len(set)
 	}
 
 	for subsetBits := 1; subsetBits < (1 << length); subsetBits++ {
-		if numWildCart > 0 && bits.OnesCount(uint(subsetBits)) != numWildCart {
+		if numWildCard > 0 && bits.OnesCount(uint(subsetBits)) != numWildCard {
 			continue
 		}
 		var subset []int

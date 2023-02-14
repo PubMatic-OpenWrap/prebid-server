@@ -52,8 +52,8 @@ var eventIDMap = map[string]string{
 	"complete":      "6",
 }
 
-//InjectVideoEventTrackers injects the video tracking events
-//Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
+// InjectVideoEventTrackers injects the video tracking events
+// Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
 func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
 	// parse VAST
 	doc := etree.NewDocument()
@@ -136,7 +136,9 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 // GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
 // By default PBS will expect [EVENT_ID] macro in trackerURL to inject event information
 // [EVENT_ID] will be injected with one of the following values
-//    firstQuartile, midpoint, thirdQuartile, complete
+//
+//	firstQuartile, midpoint, thirdQuartile, complete
+//
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
 func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
@@ -234,10 +236,10 @@ func replaceMacro(trackerURL, macro, value string) string {
 	return trackerURL
 }
 
-//FindCreatives finds Linear, NonLinearAds fro InLine and Wrapper Type of creatives
-//from input doc - VAST Document
-//NOTE: This function is temporarily seperated to reuse in ctv_auction.go. Because, in case of ctv
-//we generate bid.id
+// FindCreatives finds Linear, NonLinearAds fro InLine and Wrapper Type of creatives
+// from input doc - VAST Document
+// NOTE: This function is temporarily seperated to reuse in ctv_auction.go. Because, in case of ctv
+// we generate bid.id
 func FindCreatives(doc *etree.Document) []*etree.Element {
 	// Find Creatives of Linear and NonLinear Type
 	// Injecting Tracking Events for Companion is not supported here

@@ -86,7 +86,7 @@ func (me *MultiMetricsEngine) RecordConnectionClose(success bool) {
 	}
 }
 
-//RecordsImps records imps with imp types across all metric engines
+// RecordsImps records imps with imp types across all metric engines
 func (me *MultiMetricsEngine) RecordImps(implabels metrics.ImpLabels) {
 	for _, thisME := range *me {
 		thisME.RecordImps(implabels)
@@ -132,6 +132,13 @@ func (me *MultiMetricsEngine) RecordAdapterRequest(labels metrics.AdapterLabels)
 func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
 	for _, thisME := range *me {
 		thisME.RecordRejectedBidsForBidder(bidder)
+	}
+}
+
+// RecordDynamicFetchFailure across all engines
+func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+	for _, thisME := range *me {
+		thisME.RecordDynamicFetchFailure(pubId, code)
 	}
 }
 
@@ -499,6 +506,10 @@ func (me *NilMetricsEngine) RecordAdsCertReq(success bool) {
 
 func (me *NilMetricsEngine) RecordAdsCertSignTime(adsCertSignTime time.Duration) {
 
+}
+
+// RecordDynamicFetchFailure as a noop
+func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
 }
 
 // RecordRejectedBids as a noop

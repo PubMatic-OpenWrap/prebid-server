@@ -88,7 +88,7 @@ func GetPrebidCacheURL() string {
 	return g_cfg.ExternalURL
 }
 
-//RegisterAnalyticsModule function registers the PBSAnalyticsModule
+// RegisterAnalyticsModule function registers the PBSAnalyticsModule
 func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
 	if g_analytics == nil {
 		return fmt.Errorf("g_analytics is nil")
@@ -101,7 +101,7 @@ func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
 	return nil
 }
 
-//OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
+// OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
 func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher)
 	if err != nil {
@@ -111,7 +111,7 @@ func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-//VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
+// VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
 func VideoAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(*g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_videoFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders)
 	if err != nil {
@@ -121,25 +121,25 @@ func VideoAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-//GetUIDSWrapper Openwrap wrapper method for calling /getuids endpoint
+// GetUIDSWrapper Openwrap wrapper method for calling /getuids endpoint
 func GetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
 	getUID := endpoints.NewGetUIDsEndpoint(g_cfg.HostCookie)
 	getUID(w, r, nil)
 }
 
-//SetUIDSWrapper Openwrap wrapper method for calling /setuid endpoint
+// SetUIDSWrapper Openwrap wrapper method for calling /setuid endpoint
 func SetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
 	setUID := endpoints.NewSetUIDEndpoint(g_cfg, g_syncers, g_gdprPermsBuilder, g_tcf2CfgBuilder, *g_analytics, *g_accounts, g_metrics)
 	setUID(w, r, nil)
 }
 
-//CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
+// CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
 func CookieSync(w http.ResponseWriter, r *http.Request) {
 	cookiesync := endpoints.NewCookieSyncEndpoint(g_syncers, g_cfg, g_gdprPermsBuilder, g_tcf2CfgBuilder, g_metrics, *g_analytics, *g_accounts, g_activeBidders)
 	cookiesync.Handle(w, r, nil)
 }
 
-//SyncerMap Returns map of bidder and its usersync info
+// SyncerMap Returns map of bidder and its usersync info
 func SyncerMap() map[string]usersync.Syncer {
 	return g_syncers
 }
