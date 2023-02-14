@@ -259,6 +259,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
+	ao.Response = response
 
 	// Response Generation
 	enc := json.NewEncoder(w)
