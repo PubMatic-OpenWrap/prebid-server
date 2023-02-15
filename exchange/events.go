@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/prebid/prebid-server/exchange/entities"
@@ -142,13 +143,15 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 }
 
 func (ev *eventTracking) printUpdateEventURLs() {
-
+	count := 0
 	for _, event := range ev.events.VASTEvents {
 		if event.ExcludeDefaultURL {
-			macros.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build())
+			fmt.Printf("Vast Event Tracker %d | %s", count, macros.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build()))
+			count++
 		} else {
 			for _, eventURL := range event.URLs {
-				macros.Replace(eventURL, ev.macrosBuilder.Build())
+				fmt.Printf("Vast Event Tracker %d | %s", count, macros.Replace(eventURL, ev.macrosBuilder.Build()))
+				count++
 			}
 		}
 	}
