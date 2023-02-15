@@ -106,7 +106,7 @@ func (modelGroup *PriceFloorModelGroup) Copy() *PriceFloorModelGroup {
 	newModelGroup.Schema.Delimiter = modelGroup.Schema.Delimiter
 	newModelGroup.Schema.Fields = make([]string, len(modelGroup.Schema.Fields))
 	copy(newModelGroup.Schema.Fields, modelGroup.Schema.Fields)
-	newModelGroup.Values = make(map[string]float64)
+	newModelGroup.Values = make(map[string]float64, len(modelGroup.Values))
 	for key, val := range modelGroup.Values {
 		newModelGroup.Values[key] = val
 	}
