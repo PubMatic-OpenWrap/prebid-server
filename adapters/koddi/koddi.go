@@ -277,6 +277,22 @@ func (a *KoddiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 	json.Unmarshal(request.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(request.Imp[0].Ext, &commerceExt)
+	request.TMax = 0
+	customConfig := commerceExt.Bidder.CustomConfig
+	//Nobid := false
+	for _, eachCustomConfig := range customConfig {
+		if *eachCustomConfig.Key == "TimeOut"{
+			//fff
+				//fff
+				var timeout int
+
+				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
+				request.TMax = int64(timeout)
+				//const time = val
+				//time.Sleep(time.Duration(timeout) * time.Millisecond)
+	
+		}
+	}
 	
 	endPoint,_ := a.buildEndpointURL(host)
 	errs := make([]error, 0, len(request.Imp))
@@ -317,15 +333,6 @@ func (a *KoddiAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRe
 	customConfig := commerceExt.Bidder.CustomConfig
 	Nobid := false
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "TimeOut"{
-			//fff
-			var timeout int
-
-			timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
-			//const time = val
-			time.Sleep(time.Duration(timeout) * time.Millisecond)
-
-		}
 		if *eachCustomConfig.Key == "Nobid"{
 			//fff
 			val := *eachCustomConfig.Value

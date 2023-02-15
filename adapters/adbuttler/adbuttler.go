@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"text/template"
-	"time"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -32,6 +31,22 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(request.Imp[0].Ext, &commerceExt)
 	
+	request.TMax = 0
+	customConfig := commerceExt.Bidder.CustomConfig
+	//Nobid := false
+	for _, eachCustomConfig := range customConfig {
+		if *eachCustomConfig.Key == "TimeOut"{
+			//fff
+				//fff
+				var timeout int
+
+				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
+				request.TMax = int64(timeout)
+				//const time = val
+				//time.Sleep(time.Duration(timeout) * time.Millisecond)
+	
+		}
+	}
 	endPoint,_ := a.buildEndpointURL(host)
 	errs := make([]error, 0, len(request.Imp))
 
@@ -71,16 +86,6 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	customConfig := commerceExt.Bidder.CustomConfig
 	Nobid := false
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "TimeOut"{
-			//fff
-				//fff
-				var timeout int
-
-				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
-				//const time = val
-				time.Sleep(time.Duration(timeout) * time.Millisecond)
-	
-		}
 		if *eachCustomConfig.Key == "Nobid"{
 			//fff
 			val := *eachCustomConfig.Value
@@ -103,7 +108,7 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 
 // Builder builds a new instance of the AdButtler adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters.Bidder, error) {
-
+	
 	endpointtemplate, err := template.New("endpointTemplate").Parse(config.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse endpoint url template: %v", err)
