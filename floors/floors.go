@@ -61,7 +61,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 		return []error{fmt.Errorf("Floors disabled in request")}
 	}
 
-	modelGroup := extFloorRules.Data.ModelGroups[0]
+	modelGroup := extFloorRules.Data.ModelGroups[0].Copy()
 	if modelGroup.Schema.Delimiter == "" {
 		modelGroup.Schema.Delimiter = defaultDelimiter
 	}
