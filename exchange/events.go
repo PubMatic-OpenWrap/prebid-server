@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/prebid/prebid-server/exchange/entities"
@@ -26,6 +25,7 @@ type eventTracking struct {
 	externalURL        string
 	macrosBuilder      macros.Builder
 	events             config.Events
+	macroProcessor     macros.Processor
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
@@ -40,17 +40,17 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 		externalURL:        externalURL,
 		macrosBuilder:      macros.NewBuilder(),
 		events:             account.Events,
+		macroProcessor:     macros.GetMacroProcessor(),
 	}
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
 func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, requestWrapper *openrtb_ext.RequestWrapper) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
+	ev.macrosBuilder.WithBidRequest(requestWrapper)
+	ev.addVastEventsToMacroProcessor()
 	for bidderName, seatBid := range seatBids {
 
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
-		if modifyingVastXMLAllowed {
-			ev.macrosBuilder.WithBidRequest(requestWrapper)
-		}
 		for _, pbsBid := range seatBid.Bids {
 			if modifyingVastXMLAllowed {
 				ev.macrosBuilder.WithBidResponse(pbsBid.Bid, bidderName.String())
@@ -146,13 +146,24 @@ func (ev *eventTracking) printUpdateEventURLs() {
 	count := 0
 	for _, event := range ev.events.VASTEvents {
 		if event.ExcludeDefaultURL {
-			fmt.Printf("Vast Event Tracker %d | %s", count, macros.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build()))
+			ev.macroProcessor.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build())
+			ev.macrosBuilder.CleanUp()
 			count++
 		} else {
 			for _, eventURL := range event.URLs {
-				fmt.Printf("Vast Event Tracker %d | %s", count, macros.Replace(eventURL, ev.macrosBuilder.Build()))
-				count++
+				ev.macroProcessor.Replace(eventURL, ev.macrosBuilder.Build())
+				ev.macrosBuilder.CleanUp()
 			}
 		}
 	}
+}
+
+func (ev *eventTracking) addVastEventsToMacroProcessor() {
+	eventsURLs := []string{}
+
+	for _, event := range ev.events.VASTEvents {
+		eventsURLs = append(eventsURLs, event.URLs...)
+	}
+
+	ev.macroProcessor.AddTemplates(eventsURLs)
 }

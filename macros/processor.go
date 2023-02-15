@@ -1,53 +1,63 @@
 package macros
 
-import (
-	"bytes"
-	"strings"
-)
+type Processor interface {
+	// Replace the macros and returns replaced string
+	// if any error the error will be returned
+	Replace(string, map[string]string) (string, error)
+	// AddTemplates can add more templates to macro processor
+	AddTemplates([]string)
+}
 
-const (
-	macroPrefix          = `##` //macro prefix can not be empty
-	macroSuffix          = `##` //macro suffix can not be empty
-	macroEscapeSuffix    = `_ESC`
-	macroPrefixLen       = len(macroPrefix)
-	macroSuffixLen       = len(macroSuffix)
-	macroEscapeSuffixLen = len(macroEscapeSuffix)
-)
+type Type int
 
-// Replace replaces event macros in vast event url
-func Replace(eventURL string, macroValues map[string]string) string {
-	var out bytes.Buffer
-	pos, start, end, size := 0, 0, 0, len(eventURL)
+var StringBased Type = 0
+var TemplatedBased Type = 1
 
-	for pos < size {
+var TemplateCached Type = 2
+var StringIndexed Type = 3
+var StringIndexCached Type = 4
 
-		if start = strings.Index(eventURL[pos:], macroPrefix); start == -1 {
-			out.WriteString(eventURL[pos:])
-			break
-		}
+type Config struct {
+	Delimiter   string
+	valueConfig MacroValueConfig
+	// Templates   []string // Required by TEMPLATE_BASED processors
+}
 
-		start = start + pos
-		out.WriteString(eventURL[pos:start])
+type MacroValueConfig struct {
+	UrlEscape   bool // if true value will be url escaped
+	RemoveEmpty bool // if true key where macros are empty will be removed
+	FailOnError bool // if true on failure nothing will be replaced
+}
 
-		if (end - macroSuffixLen) <= (start + macroPrefixLen) {
-			if end = strings.Index(eventURL[start+macroPrefixLen:], macroSuffix); end == -1 {
-				out.WriteString(eventURL[start:])
-				break
-			}
+var processor Processor
 
-			end = start + macroPrefixLen + end + macroSuffixLen
-		}
+func NewProcessor(t Type, cfg Config) Processor {
 
-		key := eventURL[start+macroPrefixLen : end-macroSuffixLen]
-
-		value, found := macroValues[key]
-		if found {
-			out.WriteString(value)
-			pos = end
-		} else {
-			out.WriteByte(macroPrefix[0])
-			pos = start + 1
-		}
+	if cfg.Delimiter == "" {
+		cfg.Delimiter = "##"
 	}
-	return out.String()
+
+	switch t {
+	case StringBased:
+		processor = &stringBased{cfg: cfg}
+
+	case TemplatedBased:
+		processor = &templateBased{cfg: cfg}
+
+	case TemplateCached:
+		processor = &templateBasedCached{cfg: cfg}
+
+	case StringIndexed:
+		processor = &stringBased{cfg: cfg}
+
+	case StringIndexCached:
+		processor = &stringIndexCached{cfg: cfg}
+
+	}
+
+	return processor
+}
+
+func GetMacroProcessor() Processor {
+	return processor
 }

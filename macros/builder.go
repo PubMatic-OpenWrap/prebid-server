@@ -8,6 +8,17 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const (
+	BidIDKey       = "PBS-BIDID"
+	AppBundleKey   = "PBS-APPBUNDLE"
+	DomainKey      = "PBS-DOMAIN"
+	PubDomainkey   = "PBS-PUBDOMAIN"
+	PageURLKey     = "PBS-PAGEURL"
+	AccountIDKey   = "PBS-ACCOUNTID"
+	LmtTrackingKey = "PBS-LIMITADTRACKING"
+	ConsentKey     = "PBS-GDPRCONSENT"
+)
+
 type Builder interface {
 	// WithBidRequest extracts and stores request level macros from bid request
 	WithBidRequest(*openrtb_ext.RequestWrapper)
@@ -17,17 +28,15 @@ type Builder interface {
 	WithImpression(openrtb2.Imp)
 	// WithEventDetails extracts and stores events level macros
 	WithEventDetails()
+	// Build returns the macros map
 	Build() map[string]string
+	// CleanUp will remove the bid and vast event specific keys
+	CleanUp()
 }
 
 type macroBuilder struct {
-	// requestMacros stores request level macros
-	requestMacros map[string]string
-	// bidMacros stores bid level macros.
-	// new instance will be created for every bid
-	bidMacros map[string]string
-	// eventMacros stores macros extracted from vast exl and vast events
-	eventMacros map[string]string
+	// macros stores request level macros
+	macros map[string]string
 }
 
 func NewBuilder() Builder {
@@ -37,47 +46,47 @@ func NewBuilder() Builder {
 func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
-		maps.Copy(b.requestMacros, reqExt.GetPrebid().Macros)
+		maps.Copy(b.macros, reqExt.GetPrebid().Macros)
 	}
 
-	b.requestMacros["PBS-APPBUNDLE"] = reqWrapper.App.Bundle
+	b.macros[AppBundleKey] = reqWrapper.App.Bundle
 
 	if reqWrapper.App.Domain != "" {
-		b.requestMacros["PBS-DOMAIN"] = reqWrapper.App.Domain
+		b.macros[DomainKey] = reqWrapper.App.Domain
 	}
 
 	if reqWrapper.Site.Domain != "" {
-		b.requestMacros["PBS-DOMAIN"] = reqWrapper.Site.Domain
+		b.macros[DomainKey] = reqWrapper.Site.Domain
 	}
 
 	if reqWrapper.Site.Publisher.Domain != "" {
-		b.requestMacros["PBS-PUBDOMAIN"] = reqWrapper.Site.Publisher.Domain
+		b.macros[PubDomainkey] = reqWrapper.Site.Publisher.Domain
 	}
 
 	if reqWrapper.App.Publisher.Domain != "" {
-		b.requestMacros["PBS-PUBDOMAIN"] = reqWrapper.App.Publisher.Domain
+		b.macros[PubDomainkey] = reqWrapper.App.Publisher.Domain
 	}
 
-	b.requestMacros["PBS-PAGEURL"] = reqWrapper.Site.Page
+	b.macros[PageURLKey] = reqWrapper.Site.Page
 	userExt, _ := reqWrapper.GetUserExt()
-	b.requestMacros["PBS-GDPRCONSENT"] = *userExt.GetConsent()
+	b.macros[ConsentKey] = *userExt.GetConsent()
 	if reqWrapper.Device.Lmt != nil {
-		b.requestMacros["PBS-LIMITADTRACKING"] = strconv.Itoa(int(*reqWrapper.Device.Lmt))
+		b.macros[LmtTrackingKey] = strconv.Itoa(int(*reqWrapper.Device.Lmt))
 	}
 
-	b.requestMacros["PBS-AUCTIONID"] = reqWrapper.ID
+	b.macros[AccountIDKey] = reqWrapper.ID
 	if reqWrapper.Site.Publisher.ID != "" {
-		b.requestMacros["PBS-ACCOUNTID"] = reqWrapper.Site.Publisher.ID
+		b.macros[AccountIDKey] = reqWrapper.Site.Publisher.ID
 	}
 
 	if reqWrapper.App.Publisher.ID != "" {
-		b.requestMacros["PBS-ACCOUNTID"] = reqWrapper.App.Publisher.ID
+		b.macros[AccountIDKey] = reqWrapper.App.Publisher.ID
 	}
 
 }
 func (b *macroBuilder) WithBidResponse(bid *openrtb2.Bid, bidderName string) {
-	b.bidMacros = map[string]string{}
-	b.bidMacros["PBS-BIDID"] = bid.ID
+	b.macros = map[string]string{}
+	b.macros[BidIDKey] = bid.ID
 }
 
 func (b *macroBuilder) WithImpression(openrtb2.Imp) {
@@ -85,12 +94,15 @@ func (b *macroBuilder) WithImpression(openrtb2.Imp) {
 }
 
 func (b *macroBuilder) Build() map[string]string {
-	macros := map[string]string{}
-
-	maps.Copy(macros, b.requestMacros)
-	maps.Copy(macros, b.requestMacros)
-	maps.Copy(macros, b.eventMacros)
-	return macros
+	return b.macros
 }
 
 func (b *macroBuilder) WithEventDetails() {}
+
+func (b *macroBuilder) CleanUp() {
+	keys := []string{BidIDKey}
+
+	for _, key := range keys {
+		delete(b.macros, key)
+	}
+}
