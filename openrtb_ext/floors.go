@@ -91,3 +91,24 @@ func (Floors *PriceFloorRules) GetEnabled() bool {
 	}
 	return true
 }
+
+func (modelGroup *PriceFloorModelGroup) Copy() *PriceFloorModelGroup {
+	newModelGroup := new(PriceFloorModelGroup)
+	newModelGroup.Currency = modelGroup.Currency
+	newModelGroup.ModelVersion = modelGroup.ModelVersion
+	newModelGroup.SkipRate = modelGroup.SkipRate
+	newModelGroup.Default = modelGroup.Default
+	if modelGroup.ModelWeight != nil {
+		newModelGroup.ModelWeight = new(int)
+		*newModelGroup.ModelWeight = *modelGroup.ModelWeight
+	}
+
+	newModelGroup.Schema.Delimiter = modelGroup.Schema.Delimiter
+	newModelGroup.Schema.Fields = make([]string, len(modelGroup.Schema.Fields))
+	copy(newModelGroup.Schema.Fields, modelGroup.Schema.Fields)
+	newModelGroup.Values = make(map[string]float64)
+	for key, val := range modelGroup.Values {
+		newModelGroup.Values[key] = val
+	}
+	return newModelGroup
+}
