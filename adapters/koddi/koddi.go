@@ -273,9 +273,11 @@ func (a *KoddiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 	var extension map[string]json.RawMessage
 	var preBidExt openrtb_ext.ExtRequestPrebid
 	var commerceExt ExtImpCommerce
+	//var customConfig []*ExtCustomConfig
 	json.Unmarshal(request.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(request.Imp[0].Ext, &commerceExt)
+	
 	endPoint,_ := a.buildEndpointURL(host)
 	errs := make([]error, 0, len(request.Imp))
 
@@ -306,13 +308,43 @@ func (a *KoddiAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRe
 	curl, _ := a.buildClickURL(hostName)
 	purl, _ := a.buildConversionURL(hostName)
 	requestCount := GetRequestSlotCount(internalRequest)
-	
-	responseF := GetDummyBids(iurl, curl, purl, "koddi", requestCount)
-	//responseF := commerce.GetDummyBids_NoBid(iurl, curl, purl, "koddi", 1)
-    //err := fmt.Errorf("No Bids available for the given request from Koddi")
-	//errors = append(errors,err )
-	return responseF, errors
+	var extension map[string]json.RawMessage
+	var preBidExt openrtb_ext.ExtRequestPrebid
+	var commerceExt ExtImpCommerce
+	json.Unmarshal(internalRequest.Ext, &extension)
+	json.Unmarshal(extension["prebid"], &preBidExt)
+	json.Unmarshal(internalRequest.Imp[0].Ext, &commerceExt)
+	customConfig := commerceExt.Bidder.CustomConfig
+	Nobid := false
+	for _, eachCustomConfig := range customConfig {
+		if *eachCustomConfig.Key == "TimeOut"{
+			//fff
+			var timeout int
 
+			timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
+			//const time = val
+			time.Sleep(time.Duration(timeout) * time.Millisecond)
+
+		}
+		if *eachCustomConfig.Key == "Nobid"{
+			//fff
+			val := *eachCustomConfig.Value
+			if val == "true" {
+				Nobid = true
+			}
+
+		}
+	}
+	
+	if !Nobid {
+		responseF := GetDummyBids(iurl, curl, purl, "koddi", requestCount)
+		return responseF,nil
+	}
+	
+	err := fmt.Errorf("No Bids available for the given request from Koddi")
+	errors = append(errors,err )
+	return nil, errors
+	
 }
 
 // Builder builds a new instance of the Koddi adapter for the given bidder with the given config.

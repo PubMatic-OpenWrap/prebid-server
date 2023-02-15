@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -29,6 +31,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	json.Unmarshal(request.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(request.Imp[0].Ext, &commerceExt)
+	
 	endPoint,_ := a.buildEndpointURL(host)
 	errs := make([]error, 0, len(request.Imp))
 
@@ -50,6 +53,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	
 }
 func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	var errors []error 
 	hostName := koddi.GetHostName(internalRequest)
 	if len(hostName) == 0 {
 		hostName = koddi.COMMERCE_DEFAULT_HOSTNAME
@@ -58,9 +62,43 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	curl, _ := a.buildClickURL(hostName)
 	purl, _ := a.buildConversionURL(hostName)
 	requestCount := koddi.GetRequestSlotCount(internalRequest)
+	var extension map[string]json.RawMessage
+	var preBidExt openrtb_ext.ExtRequestPrebid
+	var commerceExt koddi.ExtImpCommerce
+	json.Unmarshal(internalRequest.Ext, &extension)
+	json.Unmarshal(extension["prebid"], &preBidExt)
+	json.Unmarshal(internalRequest.Imp[0].Ext, &commerceExt)
+	customConfig := commerceExt.Bidder.CustomConfig
+	Nobid := false
+	for _, eachCustomConfig := range customConfig {
+		if *eachCustomConfig.Key == "TimeOut"{
+			//fff
+				//fff
+				var timeout int
+
+				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
+				//const time = val
+				time.Sleep(time.Duration(timeout) * time.Millisecond)
 	
-	responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount)
-	return responseF, nil
+		}
+		if *eachCustomConfig.Key == "Nobid"{
+			//fff
+			val := *eachCustomConfig.Value
+			if val == "true" {
+				Nobid = true
+			}
+
+		}
+	}
+	
+	if !Nobid {
+		responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount)
+		return responseF,nil
+	}
+	
+	err := fmt.Errorf("No Bids available for the given request from Koddi")
+	errors = append(errors,err )
+	return nil, errors
 }
 
 // Builder builds a new instance of the AdButtler adapter for the given bidder with the given config.
