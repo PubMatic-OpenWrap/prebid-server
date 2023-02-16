@@ -5,6 +5,8 @@ type Processor interface {
 	// if any error the error will be returned
 	Replace(string, map[string]string) (string, error)
 	// AddTemplates can add more templates to macro processor
+	// Only applicable for StringIndexCached and TemplatedCached processors
+	// Template are added for every request.
 	AddTemplates([]string)
 }
 
@@ -12,7 +14,6 @@ type Type int
 
 var StringBased Type = 0
 var TemplatedBased Type = 1
-
 var TemplateCached Type = 2
 var StringIndexed Type = 3
 var StringIndexCached Type = 4
@@ -20,7 +21,6 @@ var StringIndexCached Type = 4
 type Config struct {
 	Delimiter   string
 	valueConfig MacroValueConfig
-	// Templates   []string // Required by TEMPLATE_BASED processors
 }
 
 type MacroValueConfig struct {
@@ -31,6 +31,13 @@ type MacroValueConfig struct {
 
 var processor Processor
 
+// NewProcessor will return instance of macro processor
+// Supported processor type:
+// 0. StringIndexed
+// 1. TemplatedBased
+// 2. TemplateCached
+// 3. StringBased
+// 4. StringIndexCached
 func NewProcessor(t Type, cfg Config) Processor {
 
 	if cfg.Delimiter == "" {
@@ -40,19 +47,14 @@ func NewProcessor(t Type, cfg Config) Processor {
 	switch t {
 	case StringBased:
 		processor = &stringBased{cfg: cfg}
-
 	case TemplatedBased:
 		processor = &templateBased{cfg: cfg}
-
 	case TemplateCached:
 		processor = &templateBasedCached{cfg: cfg}
-
 	case StringIndexed:
-		processor = &stringBased{cfg: cfg}
-
+		processor = &stringIndexBased{cfg: cfg}
 	case StringIndexCached:
 		processor = &stringIndexCached{cfg: cfg}
-
 	}
 
 	return processor

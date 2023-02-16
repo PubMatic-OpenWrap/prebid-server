@@ -6,21 +6,27 @@ import (
 	"text/template"
 )
 
+const (
+	templateName   = "macro_replace"
+	templateOption = "missingkey=zero"
+)
+
+// templateBased implements macro processor with text/template approach
 type templateBased struct {
 	cfg Config
 }
 
 func (processor *templateBased) Replace(url string, macroValues map[string]string) (string, error) {
-	tmpl := template.New("macro_replace")
-	tmpl.Option("missingkey=zero")
+	tmpl := template.New(templateName)
+	tmpl.Option(templateOption)
 	tmpl.Delims(processor.cfg.Delimiter, processor.cfg.Delimiter)
 	// collect all macros based on delimiters
 	regex := fmt.Sprintf("%s(.*?)%s", processor.cfg.Delimiter, processor.cfg.Delimiter)
 	re := regexp.MustCompile(regex)
-	replacedStr := re.ReplaceAllString(url, "##.$1##")
+	replacedStr := re.ReplaceAllString(url, processor.cfg.Delimiter+".$1"+processor.cfg.Delimiter)
 	tmpl, err := tmpl.Parse(replacedStr)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	return resolveMacros(tmpl, macroValues)

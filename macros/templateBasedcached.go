@@ -7,6 +7,8 @@ import (
 	"text/template"
 )
 
+// templateBasedCache implements macro processor interface with text/template caching approach
+// new template will be cached for each event url per request.
 type templateBasedCached struct {
 	templates map[string]*template.Template
 	cfg       Config
@@ -23,22 +25,16 @@ func (processor *templateBasedCached) AddTemplates(templates []string) {
 		if _, ok := processor.templates[url]; ok {
 			continue
 		}
-		tmpl := template.New("macro_replace")
-		tmpl.Option("missingkey=zero")
+		tmpl := template.New(templateName)
+		tmpl.Option(templateOption)
 		tmpl.Delims(delimiter, delimiter)
 		// collect all macros based on delimiters
 		regex := fmt.Sprintf("%s(.*?)%s", delimiter, delimiter)
 		re := regexp.MustCompile(regex)
-		// Example
-		// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
-		// ##(.*?)##
-		// Group 0 => ##PBS_EVENTTYPE##, ##PBS_GDPRCONSENT#
-		// Group 1 => PBS_EVENTTYPE, PBS_GDPRCONSENT
-		// We are using #1. because we want '.' as a prefix
-		replacedStr := re.ReplaceAllString(url, "##.$1##")
+		replacedStr := re.ReplaceAllString(url, delimiter+".$1"+delimiter)
 		tmpl, err := tmpl.Parse(replacedStr)
 		if err != nil {
-			panic(err)
+			return
 		}
 		processor.templates[url] = tmpl
 	}

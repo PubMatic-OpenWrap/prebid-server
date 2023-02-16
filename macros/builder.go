@@ -24,9 +24,7 @@ type Builder interface {
 	WithBidRequest(*openrtb_ext.RequestWrapper)
 	// WithBidResponse extracts and stores bid level macros from seatBid.bid
 	WithBidResponse(*openrtb2.Bid, string)
-	// WithImpression extracts and stores impression level macros.
-	WithImpression(openrtb2.Imp)
-	// WithEventDetails extracts and stores events level macros
+	// WithEventDetails extracts and stores vast event level macros
 	WithEventDetails()
 	// Build returns the macros map
 	Build() map[string]string
@@ -35,10 +33,11 @@ type Builder interface {
 }
 
 type macroBuilder struct {
-	// macros stores request level macros
+	// macros stores macros key values
 	macros map[string]string
 }
 
+// NewBuilder returns the instance of macro buidler
 func NewBuilder() Builder {
 	return &macroBuilder{}
 }
@@ -49,7 +48,9 @@ func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
 		maps.Copy(b.macros, reqExt.GetPrebid().Macros)
 	}
 
-	b.macros[AppBundleKey] = reqWrapper.App.Bundle
+	if reqWrapper.App.Bundle != "" {
+		b.macros[AppBundleKey] = reqWrapper.App.Bundle
+	}
 
 	if reqWrapper.App.Domain != "" {
 		b.macros[DomainKey] = reqWrapper.App.Domain
@@ -87,10 +88,6 @@ func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
 func (b *macroBuilder) WithBidResponse(bid *openrtb2.Bid, bidderName string) {
 	b.macros = map[string]string{}
 	b.macros[BidIDKey] = bid.ID
-}
-
-func (b *macroBuilder) WithImpression(openrtb2.Imp) {
-
 }
 
 func (b *macroBuilder) Build() map[string]string {

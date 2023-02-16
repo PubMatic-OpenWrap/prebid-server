@@ -142,6 +142,7 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 		})
 }
 
+// Temporary code will be removed later
 func (ev *eventTracking) printUpdateEventURLs() {
 	count := 0
 	for _, event := range ev.events.VASTEvents {
@@ -158,6 +159,7 @@ func (ev *eventTracking) printUpdateEventURLs() {
 	}
 }
 
+// addVastEventsToMacroProcessor adds vast event urls to macro processor
 func (ev *eventTracking) addVastEventsToMacroProcessor() {
 	eventsURLs := []string{}
 

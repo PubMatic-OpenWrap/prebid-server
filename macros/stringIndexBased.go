@@ -5,8 +5,9 @@ import (
 	"strings"
 )
 
-type VastBidderBased struct {
-	Processor
+// stringIndexBased implements macro processor interface with string indexing approach
+type stringIndexBased struct {
+	cfg Config
 }
 
 const (
@@ -18,34 +19,33 @@ const (
 	macroEscapeSuffixLen int    = len(macroEscapeSuffix)
 )
 
-func (p *VastBidderBased) Replace(in string, macroValues map[string]string) (string, error) {
+func (p *stringIndexBased) Replace(url string, macroValues map[string]string) (string, error) {
 	var out bytes.Buffer
-	pos, start, end, size := 0, 0, 0, len(in)
+	currIndex, start, end, size := 0, 0, 0, len(url)
 
-	for pos < size {
+	for currIndex < size {
 		//find macro prefix index
-		if start = strings.Index(in[pos:], macroPrefix); -1 == start {
+		if start = strings.Index(url[currIndex:], macroPrefix); start == -1 {
 			//[prefix_not_found] append remaining string to response
-			out.WriteString(in[pos:])
-
+			out.WriteString(url[currIndex:])
 			//macro prefix not found
 			break
 		}
 
 		//prefix index w.r.t original string
-		start = start + pos
+		start = start + currIndex
 
 		//append non macro prefix content
-		out.WriteString(in[pos:start])
+		out.WriteString(url[currIndex:start])
 
 		if (end - macroSuffixLen) <= (start + macroPrefixLen) {
 			//string contains {{TEXT_{{MACRO}} -> it should replace it with{{TEXT_MACROVALUE
 			//find macro suffix index
-			if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); -1 == end {
+			if end = strings.Index(url[start+macroPrefixLen:], macroSuffix); end == -1 {
 				//[suffix_not_found] append remaining string to response
-				out.WriteString(in[start:])
+				out.WriteString(url[start:])
 
-				// We Found First %% and Not Found Second %% But We are in between of string
+				// We Found First %% and Not Found Second %% But We are url between of string
 				break
 			}
 
@@ -53,20 +53,20 @@ func (p *VastBidderBased) Replace(in string, macroValues map[string]string) (str
 		}
 
 		//get actual macro key by removing macroPrefix and macroSuffix from key itself
-		key := in[start+macroPrefixLen : end-macroSuffixLen]
+		key := url[start+macroPrefixLen : end-macroSuffixLen]
 
 		//process macro
 		// value, found := mp.processKey(key)
 		value, found := macroValues[key]
 		if found {
 			out.WriteString(value)
-			pos = end
+			currIndex = end
 		} else {
 			out.WriteByte(macroPrefix[0])
-			pos = start + 1
+			currIndex = start + 1
 		}
-		//glog.Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
 	}
-	// glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", in, )
 	return out.String(), nil
 }
+
+func (p *stringIndexBased) AddTemplates([]string) {}
