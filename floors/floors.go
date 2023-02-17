@@ -61,7 +61,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 		return []error{fmt.Errorf("Floors disabled in request")}
 	}
 
-	modelGroup := extFloorRules.Data.ModelGroups[0].Copy()
+	modelGroup := extFloorRules.Data.ModelGroups[0]
 	if modelGroup.Schema.Delimiter == "" {
 		modelGroup.Schema.Delimiter = defaultDelimiter
 	}
@@ -179,10 +179,9 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 				finFloors.Data = new(openrtb_ext.PriceFloorData)
 				*finFloors.Data = *floors.Data
 				if len(validModelGroups) > 1 {
-					finFloors.Data.ModelGroups = selectFloorModelGroup(validModelGroups, rand.Intn)
-				} else {
-					finFloors.Data.ModelGroups = validModelGroups
+					validModelGroups = selectFloorModelGroup(validModelGroups, rand.Intn)
 				}
+				finFloors.Data.ModelGroups = []openrtb_ext.PriceFloorModelGroup{*validModelGroups[0].Copy()}
 			}
 		}
 	}

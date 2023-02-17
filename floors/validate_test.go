@@ -191,7 +191,7 @@ func TestValidateFloorRulesAndLowerValidRuleKey(t *testing.T) {
 					ModelVersion: "Version 1",
 					Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}, Delimiter: "|"},
 					Values: map[string]float64{
-						"banner|300x250|www.website.com":              1.01,
+						"BANNER|300x250|WWW.WEBSITE.COM":              1.01,
 						"banner|300x250|*":                            2.01,
 						"banner|300x600|www.website.com|www.test.com": 3.01,
 						"banner|300x600|*":                            4.01,
