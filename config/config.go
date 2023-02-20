@@ -100,8 +100,9 @@ type Configuration struct {
 	// Refers to main.go `configFileName` constant
 	BidderInfos BidderInfos `mapstructure:"adapters"`
 	// Hooks provides a way to specify hook execution plan for specific endpoints and stages
-	Hooks       Hooks       `mapstructure:"hooks"`
-	Validations Validations `mapstructure:"validations"`
+	Hooks                Hooks                `mapstructure:"hooks"`
+	Validations          Validations          `mapstructure:"validations"`
+	MacroProcessorConfig MacroProcessorConfig `mapstructure:"macroprocessorconfig"`
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500

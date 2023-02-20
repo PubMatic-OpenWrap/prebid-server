@@ -1,25 +1,28 @@
-package macros
+package processor
+
 
 import (
 	"bytes"
 	"strings"
+
+	"github.com/prebid/prebid-server/config"
 )
 
-// stringIndexBased implements macro processor interface with string indexing approach
-type stringIndexBased struct {
-	cfg Config
+// stringIndexBasedProcessor implements macro processor interface with string indexing approach
+type stringIndexBasedProcessor struct {
+	cfg config.MacroProcessorConfig
 }
 
 const (
-	macroPrefix          string = `##` //macro prefix can not be empty
-	macroSuffix          string = `##` //macro suffix can not be empty
 	macroEscapeSuffix    string = `_ESC`
-	macroPrefixLen       int    = len(macroPrefix)
-	macroSuffixLen       int    = len(macroSuffix)
 	macroEscapeSuffixLen int    = len(macroEscapeSuffix)
 )
 
-func (p *stringIndexBased) Replace(url string, macroValues map[string]string) (string, error) {
+func (p *stringIndexBasedProcessor) Replace(url string, macroProvider Provider) (string, error) {
+	macroPrefix := p.cfg.Delimiter
+	macroSuffix := p.cfg.Delimiter
+	macroPrefixLen := len(macroPrefix)
+	macroSuffixLen := len(macroSuffix)
 	var out bytes.Buffer
 	currIndex, start, end, size := 0, 0, 0, len(url)
 
@@ -55,10 +58,8 @@ func (p *stringIndexBased) Replace(url string, macroValues map[string]string) (s
 		//get actual macro key by removing macroPrefix and macroSuffix from key itself
 		key := url[start+macroPrefixLen : end-macroSuffixLen]
 
-		//process macro
-		// value, found := mp.processKey(key)
-		value, found := macroValues[key]
-		if found {
+		value := macroProvider.GetMacro(key)
+		if value != "" {
 			out.WriteString(value)
 			currIndex = end
 		} else {
@@ -68,5 +69,3 @@ func (p *stringIndexBased) Replace(url string, macroValues map[string]string) (s
 	}
 	return out.String(), nil
 }
-
-func (p *stringIndexBased) AddTemplates([]string) {}

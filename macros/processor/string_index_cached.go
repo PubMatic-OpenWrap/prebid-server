@@ -1,17 +1,16 @@
-package macros
+package processor
 
 import (
 	"bytes"
-	"fmt"
-	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/prebid/prebid-server/config"
 )
 
-type stringIndexCached struct {
-	cfg       Config
+type stringIndexCachedProcessor struct {
+	cfg       config.MacroProcessorConfig
 	templates map[string]strMetaTemplate
-	dup       int
 	sync.RWMutex
 }
 
@@ -51,8 +50,9 @@ func constructTemplate(str string, delim string) strMetaTemplate {
 	return tmplt
 }
 
-func (processor *stringIndexCached) Replace(str string, macroValues map[string]string) (string, error) {
-	tmplt := processor.templates[str]
+func (processor *stringIndexCachedProcessor) Replace(url string, macroProvider Provider) (string, error) {
+	processor.addTemplate(url)
+	tmplt := processor.templates[url]
 	var result bytes.Buffer
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
@@ -60,40 +60,27 @@ func (processor *stringIndexCached) Replace(str string, macroValues map[string]s
 	delimLen := len(processor.cfg.Delimiter)
 	for i, index := range tmplt.indices {
 		// macro := tmplt.sIndexMacrosMap[index]
-		macro := str[index+delimLen : tmplt.macroLength[i]]
+		macro := url[index+delimLen : tmplt.macroLength[i]]
 		// copy prev part
-		result.WriteString(str[s:index])
-		if value, found := macroValues[macro]; found {
-			// replace macro with value
-			if processor.cfg.valueConfig.UrlEscape {
-				value = url.QueryEscape(value)
-			}
+		result.WriteString(url[s:index])
+		value := macroProvider.GetMacro(macro)
+		if value != "" {
 			result.WriteString(value)
 		}
 		s = index + len(macro) + len(processor.cfg.Delimiter) + len(processor.cfg.Delimiter)
 	}
-	result.WriteString(str[s:])
+	result.WriteString(url[s:])
 	return result.String(), nil
 }
 
-func (processor *stringIndexCached) AddTemplates(templates []string) {
-	processor.dup = 0
-	for _, str := range templates {
-		processor.RLock()
-		_, ok := processor.templates[str]
-		processor.RUnlock()
+func (processor *stringIndexCachedProcessor) addTemplate(url string) {
+	processor.RLock()
+	_, ok := processor.templates[url]
+	processor.RUnlock()
 
-		if !ok {
-			processor.Lock()
-			processor.templates[str] = constructTemplate(str, processor.cfg.Delimiter)
-			fmt.Println("Template constructed")
-			processor.Unlock()
-		} else {
-			processor.dup++
-		}
+	if !ok {
+		processor.Lock()
+		processor.templates[url] = constructTemplate(url, processor.cfg.Delimiter)
+		processor.Unlock()
 	}
-	if processor.dup == len(templates) {
-		fmt.Printf("Templates already processed\n")
-	}
-	fmt.Printf("Macroprocessor initialized %d templates\nDuplicate=%d\n", len(processor.templates), processor.dup)
 }

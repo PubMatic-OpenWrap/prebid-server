@@ -1,4 +1,4 @@
-package macros
+package processor
 
 import (
 	"strconv"
@@ -19,30 +19,35 @@ const (
 	ConsentKey     = "PBS-GDPRCONSENT"
 )
 
-type Builder interface {
-	// WithBidRequest extracts and stores request level macros from bid request
-	WithBidRequest(*openrtb_ext.RequestWrapper)
-	// WithBidResponse extracts and stores bid level macros from seatBid.bid
-	WithBidResponse(*openrtb2.Bid, string)
-	// WithEventDetails extracts and stores vast event level macros
-	WithEventDetails()
-	// Build returns the macros map
-	Build() map[string]string
-	// CleanUp will remove the bid and vast event specific keys
-	CleanUp()
+type Provider interface {
+	// GetMacro returns the macro value for the given macro key
+	GetMacro(key string) string
+	// GetAllMacros return all the macros
+	GetAllMacros(keys []string) map[string]string
+	// SetContext set the bid and imp for the current provider
+	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp)
+	// UnsetContext unsets the bid and imp for the current provider
+	UnsetContext()
 }
 
-type macroBuilder struct {
-	// macros stores macros key values
+type macroProvider struct {
+	// macros stores request level macros key values
 	macros map[string]string
+	// bid object of the current macro provider
+	bid *openrtb2.Bid
+	// imp object of the current macro provider
+	imp *openrtb2.Imp
 }
 
 // NewBuilder returns the instance of macro buidler
-func NewBuilder() Builder {
-	return &macroBuilder{}
+func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) Provider {
+
+	macroProvider := &macroProvider{macros: map[string]string{}}
+	macroProvider.populateRequestMacros(reqWrapper)
+	return macroProvider
 }
 
-func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
+func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWrapper) {
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		maps.Copy(b.macros, reqExt.GetPrebid().Macros)
@@ -85,21 +90,28 @@ func (b *macroBuilder) WithBidRequest(reqWrapper *openrtb_ext.RequestWrapper) {
 	}
 
 }
-func (b *macroBuilder) WithBidResponse(bid *openrtb2.Bid, bidderName string) {
-	b.macros = map[string]string{}
-	b.macros[BidIDKey] = bid.ID
+
+func (b *macroProvider) GetMacro(key string) string {
+	return b.GetAllMacros([]string{key})[key]
 }
-
-func (b *macroBuilder) Build() map[string]string {
-	return b.macros
-}
-
-func (b *macroBuilder) WithEventDetails() {}
-
-func (b *macroBuilder) CleanUp() {
-	keys := []string{BidIDKey}
+func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
+	macroValues := map[string]string{}
 
 	for _, key := range keys {
-		delete(b.macros, key)
+		switch key {
+		case BidIDKey:
+			macroValues[BidIDKey] = b.bid.ID
+		default:
+			macroValues[key] = b.macros[key]
+		}
 	}
+	return macroValues
+}
+func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp) {
+	b.bid = bid
+	b.imp = imp
+}
+func (b *macroProvider) UnsetContext() {
+	b.bid = nil
+	b.imp = nil
 }

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/macros"
+	"github.com/prebid/prebid-server/macros/processor"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/prebid/prebid-server/analytics"
@@ -23,13 +24,12 @@ type eventTracking struct {
 	integrationType    string
 	bidderInfos        config.BidderInfos
 	externalURL        string
-	macrosBuilder      macros.Builder
+	macroProvider      processor.Provider
 	events             config.Events
-	macroProcessor     macros.Processor
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, processor macros.Processor) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, macroProvider processor.Provider) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
 		enabledForAccount:  account.Events.Enabled,
@@ -38,22 +38,18 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 		integrationType:    requestExtPrebid.Integration,
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
-		macrosBuilder:      macros.NewBuilder(),
+		macroProvider:      macroProvider,
 		events:             account.Events,
-		macroProcessor:     processor,
 	}
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
 func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, requestWrapper *openrtb_ext.RequestWrapper) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
-	ev.macrosBuilder.WithBidRequest(requestWrapper)
-	ev.addVastEventsToMacroProcessor()
 	for bidderName, seatBid := range seatBids {
 
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.Bids {
 			if modifyingVastXMLAllowed {
-				ev.macrosBuilder.WithBidResponse(pbsBid.Bid, bidderName.String())
 				ev.modifyBidVAST(pbsBid, bidderName)
 			}
 			pbsBid.BidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
@@ -82,7 +78,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 		bid.AdM = newVastXML
 	}
 
-	ev.printUpdateEventURLs()
+	ev.printUpdateEventURLs(bid)
 	// Tracker Injector should be called here
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
 	// if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
@@ -143,29 +139,21 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 }
 
 // Temporary code will be removed later
-func (ev *eventTracking) printUpdateEventURLs() {
-	count := 0
+func (ev *eventTracking) printUpdateEventURLs(bid *openrtb2.Bid) {
+	macroProcessor := processor.GetMacroProcessor()
+
 	for _, event := range ev.events.VASTEvents {
 		if event.ExcludeDefaultURL {
-			ev.macroProcessor.Replace(ev.events.DefaultURL, ev.macrosBuilder.Build())
-			ev.macrosBuilder.CleanUp()
-			count++
+			ev.macroProvider.SetContext(bid, nil)
+			macroProcessor.Replace(ev.events.DefaultURL, ev.macroProvider)
+			ev.macroProvider.UnsetContext()
+
 		} else {
 			for _, eventURL := range event.URLs {
-				ev.macroProcessor.Replace(eventURL, ev.macrosBuilder.Build())
-				ev.macrosBuilder.CleanUp()
+				ev.macroProvider.SetContext(bid, nil)
+				macroProcessor.Replace(eventURL, ev.macroProvider)
+				ev.macroProvider.UnsetContext()
 			}
 		}
 	}
-}
-
-// addVastEventsToMacroProcessor adds vast event urls to macro processor
-func (ev *eventTracking) addVastEventsToMacroProcessor() {
-	eventsURLs := []string{}
-
-	for _, event := range ev.events.VASTEvents {
-		eventsURLs = append(eventsURLs, event.URLs...)
-	}
-
-	ev.macroProcessor.AddTemplates(eventsURLs)
 }
