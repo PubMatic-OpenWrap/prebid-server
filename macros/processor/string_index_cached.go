@@ -51,8 +51,8 @@ func constructTemplate(str string, delim string) strMetaTemplate {
 }
 
 func (processor *stringIndexCachedProcessor) Replace(url string, macroProvider Provider) (string, error) {
-	processor.addTemplate(url)
-	tmplt := processor.templates[url]
+	tmplt := processor.getTemplate(url)
+
 	var result bytes.Buffer
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
@@ -73,14 +73,20 @@ func (processor *stringIndexCachedProcessor) Replace(url string, macroProvider P
 	return result.String(), nil
 }
 
-func (processor *stringIndexCachedProcessor) addTemplate(url string) {
+func (processor *stringIndexCachedProcessor) getTemplate(url string) strMetaTemplate {
+	var (
+		template strMetaTemplate
+		ok       bool
+	)
 	processor.RLock()
-	_, ok := processor.templates[url]
+	template, ok = processor.templates[url]
 	processor.RUnlock()
 
 	if !ok {
 		processor.Lock()
-		processor.templates[url] = constructTemplate(url, processor.cfg.Delimiter)
+		template = constructTemplate(url, processor.cfg.Delimiter)
+		processor.templates[url] = template
 		processor.Unlock()
 	}
+	return template
 }
