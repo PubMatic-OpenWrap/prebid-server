@@ -23,19 +23,26 @@ type templateWrapper struct {
 // templateBasedCache implements macro processor interface with text/template caching approach
 // new template will be cached for each event url per request.
 type templateBasedCached struct {
-	templates map[string]templateWrapper
+	templates map[string]*templateWrapper
 	cfg       config.MacroProcessorConfig
 	sync.RWMutex
 }
 
 func (processor *templateBasedCached) Replace(url string, macroProvider Provider) (string, error) {
-	return resolveMacros(processor.templates[url].template, macroProvider.GetAllMacros(processor.templates[config.ErrMsgInvalidRemoteSignerURL].keys))
+	tmplt := processor.getTemplates(url)
+	if tmplt == nil {
+		return "", fmt.Errorf("failed to add template for url: %s", url)
+	}
+	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys))
 }
 
-func (processor *templateBasedCached) addTemplates(url string) {
-
+func (processor *templateBasedCached) getTemplates(url string) *templateWrapper {
+	var (
+		tmplate *templateWrapper
+		ok      bool
+	)
 	processor.RLock()
-	_, ok := processor.templates[url]
+	tmplate, ok = processor.templates[url]
 	processor.RUnlock()
 
 	if !ok {
@@ -57,15 +64,18 @@ func (processor *templateBasedCached) addTemplates(url string) {
 		replacedStr := re.ReplaceAllString(url, delimiter+".$1"+delimiter)
 		tmpl, err := tmpl.Parse(replacedStr)
 		if err != nil {
-			return
+			return nil
 		}
-		tmplWrapper := templateWrapper{
+		tmplWrapper := &templateWrapper{
 			template: tmpl,
 			keys:     keys,
 		}
-		processor.templates[url] = tmplWrapper
+		tmplate = tmplWrapper
+		processor.templates[url] = tmplate
 		processor.Unlock()
 	}
+
+	return tmplate
 }
 
 // ResolveMacros resolves macros in the given template with the provided params
