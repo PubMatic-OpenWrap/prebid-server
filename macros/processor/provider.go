@@ -19,6 +19,10 @@ const (
 	ConsentKey     = "PBS-GDPRCONSENT"
 )
 
+var (
+	bidLevelKeys = []string{BidIDKey}
+)
+
 type Provider interface {
 	// GetMacro returns the macro value for the given macro key
 	GetMacro(key string) string
@@ -29,12 +33,8 @@ type Provider interface {
 }
 
 type macroProvider struct {
-	// macros stores request level macros key values
+	// macros map stores macros key values
 	macros map[string]string
-	// bid object of the current macro provider
-	bid *openrtb2.Bid
-	// imp object of the current macro provider
-	imp *openrtb2.Imp
 }
 
 // NewBuilder returns the instance of macro buidler
@@ -90,27 +90,22 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 }
 
 func (b *macroProvider) GetMacro(key string) string {
-	return b.GetAllMacros([]string{key})[key]
+	return b.macros[key]
 }
 func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	macroValues := map[string]string{}
 
 	for _, key := range keys {
-		switch key {
-		case BidIDKey:
-			macroValues[BidIDKey] = b.bid.ID
-		default:
-			macroValues[key] = b.macros[key]
-		}
+		macroValues[key] = b.macros[key]
 	}
 	return macroValues
 }
 func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp) {
 	b.resetcontext()
-	b.bid = bid
-	b.imp = imp
+	b.macros[BidIDKey] = bid.ID
 }
 func (b *macroProvider) resetcontext() {
-	b.bid = nil
-	b.imp = nil
+	for _, key := range bidLevelKeys {
+		delete(b.macros, key)
+	}
 }

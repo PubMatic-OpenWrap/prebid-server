@@ -19,21 +19,15 @@ func NewProcessor(cfg config.MacroProcessorConfig) Processor {
 		cfg.Delimiter = "##"
 	}
 
-	if cfg.StringIndexCacheProcessorConfig.Enabled {
+	switch cfg.ProcessorType {
+	case config.StringIndexCacheProcessor:
 		processor = &stringIndexCachedProcessor{cfg: cfg}
-	}
-
-	if cfg.TemplateCacheProcessorConfig.Enabled {
+	case config.TemplateCacheProcessor:
 		processor = &templateBasedCached{cfg: cfg}
-	}
-
-	if cfg.StringIndexProcessorConfig.Enabled {
-		processor = &stringIndexBasedProcessor{cfg: cfg}
-	}
-
-	if processor == nil {
+	default:
 		processor = &emptyProcessor{}
 	}
+
 	return processor
 }
 

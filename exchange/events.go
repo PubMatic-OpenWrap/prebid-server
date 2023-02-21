@@ -146,13 +146,11 @@ func (ev *eventTracking) printUpdateEventURLs(bid *openrtb2.Bid) {
 		if event.ExcludeDefaultURL {
 			ev.macroProvider.SetContext(bid, nil)
 			macroProcessor.Replace(ev.events.DefaultURL, ev.macroProvider)
-			ev.macroProvider.UnsetContext()
 
 		} else {
 			for _, eventURL := range event.URLs {
 				ev.macroProvider.SetContext(bid, nil)
 				macroProcessor.Replace(eventURL, ev.macroProvider)
-				ev.macroProvider.UnsetContext()
 			}
 		}
 	}
