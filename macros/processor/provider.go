@@ -26,8 +26,6 @@ type Provider interface {
 	GetAllMacros(keys []string) map[string]string
 	// SetContext set the bid and imp for the current provider
 	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp)
-	// UnsetContext unsets the bid and imp for the current provider
-	UnsetContext()
 }
 
 type macroProvider struct {
@@ -108,10 +106,11 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	return macroValues
 }
 func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp) {
+	b.resetcontext()
 	b.bid = bid
 	b.imp = imp
 }
-func (b *macroProvider) UnsetContext() {
+func (b *macroProvider) resetcontext() {
 	b.bid = nil
 	b.imp = nil
 }
