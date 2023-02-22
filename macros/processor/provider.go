@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"net/url"
 	"strconv"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
@@ -93,13 +94,13 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 }
 
 func (b *macroProvider) GetMacro(key string) string {
-	return b.macros[key]
+	return url.QueryEscape(b.macros[key])
 }
 func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	macroValues := map[string]string{}
 
 	for _, key := range keys {
-		macroValues[key] = b.macros[key]
+		macroValues[key] = url.QueryEscape(b.macros[key]) // encoding the macro values
 	}
 	return macroValues
 }
