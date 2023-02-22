@@ -8,7 +8,11 @@ const (
 	TemplateCacheProcessor    = 2
 )
 
+// MacroProcessorConfig defines the macro processor configuration
 type MacroProcessorConfig struct {
+	// ProcessorType define the type of macro processor to be used
+	// Defaults to emtpy processor, which will not replace the macros.
 	ProcessorType ProcessorType
-	Delimiter     string
+	// Delimiter identifies the start and end of a macro in url.
+	Delimiter string
 }
