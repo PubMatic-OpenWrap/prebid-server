@@ -36,14 +36,14 @@ type templateBasedCached struct {
 }
 
 func (processor *templateBasedCached) Replace(url string, macroProvider Provider) (string, error) {
-	tmplt := processor.getTemplates(url)
+	tmplt := processor.getTemplate(url)
 	if tmplt == nil {
 		return "", fmt.Errorf("failed to add template for url: %s", url)
 	}
 	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys))
 }
 
-func (processor *templateBasedCached) getTemplates(url string) *templateWrapper {
+func (processor *templateBasedCached) getTemplate(url string) *templateWrapper {
 	var (
 		tmplate *templateWrapper
 		ok      bool
@@ -54,31 +54,7 @@ func (processor *templateBasedCached) getTemplates(url string) *templateWrapper 
 
 	if !ok {
 		processor.Lock()
-
-		delimiter := processor.cfg.Delimiter
-		tmpl := template.New(templateName)
-		tmpl.Option(templateOption)
-		tmpl.Delims(delimiter, delimiter)
-		// collect all macros based on delimiters
-		regex := fmt.Sprintf("%s(.*?)%s", delimiter, delimiter)
-		re := regexp.MustCompile(regex)
-		subStringMatches := re.FindAllStringSubmatch(url, -1)
-
-		keys := make([]string, len(subStringMatches))
-		for indx, value := range subStringMatches {
-			keys[indx] = value[1]
-		}
-		replacedStr := re.ReplaceAllString(url, delimiter+".$1"+delimiter)
-		tmpl, err := tmpl.Parse(replacedStr)
-		if err != nil {
-			return nil
-		}
-		tmplWrapper := &templateWrapper{
-			template: tmpl,
-			keys:     keys,
-		}
-		tmplate = tmplWrapper
-		processor.templates[url] = tmplate
+		tmplate = processor.addTemplate(url)
 		processor.Unlock()
 	}
 
@@ -95,4 +71,32 @@ func resolveMacros(aTemplate *template.Template, params interface{}) (string, er
 	}
 	res := strBuf.String()
 	return res, nil
+}
+
+func (processor *templateBasedCached) addTemplate(url string) *templateWrapper {
+	delimiter := processor.cfg.Delimiter
+	tmpl := template.New(templateName)
+	tmpl.Option(templateOption)
+	tmpl.Delims(delimiter, delimiter)
+	// collect all macros based on delimiters
+	regex := fmt.Sprintf("%s(.*?)%s", delimiter, delimiter)
+	re := regexp.MustCompile(regex)
+	subStringMatches := re.FindAllStringSubmatch(url, -1)
+
+	keys := make([]string, len(subStringMatches))
+	for indx, value := range subStringMatches {
+		keys[indx] = value[1]
+	}
+	replacedStr := re.ReplaceAllString(url, delimiter+".$1"+delimiter)
+	tmpl, err := tmpl.Parse(replacedStr)
+	if err != nil {
+		return nil
+	}
+	tmplWrapper := &templateWrapper{
+		template: tmpl,
+		keys:     keys,
+	}
+
+	processor.templates[url] = tmplWrapper
+	return tmplWrapper
 }
