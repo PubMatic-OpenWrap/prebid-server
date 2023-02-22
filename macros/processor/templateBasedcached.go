@@ -20,6 +20,13 @@ type templateWrapper struct {
 	keys     []string
 }
 
+func newtemplateBasedProcessor(cfg config.MacroProcessorConfig) *templateBasedCached {
+	return &templateBasedCached{
+		cfg:       cfg,
+		templates: make(map[string]*templateWrapper),
+	}
+}
+
 // templateBasedCache implements macro processor interface with text/template caching approach
 // new template will be cached for each event url per request.
 type templateBasedCached struct {

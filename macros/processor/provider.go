@@ -9,15 +9,15 @@ import (
 )
 
 const (
-	BidIDKey          = "PBS-BIDID"
-	AppBundleKey      = "PBS-APPBUNDLE"
-	DomainKey         = "PBS-DOMAIN"
-	PubDomainkey      = "PBS-PUBDOMAIN"
-	PageURLKey        = "PBS-PAGEURL"
-	AccountIDKey      = "PBS-ACCOUNTID"
-	LmtTrackingKey    = "PBS-LIMITADTRACKING"
-	ConsentKey        = "PBS-GDPRCONSENT"
-	customMacroPrefix = "PBS-MACRO-"
+	BidIDKey          = "PBS_BIDID"
+	AppBundleKey      = "PBS_APPBUNDLE"
+	DomainKey         = "PBS_APPBUNDLE"
+	PubDomainkey      = "PBS_PUBDOMAIN"
+	PageURLKey        = "PBS_PAGEURL"
+	AccountIDKey      = "PBS_ACCOUNTID"
+	LmtTrackingKey    = "PBS_LIMITADTRACKING"
+	ConsentKey        = "PBS_GDPRCONSENT"
+	customMacroPrefix = "PBS_MACRO_"
 )
 
 var (
@@ -50,32 +50,34 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		for key, value := range reqExt.GetPrebid().Macros {
-			customMacroKey := customMacroPrefix + key       // Adding prefix PBS-MACRO to custom macro keys
+			customMacroKey := customMacroPrefix + key       // Adding prefix PBS_MACRO to custom macro keys
 			b.macros[customMacroKey] = truncate(value, 100) // limit the custom macro value  to 100 chars only
 		}
 	}
 
-	if reqWrapper.App.Bundle != "" {
+	if reqWrapper.App != nil && reqWrapper.App.Bundle != "" {
 		b.macros[AppBundleKey] = reqWrapper.App.Bundle
 	}
 
-	if reqWrapper.App.Domain != "" {
+	if reqWrapper.App != nil && reqWrapper.App.Domain != "" {
 		b.macros[DomainKey] = reqWrapper.App.Domain
 	}
 
-	if reqWrapper.Site.Domain != "" {
+	if reqWrapper.Site != nil && reqWrapper.Site.Domain != "" {
 		b.macros[DomainKey] = reqWrapper.Site.Domain
 	}
 
-	if reqWrapper.Site.Publisher.Domain != "" {
+	if reqWrapper.Site != nil && reqWrapper.Site.Publisher != nil && reqWrapper.Site.Publisher.Domain != "" {
 		b.macros[PubDomainkey] = reqWrapper.Site.Publisher.Domain
 	}
 
-	if reqWrapper.App.Publisher.Domain != "" {
+	if reqWrapper.App != nil && reqWrapper.App.Publisher != nil && reqWrapper.App.Publisher.Domain != "" {
 		b.macros[PubDomainkey] = reqWrapper.App.Publisher.Domain
 	}
 
-	b.macros[PageURLKey] = reqWrapper.Site.Page
+	if reqWrapper.Site != nil {
+		b.macros[PageURLKey] = reqWrapper.Site.Page
+	}
 	userExt, _ := reqWrapper.GetUserExt()
 	b.macros[ConsentKey] = *userExt.GetConsent()
 	if reqWrapper.Device.Lmt != nil {
@@ -83,11 +85,11 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 	}
 
 	b.macros[AccountIDKey] = reqWrapper.ID
-	if reqWrapper.Site.Publisher.ID != "" {
+	if reqWrapper.Site != nil && reqWrapper.Site.Publisher != nil && reqWrapper.Site.Publisher.ID != "" {
 		b.macros[AccountIDKey] = reqWrapper.Site.Publisher.ID
 	}
 
-	if reqWrapper.App.Publisher.ID != "" {
+	if reqWrapper.App != nil && reqWrapper.App.Publisher != nil && reqWrapper.App.Publisher.ID != "" {
 		b.macros[AccountIDKey] = reqWrapper.App.Publisher.ID
 	}
 

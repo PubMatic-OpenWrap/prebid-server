@@ -14,6 +14,13 @@ type stringIndexCachedProcessor struct {
 	sync.RWMutex
 }
 
+func newStringIndexCachedProcessor(cfg config.MacroProcessorConfig) *stringIndexCachedProcessor {
+	return &stringIndexCachedProcessor{
+		cfg:       cfg,
+		templates: make(map[string]strMetaTemplate),
+	}
+}
+
 type strMetaTemplate struct {
 	indices     []int
 	macroLength []int
