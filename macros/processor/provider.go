@@ -8,14 +8,15 @@ import (
 )
 
 const (
-	BidIDKey       = "PBS-BIDID"
-	AppBundleKey   = "PBS-APPBUNDLE"
-	DomainKey      = "PBS-DOMAIN"
-	PubDomainkey   = "PBS-PUBDOMAIN"
-	PageURLKey     = "PBS-PAGEURL"
-	AccountIDKey   = "PBS-ACCOUNTID"
-	LmtTrackingKey = "PBS-LIMITADTRACKING"
-	ConsentKey     = "PBS-GDPRCONSENT"
+	BidIDKey          = "PBS-BIDID"
+	AppBundleKey      = "PBS-APPBUNDLE"
+	DomainKey         = "PBS-DOMAIN"
+	PubDomainkey      = "PBS-PUBDOMAIN"
+	PageURLKey        = "PBS-PAGEURL"
+	AccountIDKey      = "PBS-ACCOUNTID"
+	LmtTrackingKey    = "PBS-LIMITADTRACKING"
+	ConsentKey        = "PBS-GDPRCONSENT"
+	customMacroPrefix = "PBS-MACRO-"
 )
 
 var (
@@ -48,10 +49,8 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		for key, value := range reqExt.GetPrebid().Macros {
-			if len(key) > 110 { // Check for custom macro ex. ##PBS-MACRO-CUSTOMACRO##
-				continue
-			}
-			b.macros[key] = value
+			customMacroKey := customMacroPrefix + key       // Adding prefix PBS-MACRO to custom macro keys
+			b.macros[customMacroKey] = truncate(value, 100) // limit the custom macro value  to 100 chars only
 		}
 	}
 
@@ -112,4 +111,14 @@ func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {
 		delete(b.macros, key)
 	}
+}
+
+func truncate(text string, width int) string {
+	if width < 0 {
+		return text
+	}
+
+	r := []rune(text)
+	trunc := r[:width]
+	return string(trunc)
 }
