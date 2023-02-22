@@ -809,6 +809,8 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
 	// (basically so viper knows they exist)
+	v.SetDefault("macroprocessorconfig.processortype", 0) // empty processor
+	v.SetDefault("macroprocessorconfig.delimiter", "##")
 	v.SetDefault("external_url", "http://localhost:8000")
 	v.SetDefault("host", "")
 	v.SetDefault("port", 8000)

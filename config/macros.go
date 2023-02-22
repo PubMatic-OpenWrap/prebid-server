@@ -14,5 +14,6 @@ type MacroProcessorConfig struct {
 	// Defaults to emtpy processor, which will not replace the macros.
 	ProcessorType ProcessorType
 	// Delimiter identifies the start and end of a macro in url.
+	// Defaults to ##
 	Delimiter string
 }
