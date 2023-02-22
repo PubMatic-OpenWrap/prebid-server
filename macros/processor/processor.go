@@ -13,6 +13,8 @@ type Processor interface {
 var processor Processor
 
 // NewProcessor will return instance of macro processor
+// Defaults to emtpy processor, in which case the macros will not be replace in url.
+// Supports string based and template based implementation
 func NewProcessor(cfg config.MacroProcessorConfig) Processor {
 
 	if cfg.Delimiter == "" {
