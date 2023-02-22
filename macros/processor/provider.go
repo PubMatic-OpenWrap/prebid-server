@@ -5,7 +5,6 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -48,7 +47,12 @@ func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) Provider {
 func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWrapper) {
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
-		maps.Copy(b.macros, reqExt.GetPrebid().Macros)
+		for key, value := range reqExt.GetPrebid().Macros {
+			if len(key) > 110 { // Check for custom macro ex. ##PBS-MACRO-CUSTOMACRO##
+				continue
+			}
+			b.macros[key] = value
+		}
 	}
 
 	if reqWrapper.App.Bundle != "" {
