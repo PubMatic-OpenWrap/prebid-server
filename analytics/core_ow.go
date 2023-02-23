@@ -8,7 +8,7 @@ import (
 // RejectedBid contains oRTB Bid object with
 // rejection reason and seat information
 type RejectedBid struct {
-	RejectionReason openrtb3.LossReason
+	RejectionReason openrtb3.NonBidStatusCode
 	Bid             *openrtb2.Bid
 	Seat            string
 }
