@@ -1833,6 +1833,54 @@ func Test_updateBidExtWithFloors(t *testing.T) {
 			},
 			want: json.RawMessage(`{"prebid":{"type":"","floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorCurrency":"WON"}}}`),
 		},
+		{
+			name: "Bid extenison is updated with floors data when ext is empty",
+			args: args{
+				reqImp: func() *openrtb_ext.ImpWrapper {
+					iw := openrtb_ext.ImpWrapper{
+						Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`)},
+					}
+					iw.RebuildImpressionExt()
+					return &iw
+				}(),
+				bid: &pbsOrtbBid{
+					bid: &openrtb2.Bid{ID: "123"},
+				},
+				floorCurrency: "WON",
+			},
+			want: json.RawMessage(`{"prebid":{"type":"","floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorCurrency":"WON"}}}`),
+		},
+		{
+			name: "Empty req impression",
+			args: args{
+				reqImp: func() *openrtb_ext.ImpWrapper {
+					iw := openrtb_ext.ImpWrapper{}
+					return &iw
+				}(),
+				bid: &pbsOrtbBid{
+					bid: &openrtb2.Bid{Ext: json.RawMessage(`{"prebid":{}}`)},
+				},
+				floorCurrency: "WON",
+			},
+			want: json.RawMessage(`{"prebid":{}}`),
+		},
+		{
+			name: "Floors data is not present in impression",
+			args: args{
+				reqImp: func() *openrtb_ext.ImpWrapper {
+					iw := openrtb_ext.ImpWrapper{
+						Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{}}`)},
+					}
+					iw.RebuildImpressionExt()
+					return &iw
+				}(),
+				bid: &pbsOrtbBid{
+					bid: &openrtb2.Bid{Ext: json.RawMessage(`{"prebid":{}}`)},
+				},
+				floorCurrency: "WON",
+			},
+			want: json.RawMessage(`{"prebid":{}}`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -44,18 +44,24 @@ func getCurrencyConversionRate(seatBidCur, reqImpCur string, conversions currenc
 func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *pbsOrtbBid, floorCurrency string) {
 
 	impExt, err := reqImp.GetImpExt()
-	if err != nil {
+	if err != nil || impExt == nil {
 		return
 	}
 
 	var bidExt openrtb_ext.ExtBid
-	err = json.Unmarshal([]byte(bid.bid.Ext), &bidExt)
-	if err != nil {
-		return
+	if len(bid.bid.Ext) != 0 {
+		err = json.Unmarshal([]byte(bid.bid.Ext), &bidExt)
+		if err != nil {
+			return
+		}
 	}
 
 	var bidExtFloors openrtb_ext.ExtBidFloors
 	prebidExt := impExt.GetPrebid()
+	if prebidExt == nil || (prebidExt != nil && prebidExt.Floors == nil) {
+		return
+	}
+
 	bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
 	bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
 	bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
@@ -66,11 +72,11 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *pbsOrtbBid, flo
 	}
 	bidExt.Prebid.Floors = bidExtFloors
 
-	floorExtData, err := json.Marshal(bidExt)
+	extWithFloors, err := json.Marshal(bidExt)
 	if err != nil {
 		return
 	}
-	bid.bid.Ext = floorExtData
+	bid.bid.Ext = extWithFloors
 }
 
 // enforceFloorToBids function does floors enforcement for each bid.
