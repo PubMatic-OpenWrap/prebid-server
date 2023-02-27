@@ -38,7 +38,7 @@ type templateBasedCached struct {
 func (processor *templateBasedCached) Replace(url string, macroProvider Provider) (string, error) {
 	tmplt := processor.getTemplate(url)
 	if tmplt == nil {
-		return "", fmt.Errorf("failed to add template for url: %s", url)
+		return url, fmt.Errorf("failed to add template for url: %s", url)
 	}
 	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys))
 }

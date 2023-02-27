@@ -22,6 +22,14 @@ var req *openrtb_ext.RequestWrapper = &openrtb_ext.RequestWrapper{
 			},
 			Page: "pageurltest",
 		},
+		App: &openrtb2.App{
+			Domain: "testdomain",
+			Bundle: "testBundle",
+			Publisher: &openrtb2.Publisher{
+				Domain: "publishertestdomain",
+				ID:     "testpublisherID",
+			},
+		},
 		Device: &openrtb2.Device{
 			Lmt: &lmt,
 		},

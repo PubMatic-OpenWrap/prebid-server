@@ -125,3 +125,4 @@ func truncate(text string, width int) string {
 	trunc := r[:width]
 	return string(trunc)
 }
+
