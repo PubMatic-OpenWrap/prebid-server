@@ -13,7 +13,7 @@ func recordRejectedBids(pubID string, rejBids []analytics.RejectedBid, metricEng
 
 	var found bool
 	var codeLabel string
-	reasonCodeMap := make(map[openrtb3.LossReason]string)
+	reasonCodeMap := make(map[openrtb3.NonBidStatusCode]string)
 
 	for _, bid := range rejBids {
 		if codeLabel, found = reasonCodeMap[bid.RejectionReason]; !found {

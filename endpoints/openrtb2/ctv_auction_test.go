@@ -813,7 +813,7 @@ func TestFilterRejectedBids(t *testing.T) {
 			want: want{
 				RejectedBids: []analytics.RejectedBid{
 					{
-						RejectionReason: openrtb3.LossLostToHigherBid,
+						RejectionReason: openrtb3.LossBidLostToHigherBid,
 						Seat:            "pubmatic",
 						Bid: &openrtb2.Bid{
 							ID:  "b2",
@@ -902,7 +902,7 @@ func TestFilterRejectedBids(t *testing.T) {
 			want: want{
 				RejectedBids: []analytics.RejectedBid{
 					{
-						RejectionReason: openrtb3.LossLostToHigherBid,
+						RejectionReason: openrtb3.LossBidLostToHigherBid,
 						Seat:            "pubmatic",
 						Bid: &openrtb2.Bid{
 							ID:  "b2",
@@ -910,7 +910,7 @@ func TestFilterRejectedBids(t *testing.T) {
 						},
 					},
 					{
-						RejectionReason: openrtb3.LossAdvertiserExclusions,
+						RejectionReason: openrtb3.LossBidAdvertiserExclusions,
 						Seat:            "appnexus",
 						Bid: &openrtb2.Bid{
 							ID:  "b3",
