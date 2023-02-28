@@ -1104,7 +1104,7 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 }
 
 func getRejectionReason(bidStatus int64) openrtb3.NonBidStatusCode {
-	var reason openrtb3.NonBidStatusCode
+	reason := openrtb3.NoBidWinningBid
 
 	switch bidStatus {
 	case constant.StatusOK:
@@ -1114,7 +1114,7 @@ func getRejectionReason(bidStatus int64) openrtb3.NonBidStatusCode {
 	case constant.StatusDomainExclusion:
 		reason = openrtb3.LossBidAdvertiserExclusions
 	case constant.StatusDurationMismatch:
-		reason = openrtb3.LossBidDurationMismatch
+		reason = openrtb3.LossBidInvalidCreative
 	}
 	return reason
 }
