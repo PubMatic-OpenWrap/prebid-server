@@ -51,4 +51,5 @@ type PbsOrtbBid struct {
 	OriginalBidCPM    float64
 	OriginalBidCur    string
 	OriginalBidCPMUSD float64
+	BidFloors         *openrtb_ext.ExtBidFloors
 }

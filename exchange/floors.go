@@ -49,35 +49,17 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrt
 		return
 	}
 
-	var bidExt openrtb_ext.ExtBid
-	if len(bid.Bid.Ext) != 0 {
-		err = json.Unmarshal([]byte(bid.Bid.Ext), &bidExt)
-		if err != nil {
-			return
-		}
-	}
-
-	var bidExtFloors openrtb_ext.ExtBidFloors
 	prebidExt := impExt.GetPrebid()
 	if prebidExt == nil || prebidExt.Floors == nil {
 		return
 	}
 
+	var bidExtFloors openrtb_ext.ExtBidFloors
 	bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
 	bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
 	bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
 	bidExtFloors.FloorCurrency = floorCurrency
-
-	if bidExt.Prebid == nil {
-		bidExt.Prebid = new(openrtb_ext.ExtBidPrebid)
-	}
-	bidExt.Prebid.Floors = bidExtFloors
-
-	extWithFloors, err := json.Marshal(bidExt)
-	if err != nil {
-		return
-	}
-	bid.Bid.Ext = extWithFloors
+	bid.BidFloors = &bidExtFloors
 }
 
 // enforceFloorToBids function does floors enforcement for each bid.
