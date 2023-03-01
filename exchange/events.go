@@ -40,7 +40,6 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
 func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
-
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.Bids {
 			if modifyingVastXMLAllowed {
@@ -71,7 +70,6 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs, ev.integrationType); ok {
 		bid.AdM = newVastXML
 	}
-
 }
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json
