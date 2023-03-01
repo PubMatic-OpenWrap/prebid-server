@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/macros/processor"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/prebid/prebid-server/analytics"
@@ -23,8 +22,6 @@ type eventTracking struct {
 	integrationType    string
 	bidderInfos        config.BidderInfos
 	externalURL        string
-	macroProvider      processor.Provider
-	events             config.Events
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
