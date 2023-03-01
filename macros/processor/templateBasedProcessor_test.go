@@ -6,7 +6,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 )
 
-func Test_templateBasedCached_Replace(t *testing.T) {
+func Test_templateBasedProcessor_Replace(t *testing.T) {
 
 	type args struct {
 		url string
@@ -43,11 +43,11 @@ func Test_templateBasedCached_Replace(t *testing.T) {
 			macroProvider.SetContext(bid, nil)
 			got, err := processor.Replace(tt.args.url, macroProvider)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("templateBasedCached.Replace() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("templateBasedProcessor.Replace() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("templateBasedCached.Replace() = %v, want %v", got, tt.want)
+				t.Errorf("templateBasedProcessor.Replace() = %v, want %v", got, tt.want)
 			}
 		})
 	}

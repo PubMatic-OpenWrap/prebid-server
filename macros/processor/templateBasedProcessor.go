@@ -20,8 +20,8 @@ type templateWrapper struct {
 	keys     []string
 }
 
-func newtemplateBasedProcessor(cfg config.MacroProcessorConfig) *templateBasedCached {
-	return &templateBasedCached{
+func newtemplateBasedProcessor(cfg config.MacroProcessorConfig) *templateBasedProcessor {
+	return &templateBasedProcessor{
 		cfg:       cfg,
 		templates: make(map[string]*templateWrapper),
 	}
@@ -29,13 +29,13 @@ func newtemplateBasedProcessor(cfg config.MacroProcessorConfig) *templateBasedCa
 
 // templateBasedCache implements macro processor interface with text/template caching approach
 // new template will be cached for each event url per request.
-type templateBasedCached struct {
+type templateBasedProcessor struct {
 	templates map[string]*templateWrapper
 	cfg       config.MacroProcessorConfig
 	sync.RWMutex
 }
 
-func (processor *templateBasedCached) Replace(url string, macroProvider Provider) (string, error) {
+func (processor *templateBasedProcessor) Replace(url string, macroProvider Provider) (string, error) {
 	tmplt := processor.getTemplate(url)
 	if tmplt == nil {
 		return url, fmt.Errorf("failed to add template for url: %s", url)
@@ -43,7 +43,7 @@ func (processor *templateBasedCached) Replace(url string, macroProvider Provider
 	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys))
 }
 
-func (processor *templateBasedCached) getTemplate(url string) *templateWrapper {
+func (processor *templateBasedProcessor) getTemplate(url string) *templateWrapper {
 	var (
 		tmplate *templateWrapper
 		ok      bool
@@ -73,7 +73,7 @@ func resolveMacros(aTemplate *template.Template, params interface{}) (string, er
 	return res, nil
 }
 
-func (processor *templateBasedCached) addTemplate(url string) *templateWrapper {
+func (processor *templateBasedProcessor) addTemplate(url string) *templateWrapper {
 	delimiter := processor.cfg.Delimiter
 	tmpl := template.New(templateName)
 	tmpl.Option(templateOption)
