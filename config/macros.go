@@ -3,9 +3,9 @@ package config
 type ProcessorType int
 
 const (
-	EmptyProcessor            = 0
-	StringIndexCacheProcessor = 1
-	TemplateCacheProcessor    = 2
+	EmptyProcessor         = 0
+	StringBasedProcessor   = 1
+	TemplateBasedProcessor = 2
 )
 
 // MacroProcessorConfig defines the macro processor configuration

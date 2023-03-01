@@ -42,7 +42,7 @@ var bid *openrtb2.Bid = &openrtb2.Bid{ID: "bidId123"}
 
 func BenchmarkTemplateBasedProcessor(b *testing.B) {
 
-	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.TemplateCacheProcessor})
+	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.TemplateBasedProcessor})
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
 		macroProvider.SetContext(bid, nil)
@@ -55,7 +55,7 @@ func BenchmarkTemplateBasedProcessor(b *testing.B) {
 
 func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 
-	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.StringIndexCacheProcessor})
+	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.StringBasedProcessor})
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
 		macroProvider.SetContext(bid, nil)

@@ -29,7 +29,7 @@ func Test_stringIndexCachedProcessor_Replace(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			processor := NewProcessor(config.MacroProcessorConfig{
-				ProcessorType: config.StringIndexCacheProcessor,
+				ProcessorType: config.StringBasedProcessor,
 			})
 			macroProvider := NewProvider(req)
 			macroProvider.SetContext(bid, nil)

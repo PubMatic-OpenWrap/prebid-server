@@ -22,9 +22,9 @@ func NewProcessor(cfg config.MacroProcessorConfig) Processor {
 	}
 
 	switch cfg.ProcessorType {
-	case config.StringIndexCacheProcessor:
+	case config.StringBasedProcessor:
 		processor = newStringIndexCachedProcessor(cfg)
-	case config.TemplateCacheProcessor:
+	case config.TemplateBasedProcessor:
 		processor = newtemplateBasedProcessor(cfg)
 
 	default:
