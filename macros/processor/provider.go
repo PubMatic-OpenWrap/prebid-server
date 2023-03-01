@@ -122,7 +122,9 @@ func truncate(text string, width int) string {
 	}
 
 	r := []rune(text)
+	if len(r) < width {
+		return text
+	}
 	trunc := r[:width]
 	return string(trunc)
 }
-

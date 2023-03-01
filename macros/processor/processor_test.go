@@ -34,7 +34,7 @@ var req *openrtb_ext.RequestWrapper = &openrtb_ext.RequestWrapper{
 			Lmt: &lmt,
 		},
 		User: &openrtb2.User{Ext: []byte(`{"consent":"yes" }`)},
-		Ext:  []byte(`{prebid:{macros:{"CUST1":"cust1Test","CUST2":"cust2Test"}}}`),
+		Ext:  []byte(`{"prebid":{"macros":{"CUSTOMMACR1":"value1","CUSTOMMACR2":"value2","CUSTOMMACR3":"value3"}}}`),
 	},
 }
 
