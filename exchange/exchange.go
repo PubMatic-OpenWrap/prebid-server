@@ -983,8 +983,8 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 					if r.LoggableObject != nil {
 						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
 							Bid:             bid.bid,
-							RejectionReason: openrtb3.LossBidCategoryExclusions,
-							Seat: seatBid.seat,
+							RejectionReason: openrtb3.LossBidCategoryMapping,
+							Seat:            seatBid.seat,
 						})
 					}
 				}
@@ -996,8 +996,8 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 					if r.LoggableObject != nil {
 						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
 							Bid:             bids[remInd].bid,
-							RejectionReason: openrtb3.LossBidCategoryExclusions,
-							Seat: seatBid.seat,
+							RejectionReason: openrtb3.LossBidCategoryMapping,
+							Seat:            seatBid.seat,
 						})
 					}
 					bids = append(bids[:remInd], bids[remInd+1:]...)
