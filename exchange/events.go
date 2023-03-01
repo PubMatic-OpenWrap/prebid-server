@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/macros/processor"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
@@ -29,17 +28,14 @@ type eventTracking struct {
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, macroProvider processor.Provider) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.Events.Enabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    requestExtPrebid.Integration,
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
-		macroProvider:      macroProvider,
-		events:             account.Events,
 	}
 }
 
@@ -77,13 +73,6 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs, ev.integrationType); ok {
 		bid.AdM = newVastXML
 	}
-
-	ev.printUpdateEventURLs(bid)
-	// Tracker Injector should be called here
-	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	// if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
-	// 	bid.AdM = string(newVastXML)
-	// }
 
 }
 
@@ -136,22 +125,4 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 			Timestamp:   ev.auctionTimestampMs,
 			Integration: ev.integrationType,
 		})
-}
-
-// Temporary code will be removed later
-func (ev *eventTracking) printUpdateEventURLs(bid *openrtb2.Bid) {
-	macroProcessor := processor.GetMacroProcessor()
-
-	for _, event := range ev.events.VASTEvents {
-		if event.ExcludeDefaultURL {
-			ev.macroProvider.SetContext(bid, nil)
-			macroProcessor.Replace(ev.events.DefaultURL, ev.macroProvider)
-
-		} else {
-			for _, eventURL := range event.URLs {
-				ev.macroProvider.SetContext(bid, nil)
-				macroProcessor.Replace(eventURL, ev.macroProvider)
-			}
-		}
-	}
 }
