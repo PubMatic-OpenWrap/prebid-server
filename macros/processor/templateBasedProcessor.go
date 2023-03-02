@@ -40,7 +40,7 @@ func (processor *templateBasedProcessor) Replace(url string, macroProvider Provi
 	if tmplt == nil {
 		return url, fmt.Errorf("failed to add template for url: %s", url)
 	}
-	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys))
+	return resolveMacros(tmplt.template, macroProvider.GetAllMacros(tmplt.keys), url)
 }
 
 func (processor *templateBasedProcessor) getTemplate(url string) *templateWrapper {
@@ -62,12 +62,12 @@ func (processor *templateBasedProcessor) getTemplate(url string) *templateWrappe
 }
 
 // ResolveMacros resolves macros in the given template with the provided params
-func resolveMacros(aTemplate *template.Template, params interface{}) (string, error) {
+func resolveMacros(aTemplate *template.Template, params interface{}, url string) (string, error) {
 	strBuf := bytes.Buffer{}
 
 	err := aTemplate.Execute(&strBuf, params)
 	if err != nil {
-		return "", err
+		return url, err
 	}
 	res := strBuf.String()
 	return res, nil

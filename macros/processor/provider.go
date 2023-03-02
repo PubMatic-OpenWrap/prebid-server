@@ -17,11 +17,13 @@ const (
 	AccountIDKey      = "PBS_ACCOUNTID"
 	LmtTrackingKey    = "PBS_LIMITADTRACKING"
 	ConsentKey        = "PBS_GDPRCONSENT"
-	customMacroPrefix = "PBS_MACRO_"
+	CustomMacroPrefix = "PBS_MACRO_"
+	BidderKey         = "##PBS-BIDDER##"
+	IntegrationKey    = "##PBS-INTEGRATION##"
 )
 
 var (
-	bidLevelKeys = []string{BidIDKey}
+	bidLevelKeys = []string{BidIDKey, BidderKey}
 )
 
 type Provider interface {
@@ -30,7 +32,7 @@ type Provider interface {
 	// GetAllMacros return all the macros
 	GetAllMacros(keys []string) map[string]string
 	// SetContext set the bid and imp for the current provider
-	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp)
+	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat string)
 }
 
 type macroProvider struct {
@@ -50,9 +52,11 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		for key, value := range reqExt.GetPrebid().Macros {
-			customMacroKey := customMacroPrefix + key       // Adding prefix PBS_MACRO to custom macro keys
+			customMacroKey := CustomMacroPrefix + key       // Adding prefix PBS_MACRO to custom macro keys
 			b.macros[customMacroKey] = truncate(value, 100) // limit the custom macro value  to 100 chars only
 		}
+
+		b.macros[IntegrationKey] = reqExt.GetPrebid().Integration
 	}
 
 	if reqWrapper.App != nil && reqWrapper.App.Bundle != "" {
@@ -107,9 +111,10 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	}
 	return macroValues
 }
-func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp) {
+func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat string) {
 	b.resetcontext()
 	b.macros[BidIDKey] = bid.ID
+	b.macros[BidderKey] = seat
 }
 func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {
