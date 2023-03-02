@@ -81,6 +81,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230209100156-3e9fc05175f6
+replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230302042809-ac21299c9f35
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4

@@ -61,8 +61,8 @@ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMo
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4 h1:EhiijwjoKTx7FVP8p2wwC/z4n5l4c8l2CGmsrFv2uhI=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230209100156-3e9fc05175f6 h1:1QaZv6G9xi6OoMQjsOvNVTU32ei+J0VkHEGxF/BkvcE=
-github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230209100156-3e9fc05175f6/go.mod h1:nMj7j6aTIopCG91Wv3nuzcFTc7YRSOzuzdPxal+FY50=
+github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230302042809-ac21299c9f35 h1:klkydHp08wAPMawK9xGNKRgTmFwu7ex+7/5nzZEGcS0=
+github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230302042809-ac21299c9f35/go.mod h1:nMj7j6aTIopCG91Wv3nuzcFTc7YRSOzuzdPxal+FY50=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
