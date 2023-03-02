@@ -59,6 +59,19 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 			want:    "http://tracker.com?macro1=",
 			wantErr: false,
 		},
+		{
+			name: "tracker url is empty",
+			args: args{
+				url: "",
+				getMacroProvider: func() Provider {
+					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
+					macroProvider.SetContext(bid, nil, "test")
+					return macroProvider
+				},
+			},
+			want:    "",
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
