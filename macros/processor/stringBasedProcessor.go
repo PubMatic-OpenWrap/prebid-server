@@ -94,28 +94,3 @@ func (processor *stringBasedProcessor) getTemplate(url string) urlMetaTemplate {
 	}
 	return template
 }
-
-// Test cases:
-// 1) Verify NewProcessor returns the instance of stringBasedProcessor if ProcessorType  = 1 in config
-// 2) Verify NewProcessor returns the instance of stringBasedProcessor if ProcessorType  = 2 in config
-// 3) Verify NewProcessor returns the instance of emptyProcessor if invalid/ ProcessorType = 0 is in config
-// 4) Verify NewProcessor instance has delimiter = "##" if default config is used
-// 5) Verify NewProcessor instance has delimiter same as delimiter added in config
-
-// 6) Verify NewProvider returns macroProvider instance with all the request level and custom macros set
-// 7) Verify customs macro values are truncated if values are beyond 100 chars
-// 8) Verify SetContext resets the  existing bid and impression level macros and adds the new the bid and impression level macros.
-// 9) Verify GetMacro returns the value of the given macro key when key is present
-// 10) Verify GetAllMacros returns the ""(empty) value when the macros value is not present in request
-// 11) Verify GetAllMacros returns the value of the all macros. Value is ""(empty if macro value not present in request)
-
-// 12) Verfiy for StringBased Approach, all the macro value are replaced in tracker url. For macros, for which 
-//value are not present in request/bid. Emtpy value will be used to replace macro.
- 
-// 13) Verfiy for TemplateBased Approach, all the macro value are replaced in tracker url. For macros, for which 
-//value are not present in request/bid. Emtpy value will be used to replace macro.
-
-// 14) Verify for TemplateBased Approach, if template creation fails, Replace function should return error.
-// 15) Verify for TemplateBased Approach, if template execution fails, Replace function returns error.
-// 16) Verify for StringBased approach, if no macros is present in url, Replace function should return url as it is.
-// 16) Verify for TemplateBased approach, if no macros is present in url, Replace function should return url as it is.
