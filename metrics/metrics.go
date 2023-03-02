@@ -58,6 +58,12 @@ type PrivacyLabels struct {
 	LMTEnforced    bool
 }
 
+type ModuleLabels struct {
+	Module    string
+	Stage     string
+	AccountID string
+}
+
 type StoredDataType string
 
 const (
@@ -441,6 +447,17 @@ type MetricsEngine interface {
 	RecordStoredResponse(pubId string)
 	RecordAdsCertReq(success bool)
 	RecordAdsCertSignTime(adsCertSignTime time.Duration)
+	RecordBidValidationCreativeSizeError(adapter openrtb_ext.BidderName, account string)
+	RecordBidValidationCreativeSizeWarn(adapter openrtb_ext.BidderName, account string)
+	RecordBidValidationSecureMarkupError(adapter openrtb_ext.BidderName, account string)
+	RecordBidValidationSecureMarkupWarn(adapter openrtb_ext.BidderName, account string)
+	RecordModuleCalled(labels ModuleLabels, duration time.Duration)
+	RecordModuleFailed(labels ModuleLabels)
+	RecordModuleSuccessNooped(labels ModuleLabels)
+	RecordModuleSuccessUpdated(labels ModuleLabels)
+	RecordModuleSuccessRejected(labels ModuleLabels)
+	RecordModuleExecutionError(labels ModuleLabels)
+	RecordModuleTimeout(labels ModuleLabels)
 
 	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 	// gives the bid response with multiple bids containing  same bid.ID

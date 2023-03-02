@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -39,16 +40,18 @@ type LoggableAuctionObject struct {
 // Loggable object of a transaction at /openrtb2/auction endpoint
 type AuctionObject struct {
 	LoggableAuctionObject
-	Account   *config.Account
-	StartTime time.Time
+	Account              *config.Account
+	StartTime            time.Time
+	HookExecutionOutcome []hookexecution.StageOutcome
 }
 
 // Loggable object of a transaction at /openrtb2/amp endpoint
 type AmpObject struct {
 	LoggableAuctionObject
-	AmpTargetingValues map[string]string
-	Origin             string
-	StartTime          time.Time
+	AmpTargetingValues   map[string]string
+	Origin               string
+	StartTime            time.Time
+	HookExecutionOutcome []hookexecution.StageOutcome
 }
 
 // Loggable object of a transaction at /openrtb2/video endpoint
