@@ -74,7 +74,7 @@ func (processor *stringBasedProcessor) Replace(url string, macroProvider Provide
 		if value != "" {
 			result.WriteString(value)
 		}
-		currentIndex = index + len(macro) + 2*len(processor.cfg.Delimiter)
+		currentIndex = index + len(macro) + 2*delimLen
 	}
 	result.WriteString(url[currentIndex:])
 	return result.String(), nil
