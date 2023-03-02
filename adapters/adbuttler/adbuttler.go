@@ -91,11 +91,8 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	}
 	impiD := internalRequest.Imp[0].ID
 	
-	responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount, impiD)
-	
-	
 	if !Nobid {
-		responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount)
+		responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount, impiD)
 		return responseF,nil
 	}
 	
