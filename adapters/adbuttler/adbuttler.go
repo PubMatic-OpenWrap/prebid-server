@@ -35,7 +35,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	customConfig := commerceExt.Bidder.CustomConfig
 	//Nobid := false
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "BidderTimeOut"{
+		if *eachCustomConfig.Key == "bidder_timeout"{
 				var timeout int
 				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
 				request.TMax = int64(timeout)
@@ -80,7 +80,7 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	customConfig := commerceExt.Bidder.CustomConfig
 	Nobid := false
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "NoBid"{
+		if *eachCustomConfig.Key == "no_bid"{
 			//fff
 			val := *eachCustomConfig.Value
 			if val == "true" {
@@ -89,6 +89,10 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 
 		}
 	}
+	impiD := internalRequest.Imp[0].ID
+	
+	responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount, impiD)
+	
 	
 	if !Nobid {
 		responseF := koddi.GetDummyBids(iurl, curl, purl, "adbuttler", requestCount)

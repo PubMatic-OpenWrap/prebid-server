@@ -156,7 +156,7 @@ func GetRandomClickPrice() float64 {
 	return truncated
 }
 
-func GetDummyBids(impUrl , clickUrl , conversionUrl, seatName string, requestCount int) (*adapters.BidderResponse) {
+func GetDummyBids(impUrl , clickUrl , conversionUrl, seatName string, requestCount int, ImpID string) (*adapters.BidderResponse) {
 	var typedArray     []*adapters.TypedBid
 
 	if requestCount > MAX_COUNT {
@@ -168,22 +168,17 @@ func GetDummyBids(impUrl , clickUrl , conversionUrl, seatName string, requestCou
 		bidPrice := GetRandomBidPrice()
 		clikcPrice := GetRandomClickPrice()
 		bidID := GetDefaultBidID(seatName) + "_" + strconv.Itoa(i)
-		newIurl := impUrl + "_ImpID=" +bidID
-		newCurl := clickUrl + "_ImpID=" +bidID
-		newPurl := conversionUrl + "_ImpID=" +bidID
+		impID := ImpID + "_" + strconv.Itoa(i)
 		bidExt := &ExtBidCommerce{
 			ProductId:  &productid,
-			ClickUrl: &newCurl,
-			ConversionUrl: &newPurl,
 			ClickPrice: &clikcPrice,
 		}
 		
 		bid := &openrtb2.Bid {
 			ID: bidID,
-			ImpID: bidID,
+			ImpID: impID,
 			Price: bidPrice,
 			CID: campaignID,
-			IURL: newIurl,
 		}
 
 		AddDefaultFields(bid)
@@ -265,7 +260,7 @@ func GetHostName(internalRequest *openrtb2.BidRequest) string {
 	json.Unmarshal(internalRequest.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(internalRequest.Imp[0].Ext, &commerceExt)
-	return *commerceExt.Bidder.HostName
+	return *commerceExt.Bidder.BidderCode
 }
 
 func (a *KoddiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -280,7 +275,7 @@ func (a *KoddiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 	request.TMax = 0
 	customConfig := commerceExt.Bidder.CustomConfig
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "BidderTimeOut"{
+		if *eachCustomConfig.Key == "bidder_timeout"{
 				var timeout int
 				timeout,_ = strconv.Atoi(*eachCustomConfig.Value)
 				request.TMax = int64(timeout)
@@ -326,7 +321,7 @@ func (a *KoddiAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRe
 	customConfig := commerceExt.Bidder.CustomConfig
 	Nobid := false
 	for _, eachCustomConfig := range customConfig {
-		if *eachCustomConfig.Key == "NoBid"{
+		if *eachCustomConfig.Key == "no_bid"{
 			//fff
 			val := *eachCustomConfig.Value
 			if val == "true" {
@@ -335,9 +330,10 @@ func (a *KoddiAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRe
 
 		}
 	}
+	impiD := internalRequest.Imp[0].ID
 	
 	if !Nobid {
-		responseF := GetDummyBids(iurl, curl, purl, "koddi", requestCount)
+		responseF := GetDummyBids(iurl, curl, purl, "koddi", requestCount, impiD)
 		return responseF,nil
 	}
 	
