@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func Test_stringIndexCachedProcessor_Replace(t *testing.T) {
+func Test_stringBasedProcessor_Replace(t *testing.T) {
 
 	type args struct {
 		url              string
@@ -67,11 +67,11 @@ func Test_stringIndexCachedProcessor_Replace(t *testing.T) {
 			})
 			got, err := processor.Replace(tt.args.url, tt.args.getMacroProvider())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("stringIndexCachedProcessor.Replace() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("stringBasedProcessor.Replace() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("stringIndexCachedProcessor.Replace() = %v, want %v", got, tt.want)
+				t.Errorf("stringBasedProcessor.Replace() = %v, want %v", got, tt.want)
 			}
 		})
 	}

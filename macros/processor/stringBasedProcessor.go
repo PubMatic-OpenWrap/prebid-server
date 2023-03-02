@@ -8,14 +8,14 @@ import (
 	"github.com/prebid/prebid-server/config"
 )
 
-type stringIndexCachedProcessor struct {
+type stringBasedProcessor struct {
 	cfg       config.MacroProcessorConfig
 	templates map[string]strMetaTemplate
 	sync.RWMutex
 }
 
-func newStringIndexCachedProcessor(cfg config.MacroProcessorConfig) *stringIndexCachedProcessor {
-	return &stringIndexCachedProcessor{
+func newstringBasedProcessor(cfg config.MacroProcessorConfig) *stringBasedProcessor {
+	return &stringBasedProcessor{
 		cfg:       cfg,
 		templates: make(map[string]strMetaTemplate),
 	}
@@ -57,7 +57,7 @@ func constructTemplate(str string, delim string) strMetaTemplate {
 	return tmplt
 }
 
-func (processor *stringIndexCachedProcessor) Replace(url string, macroProvider Provider) (string, error) {
+func (processor *stringBasedProcessor) Replace(url string, macroProvider Provider) (string, error) {
 	tmplt := processor.getTemplate(url)
 
 	var result bytes.Buffer
@@ -74,13 +74,13 @@ func (processor *stringIndexCachedProcessor) Replace(url string, macroProvider P
 		if value != "" {
 			result.WriteString(value)
 		}
-		s = index + len(macro) + len(processor.cfg.Delimiter) + len(processor.cfg.Delimiter)
+		s = index + len(macro) + 2*len(processor.cfg.Delimiter)
 	}
 	result.WriteString(url[s:])
 	return result.String(), nil
 }
 
-func (processor *stringIndexCachedProcessor) getTemplate(url string) strMetaTemplate {
+func (processor *stringBasedProcessor) getTemplate(url string) strMetaTemplate {
 	var (
 		template strMetaTemplate
 		ok       bool
