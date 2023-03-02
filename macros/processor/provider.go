@@ -79,8 +79,10 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 		b.macros[PageURLKey] = reqWrapper.Site.Page
 	}
 	userExt, _ := reqWrapper.GetUserExt()
-	b.macros[ConsentKey] = *userExt.GetConsent()
-	if reqWrapper.Device.Lmt != nil {
+	if userExt != nil && userExt.GetConsent() != nil {
+		b.macros[ConsentKey] = *userExt.GetConsent()
+	}
+	if reqWrapper.Device != nil && reqWrapper.Device.Lmt != nil {
 		b.macros[LmtTrackingKey] = strconv.Itoa(int(*reqWrapper.Device.Lmt))
 	}
 
@@ -92,7 +94,6 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 	if reqWrapper.App != nil && reqWrapper.App.Publisher != nil && reqWrapper.App.Publisher.ID != "" {
 		b.macros[AccountIDKey] = reqWrapper.App.Publisher.ID
 	}
-
 }
 
 func (b *macroProvider) GetMacro(key string) string {
