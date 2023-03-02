@@ -10,47 +10,45 @@ import (
 
 type stringBasedProcessor struct {
 	cfg       config.MacroProcessorConfig
-	templates map[string]strMetaTemplate
+	templates map[string]urlMetaTemplate
 	sync.RWMutex
 }
 
-func newstringBasedProcessor(cfg config.MacroProcessorConfig) *stringBasedProcessor {
+func newStringBasedProcessor(cfg config.MacroProcessorConfig) *stringBasedProcessor {
 	return &stringBasedProcessor{
 		cfg:       cfg,
-		templates: make(map[string]strMetaTemplate),
+		templates: make(map[string]urlMetaTemplate),
 	}
 }
 
-type strMetaTemplate struct {
+type urlMetaTemplate struct {
 	indices     []int
 	macroLength []int
 }
 
-func constructTemplate(str string, delim string) strMetaTemplate {
-	si := 0
-	tmplt := strMetaTemplate{
-		// sIndexMacrosMap: make(map[int]string),
+func constructTemplate(url string, delimiter string) urlMetaTemplate {
+	currentIndex := 0
+	tmplt := urlMetaTemplate{
 		indices:     []int{},
 		macroLength: []int{},
 	}
+	delimiterLen := len(delimiter)
 	for {
-		si = si + strings.Index(str[si:], delim)
-		if si == -1 {
+		currentIndex = currentIndex + strings.Index(url[currentIndex:], delimiter)
+		if currentIndex == -1 {
 			break
 		}
-		msi := si + len(delim)
-		ei := strings.Index(str[msi:], delim) // ending Delimiter
-		if ei == -1 {
+		middleIndex := currentIndex + delimiterLen
+		endingIndex := strings.Index(url[middleIndex:], delimiter) // ending Delimiter
+		if endingIndex == -1 {
 			break
 		}
-		ei = ei + msi // offset adjustment (Delimiter inclusive)
-		mei := ei     // just for readiability
-		// cache macro and its start index
-		// tmplt.sIndexMacrosMap[si] = str[msi:mei]
-		tmplt.indices = append(tmplt.indices, si)
-		tmplt.macroLength = append(tmplt.macroLength, mei)
-		si = ei + 1
-		if si >= len(str) {
+		endingIndex = endingIndex + middleIndex // offset adjustment (Delimiter inclusive)
+		macroLength := endingIndex              // just for readiability
+		tmplt.indices = append(tmplt.indices, currentIndex)
+		tmplt.macroLength = append(tmplt.macroLength, macroLength)
+		currentIndex = endingIndex + 1
+		if currentIndex >= len(url) {
 			break
 		}
 	}
@@ -66,7 +64,6 @@ func (processor *stringBasedProcessor) Replace(url string, macroProvider Provide
 	currentIndex := 0
 	delimLen := len(processor.cfg.Delimiter)
 	for i, index := range tmplt.indices {
-		// macro := tmplt.sIndexMacrosMap[index]
 		macro := url[index+delimLen : tmplt.macroLength[i]]
 		// copy prev part
 		result.WriteString(url[currentIndex:index])
@@ -80,9 +77,9 @@ func (processor *stringBasedProcessor) Replace(url string, macroProvider Provide
 	return result.String(), nil
 }
 
-func (processor *stringBasedProcessor) getTemplate(url string) strMetaTemplate {
+func (processor *stringBasedProcessor) getTemplate(url string) urlMetaTemplate {
 	var (
-		template strMetaTemplate
+		template urlMetaTemplate
 		ok       bool
 	)
 	processor.RLock()
