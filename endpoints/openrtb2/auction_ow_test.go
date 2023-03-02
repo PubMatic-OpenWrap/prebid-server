@@ -139,19 +139,19 @@ func TestRecordRejectedBids(t *testing.T) {
 				rejBids: []analytics.RejectedBid{
 					{
 						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossAdvertiserExclusions,
+						RejectionReason: openrtb3.LossBidAdvertiserExclusions,
 					},
 					{
 						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossBelowDealFloor,
+						RejectionReason: openrtb3.LossBidBelowDealFloor,
 					},
 					{
 						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossAdvertiserExclusions,
+						RejectionReason: openrtb3.LossBidAdvertiserExclusions,
 					},
 					{
 						Seat:            "appnexus",
-						RejectionReason: openrtb3.LossBelowDealFloor,
+						RejectionReason: openrtb3.LossBidBelowDealFloor,
 					},
 				},
 			},

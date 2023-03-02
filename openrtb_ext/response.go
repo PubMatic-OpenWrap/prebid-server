@@ -99,9 +99,9 @@ type SeatNonBid struct {
 
 // NonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid
 type NonBid struct {
-	ImpId      string           `json:"impid,omitempty"`
-	StatusCode NonBidStatusCode `json:"statuscode,omitempty"`
-	Ext        *ExtNonBid       `json:"ext,omitempty"`
+	ImpId      string                    `json:"impid,omitempty"`
+	StatusCode openrtb3.NonBidStatusCode `json:"statuscode,omitempty"`
+	Ext        *ExtNonBid                `json:"ext,omitempty"`
 }
 
 // ExtNonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext
