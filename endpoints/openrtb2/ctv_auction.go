@@ -32,6 +32,7 @@ import (
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
@@ -100,6 +101,7 @@ func NewCTVEndpoint(
 			nil,
 			ipValidator,
 			nil,
+			&hookexecution.EmptyHookExecutor{},
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -145,7 +147,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}()
 
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, _, _, _, errL = deps.parseRequest(r)
+	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
@@ -216,6 +218,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
 		LoggableObject:    &ao.LoggableAuctionObject,
+		HookExecutor:      deps.hookExecutor,
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest)

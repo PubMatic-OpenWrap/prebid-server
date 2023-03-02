@@ -728,7 +728,7 @@ func TestPopulateFirstPartyDataImpAttributesForMultipleAttributes(t *testing.T) 
 func TestGetStringArray(t *testing.T) {
 	tests := []struct {
 		name   string
-		input  interface{}
+		input  []interface{}
 		output []string
 	}{
 		{
@@ -738,38 +738,13 @@ func TestGetStringArray(t *testing.T) {
 		},
 		{
 			name:   "Invalid String Array",
-			input:  "hello",
+			input:  append(make([]interface{}, 0), 1, 2),
 			output: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getStringArray(tt.input)
-			assert.Equal(t, tt.output, got)
-		})
-	}
-}
-
-func TestIsStringArray(t *testing.T) {
-	tests := []struct {
-		name   string
-		input  []interface{}
-		output bool
-	}{
-		{
-			name:   "Valid String Array",
-			input:  append(make([]interface{}, 0), "hello", "world"),
-			output: true,
-		},
-		{
-			name:   "Invalid String Array",
-			input:  append(make([]interface{}, 0), 1, 2),
-			output: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isStringArray(tt.input)
 			assert.Equal(t, tt.output, got)
 		})
 	}
@@ -783,14 +758,14 @@ func TestGetMapFromJSON(t *testing.T) {
 	}{
 		{
 			name:  "Valid JSON",
-			input: json.RawMessage("{\"buyid\":\"testBuyId\"}"),
+			input: json.RawMessage(`{"buyid":"testBuyId"}`),
 			output: map[string]interface{}{
 				"buyid": "testBuyId",
 			},
 		},
 		{
 			name:   "Invalid JSON",
-			input:  json.RawMessage("{\"buyid\":}"),
+			input:  json.RawMessage(`{"buyid":}`),
 			output: nil,
 		},
 	}

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/prebid/prebid-server/analytics"
@@ -20,6 +21,7 @@ import (
 	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/privacy/ccpa"
 	gdprPrivacy "github.com/prebid/prebid-server/privacy/gdpr"
+	gppPrivacy "github.com/prebid/prebid-server/privacy/gpp"
 	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/stretchr/testify/assert"
@@ -323,6 +325,8 @@ func TestCookieSyncParseRequest(t *testing.T) {
 				`"gdpr":1,` +
 				`"gdpr_consent":"anyGDPRConsent",` +
 				`"us_privacy":"1NYN",` +
+				`"gpp":"anyGPPString",` +
+				`"gpp_sid":"2",` +
 				`"limit":42,` +
 				`"coopSync":true,` +
 				`"filterSettings":{"iframe":{"bidders":"*","filter":"include"}, "image":{"bidders":["b"],"filter":"exclude"}}` +
@@ -342,6 +346,10 @@ func TestCookieSyncParseRequest(t *testing.T) {
 				},
 				CCPA: ccpa.Policy{
 					Consent: "1NYN",
+				},
+				GPP: gppPrivacy.Policy{
+					Consent: "anyGPPString",
+					RawSID:  "2",
 				},
 			},
 			expectedRequest: usersync.Request{
@@ -691,7 +699,7 @@ func TestCookieSyncParseRequest(t *testing.T) {
 		},
 		{
 			description:      "HTTP Read Error",
-			givenBody:        ErrReader(errors.New("anyError")),
+			givenBody:        iotest.ErrReader(errors.New("anyError")),
 			givenGDPRConfig:  config.GDPR{Enabled: true, DefaultValue: "0"},
 			givenCCPAEnabled: true,
 			expectedError:    "Failed to read request body",
@@ -1821,8 +1829,8 @@ type FakeAccountsFetcher struct {
 	AccountData map[string]json.RawMessage
 }
 
-func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountID string) (json.RawMessage, []error) {
-	defaultAccountJSON := json.RawMessage(`{"disabled":false}`)
+func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, defaultAccountJSON json.RawMessage, accountID string) (json.RawMessage, []error) {
+	defaultAccountJSON = json.RawMessage(`{"disabled":false}`)
 
 	if accountID == metrics.PublisherUnknown {
 		return defaultAccountJSON, nil
@@ -1831,20 +1839,6 @@ func (f FakeAccountsFetcher) FetchAccount(ctx context.Context, accountID string)
 		return account, nil
 	}
 	return nil, []error{errors.New("Account not found")}
-}
-
-// ErrReader returns an io.Reader that returns 0, err from all Read calls. This is added in
-// Go 1.16. Copied here for now until we switch over.
-func ErrReader(err error) io.Reader {
-	return &errReader{err: err}
-}
-
-type errReader struct {
-	err error
-}
-
-func (r *errReader) Read(p []byte) (int, error) {
-	return 0, r.err
 }
 
 type fakePermissions struct {

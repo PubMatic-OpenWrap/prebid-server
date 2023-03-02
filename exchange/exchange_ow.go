@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"golang.org/x/net/publicsuffix"
@@ -16,21 +17,21 @@ import (
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
 // it returns true if collosion(s) is/are detected in any of the bidder's bids
-func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) bool {
+func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) bool {
 	bidIDCollisionFound := false
 	if nil == adapterBids {
 		return false
 	}
 	for bidder, bid := range adapterBids {
-		bidIDColisionMap := make(map[string]int, len(adapterBids[bidder].bids))
-		for _, thisBid := range bid.bids {
-			if collisions, ok := bidIDColisionMap[thisBid.bid.ID]; ok {
+		bidIDColisionMap := make(map[string]int, len(adapterBids[bidder].Bids))
+		for _, thisBid := range bid.Bids {
+			if collisions, ok := bidIDColisionMap[thisBid.Bid.ID]; ok {
 				bidIDCollisionFound = true
-				bidIDColisionMap[thisBid.bid.ID]++
-				glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.bid.ID, collisions, thisBid.bid.ImpID, string(bidder))
+				bidIDColisionMap[thisBid.Bid.ID]++
+				glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.Bid.ID, collisions, thisBid.Bid.ImpID, string(bidder))
 				metricsEngine.RecordAdapterDuplicateBidID(string(bidder), 1)
 			} else {
-				bidIDColisionMap[thisBid.bid.ID] = 1
+				bidIDColisionMap[thisBid.Bid.ID] = 1
 			}
 		}
 	}
@@ -62,7 +63,7 @@ func normalizeDomain(domain string) (string, error) {
 // applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 // the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 // it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid) (map[openrtb_ext.BidderName]*pbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}
 	nBadvs := []string{}
@@ -80,11 +81,11 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 	}
 
 	for bidderName, seatBid := range seatBids {
-		if seatBid.bidderCoreName == openrtb_ext.BidderVASTBidder {
-			for bidIndex := len(seatBid.bids) - 1; bidIndex >= 0; bidIndex-- {
-				bid := seatBid.bids[bidIndex]
+		if seatBid.BidderCoreName == openrtb_ext.BidderVASTBidder {
+			for bidIndex := len(seatBid.Bids) - 1; bidIndex >= 0; bidIndex-- {
+				bid := seatBid.Bids[bidIndex]
 				for _, bAdv := range nBadvs {
-					aDomains := bid.bid.ADomain
+					aDomains := bid.Bid.ADomain
 					rejectBid := false
 					if nil == aDomains {
 						// provision to enable rejecting of bids when req.badv is set
@@ -109,13 +110,13 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 						if r.LoggableObject != nil {
 							r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
 								RejectionReason: openrtb3.LossBidAdvertiserBlocking,
-								Bid:             bid.bid,
-								Seat:            seatBid.seat,
+								Bid:             bid.Bid,
+								Seat:            seatBid.Seat,
 							})
 						}
 						// reject the bid. bid belongs to blocked advertisers list
-						seatBid.bids = append(seatBid.bids[:bidIndex], seatBid.bids[bidIndex+1:]...)
-						rejections = updateRejections(rejections, bid.bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
+						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
+						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
 						break // bid is rejected due to advertiser blocked. No need to check further domains
 					}
 				}

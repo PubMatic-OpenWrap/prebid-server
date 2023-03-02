@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/exchange/entities"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ import (
 func TestApplyAdvertiserBlocking(t *testing.T) {
 	type args struct {
 		advBlockReq     *AuctionRequest
-		adaptorSeatBids map[*bidderAdapter]*pbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
+		adaptorSeatBids map[*bidderAdapter]*entities.PbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
 	}
 	type want struct {
 		rejectedBidIds       []string
@@ -48,41 +49,41 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							{
-								bid: &openrtb2.Bid{
+								Bid: &openrtb2.Bid{
 									ID:      "a.com_bid",
 									ADomain: []string{"a.com"},
 								},
 							},
 							{
-								bid: &openrtb2.Bid{
+								Bid: &openrtb2.Bid{
 									ID:      "b.com_bid",
 									ADomain: []string{"b.com"},
 								},
 							},
 							{
-								bid: &openrtb2.Bid{
+								Bid: &openrtb2.Bid{
 									ID:      "keep_ba.com",
 									ADomain: []string{"ba.com"},
 								},
 							},
 							{
-								bid: &openrtb2.Bid{
+								Bid: &openrtb2.Bid{
 									ID:      "keep_ba.com",
 									ADomain: []string{"b.a.com.shri.com"},
 								},
 							},
 							{
-								bid: &openrtb2.Bid{
+								Bid: &openrtb2.Bid{
 									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
 									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
 								},
 							},
 						},
-						bidderCoreName: openrtb_ext.BidderVASTBidder,
+						BidderCoreName: openrtb_ext.BidderVASTBidder,
 					},
 				},
 			},
@@ -120,11 +121,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tab_bidder_1"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
 						},
 					},
 				},
@@ -146,17 +147,17 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
-						bids: []*pbsOrtbBid{ // expect all bids are rejected
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_1_without_adomain"}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_1_with_empty_adomain", ADomain: []string{"", " "}}},
+						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1_without_adomain"}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1_with_empty_adomain", ADomain: []string{"", " "}}},
 						},
 					},
 					newTestRtbAdapter("rtb_bidder_1"): {
-						bids: []*pbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
 						},
 					},
 				},
@@ -179,10 +180,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adaptor_1"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ID: "bid_without_adomain"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ID: "bid_without_adomain"}},
 						},
 					},
 				},
@@ -204,17 +205,17 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
-						bids: []*pbsOrtbBid{ // expect all bids are rejected
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
 						},
 					},
 					newTestRtbAdapter("rtb_bidder_1"): {
-						bids: []*pbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
 						},
 					},
 				},
@@ -237,17 +238,17 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
-						bids: []*pbsOrtbBid{ // expect all bids are rejected
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
 						},
 					},
 					newTestRtbAdapter("rtb_bidder_1"): {
-						bids: []*pbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
 						},
 					},
 				},
@@ -270,14 +271,14 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("my_adapter"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ID: "bid_1_of_blocked_adv", ADomain: []string{"www.a.com"}}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ID: "bid_1_of_blocked_adv", ADomain: []string{"www.a.com"}}},
 							// expect a.com is extracted from page url
-							{bid: &openrtb2.Bid{ID: "bid_2_of_blocked_adv", ADomain: []string{"http://a.com/my/page?k1=v1&k2=v2"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_of_blocked_adv", ADomain: []string{"http://a.com/my/page?k1=v1&k2=v2"}}},
 							// invalid adomain - will be skipped and the bid will be not be rejected
-							{bid: &openrtb2.Bid{ID: "bid_3_with_domain_abcd1234", ADomain: []string{"abcd1234"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_3_with_domain_abcd1234", ADomain: []string{"abcd1234"}}},
 						},
 					}},
 			},
@@ -295,27 +296,27 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// adomain without www prefix
-							{bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"advertiser_3.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"advertiser_2.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"advertiser_3.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"advertiser_2.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
 						},
 					},
 					newTestTagAdapter("tag_adapter_2"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// adomain has www prefix
-							{bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"www.advertiser_1.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"www.advertiser_1.com"}}},
 						},
 					},
 					newTestRtbAdapter("rtb_adapter_1"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// should not reject following bid though its advertiser is blocked
 							// because this bid belongs to RTB Adaptor
-							{bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"advertiser_1.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"advertiser_1.com"}}},
 						},
 					},
 				},
@@ -338,27 +339,27 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// adomain without www prefix
-							{bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"a.com", "b.com", "advertiser_3.com", "d.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"a.com", "https://advertiser_3.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"a.com", "b.com", "advertiser_3.com", "d.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"a.com", "https://advertiser_3.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
 						},
 					},
 					newTestTagAdapter("tag_adapter_2"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// adomain has www prefix
-							{bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"a.com", "b.com", "www.advertiser_3.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"a.com", "b.com", "www.advertiser_3.com"}}},
 						},
 					},
 					newTestRtbAdapter("rtb_adapter_1"): {
-						bids: []*pbsOrtbBid{
+						Bids: []*entities.PbsOrtbBid{
 							// should not reject following bid though its advertiser is blocked
 							// because this bid belongs to RTB Adaptor
-							{bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"a.com", "b.com", "advertiser_3.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"a.com", "b.com", "advertiser_3.com"}}},
 						},
 					},
 				},
@@ -381,11 +382,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.com"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"www.advertiser_1.com"}}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.com"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"www.advertiser_1.com"}}},
 						},
 					},
 				},
@@ -407,11 +408,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.COM"}}},
-							{bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"wWw.ADVERTISER_1.com"}}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.COM"}}},
+							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"wWw.ADVERTISER_1.com"}}},
 						},
 					},
 				},
@@ -433,21 +434,21 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "reject_www.blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "rejecthttp://www.blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "reject_https://blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "reject_https://www.blockme.shri"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "reject_www.blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "rejecthttp://www.blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "reject_https://blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "reject_https://www.blockme.shri"}},
 						},
 					},
 					newTestRtbAdapter("rtb_non_block_bidder"): {
-						bids: []*pbsOrtbBid{ // all below bids are eligible and should not be rejected
-							{bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "accept_bid_www.blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "accept_bid__http://www.blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "accept_bid__https://blockme.shri"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "accept_bid__https://www.blockme.shri"}},
+						Bids: []*entities.PbsOrtbBid{ // all below bids are eligible and should not be rejected
+							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "accept_bid_www.blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "accept_bid__http://www.blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "accept_bid__https://blockme.shri"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "accept_bid__https://www.blockme.shri"}},
 						},
 					},
 				},
@@ -471,12 +472,12 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ADomain: []string{"shri.10th.college.puneunv.edu"}, ID: "reject_shri.10th.college.puneunv.edu"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"puneunv.edu"}, ID: "allow_puneunv.edu"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"http://WWW.123.456.10th.college.PUNEUNV.edu"}, ID: "reject_123.456.10th.college.puneunv.edu"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ADomain: []string{"shri.10th.college.puneunv.edu"}, ID: "reject_shri.10th.college.puneunv.edu"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"puneunv.edu"}, ID: "allow_puneunv.edu"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"http://WWW.123.456.10th.college.PUNEUNV.edu"}, ID: "reject_123.456.10th.college.puneunv.edu"}},
 						},
 					},
 				},
@@ -498,12 +499,12 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"edu"}, ID: "keep_bid_edu"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"..edu"}, ID: "keep_bid_..edu"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"edu"}, ID: "keep_bid_edu"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"..edu"}, ID: "keep_bid_..edu"}},
 						},
 					},
 				},
@@ -526,11 +527,11 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				// co.in is valid public suffix
-				adaptorSeatBids: map[*bidderAdapter]*pbsOrtbSeatBid{
+				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
-						bids: []*pbsOrtbBid{
-							{bid: &openrtb2.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
-							{bid: &openrtb2.Bid{ADomain: []string{"b.com"}, ID: "allow_b.com"}},
+						Bids: []*entities.PbsOrtbBid{
+							{Bid: &openrtb2.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
+							{Bid: &openrtb2.Bid{ADomain: []string{"b.com"}, ID: "allow_b.com"}},
 						},
 					},
 				},
@@ -549,7 +550,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			if tt.name != "reject_bid_of_blocked_adv_from_tag_bidder" {
 				return
 			}
-			seatBids := make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
+			seatBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
 			adapterMap := make(map[openrtb_ext.BidderName]AdaptedBidder, 0)
 			for adaptor, sbids := range tt.args.adaptorSeatBids {
@@ -566,7 +567,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
 				// verify only eligible bids are returned
-				assert.Equal(t, tt.want.validBidCountPerSeat[string(bidder)], len(sBid.bids), "Expected eligible bids are %d, but found [%d] ", tt.want.validBidCountPerSeat[string(bidder)], len(sBid.bids))
+				assert.Equal(t, tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids), "Expected eligible bids are %d, but found [%d] ", tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids))
 				// verify  rejections
 				assert.Equal(t, len(tt.want.rejectedBidIds), len(rejections), "Expected bid rejections are %d, but found [%d]", len(tt.want.rejectedBidIds), len(rejections))
 				// verify rejected bid ids
@@ -588,7 +589,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					assert.Fail(t, "Expected Bid ID [%s] as rejected. But bid is not rejected", re)
 				}
 
-				if sBid.bidderCoreName != openrtb_ext.BidderVASTBidder {
+				if sBid.BidderCoreName != openrtb_ext.BidderVASTBidder {
 					continue // advertiser blocking is currently enabled only for tag bidders
 				}
 
@@ -600,13 +601,13 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				})
 				assert.Equal(t, tt.want.expectedRejectedBids, tt.args.advBlockReq.LoggableObject.RejectedBids, "Rejected Bids not matching")
 
-				for _, bid := range sBid.bids {
-					if nil != bid.bid.ADomain {
-						for _, adomain := range bid.bid.ADomain {
+				for _, bid := range sBid.Bids {
+					if nil != bid.Bid.ADomain {
+						for _, adomain := range bid.Bid.ADomain {
 							for _, blockDomain := range tt.args.advBlockReq.BidRequestWrapper.BidRequest.BAdv {
 								nDomain, _ := normalizeDomain(adomain)
 								if nDomain == blockDomain {
-									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.bid.ID, adomain)
+									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.Bid.ID, adomain)
 								}
 							}
 						}
@@ -614,8 +615,8 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 
 					// verify this bid not belongs to rejected list
 					for _, rejectedBidID := range tt.want.rejectedBidIds {
-						if rejectedBidID == bid.bid.ID {
-							assert.Fail(t, "Bid ID [%s] is not expected in list of rejected bids", bid.bid.ID)
+						if rejectedBidID == bid.Bid.ID {
+							assert.Fail(t, "Bid ID [%s] is not expected in list of rejected bids", bid.Bid.ID)
 						}
 					}
 				}
@@ -708,30 +709,30 @@ func TestRecordAdaptorDuplicateBidIDs(t *testing.T) {
 		{scenario: "multiple bidders with bidder-1 no collision", bidderCollisions: &map[string]int{"bidder-1": 1, "bidder-2": 4}, hasCollision: true},
 		{scenario: "no bidders", bidderCollisions: nil, hasCollision: false},
 	}
-	testEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, nil, nil)
+	testEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, nil, nil, nil)
 
 	for _, testcase := range testCases {
-		var adapterBids map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		var adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
 		if nil == testcase.bidderCollisions {
 			break
 		}
-		adapterBids = make(map[openrtb_ext.BidderName]*pbsOrtbSeatBid)
+		adapterBids = make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 		for bidder, collisions := range *testcase.bidderCollisions {
-			bids := make([]*pbsOrtbBid, 0)
+			bids := make([]*entities.PbsOrtbBid, 0)
 			testBidID := "bid_id_for_bidder_" + bidder
 			// add bids as per collisions value
 			bidCount := 0
 			for ; bidCount < collisions; bidCount++ {
-				bids = append(bids, &pbsOrtbBid{
-					bid: &openrtb2.Bid{
+				bids = append(bids, &entities.PbsOrtbBid{
+					Bid: &openrtb2.Bid{
 						ID: testBidID,
 					},
 				})
 			}
 			if nil == adapterBids[openrtb_ext.BidderName(bidder)] {
-				adapterBids[openrtb_ext.BidderName(bidder)] = new(pbsOrtbSeatBid)
+				adapterBids[openrtb_ext.BidderName(bidder)] = new(entities.PbsOrtbSeatBid)
 			}
-			adapterBids[openrtb_ext.BidderName(bidder)].bids = bids
+			adapterBids[openrtb_ext.BidderName(bidder)].Bids = bids
 		}
 		assert.Equal(t, testcase.hasCollision, recordAdaptorDuplicateBidIDs(testEngine, adapterBids))
 	}

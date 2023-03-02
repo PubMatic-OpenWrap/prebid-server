@@ -12,6 +12,8 @@ import (
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/hooks"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -43,29 +45,29 @@ func TestValidateImpExtOW(t *testing.T) {
 					description:    "Impression dropped for bidder with invalid bidder params",
 					impExt:         json.RawMessage(`{"appnexus":{"placement_id":"A"}}`),
 					expectedImpExt: `{"appnexus":{"placement_id":"A"}}`,
-					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"},
-						fmt.Errorf("request.imp[%d].ext must contain at least one bidder", 0)},
+					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"},
+						fmt.Errorf("request.imp[%d].ext.prebid.bidder must contain at least one bidder", 0)},
 				},
 				{
 					description:    "Valid Bidder params + Invalid bidder params",
 					impExt:         json.RawMessage(`{"appnexus":{"placement_id":"A"},"pubmatic":{"publisherId":"156209"}}`),
 					expectedImpExt: `{"appnexus":{"placement_id":"A"},"pubmatic":{"publisherId":"156209"}}`,
-					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"}},
+					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"}},
 				},
 				{
 					description:    "Valid Bidder + Disabled Bidder + Invalid bidder params",
 					impExt:         json.RawMessage(`{"pubmatic":{"publisherId":156209},"appnexus":{"placement_id":555},"disabledbidder":{"foo":"bar"}}`),
 					expectedImpExt: `{"pubmatic":{"publisherId":156209},"appnexus":{"placement_id":555},"disabledbidder":{"foo":"bar"}}`,
 					expectedErrs: []error{&errortypes.BidderTemporarilyDisabled{Message: "The bidder 'disabledbidder' has been disabled."},
-						&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"}},
+						&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"}},
 				},
 				{
 					description:    "Valid Bidder + Disabled Bidder + Invalid bidder params",
 					impExt:         json.RawMessage(`{"pubmatic":{"publisherId":156209},"disabledbidder":{"foo":"bar"}}`),
 					expectedImpExt: `{"pubmatic":{"publisherId":156209},"disabledbidder":{"foo":"bar"}}`,
-					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"},
+					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.pubmatic failed validation.\npublisherId: Invalid type. Expected: string, given: integer"},
 						&errortypes.BidderTemporarilyDisabled{Message: "The bidder 'disabledbidder' has been disabled."},
-						fmt.Errorf("request.imp[%d].ext must contain at least one bidder", 0)},
+						fmt.Errorf("request.imp[%d].ext.prebid.bidder must contain at least one bidder", 0)},
 				},
 			},
 		},
@@ -89,6 +91,7 @@ func TestValidateImpExtOW(t *testing.T) {
 		nil,
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
+		hookexecution.NewHookExecutor(hooks.EmptyPlanBuilder{}, hookexecution.EndpointAuction, &metricsConfig.NilMetricsEngine{}),
 	}
 
 	for _, group := range testGroups {

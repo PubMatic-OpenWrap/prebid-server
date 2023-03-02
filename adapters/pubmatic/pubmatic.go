@@ -659,7 +659,7 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 		}
 
 		//separate key-val pairs in dctr string by pipe(|)
-		if dctr.String() != "" {
+		if dctr.Len() > 0 {
 			dctr.WriteString("|")
 		}
 
@@ -668,16 +668,20 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 
 		switch typedValue := val.(type) {
 		case string:
-			fmt.Fprintf(&dctr, "%s=%s", key, strings.TrimSpace(typedValue))
+			if _, err := fmt.Fprintf(&dctr, "%s=%s", key, strings.TrimSpace(typedValue)); err != nil {
+				continue
+			}
 
 		case float64, bool:
-			fmt.Fprintf(&dctr, "%s=%v", key, typedValue)
+			if _, err := fmt.Fprintf(&dctr, "%s=%v", key, typedValue); err != nil {
+				continue
+			}
 
 		case []interface{}:
-			if isStringArray(typedValue) {
-				if valStrArr := getStringArray(typedValue); valStrArr != nil && len(valStrArr) > 0 {
-					valStr := strings.Join(valStrArr[:], ",")
-					fmt.Fprintf(&dctr, "%s=%s", key, valStr)
+			if valStrArr := getStringArray(typedValue); len(valStrArr) > 0 {
+				valStr := strings.Join(valStrArr[:], ",")
+				if _, err := fmt.Fprintf(&dctr, "%s=%s", key, valStr); err != nil {
+					continue
 				}
 			}
 		}
@@ -688,29 +692,16 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 	}
 }
 
-// isStringArray check if []interface is a valid string array
-func isStringArray(array []interface{}) bool {
-	for _, val := range array {
-		if _, ok := val.(string); !ok {
-			return false
-		}
-	}
-	return true
-}
-
 // getStringArray converts interface of type string array to string array
-func getStringArray(val interface{}) []string {
-	aInterface, ok := val.([]interface{})
-	if !ok {
-		return nil
-	}
-	aString := make([]string, len(aInterface))
-	for i, v := range aInterface {
+func getStringArray(array []interface{}) []string {
+	aString := make([]string, len(array))
+	for i, v := range array {
 		if str, ok := v.(string); ok {
 			aString[i] = strings.TrimSpace(str)
+		} else {
+			return nil
 		}
 	}
-
 	return aString
 }
 
