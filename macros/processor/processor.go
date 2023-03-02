@@ -26,7 +26,6 @@ func NewProcessor(cfg config.MacroProcessorConfig) Processor {
 		processor = newStringBasedProcessor(cfg)
 	case config.TemplateBasedProcessor:
 		processor = newtemplateBasedProcessor(cfg)
-
 	default:
 		processor = &emptyProcessor{}
 	}
