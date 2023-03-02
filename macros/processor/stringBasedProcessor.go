@@ -63,20 +63,20 @@ func (processor *stringBasedProcessor) Replace(url string, macroProvider Provide
 	var result bytes.Buffer
 	// iterate over macros startindex list to get position where value should be put
 	// http://tracker.com?macro_1=##PBS_EVENTTYPE##&macro_2=##PBS_GDPRCONSENT##&custom=##PBS_MACRO_profileid##&custom=##shri##
-	s := 0
+	currentIndex := 0
 	delimLen := len(processor.cfg.Delimiter)
 	for i, index := range tmplt.indices {
 		// macro := tmplt.sIndexMacrosMap[index]
 		macro := url[index+delimLen : tmplt.macroLength[i]]
 		// copy prev part
-		result.WriteString(url[s:index])
+		result.WriteString(url[currentIndex:index])
 		value := macroProvider.GetMacro(macro)
 		if value != "" {
 			result.WriteString(value)
 		}
-		s = index + len(macro) + 2*len(processor.cfg.Delimiter)
+		currentIndex = index + len(macro) + 2*len(processor.cfg.Delimiter)
 	}
-	result.WriteString(url[s:])
+	result.WriteString(url[currentIndex:])
 	return result.String(), nil
 }
 
