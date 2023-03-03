@@ -3690,6 +3690,7 @@ func TestGetDealTiers(t *testing.T) {
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
 				"imp1": {openrtb_ext.BidderAppnexus: {Prefix: "tier1", MinDealTier: 5}},
+				"imp2": {},
 			},
 		},
 	}
