@@ -221,7 +221,7 @@ func (m *mockExchangeCTV) HoldAuction(ctx context.Context, auctionRequest exchan
 			{
 				Seat: "pubmatic",
 				Bid: []openrtb2.Bid{
-					{ID: "VIDEO12-89A1-41F1-8708-978FD3C0912A", ImpID: "abcdefgh_1", Price: 0, AdM: "<VAST><![CDATA[XYZ]]></VAST>", Dur: 30, Ext: ext},
+					{ID: "VIDEO12-89A1-41F1-8708-978FD3C0912A", ImpID: "abcdefgh_1", Price: 5, AdM: "<VAST><![CDATA[XYZ]]></VAST>", Dur: 30, Ext: ext},
 					{ID: "VIDEO12-89A1-41F1-8708-978FD3C0912A", ImpID: "abcdefgh_2", Price: 10, AdM: "<VAST><![CDATA[XYZ]]></VAST>", Dur: 30, Ext: ext},
 				},
 			},

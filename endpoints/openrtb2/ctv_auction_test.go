@@ -969,6 +969,25 @@ func TestCTVRequestForRejectedBids(t *testing.T) {
 						Bid: []*openrtb.Bid{
 							{
 								Id:    util.GetStringPtr("VIDEO12-89A1-41F1-8708-978FD3C0912A"),
+								ImpId: util.GetStringPtr("abcdefgh_1"),
+								Adm:   util.GetStringPtr("<VAST><![CDATA[XYZ]]></VAST>"),
+								Price: util.GetFloat64Ptr(5),
+								Ext: map[string]interface{}{
+									"adpod": map[string]interface{}{
+										"aprc": float64(0),
+									},
+									"prebid": map[string]interface{}{
+										"video": map[string]interface{}{
+											"duration": float64(30),
+										},
+									},
+									"video": map[string]interface{}{
+										"duration": float64(30),
+									},
+								},
+							},
+							{
+								Id:    util.GetStringPtr("VIDEO12-89A1-41F1-8708-978FD3C0912A"),
 								ImpId: util.GetStringPtr("abcdefgh_2"),
 								Adm:   util.GetStringPtr("<VAST><![CDATA[XYZ]]></VAST>"),
 								Price: util.GetFloat64Ptr(10),
