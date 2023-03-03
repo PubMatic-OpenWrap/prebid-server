@@ -2640,7 +2640,7 @@ func TestCategoryMapping(t *testing.T) {
 	assert.Equal(t, "20.00_AdapterOverride_30s", bidCategory["bid_id3"], "Category mapping override from adapter didn't take")
 	assert.Equal(t, 3, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 3, len(bidCategory), "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{{RejectionReason: 209, Bid: bid1_4.Bid, Seat: ""}}, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
+	assert.Equal(t, []analytics.RejectedBid{{RejectionReason: 303, Bid: bid1_4.Bid, Seat: ""}}, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
 }
 
 func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
