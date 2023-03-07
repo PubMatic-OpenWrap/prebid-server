@@ -15,8 +15,10 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAddTargetingKeys(t *testing.T) {
@@ -1034,5 +1036,74 @@ func TestCTVRequestForRejectedBids(t *testing.T) {
 			_ = json.Unmarshal(bidResponse.Ext, obj)
 			assert.Equal(t, obj.AdPodExt.Response.SeatBid, tt.want.seatBidArray, "Mismatched bidResponse.SeatBid")
 		})
+	}
+}
+
+func TestRecordAdPodRejectedBids(t *testing.T) {
+
+	type args struct {
+		bids types.AdPodBid
+	}
+
+	type want struct {
+		expectedCalls int
+	}
+
+	tests := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "multiple rejected bids",
+			args: args{
+				bids: types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusCategoryExclusion,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusWinningBid,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusOK,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: 100,
+							Seat:   "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				expectedCalls: 2,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		me := &metrics.MetricsEngineMock{}
+		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+
+		deps := ctvEndpointDeps{
+			endpointDeps: endpointDeps{
+				metricsEngine: me,
+			},
+			impData: []*types.ImpData{
+				{
+					Bid: &test.args.bids,
+				},
+			},
+		}
+
+		deps.recordRejectedAdPodBids("pub_001")
+		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }

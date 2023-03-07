@@ -637,10 +637,16 @@ func (e *exchange) getAllBids(
 			ae.Errors = errsToBidderErrors(err)
 			ae.Warnings = errsToBidderWarnings(err)
 			brw.adapterExtra = ae
-			for _, seatBid := range seatBids {
+			for sind, seatBid := range seatBids {
 				if seatBid != nil {
-					for _, bid := range seatBid.Bids {
+					for bind, bid := range seatBid.Bids {
 						var cpm = float64(bid.Bid.Price * 1000)
+
+						// set vastTagId in bid.Ext.
+						if bidderRequest.BidderCoreName == openrtb_ext.BidderVASTBidder {
+							seatBids[sind].Bids[bind].Bid.Ext = getBidExtWithPrebid(bid)
+						}
+
 						e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 						e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.BidType, bid.Bid.AdM != "")
 						if bid.BidType == openrtb_ext.BidTypeVideo && bid.BidVideo != nil && bid.BidVideo.Duration > 0 {
@@ -690,6 +696,34 @@ func (e *exchange) getAllBids(
 	}
 
 	return adapterBids, adapterExtra, fledge, bidsFound
+}
+
+// getBidExtWithPrebid sets the prebid-ext in bid.Ext and returns the bid.Ext
+func getBidExtWithPrebid(bid *entities.PbsOrtbBid) json.RawMessage {
+
+	prebidExt := &openrtb_ext.ExtBidPrebid{
+		Video: bid.BidVideo,
+		Type:  bid.BidType,
+	}
+
+	if bid.Bid.Ext == nil {
+		bidExt := openrtb_ext.ExtBid{
+			Prebid: prebidExt,
+		}
+		bidExtBytes, err := json.Marshal(bidExt)
+		if err != nil {
+			return nil
+		}
+		return bidExtBytes
+	}
+
+	prebidExtBytes, err := json.Marshal(prebidExt)
+	if err != nil {
+		return nil
+	}
+
+	bidExt, _ := jsonparser.Set(bid.Bid.Ext, prebidExtBytes, "prebid")
+	return bidExt
 }
 
 func collectFledgeFromSeatBid(fledge *openrtb_ext.Fledge, bidderName openrtb_ext.BidderName, adapterName openrtb_ext.BidderName, seatBid *entities.PbsOrtbSeatBid) *openrtb_ext.Fledge {
