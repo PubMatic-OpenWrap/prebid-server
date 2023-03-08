@@ -182,6 +182,19 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		typedBid.Bid.CrID = "cr_" + GetRandomID()
 	}
 
+	// set vastTagId in bid.Ext
+	bidExt := openrtb_ext.ExtBid{
+		Prebid: &openrtb_ext.ExtBidPrebid{
+			Video: typedBid.BidVideo,
+			Type:  typedBid.BidType,
+		},
+	}
+
+	bidExtBytes, err := json.Marshal(bidExt)
+	if err == nil {
+		typedBid.Bid.Ext = bidExtBytes
+	}
+
 	return bidResponse, nil
 }
 

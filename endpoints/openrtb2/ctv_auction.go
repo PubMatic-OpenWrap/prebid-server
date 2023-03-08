@@ -256,7 +256,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		//Set bid.Ext params - adpod.aprc, prebid.video.duration
 		deps.setBidExtParams()
 
-		filterRejectedBids(response, auctionRequest.LoggableObject)
+		deps.recordRejectedAdPodBids(deps.labels.PubID)
+		//filterRejectedBids(response, auctionRequest.LoggableObject) // to be used in future
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
 
@@ -847,7 +848,7 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 
 /********************* Creating CTV BidResponse *********************/
 
-//createAdPodBidResponse
+// createAdPodBidResponse
 func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse, adpods types.AdPodBids) *openrtb2.BidResponse {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v createAdPodBidResponse", deps.request.ID))
 
@@ -1106,20 +1107,24 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 	}
 }
 
-func getRejectionReason(bidStatus int64) openrtb3.NonBidStatusCode {
-	reason := openrtb3.NoBidWinningBid
+// ConvertAPRCToNBRC converts the aprc to NonBidStatusCode
+func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NonBidStatusCode {
+	var nbrCode openrtb3.NonBidStatusCode
 
 	switch bidStatus {
 	case constant.StatusOK:
-		reason = openrtb3.LossBidLostToHigherBid
+		nbrCode = openrtb3.LossBidLostToHigherBid
 	case constant.StatusCategoryExclusion:
-		reason = openrtb3.LossBidCategoryExclusions
+		nbrCode = openrtb3.LossBidCategoryExclusions
 	case constant.StatusDomainExclusion:
-		reason = openrtb3.LossBidAdvertiserExclusions
+		nbrCode = openrtb3.LossBidAdvertiserExclusions
 	case constant.StatusDurationMismatch:
-		reason = openrtb3.LossBidInvalidCreative
+		nbrCode = openrtb3.LossBidInvalidCreative
+
+	default:
+		return nil
 	}
-	return reason
+	return &nbrCode
 }
 
 // filterRejectedBids removes rejected bids from BidResponse and add it into the RejectedBids array along with reason-code.
@@ -1134,16 +1139,39 @@ func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.Lo
 				continue
 			}
 			if aprc != int64(constant.StatusWinningBid) {
+				reason := ConvertAPRCToNBRC(aprc)
+				if reason == nil {
+					continue
+				}
 				loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-					RejectionReason: getRejectionReason(aprc),
+					RejectionReason: *reason,
 					Bid:             &seatbid.Bid[bidIndex],
 					Seat:            seatbid.Seat,
 				})
 				continue
 			}
-			winningBid = append(winningBid, bid) //TODO ; what if no win bid
+			winningBid = append(winningBid, bid)
 		}
-		resp.SeatBid[index].Bid = winningBid
+		resp.SeatBid[index].Bid = winningBid // winningBid can be empty
+	}
+}
+
+// recordRejectedAdPodBids records the bids lost in ad-pod auction using metricsEngine
+func (deps *ctvEndpointDeps) recordRejectedAdPodBids(pubID string) {
+
+	for _, imp := range deps.impData {
+		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
+			for _, bid := range imp.Bid.Bids {
+				if bid.Status != constant.StatusWinningBid {
+					reason := ConvertAPRCToNBRC(bid.Status)
+					if reason == nil {
+						continue
+					}
+					rejReason := strconv.FormatInt(int64(*reason), 10)
+					deps.metricsEngine.RecordRejectedBids(pubID, bid.Seat, rejReason)
+				}
+			}
+		}
 	}
 }
 
@@ -1192,7 +1220,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 	return data[:]
 }
 
-//setBidExtParams function sets the prebid.video.duration and adpod.aprc parameters
+// setBidExtParams function sets the prebid.video.duration and adpod.aprc parameters
 func (deps *ctvEndpointDeps) setBidExtParams() {
 
 	for _, imp := range deps.impData {

@@ -641,6 +641,7 @@ func (e *exchange) getAllBids(
 				if seatBid != nil {
 					for _, bid := range seatBid.Bids {
 						var cpm = float64(bid.Bid.Price * 1000)
+
 						e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 						e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.BidType, bid.Bid.AdM != "")
 						if bid.BidType == openrtb_ext.BidTypeVideo && bid.BidVideo != nil && bid.BidVideo.Duration > 0 {
