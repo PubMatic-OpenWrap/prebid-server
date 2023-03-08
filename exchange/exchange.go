@@ -637,14 +637,14 @@ func (e *exchange) getAllBids(
 			ae.Errors = errsToBidderErrors(err)
 			ae.Warnings = errsToBidderWarnings(err)
 			brw.adapterExtra = ae
-			for sind, seatBid := range seatBids {
+			for seatBidInd, seatBid := range seatBids {
 				if seatBid != nil {
-					for bind, bid := range seatBid.Bids {
+					for bidInd, bid := range seatBid.Bids {
 						var cpm = float64(bid.Bid.Price * 1000)
 
 						// set vastTagId in bid.Ext.
 						if bidderRequest.BidderCoreName == openrtb_ext.BidderVASTBidder {
-							seatBids[sind].Bids[bind].Bid.Ext = getBidExtWithPrebid(bid)
+							seatBids[seatBidInd].Bids[bidInd].Bid.Ext = getBidExtWithPrebid(bid)
 						}
 
 						e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
