@@ -3,6 +3,7 @@ package processor
 import (
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -18,8 +19,13 @@ const (
 	LmtTrackingKey    = "PBS_LIMITADTRACKING"
 	ConsentKey        = "PBS_GDPRCONSENT"
 	CustomMacroPrefix = "PBS_MACRO_"
-	BidderKey         = "##PBS-BIDDER##"
-	IntegrationKey    = "##PBS-INTEGRATION##"
+	BidderKey         = "PBS-BIDDER"
+	IntegrationKey    = "PBS-INTEGRATION"
+	VastCRTIDKey      = "PBS-VASTCRTID"
+	LineIDKey         = "PBS-LINEID"
+	TimestampKey      = "PBS-TIMESTAMP"
+	AuctionIDKey      = "PBS-AUCTIONID"
+	ChannelKey        = "PBS-CHANNEL"
 )
 
 var (
@@ -49,6 +55,7 @@ func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) Provider {
 }
 
 func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWrapper) {
+	b.macros[TimestampKey] = strconv.Itoa(int(time.Now().Unix()))
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		for key, value := range reqExt.GetPrebid().Macros {
@@ -57,8 +64,13 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 		}
 
 		b.macros[IntegrationKey] = reqExt.GetPrebid().Integration
-	}
+		channel := reqExt.GetPrebid().Channel
+		if channel != nil {
+			b.macros[ChannelKey] = channel.Name
+		}
 
+	}
+	b.macros[AuctionIDKey] = reqWrapper.ID
 	if reqWrapper.App != nil && reqWrapper.App.Bundle != "" {
 		b.macros[AppBundleKey] = reqWrapper.App.Bundle
 	}
@@ -115,6 +127,8 @@ func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat st
 	b.resetcontext()
 	b.macros[BidIDKey] = bid.ID
 	b.macros[BidderKey] = seat
+	b.macros[VastCRTIDKey] = bid.CrID
+	b.macros[LineIDKey] = bid.CID
 }
 func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {

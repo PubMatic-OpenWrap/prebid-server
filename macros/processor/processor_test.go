@@ -10,7 +10,7 @@ import (
 )
 
 var lmt int8 = 10
-var testURL string = "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUST1##&macro10=##PBS_MACRO_CUST2##"
+var testURL string = "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUST1##&macro10=##PBS_MACRO_CUST2##&macro11=##PBS-VASTCRTID##&macro12=##PBS-LINEID##&macro13=##PBS-TIMESTAMP##&macro14=##PBS-AUCTIONID##&maco15=##PBS-CHANNEL##"
 var req *openrtb_ext.RequestWrapper = &openrtb_ext.RequestWrapper{
 	BidRequest: &openrtb2.BidRequest{
 		ID: "123",
@@ -34,11 +34,11 @@ var req *openrtb_ext.RequestWrapper = &openrtb_ext.RequestWrapper{
 			Lmt: &lmt,
 		},
 		User: &openrtb2.User{Ext: []byte(`{"consent":"yes" }`)},
-		Ext:  []byte(`{"prebid":{"macros":{"CUSTOMMACR1":"value1","CUSTOMMACR2":"value2","CUSTOMMACR3":"value3"}}}`),
+		Ext:  []byte(`{"prebid":{"macros":{"CUSTOMMACR1":"value1","CUSTOMMACR2":"value2","CUSTOMMACR3":"value3"}}, "channel": "channel_1"}`),
 	},
 }
 
-var bid *openrtb2.Bid = &openrtb2.Bid{ID: "bidId123"}
+var bid *openrtb2.Bid = &openrtb2.Bid{ID: "bidId123", CID: "campaign_1", CrID: "creative_1"}
 
 func BenchmarkTemplateBasedProcessor(b *testing.B) {
 
