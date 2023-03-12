@@ -1053,6 +1053,7 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	migrateConfigSpecialFeature1(v)
 	migrateConfigTCF2PurposeFlags(v)
 	migrateConfigDatabaseConnection(v)
+	migrateConfigBoolField(v, "account_defaults.events_enabled", "account_defaults.event.enabled")
 
 	// These defaults must be set after the migrate functions because those functions look for the presence of these
 	// config fields and there isn't a way to detect presence of a config field using the viper package if a default
@@ -1368,6 +1369,21 @@ func migrateConfigDatabaseConnection(v *viper.Viper) {
 					glog.Warning(fmt.Sprintf("using %s and ignoring deprecated %s", newField, oldField))
 				}
 			}
+		}
+	}
+}
+
+// migrateConfigBoolField is responsible for ensuring backward compatibility of config field having bool data type.
+// This function favors the newField over the oldField, if values for both are set.
+// If only oldField is set, then sets the same value to newField.
+func migrateConfigBoolField(v *viper.Viper, oldField, newField string) {
+	if v.IsSet(oldField) {
+		oldConfig := v.GetBool(oldField)
+		if v.IsSet(newField) {
+			glog.Warningf("using %s and ignoring deprecated %s", newField, oldField)
+		} else {
+			glog.Warningf("%s is deprecated and should be changed to %s", oldField, newField)
+			v.Set(newField, oldConfig)
 		}
 	}
 }

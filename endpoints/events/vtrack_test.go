@@ -13,9 +13,11 @@ import (
 	"testing"
 
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -271,6 +273,11 @@ func TestShouldRespondWithInternalServerErrorWhenPbsCacheClientFails(t *testing.
 	// mock AccountsFetcher
 	mockAccountsFetcher := &mockAccountsFetcher{}
 
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
+
 	// config
 	cfg := &config.Configuration{
 		MaxRequestSize: maxSize, VTrack: config.VTrack{
@@ -291,10 +298,11 @@ func TestShouldRespondWithInternalServerErrorWhenPbsCacheClientFails(t *testing.
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: nil,
-		Cache:       mockCacheClient,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   nil,
+		Cache:         mockCacheClient,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute
@@ -366,6 +374,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastNotAllowe
 		Fail: false,
 	}
 
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
+
 	// config
 	cfg := &config.Configuration{
 		MaxRequestSize: maxSize, VTrack: config.VTrack{
@@ -397,10 +410,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastNotAllowe
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: bidderInfos,
-		Cache:       mockCacheClient,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   bidderInfos,
+		Cache:         mockCacheClient,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute
@@ -428,6 +442,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastAllowed(t
 	mockAccountsFetcher := &mockAccountsFetcher{
 		Fail: false,
 	}
+
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
 
 	// config
 	cfg := &config.Configuration{
@@ -460,10 +479,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableBiddersWhenBidderVastAllowed(t
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: bidderInfos,
-		Cache:       mockCacheClient,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   bidderInfos,
+		Cache:         mockCacheClient,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute
@@ -492,6 +512,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableUnknownBiddersWhenUnknownBidde
 		Fail: false,
 	}
 
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
+
 	// config
 	cfg := &config.Configuration{
 		MaxRequestSize: maxSize, VTrack: config.VTrack{
@@ -515,10 +540,11 @@ func TestShouldSendToCacheExpectedPutsAndUpdatableUnknownBiddersWhenUnknownBidde
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: bidderInfos,
-		Cache:       mockCacheClient,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   bidderInfos,
+		Cache:         mockCacheClient,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute
@@ -547,6 +573,11 @@ func TestShouldReturnBadRequestWhenRequestExceedsMaxRequestSize(t *testing.T) {
 		Fail: false,
 	}
 
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
+
 	// config
 	cfg := &config.Configuration{
 		MaxRequestSize: 1,
@@ -571,10 +602,11 @@ func TestShouldReturnBadRequestWhenRequestExceedsMaxRequestSize(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: bidderInfos,
-		Cache:       mockCacheClient,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   bidderInfos,
+		Cache:         mockCacheClient,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute
@@ -596,6 +628,11 @@ func TestShouldRespondWithInternalErrorPbsCacheIsNotConfigured(t *testing.T) {
 		Fail: false,
 	}
 
+	// mock Metric Engine
+	mockMetricsEngine := &metrics.MetricsEngineMock{}
+	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
+	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
+
 	// config
 	cfg := &config.Configuration{
 		MaxRequestSize: maxSize, VTrack: config.VTrack{
@@ -615,10 +652,11 @@ func TestShouldRespondWithInternalErrorPbsCacheIsNotConfigured(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	e := vtrackEndpoint{
-		Cfg:         cfg,
-		BidderInfos: nil,
-		Cache:       nil,
-		Accounts:    mockAccountsFetcher,
+		Cfg:           cfg,
+		BidderInfos:   nil,
+		Cache:         nil,
+		Accounts:      mockAccountsFetcher,
+		MetricsEngine: mockMetricsEngine,
 	}
 
 	// execute

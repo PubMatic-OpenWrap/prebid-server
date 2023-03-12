@@ -3185,3 +3185,61 @@ func TestTCF2FeatureOneVendorException(t *testing.T) {
 		assert.Equal(t, tt.wantIsVendorException, value, tt.description)
 	}
 }
+
+func TestMigrateConfigBoolFlag(t *testing.T) {
+	tests := []struct {
+		description       string
+		config            []byte
+		wantNewFieldValue bool
+	}{
+		{
+			description: "oldField is not set, ignore oldField",
+			config: []byte(`
+			{
+				"account_defaults": {
+					"events": {
+						"enabled": true
+					}
+				}
+			}
+		    `),
+			wantNewFieldValue: true,
+		},
+		{
+			description: "oldField and newField both are set, favor newField",
+			config: []byte(`
+				{
+					"account_defaults": {
+						"events_enabled": false,
+						"events": {
+							"enabled": true
+						}
+					}
+				}
+		  	`),
+
+			wantNewFieldValue: true,
+		},
+		{
+			description: "only oldField is set, set same value to newField",
+			config: []byte(`
+				{
+					"account_defaults": {
+						"events_enabled": false
+					}
+				}
+		    `),
+			wantNewFieldValue: false,
+		},
+	}
+
+	for _, tt := range tests {
+		v := viper.New()
+		v.SetConfigType("json")
+		v.ReadConfig(bytes.NewBuffer(tt.config))
+
+		migrateConfigBoolField(v, "account_defaults.events_enabled", "account_defaults.events.enabled")
+
+		assert.Equal(t, tt.wantNewFieldValue, v.GetBool("account_defaults.events.enabled"), tt.description)
+	}
+}

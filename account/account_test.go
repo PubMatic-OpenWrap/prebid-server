@@ -33,6 +33,7 @@ var mockAccountData = map[string]json.RawMessage{
 	"gdpr_deprecated_purpose8":                     json.RawMessage(`{"disabled":false,"gdpr":{"purpose8":{"enforce_purpose":"full"}}}`),
 	"gdpr_deprecated_purpose9":                     json.RawMessage(`{"disabled":false,"gdpr":{"purpose9":{"enforce_purpose":"full"}}}`),
 	"gdpr_deprecated_purpose10":                    json.RawMessage(`{"disabled":false,"gdpr":{"purpose10":{"enforce_purpose":"full"}}}`),
+	"events_enabled":                               json.RawMessage(`{"events_enabled": true}`),
 }
 
 type mockAccountFetcher struct {
@@ -562,6 +563,12 @@ func TestAccountUpgradeStatusGetAccount(t *testing.T) {
 			givenMetrics:        []string{"RecordAccountGDPRChannelEnabledWarning", "RecordAccountGDPRPurposeWarning"},
 			expectedMetricCount: 2,
 		},
+		{
+			name:                "OneDeprecatedConfigEventsEnabled",
+			givenAccountIDs:     []string{"events_enabled"},
+			givenMetrics:        []string{"RecordAccountEventsEnabledWarning"},
+			expectedMetricCount: 1,
+		},
 	}
 
 	for _, test := range testCases {
@@ -576,6 +583,77 @@ func TestAccountUpgradeStatusGetAccount(t *testing.T) {
 				_, _ = GetAccount(context.Background(), cfg, fetcher, accountID, metrics)
 			}
 			metrics.AssertNumberOfCalls(t, "RecordAccountUpgradeStatus", test.expectedMetricCount)
+		})
+	}
+}
+
+func TestDeprecateEventsEnabledField(t *testing.T) {
+
+	type want struct {
+		value              bool
+		hasDeprecatedField bool
+	}
+
+	testCases := []struct {
+		name        string
+		accountJson json.RawMessage
+		want        want
+	}{
+		{
+			name:        "events_enabled not exist",
+			accountJson: json.RawMessage(``),
+			want: want{
+				value:              false,
+				hasDeprecatedField: false,
+			},
+		},
+		{
+			name: "events_enabled has non-bool type",
+			accountJson: json.RawMessage(`
+			{
+				"events_enabled": "invalid"
+			}
+			`),
+			want: want{
+				value:              false,
+				hasDeprecatedField: false,
+			},
+		},
+		{
+			name: "events.enabled not exist",
+			accountJson: json.RawMessage(`
+			{
+				"events_enabled": true				
+			}
+			`),
+			want: want{
+				value:              true,
+				hasDeprecatedField: true,
+			},
+		},
+		{
+			name: "events.enabled deprecates events_enabled",
+			accountJson: json.RawMessage(`
+			{
+				"events_enabled": true,
+				"events": {
+					"enabled": false
+				}
+			}
+			`),
+			want: want{
+				value:              false,
+				hasDeprecatedField: true,
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+
+			value, hasDeprecatedField := deprecateEventsEnabledField(test.accountJson)
+			assert.Equal(t, test.want.value, value, test.name)
+			assert.Equal(t, test.want.hasDeprecatedField, hasDeprecatedField, test.name)
 		})
 	}
 }

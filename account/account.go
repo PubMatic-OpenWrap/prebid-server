@@ -80,7 +80,15 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		for _, purposeName := range deprecatedPurposeFields {
 			me.RecordAccountGDPRPurposeWarning(accountID, purposeName)
 		}
-		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled {
+
+		// set the value of events.enabled field based on deprecated events_enabled field to ensure backward compatibility
+		eventEnabled, hasDeprecatedEventsEnabledField := deprecateEventsEnabledField(accountJSON)
+		if hasDeprecatedEventsEnabledField {
+			account.Events.Enabled = eventEnabled
+			me.RecordAccountEventsEnabledWarning(accountID)
+		}
+
+		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled || hasDeprecatedEventsEnabledField {
 			me.RecordAccountUpgradeStatus(accountID)
 		}
 
@@ -251,4 +259,25 @@ func useGDPRChannelEnabled(account *config.Account) bool {
 
 func useCCPAChannelEnabled(account *config.Account) bool {
 	return account.CCPA.ChannelEnabled.IsSet() && !account.CCPA.IntegrationEnabled.IsSet()
+}
+
+// deprecateEventsEnabledField is responsible for ensuring backwards compatibility of "events_enabled" field.
+// This function favors "events.enabled" field over deprecated "events_enabled" field, if values for both are found in accountJson.
+// If only deprecated "events_enabled" field is set then it returns the value of deprecated field so that caller can use it
+// to set value for "events.enabled" field. The hasDeprecatedField flag can be used to check if accountJson contains
+// the deprecated "events_enabled" field.
+func deprecateEventsEnabledField(accountJson json.RawMessage) (value bool, hasDeprecatedField bool) {
+	oldValue, err := jsonparser.GetBoolean(accountJson, "events_enabled")
+	if err != nil {
+		return false, false
+	}
+
+	hasDeprecatedField = true
+
+	value, err = jsonparser.GetBoolean(accountJson, "events", "enabled")
+	if err != nil {
+		return oldValue, hasDeprecatedField
+	}
+
+	return value, hasDeprecatedField
 }
