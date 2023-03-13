@@ -651,8 +651,10 @@ func TestDeprecateEventsEnabledField(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 
-			value, hasDeprecatedField := deprecateEventsEnabledField(test.accountJson)
-			assert.Equal(t, test.want.value, value, test.name)
+			account := &config.Account{}
+
+			hasDeprecatedField := deprecateEventsEnabledField(account, test.accountJson)
+			assert.Equal(t, test.want.value, account.Events.Enabled, test.name)
 			assert.Equal(t, test.want.hasDeprecatedField, hasDeprecatedField, test.name)
 		})
 	}
