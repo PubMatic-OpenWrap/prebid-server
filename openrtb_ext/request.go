@@ -2,6 +2,7 @@ package openrtb_ext
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 )
@@ -74,7 +75,9 @@ type ExtRequestPrebid struct {
 
 	// Macros specifies list of custom macros along with the values. This is used while forming
 	// the tracker URLs, where PBS will replace the Custom Macro with its value with url-encoding
-	Macros map[string]string `json:"macros,omitempty"`
+	Macros      map[string]string      `json:"macros,omitempty"`
+	MultiBid    []*ExtMultiBid         `json:"multibid,omitempty"`
+	MultiBidMap map[string]ExtMultiBid `json:"-"`
 }
 
 // Experiment defines if experimental features are available for the request
@@ -290,4 +293,19 @@ type ExtRequestPrebidData struct {
 type ExtRequestPrebidDataEidPermission struct {
 	Source  string   `json:"source"`
 	Bidders []string `json:"bidders"`
+}
+
+type ExtMultiBid struct {
+	Bidder                 string   `json:"bidder,omitempty"`
+	Bidders                []string `json:"bidders,omitempty"`
+	MaxBids                *int     `json:"maxbids,omitempty"`
+	TargetBidderCodePrefix string   `json:"targetbiddercodeprefix,omitempty"`
+}
+
+func (m ExtMultiBid) String() string {
+	maxBid := "<nil>"
+	if m.MaxBids != nil {
+		maxBid = fmt.Sprintf("%d", *m.MaxBids)
+	}
+	return fmt.Sprintf("{Bidder:%s, Bidders:%v, MaxBids:%s, TargetBidderCodePrefix:%s}", m.Bidder, m.Bidders, maxBid, m.TargetBidderCodePrefix)
 }
