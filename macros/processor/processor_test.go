@@ -45,7 +45,7 @@ func BenchmarkTemplateBasedProcessor(b *testing.B) {
 	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.TemplateBasedProcessor})
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
-		macroProvider.SetContext(bid, nil, "test")
+		macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 		_, err := processor.Replace(testURL, macroProvider)
 		if err != nil {
 			fmt.Println(err)
@@ -58,7 +58,7 @@ func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: config.StringBasedProcessor})
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
-		macroProvider.SetContext(bid, nil, "test")
+		macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 		_, err := processor.Replace(testURL, macroProvider)
 		if err != nil {
 			fmt.Println(err)
@@ -71,7 +71,7 @@ func BenchmarkStringIndexBasedProcessor(b *testing.B) {
 	processor := NewProcessor(config.MacroProcessorConfig{ProcessorType: 3})
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
-		macroProvider.SetContext(bid, nil, "test")
+		macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 		_, err := processor.Replace(testURL, macroProvider)
 		if err != nil {
 			fmt.Println(err)

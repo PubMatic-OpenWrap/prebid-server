@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/prebid/prebid-server/config"
 )
 
 func Test_macroProvider_GetAllMacros(t *testing.T) {
@@ -20,15 +22,15 @@ func Test_macroProvider_GetAllMacros(t *testing.T) {
 		{
 			name: "get all macros success",
 			args: args{keys: []string{BidIDKey, AccountIDKey, AppBundleKey, PubDomainkey,
-				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey, VastCRTIDKey, LineIDKey, TimestampKey, AuctionIDKey, ChannelKey}},
+				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey, VastCRTIDKey, LineIDKey, TimestampKey, AuctionIDKey, ChannelKey, EventTypeKey, VastEventKey}},
 			want: map[string]string{"PBS_ACCOUNTID": "testpublisherID", "PBS_APPBUNDLE": "testdomain", "PBS_BIDID": "bidId123", "PBS_GDPRCONSENT": "yes", "PBS_LIMITADTRACKING": "10", "PBS_PAGEURL": "pageurltest", "PBS_PUBDOMAIN": "publishertestdomain",
-				"PBS-VASTCRTID": "creative_1", "PBS-LINEID": "campaign_1", "PBS-TIMESTAMP": strconv.Itoa(int(time.Now().Unix())), "PBS-AUCTIONID": "123", "PBS-CHANNEL": ""},
+				"PBS-VASTCRTID": "creative_1", "PBS-LINEID": "campaign_1", "PBS-TIMESTAMP": strconv.Itoa(int(time.Now().Unix())), "PBS-AUCTIONID": "123", "PBS-CHANNEL": "", "PBS-EVENTTYPE": "firstQuartile", "PBS-VASTEVENT": "tracking"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			macroProvider := NewProvider(req)
-			macroProvider.SetContext(bid, nil, "test")
+			macroProvider.SetContext(bid, nil, "test", "creative_1", config.FirstQuartile, config.TrackingVASTElement)
 			if got := macroProvider.GetAllMacros(tt.args.keys); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("macroProvider.GetAllMacros() = %v, want %v", got, tt.want)
 			}
@@ -55,7 +57,7 @@ func Test_macroProvider_GetMacro(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			macroProvider := NewProvider(req)
-			macroProvider.SetContext(bid, nil, "test")
+			macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 			for _, key := range tt.args.keys {
 				if got := macroProvider.GetMacro(key); got != tt.want[key] {
 					t.Errorf("macroProvider.GetMacro() = %v, want %v", got, tt.want[key])

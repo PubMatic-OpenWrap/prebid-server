@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -26,10 +27,12 @@ const (
 	TimestampKey      = "PBS-TIMESTAMP"
 	AuctionIDKey      = "PBS-AUCTIONID"
 	ChannelKey        = "PBS-CHANNEL"
+	EventTypeKey      = "PBS-EVENTTYPE"
+	VastEventKey      = "PBS-VASTEVENT"
 )
 
 var (
-	bidLevelKeys = []string{BidIDKey, BidderKey}
+	bidLevelKeys = []string{BidIDKey, BidderKey, VastEventKey, EventTypeKey, LineIDKey, VastCRTIDKey}
 )
 
 type Provider interface {
@@ -38,7 +41,7 @@ type Provider interface {
 	// GetAllMacros return all the macros
 	GetAllMacros(keys []string) map[string]string
 	// SetContext set the bid and imp for the current provider
-	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat string)
+	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat, vastCreativeID string, vastEventType config.TrackingEventType, eventElement config.VASTEventElement)
 }
 
 type macroProvider struct {
@@ -123,12 +126,14 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	}
 	return macroValues
 }
-func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat string) {
+func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat, vastCreativeID string, vastEventType config.TrackingEventType, eventElement config.VASTEventElement) {
 	b.resetcontext()
 	b.macros[BidIDKey] = bid.ID
 	b.macros[BidderKey] = seat
-	b.macros[VastCRTIDKey] = bid.CrID
+	b.macros[VastCRTIDKey] = vastCreativeID
 	b.macros[LineIDKey] = bid.CID
+	b.macros[VastEventKey] = string(eventElement)
+	b.macros[EventTypeKey] = string(vastEventType)
 }
 func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {

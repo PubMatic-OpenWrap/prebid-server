@@ -26,7 +26,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUSTOMMACRO1##&macro10=##PBS_MACRO_CUSTOMMACRO2##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
-					macroProvider.SetContext(bid, nil, "test")
+					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 					return macroProvider
 				},
 			},
@@ -39,7 +39,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "http://tracker.com",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
-					macroProvider.SetContext(bid, nil, "test")
+					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 					return macroProvider
 				},
 			},
@@ -52,7 +52,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "http://tracker.com?macro1=##PBS_test1##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
-					macroProvider.SetContext(bid, nil, "test")
+					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 					return macroProvider
 				},
 			},
@@ -65,7 +65,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
-					macroProvider.SetContext(bid, nil, "test")
+					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 					return macroProvider
 				},
 			},
