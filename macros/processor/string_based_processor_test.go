@@ -23,14 +23,14 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 		{
 			name: "string index cached replace",
 			args: args{
-				url: "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUSTOMMACRO1##&macro10=##PBS_MACRO_CUSTOMMACRO2##",
+				url: "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUSTOMMACRO1##&macro10=##PBS_MACRO_CUSTOMMACRO2##&macro11=##PBS_AuctionIDKey##&macro12=##PBS_AUCTIONID##&macro13=##PBS_CHANNEL##&macro14=##PBS-EVENTTYPE##&macro15=###PBS_VASTEVENT##&macro16=##PBS_INTEGRATION##&macro17=##PBS-VASTCRTID##&macro18=##PBS-LINEID##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
 					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
 					return macroProvider
 				},
 			},
-			want:    "http://tracker.com?macro1=bidId123&macro2=testdomain&macro3=testdomain&macro4=publishertestdomain&macro5=pageurltest&macro6=testpublisherID&macro6=10&macro7=yes&macro8=yes&macro9=&macro10=",
+			want:    "http://tracker.com?macro1=bidId123&macro2=testdomain&macro3=testdomain&macro4=publishertestdomain&macro5=pageurltest&macro6=testpublisherID&macro6=10&macro7=yes&macro8=yes&macro9=&macro10=&macro11=&macro12=&macro13=&macro14=firstQuartile&macro15=&macro16=&macro17=123&macro18=campaign_1",
 			wantErr: false,
 		},
 		{
