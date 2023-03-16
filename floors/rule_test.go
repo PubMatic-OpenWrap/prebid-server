@@ -740,7 +740,7 @@ func Test_getMinFloorValue(t *testing.T) {
 	}
 }
 
-func Test_getDeviceType(t *testing.T) {
+func TestGetDeviceType(t *testing.T) {
 	type args struct {
 		request *openrtb2.BidRequest
 	}
@@ -750,111 +750,67 @@ func Test_getDeviceType(t *testing.T) {
 		want string
 	}{
 		{
-			name: "deviceType = tablet",
+			name: "user agent contains device type as tablet",
 			args: args{
 				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT touch 10.0; Win64; x64)"}},
 			},
 			want: "tablet",
 		},
 		{
-			name: "deviceType = desktop",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}},
-			},
-			want: "desktop",
-		},
-		{
-			name: "deviceType = phone",
+			name: "user agent contains Android.*Mobile",
 			args: args{
 				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Redmi Mobile; Win64; x64)"}},
 			},
 			want: "phone",
 		},
 		{
-			name: "deviceType = desktop",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (mobile realme ; Win64; x64)"}},
-			},
-			want: "desktop",
-		},
-
-		{
-			name: "deviceType = phone",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (phone ; Win64; x64)"}},
-			},
-			want: "phone",
-		},
-
-		{
-			name: "deviceType = phone",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (iphone; Win64; x64)"}},
-			},
-			want: "phone",
-		},
-
-		{
-			name: "deviceType = phone",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Samsung Mobile; Win64; x64)"}},
-			},
-			want: "phone",
-		},
-
-		{
-			name: "deviceType = phone",
+			name: "user agent contains Mobile.*Android",
 			args: args{
 				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Mobile pixel Android; Win64; x64)"}},
 			},
 			want: "phone",
 		},
-
 		{
-			name: "deviceType = tablet",
+			name: "user agent contains ipad",
 			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (tablet; Win64; x64)"}},
-			},
-			want: "tablet",
-		},
-
-		{
-			name: "deviceType = tablet",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (ipad; Win64; x64)"}},
-			},
-			want: "tablet",
-		},
-
-		{
-			name: "deviceType = tablet",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT realme touch; Win64; x64)"}},
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (ipad 13.10; Win64; x64)"}},
 			},
 			want: "tablet",
 		},
 		{
-			name: "deviceType = tablet",
+			name: "user agent contains Window NT.*touch",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT realme 7pro touch; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+		{
+			name: "user agent contains touch.* Window NT",
 			args: args{
 				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (touch realme Windows NT Win64; x64)"}},
 			},
 			want: "tablet",
 		},
-
 		{
-			name: "deviceType = tablet",
+			name: "user agent contains Android",
 			args: args{
 				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android; Win64; x64)"}},
 			},
 			want: "tablet",
 		},
-
 		{
-			name: "deviceType = desktop",
+			name: "user agent contains desktop",
 			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (xyz; Win64; x64)"}},
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}},
 			},
 			want: "desktop",
+		},
+		{
+			name: "empty user agent",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
+			},
+			want: "*",
 		},
 	}
 	for _, tt := range tests {

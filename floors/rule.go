@@ -420,7 +420,7 @@ func isMobileDevice(userAgent string) bool {
 }
 
 func isTabletDevice(userAgent string) bool {
-	isTablet, err := regexp.MatchString("(?i)tablet|iPad|touch.*Windows NT|Android|Windows NT.*touch", userAgent)
+	isTablet, err := regexp.MatchString("(?i)tablet|iPad|touch.*Windows NT|Windows NT.*touch|Android", userAgent)
 	if err != nil {
 		return false
 	}
