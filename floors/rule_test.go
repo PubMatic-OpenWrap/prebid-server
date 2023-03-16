@@ -739,3 +739,129 @@ func Test_getMinFloorValue(t *testing.T) {
 		})
 	}
 }
+
+func Test_getDeviceType(t *testing.T) {
+	type args struct {
+		request *openrtb2.BidRequest
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT touch 10.0; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+		{
+			name: "deviceType = desktop",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}},
+			},
+			want: "desktop",
+		},
+		{
+			name: "deviceType = phone",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Redmi Mobile; Win64; x64)"}},
+			},
+			want: "phone",
+		},
+		{
+			name: "deviceType = desktop",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (mobile realme ; Win64; x64)"}},
+			},
+			want: "desktop",
+		},
+
+		{
+			name: "deviceType = phone",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (phone ; Win64; x64)"}},
+			},
+			want: "phone",
+		},
+
+		{
+			name: "deviceType = phone",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (iphone; Win64; x64)"}},
+			},
+			want: "phone",
+		},
+
+		{
+			name: "deviceType = phone",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Samsung Mobile; Win64; x64)"}},
+			},
+			want: "phone",
+		},
+
+		{
+			name: "deviceType = phone",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Mobile pixel Android; Win64; x64)"}},
+			},
+			want: "phone",
+		},
+
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (tablet; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (ipad; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT realme touch; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (touch realme Windows NT Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+
+		{
+			name: "deviceType = tablet",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android; Win64; x64)"}},
+			},
+			want: "tablet",
+		},
+
+		{
+			name: "deviceType = desktop",
+			args: args{
+				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (xyz; Win64; x64)"}},
+			},
+			want: "desktop",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getDeviceType(tt.args.request); got != tt.want {
+				t.Errorf("Actual deviceType: %v, Expected: %v", got, tt.want)
+			}
+		})
+	}
+}

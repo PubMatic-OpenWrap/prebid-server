@@ -412,7 +412,7 @@ func getAdUnitCode(imp openrtb2.Imp) string {
 }
 
 func isMobileDevice(userAgent string) bool {
-	isMobile, err := regexp.MatchString("(?i)Phone|iPhone|Android|Mobile", userAgent)
+	isMobile, err := regexp.MatchString("(?i)Phone|iPhone|Android.*Mobile|Mobile.*Android", userAgent)
 	if err != nil {
 		return false
 	}
@@ -420,7 +420,7 @@ func isMobileDevice(userAgent string) bool {
 }
 
 func isTabletDevice(userAgent string) bool {
-	isTablet, err := regexp.MatchString("(?i)tablet|iPad|Windows NT", userAgent)
+	isTablet, err := regexp.MatchString("(?i)tablet|iPad|touch.*Windows NT|Android|Windows NT.*touch", userAgent)
 	if err != nil {
 		return false
 	}
