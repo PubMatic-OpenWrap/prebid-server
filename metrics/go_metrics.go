@@ -138,7 +138,6 @@ type accountMetrics struct {
 	channelEnabledGDPRMeter                  metrics.Meter
 	channelEnabledCCPAMeter                  metrics.Meter
 	accountDeprecationSummaryMeter           metrics.Meter
-	accountDeprecationWarningEventsEnabled   metrics.Meter
 }
 
 type ModuleMetrics struct {
@@ -563,7 +562,6 @@ func (me *Metrics) getAccountMetrics(id string) *accountMetrics {
 	am.accountDeprecationWarningsPurpose10Meter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.config.gdpr.purpose10.warn", id), me.MetricsRegistry)
 	am.channelEnabledCCPAMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.config.ccpa.channel_enabled.warn", id), me.MetricsRegistry)
 	am.channelEnabledGDPRMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.config.gdpr.channel_enabled.warn", id), me.MetricsRegistry)
-	am.accountDeprecationWarningEventsEnabled = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.config.events_enabled.warn", id), me.MetricsRegistry)
 	am.accountDeprecationSummaryMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.config.summary", id), me.MetricsRegistry)
 
 	if !me.MetricsDisabled.AccountModulesMetrics {
@@ -657,13 +655,6 @@ func (me *Metrics) RecordAccountUpgradeStatus(account string) {
 	if account != PublisherUnknown {
 		am := me.getAccountMetrics(account)
 		am.accountDeprecationSummaryMeter.Mark(1)
-	}
-}
-
-func (me *Metrics) RecordAccountEventsEnabledWarning(account string) {
-	if account != PublisherUnknown {
-		am := me.getAccountMetrics(account)
-		am.accountDeprecationWarningEventsEnabled.Mark(1)
 	}
 }
 

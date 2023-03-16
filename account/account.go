@@ -81,13 +81,10 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 			me.RecordAccountGDPRPurposeWarning(accountID, purposeName)
 		}
 
-		// set the value of events.enabled field based on deprecated events_enabled field to ensure backward compatibility
-		hasDeprecatedEventsEnabledField := deprecateEventsEnabledField(account, accountJSON)
-		if hasDeprecatedEventsEnabledField {
-			me.RecordAccountEventsEnabledWarning(accountID)
-		}
+		// set the value of events.enabled field based on deprecated events_enabled field and ensure backward compatibility
+		deprecateEventsEnabledField(account)
 
-		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled || hasDeprecatedEventsEnabledField {
+		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled {
 			me.RecordAccountUpgradeStatus(accountID)
 		}
 
@@ -261,22 +258,11 @@ func useCCPAChannelEnabled(account *config.Account) bool {
 }
 
 // deprecateEventsEnabledField is responsible for ensuring backwards compatibility of "events_enabled" field.
-// This function favors "events.enabled" field over deprecated "events_enabled" field, if values for both are found in accountJson.
-// If only deprecated "events_enabled" field is set then it sets the same value to "events.enabled".
-// This function returns hasDeprecatedField flag which can be used to check if accountJson contains
-// the deprecated "events_enabled" field.
-func deprecateEventsEnabledField(account *config.Account, accountJson json.RawMessage) (hasDeprecatedField bool) {
-	value, err := jsonparser.GetBoolean(accountJson, "events_enabled")
-	if err != nil {
-		return false
+// This function favors "events.enabled" field over deprecated "events_enabled" field, if values for both are set.
+// If only deprecated "events_enabled" field is set then it sets the same value to "events.enabled" field.
+func deprecateEventsEnabledField(account *config.Account) {
+
+	if account.Events.Enabled == nil {
+		account.Events.Enabled = &account.EventsEnabled
 	}
-
-	account.Events.Enabled = value
-
-	value, err = jsonparser.GetBoolean(accountJson, "events", "enabled")
-	if err == nil {
-		account.Events.Enabled = value
-	}
-
-	return true
 }

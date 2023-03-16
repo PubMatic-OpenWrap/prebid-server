@@ -318,11 +318,6 @@ func (me *MultiMetricsEngine) RecordAccountCCPAChannelEnabledWarning(account str
 		thisME.RecordAccountCCPAChannelEnabledWarning(account)
 	}
 }
-func (me *MultiMetricsEngine) RecordAccountEventsEnabledWarning(account string) {
-	for _, thisME := range *me {
-		thisME.RecordAccountEventsEnabledWarning(account)
-	}
-}
 func (me *MultiMetricsEngine) RecordAccountUpgradeStatus(account string) {
 	for _, thisME := range *me {
 		thisME.RecordAccountUpgradeStatus(account)
@@ -517,8 +512,6 @@ func (me *NilMetricsEngine) RecordAccountGDPRChannelEnabledWarning(account strin
 }
 
 func (me *NilMetricsEngine) RecordAccountCCPAChannelEnabledWarning(account string) {
-}
-func (me *NilMetricsEngine) RecordAccountEventsEnabledWarning(account string) {
 }
 
 func (me *NilMetricsEngine) RecordAccountUpgradeStatus(account string) {

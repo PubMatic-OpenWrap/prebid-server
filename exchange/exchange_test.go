@@ -4956,7 +4956,7 @@ type exchangeSpec struct {
 	EnforceLMT                 bool                   `json:"enforceLmt"`
 	AssumeGDPRApplies          bool                   `json:"assume_gdpr_applies"`
 	DebugLog                   *DebugLog              `json:"debuglog,omitempty"`
-	EventsEnabled              bool                   `json:"events_enabled,omitempty"`
+	EventsEnabled              *bool                  `json:"events_enabled,omitempty"`
 	StartTime                  int64                  `json:"start_time_ms,omitempty"`
 	BidIDGenerator             *mockBidIDGenerator    `json:"bidIDGenerator,omitempty"`
 	RequestType                *metrics.RequestType   `json:"requestType,omitempty"`

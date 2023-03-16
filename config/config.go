@@ -139,9 +139,6 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	if cfg.AccountDefaults.Disabled {
 		glog.Warning(`With account_defaults.disabled=true, host-defined accounts must exist and have "disabled":false. All other requests will be rejected.`)
 	}
-	if cfg.AccountDefaults.Events.Enabled {
-		glog.Warning(`account_defaults.events will currently not do anything as the feature is still under development. Please follow https://github.com/prebid/prebid-server/issues/1725 for more updates`)
-	}
 
 	if cfg.PriceFloors.Enabled {
 		glog.Warning(`cfg.PriceFloors.Enabled will currently not do anything as price floors feature is still under development.`)
@@ -689,6 +686,12 @@ func New(v *viper.Viper, bidderInfos BidderInfos, normalizeBidderName func(strin
 
 	// Update account defaults and generate base json for patch
 	c.AccountDefaults.CacheTTL = c.CacheURL.DefaultTTLs // comment this out to set explicitly in config
+
+	// explicitly set the new Field events.enabled field to nil to deprecate events_enabled field.
+	// This value will be overridden by the account-level config if the publisher sets this field in the account-JSON.
+	// Whererver required, we can check the nil value and determine if the account-JSON contains this "events.enabled" field or not.
+	c.AccountDefaults.Events.Enabled = nil
+
 	if err := c.MarshalAccountDefaults(); err != nil {
 		return nil, err
 	}
@@ -1053,7 +1056,15 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	migrateConfigSpecialFeature1(v)
 	migrateConfigTCF2PurposeFlags(v)
 	migrateConfigDatabaseConnection(v)
-	migrateConfigBoolField(v, "account_defaults.events_enabled", "account_defaults.event.enabled")
+
+	// The events_enabled field is getting deprecated and will be replaced by events.enabled field in the future.
+	// During the process of deprecation, if the user provides both account-level and host-level value, then we need to follow the below precedence order.
+	// (1) account-level new field, (2) account-level deprecated field, (3) host-level new field, (4) host-level deprecated field
+	// To achieve this, we will apply the precedence within host-level fields and set the result in the deprecated field.
+	// We will set the new field to nil so that when we fetch and merge the account-level JSON into the account-default JSON then,
+	// account-level value will become available in the new field.
+	// If new field is not present in the account-level JSON, then we will copy the value of the deprecated field and set it to the new field.
+	migrateConfigEventsEnabled(v)
 
 	// These defaults must be set after the migrate functions because those functions look for the presence of these
 	// config fields and there isn't a way to detect presence of a config field using the viper package if a default
@@ -1104,8 +1115,8 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("experiment.adscert.inprocess.domain_renewal_interval_seconds", 30)
 	v.SetDefault("experiment.adscert.remote.url", "")
 	v.SetDefault("experiment.adscert.remote.signing_timeout_ms", 5)
-
 	v.SetDefault("hooks.enabled", false)
+	v.SetDefault("account_defaults.events_enabled", false)
 
 	for bidderName := range bidderInfos {
 		setBidderDefaults(v, strings.ToLower(bidderName))
@@ -1373,18 +1384,16 @@ func migrateConfigDatabaseConnection(v *viper.Viper) {
 	}
 }
 
-// migrateConfigBoolField is responsible for ensuring backward compatibility of config field having bool data type.
-// This function favors the newField over the oldField, if values for both are set.
-// If only oldField is set, then sets the same value to newField.
-func migrateConfigBoolField(v *viper.Viper, oldField, newField string) {
-	if v.IsSet(oldField) {
-		oldConfig := v.GetBool(oldField)
-		if v.IsSet(newField) {
-			glog.Warningf("using %s and ignoring deprecated %s", newField, oldField)
-		} else {
-			glog.Warningf("%s is deprecated and should be changed to %s", oldField, newField)
-			v.Set(newField, oldConfig)
-		}
+// migrateConfigEventsEnabled is responsible for ensuring backward compatibility of events_enabled field.
+// This function copies the value of newField "events.enabled" and set it to the oldField "events_enabled".
+func migrateConfigEventsEnabled(v *viper.Viper) {
+	newField := "account_defaults.events.enabled"
+	oldField := "account_defaults.events_enabled"
+
+	if v.IsSet(newField) {
+		glog.Warningf("using %s and ignoring deprecated %s", newField, oldField)
+		newValue := v.GetBool(newField)
+		v.Set(oldField, newValue)
 	}
 }
 

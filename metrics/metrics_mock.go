@@ -222,7 +222,3 @@ func (me *MetricsEngineMock) RecordAccountCCPAChannelEnabledWarning(account stri
 func (me *MetricsEngineMock) RecordAccountUpgradeStatus(account string) {
 	me.Called(account)
 }
-
-func (me *MetricsEngineMock) RecordAccountEventsEnabledWarning(account string) {
-	me.Called(account)
-}

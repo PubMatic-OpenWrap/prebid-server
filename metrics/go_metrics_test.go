@@ -1193,31 +1193,6 @@ func TestRecordAccountUpgradeStatusMetrics(t *testing.T) {
 	}
 }
 
-func TestRecordAccountEventsEnabledWarning(t *testing.T) {
-	testCases := []struct {
-		name                string
-		givenPubID          string
-		expectedMetricCount int64
-	}{
-		{
-			name:                "EventsEnabledMetricIncremented",
-			givenPubID:          "acct-id",
-			expectedMetricCount: 1,
-		},
-	}
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			registry := metrics.NewRegistry()
-			m := NewMetrics(registry, []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus}, config.DisabledMetrics{}, nil, nil)
-
-			m.RecordAccountEventsEnabledWarning(test.givenPubID)
-			am := m.getAccountMetrics(test.givenPubID)
-
-			assert.Equal(t, test.expectedMetricCount, am.accountDeprecationWarningEventsEnabled.Count())
-		})
-	}
-}
-
 func ensureContainsBidTypeMetrics(t *testing.T, registry metrics.Registry, prefix string, mdm map[openrtb_ext.BidType]*MarkupDeliveryMetrics) {
 	ensureContains(t, registry, prefix+".banner.adm_bids_received", mdm[openrtb_ext.BidTypeBanner].AdmMeter)
 	ensureContains(t, registry, prefix+".banner.nurl_bids_received", mdm[openrtb_ext.BidTypeBanner].NurlMeter)

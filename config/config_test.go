@@ -709,6 +709,8 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "experiment.adscert.remote.signing_timeout_ms", cfg.Experiment.AdCerts.Remote.SigningTimeoutMs, 10)
 	cmpBools(t, "hooks.enabled", cfg.Hooks.Enabled, true)
 	cmpBools(t, "account_modules_metrics", cfg.Metrics.Disabled.AccountModulesMetrics, true)
+	cmpBools(t, "account_defaults.events_enabled", cfg.AccountDefaults.EventsEnabled, false)
+	cmpNils(t, "account_defaults.events.enabled", cfg.AccountDefaults.Events.Enabled)
 }
 
 func TestValidateConfig(t *testing.T) {
@@ -3187,13 +3189,22 @@ func TestTCF2FeatureOneVendorException(t *testing.T) {
 }
 
 func TestMigrateConfigBoolFlag(t *testing.T) {
+
+	boolFalse := false
+	boolTrue := true
+
+	type want struct {
+		newField *bool
+		oldField *bool
+	}
+
 	tests := []struct {
-		description       string
-		config            []byte
-		wantNewFieldValue bool
+		description string
+		config      []byte
+		want        want
 	}{
 		{
-			description: "oldField is not set, ignore oldField",
+			description: "only newField is set",
 			config: []byte(`
 			{
 				"account_defaults": {
@@ -3203,10 +3214,13 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 				}
 			}
 		    `),
-			wantNewFieldValue: true,
+			want: want{
+				newField: &boolTrue,
+				oldField: &boolTrue,
+			},
 		},
 		{
-			description: "oldField and newField both are set, favor newField",
+			description: "oldField and newField both are set",
 			config: []byte(`
 				{
 					"account_defaults": {
@@ -3217,11 +3231,13 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 					}
 				}
 		  	`),
-
-			wantNewFieldValue: true,
+			want: want{
+				newField: &boolTrue,
+				oldField: &boolTrue,
+			},
 		},
 		{
-			description: "only oldField is set, set same value to newField",
+			description: "only oldField is set",
 			config: []byte(`
 				{
 					"account_defaults": {
@@ -3229,7 +3245,18 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 					}
 				}
 		    `),
-			wantNewFieldValue: false,
+			want: want{
+				newField: nil,
+				oldField: &boolFalse,
+			},
+		},
+		{
+			description: "both newField and oldField are not set",
+			config:      []byte(``),
+			want: want{
+				newField: nil,
+				oldField: nil,
+			},
 		},
 	}
 
@@ -3238,8 +3265,22 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 		v.SetConfigType("json")
 		v.ReadConfig(bytes.NewBuffer(tt.config))
 
-		migrateConfigBoolField(v, "account_defaults.events_enabled", "account_defaults.events.enabled")
+		migrateConfigEventsEnabled(v)
 
-		assert.Equal(t, tt.wantNewFieldValue, v.GetBool("account_defaults.events.enabled"), tt.description)
+		if tt.want.newField == nil {
+			if v.IsSet("account_defaults.events.enabled") {
+				t.Errorf("For test [%s], viper is not expected to set any value for newField 'events.enabled'", tt.description)
+			}
+		} else {
+			assert.Equal(t, *tt.want.newField, v.GetBool("account_defaults.events.enabled"), tt.description)
+		}
+
+		if tt.want.oldField == nil {
+			if v.IsSet("account_defaults.events_enabled") {
+				t.Errorf("For test [%s], viper is not expected to set any value for oldField 'events_enabled'", tt.description)
+			}
+		} else {
+			assert.Equal(t, *tt.want.oldField, v.GetBool("account_defaults.events_enabled"), tt.description)
+		}
 	}
 }

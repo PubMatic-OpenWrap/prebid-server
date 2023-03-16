@@ -33,7 +33,6 @@ var mockAccountData = map[string]json.RawMessage{
 	"gdpr_deprecated_purpose8":                     json.RawMessage(`{"disabled":false,"gdpr":{"purpose8":{"enforce_purpose":"full"}}}`),
 	"gdpr_deprecated_purpose9":                     json.RawMessage(`{"disabled":false,"gdpr":{"purpose9":{"enforce_purpose":"full"}}}`),
 	"gdpr_deprecated_purpose10":                    json.RawMessage(`{"disabled":false,"gdpr":{"purpose10":{"enforce_purpose":"full"}}}`),
-	"events_enabled":                               json.RawMessage(`{"events_enabled": true}`),
 }
 
 type mockAccountFetcher struct {
@@ -563,12 +562,6 @@ func TestAccountUpgradeStatusGetAccount(t *testing.T) {
 			givenMetrics:        []string{"RecordAccountGDPRChannelEnabledWarning", "RecordAccountGDPRPurposeWarning"},
 			expectedMetricCount: 2,
 		},
-		{
-			name:                "OneDeprecatedConfigEventsEnabled",
-			givenAccountIDs:     []string{"events_enabled"},
-			givenMetrics:        []string{"RecordAccountEventsEnabledWarning"},
-			expectedMetricCount: 1,
-		},
 	}
 
 	for _, test := range testCases {
@@ -589,73 +582,36 @@ func TestAccountUpgradeStatusGetAccount(t *testing.T) {
 
 func TestDeprecateEventsEnabledField(t *testing.T) {
 
-	type want struct {
-		value              bool
-		hasDeprecatedField bool
-	}
+	boolTrue := true
 
 	testCases := []struct {
-		name        string
-		accountJson json.RawMessage
-		want        want
+		name    string
+		account *config.Account
+		want    bool
 	}{
 		{
-			name:        "events_enabled not exist",
-			accountJson: json.RawMessage(``),
-			want: want{
-				value:              false,
-				hasDeprecatedField: false,
+			name: "events.enabled is nil",
+			account: &config.Account{
+				EventsEnabled: true,
 			},
+			want: true,
 		},
 		{
-			name: "events_enabled has non-bool type",
-			accountJson: json.RawMessage(`
-			{
-				"events_enabled": "invalid"
-			}
-			`),
-			want: want{
-				value:              false,
-				hasDeprecatedField: false,
+			name: "events.enabled is non-nil",
+			account: &config.Account{
+				Events: config.Events{
+					Enabled: &boolTrue,
+				},
+				EventsEnabled: false,
 			},
-		},
-		{
-			name: "events.enabled not exist",
-			accountJson: json.RawMessage(`
-			{
-				"events_enabled": true				
-			}
-			`),
-			want: want{
-				value:              true,
-				hasDeprecatedField: true,
-			},
-		},
-		{
-			name: "events.enabled deprecates events_enabled",
-			accountJson: json.RawMessage(`
-			{
-				"events_enabled": true,
-				"events": {
-					"enabled": false
-				}
-			}
-			`),
-			want: want{
-				value:              false,
-				hasDeprecatedField: true,
-			},
+			want: true,
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-
-			account := &config.Account{}
-
-			hasDeprecatedField := deprecateEventsEnabledField(account, test.accountJson)
-			assert.Equal(t, test.want.value, account.Events.Enabled, test.name)
-			assert.Equal(t, test.want.hasDeprecatedField, hasDeprecatedField, test.name)
+			deprecateEventsEnabledField(test.account)
+			assert.Equal(t, test.want, *test.account.Events.Enabled, test.name)
 		})
 	}
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 // Mock Analytics Module
@@ -445,11 +444,6 @@ func TestShouldNotPassEventToAnalyticsReporterWhenAccountEventNotEnabled(t *test
 		Fail: false,
 	}
 
-	// mock Metric Engine
-	mockMetricsEngine := &metrics.MetricsEngineMock{}
-	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
-	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
-
 	// mock config
 	cfg := &config.Configuration{
 		AccountDefaults: config.Account{},
@@ -462,7 +456,7 @@ func TestShouldNotPassEventToAnalyticsReporterWhenAccountEventNotEnabled(t *test
 	req := httptest.NewRequest("GET", "/event?t=win&b=test&ts=1234&f=b&x=1&a=events_disabled", strings.NewReader(reqData))
 	recorder := httptest.NewRecorder()
 
-	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, mockMetricsEngine)
+	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, &metrics.MetricsEngineMock{})
 
 	// execute
 	e(recorder, req, nil)
@@ -488,11 +482,6 @@ func TestShouldPassEventToAnalyticsReporterWhenAccountEventEnabled(t *testing.T)
 		Fail: false,
 	}
 
-	// mock Metric Engine
-	mockMetricsEngine := &metrics.MetricsEngineMock{}
-	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
-	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
-
 	// mock config
 	cfg := &config.Configuration{
 		AccountDefaults: config.Account{},
@@ -505,7 +494,7 @@ func TestShouldPassEventToAnalyticsReporterWhenAccountEventEnabled(t *testing.T)
 	req := httptest.NewRequest("GET", "/event?t=win&b=test&ts=1234&f=b&x=1&a=events_enabled", strings.NewReader(reqData))
 	recorder := httptest.NewRecorder()
 
-	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, mockMetricsEngine)
+	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, &metrics.MetricsEngineMock{})
 
 	// execute
 	e(recorder, req, nil)
@@ -561,11 +550,6 @@ func TestShouldRespondWithPixelAndContentTypeWhenRequestFormatIsImage(t *testing
 		Fail: false,
 	}
 
-	// mock Metric Engine
-	mockMetricsEngine := &metrics.MetricsEngineMock{}
-	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
-	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
-
 	// mock config
 	cfg := &config.Configuration{
 		AccountDefaults: config.Account{},
@@ -578,7 +562,7 @@ func TestShouldRespondWithPixelAndContentTypeWhenRequestFormatIsImage(t *testing
 	req := httptest.NewRequest("GET", "/event?t=win&b=test&ts=1234&f=i&x=1&a=events_enabled", strings.NewReader(reqData))
 	recorder := httptest.NewRecorder()
 
-	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, mockMetricsEngine)
+	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, &metrics.MetricsEngineMock{})
 
 	// execute
 	e(recorder, req, nil)
@@ -607,11 +591,6 @@ func TestShouldRespondWithNoContentWhenRequestFormatIsNotDefined(t *testing.T) {
 		Fail: false,
 	}
 
-	// mock Metric Engine
-	mockMetricsEngine := &metrics.MetricsEngineMock{}
-	mockMetricsEngine.Mock.On("RecordAccountUpgradeStatus", mock.Anything, mock.Anything).Return()
-	mockMetricsEngine.Mock.On("RecordAccountEventsEnabledWarning", mock.Anything, mock.Anything).Return()
-
 	// mock config
 	cfg := &config.Configuration{
 		AccountDefaults: config.Account{},
@@ -624,7 +603,7 @@ func TestShouldRespondWithNoContentWhenRequestFormatIsNotDefined(t *testing.T) {
 	req := httptest.NewRequest("GET", "/event?t=imp&b=test&ts=1234&x=1&a=events_enabled", strings.NewReader(reqData))
 	recorder := httptest.NewRecorder()
 
-	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, mockMetricsEngine)
+	e := NewEventEndpoint(cfg, mockAccountsFetcher, mockAnalyticsModule, &metrics.MetricsEngineMock{})
 
 	// execute
 	e(recorder, req, nil)

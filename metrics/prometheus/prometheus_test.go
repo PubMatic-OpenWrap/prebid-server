@@ -2050,25 +2050,3 @@ func TestRecordAccountUpgradeStatusMetrics(t *testing.T) {
 
 	}
 }
-
-func TestRecordAccountEventsEnabledWarning(t *testing.T) {
-	testCases := []struct {
-		name                string
-		givenPubID          string
-		expectedMetricCount float64
-	}{
-		{
-			name:                "EventsEnabledMetricIncremented",
-			givenPubID:          "acct-id",
-			expectedMetricCount: 1,
-		},
-	}
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			m := createMetricsForTesting()
-			m.RecordAccountEventsEnabledWarning(test.givenPubID)
-
-			assertCounterValue(t, "", "account deprecation warning events enabled should be incremented", m.accountDeprecationWarningEventsEnabled, test.expectedMetricCount)
-		})
-	}
-}

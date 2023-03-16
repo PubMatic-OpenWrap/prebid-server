@@ -450,5 +450,4 @@ type MetricsEngine interface {
 	RecordAccountGDPRChannelEnabledWarning(account string)
 	RecordAccountCCPAChannelEnabledWarning(account string)
 	RecordAccountUpgradeStatus(account string)
-	RecordAccountEventsEnabledWarning(account string)
 }

@@ -87,20 +87,19 @@ type Metrics struct {
 	accountBidResponseSecureMarkupWarn    *prometheus.CounterVec
 
 	// Account Deprecation Metrics
-	accountDeprecationWarningsPurpose1     prometheus.Counter
-	accountDeprecationWarningsPurpose2     prometheus.Counter
-	accountDeprecationWarningsPurpose3     prometheus.Counter
-	accountDeprecationWarningsPurpose4     prometheus.Counter
-	accountDeprecationWarningsPurpose5     prometheus.Counter
-	accountDeprecationWarningsPurpose6     prometheus.Counter
-	accountDeprecationWarningsPurpose7     prometheus.Counter
-	accountDeprecationWarningsPurpose8     prometheus.Counter
-	accountDeprecationWarningsPurpose9     prometheus.Counter
-	accountDeprecationWarningsPurpose10    prometheus.Counter
-	channelEnabledGDPR                     prometheus.Counter
-	channelEnabledCCPA                     prometheus.Counter
-	accountDeprecationSummary              prometheus.Counter
-	accountDeprecationWarningEventsEnabled prometheus.Counter
+	accountDeprecationWarningsPurpose1  prometheus.Counter
+	accountDeprecationWarningsPurpose2  prometheus.Counter
+	accountDeprecationWarningsPurpose3  prometheus.Counter
+	accountDeprecationWarningsPurpose4  prometheus.Counter
+	accountDeprecationWarningsPurpose5  prometheus.Counter
+	accountDeprecationWarningsPurpose6  prometheus.Counter
+	accountDeprecationWarningsPurpose7  prometheus.Counter
+	accountDeprecationWarningsPurpose8  prometheus.Counter
+	accountDeprecationWarningsPurpose9  prometheus.Counter
+	accountDeprecationWarningsPurpose10 prometheus.Counter
+	channelEnabledGDPR                  prometheus.Counter
+	channelEnabledCCPA                  prometheus.Counter
+	accountDeprecationSummary           prometheus.Counter
 
 	// Module Metrics as a map where the key is the module name
 	moduleDuration        map[string]*prometheus.HistogramVec
@@ -540,10 +539,6 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"account_config_summary",
 		"Count of deprecated account config fields encountered across all accounts")
 
-	metrics.accountDeprecationWarningEventsEnabled = newCounterWithoutLabels(cfg, reg,
-		"account_config_events_enabled_warn",
-		"Count of requests referencing an account whose config specifies a depreceated events_enabled field")
-
 	createModulesMetrics(cfg, reg, &metrics, moduleStageNames, standardTimeBuckets)
 
 	metrics.Gatherer = reg
@@ -762,12 +757,6 @@ func (m *Metrics) RecordAccountCCPAChannelEnabledWarning(account string) {
 func (m *Metrics) RecordAccountUpgradeStatus(account string) {
 	if account != metrics.PublisherUnknown {
 		m.accountDeprecationSummary.Inc()
-	}
-}
-
-func (m *Metrics) RecordAccountEventsEnabledWarning(account string) {
-	if account != metrics.PublisherUnknown {
-		m.accountDeprecationWarningEventsEnabled.Inc()
 	}
 }
 
