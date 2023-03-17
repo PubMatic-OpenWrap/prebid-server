@@ -21,16 +21,24 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "string index cached replace",
+			name: "success",
 			args: args{
-				url: "http://tracker.com?macro1=##PBS-BIDID##&macro2=##PBS-APPBUNDLE##&macro3=##PBS-APPBUNDLE##&macro4=##PBS-PUBDOMAIN##&macro5=##PBS-PAGEURL##&macro6=##PBS-ACCOUNTID##&macro6=##PBS-LIMITADTRACKING##&macro7=##PBS-GDPRCONSENT##&macro8=##PBS-GDPRCONSENT##&macro9=##PBS-MACRO_CUSTOMMACRO1##&macro10=##PBS-MACRO_CUSTOMMACRO2##",
+				url: "http://tracker.com?macro1=##PBS-BIDID##&macro2=##PBS-APPBUNDLE##&macro3=##PBS-DOMAIN##&macro4=##PBS-PUBDOMAIN##&macro5=##PBS-PAGEURL##&macro6=##PBS-ACCOUNTID##&macro7=##PBS-LIMITADTRACKING##&macro8=##PBS-GDPRCONSENT##&macro9=##PBS-MACRO_##&macro10=##PBS-BIDDER##&macro11=##PBS-INTEGRATION##&macro12=##PBS-VASTCRTID##&macro13=##PBS-LINEID##&macro15=##PBS-AUCTIONID##&macro16=##PBS-CHANNEL##&macro17=##PBS-EVENTTYPE##&macro18=##PBS-VASTEVENT##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
-					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
+
+					macroProvider.SetContext(MacroContext{
+						Bid:            bid,
+						Imp:            nil,
+						Seat:           "test",
+						VastCreativeID: "123",
+						VastEventType:  config.FirstQuartile,
+						EventElement:   config.TrackingVASTElement,
+					})
 					return macroProvider
 				},
 			},
-			want:    "http://tracker.com?macro1=bidId123&macro2=testdomain&macro3=testdomain&macro4=publishertestdomain&macro5=pageurltest&macro6=testpublisherID&macro6=10&macro7=yes&macro8=yes&macro9=&macro10=&macro11=&macro12=&macro13=&macro14=firstQuartile&macro15=&macro16=&macro17=123&macro18=campaign_1",
+			want:    "http://tracker.com?macro1=bidId123&macro2=testbundle&macro3=testdomain&macro4=publishertestdomain&macro5=pageurltest&macro6=testpublisherID&macro7=10&macro8=yes&macro9=&macro10=test&macro11=&macro12=123&macro13=campaign_1&macro15=123&macro16=&macro17=firstQuartile&macro18=tracking",
 			wantErr: false,
 		},
 		{
@@ -39,7 +47,15 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "http://tracker.com",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
-					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
+
+					macroProvider.SetContext(MacroContext{
+						Bid:            bid,
+						Imp:            nil,
+						Seat:           "test",
+						VastCreativeID: "123",
+						VastEventType:  config.FirstQuartile,
+						EventElement:   config.TrackingVASTElement,
+					})
 					return macroProvider
 				},
 			},
@@ -52,7 +68,15 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "http://tracker.com?macro1=##PBS-test1##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
-					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
+
+					macroProvider.SetContext(MacroContext{
+						Bid:            bid,
+						Imp:            nil,
+						Seat:           "test",
+						VastCreativeID: "123",
+						VastEventType:  config.FirstQuartile,
+						EventElement:   config.TrackingVASTElement,
+					})
 					return macroProvider
 				},
 			},
@@ -65,7 +89,15 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 				url: "",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
-					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
+
+					macroProvider.SetContext(MacroContext{
+						Bid:            bid,
+						Imp:            nil,
+						Seat:           "test",
+						VastCreativeID: "123",
+						VastEventType:  config.FirstQuartile,
+						EventElement:   config.TrackingVASTElement,
+					})
 					return macroProvider
 				},
 			},

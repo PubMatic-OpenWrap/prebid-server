@@ -13,7 +13,7 @@ import (
 const (
 	BidIDKey          = "PBS-BIDID"
 	AppBundleKey      = "PBS-APPBUNDLE"
-	DomainKey         = "PBS-APPBUNDLE"
+	DomainKey         = "PBS-DOMAIN"
 	PubDomainkey      = "PBS-PUBDOMAIN"
 	PageURLKey        = "PBS-PAGEURL"
 	AccountIDKey      = "PBS-ACCOUNTID"
@@ -35,13 +35,22 @@ var (
 	bidLevelKeys = []string{BidIDKey, BidderKey, VastEventKey, EventTypeKey, LineIDKey, VastCRTIDKey}
 )
 
+type MacroContext struct {
+	Bid            *openrtb2.Bid
+	Imp            *openrtb2.Imp
+	Seat           string
+	VastCreativeID string
+	VastEventType  config.TrackingEventType
+	EventElement   config.VASTEventElement
+}
+
 type Provider interface {
 	// GetMacro returns the macro value for the given macro key
 	GetMacro(key string) string
 	// GetAllMacros return all the macros
 	GetAllMacros(keys []string) map[string]string
 	// SetContext set the bid and imp for the current provider
-	SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat, vastCreativeID string, vastEventType config.TrackingEventType, eventElement config.VASTEventElement)
+	SetContext(ctx MacroContext)
 }
 
 type macroProvider struct {
@@ -126,14 +135,14 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 	}
 	return macroValues
 }
-func (b *macroProvider) SetContext(bid *openrtb2.Bid, imp *openrtb2.Imp, seat, vastCreativeID string, vastEventType config.TrackingEventType, eventElement config.VASTEventElement) {
+func (b *macroProvider) SetContext(ctx MacroContext) {
 	b.resetcontext()
-	b.macros[BidIDKey] = bid.ID
-	b.macros[BidderKey] = seat
-	b.macros[VastCRTIDKey] = vastCreativeID
-	b.macros[LineIDKey] = bid.CID
-	b.macros[VastEventKey] = string(eventElement)
-	b.macros[EventTypeKey] = string(vastEventType)
+	b.macros[BidIDKey] = ctx.Bid.ID
+	b.macros[BidderKey] = ctx.Seat
+	b.macros[VastCRTIDKey] = ctx.VastCreativeID
+	b.macros[LineIDKey] = ctx.Bid.CID
+	b.macros[VastEventKey] = string(ctx.EventElement)
+	b.macros[EventTypeKey] = string(ctx.VastEventType)
 }
 func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {
@@ -153,3 +162,5 @@ func truncate(text string, width int) string {
 	trunc := r[:width]
 	return string(trunc)
 }
+
+// macro1=##PBS-BIDID##&macro2=##PBS-APPBUNDLE##&macro3=##PBS-DOMAIN##&macro4=##PBS-PUBDOMAIN##&macro5=##PBS-PAGEURL##&macro6=##PBS-ACCOUNTID##&macro7=##PBS-LIMITADTRACKING##&macro8=##PBS-GDPRCONSENT##&macro9=##PBS-MACRO_##&macro10=##PBS-BIDDER##&macro11=##PBS-INTEGRATION##&macro12=##PBS-VASTCRTID##&macro13=##PBS-LINEID##&macro14=##PBS-TIMESTAMP##&macro15=##PBS-AUCTIONID##&macro16=##PBS-CHANNEL##&macro17=##PBS-EVENTTYPE##&macro18=##PBS-VASTEVENT##

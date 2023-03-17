@@ -24,7 +24,7 @@ var req *openrtb_ext.RequestWrapper = &openrtb_ext.RequestWrapper{
 		},
 		App: &openrtb2.App{
 			Domain: "testdomain",
-			Bundle: "testBundle",
+			Bundle: "testbundle",
 			Publisher: &openrtb2.Publisher{
 				Domain: "publishertestdomain",
 				ID:     "testpublisherID",
@@ -45,7 +45,15 @@ func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 	processor := NewProcessor()
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
-		macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
+
+		macroProvider.SetContext(MacroContext{
+			Bid:            bid,
+			Imp:            nil,
+			Seat:           "test",
+			VastCreativeID: "123",
+			VastEventType:  config.FirstQuartile,
+			EventElement:   config.TrackingVASTElement,
+		})
 		_, err := processor.Replace(testURL, macroProvider)
 		if err != nil {
 			fmt.Println(err)
