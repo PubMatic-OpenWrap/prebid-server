@@ -81,7 +81,6 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		for _, purposeName := range deprecatedPurposeFields {
 			me.RecordAccountGDPRPurposeWarning(accountID, purposeName)
 		}
-
 		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled {
 			me.RecordAccountUpgradeStatus(accountID)
 		}

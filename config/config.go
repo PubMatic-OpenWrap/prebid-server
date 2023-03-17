@@ -145,7 +145,7 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	}
 
 	if len(cfg.AccountDefaults.Events.VASTEvents) > 0 {
-		errs = append(errs, fmt.Errorf("cfg.AccountDefaults.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML in under development"))
+		errs = append(errs, fmt.Errorf("cfg.AccountDefaults.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML is under development"))
 	}
 
 	errs = cfg.Experiment.validate(errs)

@@ -73,7 +73,7 @@ func (e Events) IsEnabled() bool {
 
 // validate verifies the events object  and returns error if at least one is invalid.
 func (e Events) validate(errs []error) []error {
-	if e.Enabled != nil && *e.Enabled {
+	if e.IsEnabled() {
 		if !isValidURL(e.DefaultURL) {
 			return append(errs, errors.New("Invalid events.default_url"))
 		}

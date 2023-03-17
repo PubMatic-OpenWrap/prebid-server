@@ -254,7 +254,6 @@ func TestValidateVASTEvent(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-
 	testCases := []struct {
 		description string
 		events      Events
