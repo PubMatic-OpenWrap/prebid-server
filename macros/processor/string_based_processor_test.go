@@ -23,7 +23,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 		{
 			name: "string index cached replace",
 			args: args{
-				url: "http://tracker.com?macro1=##PBS_BIDID##&macro2=##PBS_APPBUNDLE##&macro3=##PBS_APPBUNDLE##&macro4=##PBS_PUBDOMAIN##&macro5=##PBS_PAGEURL##&macro6=##PBS_ACCOUNTID##&macro6=##PBS_LIMITADTRACKING##&macro7=##PBS_GDPRCONSENT##&macro8=##PBS_GDPRCONSENT##&macro9=##PBS_MACRO_CUSTOMMACRO1##&macro10=##PBS_MACRO_CUSTOMMACRO2##&macro11=##PBS_AuctionIDKey##&macro12=##PBS_AUCTIONID##&macro13=##PBS_CHANNEL##&macro14=##PBS-EVENTTYPE##&macro15=###PBS_VASTEVENT##&macro16=##PBS_INTEGRATION##&macro17=##PBS-VASTCRTID##&macro18=##PBS-LINEID##",
+				url: "http://tracker.com?macro1=##PBS-BIDID##&macro2=##PBS-APPBUNDLE##&macro3=##PBS-APPBUNDLE##&macro4=##PBS-PUBDOMAIN##&macro5=##PBS-PAGEURL##&macro6=##PBS-ACCOUNTID##&macro6=##PBS-LIMITADTRACKING##&macro7=##PBS-GDPRCONSENT##&macro8=##PBS-GDPRCONSENT##&macro9=##PBS-MACRO_CUSTOMMACRO1##&macro10=##PBS-MACRO_CUSTOMMACRO2##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(req)
 					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)
@@ -49,7 +49,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 		{
 			name: "macro not found",
 			args: args{
-				url: "http://tracker.com?macro1=##PBS_test1##",
+				url: "http://tracker.com?macro1=##PBS-test1##",
 				getMacroProvider: func() Provider {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
 					macroProvider.SetContext(bid, nil, "test", "123", config.FirstQuartile, config.TrackingVASTElement)

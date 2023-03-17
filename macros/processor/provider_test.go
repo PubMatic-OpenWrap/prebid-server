@@ -2,9 +2,7 @@ package processor
 
 import (
 	"reflect"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/prebid/prebid-server/config"
 )
@@ -22,9 +20,8 @@ func Test_macroProvider_GetAllMacros(t *testing.T) {
 		{
 			name: "get all macros success",
 			args: args{keys: []string{BidIDKey, AccountIDKey, AppBundleKey, PubDomainkey,
-				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey, VastCRTIDKey, LineIDKey, TimestampKey, AuctionIDKey, ChannelKey, EventTypeKey, VastEventKey}},
-			want: map[string]string{"PBS_ACCOUNTID": "testpublisherID", "PBS_APPBUNDLE": "testdomain", "PBS_BIDID": "bidId123", "PBS_GDPRCONSENT": "yes", "PBS_LIMITADTRACKING": "10", "PBS_PAGEURL": "pageurltest", "PBS_PUBDOMAIN": "publishertestdomain",
-				"PBS-VASTCRTID": "creative_1", "PBS-LINEID": "campaign_1", "PBS-TIMESTAMP": strconv.Itoa(int(time.Now().Unix())), "PBS-AUCTIONID": "123", "PBS-CHANNEL": "", "PBS-EVENTTYPE": "firstQuartile", "PBS-VASTEVENT": "tracking"},
+				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey}},
+			want: map[string]string{"PBS-ACCOUNTID": "testpublisherID", "PBS-APPBUNDLE": "testdomain", "PBS-BIDID": "bidId123", "PBS-GDPRCONSENT": "yes", "PBS-LIMITADTRACKING": "10", "PBS-PAGEURL": "pageurltest", "PBS-PUBDOMAIN": "publishertestdomain"},
 		},
 	}
 	for _, tt := range tests {
@@ -51,7 +48,7 @@ func Test_macroProvider_GetMacro(t *testing.T) {
 			name: "get all macros success",
 			args: args{keys: []string{BidIDKey, AccountIDKey, AppBundleKey, PubDomainkey,
 				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey}},
-			want: map[string]string{"PBS_ACCOUNTID": "testpublisherID", "PBS_APPBUNDLE": "testdomain", "PBS_BIDID": "bidId123", "PBS_GDPRCONSENT": "yes", "PBS_LIMITADTRACKING": "10", "PBS_PAGEURL": "pageurltest", "PBS_PUBDOMAIN": "publishertestdomain"},
+			want: map[string]string{"PBS-ACCOUNTID": "testpublisherID", "PBS-APPBUNDLE": "testdomain", "PBS-BIDID": "bidId123", "PBS-GDPRCONSENT": "yes", "PBS-LIMITADTRACKING": "10", "PBS-PAGEURL": "pageurltest", "PBS-PUBDOMAIN": "publishertestdomain"},
 		},
 	}
 	for _, tt := range tests {
