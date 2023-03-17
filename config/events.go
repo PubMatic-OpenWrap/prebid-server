@@ -66,6 +66,11 @@ type Events struct {
 	VASTEvents []VASTEvent `mapstructure:"vast_events" json:"vast_events,omitempty"`
 }
 
+// isEnabled function returns the value of events.enabled field
+func (e Events) IsEnabled() bool {
+	return e.Enabled != nil && *e.Enabled
+}
+
 // validate verifies the events object  and returns error if at least one is invalid.
 func (e Events) validate(errs []error) []error {
 	if e.Enabled != nil && *e.Enabled {

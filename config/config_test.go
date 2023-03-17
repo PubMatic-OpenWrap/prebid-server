@@ -12,6 +12,7 @@ import (
 
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -3190,9 +3191,6 @@ func TestTCF2FeatureOneVendorException(t *testing.T) {
 
 func TestMigrateConfigBoolFlag(t *testing.T) {
 
-	boolFalse := false
-	boolTrue := true
-
 	type want struct {
 		newField *bool
 		oldField *bool
@@ -3204,23 +3202,7 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 		want        want
 	}{
 		{
-			description: "only newField is set",
-			config: []byte(`
-			{
-				"account_defaults": {
-					"events": {
-						"enabled": true
-					}
-				}
-			}
-		    `),
-			want: want{
-				newField: &boolTrue,
-				oldField: &boolTrue,
-			},
-		},
-		{
-			description: "oldField and newField both are set",
+			description: "oldField and newField both are set, override oldField with newField value",
 			config: []byte(`
 				{
 					"account_defaults": {
@@ -3232,12 +3214,12 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 				}
 		  	`),
 			want: want{
-				newField: &boolTrue,
-				oldField: &boolTrue,
+				newField: ptrutil.ToPtr(true),
+				oldField: ptrutil.ToPtr(true),
 			},
 		},
 		{
-			description: "only oldField is set",
+			description: "newField is not set, dont change oldField",
 			config: []byte(`
 				{
 					"account_defaults": {
@@ -3247,11 +3229,11 @@ func TestMigrateConfigBoolFlag(t *testing.T) {
 		    `),
 			want: want{
 				newField: nil,
-				oldField: &boolFalse,
+				oldField: ptrutil.ToPtr(false),
 			},
 		},
 		{
-			description: "both newField and oldField are not set",
+			description: "both newField and oldField are not set, dont change oldField",
 			config:      []byte(``),
 			want: want{
 				newField: nil,

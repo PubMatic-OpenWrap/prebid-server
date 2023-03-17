@@ -108,7 +108,7 @@ func (e *eventEndpoint) Handle(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	// account does not support events
-	if account.Events.Enabled == nil || !(*account.Events.Enabled) {
+	if !account.Events.IsEnabled() {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(fmt.Sprintf("Account '%s' doesn't support events", eventRequest.AccountID)))
 		return

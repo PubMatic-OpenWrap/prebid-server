@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -582,36 +583,37 @@ func TestAccountUpgradeStatusGetAccount(t *testing.T) {
 
 func TestDeprecateEventsEnabledField(t *testing.T) {
 
-	boolTrue := true
-
 	testCases := []struct {
 		name    string
 		account *config.Account
-		want    bool
+		want    *bool
 	}{
 		{
 			name: "events.enabled is nil",
 			account: &config.Account{
 				EventsEnabled: true,
+				Events: config.Events{
+					Enabled: nil,
+				},
 			},
-			want: true,
+			want: ptrutil.ToPtr(true),
 		},
 		{
 			name: "events.enabled is non-nil",
 			account: &config.Account{
 				Events: config.Events{
-					Enabled: &boolTrue,
+					Enabled: ptrutil.ToPtr(true),
 				},
 				EventsEnabled: false,
 			},
-			want: true,
+			want: ptrutil.ToPtr(true),
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			deprecateEventsEnabledField(test.account)
-			assert.Equal(t, test.want, *test.account.Events.Enabled, test.name)
+			assert.Equal(t, test.want, test.account.Events.Enabled, test.name)
 		})
 	}
 }

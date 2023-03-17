@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -81,9 +82,6 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 			me.RecordAccountGDPRPurposeWarning(accountID, purposeName)
 		}
 
-		// set the value of events.enabled field based on deprecated events_enabled field and ensure backward compatibility
-		deprecateEventsEnabledField(account)
-
 		if len(deprecatedPurposeFields) > 0 || usingGDPRChannelEnabled || usingCCPAChannelEnabled {
 			me.RecordAccountUpgradeStatus(accountID)
 		}
@@ -106,6 +104,14 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 		})
 		return nil, errs
 	}
+
+	// set the value of events.enabled field based on deprecated events_enabled field and ensure backward compatibility
+	deprecateEventsEnabledField(account)
+
+	if len(account.Events.VASTEvents) > 0 {
+		glog.Warning("Account.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML is under development.")
+	}
+
 	return account, nil
 }
 
@@ -262,7 +268,7 @@ func useCCPAChannelEnabled(account *config.Account) bool {
 // If only deprecated "events_enabled" field is set then it sets the same value to "events.enabled" field.
 func deprecateEventsEnabledField(account *config.Account) {
 
-	if account.Events.Enabled == nil {
+	if account != nil && account.Events.Enabled == nil {
 		account.Events.Enabled = &account.EventsEnabled
 	}
 }

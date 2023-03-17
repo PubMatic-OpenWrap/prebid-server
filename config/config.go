@@ -144,6 +144,10 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 		glog.Warning(`cfg.PriceFloors.Enabled will currently not do anything as price floors feature is still under development.`)
 	}
 
+	if len(cfg.AccountDefaults.Events.VASTEvents) > 0 {
+		errs = append(errs, fmt.Errorf("cfg.AccountDefaults.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML in under development"))
+	}
+
 	errs = cfg.Experiment.validate(errs)
 	errs = cfg.BidderInfos.validate(errs)
 	return errs
