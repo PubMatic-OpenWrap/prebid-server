@@ -108,7 +108,7 @@ func GetAccount(ctx context.Context, cfg *config.Configuration, fetcher stored_r
 	deprecateEventsEnabledField(account)
 
 	if len(account.Events.VASTEvents) > 0 {
-		glog.Warning("Account.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML is under development.")
+		glog.Warningf("Account.%s.Events.VASTEvents must be empty since feature of injecting tracker URLs within the VAST XML is under development.", accountID)
 	}
 
 	return account, nil
