@@ -1175,7 +1175,7 @@ func (deps *ctvEndpointDeps) recordRejectedAdPodBids(pubID string) {
 	}
 }
 
-// getBidResponseExt returns the bidresponse
+// getBidResponseExt prepare and return the bidresponse extension
 func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data json.RawMessage) {
 
 	var err error
