@@ -1,6 +1,8 @@
 package prebidServer
 
 import (
+	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/prebid-server/version"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -92,6 +95,14 @@ func SetUIDS(w http.ResponseWriter, r *http.Request) {
 
 func CookieSync(w http.ResponseWriter, r *http.Request) {
 	router.CookieSync(w, r)
+}
+
+func GetPrebidVersion(w http.ResponseWriter, r *http.Request) {
+
+	ver := fmt.Sprintf("Prebid server version=[%s]", version.Ver)
+	ver = fmt.Sprintf("%s \nPrebid server rev= [%s]", ver, version.Rev)
+
+	io.WriteString(w, ver)
 }
 
 func SyncerMap() map[string]usersync.Syncer {
