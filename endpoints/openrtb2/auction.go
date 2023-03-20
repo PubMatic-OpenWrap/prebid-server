@@ -86,6 +86,10 @@ func NewEndpoint(
 	storedRespFetcher stored_requests.Fetcher,
 	hookExecutionPlanBuilder hooks.ExecutionPlanBuilder,
 ) (httprouter.Handle, error) {
+
+	fmt.Println("NewEndpoint version.Ver=", version.Ver)
+	fmt.Println("NewEndpoint version.Rev=", version.Rev)
+
 	if ex == nil || validator == nil || requestsById == nil || accounts == nil || cfg == nil || metricsEngine == nil {
 		return nil, errors.New("NewEndpoint requires non-nil arguments.")
 	}

@@ -39,6 +39,7 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/iputil"
 	"github.com/prebid/prebid-server/util/uuidutil"
+	"github.com/prebid/prebid-server/version"
 )
 
 // CTV Specific Endpoint
@@ -70,6 +71,9 @@ func NewCTVEndpoint(
 	disabledBidders map[string]string,
 	defReqJSON []byte,
 	bidderMap map[string]openrtb_ext.BidderName) (httprouter.Handle, error) {
+
+	fmt.Println("NewCTVEndpoint version.Ver=", version.Ver)
+	fmt.Println("NewCTVEndpoint version.Rev=", version.Rev)
 
 	if ex == nil || validator == nil || requestsByID == nil || accounts == nil || cfg == nil || met == nil {
 		return nil, errors.New("NewCTVEndpoint requires non-nil arguments")
