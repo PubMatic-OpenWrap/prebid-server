@@ -19,7 +19,7 @@ const (
 	AccountIDKey      = "PBS-ACCOUNTID"
 	LmtTrackingKey    = "PBS-LIMITADTRACKING"
 	ConsentKey        = "PBS-GDPRCONSENT"
-	CustomMacroPrefix = "PBS-MACRO_"
+	CustomMacroPrefix = "PBS-MACRO-"
 	BidderKey         = "PBS-BIDDER"
 	IntegrationKey    = "PBS-INTEGRATION"
 	VastCRTIDKey      = "PBS-VASTCRTID"
@@ -162,5 +162,3 @@ func truncate(text string, width int) string {
 	trunc := r[:width]
 	return string(trunc)
 }
-
-// macro1=##PBS-BIDID##&macro2=##PBS-APPBUNDLE##&macro3=##PBS-DOMAIN##&macro4=##PBS-PUBDOMAIN##&macro5=##PBS-PAGEURL##&macro6=##PBS-ACCOUNTID##&macro7=##PBS-LIMITADTRACKING##&macro8=##PBS-GDPRCONSENT##&macro9=##PBS-MACRO_##&macro10=##PBS-BIDDER##&macro11=##PBS-INTEGRATION##&macro12=##PBS-VASTCRTID##&macro13=##PBS-LINEID##&macro14=##PBS-TIMESTAMP##&macro15=##PBS-AUCTIONID##&macro16=##PBS-CHANNEL##&macro17=##PBS-EVENTTYPE##&macro18=##PBS-VASTEVENT##
