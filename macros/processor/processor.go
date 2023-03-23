@@ -10,9 +10,10 @@ var processor Processor
 
 // NewProcessor will return instance of macro processor
 func NewProcessor() Processor {
-	return &stringBasedProcessor{
+	processor = &stringBasedProcessor{
 		templates: make(map[string]urlMetaTemplate),
 	}
+	return processor
 }
 
 func GetMacroProcessor() Processor {
