@@ -289,13 +289,13 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	}
 
 	//Maintaining BidRequest Impression Map
-	impMap := map[string]interface{}
+	impMap := map[string]*openrtb_ext.ExtImpPrebidFloors{}
 	for _, v := range r.BidRequestWrapper.GetImp() {
-		impExt := v.GetImpExt()
-		record := map[string]ExtImpPrebidFloors{
-			FloorRule:     impExt.Prebid.Floors.FloorRule,
-		FloorRuleValue: impExt.Prebid.Floors.FloorRuleValue,
-		FloorValue:     v.BidFloor,
+		impExt, _ := v.GetImpExt()
+		record := &openrtb_ext.ExtImpPrebidFloors{
+			FloorRule:      impExt.Prebid.Floors.FloorRule,
+			FloorRuleValue: impExt.Prebid.Floors.FloorRuleValue,
+			FloorValue:     v.BidFloor,
 			// "fv": v.BidFloor
 			// "fr": impExt.Prebid.Floors.FloorRule
 			// "frv":  impExt.Prebid.Floors.FloorRuleValue
@@ -303,7 +303,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		impMap[v.ID] = record
 	}
 
-	r.loggableObject.Bids = impMap
+	r.LoggableObject.Bids = impMap
 
 	if responseDebugAllow {
 		//save incoming request with stored requests (if applicable) to return in debug logs
