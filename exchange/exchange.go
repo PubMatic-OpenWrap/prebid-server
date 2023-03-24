@@ -287,6 +287,24 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	if e.floor.Enabled {
 		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
 	}
+
+	//Maintaining BidRequest Impression Map
+	impMap := map[string]interface{}
+	for _, v := range r.BidRequestWrapper.GetImp() {
+		impExt := v.GetImpExt()
+		record := map[string]ExtImpPrebidFloors{
+			FloorRule:     impExt.Prebid.Floors.FloorRule,
+		FloorRuleValue: impExt.Prebid.Floors.FloorRuleValue,
+		FloorValue:     v.BidFloor,
+			// "fv": v.BidFloor
+			// "fr": impExt.Prebid.Floors.FloorRule
+			// "frv":  impExt.Prebid.Floors.FloorRuleValue
+		}
+		impMap[v.ID] = record
+	}
+
+	r.loggableObject.Bids = impMap
+
 	if responseDebugAllow {
 		//save incoming request with stored requests (if applicable) to return in debug logs
 		resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)

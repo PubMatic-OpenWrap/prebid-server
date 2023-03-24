@@ -35,6 +35,7 @@ type LoggableAuctionObject struct {
 	Request      *openrtb2.BidRequest
 	Response     *openrtb2.BidResponse
 	RejectedBids []RejectedBid
+	Bids         map[string]*openrtb_ext.ExtImpPrebidFloors
 }
 
 // Loggable object of a transaction at /openrtb2/auction endpoint
