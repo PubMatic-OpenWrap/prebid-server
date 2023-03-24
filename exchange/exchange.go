@@ -283,27 +283,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	// Get currency rates conversions for the auction
 	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
-
+	
 	if e.floor.Enabled {
 		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
 	}
 
-	//Maintaining BidRequest Impression Map
-	impMap := map[string]*openrtb_ext.ExtImpPrebidFloors{}
-	for _, v := range r.BidRequestWrapper.GetImp() {
-		impExt, _ := v.GetImpExt()
-		record := &openrtb_ext.ExtImpPrebidFloors{
-			FloorRule:      impExt.Prebid.Floors.FloorRule,
-			FloorRuleValue: impExt.Prebid.Floors.FloorRuleValue,
-			FloorValue:     v.BidFloor,
-			// "fv": v.BidFloor
-			// "fr": impExt.Prebid.Floors.FloorRule
-			// "frv":  impExt.Prebid.Floors.FloorRuleValue
-		}
-		impMap[v.ID] = record
-	}
-
-	r.LoggableObject.Bids = impMap
 
 	if responseDebugAllow {
 		//save incoming request with stored requests (if applicable) to return in debug logs

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/hooks"
 
@@ -28,24 +29,26 @@ import (
 )
 
 var (
-	g_syncers           map[string]usersync.Syncer
-	g_cfg               *config.Configuration
-	g_ex                *exchange.Exchange
-	g_accounts          *stored_requests.AccountFetcher
-	g_paramsValidator   *openrtb_ext.BidderParamValidator
-	g_storedReqFetcher  *stored_requests.Fetcher
-	g_storedRespFetcher *stored_requests.Fetcher
-	g_metrics           metrics.MetricsEngine
-	g_analytics         *analytics.PBSAnalyticsModule
-	g_disabledBidders   map[string]string
-	g_videoFetcher      *stored_requests.Fetcher
-	g_activeBidders     map[string]openrtb_ext.BidderName
-	g_defReqJSON        []byte
-	g_cacheClient       *pbc.Client
-	g_transport         *http.Transport
-	g_gdprPermsBuilder  gdpr.PermissionsBuilder
-	g_tcf2CfgBuilder    gdpr.TCF2ConfigBuilder
-	g_planBuilder       *hooks.ExecutionPlanBuilder
+	g_syncers             map[string]usersync.Syncer
+	g_cfg                 *config.Configuration
+	g_ex                  *exchange.Exchange
+	g_accounts            *stored_requests.AccountFetcher
+	g_paramsValidator     *openrtb_ext.BidderParamValidator
+	g_storedReqFetcher    *stored_requests.Fetcher
+	g_storedRespFetcher   *stored_requests.Fetcher
+	g_metrics             metrics.MetricsEngine
+	g_analytics           *analytics.PBSAnalyticsModule
+	g_disabledBidders     map[string]string
+	g_videoFetcher        *stored_requests.Fetcher
+	g_activeBidders       map[string]openrtb_ext.BidderName
+	g_defReqJSON          []byte
+	g_cacheClient         *pbc.Client
+	g_transport           *http.Transport
+	g_gdprPermsBuilder    gdpr.PermissionsBuilder
+	g_tcf2CfgBuilder      gdpr.TCF2ConfigBuilder
+	g_planBuilder         *hooks.ExecutionPlanBuilder
+	g_rateConvertor       *currency.RateConverter
+	g_currencyConversions currency.Conversions
 )
 
 func getTransport(cfg *config.Configuration, certPool *x509.CertPool) *http.Transport {
@@ -111,6 +114,18 @@ func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 	}
 	ortbAuctionEndpoint(w, r, nil)
 	return nil
+}
+
+// GetPBSCurrencyRate Openwrap wrapper method for currency conversion
+func GetPBSCurrencyConversion(from, to string, value float64) (float64, error) {
+	if g_currencyConversions == nil {
+		g_currencyConversions = g_rateConvertor.Rates()
+	}
+	if rate, err := g_currencyConversions.GetRate(from, to); err == nil {
+		return value * rate, nil
+	} else {
+		return 0, err
+	}
 }
 
 // VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint

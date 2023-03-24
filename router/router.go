@@ -309,7 +309,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_gdprPermsBuilder = gdprPermsBuilder
 	g_tcf2CfgBuilder = tcf2CfgBuilder
 	g_planBuilder = &planBuilder
-
+	g_rateConvertor = rateConvertor
 	return r, nil
 }
 
