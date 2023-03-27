@@ -14,7 +14,7 @@ func RequestHasFloors(bidRequest *openrtb2.BidRequest) bool {
 	return false
 }
 
-func ShouldEnforce(bidRequest *openrtb2.BidRequest, floorExt *openrtb_ext.PriceFloorRules, configEnforceRate int, f func(int) int) (bool, bool) {
+func ShouldEnforce(floorExt *openrtb_ext.PriceFloorRules, configEnforceRate int, f func(int) int) (bool, bool) {
 
 	updateReqExt := false
 	if floorExt != nil && floorExt.Skipped != nil && *floorExt.Skipped {
