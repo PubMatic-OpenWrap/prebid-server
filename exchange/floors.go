@@ -94,6 +94,7 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 						reqImpCur = "USD"
 					}
 				}
+				updateBidExtWithFloors(reqImp, bid, reqImpCur)
 				rate, err := getCurrencyConversionRate(seatBid.Currency, reqImpCur, conversions)
 				if err == nil {
 					bidPrice := rate * bid.Bid.Price
@@ -109,7 +110,6 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 						rejectedBids = append(rejectedBids, rejectedBid)
 						errs = append(errs, fmt.Errorf("bid rejected [bid ID: %s] reason: bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bid.Bid.ID, bidPrice, reqImpCur, reqImp.BidFloor, reqImpCur, bid.Bid.ImpID, bidderName))
 					} else {
-						updateBidExtWithFloors(reqImp, bid, reqImpCur)
 						eligibleBids = append(eligibleBids, bid)
 					}
 				} else {

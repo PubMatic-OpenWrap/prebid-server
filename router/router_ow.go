@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/hooks"
 
 	analyticCfg "github.com/prebid/prebid-server/analytics/config"
