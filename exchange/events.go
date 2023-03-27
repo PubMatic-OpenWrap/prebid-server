@@ -2,9 +2,9 @@ package exchange
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/macros/processor"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
@@ -143,9 +143,9 @@ func (ev *eventTracking) printEventTracker(pbsBid *entities.PbsOrtbBid, bidderNa
 			})
 			replacedURL, err := processor.GetMacroProcessor().Replace(ev.events.DefaultURL, ev.macroProvider)
 			if err != nil {
-				fmt.Printf("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
+				glog.Infof("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
 			}
-			fmt.Printf("Replaced tracker URL: %s", replacedURL)
+			glog.Infof("Replaced tracker URL: %s", replacedURL)
 		}
 
 		for _, trackerURL := range event.URLs {
@@ -158,9 +158,9 @@ func (ev *eventTracking) printEventTracker(pbsBid *entities.PbsOrtbBid, bidderNa
 			})
 			replacedURL, err := processor.GetMacroProcessor().Replace(trackerURL, ev.macroProvider)
 			if err != nil {
-				fmt.Printf("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
+				glog.Infof("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
 			}
-			fmt.Printf("Replaced tracker URL: %s", replacedURL)
+			glog.Infof("Replaced tracker URL: %s", replacedURL)
 		}
 	}
 }
