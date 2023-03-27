@@ -2233,10 +2233,12 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 	auctionRequest := AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: &spec.IncomingRequest.OrtbRequest},
 		Account: config.Account{
-			ID:            "testaccount",
-			EventsEnabled: spec.EventsEnabled,
-			DebugAllow:    true,
-			Validations:   spec.AccountConfigBidValidation,
+			ID:          "testaccount",
+			DebugAllow:  true,
+			Validations: spec.AccountConfigBidValidation,
+			Events: config.Events{
+				Enabled: &spec.EventsEnabled,
+			},
 		},
 		UserSyncs:     mockIdFetcher(spec.IncomingRequest.Usersyncs),
 		ImpExtInfoMap: impExtInfoMap,
