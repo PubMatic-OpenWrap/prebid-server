@@ -283,11 +283,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	// Get currency rates conversions for the auction
 	conversions := e.getAuctionCurrencyRates(requestExt.Prebid.CurrencyConversions)
-	
+
 	if e.floor.Enabled {
 		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
 	}
-
 
 	if responseDebugAllow {
 		//save incoming request with stored requests (if applicable) to return in debug logs
@@ -1043,26 +1042,14 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 			if len(bidsToRemove) == len(seatBid.Bids) {
 				//if all bids are invalid - remove entire seat bid
 				for _, bid := range seatBid.Bids {
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bid.Bid,
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
+					addRejectedBid(r.LoggableObject, bid, seatBid.Seat, openrtb3.LossBidCategoryMapping)
 				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.Bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bids[remInd].Bid,
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
+					addRejectedBid(r.LoggableObject, bids[remInd], seatBid.Seat, openrtb3.LossBidCategoryMapping)
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.Bids = bids

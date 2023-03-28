@@ -121,11 +121,11 @@ func GetPBSCurrencyConversion(from, to string, value float64) (float64, error) {
 	if g_currencyConversions == nil {
 		g_currencyConversions = g_rateConvertor.Rates()
 	}
-	if rate, err := g_currencyConversions.GetRate(from, to); err == nil {
+	rate, err := g_currencyConversions.GetRate(from, to)
+	if err == nil {
 		return value * rate, nil
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 // VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
