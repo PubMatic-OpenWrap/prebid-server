@@ -1,7 +1,7 @@
 package analytics
 
 import (
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/openrtb/v17/openrtb3"
 )
 
@@ -9,6 +9,6 @@ import (
 // rejection reason and seat information
 type RejectedBid struct {
 	RejectionReason openrtb3.NonBidStatusCode
-	Bid             *openrtb2.Bid
+	Bid             *entities.PbsOrtbBid
 	Seat            string
 }

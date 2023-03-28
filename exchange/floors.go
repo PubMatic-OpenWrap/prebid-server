@@ -6,7 +6,6 @@ import (
 	"math/rand"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -18,9 +17,9 @@ import (
 
 // RejectedBid defines the contract for bid rejection errors due to floors enforcement
 type RejectedBid struct {
-	Bid             *openrtb2.Bid `json:"bid,omitempty"`
-	RejectionReason int           `json:"rejectreason,omitempty"`
-	BidderName      string        `json:"biddername,omitempty"`
+	Bid             *entities.PbsOrtbBid `json:"bid,omitempty"`
+	RejectionReason int                  `json:"rejectreason,omitempty"`
+	BidderName      string               `json:"biddername,omitempty"`
 }
 
 // Check for Floors enforcement for deals,
