@@ -105,6 +105,7 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 			}
 
 			bidPrice := rate * bid.Bid.Price
+			updateBidExtWithFloors(reqImp, bid, reqImpCur)
 			if reqImp.BidFloor > bidPrice {
 				rejectedBid := analytics.RejectedBid{
 					Bid:  bid.Bid,
@@ -118,7 +119,6 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 				errs = append(errs, fmt.Errorf("bid rejected [bid ID: %s] reason: bid price value %.4f %s is less than bidFloor value %.4f %s for impression id %s bidder %s", bid.Bid.ID, bidPrice, reqImpCur, reqImp.BidFloor, reqImpCur, bid.Bid.ImpID, bidderName))
 				continue
 			}
-			updateBidExtWithFloors(reqImp, bid, reqImpCur)
 			eligibleBids = append(eligibleBids, bid)
 		}
 		seatBids[bidderName].Bids = eligibleBids
