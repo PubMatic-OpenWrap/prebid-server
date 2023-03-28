@@ -1132,7 +1132,7 @@ func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.Lo
 
 	for index, seatbid := range resp.SeatBid {
 		winningBid := make([]openrtb2.Bid, 0)
-		for bidIndex, bid := range seatbid.Bid {
+		for _, bid := range seatbid.Bid {
 			aprc, err := jsonparser.GetInt(bid.Ext, "adpod", "aprc")
 			if err != nil {
 				glog.Warningf("JSONParser GetInt Error: %s", err.Error())
@@ -1143,11 +1143,11 @@ func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.Lo
 				if reason == nil {
 					continue
 				}
-				loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-					RejectionReason: *reason,
-					Bid:             &seatbid.Bid[bidIndex],
-					Seat:            seatbid.Seat,
-				})
+				// loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
+				// 	RejectionReason: *reason,
+				// 	Bid:             &seatbid.Bid[bidIndex],
+				// 	Seat:            seatbid.Seat,
+				// })
 				continue
 			}
 			winningBid = append(winningBid, bid)
