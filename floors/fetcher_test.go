@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const MaxAge = "max-age"
+
 func TestFetchQueueLen(t *testing.T) {
 	tests := []struct {
 		name string
@@ -176,8 +178,9 @@ func TestFetchQueueTop(t *testing.T) {
 
 func TestValidatePriceFloorRules(t *testing.T) {
 
-	zero := 0
-	one_o_one := 101
+	var zero = 0
+	var one_o_one = 101
+	var testURL = "abc.com"
 	type args struct {
 		configs     config.AccountFloorFetch
 		priceFloors *openrtb_ext.PriceFloorRules
@@ -192,7 +195,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    5,
@@ -208,7 +211,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    5,
@@ -226,7 +229,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    5,
@@ -248,7 +251,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    0,
@@ -272,7 +275,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    1,
@@ -297,7 +300,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    1,
@@ -322,7 +325,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    1,
@@ -347,7 +350,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    1,
@@ -372,7 +375,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			args: args{
 				configs: config.AccountFloorFetch{
 					Enabled:     true,
-					URL:         "abc.com",
+					URL:         testURL,
 					Timeout:     5,
 					MaxFileSize: 20,
 					MaxRules:    1,
@@ -405,9 +408,9 @@ func TestValidatePriceFloorRules(t *testing.T) {
 func TestFetchFloorRulesFromURL(t *testing.T) {
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Add("Content-Length", "645")
-			w.Header().Add("max-age", "20")
+			w.Header().Add(MaxAge, "20")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -526,9 +529,9 @@ func TestFetchFloorRulesFromURL(t *testing.T) {
 func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Add("Content-Length", "645")
-			w.Header().Add("max-age", "abc")
+			w.Header().Add(MaxAge, "abc")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -595,8 +598,8 @@ func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 func TestFetchAndValidate(t *testing.T) {
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("max-age", "30")
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Add(MaxAge, "30")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -738,7 +741,7 @@ func TestFetcherWhenRequestGetSameURLInrequest(t *testing.T) {
 	refetchCheckInterval = 1
 	response := []byte(`{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]}`)
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -840,8 +843,8 @@ func TestPriceFloorFetcherWorker(t *testing.T) {
 	}
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("max-age", "5")
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Add(MaxAge, "5")
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -890,7 +893,7 @@ func TestPriceFloorFetcherWorkerDefaultCacheExpiry(t *testing.T) {
 	}
 
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -934,7 +937,7 @@ func TestPriceFloorFetcherSubmit(t *testing.T) {
 
 	response := []byte(`{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]}`)
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})
@@ -1028,7 +1031,7 @@ func TestFetcherWhenRequestGetDifferentURLInrequest(t *testing.T) {
 	refetchCheckInterval = 1
 	response := []byte(`{"currency":"USD","modelgroups":[{"modelweight":40,"modelversion":"version1","default":5,"values":{"banner|300x600|www.website.com":3,"banner|728x90|www.website.com":5,"banner|300x600|*":4,"banner|300x250|*":2,"*|*|*":16,"*|300x250|*":10,"*|300x600|*":12,"*|300x600|www.website.com":11,"banner|*|*":8,"banner|300x250|www.website.com":1,"*|728x90|www.website.com":13,"*|300x250|www.website.com":9,"*|728x90|*":14,"banner|728x90|*":6,"banner|*|www.website.com":7,"*|*|www.website.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]}`)
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(mockStatus)
 			w.Write(mockResponse)
 		})

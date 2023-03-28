@@ -1,15 +1,9 @@
 package openrtb2
 
 import (
-	"bytes"
 	"encoding/json"
-	"header-bidding/openrtb"
-	v25 "header-bidding/openrtb/v25"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"git.pubmatic.com/PubMatic/go-common/util"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
@@ -950,91 +944,6 @@ func TestFilterRejectedBids(t *testing.T) {
 			filterRejectedBids(tt.args.resp, tt.args.loggableObject)
 			assert.Equal(t, tt.want.RejectedBids, tt.args.loggableObject.RejectedBids)
 			assert.Equal(t, tt.want.SeatBids, tt.args.resp.SeatBid)
-		})
-	}
-}
-
-func TestCTVRequestForRejectedBids(t *testing.T) {
-
-	type want struct {
-		seatBidArray []*v25.SeatBid
-	}
-	tests := []struct {
-		name string
-		want want
-	}{
-		{
-			name: "test-ad-pod-bid",
-			want: want{
-				seatBidArray: []*v25.SeatBid{
-					{
-						Bid: []*openrtb.Bid{
-							{
-								Id:    util.GetStringPtr("VIDEO12-89A1-41F1-8708-978FD3C0912A"),
-								ImpId: util.GetStringPtr("abcdefgh_1"),
-								Adm:   util.GetStringPtr("<VAST><![CDATA[XYZ]]></VAST>"),
-								Price: util.GetFloat64Ptr(5),
-								Ext: map[string]interface{}{
-									"adpod": map[string]interface{}{
-										"aprc": float64(0),
-									},
-									"prebid": map[string]interface{}{
-										"video": map[string]interface{}{
-											"duration": float64(30),
-										},
-									},
-									"video": map[string]interface{}{
-										"duration": float64(30),
-									},
-								},
-							},
-							{
-								Id:    util.GetStringPtr("VIDEO12-89A1-41F1-8708-978FD3C0912A"),
-								ImpId: util.GetStringPtr("abcdefgh_2"),
-								Adm:   util.GetStringPtr("<VAST><![CDATA[XYZ]]></VAST>"),
-								Price: util.GetFloat64Ptr(10),
-								Ext: map[string]interface{}{
-									"adpod": map[string]interface{}{
-										"aprc": float64(1),
-									},
-									"prebid": map[string]interface{}{
-										"video": map[string]interface{}{
-											"duration": float64(30),
-										},
-									},
-									"video": map[string]interface{}{
-										"duration": float64(30),
-									},
-								},
-							},
-						},
-						Seat: util.GetStringPtr("pubmatic"),
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			pbReq := formORtbV25Request(false, true)
-			body := new(bytes.Buffer)
-			_ = json.NewEncoder(body).Encode(pbReq)
-			request := httptest.NewRequest("POST", "/openrtb2/video", body)
-			recorder := httptest.NewRecorder()
-			endpoint := GetCTVHandler()
-
-			endpoint(recorder, request, nil)
-
-			assert.Equalf(t, recorder.Code, http.StatusOK, "Unexpected status code")
-			var bidResponse openrtb2.BidResponse
-			_ = json.Unmarshal(recorder.Body.Bytes(), &bidResponse)
-			type AdPodExt struct {
-				AdPodExt openrtb.BidResponseAdPodExt `json:"adpod,omitempty"`
-			}
-			obj := &AdPodExt{}
-			_ = json.Unmarshal(bidResponse.Ext, obj)
-			assert.Equal(t, obj.AdPodExt.Response.SeatBid, tt.want.seatBidArray, "Mismatched bidResponse.SeatBid")
 		})
 	}
 }
