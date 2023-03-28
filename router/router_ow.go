@@ -47,7 +47,6 @@ var (
 	g_gdprPermsBuilder    gdpr.PermissionsBuilder
 	g_tcf2CfgBuilder      gdpr.TCF2ConfigBuilder
 	g_planBuilder         *hooks.ExecutionPlanBuilder
-	g_rateConvertor       *currency.RateConverter
 	g_currencyConversions currency.Conversions
 )
 
@@ -118,9 +117,6 @@ func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 
 // GetPBSCurrencyRate Openwrap wrapper method for currency conversion
 func GetPBSCurrencyConversion(from, to string, value float64) (float64, error) {
-	if g_currencyConversions == nil {
-		g_currencyConversions = g_rateConvertor.Rates()
-	}
 	rate, err := g_currencyConversions.GetRate(from, to)
 	if err == nil {
 		return value * rate, nil

@@ -107,7 +107,13 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejectedBid for analytics logging.
-						addRejectedBid(r.LoggableObject, bid, seatBid.Seat, openrtb3.LossBidAdvertiserBlocking)
+						if r.LoggableObject != nil {
+							r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+								RejectionReason: openrtb3.LossBidAdvertiserBlocking,
+								Bid:             bid,
+								Seat:            seatBid.Seat,
+							})
+						}
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -120,40 +126,34 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 	return seatBids, rejections
 }
 
-func addRejectedBid(loggableObject *analytics.LoggableAuctionObject, pbsOrtbBid *entities.PbsOrtbBid,
-	seat string, rejReason openrtb3.NonBidStatusCode) {
+func UpdateRejectedBidExt(loggableObject *analytics.LoggableAuctionObject) {
+	for _, rejectedBid := range loggableObject.RejectedBids {
+		pbsOrtbBid := rejectedBid.Bid
 
-	if loggableObject != nil && pbsOrtbBid != nil && pbsOrtbBid.Bid != nil {
+		if loggableObject != nil && pbsOrtbBid != nil && pbsOrtbBid.Bid != nil {
 
-		bidExtPrebid := &openrtb_ext.ExtBidPrebid{
-			DealPriority:      pbsOrtbBid.DealPriority,
-			DealTierSatisfied: pbsOrtbBid.DealTierSatisfied, //NOT_SET
-			Events:            pbsOrtbBid.BidEvents,         //NOT_REQ
-			Targeting:         pbsOrtbBid.BidTargets,        //NOT_REQ
-			Type:              pbsOrtbBid.BidType,
-			Meta:              pbsOrtbBid.BidMeta,
-			Video:             pbsOrtbBid.BidVideo,
-			BidId:             pbsOrtbBid.GeneratedBidID, //NOT_SET
-			Floors:            pbsOrtbBid.BidFloors,
+			bidExtPrebid := &openrtb_ext.ExtBidPrebid{
+				DealPriority:      pbsOrtbBid.DealPriority,
+				DealTierSatisfied: pbsOrtbBid.DealTierSatisfied, //NOT_SET
+				Events:            pbsOrtbBid.BidEvents,         //NOT_REQ
+				Targeting:         pbsOrtbBid.BidTargets,        //NOT_REQ
+				Type:              pbsOrtbBid.BidType,
+				Meta:              pbsOrtbBid.BidMeta,
+				Video:             pbsOrtbBid.BidVideo,
+				BidId:             pbsOrtbBid.GeneratedBidID, //NOT_SET
+				Floors:            pbsOrtbBid.BidFloors,
+			}
+
+			rejBid := pbsOrtbBid.Bid
+
+			bidExtJSON, err := makeBidExtJSON(rejBid.Ext, bidExtPrebid, nil, pbsOrtbBid.Bid.ImpID,
+				pbsOrtbBid.OriginalBidCPM, pbsOrtbBid.OriginalBidCur, pbsOrtbBid.OriginalBidCPMUSD)
+
+			if err != nil {
+				glog.Warningf("For bid-id:[%v], bidder:[%v], makeBidExtJSON returned error - [%v]", rejBid.ID, rejectedBid.Seat, err)
+				return
+			}
+			rejBid.Ext = bidExtJSON
 		}
-
-		rejBid := pbsOrtbBid.Bid
-
-		bidExtJSON, err := makeBidExtJSON(rejBid.Ext, bidExtPrebid, nil, pbsOrtbBid.Bid.ImpID,
-			pbsOrtbBid.OriginalBidCPM, pbsOrtbBid.OriginalBidCur, pbsOrtbBid.OriginalBidCPMUSD)
-
-		if err != nil {
-			glog.Warningf("For bid-id:[%v], bidder:[%v], makeBidExtJSON returned error - [%v]", rejBid.ID, seat, err)
-			return
-		}
-		rejBid.Ext = bidExtJSON
-
-		loggableObject.RejectedBids = append(loggableObject.RejectedBids,
-			analytics.RejectedBid{
-				RejectionReason: rejReason,
-				Bid:             rejBid,
-				Seat:            seat,
-			},
-		)
 	}
 }

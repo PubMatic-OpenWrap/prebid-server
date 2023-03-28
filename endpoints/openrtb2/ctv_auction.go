@@ -222,7 +222,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest)
-
+	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
 	ao.Request = request
 	ao.Response = response
 	if err != nil || nil == response {

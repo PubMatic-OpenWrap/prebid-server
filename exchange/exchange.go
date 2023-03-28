@@ -1042,14 +1042,27 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, requestExt *op
 			if len(bidsToRemove) == len(seatBid.Bids) {
 				//if all bids are invalid - remove entire seat bid
 				for _, bid := range seatBid.Bids {
-					addRejectedBid(r.LoggableObject, bid, seatBid.Seat, openrtb3.LossBidCategoryMapping)
+				
+				if r.LoggableObject != nil {
+					r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+						Bid:             bid,
+						RejectionReason: openrtb3.LossBidCategoryMapping,
+						Seat:            seatBid.Seat,
+					})
+				}
 				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.Bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
-					addRejectedBid(r.LoggableObject, bids[remInd], seatBid.Seat, openrtb3.LossBidCategoryMapping)
+					if r.LoggableObject != nil {
+						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
+							Bid:             bids[remInd],
+							RejectionReason: openrtb3.LossBidCategoryMapping,
+							Seat:            seatBid.Seat,
+						})
+					}					
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.Bids = bids

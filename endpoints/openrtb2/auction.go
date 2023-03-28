@@ -233,6 +233,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
 	ao.Request = req.BidRequest
 	ao.Response = response
 	ao.Account = account
