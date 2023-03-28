@@ -49,8 +49,6 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-git.pubmatic.com/PubMatic/go-common v0.0.0-20220930092137-070abdacb310 h1:tLXuzu5EQO3CVAdoJNHsQ9e7ePNidtcZvY/89faCmAo=
-git.pubmatic.com/PubMatic/go-common v0.0.0-20220930092137-070abdacb310/go.mod h1:hQXQvp5KCSmebkYD849zbEjBe+CGJYNO1GGWHU99aGs=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
@@ -63,8 +61,8 @@ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMo
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4 h1:EhiijwjoKTx7FVP8p2wwC/z4n5l4c8l2CGmsrFv2uhI=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230303120828-7d32b1d3ced3 h1:ypRwCFGuoFIx+a0U9ju8SH48GXwDIoF6Tz7CGZHfCAo=
-github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230303120828-7d32b1d3ced3/go.mod h1:nMj7j6aTIopCG91Wv3nuzcFTc7YRSOzuzdPxal+FY50=
+github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6 h1:YQ+5zqVVQn9cs04KZstGOeJKdS2EwhlQNZ9OIXeS9WU=
+github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6/go.mod h1:nMj7j6aTIopCG91Wv3nuzcFTc7YRSOzuzdPxal+FY50=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=

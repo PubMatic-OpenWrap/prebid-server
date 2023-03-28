@@ -46,7 +46,6 @@ require (
 require github.com/go-sql-driver/mysql v1.7.0
 
 require (
-	git.pubmatic.com/PubMatic/go-common v0.0.0-20220930092137-070abdacb310
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -81,6 +80,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230303120828-7d32b1d3ced3
+replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
