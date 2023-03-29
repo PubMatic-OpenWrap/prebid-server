@@ -257,7 +257,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.setBidExtParams()
 
 		deps.recordRejectedAdPodBids(deps.labels.PubID)
-		//filterRejectedBids(response, auctionRequest.LoggableObject) // to be used in future
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
 
@@ -1125,35 +1124,6 @@ func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NonBidStatusCode {
 		return nil
 	}
 	return &nbrCode
-}
-
-// filterRejectedBids removes rejected bids from BidResponse and add it into the RejectedBids array along with reason-code.
-func filterRejectedBids(resp *openrtb2.BidResponse, loggableObject *analytics.LoggableAuctionObject) {
-
-	for index, seatbid := range resp.SeatBid {
-		winningBid := make([]openrtb2.Bid, 0)
-		for _, bid := range seatbid.Bid {
-			aprc, err := jsonparser.GetInt(bid.Ext, "adpod", "aprc")
-			if err != nil {
-				glog.Warningf("JSONParser GetInt Error: %s", err.Error())
-				continue
-			}
-			if aprc != int64(constant.StatusWinningBid) {
-				reason := ConvertAPRCToNBRC(aprc)
-				if reason == nil {
-					continue
-				}
-				// loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-				// 	RejectionReason: *reason,
-				// 	Bid:             &seatbid.Bid[bidIndex],
-				// 	Seat:            seatbid.Seat,
-				// })
-				continue
-			}
-			winningBid = append(winningBid, bid)
-		}
-		resp.SeatBid[index].Bid = winningBid // winningBid can be empty
-	}
 }
 
 // recordRejectedAdPodBids records the bids lost in ad-pod auction using metricsEngine

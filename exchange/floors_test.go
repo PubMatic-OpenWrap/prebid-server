@@ -1015,7 +1015,7 @@ func TestEnforceFloors(t *testing.T) {
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
 					RejectionReason: openrtb3.LossBidBelowDealFloor,
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:     "some-bid-11",
 						Price:  0.5,
 						ImpID:  "some-impression-id-1",
@@ -1112,7 +1112,7 @@ func TestEnforceFloors(t *testing.T) {
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
 					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
@@ -1196,7 +1196,7 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					Bid:  &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
@@ -1283,7 +1283,7 @@ func TestEnforceFloors(t *testing.T) {
 				{
 					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
@@ -1367,7 +1367,7 @@ func TestEnforceFloors(t *testing.T) {
 				{
 					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
@@ -1769,7 +1769,7 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-1",
 						Price: 1.2,
 						ImpID: "some-impression-id-1",
@@ -1778,7 +1778,7 @@ func TestEnforceFloors(t *testing.T) {
 					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
 				}, {
-					Bid:  &entities.PbsOrtbBid{Bid:&openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",

@@ -1,8 +1,8 @@
 package analytics
 
 import (
-	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/prebid-server/exchange/entities"
 )
 
 // RejectedBid contains oRTB Bid object with
