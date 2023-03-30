@@ -1,4 +1,4 @@
-package ortb2blocking
+package openwrap
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func (m Module) HandleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
+	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
 	// var cfg config
 	// if len(miCtx.AccountConfig) != 0 {
 	// 	ncfg, err := newConfig(miCtx.AccountConfig)

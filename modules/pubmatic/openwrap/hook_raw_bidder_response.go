@@ -22,7 +22,10 @@ func handleRawBidderResponseHook(
 
 		bidMediaTypes := mediaTypesFromBid(bid)
 
-		fmt.Printf("\n Receieved bid from = %v type = %v", bidder, bidMediaTypes)
+		fmt.Printf("\n Receieved bid ID = %v from = %v type = %v price = %v ", bid.Bid.ID, bidder, bidMediaTypes, bid.Bid.Price)
+
+		//	addAllowedAnalyticTag(&result, bidder, bid.Bid.ImpID)
+		allowedBids = append(allowedBids, bid)
 
 	}
 

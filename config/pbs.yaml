@@ -6,7 +6,7 @@ adapters:
   pubmatic:
     endpoint: http://10.172.141.11:3141/translator?source=ow-server #"http://10.110.194.12:3141/translator?source=ow-server"
  
- 
+
 hooks:
     enabled: true
     modules:
@@ -24,19 +24,35 @@ hooks:
                     module_code: pubmatic.openwrap
                     hook_impl_code: pubmatic.openwrap.setup_request_ctx
 
-    default_account_execution_plan:
-      endpoints:
-        /openrtb2/auction:
-          stages:
-            raw_bidder_response:
-              groups:
-                - timeout: 500000
-                  hook_sequence:
-                    module_code: pubmatic.openwrap
-                    hook_impl_code: pubmatic.openwrap.setup_request_ctx    
+    # default_account_execution_plan:
+    #   endpoints:
+    #     /openrtb2/auction:
+    #       stages:
+    #         raw_bidder_response:
+    #           groups:
+    #             - timeout: 500000
+    #               hook_sequence:
+    #                 module_code: pubmatic.openwrap
+    #                 hook_impl_code: pubmatic.openwrap.setup_request_ctx    
 price_floors:
     enabled: true
+
 account_defaults:
+  # hooks:
+  #   modules:
+  #     pubmatic:
+  #       openwrap:
+
+  #   host_execution_plan:
+  #     endpoints:
+  #       /openrtb2/auction:
+  #         stages:
+  #           raw_bidder_response:
+  #             groups:
+  #               - timeout: 500000
+  #                 hook_sequence:
+  #                   module_code: pubmatic.openwrap
+  #                   hook_impl_code: pubmatic.openwrap.setup_request_ctx
     price_floors:
         enabled: true
         enforce_floors_rate: 50
