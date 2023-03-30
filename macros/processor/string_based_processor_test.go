@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -28,7 +29,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 					macroProvider := NewProvider(req)
 
 					macroProvider.SetContext(MacroContext{
-						Bid:            bid,
+						Bid:            &entities.PbsOrtbBid{Bid: bid},
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
@@ -49,7 +50,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 					macroProvider := NewProvider(req)
 
 					macroProvider.SetContext(MacroContext{
-						Bid:            bid,
+						Bid:            &entities.PbsOrtbBid{Bid: bid},
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
@@ -70,7 +71,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
 
 					macroProvider.SetContext(MacroContext{
-						Bid:            bid,
+						Bid:            &entities.PbsOrtbBid{Bid: bid},
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
@@ -91,7 +92,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 					macroProvider := NewProvider(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
 
 					macroProvider.SetContext(MacroContext{
-						Bid:            bid,
+						Bid:            &entities.PbsOrtbBid{Bid: bid},
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",

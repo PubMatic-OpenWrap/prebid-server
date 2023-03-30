@@ -7,6 +7,7 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -36,7 +37,7 @@ var (
 )
 
 type MacroContext struct {
-	Bid            *openrtb2.Bid
+	Bid            *entities.PbsOrtbBid
 	Imp            *openrtb2.Imp
 	Seat           string
 	VastCreativeID string
@@ -137,10 +138,14 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 }
 func (b *macroProvider) SetContext(ctx MacroContext) {
 	b.resetcontext()
-	b.macros[BidIDKey] = ctx.Bid.ID
+
+	b.macros[BidIDKey] = ctx.Bid.Bid.ID
+	if ctx.Bid.GeneratedBidID != "" {
+		b.macros[BidIDKey] = ctx.Bid.GeneratedBidID
+	}
 	b.macros[BidderKey] = ctx.Seat
 	b.macros[VastCRTIDKey] = ctx.VastCreativeID
-	b.macros[LineIDKey] = ctx.Bid.CID
+	b.macros[LineIDKey] = ctx.Bid.Bid.CID
 	b.macros[VastEventKey] = string(ctx.EventElement)
 	b.macros[EventTypeKey] = string(ctx.VastEventType)
 }

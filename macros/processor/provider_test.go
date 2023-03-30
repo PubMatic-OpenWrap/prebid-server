@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/exchange/entities"
 )
 
 func Test_macroProvider_GetAllMacros(t *testing.T) {
@@ -29,7 +30,7 @@ func Test_macroProvider_GetAllMacros(t *testing.T) {
 			macroProvider := NewProvider(req)
 
 			macroProvider.SetContext(MacroContext{
-				Bid:            bid,
+				Bid:            &entities.PbsOrtbBid{Bid: bid},
 				Imp:            nil,
 				Seat:           "test",
 				VastCreativeID: "123",
@@ -64,7 +65,7 @@ func Test_macroProvider_GetMacro(t *testing.T) {
 			macroProvider := NewProvider(req)
 
 			macroProvider.SetContext(MacroContext{
-				Bid:            bid,
+				Bid:            &entities.PbsOrtbBid{Bid: bid},
 				Imp:            nil,
 				Seat:           "test",
 				VastCreativeID: "123",

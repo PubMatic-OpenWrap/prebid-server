@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -47,7 +48,7 @@ func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 		macroProvider := NewProvider(req)
 
 		macroProvider.SetContext(MacroContext{
-			Bid:            bid,
+			Bid:            &entities.PbsOrtbBid{Bid: bid},
 			Imp:            nil,
 			Seat:           "test",
 			VastCreativeID: "123",

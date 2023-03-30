@@ -136,7 +136,7 @@ func (ev *eventTracking) printEventTracker(pbsBid *entities.PbsOrtbBid, bidderNa
 	for _, event := range ev.events.VASTEvents {
 		if !event.ExcludeDefaultURL {
 			ev.macroProvider.SetContext(processor.MacroContext{
-				Bid:           pbsBid.Bid,
+				Bid:           pbsBid,
 				Seat:          string(bidderName),
 				VastEventType: event.Type,
 				EventElement:  event.CreateElement,
@@ -150,7 +150,7 @@ func (ev *eventTracking) printEventTracker(pbsBid *entities.PbsOrtbBid, bidderNa
 
 		for _, trackerURL := range event.URLs {
 			ev.macroProvider.SetContext(processor.MacroContext{
-				Bid:            pbsBid.Bid,
+				Bid:            pbsBid,
 				Seat:           string(bidderName),
 				VastEventType:  event.Type,
 				EventElement:   event.CreateElement,
