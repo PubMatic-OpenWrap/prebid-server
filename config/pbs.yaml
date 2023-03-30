@@ -1,0 +1,45 @@
+external_url: "http://ow.pubmatic.com"
+tracker_url: "https://10.110.194.12:8842/wt?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&adv=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&origbidid=[PBS-ORIG_BIDID]&bc=[BIDDER_CODE]"
+adapters:
+  appnexus:
+    endpoint: http://10.172.141.11:3141/openrtb2 #"http://10.110.194.12:3141/openrtb2"
+  pubmatic:
+    endpoint: http://10.172.141.11:3141/translator?source=ow-server #"http://10.110.194.12:3141/translator?source=ow-server"
+ 
+ 
+hooks:
+    enabled: true
+    modules:
+      pubmatic:
+        openwrap:
+          enabled: true
+    host_execution_plan:
+      endpoints:
+        /openrtb2/auction:
+          stages:
+            raw_bidder_response:
+              groups:
+                - timeout: 500000
+                  hook_sequence:
+                    module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.setup_request_ctx
+
+    default_account_execution_plan:
+      endpoints:
+        /openrtb2/auction:
+          stages:
+            raw_bidder_response:
+              groups:
+                - timeout: 500000
+                  hook_sequence:
+                    module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.setup_request_ctx    
+price_floors:
+    enabled: true
+account_defaults:
+    price_floors:
+        enabled: true
+        enforce_floors_rate: 50
+        adjust_for_bid_adjustment: false
+        enforce_deal_floors: true
+        use_dynamic_data: true

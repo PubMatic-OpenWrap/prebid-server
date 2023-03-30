@@ -814,7 +814,7 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	if filename != "" {
 		v.SetConfigName(filename)
 		v.AddConfigPath(".")
-		v.AddConfigPath("/etc/config")
+		v.AddConfigPath("//Users/jaydeepmohite/go/src/prebid-server/config/")
 	}
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
@@ -957,7 +957,8 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
 	v.BindEnv("gdpr.default_value")
-	v.SetDefault("gdpr.enabled", true)
+	v.SetDefault("gdpr.default_value", "0")
+	v.SetDefault("gdpr.enabled", false)
 	v.SetDefault("gdpr.host_vendor_id", 0)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
