@@ -48,6 +48,7 @@ func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName
 	for bidderName, seatBid := range seatBids {
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.Bids {
+			ev.printEventTracker(pbsBid, bidderName)
 			if modifyingVastXMLAllowed {
 				ev.modifyBidVAST(pbsBid, bidderName)
 			}
@@ -77,7 +78,6 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 		bid.AdM = newVastXML
 	}
 
-	ev.printEventTracker(pbsBid, bidderName)
 }
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json

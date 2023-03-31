@@ -24,7 +24,6 @@ const (
 	BidderKey         = "PBS-BIDDER"
 	IntegrationKey    = "PBS-INTEGRATION"
 	VastCRTIDKey      = "PBS-VASTCRTID"
-	LineIDKey         = "PBS-LINEID"
 	TimestampKey      = "PBS-TIMESTAMP"
 	AuctionIDKey      = "PBS-AUCTIONID"
 	ChannelKey        = "PBS-CHANNEL"
@@ -33,7 +32,7 @@ const (
 )
 
 var (
-	bidLevelKeys = []string{BidIDKey, BidderKey, VastEventKey, EventTypeKey, LineIDKey, VastCRTIDKey}
+	bidLevelKeys = []string{BidIDKey, BidderKey, VastEventKey, EventTypeKey, VastCRTIDKey}
 )
 
 type MacroContext struct {
@@ -145,7 +144,6 @@ func (b *macroProvider) SetContext(ctx MacroContext) {
 	}
 	b.macros[BidderKey] = ctx.Seat
 	b.macros[VastCRTIDKey] = ctx.VastCreativeID
-	b.macros[LineIDKey] = ctx.Bid.Bid.CID
 	b.macros[VastEventKey] = string(ctx.EventElement)
 	b.macros[EventTypeKey] = string(ctx.VastEventType)
 }
