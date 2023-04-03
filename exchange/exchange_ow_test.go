@@ -821,12 +821,11 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 					RejectedBids: []analytics.RejectedBid{
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID: "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`) ,
+								ID:  "b1",
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",
-
 							},
 						},
 					},
@@ -852,9 +851,8 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 					RejectedBids: []analytics.RejectedBid{
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID: "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`) ,
-
+								ID:  "b1",
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",
