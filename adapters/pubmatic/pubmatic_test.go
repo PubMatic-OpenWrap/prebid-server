@@ -154,10 +154,10 @@ func TestParseImpressionObject(t *testing.T) {
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}}`),
+					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}}`),
 				},
 			},
-			expectedImpExt: json.RawMessage(`{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}`),
+			expectedImpExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
 		},
 	}
 	for _, tt := range tests {

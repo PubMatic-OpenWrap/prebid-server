@@ -16,7 +16,7 @@ type ExtImpPubmatic struct {
 	WrapExt             json.RawMessage         `json:"wrapper,omitempty"`
 	Keywords            []*ExtImpPubmaticKeyVal `json:"keywords,omitempty"`
 	Kadfloor            string                  `json:"kadfloor,omitempty"`
-	BidViewabilityScore *ExtBidViewabilityScore `json:"bidViewability,omitempty"`
+	BidViewabilityScore map[string]interface{}  `json:"bidViewability,omitempty"`
 }
 
 // ExtImpPubmaticKeyVal defines the contract for bidrequest.imp[i].ext.prebid.bidder.pubmatic.keywords[i]
