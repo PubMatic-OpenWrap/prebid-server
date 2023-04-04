@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/macros/processor"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	"github.com/prebid/prebid-server/analytics"
