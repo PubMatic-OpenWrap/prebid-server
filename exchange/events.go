@@ -24,22 +24,18 @@ type eventTracking struct {
 	integrationType    string
 	bidderInfos        config.BidderInfos
 	externalURL        string
-	events             config.Events
-	macroProvider      processor.Provider
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, macroProvider processor.Provider) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.Events.Enabled,
+		enabledForAccount:  account.EventsEnabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    requestExtPrebid.Integration,
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
-		events:             account.Events,
-		macroProvider:      macroProvider,
 	}
 }
 
@@ -48,7 +44,6 @@ func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName
 	for bidderName, seatBid := range seatBids {
 		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.Bids {
-			ev.printEventTracker(pbsBid, bidderName)
 			if modifyingVastXMLAllowed {
 				ev.modifyBidVAST(pbsBid, bidderName)
 			}
@@ -129,38 +124,4 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 			Timestamp:   ev.auctionTimestampMs,
 			Integration: ev.integrationType,
 		})
-}
-
-func (ev *eventTracking) printEventTracker(pbsBid *entities.PbsOrtbBid, bidderName openrtb_ext.BidderName) {
-
-	for _, event := range ev.events.VASTEvents {
-		if !event.ExcludeDefaultURL {
-			ev.macroProvider.SetContext(processor.MacroContext{
-				Bid:           pbsBid,
-				Seat:          string(bidderName),
-				VastEventType: event.Type,
-				EventElement:  event.CreateElement,
-			})
-			replacedURL, err := processor.GetMacroProcessor().Replace(ev.events.DefaultURL, ev.macroProvider)
-			if err != nil {
-				glog.Infof("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
-			}
-			glog.Infof("Replaced tracker URL: %s", replacedURL)
-		}
-
-		for _, trackerURL := range event.URLs {
-			ev.macroProvider.SetContext(processor.MacroContext{
-				Bid:            pbsBid,
-				Seat:           string(bidderName),
-				VastEventType:  event.Type,
-				EventElement:   event.CreateElement,
-				VastCreativeID: "testCreativeID",
-			})
-			replacedURL, err := processor.GetMacroProcessor().Replace(trackerURL, ev.macroProvider)
-			if err != nil {
-				glog.Infof("error: %s replacing tracker URL: %s", ev.events.DefaultURL, err.Error())
-			}
-			glog.Infof("Replaced tracker URL: %s", replacedURL)
-		}
-	}
 }
