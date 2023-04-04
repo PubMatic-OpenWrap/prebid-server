@@ -138,12 +138,13 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	if cfg.AccountDefaults.Disabled {
 		glog.Warning(`With account_defaults.disabled=true, host-defined accounts must exist and have "disabled":false. All other requests will be rejected.`)
 	}
-	if cfg.AccountDefaults.Events.Enabled {
-		glog.Warning(`account_defaults.events will currently not do anything as the feature is still under development. Please follow https://github.com/prebid/prebid-server/issues/1725 for more updates`)
-	}
 
 	if cfg.PriceFloors.Enabled {
 		glog.Warning(`cfg.PriceFloors.Enabled will currently not do anything as price floors feature is still under development.`)
+	}
+
+	if len(cfg.AccountDefaults.Events.VASTEvents) > 0 {
+		errs = append(errs, fmt.Errorf("account_defaults.Events.VASTEvents will currently not do anything as the feature is still under development. Please follow https://github.com/prebid/prebid-server/issues/1725 for more updates"))
 	}
 
 	errs = cfg.Experiment.validate(errs)
@@ -688,6 +689,12 @@ func New(v *viper.Viper, bidderInfos BidderInfos, normalizeBidderName func(strin
 
 	// Update account defaults and generate base json for patch
 	c.AccountDefaults.CacheTTL = c.CacheURL.DefaultTTLs // comment this out to set explicitly in config
+
+	// explicitly set the new Field events.enabled field to nil to deprecate events_enabled field.
+	// This value will be overridden by the account-level config if the publisher sets this field in the account-JSON.
+	// Whererver required, we can check the nil value and determine if the account-JSON contains this "events.enabled" field or not.
+	c.AccountDefaults.Events.Enabled = nil
+
 	if err := c.MarshalAccountDefaults(); err != nil {
 		return nil, err
 	}
@@ -1051,6 +1058,15 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	migrateConfigTCF2PurposeFlags(v)
 	migrateConfigDatabaseConnection(v)
 
+	// The events_enabled field is getting deprecated and will be replaced by events.enabled field in the future.
+	// During the process of deprecation, if the user provides both account-level and host-level value, then we need to follow the below precedence order.
+	// (1) account-level new field, (2) account-level deprecated field, (3) host-level new field, (4) host-level deprecated field
+	// To achieve this, we will apply the precedence within host-level fields and set the result in the deprecated field.
+	// We will set the new field to nil so that when we fetch and merge the account-level JSON into the account-default JSON then,
+	// account-level value will become available in the new field.
+	// If new field is not present in the account-level JSON, then we will copy the value of the deprecated field and set it to the new field.
+	migrateConfigEventsEnabled(v)
+
 	// These defaults must be set after the migrate functions because those functions look for the presence of these
 	// config fields and there isn't a way to detect presence of a config field using the viper package if a default
 	// is set. Viper IsSet and Get functions consider default values.
@@ -1100,8 +1116,8 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("experiment.adscert.inprocess.domain_renewal_interval_seconds", 30)
 	v.SetDefault("experiment.adscert.remote.url", "")
 	v.SetDefault("experiment.adscert.remote.signing_timeout_ms", 5)
-
 	v.SetDefault("hooks.enabled", false)
+	v.SetDefault("account_defaults.events_enabled", false)
 
 	for bidderName := range bidderInfos {
 		setBidderDefaults(v, strings.ToLower(bidderName))
@@ -1369,6 +1385,19 @@ func migrateConfigDatabaseConnection(v *viper.Viper) {
 	}
 }
 
+// migrateConfigEventsEnabled is responsible for ensuring backward compatibility of events_enabled field.
+// This function copies the value of newField "events.enabled" and set it to the oldField "events_enabled".
+func migrateConfigEventsEnabled(v *viper.Viper) {
+	newField := "account_defaults.events.enabled"
+	oldField := "account_defaults.events_enabled"
+
+	if v.IsSet(newField) {
+		glog.Warningf("using %s and ignoring deprecated %s", newField, oldField)
+		newValue := v.GetBool(newField)
+		v.Set(oldField, newValue)
+	}
+}
+
 func isConfigInfoPresent(v *viper.Viper, prefix string, fields []string) bool {
 	prefix = prefix + "."
 	for _, field := range fields {
@@ -1387,6 +1416,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_requests.database.connection.port")
 	v.BindEnv("stored_requests.database.connection.user")
 	v.BindEnv("stored_requests.database.connection.password")
+	v.BindEnv("stored_requests.database.connection.query_string")
+	v.BindEnv("stored_requests.database.connection.tls.root_cert")
+	v.BindEnv("stored_requests.database.connection.tls.client_cert")
+	v.BindEnv("stored_requests.database.connection.tls.client_key")
 	v.BindEnv("stored_requests.database.fetcher.query")
 	v.BindEnv("stored_requests.database.fetcher.amp_query")
 	v.BindEnv("stored_requests.database.initialize_caches.timeout_ms")
@@ -1402,6 +1435,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_video_req.database.connection.port")
 	v.BindEnv("stored_video_req.database.connection.user")
 	v.BindEnv("stored_video_req.database.connection.password")
+	v.BindEnv("stored_video_req.database.connection.query_string")
+	v.BindEnv("stored_video_req.database.connection.tls.root_cert")
+	v.BindEnv("stored_video_req.database.connection.tls.client_cert")
+	v.BindEnv("stored_video_req.database.connection.tls.client_key")
 	v.BindEnv("stored_video_req.database.fetcher.query")
 	v.BindEnv("stored_video_req.database.initialize_caches.timeout_ms")
 	v.BindEnv("stored_video_req.database.initialize_caches.query")
@@ -1414,6 +1451,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_responses.database.connection.port")
 	v.BindEnv("stored_responses.database.connection.user")
 	v.BindEnv("stored_responses.database.connection.password")
+	v.BindEnv("stored_responses.database.connection.query_string")
+	v.BindEnv("stored_responses.database.connection.tls.root_cert")
+	v.BindEnv("stored_responses.database.connection.tls.client_cert")
+	v.BindEnv("stored_responses.database.connection.tls.client_key")
 	v.BindEnv("stored_responses.database.fetcher.query")
 	v.BindEnv("stored_responses.database.initialize_caches.timeout_ms")
 	v.BindEnv("stored_responses.database.initialize_caches.query")
