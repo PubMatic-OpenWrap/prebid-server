@@ -108,7 +108,7 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			processor := NewProcessor()
+			processor := NewReplacer()
 			got, err := processor.Replace(tt.args.url, tt.args.getMacroProvider())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("stringBasedProcessor.Replace() error = %v, wantErr %v", err, tt.wantErr)

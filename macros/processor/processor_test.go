@@ -43,7 +43,7 @@ var bid *openrtb2.Bid = &openrtb2.Bid{ID: "bidId123", CID: "campaign_1", CrID: "
 
 func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 
-	processor := NewProcessor()
+	processor := NewReplacer()
 	for n := 0; n < b.N; n++ {
 		macroProvider := NewProvider(req)
 
