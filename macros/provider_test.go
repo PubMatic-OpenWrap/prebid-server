@@ -1,10 +1,9 @@
-package replacer
+package macros
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
 )
 
@@ -34,8 +33,8 @@ func Test_macroProvider_GetAllMacros(t *testing.T) {
 				Imp:            nil,
 				Seat:           "test",
 				VastCreativeID: "123",
-				VastEventType:  config.FirstQuartile,
-				EventElement:   config.TrackingVASTElement,
+				VastEventType:  "firstQuartile",
+				EventElement:   "tracking",
 			})
 			if got := macroProvider.GetAllMacros(tt.args.keys); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("macroProvider.GetAllMacros() = %v, want %v", got, tt.want)
@@ -69,8 +68,8 @@ func Test_macroProvider_GetMacro(t *testing.T) {
 				Imp:            nil,
 				Seat:           "test",
 				VastCreativeID: "123",
-				VastEventType:  config.FirstQuartile,
-				EventElement:   config.TrackingVASTElement,
+				VastEventType:  "firstQuartile",
+				EventElement:   "tracking",
 			})
 			for _, key := range tt.args.keys {
 				if got := macroProvider.GetMacro(key); got != tt.want[key] {

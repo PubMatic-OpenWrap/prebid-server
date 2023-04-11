@@ -1,4 +1,4 @@
-package replacer
+package macros
 
 import (
 	"net/url"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -40,8 +39,8 @@ type MacroContext struct {
 	Imp            *openrtb2.Imp
 	Seat           string
 	VastCreativeID string
-	VastEventType  config.TrackingEventType
-	EventElement   config.VASTEventElement
+	VastEventType  string
+	EventElement   string
 }
 
 type Provider interface {

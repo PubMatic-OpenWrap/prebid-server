@@ -1,4 +1,4 @@
-package replacer
+package macros
 
 type Replacer interface {
 	// Replace the macros and returns replaced string

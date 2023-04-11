@@ -1,11 +1,10 @@
-package replacer
+package macros
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -52,8 +51,8 @@ func BenchmarkStringIndexCachedBasedProcessor(b *testing.B) {
 			Imp:            nil,
 			Seat:           "test",
 			VastCreativeID: "123",
-			VastEventType:  config.FirstQuartile,
-			EventElement:   config.TrackingVASTElement,
+			VastEventType:  "firstQuartile",
+			EventElement:   "tracking",
 		})
 		_, err := processor.Replace(testURL, macroProvider)
 		if err != nil {

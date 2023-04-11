@@ -1,10 +1,9 @@
-package replacer
+package macros
 
 import (
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -33,8 +32,8 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
-						VastEventType:  config.FirstQuartile,
-						EventElement:   config.TrackingVASTElement,
+						VastEventType:  "firstQuartile",
+						EventElement:   "tracking",
 					})
 					return macroProvider
 				},
@@ -54,8 +53,8 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
-						VastEventType:  config.FirstQuartile,
-						EventElement:   config.TrackingVASTElement,
+						VastEventType:  "firstQuartile",
+						EventElement:   "tracking",
 					})
 					return macroProvider
 				},
@@ -75,8 +74,8 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
-						VastEventType:  config.FirstQuartile,
-						EventElement:   config.TrackingVASTElement,
+						VastEventType:  "firstQuartile",
+						EventElement:   "tracking",
 					})
 					return macroProvider
 				},
@@ -96,8 +95,8 @@ func Test_stringBasedProcessor_Replace(t *testing.T) {
 						Imp:            nil,
 						Seat:           "test",
 						VastCreativeID: "123",
-						VastEventType:  config.FirstQuartile,
-						EventElement:   config.TrackingVASTElement,
+						VastEventType:  "firstQuartile",
+						EventElement:   "tracking",
 					})
 					return macroProvider
 				},
