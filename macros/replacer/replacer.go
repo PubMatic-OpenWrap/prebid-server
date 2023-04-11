@@ -1,4 +1,4 @@
-package processor
+package replacer
 
 type Replacer interface {
 	// Replace the macros and returns replaced string
@@ -6,11 +6,8 @@ type Replacer interface {
 	Replace(url string, macroProvider Provider) (string, error)
 }
 
-var processor Replacer
-
 // NewReplacer will return instance of macro processor
 func NewReplacer() Replacer {
-
 	return &stringBasedProcessor{
 		templates: make(map[string]urlMetaTemplate),
 	}
