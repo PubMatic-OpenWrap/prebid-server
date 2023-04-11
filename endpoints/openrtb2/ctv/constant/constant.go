@@ -51,7 +51,3 @@ const (
 	// CompetitiveExclusionV1 ...
 	CompetitiveExclusionV1 MonitorKey = "comp_exclusion_v1"
 )
-
-const (
-	VastUnwrapperEnableKey = "enableVastUnwrapper"
-)
