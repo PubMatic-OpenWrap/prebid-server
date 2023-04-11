@@ -19,8 +19,8 @@ func Test_macroProvider_GetAllMacros(t *testing.T) {
 	}{
 		{
 			name: "get all macros success",
-			args: args{keys: []string{BidIDKey, AccountIDKey, AppBundleKey, PubDomainkey,
-				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey}},
+			args: args{keys: []string{MacroKeyBidID, MacroKeyAccountID, MacroKeyAppBundle, MacroKeyPubDomain,
+				MacroKeyPageURL, MacroKeyAccountID, MacroKeyLmtTracking, MacroKeyConsent}},
 			want: map[string]string{"PBS-ACCOUNTID": "testpublisherID", "PBS-APPBUNDLE": "testbundle", "PBS-BIDID": "bidId123", "PBS-GDPRCONSENT": "yes", "PBS-LIMITADTRACKING": "10", "PBS-PAGEURL": "pageurltest", "PBS-PUBDOMAIN": "publishertestdomain"},
 		},
 	}
@@ -54,8 +54,8 @@ func Test_macroProvider_GetMacro(t *testing.T) {
 	}{
 		{
 			name: "get all macros success",
-			args: args{keys: []string{BidIDKey, AccountIDKey, AppBundleKey, PubDomainkey,
-				PageURLKey, AccountIDKey, LmtTrackingKey, ConsentKey}},
+			args: args{keys: []string{MacroKeyBidID, MacroKeyAccountID, MacroKeyAppBundle, MacroKeyPubDomain,
+				MacroKeyPageURL, MacroKeyAccountID, MacroKeyLmtTracking, MacroKeyConsent}},
 			want: map[string]string{"PBS-ACCOUNTID": "testpublisherID", "PBS-APPBUNDLE": "testbundle", "PBS-BIDID": "bidId123", "PBS-GDPRCONSENT": "yes", "PBS-LIMITADTRACKING": "10", "PBS-PAGEURL": "pageurltest", "PBS-PUBDOMAIN": "publishertestdomain"},
 		},
 	}

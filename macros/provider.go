@@ -11,27 +11,29 @@ import (
 )
 
 const (
-	BidIDKey          = "PBS-BIDID"
-	AppBundleKey      = "PBS-APPBUNDLE"
-	DomainKey         = "PBS-DOMAIN"
-	PubDomainkey      = "PBS-PUBDOMAIN"
-	PageURLKey        = "PBS-PAGEURL"
-	AccountIDKey      = "PBS-ACCOUNTID"
-	LmtTrackingKey    = "PBS-LIMITADTRACKING"
-	ConsentKey        = "PBS-GDPRCONSENT"
+	MacroKeyBidID       = "PBS-BIDID"
+	MacroKeyAppBundle   = "PBS-APPBUNDLE"
+	MacroKeyDomain      = "PBS-DOMAIN"
+	MacroKeyPubDomain   = "PBS-PUBDOMAIN"
+	MacroKeyPageURL     = "PBS-PAGEURL"
+	MacroKeyAccountID   = "PBS-ACCOUNTID"
+	MacroKeyLmtTracking = "PBS-LIMITADTRACKING"
+	MacroKeyConsent     = "PBS-GDPRCONSENT"
+	MacroKeyBidder      = "PBS-BIDDER"
+	MacroKeyIntegration = "PBS-INTEGRATION"
+	MacroKeyVastCRTID   = "PBS-VASTCRTID"
+	MacroKeyTimestamp   = "PBS-TIMESTAMP"
+	MacroKeyAuctionID   = "PBS-AUCTIONID"
+	MacroKeyChannel     = "PBS-CHANNEL"
+	MacroKeyEventType   = "PBS-EVENTTYPE"
+	MacroKeyVastEvent   = "PBS-VASTEVENT"
+)
+const (
 	CustomMacroPrefix = "PBS-MACRO-"
-	BidderKey         = "PBS-BIDDER"
-	IntegrationKey    = "PBS-INTEGRATION"
-	VastCRTIDKey      = "PBS-VASTCRTID"
-	TimestampKey      = "PBS-TIMESTAMP"
-	AuctionIDKey      = "PBS-AUCTIONID"
-	ChannelKey        = "PBS-CHANNEL"
-	EventTypeKey      = "PBS-EVENTTYPE"
-	VastEventKey      = "PBS-VASTEVENT"
 )
 
 var (
-	bidLevelKeys = []string{BidIDKey, BidderKey, VastEventKey, EventTypeKey, VastCRTIDKey}
+	bidLevelKeys = []string{MacroKeyBidID, MacroKeyBidder, MacroKeyVastEvent, MacroKeyEventType, MacroKeyVastCRTID}
 )
 
 type MacroContext struct {
@@ -66,7 +68,7 @@ func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) Provider {
 }
 
 func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWrapper) {
-	b.macros[TimestampKey] = strconv.Itoa(int(time.Now().Unix()))
+	b.macros[MacroKeyTimestamp] = strconv.Itoa(int(time.Now().Unix()))
 	reqExt, _ := reqWrapper.GetRequestExt()
 	if reqExt != nil && reqExt.GetPrebid() != nil {
 		for key, value := range reqExt.GetPrebid().Macros {
@@ -74,52 +76,52 @@ func (b *macroProvider) populateRequestMacros(reqWrapper *openrtb_ext.RequestWra
 			b.macros[customMacroKey] = truncate(value, 100) // limit the custom macro value  to 100 chars only
 		}
 
-		b.macros[IntegrationKey] = reqExt.GetPrebid().Integration
+		b.macros[MacroKeyIntegration] = reqExt.GetPrebid().Integration
 		channel := reqExt.GetPrebid().Channel
 		if channel != nil {
-			b.macros[ChannelKey] = channel.Name
+			b.macros[MacroKeyChannel] = channel.Name
 		}
 
 	}
-	b.macros[AuctionIDKey] = reqWrapper.ID
+	b.macros[MacroKeyAuctionID] = reqWrapper.ID
 	if reqWrapper.App != nil && reqWrapper.App.Bundle != "" {
-		b.macros[AppBundleKey] = reqWrapper.App.Bundle
+		b.macros[MacroKeyAppBundle] = reqWrapper.App.Bundle
 	}
 
 	if reqWrapper.App != nil && reqWrapper.App.Domain != "" {
-		b.macros[DomainKey] = reqWrapper.App.Domain
+		b.macros[MacroKeyDomain] = reqWrapper.App.Domain
 	}
 
 	if reqWrapper.Site != nil && reqWrapper.Site.Domain != "" {
-		b.macros[DomainKey] = reqWrapper.Site.Domain
+		b.macros[MacroKeyDomain] = reqWrapper.Site.Domain
 	}
 
 	if reqWrapper.Site != nil && reqWrapper.Site.Publisher != nil && reqWrapper.Site.Publisher.Domain != "" {
-		b.macros[PubDomainkey] = reqWrapper.Site.Publisher.Domain
+		b.macros[MacroKeyPubDomain] = reqWrapper.Site.Publisher.Domain
 	}
 
 	if reqWrapper.App != nil && reqWrapper.App.Publisher != nil && reqWrapper.App.Publisher.Domain != "" {
-		b.macros[PubDomainkey] = reqWrapper.App.Publisher.Domain
+		b.macros[MacroKeyPubDomain] = reqWrapper.App.Publisher.Domain
 	}
 
 	if reqWrapper.Site != nil {
-		b.macros[PageURLKey] = reqWrapper.Site.Page
+		b.macros[MacroKeyPageURL] = reqWrapper.Site.Page
 	}
 	userExt, _ := reqWrapper.GetUserExt()
 	if userExt != nil && userExt.GetConsent() != nil {
-		b.macros[ConsentKey] = *userExt.GetConsent()
+		b.macros[MacroKeyConsent] = *userExt.GetConsent()
 	}
 	if reqWrapper.Device != nil && reqWrapper.Device.Lmt != nil {
-		b.macros[LmtTrackingKey] = strconv.Itoa(int(*reqWrapper.Device.Lmt))
+		b.macros[MacroKeyLmtTracking] = strconv.Itoa(int(*reqWrapper.Device.Lmt))
 	}
 
-	b.macros[AccountIDKey] = reqWrapper.ID
+	b.macros[MacroKeyAccountID] = reqWrapper.ID
 	if reqWrapper.Site != nil && reqWrapper.Site.Publisher != nil && reqWrapper.Site.Publisher.ID != "" {
-		b.macros[AccountIDKey] = reqWrapper.Site.Publisher.ID
+		b.macros[MacroKeyAccountID] = reqWrapper.Site.Publisher.ID
 	}
 
 	if reqWrapper.App != nil && reqWrapper.App.Publisher != nil && reqWrapper.App.Publisher.ID != "" {
-		b.macros[AccountIDKey] = reqWrapper.App.Publisher.ID
+		b.macros[MacroKeyAccountID] = reqWrapper.App.Publisher.ID
 	}
 }
 
@@ -137,14 +139,14 @@ func (b *macroProvider) GetAllMacros(keys []string) map[string]string {
 func (b *macroProvider) SetContext(ctx MacroContext) {
 	b.resetcontext()
 
-	b.macros[BidIDKey] = ctx.Bid.Bid.ID
+	b.macros[MacroKeyBidID] = ctx.Bid.Bid.ID
 	if ctx.Bid.GeneratedBidID != "" {
-		b.macros[BidIDKey] = ctx.Bid.GeneratedBidID
+		b.macros[MacroKeyBidID] = ctx.Bid.GeneratedBidID
 	}
-	b.macros[BidderKey] = ctx.Seat
-	b.macros[VastCRTIDKey] = ctx.VastCreativeID
-	b.macros[VastEventKey] = string(ctx.EventElement)
-	b.macros[EventTypeKey] = string(ctx.VastEventType)
+	b.macros[MacroKeyBidder] = ctx.Seat
+	b.macros[MacroKeyVastCRTID] = ctx.VastCreativeID
+	b.macros[MacroKeyVastEvent] = string(ctx.EventElement)
+	b.macros[MacroKeyEventType] = string(ctx.VastEventType)
 }
 func (b *macroProvider) resetcontext() {
 	for _, key := range bidLevelKeys {
