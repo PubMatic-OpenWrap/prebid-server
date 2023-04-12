@@ -10,7 +10,9 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func Builder(_ json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
+func Builder(cfg json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
+	//Accept bidder targeting rules here from config
+	fmt.Println(cfg)
 	return Module{}, nil
 }
 
@@ -22,21 +24,25 @@ func (m Module) HandleProcessedAuctionHook(
 	moduleContext hookstage.ModuleInvocationContext,
 	payload hookstage.ProcessedAuctionRequestPayload,
 ) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
-	hookResult := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
+	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
+	result.ChangeSet = hookstage.ChangeSet[hookstage.ProcessedAuctionRequestPayload]{}
 
 	request := openrtb_ext.RequestWrapper{
 		BidRequest: payload.BidRequest,
 	}
 	requestRules, err := getRequestLevelRules(payload.BidRequest.Ext)
-	bidderTargeting := getBidderTargeting()
+	rtbRequest := RTBRequest{payload.BidRequest}
+	bidderTargeting := getBidderTargeting(rtbRequest)
 	if err == nil {
 		// iterate over request.impressions
+		newImps := make([]*openrtb_ext.ImpWrapper, 0)
 		for _, imp := range request.GetImp() {
 			impExt, err := imp.GetImpExt()
 			if err == nil {
 				biddersToRemove := []string{}
+				impExtPrebid := impExt.GetPrebid()
 				// verify filter rule for each bidder
-				for bidder := range impExt.GetPrebid().Bidder {
+				for bidder := range impExtPrebid.Bidder {
 					targeting := bidderTargeting[bidder]
 					targetBidder, err := m.bidderTargetingMatches(targeting, requestRules)
 					if err == nil && !targetBidder {
@@ -44,20 +50,30 @@ func (m Module) HandleProcessedAuctionHook(
 					}
 				}
 				// remove bidder from impExt.prebid.bidder using biddersToRemove
+				result.Warnings = make([]string, 0)
 				for _, bidder := range biddersToRemove {
-					delete(impExt.GetPrebid().Bidder, bidder)
+					delete(impExtPrebid.Bidder, bidder)
 					warning := fmt.Sprintf("Removed bidder '%s' from Impression Id = '%s' (targeting rule [%s] not satified)", bidder, imp.ID, bidderTargeting[bidder])
 					fmt.Println(warning)
-					hookResult.Warnings = append(hookResult.Warnings, warning)
+					result.Warnings = append(result.Warnings, warning)
 				}
 				if len(biddersToRemove) > 0 {
-					request.RebuildRequest()
+					impExt.SetPrebid(impExtPrebid)
+					imp.RebuildImp()
 				}
+				newImps = append(newImps, imp)
 			}
 		}
+		request.SetImp(newImps)
+		request.RebuildRequest()
 	}
 
-	return hookResult, err
+	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
+		parp.BidRequest = request.BidRequest
+		return parp, err
+	}, hookstage.MutationUpdate, "filter-bidders-traffic-shaping")
+
+	return result, err
 }
 
 // keywords and values : User Input  (req.ext.rules)
@@ -77,37 +93,6 @@ func (m Module) bidderTargetingMatches(rule Expression, variables map[string]str
 	}
 
 	return rule.Evaluate(variables), nil
-}
-
-// Bidder rules : Profile version level
-// allow only whitelisted keywords
-
-func getBidderTargeting() map[string]Expression {
-	// consider appnexus if series = friends and country = india
-	seriesExp := Eq{
-		Key:   "series",
-		Value: "friends",
-	}
-	countryExp := Eq{
-		Key:   "country",
-		Value: "India",
-	}
-	appNexusRule := And{
-		Left:  seriesExp,
-		Right: countryExp,
-	}
-
-	// consider rubicon if series = saregampa
-	fSeriesExp := Eq{
-		Key:   "series",
-		Value: "saregampa",
-	}
-	freewheelSspRule := fSeriesExp
-
-	return map[string]Expression{
-		"appnexus":     appNexusRule,
-		"freewheelssp": freewheelSspRule,
-	}
 }
 
 // keywords whitelisting (freeform type)  : publisher level

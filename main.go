@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -15,7 +16,6 @@ import (
 	"github.com/prebid/prebid-server/server"
 	"github.com/prebid/prebid-server/util/task"
 
-	"github.com/golang/glog"
 	"github.com/spf13/viper"
 )
 
@@ -24,6 +24,8 @@ func init() {
 }
 
 func main() {
+
+	// trafficshapping.GetRTBFieldTargeting()
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)

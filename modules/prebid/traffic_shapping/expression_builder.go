@@ -22,3 +22,13 @@ func (e Eq) Evaluate(p map[string]string) bool {
 	}
 	return false
 }
+
+// type IsPresent struct {
+// 	Key string
+// }
+
+// // Evaluate of IsPresent checks only if key inside input is present or not
+// func (i IsPresent) Evaluate(p map[string]string) bool {
+// 	_, present := p[i.Key]
+// 	return present
+// }
