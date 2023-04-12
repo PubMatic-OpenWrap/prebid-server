@@ -139,9 +139,45 @@ func getPartnerRecordsByImp(ao *analytics.AuctionObject, rCtx *models.RequestCtx
 	// impID-partnerRecords: partner records per impression
 	ipr := make(map[string][]PartnerRecord)
 
+	// Seat-impID
+	rejectedBids := map[string]map[string]struct{}{}
 	loggerSeat := make(map[string][]openrtb2.Bid)
+	for _, seatBids := range ao.RejectedBids {
+		if _, ok := rejectedBids[seatBids.Seat]; !ok {
+			rejectedBids[seatBids.Seat] = map[string]struct{}{}
+		}
+
+		if seatBids.Bid != nil && seatBids.Bid.Bid != nil {
+			rejectedBids[seatBids.Seat][seatBids.Bid.Bid.ImpID] = struct{}{}
+
+			bidExt := models.BidExt{}
+			_ = json.Unmarshal(seatBids.Bid.Bid.Ext, &bidExt)
+			bidExt.OriginalBidCPM = seatBids.Bid.OriginalBidCPM
+			bidExt.OriginalBidCPMUSD = seatBids.Bid.OriginalBidCPMUSD
+			bidExt.OriginalBidCur = seatBids.Bid.OriginalBidCur
+			if bidExt.Prebid == nil {
+				bidExt.Prebid = &openrtb_ext.ExtBidPrebid{}
+			}
+			bidExt.Prebid.Floors = seatBids.Bid.BidFloors
+			bidExt.Prebid.DealPriority = seatBids.Bid.DealPriority
+			bidExt.Prebid.Meta = seatBids.Bid.BidMeta
+			bidExt.Prebid.Video = seatBids.Bid.BidVideo
+
+			loggerSeat[seatBids.Seat] = append(loggerSeat[seatBids.Seat], *seatBids.Bid.Bid)
+		}
+	}
 	for _, seatBid := range ao.Response.SeatBid {
-		loggerSeat[seatBid.Seat] = append(loggerSeat[seatBid.Seat], seatBid.Bid...)
+		for _, bid := range seatBid.Bid {
+			// Check if this is a default bid of the RejectedBids
+			if bid.Price == 0 && bid.W == 0 && bid.H == 0 {
+				if _, ok := rejectedBids[seatBid.Seat]; ok {
+					if _, ok := rejectedBids[seatBid.Seat][bid.ImpID]; ok {
+						continue
+					}
+				}
+			}
+			loggerSeat[seatBid.Seat] = append(loggerSeat[seatBid.Seat], bid)
+		}
 	}
 	for seat, Bids := range rCtx.DroppedBids {
 		loggerSeat[seat] = append(loggerSeat[seat], Bids...)
