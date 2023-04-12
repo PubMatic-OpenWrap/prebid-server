@@ -166,7 +166,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 		}
 	}
 
-	// overwrite marketplace bid details with that of partner adatper
+	// overwrite marketplace bid details with that of parent bidder
 	for bidID, tracker := range trackers {
 		if _, ok := rctx.MarketPlaceBidders[tracker.Tracker.PartnerInfo.BidderCode]; ok {
 			if v, ok := pmMkt[tracker.Tracker.ImpID]; ok {
@@ -174,6 +174,16 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 				tracker.Tracker.PartnerInfo.KGPV = v.PubmaticKGPV
 			}
 		}
+
+		var finalTrackerURL string
+		trackerURL := ConstructTrackerURL(rctx, tracker.Tracker)
+		trackURL, err := url.Parse(trackerURL)
+		if err == nil {
+			trackURL.Scheme = models.HTTPSProtocol
+			finalTrackerURL = trackURL.String()
+		}
+		tracker.TrackerURL = finalTrackerURL
+
 		trackers[bidID] = tracker
 	}
 
