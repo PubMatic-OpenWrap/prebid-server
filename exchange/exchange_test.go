@@ -2630,6 +2630,22 @@ func TestCategoryMapping(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
+	expectedRejectedBids := []analytics.RejectedBid{
+		{
+			Bid: &entities.PbsOrtbBid{
+				Bid:     bid1_4.Bid,
+				BidType: openrtb_ext.BidTypeVideo,
+				BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+					Duration: 30,
+				},
+				OriginalBidCPM:    40,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 40,
+			},
+			RejectionReason: openrtb3.LossBidCategoryMapping,
+		},
+	}
+
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
@@ -2640,7 +2656,7 @@ func TestCategoryMapping(t *testing.T) {
 	assert.Equal(t, "20.00_AdapterOverride_30s", bidCategory["bid_id3"], "Category mapping override from adapter didn't take")
 	assert.Equal(t, 3, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 3, len(bidCategory), "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{{RejectionReason: 209, Bid: bid1_4.Bid, Seat: ""}}, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
+	assert.Equal(t, expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
 }
 
 func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
@@ -2751,6 +2767,22 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
+	expectedRejectedBids := []analytics.RejectedBid{
+		{
+			Bid: &entities.PbsOrtbBid{
+				Bid:     &bid3,
+				BidType: openrtb_ext.BidTypeVideo,
+				BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+					Duration: 30,
+				},
+				OriginalBidCPM:    30,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 30,
+			},
+			RejectionReason: openrtb3.LossBidCategoryMapping,
+		},
+	}
+
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &r, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
@@ -2760,7 +2792,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	assert.Equal(t, "20.00_Sports_50s", bidCategory["bid_id2"], "Category mapping doesn't match")
 	assert.Equal(t, 2, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 2, len(bidCategory), "Bidders category mapping doesn't match")
-	assert.Equal(t, []analytics.RejectedBid{{Bid: &bid3, RejectionReason: openrtb3.LossCategoryExclusions}}, r.LoggableObject.RejectedBids, "Rejected Bids not matching")
+	assert.Equal(t, expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids not matching")
 }
 
 func newExtRequestTranslateCategories(translateCategories *bool) openrtb_ext.ExtRequest {
@@ -3194,9 +3226,12 @@ func TestBidRejectionErrors(t *testing.T) {
 			},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Bid:             &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{}, W: 1, H: 1},
-					Seat:            "",
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
 				},
 			},
 		},
@@ -3212,9 +3247,12 @@ func TestBidRejectionErrors(t *testing.T) {
 			},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Bid:             &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
-					Seat:            "",
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
 				},
 			},
 		},
@@ -3230,9 +3268,12 @@ func TestBidRejectionErrors(t *testing.T) {
 			},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Bid:             &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
-					Seat:            "",
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 70}},
+					Seat: "",
 				},
 			},
 		},
@@ -3250,9 +3291,12 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedCatDur: "10.00_VideoGames_30s",
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Bid:             &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
-					Seat:            "",
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
 				},
 			},
 		},
@@ -3289,7 +3333,7 @@ func TestBidRejectionErrors(t *testing.T) {
 
 		assert.Empty(t, err, "Category mapping error should be empty")
 		assert.Equal(t, test.expectedRejections, rejections, test.description)
-		assert.Equal(t, test.expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids did not match")
+		assert.Equal(t, test.expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids did not match for %v", test.description)
 	}
 }
 
@@ -3690,6 +3734,7 @@ func TestGetDealTiers(t *testing.T) {
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
 				"imp1": {openrtb_ext.BidderAppnexus: {Prefix: "tier1", MinDealTier: 5}},
+				"imp2": {},
 			},
 		},
 	}

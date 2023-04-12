@@ -54,7 +54,6 @@ func TestRequestHasFloors(t *testing.T) {
 }
 func TestShouldEnforceFloors(t *testing.T) {
 	type args struct {
-		bidRequest        *openrtb2.BidRequest
 		floorExt          *openrtb_ext.PriceFloorRules
 		configEnforceRate int
 		f                 func(int) int
@@ -68,21 +67,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "enfocement = true of enforcement object not provided",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    2.2,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				configEnforceRate: 100,
 				f: func(n int) int {
 					return n - 1
@@ -95,21 +79,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "No enfocement of floors when enforcePBS is false",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    2.2,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS: getFalse(),
@@ -127,21 +96,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "No enfocement of floors when enforcePBS is true but enforce rate is low",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    2.2,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS: getTrue(),
@@ -159,21 +113,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "No enfocement of floors when enforcePBS is true but enforce rate is low in incoming request",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    2.2,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS:  getTrue(),
@@ -192,21 +131,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "No Enfocement of floors when skipped is true, non zero value of bidfloor in imp",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    2.2,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS: getTrue(),
@@ -224,21 +148,6 @@ func TestShouldEnforceFloors(t *testing.T) {
 		{
 			name: "No enfocement of floors when skipped is true, zero value of bidfloor in imp",
 			args: args{
-				bidRequest: func() *openrtb2.BidRequest {
-					r := openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-							{
-								BidFloor:    0,
-								BidFloorCur: "USD",
-							},
-						},
-					}
-					return &r
-				}(),
 				floorExt: &openrtb_ext.PriceFloorRules{
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS: getTrue(),
@@ -256,7 +165,7 @@ func TestShouldEnforceFloors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shouldEnforce, updateReq := ShouldEnforce(tt.args.bidRequest, tt.args.floorExt, tt.args.configEnforceRate, tt.args.f)
+			shouldEnforce, updateReq := ShouldEnforce(tt.args.floorExt, tt.args.configEnforceRate, tt.args.f)
 			if shouldEnforce != tt.expEnforce {
 				t.Errorf("shouldEnforce = %v, want %v", shouldEnforce, tt.expEnforce)
 			}

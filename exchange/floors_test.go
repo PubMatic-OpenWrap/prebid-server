@@ -920,7 +920,7 @@ func TestEnforceFloorToBidsConversion(t *testing.T) {
 					Currency: "EUR",
 				},
 			},
-			want1: []string{"Error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-1 and bid id some-bid-1", "Error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-2 and bid id some-bid-2"},
+			want1: []string{"error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-1 and bid id some-bid-1", "error in rate conversion from = EUR to USD with bidder pubmatic for impression id some-impression-id-2 and bid id some-bid-2"},
 		},
 	}
 
@@ -1014,22 +1014,24 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossBelowDealFloor,
-					Bid: &openrtb2.Bid{
+					RejectionReason: openrtb3.LossBidBelowDealFloor,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:     "some-bid-11",
 						Price:  0.5,
 						ImpID:  "some-impression-id-1",
 						DealID: "3",
 					},
+					},
 					Seat: "",
 				},
 				{
-					RejectionReason: openrtb3.LossBelowDealFloor,
-					Bid: &openrtb2.Bid{
+					RejectionReason: openrtb3.LossBidBelowDealFloor,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:     "some-bid-1",
 						Price:  1.2,
 						ImpID:  "some-impression-id-1",
 						DealID: "1",
+					},
 					},
 					Seat: "",
 				},
@@ -1109,11 +1111,12 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
-					Bid: &openrtb2.Bid{
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
+					},
 					},
 					Seat: "",
 				},
@@ -1193,12 +1196,13 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
 					},
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					},
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
 				},
 			},
@@ -1277,12 +1281,13 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
-					Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
+					},
 					},
 				},
 			},
@@ -1360,12 +1365,13 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 5.0100 USD for impression id some-impression-id-1 bidder appnexus"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
-					Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
+					},
 					},
 				},
 			},
@@ -1763,20 +1769,22 @@ func TestEnforceFloors(t *testing.T) {
 			want1: []string{"bid rejected [bid ID: some-bid-11] reason: bid price value 0.5000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder appnexus", "bid rejected [bid ID: some-bid-1] reason: bid price value 1.2000 USD is less than bidFloor value 20.0100 USD for impression id some-impression-id-1 bidder pubmatic"},
 			expectedRejectedBids: []analytics.RejectedBid{
 				{
-					Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-1",
 						Price: 1.2,
 						ImpID: "some-impression-id-1",
 					},
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					},
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
 				}, {
-					Bid: &openrtb2.Bid{
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 						ID:    "some-bid-11",
 						Price: 0.5,
 						ImpID: "some-impression-id-1",
 					},
-					RejectionReason: openrtb3.LossBelowAuctionFloor,
+					},
+					RejectionReason: openrtb3.LossBidBelowAuctionFloor,
 					Seat:            "",
 				},
 			},
@@ -1792,11 +1800,11 @@ func TestEnforceFloors(t *testing.T) {
 			}
 
 			sort.Slice(tt.args.r.LoggableObject.RejectedBids, func(i, j int) bool {
-				return tt.args.r.LoggableObject.RejectedBids[i].Bid.ID > tt.args.r.LoggableObject.RejectedBids[j].Bid.ID
+				return tt.args.r.LoggableObject.RejectedBids[i].Bid.Bid.ID > tt.args.r.LoggableObject.RejectedBids[j].Bid.Bid.ID
 			})
 
 			sort.Slice(tt.expectedRejectedBids, func(i, j int) bool {
-				return tt.expectedRejectedBids[i].Bid.ID > tt.expectedRejectedBids[j].Bid.ID
+				return tt.expectedRejectedBids[i].Bid.Bid.ID > tt.expectedRejectedBids[j].Bid.Bid.ID
 			})
 
 			assert.Equal(t, tt.expectedRejectedBids, tt.args.r.LoggableObject.RejectedBids, "Rejected Bids not matching")

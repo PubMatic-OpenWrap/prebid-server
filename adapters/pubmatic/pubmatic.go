@@ -273,7 +273,7 @@ func validateAdSlot(adslot string, imp *openrtb2.Imp) error {
 		}
 
 		//In case of video, size could be derived from the player size
-		if imp.Banner != nil && width != 0 && height != 0 {
+		if imp.Banner != nil && width != 0 && height != 0 && !(imp.Native != nil && width == 1 && height == 1) {
 			imp.Banner = assignBannerWidthAndHeight(imp.Banner, int64(width), int64(height))
 		}
 	} else {
@@ -383,7 +383,7 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	// If bidViewabilityScore param is populated, pass it to imp[i].ext
 	if pubmaticExt.BidViewabilityScore != nil {
-		extMap[bidViewability] = *pubmaticExt.BidViewabilityScore
+		extMap[bidViewability] = pubmaticExt.BidViewabilityScore
 	}
 
 	imp.Ext = nil

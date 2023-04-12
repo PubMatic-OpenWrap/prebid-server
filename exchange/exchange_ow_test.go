@@ -90,19 +90,19 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				expectedRejectedBids: []analytics.RejectedBid{
 					{
-						RejectionReason: openrtb3.LossAdvertiserExclusions,
-						Bid: &openrtb2.Bid{
+						RejectionReason: openrtb3.LossBidAdvertiserBlocking,
+						Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 							ID:      "a.com_bid",
 							ADomain: []string{"a.com"},
-						},
+						}},
 						Seat: "",
 					},
 					{
-						RejectionReason: openrtb3.LossAdvertiserExclusions,
-						Bid: &openrtb2.Bid{
+						RejectionReason: openrtb3.LossBidAdvertiserBlocking,
+						Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 							ID:      "reject_b.a.com.a.com.b.c.d.a.com",
 							ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
-						},
+						}},
 						Seat: "",
 					},
 				},
@@ -594,10 +594,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				}
 
 				sort.Slice(tt.args.advBlockReq.LoggableObject.RejectedBids, func(i, j int) bool {
-					return tt.args.advBlockReq.LoggableObject.RejectedBids[i].Bid.ID > tt.args.advBlockReq.LoggableObject.RejectedBids[j].Bid.ID
+					return tt.args.advBlockReq.LoggableObject.RejectedBids[i].Bid.Bid.ID > tt.args.advBlockReq.LoggableObject.RejectedBids[j].Bid.Bid.ID
 				})
 				sort.Slice(tt.want.expectedRejectedBids, func(i, j int) bool {
-					return tt.want.expectedRejectedBids[i].Bid.ID > tt.want.expectedRejectedBids[j].Bid.ID
+					return tt.want.expectedRejectedBids[i].Bid.Bid.ID > tt.want.expectedRejectedBids[j].Bid.Bid.ID
 				})
 				assert.Equal(t, tt.want.expectedRejectedBids, tt.args.advBlockReq.LoggableObject.RejectedBids, "Rejected Bids not matching")
 
@@ -785,5 +785,126 @@ func TestMakeBidExtJSONOW(t *testing.T) {
 		} else {
 			assert.Contains(t, err.Error(), test.expectedErrMessage, "incorrect error message")
 		}
+	}
+}
+
+func TestUpdateRejectedBidExt(t *testing.T) {
+	type args struct {
+		loggableObject *analytics.LoggableAuctionObject
+	}
+	type want struct {
+		loggableObject *analytics.LoggableAuctionObject
+	}
+	type test struct {
+		name string
+		args args
+		want want
+	}
+
+	testCases := []test{
+		{
+			name: "nil rejected bid",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{
+						{
+							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+								ID: "b1",
+							},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{
+						{
+							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+								ID:  "b1",
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+							},
+								OriginalBidCPM: 0,
+								BidType:        "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "malformed bid.ext json",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{
+						{
+							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+								ID: "b1",
+							},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{
+						{
+							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+								ID:  "b1",
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+							},
+								OriginalBidCPM: 0,
+								BidType:        "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "valid pbsOrtbBid",
+			args: args{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{{
+						Bid: &entities.PbsOrtbBid{
+							Bid: &openrtb2.Bid{
+								ID:  "b2",
+								Ext: json.RawMessage(`{"key":"value"}`),
+							},
+							DealPriority:   10,
+							OriginalBidCPM: 10,
+							BidType:        openrtb_ext.BidTypeBanner,
+						},
+						Seat:            "pubmatic",
+						RejectionReason: openrtb3.LossBidAdvertiserBlocking}},
+				},
+			},
+			want: want{
+				loggableObject: &analytics.LoggableAuctionObject{
+					RejectedBids: []analytics.RejectedBid{
+						{
+							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
+								ID:  "b2",
+								Ext: json.RawMessage(`{"key":"value","origbidcpm":10,"prebid":{"dealpriority":10,"type":"banner"}}`),
+							},
+								DealPriority:   10,
+								OriginalBidCPM: 10,
+								BidType:        openrtb_ext.BidTypeBanner,
+							},
+							Seat:            "pubmatic",
+							RejectionReason: openrtb3.LossBidAdvertiserBlocking,
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			UpdateRejectedBidExt(test.args.loggableObject)
+			assert.Equal(t, test.want.loggableObject.RejectedBids[0].Bid.Bid.Ext, test.args.loggableObject.RejectedBids[0].Bid.Bid.Ext, "mismatched loggableObject for test-[%+v]", test.name)
+
+		})
 	}
 }

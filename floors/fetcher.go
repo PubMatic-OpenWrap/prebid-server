@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"strconv"
@@ -84,10 +84,14 @@ func (fq *FetchQueue) Top() *FetchInfo {
 	return old[0]
 }
 
+func workerPanicHandler(p interface{}) {
+	glog.Errorf("floor fetcher worker panicked: %v", p)
+}
+
 func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry int, metricEngine metrics.MetricsEngine) *PriceFloorFetcher {
 
 	floorFetcher := PriceFloorFetcher{
-		pool:            pond.New(maxWorkers, maxCapacity),
+		pool:            pond.New(maxWorkers, maxCapacity, pond.PanicHandler(workerPanicHandler)),
 		fetchQueue:      make(FetchQueue, 0, 100),
 		fetchInprogress: make(map[string]bool),
 		configReceiver:  make(chan FetchInfo, maxCapacity),
@@ -256,7 +260,7 @@ func fetchFloorRulesFromURL(configs config.AccountFloorFetch) ([]byte, int, erro
 		}
 	}
 
-	respBody, err := ioutil.ReadAll(httpResp.Body)
+	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return nil, 0, errors.New("unable to read response")
 	}

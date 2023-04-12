@@ -1,6 +1,7 @@
 package vastbidder
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -63,6 +64,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 								Price: 0.05,
 								AdM:   `<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
 								CrID:  "cr_1234",
+								Ext:   json.RawMessage(`{"prebid":{"type":"video","video":{"duration":15,"primary_category":"","vasttagid":"101"}}}`),
 							},
 							BidType: openrtb_ext.BidTypeVideo,
 							BidVideo: &openrtb_ext.ExtBidPrebidVideo{
