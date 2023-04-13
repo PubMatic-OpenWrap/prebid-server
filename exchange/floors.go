@@ -106,6 +106,7 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 
 			bidPrice := rate * bid.Bid.Price
 			if reqImp.BidFloor > bidPrice {
+				bid.BidFloors.FloorValueUSD = getOriginalBidCpmUsd(reqImp.BidFloor, reqImpCur, conversions) // for analytics
 				rejectedBid := analytics.RejectedBid{
 					Bid:  bid,
 					Seat: seatBid.Seat,
@@ -123,6 +124,12 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 		seatBids[bidderName].Bids = eligibleBids
 	}
 	return seatBids, errs, rejectedBids
+}
+
+// TODO: Move this to impCtx and use it in all places
+func getOriginalBidCpmUsd(price float64, from string, conversions currency.Conversions) float64 {
+	rate, _ := getCurrencyConversionRate(from, "USD", conversions)
+	return rate * price
 }
 
 // getFloorsFlagFromReqExt returns floors enabled flag,
