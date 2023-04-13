@@ -94,8 +94,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// TODO make this generic.
-	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+	for _, bidderName := range []string{string(openrtb_ext.BidderPubmatic), string(models.BidderPubMaticSecondaryAlias)} {
+		if _, ok := rCtx.AdapterThrottleMap[bidderName]; !ok {
+			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderName)
+		}
 	}
 
 	disabledSlots := 0
