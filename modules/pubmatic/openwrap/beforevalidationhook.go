@@ -337,6 +337,13 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	bidRequest.Source.TID = bidRequest.ID
 
 	for i := 0; i < len(bidRequest.Imp); i++ {
+		// TODO: move this to PBS-Core
+		if bidRequest.Imp[i].BidFloor == 0 {
+			bidRequest.Imp[i].BidFloorCur = ""
+		} else if bidRequest.Imp[i].BidFloorCur == "" {
+			bidRequest.Imp[i].BidFloorCur = "USD"
+		}
+
 		m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
