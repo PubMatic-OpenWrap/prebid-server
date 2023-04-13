@@ -52,7 +52,6 @@ type macroProvider struct {
 
 // NewBuilder returns the instance of macro buidler
 func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) *macroProvider {
-
 	macroProvider := &macroProvider{macros: map[string]string{}}
 	macroProvider.populateRequestMacros(reqWrapper)
 	return macroProvider
