@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	gocache "github.com/patrickmn/go-cache"
@@ -14,6 +15,7 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	ow_config "github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 const (
@@ -32,6 +34,7 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("invalid openwrap config: %v", err)
 	}
+	patchConfig(&cfg)
 
 	mysqlDriver, err := open("mysql", cfg.OpenWrap.Database)
 	if err != nil {
@@ -74,4 +77,12 @@ func open(driverName string, cfg ow_config.Database) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func patchConfig(cfg *ow_config.SSHB) {
+	cfg.OpenWrap.Server.HostName = getHostName()
+	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.OpenWrap.Pixelview.OMScript, 1)
+	if cfg.OpenWrap.Stats.DefaultHostName == "" {
+		cfg.OpenWrap.Stats.DefaultHostName = "N:P"
+	}
 }

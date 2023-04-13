@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -187,4 +188,28 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 		origin = source
 	}
 	return source, origin
+}
+
+// getHostName Generates server name from node and pod name in K8S  environment
+func getHostName() string {
+	var (
+		nodeName string
+		podName  string
+	)
+
+	if nodeName, _ = os.LookupEnv(models.ENV_VAR_NODE_NAME); nodeName == "" {
+		nodeName = models.DEFAULT_NODENAME
+	} else {
+		nodeName = strings.Split(nodeName, ".")[0]
+	}
+
+	if podName, _ = os.LookupEnv(models.ENV_VAR_POD_NAME); podName == "" {
+		podName = models.DEFAULT_PODNAME
+	} else {
+		podName = strings.TrimPrefix(podName, "ssheaderbidding-")
+	}
+
+	serverName := nodeName + ":" + podName
+
+	return serverName
 }
