@@ -145,13 +145,9 @@ func (b *macroProvider) resetcontext() {
 	}
 }
 
-func truncate(text string, width int) string {
-	if width < 0 {
-		return text
-	}
-
+func truncate(text string, width uint) string {
 	r := []rune(text)
-	if len(r) < width {
+	if uint(len(r)) < (width) {
 		return text
 	}
 	trunc := r[:width]
