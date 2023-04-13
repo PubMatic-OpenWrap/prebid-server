@@ -1,7 +1,10 @@
 package trafficshapping
 
+import "fmt"
+
 type Expression interface {
 	Evaluate(map[string]string) bool
+	GetName() string
 }
 
 type And struct {
@@ -10,6 +13,13 @@ type And struct {
 
 func (a And) Evaluate(p map[string]string) bool {
 	return a.Left.Evaluate(p) && a.Right.Evaluate(p)
+}
+
+func (a And) GetName() string {
+	if a.Left == nil || a.Right == nil {
+		return "And"
+	}
+	return fmt.Sprintf("(%v And %v)", a.Left.GetName(), a.Right.GetName())
 }
 
 type Eq struct {
@@ -23,12 +33,6 @@ func (e Eq) Evaluate(p map[string]string) bool {
 	return false
 }
 
-// type IsPresent struct {
-// 	Key string
-// }
-
-// // Evaluate of IsPresent checks only if key inside input is present or not
-// func (i IsPresent) Evaluate(p map[string]string) bool {
-// 	_, present := p[i.Key]
-// 	return present
-// }
+func (e Eq) GetName() string {
+	return fmt.Sprintf("(%v = %v)", e.Key, e.Value)
+}

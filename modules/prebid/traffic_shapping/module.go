@@ -27,16 +27,18 @@ func (m Module) HandleProcessedAuctionHook(
 	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
 	result.ChangeSet = hookstage.ChangeSet[hookstage.ProcessedAuctionRequestPayload]{}
 
-	request := openrtb_ext.RequestWrapper{
-		BidRequest: payload.BidRequest,
-	}
-	requestRules, err := getRequestLevelRules(payload.BidRequest.Ext)
-	rtbRequest := RTBRequest{payload.BidRequest}
+	// request := openrtb_ext.RequestWrapper{
+	// 	BidRequest: payload.BidRequest,
+	// }
+	rw := payload.BidRequest
+	requestRules, err := getRequestLevelRules(rw.Ext)
+	rtbRequest := RTBRequest{rw.BidRequest}
 	bidderTargeting := getBidderTargeting(rtbRequest)
+	result.Warnings = make([]string, 0)
 	if err == nil {
 		// iterate over request.impressions
 		newImps := make([]*openrtb_ext.ImpWrapper, 0)
-		for _, imp := range request.GetImp() {
+		for _, imp := range rw.GetImp() {
 			impExt, err := imp.GetImpExt()
 			if err == nil {
 				biddersToRemove := []string{}
@@ -50,10 +52,9 @@ func (m Module) HandleProcessedAuctionHook(
 					}
 				}
 				// remove bidder from impExt.prebid.bidder using biddersToRemove
-				result.Warnings = make([]string, 0)
 				for _, bidder := range biddersToRemove {
 					delete(impExtPrebid.Bidder, bidder)
-					warning := fmt.Sprintf("Removed bidder '%s' from Impression Id = '%s' (targeting rule [%s] not satified)", bidder, imp.ID, bidderTargeting[bidder])
+					warning := fmt.Sprintf("Removed bidder '%s' from Impression Id = '%s' targeting rule [%s] not satisfied", bidder, imp.ID, bidderTargeting[bidder].GetName())
 					fmt.Println(warning)
 					result.Warnings = append(result.Warnings, warning)
 				}
@@ -64,12 +65,12 @@ func (m Module) HandleProcessedAuctionHook(
 				newImps = append(newImps, imp)
 			}
 		}
-		request.SetImp(newImps)
-		request.RebuildRequest()
+		rw.SetImp(newImps)
+		rw.RebuildRequest()
 	}
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		parp.BidRequest = request.BidRequest
+		parp.BidRequest = rw
 		return parp, err
 	}, hookstage.MutationUpdate, "filter-bidders-traffic-shaping")
 
