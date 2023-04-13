@@ -28,7 +28,7 @@ type eventTracking struct {
 func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.Events.IsEnabled(),
+		enabledForAccount:  account.EventsEnabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    getIntegrationType(requestExtPrebid),
