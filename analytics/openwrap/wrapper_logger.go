@@ -139,10 +139,6 @@ func getPartnerRecordsByImp(ao *analytics.AuctionObject, rCtx *models.RequestCtx
 	// impID-partnerRecords: partner records per impression
 	ipr := make(map[string][]PartnerRecord)
 
-	// TODO: Move this to impCtx and use it in all places
-	// refer getOriginalBidCpmUsd
-	floorValueUSD := map[string]float64{}
-
 	// Seat-impID
 	rejectedBids := map[string]map[string]struct{}{}
 	loggerSeat := make(map[string][]openrtb2.Bid)
@@ -153,8 +149,6 @@ func getPartnerRecordsByImp(ao *analytics.AuctionObject, rCtx *models.RequestCtx
 
 		if seatBids.Bid != nil && seatBids.Bid.Bid != nil {
 			rejectedBids[seatBids.Seat][seatBids.Bid.Bid.ImpID] = struct{}{}
-
-			floorValueUSD[seatBids.Bid.Bid.ID] = seatBids.Bid.BidFloors.FloorValueUSD
 
 			bidExt := models.BidExt{}
 			_ = json.Unmarshal(seatBids.Bid.Bid.Ext, &bidExt)
@@ -330,7 +324,7 @@ func getPartnerRecordsByImp(ao *analytics.AuctionObject, rCtx *models.RequestCtx
 					if bidExt.Prebid.Floors.FloorCurrency == "USD" {
 						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
 					} else {
-						pr.FloorValue = roundToTwoDigit(floorValueUSD[pr.BidID])
+						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValueUSD)
 					}
 				}
 			}
