@@ -45,22 +45,13 @@ type MacroContext struct {
 	EventElement   string
 }
 
-type Provider interface {
-	// GetMacro returns the macro value for the given macro key
-	GetMacro(key string) string
-	// GetAllMacros return all the macros
-	GetAllMacros(keys []string) map[string]string
-	// SetContext set the bid and imp for the current provider
-	SetContext(ctx MacroContext)
-}
-
 type macroProvider struct {
 	// macros map stores macros key values
 	macros map[string]string
 }
 
 // NewBuilder returns the instance of macro buidler
-func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) Provider {
+func NewProvider(reqWrapper *openrtb_ext.RequestWrapper) *macroProvider {
 
 	macroProvider := &macroProvider{macros: map[string]string{}}
 	macroProvider.populateRequestMacros(reqWrapper)
