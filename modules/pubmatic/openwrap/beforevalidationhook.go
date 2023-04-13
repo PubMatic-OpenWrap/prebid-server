@@ -93,13 +93,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		IncludeWinners:    true,
 	}
 
-	// TODO make this generic.
-	for _, bidderName := range []string{string(openrtb_ext.BidderPubmatic), string(models.BidderPubMaticSecondaryAlias)} {
-		if _, ok := rCtx.AdapterThrottleMap[bidderName]; !ok {
-			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderName)
-		}
-	}
-
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 
@@ -295,6 +288,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
+	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+	}
+	if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
+	}
 
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
