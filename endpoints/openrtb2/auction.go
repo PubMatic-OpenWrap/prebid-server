@@ -273,6 +273,22 @@ func rejectAuctionRequest(
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
 	if request != nil {
 		response.ID = request.ID
+
+	}
+
+	// TODO merge this with success case
+	if response != nil {
+		stageOutcomes := hookExecutor.GetOutcomes()
+		ao.HookExecutionOutcome = stageOutcomes
+
+		response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
+
+		isDebug, err := jsonparser.GetBoolean(request.Ext, "prebid", "debug")
+		if err == nil && isDebug {
+			url := "\"" + openwrap.GetLogAuctionObjectAsURL(&ao, false) + "\""
+			response.Ext, _ = jsonparser.Set(ao.Response.Ext, []byte(url), "owlogger")
+		}
+		response.Ext = getLogInfo(request.Ext, response.Ext, &ao)
 	}
 
 	ao.Response = response
