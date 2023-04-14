@@ -303,6 +303,7 @@ func sendAuctionResponse(
 		}
 
 		response.Ext = getLogInfo(request.Ext, response.Ext, &ao)
+		response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
