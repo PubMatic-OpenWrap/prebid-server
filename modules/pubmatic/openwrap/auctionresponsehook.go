@@ -52,9 +52,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		},
 	}
 
-	if payload.BidResponse.NBR != nil {
-		return result, nil
-	}
+	// if payload.BidResponse.NBR != nil {
+	// 	return result, nil
+	// }
 
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
