@@ -96,11 +96,17 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 			incomingSlots = impCtx.IncomingSlots
 		}
 
+		// to keep existing response intact
+		partnerData := make([]PartnerRecord, 0)
+		if ipr[imp.ID] != nil {
+			partnerData = ipr[imp.ID]
+		}
+
 		slots = append(slots, SlotRecord{
 			SlotName:          getSlotName(imp.ID, imp.TagID),
 			SlotSize:          incomingSlots,
 			Adunit:            imp.TagID,
-			PartnerData:       ipr[imp.ID],
+			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
 			// AdPodSlot:         getAdPodSlot(imp, responseMap.AdPodBidsExt),
 		})

@@ -72,6 +72,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil {
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.DebugMessages = append(result.DebugMessages, err.Error())
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
 
@@ -79,6 +80,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil {
 		result.NbrCode = nbr.InvalidPriceGranularityConfig
 		result.DebugMessages = append(result.DebugMessages, err.Error())
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
 
@@ -136,6 +138,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
 			disabledSlots++
+
+			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
+				IncomingSlots: incomingSlots,
+			}
 			continue
 		}
 

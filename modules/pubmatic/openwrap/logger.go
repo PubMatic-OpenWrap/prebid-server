@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 func getIncomingSlots(imp openrtb2.Imp) []string {
@@ -27,4 +28,16 @@ func getIncomingSlots(imp openrtb2.Imp) []string {
 		s = append(s, k)
 	}
 	return s
+}
+
+func getDefaultImpBidCtx(request openrtb2.BidRequest) map[string]models.ImpCtx {
+	impBidCtx := make(map[string]models.ImpCtx)
+	for _, imp := range request.Imp {
+		incomingSlots := getIncomingSlots(imp)
+
+		impBidCtx[imp.ID] = models.ImpCtx{
+			IncomingSlots: incomingSlots,
+		}
+	}
+	return impBidCtx
 }
