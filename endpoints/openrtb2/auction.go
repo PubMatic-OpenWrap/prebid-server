@@ -277,19 +277,17 @@ func rejectAuctionRequest(
 	}
 
 	// TODO merge this with success case
-	if response != nil {
-		stageOutcomes := hookExecutor.GetOutcomes()
-		ao.HookExecutionOutcome = stageOutcomes
+	stageOutcomes := hookExecutor.GetOutcomes()
+	ao.HookExecutionOutcome = stageOutcomes
 
-		response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
+	response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
 
-		isDebug, err := jsonparser.GetBoolean(request.Ext, "prebid", "debug")
-		if err == nil && isDebug {
-			url := "\"" + openwrap.GetLogAuctionObjectAsURL(&ao, false) + "\""
-			response.Ext, _ = jsonparser.Set(ao.Response.Ext, []byte(url), "owlogger")
-		}
-		response.Ext = getLogInfo(request.Ext, response.Ext, &ao)
+	isDebug, err := jsonparser.GetBoolean(request.Ext, "prebid", "debug")
+	if err == nil && isDebug {
+		url := "\"" + openwrap.GetLogAuctionObjectAsURL(&ao, false) + "\""
+		response.Ext, _ = jsonparser.Set(ao.Response.Ext, []byte(url), "owlogger")
 	}
+	response.Ext = getLogInfo(request.Ext, response.Ext, &ao)
 
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
