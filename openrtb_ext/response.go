@@ -28,7 +28,7 @@ type ExtBidResponse struct {
 
 	OwMatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
 	OwSendAllBids       int             `json:"sendallbids,omitempty"`
-	OwLogInfo           LogInfo         `json:"loginfo,omitempty"`
+	OwLogInfo           *OwLogInfo      `json:"loginfo,omitempty"`
 	OwLogger            string          `json:"owlogger,omitempty"`
 }
 

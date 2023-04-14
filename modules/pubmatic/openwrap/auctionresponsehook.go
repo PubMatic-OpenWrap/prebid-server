@@ -182,7 +182,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
-	responseExt := make(map[string]interface{})
+	responseExt := openrtb_ext.ExtBidResponse{}
 	// TODO use concrete structure
 	if len(payload.BidResponse.Ext) != 0 {
 		if err := json.Unmarshal(payload.BidResponse.Ext, &responseExt); err != nil {
@@ -190,26 +190,22 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	if responsetimemillis, _ := responseExt["responsetimemillis"]; ok {
-		if responsetimemillisMap, ok := responsetimemillis.(map[string]interface{}); ok {
-			for k, v := range responsetimemillisMap {
-				rctx.BidderResponseTimeMillis[k] = int(v.(float64))
-			}
-		}
+	for k, v := range responseExt.ResponseTimeMillis {
+		rctx.BidderResponseTimeMillis[k.String()] = v
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()
 	if matchedImpression := getMatchedImpression(rctx); matchedImpression != nil {
-		responseExt[models.MatchedImpression] = matchedImpression
+		responseExt.OwMatchedImpression = matchedImpression
 	}
 
 	if rctx.SendAllBids {
-		responseExt[models.SendAllBidsFlagKey] = 1
+		responseExt.OwSendAllBids = 1
 	}
 
 	if rctx.LogInfoFlag == 1 {
-		responseExt[models.LogInfoKey] = openrtb_ext.LogInfo{
-			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true),
+		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
+			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true), updated done later
 			Tracker: tracker.GetTrackerInfo(rctx),
 		}
 	}
