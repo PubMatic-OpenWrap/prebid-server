@@ -22,10 +22,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	result := hookstage.HookResult[hookstage.AuctionResponsePayload]{}
 	result.ChangeSet = hookstage.ChangeSet[hookstage.AuctionResponsePayload]{}
 
-	if payload.BidResponse.NBR != nil {
-		return result, nil
-	}
-
 	// absence of rctx at this hook means the first hook failed!. Do nothing
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
@@ -41,12 +37,24 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}()
 
 	// cache rctx for analytics
-	result.AnalyticsTags.Activities = make([]hookanalytics.Activity, 1)
-	result.AnalyticsTags.Activities[0].Name = "openwrap_request_ctx"
-	result.AnalyticsTags.Activities[0].Results = make([]hookanalytics.Result, 1)
-	values := make(map[string]interface{})
-	values["request-ctx"] = &rctx
-	result.AnalyticsTags.Activities[0].Results[0].Values = values
+	result.AnalyticsTags = hookanalytics.Analytics{
+		Activities: []hookanalytics.Activity{
+			{
+				Name: "openwrap_request_ctx",
+				Results: []hookanalytics.Result{
+					{
+						Values: map[string]interface{}{
+							"request-ctx": &rctx,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if payload.BidResponse.NBR != nil {
+		return result, nil
+	}
 
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {

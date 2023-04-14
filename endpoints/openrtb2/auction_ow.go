@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/analytics/openwrap"
@@ -27,17 +28,21 @@ func recordRejectedBids(pubID string, rejBids []analytics.RejectedBid, metricEng
 	}
 }
 
-func UpdateResponseExtOW(responseExt json.RawMessage, ao analytics.AuctionObject) []byte {
-	rCtx := openwrap.GetRequestCtx(ao.HookExecutionOutcome)
-	if rCtx == nil {
-		return responseExt
+func UpdateResponseExtOW(response *openrtb2.BidResponse, ao analytics.AuctionObject) {
+	if response == nil {
+		return
 	}
 
 	extBidResponse := openrtb_ext.ExtBidResponse{}
-	if len(responseExt) != 0 {
-		if err := json.Unmarshal(responseExt, &extBidResponse); err != nil {
-			return responseExt
+	if len(response.Ext) != 0 {
+		if err := json.Unmarshal(response.Ext, &extBidResponse); err != nil {
+			return
 		}
+	}
+
+	rCtx := openwrap.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		return
 	}
 
 	if rCtx.LogInfoFlag == 1 {
@@ -53,8 +58,7 @@ func UpdateResponseExtOW(responseExt json.RawMessage, ao analytics.AuctionObject
 
 	extBidResponse.Logger = openwrap.GetLogAuctionObjectAsURL(ao, false)
 
-	responseExt, _ = json.Marshal(extBidResponse)
-	return responseExt
+	response.Ext, _ = json.Marshal(extBidResponse)
 }
 
 func updateSeatNoBid(ao analytics.AuctionObject) []openrtb_ext.SeatNonBid {

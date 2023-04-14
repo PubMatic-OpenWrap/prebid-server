@@ -277,7 +277,7 @@ func rejectAuctionRequest(
 	// TODO merge this with success case
 	stageOutcomes := hookExecutor.GetOutcomes()
 	ao.HookExecutionOutcome = stageOutcomes
-	UpdateResponseExtOW(response.Ext, ao)
+	UpdateResponseExtOW(response, ao)
 
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
@@ -299,7 +299,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
-		defer UpdateResponseExtOW(response.Ext, ao)
+		UpdateResponseExtOW(response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
