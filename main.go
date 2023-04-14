@@ -19,6 +19,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/viper"
+
+	_ "net/http/pprof"
 )
 
 func init() {
@@ -28,6 +30,8 @@ func init() {
 func main() {
 	flag.Parse() // required for glog flags and testing package flags
 
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
 	pyroscope.Start(pyroscope.Config{
 		ApplicationName: "nilesh.owpbsmodule.golang.app",
 
