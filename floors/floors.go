@@ -211,6 +211,10 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors openrtb_ext
 		}
 		*mergedFloors.Enabled = floorsEnabledByProvider && floorsEnabledByRequest
 		mergedFloors.Enforcement = resolveEnforcement(floorsProviderEnforcement, enforceRate)
+		if reqFloors != nil && reqFloors.Enforcement != nil && reqFloors.Enforcement.EnforcePBS != nil {
+			enforcepbs := *reqFloors.Enforcement.EnforcePBS
+			mergedFloors.Enforcement.EnforcePBS = &enforcepbs
+		}
 		if floorMinPrice.FloorMin > float64(0) {
 			mergedFloors.FloorMin = floorMinPrice.FloorMin
 			mergedFloors.FloorMinCur = floorMinPrice.FloorMinCur
