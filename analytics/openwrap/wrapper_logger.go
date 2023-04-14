@@ -14,7 +14,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func GetLogAuctionObjectAsURL(ao *analytics.AuctionObject, logInfo bool) string {
+func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -135,7 +135,7 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 	return nil
 }
 
-func getPartnerRecordsByImp(ao *analytics.AuctionObject, rCtx *models.RequestCtx) map[string][]PartnerRecord {
+func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx) map[string][]PartnerRecord {
 	// impID-partnerRecords: partner records per impression
 	ipr := make(map[string][]PartnerRecord)
 

@@ -28,6 +28,8 @@ type ExtBidResponse struct {
 
 	MatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
 	SendAllBids       int             `json:"sendallbids,omitempty"`
+	LogInfo           LogInfo         `json:"loginfo,omitempty"`
+	Logger            string          `json:"logger,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug
@@ -153,4 +155,10 @@ type ExtNonBid struct {
 // ExtNonBidPrebid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext.prebid
 type ExtNonBidPrebid struct {
 	Bid interface{} `json:"bid,omitempty"` // To be removed once we start using single "Bid" data-type (unlike V25.Bid and openrtb2.Bid)
+}
+
+// LogInfo contains the logger, tracker calls to be sent in response
+type LogInfo struct {
+	Logger  string `json:"logger,omitempty"`
+	Tracker string `json:"tracker,omitempty"`
 }

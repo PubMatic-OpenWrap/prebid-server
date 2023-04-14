@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(
@@ -199,7 +200,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	if rctx.LogInfoFlag == 1 {
-		responseExt[models.LogInfoKey] = models.LogInfo{
+		responseExt[models.LogInfoKey] = openrtb_ext.LogInfo{
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true),
 			Tracker: tracker.GetTrackerInfo(rctx),
 		}

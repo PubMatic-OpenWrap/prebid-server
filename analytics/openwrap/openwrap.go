@@ -35,7 +35,7 @@ func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 	}()
 
-	_ = GetLogAuctionObjectAsURL(ao, false)
+	_ = GetLogAuctionObjectAsURL(*ao, false)
 	// Send(*ow.client, ow.URL, wl, 1) // NYC_TODO: pass gdpr enabled in ao.Context
 }
 
