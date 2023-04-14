@@ -61,6 +61,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
+	rCtx.TMax = m.setTimeout(rCtx)
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
 		rCtx.ABTestConfigApplied = 1
@@ -338,7 +339,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 
 	if bidRequest.TMax == 0 {
-		bidRequest.TMax = m.setTimeout(rctx)
+		bidRequest.TMax = rctx.TMax
 	}
 
 	if bidRequest.Source == nil {

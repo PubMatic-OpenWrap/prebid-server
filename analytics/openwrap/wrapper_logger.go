@@ -37,7 +37,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 			Timestamp:         rCtx.StartTime,
 			ServerLogger:      1,
 			TestConfigApplied: rCtx.ABTestConfigApplied,
-			Timeout:           int(ao.Request.TMax),
+			Timeout:           int(rCtx.TMax),
 		},
 	}
 

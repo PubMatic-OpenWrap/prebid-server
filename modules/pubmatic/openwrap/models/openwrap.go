@@ -20,7 +20,8 @@ type RequestCtx struct {
 	LoggerImpressionID                     string
 	ClientConfigFlag                       int
 
-	IP string
+	IP   string
+	TMax int64
 
 	//NYC_TODO: use enum?
 	IsTestRequest                     bool
