@@ -46,7 +46,7 @@ func UpdateResponseExtOW(response *openrtb2.BidResponse, ao analytics.AuctionObj
 	}
 
 	if rCtx.LogInfoFlag == 1 {
-		extBidResponse.LogInfo.Logger = openwrap.GetLogAuctionObjectAsURL(ao, true)
+		extBidResponse.OwLogInfo.Logger = openwrap.GetLogAuctionObjectAsURL(ao, true)
 	}
 
 	if seatNonBids := updateSeatNoBid(ao); len(seatNonBids) != 0 {
@@ -56,7 +56,7 @@ func UpdateResponseExtOW(response *openrtb2.BidResponse, ao analytics.AuctionObj
 		extBidResponse.Prebid.SeatNonBid = seatNonBids
 	}
 
-	extBidResponse.Logger = openwrap.GetLogAuctionObjectAsURL(ao, false)
+	extBidResponse.OwLogger = openwrap.GetLogAuctionObjectAsURL(ao, false)
 
 	response.Ext, _ = json.Marshal(extBidResponse)
 }
