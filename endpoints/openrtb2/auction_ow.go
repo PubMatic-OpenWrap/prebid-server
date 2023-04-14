@@ -62,11 +62,12 @@ func updateSeatNoBid(responseExt []byte, ao *analytics.AuctionObject) []byte {
 
 		for seat, rejectedBids := range seatNoBids {
 			extSeatNoBid := openrtb_ext.SeatNonBid{
-				Seat: seat,
+				Seat:    seat,
+				NonBids: make([]openrtb_ext.NonBid, 0, len(rejectedBids)),
 			}
-			nonBids := make([]openrtb_ext.NonBid, 0, len(rejectedBids))
+
 			for _, rejectedBid := range rejectedBids {
-				nonBids = append(nonBids, openrtb_ext.NonBid{
+				extSeatNoBid.NonBids = append(extSeatNoBid.NonBids, openrtb_ext.NonBid{
 					ImpId:      rejectedBid.Bid.Bid.ImpID,
 					StatusCode: rejectedBid.RejectionReason,
 					Ext: openrtb_ext.NonBidExt{
@@ -90,6 +91,7 @@ func updateSeatNoBid(responseExt []byte, ao *analytics.AuctionObject) []byte {
 					},
 				})
 			}
+
 			extBidResponse.Prebid.SeatNonBid = append(extBidResponse.Prebid.SeatNonBid, extSeatNoBid)
 		}
 		responseExt, _ = json.Marshal(extBidResponse)
