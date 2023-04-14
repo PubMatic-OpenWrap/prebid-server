@@ -296,14 +296,14 @@ func sendAuctionResponse(
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
 
+		response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
+
 		isDebug, err := jsonparser.GetBoolean(request.Ext, "prebid", "debug")
 		if err == nil && isDebug {
 			url := "\"" + openwrap.GetLogAuctionObjectAsURL(&ao, false) + "\""
 			response.Ext, _ = jsonparser.Set(ao.Response.Ext, []byte(url), "owlogger")
 		}
-
 		response.Ext = getLogInfo(request.Ext, response.Ext, &ao)
-		response.Ext = updateSeatNoBid(response.Ext, &ao) // temporary until seatnobid's vanilla PR is merged
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {

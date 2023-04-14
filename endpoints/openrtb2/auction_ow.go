@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/analytics/openwrap"
@@ -73,17 +72,7 @@ func updateSeatNoBid(responseExt []byte, ao *analytics.AuctionObject) []byte {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.Bid{
-								Bid: openrtb2.Bid{
-									Price:   rejectedBid.Bid.Bid.Price,
-									ADomain: rejectedBid.Bid.Bid.ADomain,
-									CatTax:  rejectedBid.Bid.Bid.CatTax,
-									Cat:     rejectedBid.Bid.Bid.Cat,
-									DealID:  rejectedBid.Bid.Bid.DealID,
-									W:       rejectedBid.Bid.Bid.W,
-									H:       rejectedBid.Bid.Bid.H,
-									Dur:     rejectedBid.Bid.Bid.Dur,
-									MType:   rejectedBid.Bid.Bid.MType,
-								},
+								Bid:            *rejectedBid.Bid.Bid,
 								OriginalBidCPM: rejectedBid.Bid.OriginalBidCPM,
 								OriginalBidCur: rejectedBid.Bid.OriginalBidCur,
 							},
