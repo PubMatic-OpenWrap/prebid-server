@@ -12,7 +12,6 @@ type BidExt struct {
 
 	ErrorCode       int    `json:"errorCode,omitempty"`
 	ErrorMsg        string `json:"errorMessage,omitempty"`
-	Partner         string `json:"partner,omitempty"`
 	RefreshInterval int    `json:"refreshInterval,omitempty"`
 	CreativeType    string `json:"crtype,omitempty"`
 	// AdPod           ExtBidPrebidAdPod `json:"adpod,omitempty"`

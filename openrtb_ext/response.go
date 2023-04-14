@@ -60,11 +60,6 @@ type ExtResponsePrebid struct {
 // Bid is Wrapper around original/proxy bid object
 type Bid struct {
 	openrtb2.Bid
-	ID    string `json:"id,omitempty"`    // added omitempty
-	ImpID string `json:"impid,omitempty"` // added omitempty
-
-	OriginalBidCPM float64 `json:"originalbidcpm,omitempty"`
-	OriginalBidCur string  `json:"originalbidcur,omitempty"`
 }
 
 // ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
