@@ -90,25 +90,15 @@ func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
 
 	httpResp := httptest.NewRecorder()
 	unwrapper.UnwrapRequest(httpResp, httpReq)
-	// ctx := context.Background()
-	// httpResp, err := ctxhttp.Do(ctx, nil, httpReq)
-	// if err != nil {
-	// 	respChan <- &unwrapReq{err: err}
-	// }
 
 	wrap_cnt := httpResp.Header().Get("unwrap-count")
-	//wrap_cnt := httpResp.Header.Get("unwrap-count")
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
 
 	}
 
 	respBody := httpResp.Body.Bytes()
-	// respBody, err := io.ReadAll(respBytes)
-	// if err != nil {
-	// 	respChan <- &unwrapReq{err: err}
-	// }
-	// defer httpResp.Body.Close()
+
 	if httpResp.Code != http.StatusOK {
 		respChan <- &unwrapReq{err: error(fmt.Errorf("Unexpected status code: %d. Run with request.debug = 1 for more info", httpResp.Code))}
 	}
