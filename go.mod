@@ -2,7 +2,7 @@ module github.com/prebid/prebid-server
 
 go 1.19
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230201103632-1ab3636b5914
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230418122827-89589b273e7c
 
 require (
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
