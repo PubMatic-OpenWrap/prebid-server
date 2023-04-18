@@ -15,6 +15,8 @@ import (
 	"github.com/prebid/prebid-server/server"
 	"github.com/prebid/prebid-server/util/task"
 
+	unwrapper "git.pubmatic.com/vastunwrap"
+
 	"github.com/golang/glog"
 	"github.com/spf13/viper"
 )
@@ -39,6 +41,8 @@ func main() {
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
+
+	unwrapper.InitUnWrapperConfig(cfg.UnwrapCfg)
 
 	// Create a soft memory limit on the total amount of memory that PBS uses to tune the behavior
 	// of the Go garbage collector. In summary, `cfg.GarbageCollectorThreshold` serves as a fixed cost

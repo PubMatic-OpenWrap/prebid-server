@@ -17,6 +17,8 @@ import (
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
+
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 )
 
 // Configuration specifies the static application config.
@@ -103,6 +105,8 @@ type Configuration struct {
 	Hooks       Hooks       `mapstructure:"hooks"`
 	Validations Validations `mapstructure:"validations"`
 	PriceFloors PriceFloors `mapstructure:"price_floors"`
+
+	UnwrapCfg unWrapCfg.VastUnWrapCfg `mapstructure:"vast_unwrap"`
 }
 
 type PriceFloors struct {
@@ -814,7 +818,7 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	if filename != "" {
 		v.SetConfigName(filename)
 		v.AddConfigPath(".")
-		v.AddConfigPath("//Users/jaydeepmohite/go/src/prebid-server/config/")
+		//v.AddConfigPath("//Users/jaydeepmohite/go/src/prebid-server/config/")
 	}
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables

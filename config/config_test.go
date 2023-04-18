@@ -450,7 +450,45 @@ account_defaults:
         adjust_for_bid_adjustment: false
         enforce_deal_floors: true
         use_dynamic_data: true
+
 `)
+
+var vastConfig = []byte(`
+vast_unwrap:
+  enabled: true
+  http_config:
+    max_idle_conns: 100
+    max_idle_conns_per_host: 1
+    idle_conn_timeout: 300
+  app_config:
+    unwrap_default_timeout: 100
+    debug: 0
+  stat_config:
+    host: 10.172.141.13
+    port: 8080
+    referesh_interval_in_sec: 1
+  server_config:
+    dc_name: OW_DC
+  log_config:
+    debug_log_file: /Users/jaydeepmohite/logs/unwrap/debug.log
+    error_log_file: /Users/jaydeepmohite/logs/unwrap/error.log
+`)
+
+func TestVASTConfig(t *testing.T) {
+
+	v := viper.New()
+	SetupViper(v, "", bidderInfos)
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(vastConfig))
+	cfg, err := New(v, bidderInfos, mockNormalizeBidderName)
+	assert.NoError(t, err, "Setting up config should work but it doesn't")
+
+	cmpInts(t, "max_idle_conns", cfg.UnwrapCfg.HTTPConfig.MaxIdleConns, 100)
+	cmpInts(t, "max_idle_conns", cfg.UnwrapCfg.HTTPConfig.MaxIdleConnsPerHost, 1)
+	cmpInts(t, "max_idle_conns", cfg.UnwrapCfg.HTTPConfig.IdleConnTimeout, 300)
+	cmpBools(t, "cfg.UnwrapCfg.Enabled", cfg.UnwrapCfg.Enabled, true)
+
+}
 
 var oldStoredRequestsConfig = []byte(`
 stored_requests:

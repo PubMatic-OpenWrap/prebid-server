@@ -1,17 +1,16 @@
 package openwrap
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"strings"
 	"time"
 
+	unwrapper "git.pubmatic.com/vastunwrap"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 type mediaTypes map[string]struct{}
@@ -78,6 +77,8 @@ func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
 	startTime := time.Now()
 	wrapperCnt := 0
 	headers := http.Header{}
+	//var httpResp w http.ResponseWriter
+	//	var httpResp http.ResponseWriter
 	headers.Add("Content-Type", "application/xml; charset=utf-8")
 	headers.Add("user-agent", "Mozilla/5.0 (QSP; Roku; AP; 5.4.12.227)")
 	headers.Add("unwrap-timeout", "1000")
@@ -86,25 +87,30 @@ func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
 		respChan <- &unwrapReq{err: err}
 	}
 	httpReq.Header = headers
-	ctx := context.Background()
-	httpResp, err := ctxhttp.Do(ctx, nil, httpReq)
-	if err != nil {
-		respChan <- &unwrapReq{err: err}
-	}
 
-	wrap_cnt := httpResp.Header.Get("unwrap-count")
+	httpResp := httptest.NewRecorder()
+	unwrapper.UnwrapRequest(httpResp, httpReq)
+	// ctx := context.Background()
+	// httpResp, err := ctxhttp.Do(ctx, nil, httpReq)
+	// if err != nil {
+	// 	respChan <- &unwrapReq{err: err}
+	// }
+
+	wrap_cnt := httpResp.Header().Get("unwrap-count")
+	//wrap_cnt := httpResp.Header.Get("unwrap-count")
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
+
 	}
 
-	respBody, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		respChan <- &unwrapReq{err: err}
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusOK {
-		respChan <- &unwrapReq{err: error(fmt.Errorf("Unexpected status code: %d. Run with request.debug = 1 for more info", httpResp.StatusCode))}
+	respBody := httpResp.Body.Bytes()
+	// respBody, err := io.ReadAll(respBytes)
+	// if err != nil {
+	// 	respChan <- &unwrapReq{err: err}
+	// }
+	// defer httpResp.Body.Close()
+	if httpResp.Code != http.StatusOK {
+		respChan <- &unwrapReq{err: error(fmt.Errorf("Unexpected status code: %d. Run with request.debug = 1 for more info", httpResp.Code))}
 	}
 
 	respTime := int(time.Since(startTime).Milliseconds())
