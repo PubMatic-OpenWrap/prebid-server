@@ -1,14 +1,17 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/julienschmidt/httprouter"
 )
 
 const (
-	OpenWrapAuction = "/pbs/openrtb2/auction"
-	OpenWrapV25     = "/openrtb/2.5"
-	OpenWrapVideo   = "/openrtb/video"
-	OpenWrapAmp     = "/openrtb/amp"
+	OpenWrapAuction     = "/pbs/openrtb2/auction"
+	OpenWrapV25         = "/openrtb/2.5"
+	OpenWrapVideo       = "/openrtb/video"
+	OpenWrapAmp         = "/openrtb/amp"
+	OpenWrapHealthcheck = "/healthcheck"
 )
 
 // Support legacy APIs for a grace period.
@@ -26,4 +29,8 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 	// OpenWrap AMP
 	r.POST(OpenWrapAmp, ampEndpoint)
+
+	r.GET(OpenWrapHealthcheck, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		w.WriteHeader(http.StatusOK)
+	})
 }
