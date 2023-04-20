@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/hooks"
@@ -168,7 +169,7 @@ func GetPrometheusGatherer() *prometheus.Registry {
 }
 
 // CallRecordNonBids calls RecordRejectedBids function on prebid's metric-engine
-func CallRecordNonBids(pubId, bidder string, code int) {
+func CallRecordNonBids(pubId, bidder string, code openrtb3.NonBidStatusCode) {
 	if g_metrics != nil {
 		codeStr := strconv.FormatInt(int64(code), 10)
 		g_metrics.RecordRejectedBids(pubId, bidder, codeStr)

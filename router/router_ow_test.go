@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
@@ -185,7 +186,7 @@ func TestCallRecordRejectedBids(t *testing.T) {
 
 	type args struct {
 		pubid, bidder string
-		code          int
+		code          openrtb3.NonBidStatusCode
 	}
 
 	type want struct {
