@@ -77,8 +77,7 @@ func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
 	startTime := time.Now()
 	wrapperCnt := 0
 	headers := http.Header{}
-	//var httpResp w http.ResponseWriter
-	//	var httpResp http.ResponseWriter
+
 	headers.Add("Content-Type", "application/xml; charset=utf-8")
 	headers.Add("user-agent", "Mozilla/5.0 (QSP; Roku; AP; 5.4.12.227)")
 	headers.Add("unwrap-timeout", "1000")
@@ -94,11 +93,9 @@ func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
 	wrap_cnt := httpResp.Header().Get("unwrap-count")
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
-
 	}
 
 	respBody := httpResp.Body.Bytes()
-
 	if httpResp.Code != http.StatusOK {
 		respChan <- &unwrapReq{err: error(fmt.Errorf("Unexpected status code: %d. Run with request.debug = 1 for more info", httpResp.Code))}
 	}
