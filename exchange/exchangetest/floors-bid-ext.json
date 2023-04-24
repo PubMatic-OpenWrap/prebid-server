@@ -141,7 +141,13 @@
                   "origbidcpm": 0.3,
                   "someField": "someValue",
                   "prebid": {
-                    "type": "video"
+                    "type": "video",
+                    "floors":{
+                      "floorCurrency":"USD", 
+                      "floorRule":"video-instream|*|test.somedomain.com", 
+                      "floorRuleValue":16, 
+                      "floorValue":16
+                    }
                   }
                 }
               }
