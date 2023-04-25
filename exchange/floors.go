@@ -150,13 +150,13 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entit
 		rejectionsErrs = append(rejectionsErrs, err)
 		return seatBids, rejectionsErrs
 	}
-	updateBidExt(r.BidRequestWrapper, seatBids)
 	prebidExt := requestExt.GetPrebid()
 	reqFloorEnable := getFloorsFlagFromReqExt(prebidExt)
 	if floor.Enabled && reqFloorEnable && r.Account.PriceFloors.Enabled {
 		var enforceDealFloors bool
 		var floorsEnfocement bool
 		var updateReqExt bool
+		updateBidExt(r.BidRequestWrapper, seatBids)
 		floorsEnfocement = floors.RequestHasFloors(r.BidRequestWrapper.BidRequest)
 		if prebidExt != nil && floorsEnfocement {
 			if floorsEnfocement, updateReqExt = floors.ShouldEnforce(prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
