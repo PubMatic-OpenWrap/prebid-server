@@ -8,6 +8,11 @@ import (
 	"github.com/prebid/prebid-server/modules/moduledeps"
 )
 
+type RequestCtx struct {
+	UA             string
+	VastUnwrapFlag bool
+}
+
 func Builder(_ json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
 	return Module{}, nil
 }
@@ -53,4 +58,23 @@ func (m Module) HandleRawBidderResponseHook(
 	// }
 
 	return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
+}
+
+// HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
+func (m Module) HandleEntrypointHook(
+	ctx context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.EntrypointPayload,
+) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
+	// var cfg config
+	// if len(miCtx.AccountConfig) != 0 {
+	// 	ncfg, err := newConfig(miCtx.AccountConfig)
+	// 	if err != nil {
+	// 		return result, err
+	// 	}
+	// 	cfg = ncfg
+	// }
+
+	return handleEntrypointHook(ctx, miCtx, payload)
 }

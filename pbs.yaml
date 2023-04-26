@@ -52,12 +52,20 @@ hooks:
       endpoints:
         /openrtb2/auction:
           stages:
+            entrypoint:
+              groups:
+                - timeout: 500000
+                  hook_sequence:
+                    module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.setup_request_ctx
+    
             raw_bidder_response:
               groups:
                 - timeout: 500000
                   hook_sequence:
                     module_code: pubmatic.openwrap
                     hook_impl_code: pubmatic.openwrap.setup_request_ctx
+    
 
 
 

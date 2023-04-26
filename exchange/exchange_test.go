@@ -3383,6 +3383,24 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 	}
 }
 
+func Test123(t *testing.T) {
+	values := []int{1, 2, 3}
+	for _, val := range values {
+		go func() {
+			fmt.Println(val)
+		}()
+	}
+}
+
+func Test12(t *testing.T) {
+	values := []int{1, 2, 3}
+	for _, val := range values {
+		go func(val interface{}) {
+			fmt.Println(val)
+		}(val)
+	}
+}
+
 func TestRemoveBidById(t *testing.T) {
 	cats1 := []string{"IAB1-3"}
 

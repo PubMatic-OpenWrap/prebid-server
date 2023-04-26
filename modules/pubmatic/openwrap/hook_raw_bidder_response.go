@@ -30,15 +30,29 @@ func handleRawBidderResponseHook(
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 	//bidder := payload.Bidder
 
+	rCtx, ok := moduleCtx["rctx"].(RequestCtx)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
+		return result, nil
+	}
+	defer func() {
+		moduleCtx["rctx"] = rCtx
+	}()
+
+	if !rCtx.VastUnwrapFlag {
+		fmt.Printf("\n **** VAST unwrapping Disabled **** !!!! ")
+	} else {
+		fmt.Printf("\n VAST unwrapping Enabled  !!!! ")
+	}
+
 	// allowedBids will store all bids that have passed the attribute check
 	allowedBids := make([]*adapters.TypedBid, 0)
 
 	responseChannel := make(chan *unwrapReq, len(payload.Bids))
 	for _, bid := range payload.Bids {
-
 		bidMediaTypes := mediaTypesFromBid(bid)
 		if _, ok := bidMediaTypes["video"]; ok {
-			go vastUnwrapCreative(bid.Bid.AdM, bid.Bid.ID, responseChannel)
+			go vastUnwrapCreative(bid.Bid.AdM, rCtx.UA, bid.Bid.ID, responseChannel)
 		}
 	}
 
@@ -73,13 +87,14 @@ func mediaTypesFromBid(bid *adapters.TypedBid) mediaTypes {
 	return mediaTypes{string(bid.BidType): struct{}{}}
 }
 
-func vastUnwrapCreative(in string, bidid string, respChan chan<- *unwrapReq) {
+func vastUnwrapCreative(in string, ua, bidid string, respChan chan<- *unwrapReq) {
 	startTime := time.Now()
 	wrapperCnt := 0
 	headers := http.Header{}
 
 	headers.Add("Content-Type", "application/xml; charset=utf-8")
-	headers.Add("user-agent", "Mozilla/5.0 (QSP; Roku; AP; 5.4.12.227)")
+	//headers.Add("user-agent", "Mozilla/5.0 (QSP; Roku; AP; 5.4.12.227)")
+	headers.Add("user-agent", ua)
 	headers.Add("unwrap-timeout", "1000")
 	httpReq, err := http.NewRequest("POST", "http://localhost:8003/unwrap", strings.NewReader(in))
 	if err != nil {
