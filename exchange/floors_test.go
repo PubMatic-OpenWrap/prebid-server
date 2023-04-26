@@ -1855,7 +1855,7 @@ func TestUpdateBidExtWithFloors(t *testing.T) {
 	}
 }
 
-func Test_updateBidExt(t *testing.T) {
+func TestUpdateBidExt(t *testing.T) {
 	type args struct {
 		bidRequestWrapper *openrtb_ext.RequestWrapper
 		seatBids          map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
@@ -1988,10 +1988,7 @@ func Test_updateBidExt(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			updateBidExt(tt.args.bidRequestWrapper, tt.args.seatBids)
-			assert.Equal(t, tt.want, tt.args.seatBids["pubmatic"].Bids[0].BidFloors, "Bid is not updated with data")
-
-		})
+		updateBidExt(tt.args.bidRequestWrapper, tt.args.seatBids)
+		assert.Equal(t, tt.want, tt.args.seatBids["pubmatic"].Bids[0].BidFloors, "Bid is not updated with data")
 	}
 }
