@@ -116,9 +116,13 @@ func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule strin
 	if extImpPrebid == nil {
 		extImpPrebid = &openrtb_ext.ExtImpPrebid{}
 	}
+	floorRuleValue := 0.0
+	if matchedRule != "" {
+		floorRuleValue = floorRuleVal
+	}
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
-		FloorRuleValue: math.Floor(floorRuleVal*10000) / 10000,
+		FloorRuleValue: math.Floor(floorRuleValue*10000) / 10000,
 		FloorValue:     floorVal,
 	}
 	impExt.SetPrebid(extImpPrebid)
