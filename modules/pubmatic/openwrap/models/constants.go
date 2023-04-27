@@ -181,6 +181,8 @@ const (
 	DeviceDNT             = "pwtdnt"
 	UserID                = "pwtuid"
 	ContentTransparency   = "owcontenttransparency"
+	FloorValue            = "floor_val"
+	FloorCurrency         = "floor_cur"
 
 	// constants for error related query params to be added to DFP call
 	ErrorKey                 = "pwterr"

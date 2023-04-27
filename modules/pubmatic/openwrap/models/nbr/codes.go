@@ -19,4 +19,5 @@ const (
 	InvalidImpressionTagID
 	ServerSidePartnerNotConfigured
 	AllSlotsDisabled
+	InvalidVideoRequest
 )

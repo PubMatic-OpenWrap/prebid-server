@@ -187,3 +187,19 @@ func GetIP(in *http.Request) string {
 
 	return ""
 }
+
+func Atof(value string, decimalplaces int) (float64, error) {
+
+	floatValue, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	value = fmt.Sprintf("%."+strconv.Itoa(decimalplaces)+"f", floatValue)
+	floatValue, err = strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return floatValue, nil
+}

@@ -7,16 +7,17 @@ import (
 
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	uuid "github.com/satori/go.uuid"
 )
 
 const (
-	OpenWrapAuction = "/pbs/openrtb2/auction"
-	OpenWrapV25     = "/openrtb/2.5"
-	OpenWrapVideo   = "/openrtb/video"
-	OpenWrapAmp     = "/openrtb/amp"
+	OpenWrapAuction  = "/pbs/openrtb2/auction"
+	OpenWrapV25      = "/openrtb/2.5"
+	OpenWrapV25Video = "/openrtb/2.5/video"
+	OpenWrapAmp      = "/openrtb/amp"
 )
 
 func (m OpenWrap) handleEntrypointHook(
@@ -46,7 +47,13 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case OpenWrapVideo:
+	case OpenWrapV25Video:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+		if err != nil {
+			result.NbrCode = nbr.InvalidVideoRequest
+			result.Errors = append(result.Errors, "InvalidVideoRequest")
+			return result, err
+		}
 	case OpenWrapAmp:
 		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
 	}

@@ -9,7 +9,7 @@ import (
 const (
 	OpenWrapAuction     = "/pbs/openrtb2/auction"
 	OpenWrapV25         = "/openrtb/2.5"
-	OpenWrapVideo       = "/openrtb/video"
+	OpenWrapV25Video    = "/openrtb/2.5/video"
 	OpenWrapAmp         = "/openrtb/amp"
 	OpenWrapHealthcheck = "/healthcheck"
 )
@@ -25,11 +25,12 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 	r.POST(OpenWrapV25, openrtbEndpoint)
 
 	// OpenWrap 2.5 video
-	r.POST(OpenWrapVideo, openrtbEndpoint)
+	r.GET(OpenWrapV25Video, openrtbEndpoint)
 
 	// OpenWrap AMP
 	r.POST(OpenWrapAmp, ampEndpoint)
 
+	// healthcheck used by k8s
 	r.GET(OpenWrapHealthcheck, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		w.WriteHeader(http.StatusOK)
 	})
