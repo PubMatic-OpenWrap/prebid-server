@@ -27,7 +27,7 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubId, profileId int, displayV
 }
 
 func (db *mySqlDB) getActivePartnerConfigurations(pubId, profileId int, versionID int) (map[int]map[string]string, error) {
-	getActivePartnersQuery := strings.Replace(getParterConfig, versionIdKey, strconv.Itoa(versionID), -1)
+	getActivePartnersQuery := strings.Replace(db.cfg.Queries.GetParterConfig, versionIdKey, strconv.Itoa(versionID), -1)
 	getActivePartnersQuery = fmt.Sprintf(getActivePartnersQuery, db.cfg.MaxDbContextTimeout)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
@@ -82,9 +82,9 @@ func (db *mySqlDB) getVersionID(profileID, displayVersionID, pubID int) (int, in
 	var row *sql.Row
 
 	if displayVersionID == 0 {
-		row = db.conn.QueryRow(liveVersionInnerQuery, profileID, pubID)
+		row = db.conn.QueryRow(db.cfg.Queries.LiveVersionInnerQuery, profileID, pubID)
 	} else {
-		row = db.conn.QueryRow(displayVersionInnerQuery, profileID, displayVersionID, pubID)
+		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, profileID, displayVersionID, pubID)
 	}
 
 	err := row.Scan(&versionID, &displayVersionIDFromDB)

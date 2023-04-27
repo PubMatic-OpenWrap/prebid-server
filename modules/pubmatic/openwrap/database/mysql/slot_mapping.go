@@ -12,7 +12,7 @@ import (
 // Return the list of Pubmatic slot mappings
 func (db *mySqlDB) GetPubmaticSlotMappings(pubId int) map[string]models.SlotMapping {
 	pmSlotMappings := make(map[string]models.SlotMapping, 0)
-	rows, err := db.conn.Query(getPMSlotToMappings,
+	rows, err := db.conn.Query(db.cfg.Queries.GetPMSlotToMappings,
 		pubId, models.MAX_SLOT_COUNT)
 	if nil != err {
 		return pmSlotMappings
@@ -128,17 +128,17 @@ func formWrapperSlotMappingQuery(profileID, displayVersion int, partnerConfigMap
 	partnerIDStr = strings.TrimSuffix(partnerIDStr, ",")
 
 	if displayVersion != 0 {
-		query = strings.Replace(getWrapperSlotMappingsQuery, profileIdKey, strconv.Itoa(profileID), -1)
+		query = strings.Replace(db.cfg.Queries.GetWrapperSlotMappingsQuery, profileIdKey, strconv.Itoa(profileID), -1)
 		query = strings.Replace(query, displayVersionKey, strconv.Itoa(displayVersion), -1)
 		query = strings.Replace(query, partnerIdKey, partnerIDStr, -1)
 	} else {
-		query = strings.Replace(getWrapperLiveVersionSlotMappings, profileIdKey, strconv.Itoa(profileID), -1)
+		query = strings.Replace(db.cfg.Queries.GetWrapperLiveVersionSlotMappings, profileIdKey, strconv.Itoa(profileID), -1)
 		query = strings.Replace(query, partnerIdKey, partnerIDStr, -1)
 	}
 	return query
 }
 
 func formSlotNameHashQuery(pubID int) (query string) {
-	query = strings.Replace(getSlotNameHash, pubIdKey, strconv.Itoa(pubID), -1)
+	query = strings.Replace(db.cfg.Queries.GetSlotNameHash, pubIdKey, strconv.Itoa(pubID), -1)
 	return query
 }

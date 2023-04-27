@@ -16,9 +16,9 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersionID int) (*adunitconf
 	adunitConfig := new(adunitconfig.AdUnitConfig)
 	adunitConfigQuery := ""
 	if displayVersionID == 0 {
-		adunitConfigQuery = getAdunitConfigForLiveVersion
+		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigForLiveVersion
 	} else {
-		adunitConfigQuery = getAdunitConfigQuery
+		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigQuery
 	}
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, profileIdKey, strconv.Itoa(profileID), -1)
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, displayVersionKey, strconv.Itoa(displayVersionID), -1)

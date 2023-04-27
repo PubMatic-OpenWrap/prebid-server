@@ -18,7 +18,7 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 		}
 	*/
 
-	getActiveVASTTagsQuery := strings.Replace(getPublisherVASTTagsQuery, pubIdKey, strconv.Itoa(pubID), -1)
+	getActiveVASTTagsQuery := strings.Replace(db.cfg.Queries.GetPublisherVASTTagsQuery, pubIdKey, strconv.Itoa(pubID), -1)
 
 	rows, err := db.conn.Query(getActiveVASTTagsQuery)
 	if err != nil {
