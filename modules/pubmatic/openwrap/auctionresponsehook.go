@@ -216,8 +216,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
 	}
 
-	rCtxBytes, _ := json.Marshal(rctx)
-	result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
+	if rctx.Debug {
+		rCtxBytes, _ := json.Marshal(rctx)
+		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
+	}
 
 	result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)

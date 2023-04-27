@@ -326,9 +326,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
 	}
 
-	newImp, _ := json.Marshal(rCtx.ImpBidCtx)
-	result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
-	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(rCtx.NewReqExt))
+	if rCtx.Debug {
+		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
+		result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
+		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(rCtx.NewReqExt))
+	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)

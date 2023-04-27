@@ -70,7 +70,9 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		extBidResponse.Prebid.SeatNonBid = seatNonBids
 	}
 
-	extBidResponse.OwLogger, _ = openwrap.GetLogAuctionObjectAsURL(ao, false)
+	if rCtx.Debug {
+		extBidResponse.OwLogger, _ = openwrap.GetLogAuctionObjectAsURL(ao, false)
+	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
 }

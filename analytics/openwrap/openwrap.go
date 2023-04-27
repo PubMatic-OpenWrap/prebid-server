@@ -36,7 +36,7 @@ func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}()
 
 	url, headers := GetLogAuctionObjectAsURL(*ao, false)
-	Send(*ow.client, url, headers)
+	Send(*ow.Client, url, headers)
 }
 
 // Writes VideoObject to file
