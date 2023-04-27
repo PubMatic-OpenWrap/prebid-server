@@ -95,9 +95,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 					imp.BidFloor = math.Round(bidFloor*10000) / 10000
 					imp.BidFloorCur = floorCur
 				}
-				if isRuleMatched {
-					updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
-				}
+				updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
 			} else {
 				floorErrList = append(floorErrList, fmt.Errorf("Error in getting FloorMin value : '%v'", err.Error()))
 			}
