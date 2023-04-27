@@ -3,6 +3,7 @@ package mysql
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -139,6 +140,5 @@ func formWrapperSlotMappingQuery(profileID, displayVersion int, partnerConfigMap
 }
 
 func formSlotNameHashQuery(pubID int) (query string) {
-	query = strings.Replace(db.cfg.Queries.GetSlotNameHash, pubIdKey, strconv.Itoa(pubID), -1)
-	return query
+	return fmt.Sprint(db.cfg.Queries.GetSlotNameHash, pubID)
 }

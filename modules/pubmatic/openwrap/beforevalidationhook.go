@@ -43,6 +43,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequest
+		err = errors.New("failed to get request ext: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 
@@ -52,7 +54,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = nbr.InvalidProfileConfiguration
-		return result, errors.New("failed to get profile data")
+		err = errors.New("failed to get profile data: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
+		return result, err
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
@@ -72,7 +76,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.AdapterThrottleMap, err = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 	if err != nil {
 		result.NbrCode = nbr.AllPartnerThrottled
-		result.DebugMessages = append(result.DebugMessages, err.Error())
+		err = errors.New("failed to adapter throttle details: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
@@ -80,7 +85,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPriceGranularityConfig
-		result.DebugMessages = append(result.DebugMessages, err.Error())
+		err = errors.New("failed to price granularity details: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
@@ -106,7 +112,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		if imp.TagID == "" {
 			result.NbrCode = nbr.InvalidImpressionTagID
-			result.DebugMessages = append(result.DebugMessages, "ErrMissingTagID")
+			err = errors.New("tagid missing for imp: " + imp.ID)
+			result.Errors = append(result.Errors, err.Error())
 			return result, err
 		}
 
@@ -120,6 +127,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err := json.Unmarshal(imp.Ext, impExt)
 			if err != nil {
 				result.NbrCode = nbr.InternalError
+				err = errors.New("failed to parse imp.ext: " + imp.ID)
+				result.Errors = append(result.Errors, err.Error())
 				return result, err
 			}
 		}
@@ -272,11 +281,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled
+		err = errors.New("All slots disabled: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
 
 	if !serviceSideBidderPresent {
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
+		err = errors.New("server side partner not found: " + err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
 

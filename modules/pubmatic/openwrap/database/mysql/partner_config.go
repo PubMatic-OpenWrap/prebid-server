@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -27,8 +26,7 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubId, profileId int, displayV
 }
 
 func (db *mySqlDB) getActivePartnerConfigurations(pubId, profileId int, versionID int) (map[int]map[string]string, error) {
-	getActivePartnersQuery := strings.Replace(db.cfg.Queries.GetParterConfig, versionIdKey, strconv.Itoa(versionID), -1)
-	getActivePartnersQuery = fmt.Sprintf(getActivePartnersQuery, db.cfg.MaxDbContextTimeout)
+	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, versionID, versionID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()

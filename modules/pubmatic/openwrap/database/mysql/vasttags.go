@@ -2,8 +2,6 @@ package mysql
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -18,7 +16,7 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 		}
 	*/
 
-	getActiveVASTTagsQuery := strings.Replace(db.cfg.Queries.GetPublisherVASTTagsQuery, pubIdKey, strconv.Itoa(pubID), -1)
+	getActiveVASTTagsQuery := fmt.Sprintf(db.cfg.Queries.GetPublisherVASTTagsQuery, pubID)
 
 	rows, err := db.conn.Query(getActiveVASTTagsQuery)
 	if err != nil {
