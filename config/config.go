@@ -522,7 +522,8 @@ type Pubstack struct {
 }
 
 type PubMatic struct {
-	Enabled bool `mapstructure:"enabled"`
+	Enabled bool       `mapstructure:"enabled"`
+	Client  HTTPClient `mapstructure:"http_client"`
 }
 
 type PubstackBuffer struct {

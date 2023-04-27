@@ -3,6 +3,7 @@ package openwrap
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"runtime/debug"
 	"strconv"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
+func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) (string, http.Header) {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -23,7 +24,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 
 	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
 	if rCtx == nil {
-		return ""
+		return "", http.Header{}
 	}
 
 	wlog := WloggerRecord{
@@ -44,7 +45,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 	extWrapper := models.RequestExtWrapper{}
 	err := json.Unmarshal(ao.Request.Ext, &extWrapper)
 	if err != nil {
-		return ""
+		return "", http.Header{}
 	}
 
 	if ao.Request.User != nil {
@@ -114,7 +115,15 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) string {
 
 	wlog.Slots = slots
 
-	return PrepareLoggerURL(&wlog, rCtx.URL, GetGdprEnabledFlag(rCtx.PartnerConfigMap))
+	headers := http.Header{
+		models.USER_AGENT_HEADER: []string{rCtx.UA},
+		models.IP_HEADER:         []string{rCtx.IP},
+	}
+	if rCtx.KADUSERCookie != nil {
+		headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
+	}
+
+	return PrepareLoggerURL(&wlog, rCtx.URL, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
 }
 
 // TODO filter by name. (*stageOutcomes[8].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(data))

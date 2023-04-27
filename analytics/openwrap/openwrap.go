@@ -24,7 +24,7 @@ const (
 // Module that can perform transactional logging
 type HTTPLogger struct {
 	URL    string
-	client *http.Client
+	Client *http.Client
 }
 
 // Writes AuctionObject to file
@@ -35,8 +35,8 @@ func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 	}()
 
-	_ = GetLogAuctionObjectAsURL(*ao, false)
-	// Send(*ow.client, ow.URL, wl, 1) // NYC_TODO: pass gdpr enabled in ao.Context
+	url, headers := GetLogAuctionObjectAsURL(*ao, false)
+	Send(*ow.client, url, headers)
 }
 
 // Writes VideoObject to file

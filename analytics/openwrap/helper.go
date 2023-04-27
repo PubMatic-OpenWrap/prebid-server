@@ -14,18 +14,12 @@ import (
 )
 
 // Send method
-func Send(client http.Client, loggerURL string, wl *WloggerRecord, gdprEnabled int) error {
-	loggerURL = PrepareLoggerURL(wl, loggerURL, gdprEnabled)
-	hc, err := http.NewRequest(http.MethodGet, loggerURL, nil)
+func Send(client http.Client, url string, headers http.Header) error {
+	hc, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-
-	hc.Header.Add(models.USER_AGENT_HEADER, wl.UserAgent)
-	hc.Header.Add(models.IP_HEADER, wl.IP)
-	if wl.UID != "" {
-		hc.Header.Add(models.KADUSERCOOKIE, wl.UID)
-	}
+	hc.Header = headers
 
 	_, err = client.Do(hc)
 	if err != nil {

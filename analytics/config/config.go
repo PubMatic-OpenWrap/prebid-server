@@ -1,6 +1,9 @@
 package config
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/benbjohnson/clock"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
@@ -40,8 +43,19 @@ func NewPBSAnalytics(analytics *config.Analytics) analytics.PBSAnalyticsModule {
 	}
 
 	if analytics.PubMatic.Enabled {
+		client := &http.Client{
+			Transport: &http.Transport{
+				Proxy:               http.ProxyFromEnvironment,
+				MaxConnsPerHost:     analytics.PubMatic.Client.MaxConnsPerHost,
+				MaxIdleConns:        analytics.PubMatic.Client.MaxIdleConns,
+				MaxIdleConnsPerHost: analytics.PubMatic.Client.MaxIdleConnsPerHost,
+				IdleConnTimeout:     time.Duration(analytics.PubMatic.Client.IdleConnTimeout) * time.Second,
+			},
+		}
+
 		owl := openwrap.HTTPLogger{
-			URL: "http://t.pubmatic.com/wl",
+			URL:    "http://t.pubmatic.com/wl",
+			Client: client,
 		}
 		modules = append(modules, &owl)
 	}
