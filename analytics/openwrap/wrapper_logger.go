@@ -15,7 +15,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) (string, http.Header) {
+func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo, forRespExt bool) (string, http.Header) {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -117,7 +117,12 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) (string,
 		headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
 	}
 
-	return PrepareLoggerURL(&wlog, rCtx.URL, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
+	url := rCtx.InternalURL
+	if logInfo || forRespExt {
+		url = rCtx.PublicURL
+	}
+
+	return PrepareLoggerURL(&wlog, url, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
 }
 
 // TODO filter by name. (*stageOutcomes[8].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(data))

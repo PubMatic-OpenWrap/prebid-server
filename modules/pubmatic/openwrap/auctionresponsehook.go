@@ -205,7 +205,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	if rctx.LogInfoFlag == 1 {
 		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
-			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true), updated done later
+			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
 			Tracker: tracker.GetTrackerInfo(rctx),
 		}
 	}

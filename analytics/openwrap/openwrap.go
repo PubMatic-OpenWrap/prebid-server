@@ -35,7 +35,7 @@ func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 	}()
 
-	url, headers := GetLogAuctionObjectAsURL(*ao, false)
+	url, headers := GetLogAuctionObjectAsURL(*ao, false, false)
 	Send(*ow.Client, url, headers)
 }
 
