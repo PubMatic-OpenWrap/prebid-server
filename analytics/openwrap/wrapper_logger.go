@@ -302,11 +302,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DealID:      bid.DealID,
 			}
 
-			// don't want default banner for nobid in wl
-			if len(bid.AdM) != 0 {
-				pr.Adformat = models.GetAdFormat(bid.AdM)
-			}
-
 			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bid.ID {
 				pr.WinningBidStaus = 1
 			}
@@ -321,6 +316,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if bidExt.Prebid != nil {
+				// don't want default banner for nobid in wl
+				if bidExt.Prebid.Type != "" {
+					pr.Adformat = string(bidExt.Prebid.Type)
+				}
+
 				if bidExt.Prebid.DealTierSatisfied && bidExt.Prebid.DealPriority > 0 {
 					pr.DealPriority = bidExt.Prebid.DealPriority
 				}
@@ -342,6 +342,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValueUSD)
 					}
 				}
+			}
+
+			if pr.Adformat == "" && bid.AdM != "" {
+				pr.Adformat = models.GetAdFormat(bid.AdM)
 			}
 
 			if len(bid.ADomain) != 0 {

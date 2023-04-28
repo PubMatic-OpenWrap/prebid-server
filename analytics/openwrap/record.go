@@ -149,16 +149,6 @@ type MetaData struct {
 	SecondaryCategoryIDs []string        `json:"secondaryCatIds,omitempty"`
 }
 
-func (wlog *WloggerRecord) initNonBidRejections() {
-	wlog.NonBidRejections = make(map[string]analytics.RejectedBid)
-}
-
-// String returns string object
-func (wlog *WloggerRecord) String() string {
-	byts, _ := json.Marshal(wlog)
-	return string(byts)
-}
-
 // logDeviceObject will be used to log device specific parameters like platform and ifa_type
 func (wlog *WloggerRecord) logDeviceObject(rctx models.RequestCtx, uaFromHTTPReq string, ortbBidRequest *openrtb2.BidRequest, platform string) {
 	dvc := Device{
