@@ -81,8 +81,7 @@ func NewCTVEndpoint(
 		IPv4PrivateNetworks: cfg.RequestValidation.IPv4PrivateNetworksParsed,
 		IPv6PrivateNetworks: cfg.RequestValidation.IPv6PrivateNetworksParsed,
 	}
-	hookExecutor := hookexecution.NewHookExecutor(planBuilder, hookexecution.EndpointAmp, met)
-
+	hookExecutor := hookexecution.NewHookExecutor(planBuilder, hookexecution.EndpointCtv, met)
 	var uuidGenerator uuidutil.UUIDGenerator
 	return httprouter.Handle((&ctvEndpointDeps{
 		endpointDeps: endpointDeps{
