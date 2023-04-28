@@ -28,9 +28,7 @@ func handleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{
-		//	Reject: true,
-	}
+	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 
 	rCtx := RequestCtx{
 		UA:             payload.Request.Header.Get("User-Agent"),

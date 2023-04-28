@@ -28,16 +28,6 @@ func (m Module) HandleBidderRequestHook(
 ) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	var err error
 	result := hookstage.HookResult[hookstage.BidderRequestPayload]{}
-	// if len(miCtx.AccountConfig) == 0 {
-	// 	return result, nil
-	// }
-
-	// cfg, err := newConfig(miCtx.AccountConfig)
-	// if err != nil {
-	// 	return result, err
-	// }
-
-	//return handleBidderRequestHook(cfg, payload)
 	return result, err
 }
 
@@ -47,15 +37,6 @@ func (m Module) HandleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
-	// var cfg config
-	// if len(miCtx.AccountConfig) != 0 {
-	// 	ncfg, err := newConfig(miCtx.AccountConfig)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	cfg = ncfg
-	// }
 
 	return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
 }
@@ -66,15 +47,6 @@ func (m Module) HandleEntrypointHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
-	// var cfg config
-	// if len(miCtx.AccountConfig) != 0 {
-	// 	ncfg, err := newConfig(miCtx.AccountConfig)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	cfg = ncfg
-	// }
 
 	return handleEntrypointHook(ctx, miCtx, payload)
 }
