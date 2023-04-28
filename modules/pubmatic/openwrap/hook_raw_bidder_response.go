@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	unwrapper "git.pubmatic.com/vastunwrap"
+	// unwrapper "git.pubmatic.com/vastunwrap"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -104,7 +104,7 @@ func vastUnwrapCreative(in string, ua, bidid string, respChan chan<- *unwrapReq)
 	httpReq.Header = headers
 
 	httpResp := httptest.NewRecorder()
-	unwrapper.UnwrapRequest(httpResp, httpReq)
+	// unwrapper.UnwrapRequest(httpResp, httpReq)
 
 	wrap_cnt := httpResp.Header().Get("unwrap-count")
 	if wrap_cnt != "" {
