@@ -42,12 +42,6 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo bool) (string,
 		},
 	}
 
-	extWrapper := models.RequestExtWrapper{}
-	err := json.Unmarshal(ao.Request.Ext, &extWrapper)
-	if err != nil {
-		return "", http.Header{}
-	}
-
 	if ao.Request.User != nil {
 		extUser := openrtb_ext.ExtUser{}
 		_ = json.Unmarshal(ao.Request.User.Ext, &extUser)
