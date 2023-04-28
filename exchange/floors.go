@@ -205,15 +205,7 @@ func updateBidExt(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids map[op
 			if !ok {
 				continue
 			}
-
-			reqImpCur := reqImp.BidFloorCur
-			if reqImpCur == "" {
-				reqImpCur = "USD"
-				if bidRequestWrapper.Cur != nil {
-					reqImpCur = bidRequestWrapper.Cur[0]
-				}
-			}
-			updateBidExtWithFloors(reqImp, bid, reqImpCur)
+			updateBidExtWithFloors(reqImp, bid, reqImp.BidFloorCur)
 		}
 	}
 }
