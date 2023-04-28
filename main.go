@@ -30,6 +30,8 @@ func init() {
 func main() {
 	flag.Parse() // required for glog flags and testing package flags
 
+	hostname, _ := os.Hostname()
+
 	runtime.SetMutexProfileFraction(5)
 	runtime.SetBlockProfileRate(5)
 	pyroscope.Start(pyroscope.Config{
@@ -47,7 +49,7 @@ func main() {
 		AuthToken: "psx-5NHb177FyMgtyzWqyDOkDjo-_kl0A7z7rTxr7LW9TZ_izUcqTPiMG_0",
 
 		// you can provide static tags via a map:
-		Tags: map[string]string{"hostname": os.Getenv("HOSTNAME")},
+		Tags: map[string]string{"hostname": hostname},
 
 		ProfileTypes: []pyroscope.ProfileType{
 			// these profile types are enabled by default:
