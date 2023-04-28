@@ -261,8 +261,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				kgpv = kgpsv
 			}
 
-			bidExt := models.BidExt{}
-			_ = json.Unmarshal(bid.Ext, &bidExt)
+			var bidExt models.BidExt
+			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
+				bidExt = bidCtx.BidExt
+			}
 
 			price := bid.Price
 			if ao.Response.Cur != "USD" {
