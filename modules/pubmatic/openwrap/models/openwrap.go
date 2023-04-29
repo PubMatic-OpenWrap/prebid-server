@@ -44,10 +44,6 @@ type RequestCtx struct {
 	StartTime      int64
 	DevicePlatform DevicePlatform
 
-	//logger
-	InternalURL string
-	PublicURL   string
-
 	//trackers per bid
 	Trackers map[string]OWTracker
 

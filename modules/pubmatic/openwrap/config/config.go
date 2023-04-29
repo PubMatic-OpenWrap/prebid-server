@@ -94,16 +94,6 @@ type SSHB struct {
 			MaxIdleConnectionsPerHost int
 		}
 
-		Logger struct {
-			Enabled        bool
-			Endpoint       string
-			PublicEndpoint string
-			MaxClients     int32
-			MaxConnections int
-			MaxCalls       int
-			RespTimeout    int
-		}
-
 		Cache Cache
 
 		Timeout struct {

@@ -1,12 +1,13 @@
 package openwrap
 
 import (
-	"net/http"
 	"runtime/debug"
 	"strconv"
+	"sync"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -21,14 +22,16 @@ const (
 	NOTIFICATION_EVENT RequestType = "/event"
 )
 
+var ow HTTPLogger
+var once sync.Once
+
 // Module that can perform transactional logging
 type HTTPLogger struct {
-	URL    string
-	Client *http.Client
+	cfg config.PubMaticWL
 }
 
 // Writes AuctionObject to file
-func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
+func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -36,34 +39,40 @@ func (ow *HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}()
 
 	url, headers := GetLogAuctionObjectAsURL(*ao, false, false)
-	Send(*ow.Client, url, headers)
+	Send(url, headers)
 }
 
 // Writes VideoObject to file
-func (ow *HTTPLogger) LogVideoObject(vo *analytics.VideoObject) {
+func (ow HTTPLogger) LogVideoObject(vo *analytics.VideoObject) {
 }
 
 // Logs SetUIDObject to file
-func (ow *HTTPLogger) LogSetUIDObject(so *analytics.SetUIDObject) {
+func (ow HTTPLogger) LogSetUIDObject(so *analytics.SetUIDObject) {
 }
 
 // Logs CookieSyncObject to file
-func (ow *HTTPLogger) LogCookieSyncObject(cso *analytics.CookieSyncObject) {
+func (ow HTTPLogger) LogCookieSyncObject(cso *analytics.CookieSyncObject) {
 }
 
 // Logs AmpObject to file
-func (ow *HTTPLogger) LogAmpObject(ao *analytics.AmpObject) {
+func (ow HTTPLogger) LogAmpObject(ao *analytics.AmpObject) {
 }
 
 // Logs NotificationEvent to file
-func (ow *HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent) {
+func (ow HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent) {
 }
 
 // Method to initialize the analytic module
-func NewHTTPLogger(url string) (analytics.PBSAnalyticsModule, error) {
-	return &HTTPLogger{
-		URL: url,
-	}, nil
+func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
+	once.Do(func() {
+		Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
+
+		ow = HTTPLogger{
+			cfg: cfg,
+		}
+	})
+
+	return ow
 }
 
 // GetGdprEnabledFlag returns gdpr flag set in the partner config

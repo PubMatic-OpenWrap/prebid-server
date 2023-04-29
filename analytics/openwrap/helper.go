@@ -14,17 +14,25 @@ import (
 )
 
 // Send method
-func Send(client http.Client, url string, headers http.Header) error {
-	hc, err := http.NewRequest(http.MethodGet, url, nil)
+func Send(url string, headers http.Header) error {
+	mhc := NewMultiHttpContext()
+	hc, err := NewHttpCall(url, "")
 	if err != nil {
 		return err
 	}
-	hc.Header = headers
 
-	_, err = client.Do(hc)
-	if err != nil {
+	for k, v := range headers {
+		if len(v) != 0 {
+			hc.AddHeader(k, v[0])
+		}
+	}
+
+	mhc.AddHttpCall(hc)
+	_, erc := mhc.Execute()
+	if erc != 0 {
 		return errors.New("error in sending logger pixel")
 	}
+
 	return nil
 }
 

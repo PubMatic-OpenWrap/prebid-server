@@ -83,8 +83,6 @@ func (m OpenWrap) handleEntrypointHook(
 		Debug:                     queryParams.Get(models.Debug) == "1",
 		StartTime:                 time.Now().Unix(),
 		ImpBidCtx:                 make(map[string]models.ImpCtx),
-		PublicURL:                 m.cfg.OpenWrap.Logger.PublicEndpoint,
-		InternalURL:               m.cfg.OpenWrap.Logger.Endpoint,
 		IP:                        models.GetIP(payload.Request),
 		PrebidBidderCode:          make(map[string]string),
 		TrackerEndpoint:           m.cfg.OpenWrap.Tracker.Endpoint,

@@ -117,9 +117,9 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo, forRespExt bo
 		headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
 	}
 
-	url := rCtx.InternalURL
+	url := ow.cfg.Endpoint
 	if logInfo || forRespExt {
-		url = rCtx.PublicURL
+		url = ow.cfg.PublicEndpoint
 	}
 
 	return PrepareLoggerURL(&wlog, url, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
