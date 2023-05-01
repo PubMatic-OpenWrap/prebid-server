@@ -125,9 +125,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		},
 	}
 
-	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
-	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
-
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
 	//

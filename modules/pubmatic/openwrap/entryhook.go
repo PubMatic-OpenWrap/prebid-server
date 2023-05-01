@@ -31,7 +31,6 @@ func handleEntrypointHook(
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 
 	rCtx := RequestCtx{
-		UA:             payload.Request.Header.Get("User-Agent"),
 		VastUnwrapFlag: getContextValueForField(payload.Request.Context(), "enableVastUnwrapper"),
 	}
 
