@@ -9,6 +9,7 @@ type UnwrapReq struct {
 }
 
 type RequestCtx struct {
+	//User Agent
 	UA             string
 	VastUnwrapFlag bool
 }

@@ -22,8 +22,7 @@ func (m Module) HandleBidderRequestHook(
 	payload hookstage.BidderRequestPayload,
 ) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	var err error
-	result := hookstage.HookResult[hookstage.BidderRequestPayload]{}
-	return result, err
+	return hookstage.HookResult[hookstage.BidderRequestPayload]{}, err
 }
 
 // HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
