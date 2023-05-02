@@ -53,9 +53,6 @@ import (
 const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
-const (
-	VastUnwrapperEnableKey = "enableVastUnwrapper"
-)
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")

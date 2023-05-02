@@ -2,24 +2,23 @@ package openwrap
 
 import (
 	"context"
-	"strings"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 const (
-	OpenWrapAuction = "/pbs/openrtb2/auction"
-	OpenWrapV25     = "/openrtb/2.5"
-	OpenWrapVideo   = "/openrtb/video"
-	OpenWrapAmp     = "/openrtb/amp"
+	OpenWrapAuction        = "/pbs/openrtb2/auction"
+	OpenWrapV25            = "/openrtb/2.5"
+	OpenWrapVideo          = "/openrtb/video"
+	OpenWrapAmp            = "/openrtb/amp"
+	VastUnwrapperEnableKey = "enableVastUnwrapper"
+	RequestContext         = "rctx"
 )
 
-func getContextValueForField(ctx context.Context, field string) bool {
+func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	vastEnableUnwrapper, _ := ctx.Value(field).(string)
-	if vastEnableUnwrapper == "1" || strings.ToLower(vastEnableUnwrapper) == "true" {
-		return true
-	}
-	return false
+	return vastEnableUnwrapper == "1"
 }
 
 func handleEntrypointHook(
@@ -28,14 +27,14 @@ func handleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+	result := hookstage.HookResult[hookstage.EntrypointPayload]{Reject: true}
 
-	rCtx := RequestCtx{
-		VastUnwrapFlag: getContextValueForField(payload.Request.Context(), "enableVastUnwrapper"),
+	rCtx := models.RequestCtx{
+		VastUnwrapFlag: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapperEnableKey),
 	}
 
 	result.ModuleContext = make(hookstage.ModuleContext)
-	result.ModuleContext["rctx"] = rCtx
+	result.ModuleContext[RequestContext] = rCtx
 
 	result.Reject = false
 	return result, nil

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 func TestHandleRawBidderResponseHook(t *testing.T) {
@@ -26,14 +27,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context",
 			args: args{
-				moduleCtx: hookstage.ModuleContext{"rctx": RequestCtx{VastUnwrapFlag: true}},
+				moduleCtx: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: true}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context",
 			args: args{
-				moduleCtx: hookstage.ModuleContext{"rctx": RequestCtx{VastUnwrapFlag: false}},
+				moduleCtx: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: false}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
 		},

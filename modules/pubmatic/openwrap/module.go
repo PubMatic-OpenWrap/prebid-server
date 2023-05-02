@@ -8,11 +8,6 @@ import (
 	"github.com/prebid/prebid-server/modules/moduledeps"
 )
 
-type RequestCtx struct {
-	UA             string
-	VastUnwrapFlag bool
-}
-
 func Builder(_ json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
 	return Module{}, nil
 }
@@ -41,7 +36,7 @@ func (m Module) HandleRawBidderResponseHook(
 	return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
 }
 
-// HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
+// HandleEntrypointHook check for the VastUnwrapperEnableKey and update it into modulecontext
 func (m Module) HandleEntrypointHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
