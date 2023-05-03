@@ -29,14 +29,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			args: args{
 				moduleCtx: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: true}},
 			},
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"request-ctx:", "true"}},
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context",
 			args: args{
 				moduleCtx: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: false}},
 			},
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"request-ctx:", "false"}},
 		},
 	}
 	for _, tt := range tests {
