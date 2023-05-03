@@ -14,18 +14,7 @@ func Builder(_ json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
 
 type Module struct{}
 
-// HandleBidderRequestHook updates blocking fields on the openrtb2.BidRequest.
-// Fields are updated only if request satisfies conditions provided by the module config.
-func (m Module) HandleBidderRequestHook(
-	_ context.Context,
-	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.BidderRequestPayload,
-) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
-	var err error
-	return hookstage.HookResult[hookstage.BidderRequestPayload]{}, err
-}
-
-// HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
+// HandleRawBidderResponseHook fetches rCtx and check for vast unwrapper flag to enable/disable vast unwrapping feature
 func (m Module) HandleRawBidderResponseHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
