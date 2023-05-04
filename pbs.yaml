@@ -27,10 +27,9 @@ hooks:
     enabled: true
     modules:
       pubmatic:
-        openwrap:
+        vastunwrap:
           enabled: true
-          OpenWrap:
-            Vastunwrap:
+          VastUnWrapCfg:
               enabled: true
               http_config:
                 max_idle_conns: 100
@@ -57,15 +56,15 @@ hooks:
               groups:
                 - timeout: 500000
                   hook_sequence:
-                    module_code: pubmatic.openwrap
-                    hook_impl_code: pubmatic.openwrap.setup_request_ctx
+                    module_code: pubmatic.vastunwrap
+                    hook_impl_code: pubmatic.vastunwrap.setup_request_ctx
     
             raw_bidder_response:
               groups:
                 - timeout: 500000
                   hook_sequence:
-                    module_code: pubmatic.openwrap
-                    hook_impl_code: pubmatic.openwrap.setup_request_ctx
+                    module_code: pubmatic.vastunwrap
+                    hook_impl_code: pubmatic.vastunwrap.process_bidder_resp
     
 
 
