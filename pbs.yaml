@@ -22,25 +22,6 @@ metrics:
   disabled_metrics:
     adapter_connections_metrics: false
 
-
-vast_unwrap:
-  enabled: true
-  http_config:
-    max_idle_conns: 100
-    max_idle_conns_per_host: 1
-    idle_conn_timeout: 300
-  app_config:
-    unwrap_default_timeout: 100
-    debug: 1
-  stat_config:
-    host: 10.172.141.13
-    port: 8080
-    referesh_interval_in_sec: 1
-  server_config:
-    dc_name: OW_DC
-  log_config:
-    debug_log_file: /Users/jaydeepmohite/logs/unwrap/debug.log
-    error_log_file: /Users/jaydeepmohite/logs/unwrap/error.log
       
 hooks:
     enabled: true
@@ -48,6 +29,26 @@ hooks:
       pubmatic:
         openwrap:
           enabled: true
+          OpenWrap:
+            Vastunwrap:
+              enabled: true
+              http_config:
+                max_idle_conns: 100
+                max_idle_conns_per_host: 1
+                idle_conn_timeout: 300
+              app_config:
+                unwrap_default_timeout: 100
+                debug: 1
+              stat_config:
+                host: 10.172.141.13
+                port: 8080
+                referesh_interval_in_sec: 1
+              server_config:
+                dc_name: OW_DC
+              log_config:
+                debug_log_file: /Users/jaydeepmohite/logs/unwrap/debug.log
+                error_log_file: /Users/jaydeepmohite/logs/unwrap/error.log
+
     host_execution_plan:
       endpoints:
         /openrtb2/auction:

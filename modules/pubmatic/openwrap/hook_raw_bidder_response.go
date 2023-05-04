@@ -13,6 +13,10 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookstage"
 )
 
+type RequestCtx struct {
+	UA             string
+	VastUnwrapFlag bool
+}
 type mediaTypes map[string]struct{}
 
 type unwrapReq struct {
@@ -93,7 +97,6 @@ func vastUnwrapCreative(in string, ua, bidid string, respChan chan<- *unwrapReq)
 	headers := http.Header{}
 
 	headers.Add("Content-Type", "application/xml; charset=utf-8")
-	//headers.Add("user-agent", "Mozilla/5.0 (QSP; Roku; AP; 5.4.12.227)")
 	headers.Add("user-agent", ua)
 	headers.Add("unwrap-timeout", "1000")
 	httpReq, err := http.NewRequest("POST", "http://localhost:8003/unwrap", strings.NewReader(in))

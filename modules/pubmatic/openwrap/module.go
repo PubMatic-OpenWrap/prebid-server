@@ -8,73 +8,33 @@ import (
 	"github.com/prebid/prebid-server/modules/moduledeps"
 )
 
-type RequestCtx struct {
-	UA             string
-	VastUnwrapFlag bool
+func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
+	return initOpenWrap(rawCfg, deps)
 }
 
-func Builder(_ json.RawMessage, _ moduledeps.ModuleDeps) (interface{}, error) {
-	return Module{}, nil
-}
-
-type Module struct{}
-
-// HandleBidderRequestHook updates blocking fields on the openrtb2.BidRequest.
-// Fields are updated only if request satisfies conditions provided by the module config.
-func (m Module) HandleBidderRequestHook(
-	_ context.Context,
-	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.BidderRequestPayload,
-) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
-	var err error
-	result := hookstage.HookResult[hookstage.BidderRequestPayload]{}
-	// if len(miCtx.AccountConfig) == 0 {
-	// 	return result, nil
-	// }
-
-	// cfg, err := newConfig(miCtx.AccountConfig)
-	// if err != nil {
-	// 	return result, err
-	// }
-
-	//return handleBidderRequestHook(cfg, payload)
-	return result, err
-}
-
-// HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
-func (m Module) HandleRawBidderResponseHook(
+// HandleRawBidderResponseHook unwraps VAST creatives if vast un-wrapper feature is enabled
+func (m OpenWrap) HandleRawBidderResponseHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
-	// var cfg config
-	// if len(miCtx.AccountConfig) != 0 {
-	// 	ncfg, err := newConfig(miCtx.AccountConfig)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	cfg = ncfg
-	// }
+	result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
 
-	return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
+	if m.cfg.OpenWrap.Vastunwrap.Enabled {
+		return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
+	}
+	return result, nil
+
 }
 
-// HandleRawBidderResponseHook rejects bids for a specific bidder if they fail the attribute check.
-func (m Module) HandleEntrypointHook(
+// HandleEntrypointHook retrieves vast un-wrapper flag and User-agent proivded in request context
+func (m OpenWrap) HandleEntrypointHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	//result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
-	// var cfg config
-	// if len(miCtx.AccountConfig) != 0 {
-	// 	ncfg, err := newConfig(miCtx.AccountConfig)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	cfg = ncfg
-	// }
-
-	return handleEntrypointHook(ctx, miCtx, payload)
+	if m.cfg.OpenWrap.Vastunwrap.Enabled {
+		return handleEntrypointHook(ctx, miCtx, payload)
+	}
+	return hookstage.HookResult[hookstage.EntrypointPayload]{}, nil
 }

@@ -29,7 +29,7 @@ func handleEntrypointHook(
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{
-		//	Reject: true,
+		Reject: true,
 	}
 
 	rCtx := RequestCtx{
