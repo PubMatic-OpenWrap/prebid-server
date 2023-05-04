@@ -125,6 +125,14 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
 			expected:     []byte(`{"prebid":{"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5,"floorValue":15.5}}}`),
 		},
+		{
+			name:         "non matching rule",
+			matchedRule:  "",
+			floorRuleVal: 5.5,
+			floorVal:     15.5,
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			expected:     []byte(`{"prebid":{"floors":{"floorValue":15.5}}}`),
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

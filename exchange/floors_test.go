@@ -1942,7 +1942,7 @@ func TestUpdateBidExt(t *testing.T) {
 				FloorRule:      "*|*|*",
 				FloorRuleValue: 26.02,
 				FloorValue:     12,
-				FloorCurrency:  "USD",
+				FloorCurrency:  "",
 			},
 		},
 		{
@@ -1983,7 +1983,7 @@ func TestUpdateBidExt(t *testing.T) {
 				FloorRule:      "*|*|*",
 				FloorRuleValue: 26.02,
 				FloorValue:     12,
-				FloorCurrency:  "JPY",
+				FloorCurrency:  "",
 			},
 		},
 	}
