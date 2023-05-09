@@ -9,7 +9,6 @@ import (
 
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
-
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -1853,5 +1852,130 @@ func TestUpdateBidExtWithFloors(t *testing.T) {
 			updateBidExtWithFloors(tt.args.reqImp, tt.args.bid, tt.args.floorCurrency)
 		})
 		assert.Equal(t, tt.want, *tt.args.bid.BidFloors, "Bid is not updated with data")
+	}
+}
+
+func TestFloorsEnabled(t *testing.T) {
+	type args struct {
+		account           config.Account
+		bidRequestWrapper *openrtb_ext.RequestWrapper
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  bool
+		want1 *openrtb_ext.PriceFloorRules
+	}{
+		{
+			name: "Floors data available in request and its enabled",
+			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
+				bidRequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Ext: func() json.RawMessage {
+							ext := make(map[string]interface{})
+							enabled := true
+							prebidExt := openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled:     &enabled,
+									FloorMin:    2,
+									FloorMinCur: "INR",
+									Data: &openrtb_ext.PriceFloorData{
+										Currency: "INR",
+									},
+								},
+							}
+							ext["prebid"] = prebidExt
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
+					},
+				},
+			},
+			want: true,
+			want1: func() *openrtb_ext.PriceFloorRules {
+				enabled := true
+				floors := openrtb_ext.PriceFloorRules{
+					Enabled:     &enabled,
+					FloorMin:    2,
+					FloorMinCur: "INR",
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "INR",
+					},
+				}
+				return &floors
+			}(),
+		},
+		{
+			name: "Floors data available in request and its disabled",
+			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: false,
+					},
+				},
+				bidRequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Ext: func() json.RawMessage {
+							ext := make(map[string]interface{})
+							enabled := true
+							prebidExt := openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled:     &enabled,
+									FloorMin:    2,
+									FloorMinCur: "INR",
+									Data: &openrtb_ext.PriceFloorData{
+										Currency: "INR",
+									},
+								},
+							}
+							ext["prebid"] = prebidExt
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
+					},
+				},
+			},
+			want:  false,
+			want1: nil,
+		},
+		{
+			name: "Floors data available in request and its disabled",
+			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
+				bidRequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Ext: func() json.RawMessage {
+							ext := make(map[string]interface{})
+							prebidExt := openrtb_ext.ExtRequestPrebid{}
+							ext["prebid"] = prebidExt
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
+					},
+				},
+			},
+			want:  true,
+			want1: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := floorsEnabled(tt.args.account, tt.args.bidRequestWrapper)
+			if got != tt.want {
+				t.Errorf("floorsEnabled() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("floorsEnabled() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
 	}
 }
