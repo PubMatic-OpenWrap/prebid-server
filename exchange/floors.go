@@ -45,19 +45,15 @@ func getCurrencyConversionRate(seatBidCur, reqImpCur string, conversions currenc
 func floorsEnabled(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper) (bool, *openrtb_ext.PriceFloorRules) {
 	var reqEnabled bool
 	var floorRules *openrtb_ext.PriceFloorRules
-	requestExt, err := bidRequestWrapper.GetRequestExt()
-	if err == nil {
+
+	if requestExt, err := bidRequestWrapper.GetRequestExt(); err == nil {
 		if prebidExt := requestExt.GetPrebid(); prebidExt != nil {
 			reqEnabled = prebidExt.Floors.GetEnabled()
 			floorRules = prebidExt.Floors
 		}
 	}
 
-	if account.PriceFloors.Enabled && reqEnabled {
-		return true, floorRules
-	}
-
-	return false, nil
+	return account.PriceFloors.Enabled && reqEnabled, floorRules
 }
 
 func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrtbBid, floorCurrency string) {

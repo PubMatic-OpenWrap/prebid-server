@@ -462,7 +462,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	if enabled, rules := floorsEnabled(r.Account, r.BidRequestWrapper); enabled && rules != nil {
 		if bidResponseExt.Prebid == nil {
-			bidResponseExt.Prebid = new(openrtb_ext.ExtResponsePrebid)
+			bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{}
 		}
 		bidResponseExt.Prebid.Floors = rules
 	}

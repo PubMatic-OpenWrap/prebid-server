@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/boolutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1861,10 +1862,10 @@ func TestFloorsEnabled(t *testing.T) {
 		bidRequestWrapper *openrtb_ext.RequestWrapper
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  bool
-		want1 *openrtb_ext.PriceFloorRules
+		name        string
+		args        args
+		wantEnabled bool
+		wantRules   *openrtb_ext.PriceFloorRules
 	}{
 		{
 			name: "Floors data available in request and its enabled",
@@ -1878,10 +1879,9 @@ func TestFloorsEnabled(t *testing.T) {
 					BidRequest: &openrtb2.BidRequest{
 						Ext: func() json.RawMessage {
 							ext := make(map[string]interface{})
-							enabled := true
 							prebidExt := openrtb_ext.ExtRequestPrebid{
 								Floors: &openrtb_ext.PriceFloorRules{
-									Enabled:     &enabled,
+									Enabled:     boolutil.BoolPtr(true),
 									FloorMin:    2,
 									FloorMinCur: "INR",
 									Data: &openrtb_ext.PriceFloorData{
@@ -1896,11 +1896,10 @@ func TestFloorsEnabled(t *testing.T) {
 					},
 				},
 			},
-			want: true,
-			want1: func() *openrtb_ext.PriceFloorRules {
-				enabled := true
+			wantEnabled: true,
+			wantRules: func() *openrtb_ext.PriceFloorRules {
 				floors := openrtb_ext.PriceFloorRules{
-					Enabled:     &enabled,
+					Enabled:     boolutil.BoolPtr(true),
 					FloorMin:    2,
 					FloorMinCur: "INR",
 					Data: &openrtb_ext.PriceFloorData{
@@ -1911,7 +1910,7 @@ func TestFloorsEnabled(t *testing.T) {
 			}(),
 		},
 		{
-			name: "Floors data available in request and its disabled",
+			name: "Floors data available in request and floors is disabled",
 			args: args{
 				account: config.Account{
 					PriceFloors: config.AccountPriceFloors{
@@ -1921,30 +1920,39 @@ func TestFloorsEnabled(t *testing.T) {
 				bidRequestWrapper: &openrtb_ext.RequestWrapper{
 					BidRequest: &openrtb2.BidRequest{
 						Ext: func() json.RawMessage {
-							ext := make(map[string]interface{})
-							enabled := true
-							prebidExt := openrtb_ext.ExtRequestPrebid{
-								Floors: &openrtb_ext.PriceFloorRules{
-									Enabled:     &enabled,
-									FloorMin:    2,
-									FloorMinCur: "INR",
-									Data: &openrtb_ext.PriceFloorData{
-										Currency: "INR",
+							ext := map[string]interface{}{
+								"prebid": openrtb_ext.ExtRequestPrebid{
+									Floors: &openrtb_ext.PriceFloorRules{
+										Enabled:     boolutil.BoolPtr(true),
+										FloorMin:    2,
+										FloorMinCur: "INR",
+										Data: &openrtb_ext.PriceFloorData{
+											Currency: "INR",
+										},
 									},
 								},
 							}
-							ext["prebid"] = prebidExt
 							data, _ := json.Marshal(ext)
 							return data
 						}(),
 					},
 				},
 			},
-			want:  false,
-			want1: nil,
+			wantEnabled: false,
+			wantRules: func() *openrtb_ext.PriceFloorRules {
+				floors := openrtb_ext.PriceFloorRules{
+					Enabled:     boolutil.BoolPtr(true),
+					FloorMin:    2,
+					FloorMinCur: "INR",
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "INR",
+					},
+				}
+				return &floors
+			}(),
 		},
 		{
-			name: "Floors data available in request and its disabled",
+			name: "Floors data is nil in request but floors is enabled in account",
 			args: args{
 				account: config.Account{
 					PriceFloors: config.AccountPriceFloors{
@@ -1954,28 +1962,26 @@ func TestFloorsEnabled(t *testing.T) {
 				bidRequestWrapper: &openrtb_ext.RequestWrapper{
 					BidRequest: &openrtb2.BidRequest{
 						Ext: func() json.RawMessage {
-							ext := make(map[string]interface{})
-							prebidExt := openrtb_ext.ExtRequestPrebid{}
-							ext["prebid"] = prebidExt
+							ext := map[string]interface{}{
+								"prebid": openrtb_ext.ExtRequestPrebid{},
+							}
 							data, _ := json.Marshal(ext)
 							return data
 						}(),
 					},
 				},
 			},
-			want:  true,
-			want1: nil,
+			wantEnabled: true,
+			wantRules:   nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := floorsEnabled(tt.args.account, tt.args.bidRequestWrapper)
-			if got != tt.want {
-				t.Errorf("floorsEnabled() got = %v, want %v", got, tt.want)
+			gotEnabled, gotRules := floorsEnabled(tt.args.account, tt.args.bidRequestWrapper)
+			if gotEnabled != tt.wantEnabled {
+				t.Errorf("floorsEnabled() got = %v, want %v", gotEnabled, tt.wantEnabled)
 			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("floorsEnabled() got1 = %v, want %v", got1, tt.want1)
-			}
+			assert.Equal(t, tt.wantRules, gotRules, "Invalid Floors rules")
 		})
 	}
 }
