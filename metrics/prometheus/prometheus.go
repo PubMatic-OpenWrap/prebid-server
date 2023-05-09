@@ -84,6 +84,8 @@ type Metrics struct {
 
 	// Rejected Bids
 	rejectedBids *prometheus.CounterVec
+	// bidderDeals Bids
+	bidderDeals *prometheus.CounterVec
 	//rejectedBids         *prometheus.CounterVec
 	accountRejectedBid   *prometheus.CounterVec
 	accountFloorsRequest *prometheus.CounterVec
@@ -344,6 +346,11 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	// 	"tls_handshake_time",
 	// 	"Seconds to perform TLS Handshake",
 	// 	standardTimeBuckets)
+
+	metrics.bidderDeals = newCounter(cfg, reg,
+		"bidder_deals",
+		"Count of bidder deal bids by publisher id, profile, bidder and deal",
+		[]string{pubIDLabel, profileLabel, bidderLabel, dealLabel})
 
 	metrics.privacyCCPA = newCounter(cfg, reg,
 		"privacy_ccpa",
@@ -654,6 +661,7 @@ func createModulesMetrics(cfg config.PrometheusMetrics, registry *prometheus.Reg
 			fmt.Sprintf("modules_%s_timeouts", module),
 			"Count of module timeouts labeled by stage name.",
 			[]string{stageLabel})
+
 	}
 }
 

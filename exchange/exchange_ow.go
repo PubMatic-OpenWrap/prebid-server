@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -13,6 +14,11 @@ import (
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"golang.org/x/net/publicsuffix"
+)
+
+const (
+	trueIdMetricEnable = "trueIdMetricEnable"
+	owProfileId        = "owProfileId"
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
@@ -156,4 +162,18 @@ func UpdateRejectedBidExt(loggableObject *analytics.LoggableAuctionObject) {
 			rejBid.Ext = bidExtJSON
 		}
 	}
+}
+
+func recordBidderDeals(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID string, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	// Temporary code to record deal bids for the trueID publishers
+	if trueIDMetricEnable, ok := ctx.Value(trueIdMetricEnable).(bool); trueIDMetricEnable && ok {
+		if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
+			for _, seatBid := range adapterBids {
+				for _, pbsBid := range seatBid.Bids {
+					metricsEngine.RecordBidderDeals(pubID, profileID, seatBid.Seat, pbsBid.Bid.DealID)
+				}
+			}
+		}
+	}
+
 }
