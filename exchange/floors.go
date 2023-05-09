@@ -41,10 +41,12 @@ func getCurrencyConversionRate(seatBidCur, reqImpCur string, conversions currenc
 	}
 }
 
-// floorsEnabled will return true if floors are enbaled in both account and request level
+// floorsEnabled will return true if floors are enabled in both account and request level
 func floorsEnabled(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper) (bool, *openrtb_ext.PriceFloorRules) {
-	var reqEnabled bool
-	var floorRules *openrtb_ext.PriceFloorRules
+	var (
+		reqEnabled bool
+		floorRules *openrtb_ext.PriceFloorRules
+	)
 
 	if requestExt, err := bidRequestWrapper.GetRequestExt(); err == nil {
 		if prebidExt := requestExt.GetPrebid(); prebidExt != nil {
