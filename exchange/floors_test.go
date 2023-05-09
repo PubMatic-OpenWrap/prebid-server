@@ -1974,6 +1974,21 @@ func TestFloorsEnabled(t *testing.T) {
 			wantEnabled: true,
 			wantRules:   nil,
 		},
+		{
+			name: "extension is empty but floors is enabled in account",
+			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
+				bidRequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{},
+				},
+			},
+			wantEnabled: false,
+			wantRules:   nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
