@@ -422,9 +422,9 @@ func (me *MultiMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordBidderDeals(pubid, profileid, biddder, deal string) {
+func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 	for _, thisME := range *me {
-		thisME.RecordBidderDeals(pubid, profileid, biddder, deal)
+		thisME.RecordBids(pubid, profileid, biddder, deal)
 	}
 }
 
@@ -620,6 +620,6 @@ func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
 func (me *NilMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
 }
 
-// RecordBidderDeals as a noop
-func (me *NilMetricsEngine) RecordBidderDeals(pubid, profileid, biddder, deal string) {
+// RecordBids as a noop
+func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 }

@@ -30,6 +30,6 @@ func (me *Metrics) RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidD
 func (me *Metrics) RecordRejectedBids(pubid, biddder, code string) {
 }
 
-// RecordBidderDeals as a noop
-func (me *Metrics) RecordBidderDeals(pubid, profileid, biddder, deal string) {
+// RecordBids as a noop
+func (me *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 }

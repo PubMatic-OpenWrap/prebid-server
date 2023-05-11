@@ -350,7 +350,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	var bidResponseExt *openrtb_ext.ExtBidResponse
 
 	if anyBidsReturned {
-		recordBidderDeals(ctx, e.me, r.PubID, adapterBids)
+		recordBids(ctx, e.me, r.PubID, adapterBids)
 		//If floor enforcement config enabled then filter bids
 		adapterBids, enforceErrs := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)

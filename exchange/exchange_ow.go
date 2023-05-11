@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	trueIdMetricEnable = "trueIdMetricEnable"
-	owProfileId        = "owProfileId"
+	bidCountMetricEnabled = "bidCountMetricEnabled"
+	owProfileId           = "owProfileId"
+	nodeal                = "nodeal"
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
@@ -164,13 +165,17 @@ func UpdateRejectedBidExt(loggableObject *analytics.LoggableAuctionObject) {
 	}
 }
 
-func recordBidderDeals(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID string, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
-	// Temporary code to record deal bids for the trueID publishers
-	if trueIDMetricEnable, ok := ctx.Value(trueIdMetricEnable).(bool); trueIDMetricEnable && ok {
+func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID string, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	// Temporary code to record bids for publishers
+	if metricEnabled, ok := ctx.Value(bidCountMetricEnabled).(bool); metricEnabled && ok {
 		if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
 			for _, seatBid := range adapterBids {
 				for _, pbsBid := range seatBid.Bids {
-					metricsEngine.RecordBidderDeals(pubID, profileID, seatBid.Seat, pbsBid.Bid.DealID)
+					deal := pbsBid.Bid.DealID
+					if deal == "" {
+						deal = nodeal
+					}
+					metricsEngine.RecordBids(pubID, profileID, seatBid.Seat, deal)
 				}
 			}
 		}

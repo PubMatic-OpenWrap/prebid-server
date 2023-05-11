@@ -32,6 +32,6 @@ func (me *MetricsEngineMock) RecordAdapterVideoBidDuration(labels AdapterLabels,
 	me.Called(labels, videoBidDuration)
 }
 
-func (me *MetricsEngineMock) RecordBidderDeals(pubid, profileid, biddder, deal string) {
+func (me *MetricsEngineMock) RecordBids(pubid, profileid, biddder, deal string) {
 	me.Called(pubid, profileid, biddder, deal)
 }
