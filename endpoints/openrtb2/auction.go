@@ -23,6 +23,7 @@ import (
 	nativeRequests "github.com/prebid/openrtb/v17/native1/request"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/ortb"
 	"golang.org/x/net/publicsuffix"
@@ -54,6 +55,14 @@ import (
 const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
+const (
+	VastUnwrapperEnableKey = "enableVastUnwrapper"
+)
+
+func GetContextValueForField(ctx context.Context, field string) string {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper
+}
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")
@@ -152,10 +161,17 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	start := time.Now()
 
 	ao := analytics.AuctionObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
+		},
 		StartTime: start,
 	}
+
+	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
+	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
 
 	labels := metrics.Labels{
 		Source:        metrics.DemandUnknown,
@@ -166,6 +182,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
+		recordRejectedBids(labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -226,8 +243,10 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		BidderImpReplaceImpID:      bidderImpReplaceImp,
 		PubID:                      labels.PubID,
 		HookExecutor:               deps.hookExecutor,
+		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
 	ao.Request = req.BidRequest
 	ao.Response = response
 	ao.Account = account
@@ -834,7 +853,7 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 				return errors.New("imp.ext.tid missing in the imp and error creating a random UID")
 			}
 			ie.SetTid(rawUUID.String())
-			impWrapper.RebuildImp()
+			impWrapper.RebuildImpressionExt()
 		}
 	}
 
@@ -1409,7 +1428,11 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 
 		if coreBidderNormalized, isValid := deps.bidderMap[coreBidder]; isValid {
 			if err := deps.paramsValidator.Validate(coreBidderNormalized, ext); err != nil {
-				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
+				msg := fmt.Sprintf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)
+
+				delete(prebid.Bidder, bidder)
+				glog.Errorf("BidderSchemaValidationError: %s", msg)
+				errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 			}
 		} else {
 			if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
