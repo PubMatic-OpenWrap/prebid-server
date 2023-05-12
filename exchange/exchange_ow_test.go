@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
+	"github.com/prebid/prebid-server/metrics"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -905,6 +907,214 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 			UpdateRejectedBidExt(test.args.loggableObject)
 			assert.Equal(t, test.want.loggableObject.RejectedBids[0].Bid.Bid.Ext, test.args.loggableObject.RejectedBids[0].Bid.Bid.Ext, "mismatched loggableObject for test-[%+v]", test.name)
 
+		})
+	}
+}
+
+func TestCallRecordBids(t *testing.T) {
+
+	type args struct {
+		ctx              context.Context
+		pubID            string
+		adapterBids      map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+		getMetricsEngine func() *metrics.MetricsEngineMock
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "empty context",
+			args: args{
+				ctx:   context.Background(),
+				pubID: "1010",
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "bidCountMetricEnabled is false",
+			args: args{
+				ctx:   context.WithValue(context.Background(), bidCountMetricEnabled, false),
+				pubID: "1010",
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "bidCountMetricEnabled is true, owProfileId is non-string",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, 1),
+				pubID: "1010",
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "bidCountMetricEnabled is true, owProfileId is empty",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, ""),
+				pubID: "1010",
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "empty adapterBids",
+			args: args{
+				ctx:         context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID:       "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "empty adapterBids.seat",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID: "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "empty adapterBids.seat.bids",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID: "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					return &metrics.MetricsEngineMock{}
+				},
+			},
+		},
+		{
+			name: "multiple non deal bid",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID: "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid1",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid2",
+								},
+							},
+						},
+						Seat: "pubmatic",
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordBids", "1010", "11", "pubmatic", nodeal).Return()
+					metricEngine.Mock.On("RecordBids", "1010", "11", "pubmatic", nodeal).Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "multiple deal bid",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID: "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid1",
+									DealID: "pubdeal",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid2",
+									DealID: "pubdeal",
+								},
+							},
+						},
+						Seat: "pubmatic",
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordBids", "1010", "11", "pubmatic", "pubdeal").Return()
+					metricEngine.Mock.On("RecordBids", "1010", "11", "pubmatic", "pubdeal").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "multiple bidders",
+			args: args{
+				ctx:   context.WithValue(context.WithValue(context.Background(), bidCountMetricEnabled, true), owProfileId, "11"),
+				pubID: "1010",
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid1",
+									DealID: "pubdeal",
+								},
+							},
+						},
+						Seat: "pubmatic",
+					},
+					"appnexus": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid2",
+									DealID: "appnxdeal",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid3",
+								},
+							},
+						},
+						Seat: "appnexus",
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordBids", "1010", "11", "pubmatic", "pubdeal").Return()
+					metricEngine.Mock.On("RecordBids", "1010", "11", "appnexus", "appnxdeal").Return()
+					metricEngine.Mock.On("RecordBids", "1010", "11", "appnexus", nodeal).Return()
+					return metricEngine
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockMetricEngine := tt.args.getMetricsEngine()
+			recordBids(tt.args.ctx, mockMetricEngine, tt.args.pubID, tt.args.adapterBids)
+			mockMetricEngine.AssertExpectations(t)
 		})
 	}
 }
