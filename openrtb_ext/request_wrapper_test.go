@@ -216,7 +216,7 @@ func TestRebuildImp(t *testing.T) {
 			description:       "One - Accessed - Error",
 			request:           openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1"}}},
 			requestImpWrapper: []*ImpWrapper{{Imp: nil, impExt: &ImpExt{}}},
-			expectedError:     "ImpWrapper RebuildImp called on a nil Imp",
+			expectedError:     "ImpWrapper RebuildImpressionExt called on a nil Imp",
 		},
 		{
 			description:       "Many - Accessed - Dirty / Not Dirty",
@@ -1643,7 +1643,7 @@ func TestImpWrapperRebuildImp(t *testing.T) {
 		test.impExtWrapper.ext = make(map[string]json.RawMessage)
 
 		w := &ImpWrapper{Imp: &test.imp, impExt: &test.impExtWrapper}
-		w.RebuildImp()
+		w.RebuildImpressionExt()
 		assert.Equal(t, test.expectedImp, *w.Imp, test.description)
 	}
 }
@@ -1664,24 +1664,14 @@ func TestImpWrapperGetImpExt(t *testing.T) {
 		},
 		{
 			description:  "Populated - Ext",
-			givenWrapper: ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"is_rewarded_inventory":1},"other":42,"tid":"test-tid","gpid":"test-gpid","data":{"adserver":{"name":"ads","adslot":"adslot123"},"pbadslot":"pbadslot123"}}`)}},
+			givenWrapper: ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"is_rewarded_inventory":1},"other":42, "tid": "test-tid"}`)}},
 			expectedImpExt: ImpExt{
 				ext: map[string]json.RawMessage{
 					"prebid": json.RawMessage(`{"is_rewarded_inventory":1}`),
 					"other":  json.RawMessage(`42`),
 					"tid":    json.RawMessage(`"test-tid"`),
-					"gpid":   json.RawMessage(`"test-gpid"`),
-					"data":   json.RawMessage(`{"adserver":{"name":"ads","adslot":"adslot123"},"pbadslot":"pbadslot123"}`),
 				},
-				tid:  "test-tid",
-				gpId: "test-gpid",
-				data: &ExtImpData{
-					AdServer: &ExtImpDataAdServer{
-						Name:   "ads",
-						AdSlot: "adslot123",
-					},
-					PbAdslot: "pbadslot123",
-				},
+				tid:    "test-tid",
 				prebid: &ExtImpPrebid{IsRewardedInventory: &isRewardedInventoryOne},
 			},
 		},

@@ -2,7 +2,11 @@ package openrtb_ext
 
 import (
 	"encoding/json"
+
+	"github.com/prebid/openrtb/v19/openrtb3"
 )
+
+type NonBidStatusCode openrtb3.LossReason
 
 // ExtBidResponse defines the contract for bidresponse.ext
 type ExtBidResponse struct {
@@ -44,6 +48,7 @@ type ExtResponsePrebid struct {
 	Modules          json.RawMessage   `json:"modules,omitempty"`
 	Fledge           *Fledge           `json:"fledge,omitempty"`
 	Targeting        map[string]string `json:"targeting,omitempty"`
+	Floors           *PriceFloorRules  `json:"floors,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
@@ -78,6 +83,7 @@ type ExtHttpCall struct {
 	RequestHeaders map[string][]string `json:"requestheaders"`
 	ResponseBody   string              `json:"responsebody"`
 	Status         int                 `json:"status"`
+	Params         map[string]int      `json:"params,omitempty"`
 }
 
 // CookieStatus describes the allowed values for bidresponse.ext.usersync.{bidder}.status
@@ -96,3 +102,32 @@ const (
 	UserSyncIframe UserSyncType = "iframe"
 	UserSyncPixel  UserSyncType = "pixel"
 )
+
+// SeatNonBidResponse defines the contract for bidresponse.ext.debug.seatnonbid
+type SeatNonBidResponse struct {
+	SeatNonBids []SeatNonBid `json:"seatnonbid,omitempty"`
+}
+
+// SeatNonBid defines the contract to hold all elements of single seatnonbid
+type SeatNonBid struct {
+	NonBids []NonBid `json:"nonbid,omitempty"`
+	Seat    string   `json:"seat,omitempty"`
+}
+
+// NonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid
+type NonBid struct {
+	ImpId      string                    `json:"impid,omitempty"`
+	StatusCode openrtb3.NonBidStatusCode `json:"statuscode,omitempty"`
+	Ext        *ExtNonBid                `json:"ext,omitempty"`
+}
+
+// ExtNonBid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext
+type ExtNonBid struct {
+	Prebid  *ExtNonBidPrebid `json:"prebid,omitempty"`
+	IsAdPod *bool            `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
+}
+
+// ExtNonBidPrebid defines the contract for bidresponse.ext.debug.seatnonbid.nonbid.ext.prebid
+type ExtNonBidPrebid struct {
+	Bid interface{} `json:"bid,omitempty"` // To be removed once we start using single "Bid" data-type (unlike V25.Bid and openrtb2.Bid)
+}

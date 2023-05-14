@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/experiment/adscert"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
@@ -90,6 +91,7 @@ type testConfigValues struct {
 	CurrencyRates       map[string]map[string]float64 `json:"currencyRates"`
 	MockBidders         []mockBidderHandler           `json:"mockBidders"`
 	RealParamsValidator bool                          `json:"realParamsValidator"`
+	AssertBidExt        bool                          `json:"assertbidext"`
 }
 
 type brokenExchange struct{}
@@ -1232,6 +1234,7 @@ func buildTestExchange(testCfg *testConfigValues, adapterMap map[openrtb_ext.Bid
 		mockCurrencyConverter,
 		mockFetcher,
 		&adscert.NilSigner{},
+		&floors.PriceFloorFetcher{},
 	)
 
 	testExchange = &exchangeTestWrapper{

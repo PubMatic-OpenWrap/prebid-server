@@ -176,7 +176,7 @@ func (rw *RequestWrapper) RebuildRequest() error {
 		return errors.New("Requestwrapper RebuildRequest called on a nil BidRequest")
 	}
 
-	if err := rw.rebuildImp(); err != nil {
+	if err := rw.RebuildImp(); err != nil {
 		return err
 	}
 	if err := rw.rebuildUserExt(); err != nil {
@@ -185,7 +185,7 @@ func (rw *RequestWrapper) RebuildRequest() error {
 	if err := rw.rebuildDeviceExt(); err != nil {
 		return err
 	}
-	if err := rw.rebuildRequestExt(); err != nil {
+	if err := rw.RebuildRequestExt(); err != nil {
 		return err
 	}
 	if err := rw.rebuildAppExt(); err != nil {
@@ -204,7 +204,7 @@ func (rw *RequestWrapper) RebuildRequest() error {
 	return nil
 }
 
-func (rw *RequestWrapper) rebuildImp() error {
+func (rw *RequestWrapper) RebuildImp() error {
 	if !rw.impWrappersAccessed {
 		return nil
 	}
@@ -216,7 +216,7 @@ func (rw *RequestWrapper) rebuildImp() error {
 
 	rw.Imp = make([]openrtb2.Imp, len(rw.impWrappers))
 	for i := range rw.impWrappers {
-		if err := rw.impWrappers[i].RebuildImp(); err != nil {
+		if err := rw.impWrappers[i].RebuildImpressionExt(); err != nil {
 			return err
 		}
 		rw.Imp[i] = *rw.impWrappers[i].Imp
@@ -263,7 +263,7 @@ func (rw *RequestWrapper) rebuildDeviceExt() error {
 	return nil
 }
 
-func (rw *RequestWrapper) rebuildRequestExt() error {
+func (rw *RequestWrapper) RebuildRequestExt() error {
 	if rw.requestExt == nil || !rw.requestExt.Dirty() {
 		return nil
 	}
@@ -1387,9 +1387,9 @@ func (w *ImpWrapper) GetImpExt() (*ImpExt, error) {
 	return w.impExt, w.impExt.unmarshal(w.Ext)
 }
 
-func (w *ImpWrapper) RebuildImp() error {
+func (w *ImpWrapper) RebuildImpressionExt() error {
 	if w.Imp == nil {
-		return errors.New("ImpWrapper RebuildImp called on a nil Imp")
+		return errors.New("ImpWrapper RebuildImpressionExt called on a nil Imp")
 	}
 
 	if err := w.rebuildImpExt(); err != nil {
@@ -1433,10 +1433,8 @@ type ImpExt struct {
 	ext         map[string]json.RawMessage
 	extDirty    bool
 	prebid      *ExtImpPrebid
-	data        *ExtImpData
 	prebidDirty bool
 	tid         string
-	gpId        string
 	tidDirty    bool
 }
 
@@ -1463,24 +1461,9 @@ func (e *ImpExt) unmarshal(extJson json.RawMessage) error {
 		}
 	}
 
-	dataJson, hasData := e.ext[dataKey]
-	if hasData {
-		e.data = &ExtImpData{}
-		if err := json.Unmarshal(dataJson, e.data); err != nil {
-			return err
-		}
-	}
-
 	tidJson, hasTid := e.ext["tid"]
 	if hasTid {
 		if err := json.Unmarshal(tidJson, &e.tid); err != nil {
-			return err
-		}
-	}
-
-	gpIdJson, hasGpId := e.ext["gpid"]
-	if hasGpId {
-		if err := json.Unmarshal(gpIdJson, &e.gpId); err != nil {
 			return err
 		}
 	}
@@ -1563,14 +1546,6 @@ func (e *ImpExt) SetPrebid(prebid *ExtImpPrebid) {
 	e.prebidDirty = true
 }
 
-func (e *ImpExt) GetData() *ExtImpData {
-	if e.data == nil {
-		return nil
-	}
-	data := *e.data
-	return &data
-}
-
 func (e *ImpExt) GetTid() string {
 	tid := e.tid
 	return tid
@@ -1579,11 +1554,6 @@ func (e *ImpExt) GetTid() string {
 func (e *ImpExt) SetTid(tid string) {
 	e.tid = tid
 	e.tidDirty = true
-}
-
-func (e *ImpExt) GetGpId() string {
-	gpId := e.gpId
-	return gpId
 }
 
 func CreateImpExtForTesting(ext map[string]json.RawMessage, prebid *ExtImpPrebid) ImpExt {
