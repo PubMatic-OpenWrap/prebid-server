@@ -114,13 +114,16 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAmp, deps.metricsEngine)
 
 	ao := analytics.AmpObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
+		},
 		StartTime: start,
 	}
 
 	// Set this as an AMP request in Metrics.
-
 	labels := metrics.Labels{
 		Source:        metrics.DemandWeb,
 		RType:         metrics.ReqTypeAMP,
@@ -234,11 +237,12 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		BidderImpReplaceImpID:      bidderImpReplaceImp,
 		PubID:                      labels.PubID,
 		HookExecutor:               hookExecutor,
+		LoggableObject:             &ao.LoggableAuctionObject,
 		QueryParams:                r.URL.Query(),
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
-	ao.AuctionResponse = response
+	ao.Response = response
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -282,7 +286,7 @@ func rejectAmpRequest(
 	errs []error,
 ) (metrics.Labels, analytics.AmpObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
-	ao.AuctionResponse = response
+	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
 	return sendAmpResponse(w, hookExecutor, response, reqWrapper, account, labels, ao, errs)
