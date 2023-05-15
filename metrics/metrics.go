@@ -498,4 +498,7 @@ type MetricsEngine interface {
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
 	RecordRejectedBids(pubid, bidder, code string)
+
+	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
+	RecordBids(pubid, profileid, bidder, deal string)
 }

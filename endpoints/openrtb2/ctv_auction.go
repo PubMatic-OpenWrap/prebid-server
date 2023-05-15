@@ -194,7 +194,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		}
 		deps.labels.PubID = getAccountID(request.Site.Publisher)
 	}
-	ctx := context.Background()
+	ctx := r.Context()
 
 	// Look up account now that we have resolved the pubID value
 	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID)

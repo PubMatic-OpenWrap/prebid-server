@@ -9,9 +9,11 @@ import (
 )
 
 const (
-	pubIDLabel  = "pubid"
-	bidderLabel = "bidder"
-	codeLabel   = "code"
+	pubIDLabel   = "pubid"
+	bidderLabel  = "bidder"
+	codeLabel    = "code"
+	profileLabel = "profileid"
+	dealLabel    = "deal"
 )
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
@@ -84,5 +86,16 @@ func (m *Metrics) RecordRejectedBids(pubid, biddder, code string) {
 		pubIDLabel:  pubid,
 		bidderLabel: biddder,
 		codeLabel:   code,
+	}).Inc()
+}
+
+// RecordBids records bids labeled by pubid, profileid, bidder and deal
+func (m *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
+
+	m.bids.With(prometheus.Labels{
+		pubIDLabel:   pubid,
+		profileLabel: profileid,
+		bidderLabel:  biddder,
+		dealLabel:    deal,
 	}).Inc()
 }

@@ -173,7 +173,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 
 	ao.Request = reqWrapper.BidRequest
 
-	ctx := context.Background()
+	ctx := r.Context()
 	var cancel context.CancelFunc
 	if reqWrapper.TMax > 0 {
 		ctx, cancel = context.WithDeadline(ctx, start.Add(time.Duration(reqWrapper.TMax)*time.Millisecond))

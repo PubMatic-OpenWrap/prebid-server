@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/boolutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1855,140 +1856,147 @@ func TestUpdateBidExtWithFloors(t *testing.T) {
 	}
 }
 
-func TestUpdateBidExt(t *testing.T) {
+func TestFloorsEnabled(t *testing.T) {
 	type args struct {
+		account           config.Account
 		bidRequestWrapper *openrtb_ext.RequestWrapper
-		seatBids          map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
 	}
 	tests := []struct {
-		name string
-		args args
-		want *openrtb_ext.ExtBidFloors
+		name        string
+		args        args
+		wantEnabled bool
+		wantRules   *openrtb_ext.PriceFloorRules
 	}{
 		{
-			name: "Update Bid Ext with imp currency USD",
+			name: "Floors data available in request and its enabled",
 			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
 				bidRequestWrapper: &openrtb_ext.RequestWrapper{
 					BidRequest: &openrtb2.BidRequest{
-						ID: "some-request-id",
-						Imp: []openrtb2.Imp{{
-							ID:          "some-impression-id-1",
-							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
-							BidFloor:    20.01,
-							BidFloorCur: "USD",
-							Ext:         json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`),
-						}},
-						Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelversion":"version1","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":20.01,"*|*|www.website1.com":16.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}`),
-					},
-				},
-				seatBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "some-bid-1",
-									Price:  1.2,
-									ImpID:  "some-impression-id-1",
-									DealID: "1",
+						Ext: func() json.RawMessage {
+							ext := make(map[string]interface{})
+							prebidExt := openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled:     boolutil.BoolPtr(true),
+									FloorMin:    2,
+									FloorMinCur: "INR",
+									Data: &openrtb_ext.PriceFloorData{
+										Currency: "INR",
+									},
 								},
-							},
-						},
-						Currency: "USD",
+							}
+							ext["prebid"] = prebidExt
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
 					},
 				},
 			},
-			want: &openrtb_ext.ExtBidFloors{
-				BidAdjustment:  false,
-				FloorRule:      "*|*|*",
-				FloorRuleValue: 26.02,
-				FloorValue:     12,
-				FloorCurrency:  "USD",
-			},
+			wantEnabled: true,
+			wantRules: func() *openrtb_ext.PriceFloorRules {
+				floors := openrtb_ext.PriceFloorRules{
+					Enabled:     boolutil.BoolPtr(true),
+					FloorMin:    2,
+					FloorMinCur: "INR",
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "INR",
+					},
+				}
+				return &floors
+			}(),
 		},
 		{
-			name: "Update Bid Ext with imp currency empty and request currency list is empty",
+			name: "Floors data available in request and floors is disabled",
 			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: false,
+					},
+				},
 				bidRequestWrapper: &openrtb_ext.RequestWrapper{
 					BidRequest: &openrtb2.BidRequest{
-						ID: "some-request-id",
-						Imp: []openrtb2.Imp{{
-							ID:          "some-impression-id-1",
-							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
-							BidFloor:    20.01,
-							BidFloorCur: "",
-							Ext:         json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`),
-						}},
-						Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelversion":"version1","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":20.01,"*|*|www.website1.com":16.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}`),
-					},
-				},
-				seatBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "some-bid-1",
-									Price:  1.2,
-									ImpID:  "some-impression-id-1",
-									DealID: "1",
+						Ext: func() json.RawMessage {
+							ext := map[string]interface{}{
+								"prebid": openrtb_ext.ExtRequestPrebid{
+									Floors: &openrtb_ext.PriceFloorRules{
+										Enabled:     boolutil.BoolPtr(true),
+										FloorMin:    2,
+										FloorMinCur: "INR",
+										Data: &openrtb_ext.PriceFloorData{
+											Currency: "INR",
+										},
+									},
 								},
-							},
-						},
-						Currency: "USD",
+							}
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
 					},
 				},
 			},
-			want: &openrtb_ext.ExtBidFloors{
-				BidAdjustment:  false,
-				FloorRule:      "*|*|*",
-				FloorRuleValue: 26.02,
-				FloorValue:     12,
-				FloorCurrency:  "",
-			},
+			wantEnabled: false,
+			wantRules: func() *openrtb_ext.PriceFloorRules {
+				floors := openrtb_ext.PriceFloorRules{
+					Enabled:     boolutil.BoolPtr(true),
+					FloorMin:    2,
+					FloorMinCur: "INR",
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "INR",
+					},
+				}
+				return &floors
+			}(),
 		},
 		{
-			name: "Update Bid Ext with imp currency empty and request currency list is non empty",
+			name: "Floors data is nil in request but floors is enabled in account",
 			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
 				bidRequestWrapper: &openrtb_ext.RequestWrapper{
 					BidRequest: &openrtb2.BidRequest{
-						ID: "some-request-id",
-						Imp: []openrtb2.Imp{{
-							ID:          "some-impression-id-1",
-							Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
-							BidFloor:    20.01,
-							BidFloorCur: "",
-							Ext:         json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`),
-						}},
-						Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"data":{"currency":"USD","skiprate":100,"modelgroups":[{"modelversion":"version1","skiprate":10,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":20.01,"*|*|www.website1.com":16.01},"default":21}]},"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true,"skipped":false}}}`),
-						Cur: []string{"JPY"},
-					},
-				},
-				seatBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "some-bid-1",
-									Price:  1.2,
-									ImpID:  "some-impression-id-1",
-									DealID: "1",
-								},
-							},
-						},
-						Currency: "USD",
+						Ext: func() json.RawMessage {
+							ext := map[string]interface{}{
+								"prebid": openrtb_ext.ExtRequestPrebid{},
+							}
+							data, _ := json.Marshal(ext)
+							return data
+						}(),
 					},
 				},
 			},
-			want: &openrtb_ext.ExtBidFloors{
-				BidAdjustment:  false,
-				FloorRule:      "*|*|*",
-				FloorRuleValue: 26.02,
-				FloorValue:     12,
-				FloorCurrency:  "",
+			wantEnabled: true,
+			wantRules:   nil,
+		},
+		{
+			name: "extension is empty but floors is enabled in account",
+			args: args{
+				account: config.Account{
+					PriceFloors: config.AccountPriceFloors{
+						Enabled: true,
+					},
+				},
+				bidRequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{},
+				},
 			},
+			wantEnabled: false,
+			wantRules:   nil,
 		},
 	}
 	for _, tt := range tests {
-		updateBidExt(tt.args.bidRequestWrapper, tt.args.seatBids)
-		assert.Equal(t, tt.want, tt.args.seatBids["pubmatic"].Bids[0].BidFloors, "Bid is not updated with data")
+		t.Run(tt.name, func(t *testing.T) {
+			gotEnabled, gotRules := floorsEnabled(tt.args.account, tt.args.bidRequestWrapper)
+			if gotEnabled != tt.wantEnabled {
+				t.Errorf("floorsEnabled() got = %v, want %v", gotEnabled, tt.wantEnabled)
+			}
+			assert.Equal(t, tt.wantRules, gotRules, "Invalid Floors rules")
+		})
 	}
 }
