@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -36,6 +37,7 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 	}
 	patchConfig(&cfg)
 
+	glog.Info("Connecting to OpenWrap database...")
 	mysqlDriver, err := open("mysql", cfg.OpenWrap.Database)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("failed to open db connection: %v", err)
