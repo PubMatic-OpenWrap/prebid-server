@@ -112,7 +112,6 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 					reqImpCur = bidRequestWrapper.Cur[0]
 				}
 			}
-			updateBidExtWithFloors(reqImp, bid, reqImpCur)
 			rate, err := getCurrencyConversionRate(seatBid.Currency, reqImpCur, conversions)
 			if err != nil {
 				errMsg := fmt.Errorf("error in rate conversion from = %s to %s with bidder %s for impression id %s and bid id %s", seatBid.Currency, reqImpCur, bidderName, bid.Bid.ImpID, bid.Bid.ID)
@@ -174,6 +173,7 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entit
 		var enforceDealFloors bool
 		var floorsEnfocement bool
 		var updateReqExt bool
+		updateBidExt(r.BidRequestWrapper, seatBids)
 		floorsEnfocement = floors.RequestHasFloors(r.BidRequestWrapper.BidRequest)
 		if prebidExt != nil && floorsEnfocement {
 			if floorsEnfocement, updateReqExt = floors.ShouldEnforce(prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
