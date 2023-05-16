@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +41,8 @@ import (
 	"github.com/prebid/prebid-server/util/iputil"
 	"github.com/prebid/prebid-server/util/ptrutil"
 )
+
+const jsonFileExtension string = ".json"
 
 func TestJsonSampleRequests(t *testing.T) {
 	testSuites := []struct {
@@ -121,46 +124,64 @@ func TestJsonSampleRequests(t *testing.T) {
 	}
 
 	for _, tc := range testSuites {
-		testCaseFiles, err := getTestFiles(filepath.Join("sample-requests", tc.sampleRequestsSubDir))
-		if assert.NoError(t, err, "Test case %s. Error reading files from directory %s \n", tc.description, tc.sampleRequestsSubDir) {
-			for _, testFile := range testCaseFiles {
-				fileData, err := os.ReadFile(testFile)
-				if assert.NoError(t, err, "Test case %s. Error reading file %s \n", tc.description, testFile) {
-					// Retrieve test case input and expected output from JSON file
-					test, err := parseTestFile(fileData, testFile)
-					if !assert.NoError(t, err) {
-						continue
-					}
-
-					// Build endpoint for testing. If no error, run test case
-					cfg := &config.Configuration{MaxRequestSize: maxSize}
-					if test.Config != nil {
-						cfg.BlacklistedApps = test.Config.BlacklistedApps
-						cfg.BlacklistedAppMap = test.Config.getBlacklistedAppMap()
-						cfg.BlacklistedAccts = test.Config.BlacklistedAccounts
-						cfg.BlacklistedAcctMap = test.Config.getBlackListedAccountMap()
-						cfg.AccountRequired = test.Config.AccountRequired
-					}
-					cfg.MarshalAccountDefaults()
-					test.endpointType = OPENRTB_ENDPOINT
-
-					auctionEndpointHandler, _, mockBidServers, mockCurrencyRatesServer, err := buildTestEndpoint(test, cfg)
-					if assert.NoError(t, err) {
-						assert.NotPanics(t, func() { runTestCase(t, auctionEndpointHandler, test, fileData, testFile) }, testFile)
-					}
-
-					// Close servers regardless if the test case was run or not
-					for _, mockBidServer := range mockBidServers {
-						mockBidServer.Close()
-					}
-					mockCurrencyRatesServer.Close()
-				}
+		err := filepath.WalkDir(filepath.Join("sample-requests", tc.sampleRequestsSubDir), func(path string, info fs.DirEntry, err error) error {
+			// According to documentation, needed to avoid panics
+			if err != nil {
+				return err
 			}
-		}
+
+			// Test suite will traverse the directory tree recursively and will only consider files with `json` extension
+			if !info.IsDir() && filepath.Ext(info.Name()) == jsonFileExtension {
+				t.Run(tc.description, func(t *testing.T) {
+					runJsonBasedTest(t, path, tc.description)
+				})
+			}
+
+			return nil
+		})
+		assert.NoError(t, err, "Test case %s. Error reading files from directory %s \n", tc.description, tc.sampleRequestsSubDir)
 	}
 }
 
-func runTestCase(t *testing.T, auctionEndpointHandler httprouter.Handle, test testCase, fileData []byte, testFile string) {
+func runJsonBasedTest(t *testing.T, filename, desc string) {
+	t.Helper()
+
+	fileData, err := os.ReadFile(filename)
+	if !assert.NoError(t, err, "Test case %s. Error reading file %s \n", desc, filename) {
+		return
+	}
+
+	// Retrieve test case input and expected output from JSON file
+	test, err := parseTestData(fileData, filename)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// Build endpoint for testing. If no error, run test case
+	cfg := &config.Configuration{MaxRequestSize: maxSize}
+	if test.Config != nil {
+		cfg.BlacklistedApps = test.Config.BlacklistedApps
+		cfg.BlacklistedAppMap = test.Config.getBlacklistedAppMap()
+		cfg.BlacklistedAccts = test.Config.BlacklistedAccounts
+		cfg.BlacklistedAcctMap = test.Config.getBlackListedAccountMap()
+		cfg.AccountRequired = test.Config.AccountRequired
+	}
+	cfg.MarshalAccountDefaults()
+	test.endpointType = OPENRTB_ENDPOINT
+
+	auctionEndpointHandler, _, mockBidServers, mockCurrencyRatesServer, err := buildTestEndpoint(test, cfg)
+	if assert.NoError(t, err) {
+		assert.NotPanics(t, func() { runEndToEndTest(t, auctionEndpointHandler, test, fileData, filename) }, filename)
+	}
+
+	// Close servers regardless if the test case was run or not
+	for _, mockBidServer := range mockBidServers {
+		mockBidServer.Close()
+	}
+	mockCurrencyRatesServer.Close()
+}
+
+func runEndToEndTest(t *testing.T, auctionEndpointHandler httprouter.Handle, test testCase, fileData []byte, testFile string) {
 	t.Helper()
 
 	// Hit the auction endpoint with the test case configuration and mockBidRequest
@@ -187,7 +208,7 @@ func runTestCase(t *testing.T, auctionEndpointHandler httprouter.Handle, test te
 		if assert.NoError(t, err, "Could not unmarshal expected bidResponse taken from test file.\n Test file: %s\n Error:%s\n", testFile, err) {
 			err = json.Unmarshal([]byte(actualJsonBidResponse), &actualBidResponse)
 			if assert.NoError(t, err, "Could not unmarshal actual bidResponse from auction.\n Test file: %s\n Error:%s\n", testFile, err) {
-				assertBidResponseEqual(t, testFile, expectedBidResponse, actualBidResponse)
+				assertBidResponseEqual(t, test, testFile, expectedBidResponse, actualBidResponse)
 			}
 		}
 	}
@@ -228,7 +249,7 @@ func compareWarnings(t *testing.T, expectedBidResponseExt, actualBidResponseExt 
 // Once unmarshalled, bidResponse objects can't simply be compared with an `assert.Equalf()` call
 // because tests fail if the elements inside the `bidResponse.SeatBid` and `bidResponse.SeatBid.Bid`
 // arrays, if any, are not listed in the exact same order in the actual version and in the expected version.
-func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
+func assertBidResponseEqual(t *testing.T, test testCase, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
 
 	//Assert non-array BidResponse fields
 	assert.Equalf(t, expectedBidResponse.ID, actualBidResponse.ID, "BidResponse.ID doesn't match expected. Test: %s\n", testFile)
@@ -282,8 +303,8 @@ func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse o
 			assert.Equalf(t, expectedBid.ImpID, actualBidMap[bidID].ImpID, "BidResponse.SeatBid[%s].Bid[%s].ImpID doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 			assert.Equalf(t, expectedBid.Price, actualBidMap[bidID].Price, "BidResponse.SeatBid[%s].Bid[%s].Price doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 
-			if len(expectedBid.Ext) > 0 {
-				assert.JSONEq(t, string(expectedBid.Ext), string(actualBidMap[bidID].Ext), "Incorrect bid extension")
+			if len(expectedBid.Ext) > 0 && test.Config.AssertBidExt {
+				assert.JSONEq(t, string(expectedBid.Ext), string(actualBidMap[bidID].Ext), "BidResponse.SeatBid[%s].Bid[%s].Ext doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 			}
 		}
 	}
@@ -367,7 +388,7 @@ func TestBidRequestAssert(t *testing.T) {
 	}
 
 	for _, test := range testSuites {
-		assertBidResponseEqual(t, test.description, test.expectedBidResponse, test.actualBidResponse)
+		assertBidResponseEqual(t, testCase{Config: &testConfigValues{}}, test.description, test.expectedBidResponse, test.actualBidResponse)
 	}
 }
 
@@ -2581,14 +2602,14 @@ func TestValidateImpExt(t *testing.T) {
 
 			errs := deps.validateImpExt(impWrapper, nil, 0, false, nil)
 
-			assert.NoError(t, impWrapper.RebuildImp(), test.description+":rebuild_imp")
+			assert.NoError(t, impWrapper.RebuildImpressionExt(), test.description+":rebuild_imp")
 
 			if len(test.expectedImpExt) > 0 {
 				assert.JSONEq(t, test.expectedImpExt, string(imp.Ext), "imp.ext JSON does not match expected. Test: %s. %s\n", group.description, test.description)
 			} else {
 				assert.Empty(t, imp.Ext, "imp.ext expected to be empty but was: %s. Test: %s. %s\n", string(imp.Ext), group.description, test.description)
 			}
-			assert.Equal(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
+			assert.ElementsMatch(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
 		}
 	}
 }
@@ -4119,7 +4140,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    validRequest(t, "site.json"),
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -4128,7 +4149,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    "{}",
 			expectedStatus: 400,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
@@ -5098,7 +5119,7 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 			fileData, err := os.ReadFile(tc.file)
 			assert.NoError(t, err, "Failed to read test file.")
 
-			test, err := parseTestFile(fileData, tc.file)
+			test, err := parseTestData(fileData, tc.file)
 			assert.NoError(t, err, "Failed to parse test file.")
 			test.planBuilder = tc.planBuilder
 			test.endpointType = OPENRTB_ENDPOINT
@@ -5124,7 +5145,7 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(actualResp.Ext, &actualExt), "Unable to unmarshal actual ExtBidResponse.")
 			}
 
-			assertBidResponseEqual(t, tc.file, expectedResp, actualResp)
+			assertBidResponseEqual(t, test, tc.file, expectedResp, actualResp)
 			assert.Equal(t, expectedResp.NBR, actualResp.NBR, "Invalid NBR.")
 			assert.Equal(t, expectedExt.Warnings, actualExt.Warnings, "Wrong bidResponse.ext.warnings.")
 

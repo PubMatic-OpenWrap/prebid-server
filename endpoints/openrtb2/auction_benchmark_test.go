@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prebid/prebid-server/floors"
+
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -93,6 +95,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
 		empty_fetcher.EmptyFetcher{},
 		&adscert.NilSigner{},
+		&floors.PriceFloorFetcher{},
 	)
 
 	endpoint, _ := NewEndpoint(
@@ -137,7 +140,7 @@ func BenchmarkValidWholeExemplary(b *testing.B) {
 			if err != nil {
 				b.Fatalf("unable to read file %s", testFile)
 			}
-			test, err := parseTestFile(fileData, testFile)
+			test, err := parseTestData(fileData, testFile)
 			if err != nil {
 				b.Fatal(err.Error())
 			}
