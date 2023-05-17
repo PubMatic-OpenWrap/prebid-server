@@ -35,9 +35,9 @@ type Account struct {
 	TruncateTargetAttribute *int                                 `mapstructure:"truncate_target_attr" json:"truncate_target_attr"`
 	AlternateBidderCodes    *openrtb_ext.ExtAlternateBidderCodes `mapstructure:"alternatebiddercodes" json:"alternatebiddercodes"`
 	Hooks                   AccountHooks                         `mapstructure:"hooks" json:"hooks"`
-	PriceFloors             AccountPriceFloors                   `mapstructure:"price_floors" json:"price_floors"`
 	Validations             Validations                          `mapstructure:"validations" json:"validations"`
 	DefaultBidLimit         int                                  `mapstructure:"default_bid_limit" json:"default_bid_limit"`
+	PriceFloors             AccountPriceFloors                   `mapstructure:"price_floors" json:"price_floors"`
 }
 
 // CookieSync represents the account-level defaults for the cookie sync endpoint.
@@ -47,27 +47,31 @@ type CookieSync struct {
 	DefaultCoopSync *bool `mapstructure:"default_coop_sync" json:"default_coop_sync"`
 }
 
+type AccountPriceFloors struct {
+	Enabled           bool              `mapstructure:"enabled" json:"enabled"`
+	EnforceFloorRate  int               `mapstructure:"enforce_floors_rate" json:"enforce_floors_rate"`
+	BidAdjustment     bool              `mapstructure:"adjust_for_bid_adjustment" json:"adjust_for_bid_adjustment"`
+	EnforceDealFloors bool              `mapstructure:"enforce_deal_floors" json:"enforce_deal_floors"`
+	UseDynamicData    bool              `mapstructure:"use_dynamic_data" json:"use_dynamic_data"`
+	Fetch             AccountFloorFetch `mapstructure:"fetch" json:"fetch"`
+}
+
+type AccountFloorFetch struct {
+	Enabled     bool   `mapstructure:"enabled" json:"enabled"`
+	URL         string `mapstructure:"url" json:"url"`
+	Timeout     int    `mapstructure:"timeout_ms" json:"timeout_ms"`
+	MaxFileSize int    `mapstructure:"max_file_size_kb" json:"max_file_size_kb"`
+	MaxRules    int    `mapstructure:"max_rules" json:"max_rules"`
+	MaxAge      int    `mapstructure:"max_age_sec" json:"max_age_sec"`
+	Period      int    `mapstructure:"period_sec" json:"period_sec"`
+	AccountID   string `mapstructure:"accountID" json:"accountID"`
+}
+
 // AccountCCPA represents account-specific CCPA configuration
 type AccountCCPA struct {
 	Enabled            *bool          `mapstructure:"enabled" json:"enabled,omitempty"`
 	IntegrationEnabled AccountChannel `mapstructure:"integration_enabled" json:"integration_enabled"`
 	ChannelEnabled     AccountChannel `mapstructure:"channel_enabled" json:"channel_enabled"`
-}
-
-type AccountPriceFloors struct {
-	Enabled                bool `mapstructure:"enabled" json:"enabled"`
-	EnforceFloorsRate      int  `mapstructure:"enforce_floors_rate" json:"enforce_floors_rate"`
-	AdjustForBidAdjustment bool `mapstructure:"adjust_for_bid_adjustment" json:"adjust_for_bid_adjustment"`
-	EnforceDealFloors      bool `mapstructure:"enforce_deal_floors" json:"enforce_deal_floors"`
-	UseDynamicData         bool `mapstructure:"use_dynamic_data" json:"use_dynamic_data"`
-}
-
-func (pf *AccountPriceFloors) validate(errs []error) []error {
-
-	if pf.EnforceFloorsRate < 0 || pf.EnforceFloorsRate > 100 {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.enforce_floors_rate should be between 0 and 100`))
-	}
-	return errs
 }
 
 // EnabledForChannelType indicates whether CCPA is turned on at the account level for the specified channel type
