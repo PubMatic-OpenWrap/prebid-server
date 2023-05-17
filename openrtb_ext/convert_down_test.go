@@ -439,7 +439,7 @@ func TestMoveRewardedFrom26ToPrebidExt(t *testing.T) {
 			if len(test.expectedErr) > 0 {
 				assert.EqualError(t, err, test.expectedErr, "error")
 			} else {
-				assert.NoError(t, w.RebuildImp(), "error")
+				assert.NoError(t, w.RebuildImpressionExt(), "error")
 				assert.Equal(t, test.expectedImp, *w.Imp, "result")
 			}
 		})
@@ -533,7 +533,7 @@ func TestClear26Fields(t *testing.T) {
 				MIMEs:        []string{"any/audio"},
 				PodDur:       30,
 				RqdDurs:      []int64{15, 60},
-				PodID:        1,
+				PodID:        "1",
 				PodSeq:       adcom1.PodSeqFirst,
 				SlotInPod:    adcom1.SlotPosFirst,
 				MinCPMPerSec: 100.0,
@@ -542,7 +542,7 @@ func TestClear26Fields(t *testing.T) {
 				MIMEs:        []string{"any/video"},
 				MaxSeq:       30,
 				PodDur:       30,
-				PodID:        1,
+				PodID:        "1",
 				PodSeq:       adcom1.PodSeqFirst,
 				RqdDurs:      []int64{15, 60},
 				SlotInPod:    adcom1.SlotPosFirst,
