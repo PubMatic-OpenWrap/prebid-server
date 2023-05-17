@@ -95,7 +95,7 @@ func TestRebuildImp(t *testing.T) {
 			description:       "One - Accessed - Error",
 			request:           openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1"}}},
 			requestImpWrapper: []*ImpWrapper{{Imp: nil, impExt: &ImpExt{}}},
-			expectedError:     "ImpWrapper RebuildImp called on a nil Imp",
+			expectedError:     "ImpWrapper RebuildImpressionExt called on a nil Imp",
 		},
 		{
 			description:       "Many - Accessed - Dirty / Not Dirty",
@@ -942,7 +942,7 @@ func TestImpWrapperRebuildImp(t *testing.T) {
 		test.impExtWrapper.ext = make(map[string]json.RawMessage)
 
 		w := &ImpWrapper{Imp: &test.imp, impExt: &test.impExtWrapper}
-		w.RebuildImp()
+		w.RebuildImpressionExt()
 		assert.Equal(t, test.expectedImp, *w.Imp, test.description)
 	}
 }

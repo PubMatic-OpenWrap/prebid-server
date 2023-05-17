@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange/entities"
@@ -129,9 +130,11 @@ func runTargetingAuction(t *testing.T, mockBids map[openrtb_ext.BidderName][]*op
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
+
 	bidResp, err := ex.HoldAuction(context.Background(), auctionRequest, &debugLog)
 
 	if err != nil {
