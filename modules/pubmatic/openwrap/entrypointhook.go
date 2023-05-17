@@ -2,7 +2,6 @@ package openwrap
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/prebid/prebid-server/hooks/hookexecution"
@@ -84,21 +83,10 @@ func (m OpenWrap) handleEntrypointHook(
 		BidderResponseTimeMillis:  make(map[string]int),
 	}
 
-	rCtx.UidCookie, err = payload.Request.Cookie(models.UidCookieName)
-	if err != nil && err != http.ErrNoCookie {
-		result.Errors = append(result.Errors, "failed to parse cookie: uids err: "+err.Error())
-	}
-
-	rCtx.KADUSERCookie, err = payload.Request.Cookie(models.KADUSERCOOKIE)
-	if err != nil && err != http.ErrNoCookie {
-		result.Errors = append(result.Errors, "failed to parse cookie: KADUSERCOOKIE err: "+err.Error())
-	}
-
-	originCookie, err := payload.Request.Cookie("origin")
-	if err != nil && err != http.ErrNoCookie {
-		result.Errors = append(result.Errors, "failed to parse cookie: origin err: "+err.Error())
-	}
-	if originCookie != nil {
+	// only http.ErrNoCookie is returned, we can ignore it
+	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
+	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
+	if originCookie, _ := payload.Request.Cookie("origin"); originCookie != nil {
 		rCtx.OriginCookie = originCookie.Value
 	}
 
