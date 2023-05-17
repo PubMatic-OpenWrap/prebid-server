@@ -254,7 +254,7 @@ func clear26Fields(r *RequestWrapper) {
 		if audio := imp.Audio; audio != nil {
 			audio.PodDur = 0
 			audio.RqdDurs = nil
-			audio.PodID = 0
+			audio.PodID = ""
 			audio.PodSeq = 0
 			audio.SlotInPod = 0
 			audio.MinCPMPerSec = 0
@@ -263,7 +263,7 @@ func clear26Fields(r *RequestWrapper) {
 		if video := imp.Video; video != nil {
 			video.MaxSeq = 0
 			video.PodDur = 0
-			video.PodID = 0
+			video.PodID = ""
 			video.PodSeq = 0
 			video.RqdDurs = nil
 			video.SlotInPod = 0
