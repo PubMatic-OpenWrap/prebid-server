@@ -70,6 +70,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
+	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
@@ -80,6 +81,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-replace github.com/prebid/openrtb/v19 => github.com/pm-saurabh-narkhede/prebid-openrtb/v19 v19.0.0-20230512102610-f173be7e335d
+replace github.com/prebid/openrtb/v19 => github.com/PubMatic-OpenWrap/prebid-openrtb/v19 v19.0.0-20230517094918-56ce40c97ced
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
