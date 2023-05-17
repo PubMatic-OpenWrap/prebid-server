@@ -199,6 +199,8 @@ func TestDefaults(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 3600, cfg.AccountDefaults.PriceFloors.Fetch.Period)
 	cmpInts(t, "price_floor_fetcher.worker", 20, cfg.PriceFloorFetcher.Worker)
 	cmpInts(t, "price_floor_fetcher.capacity", 20000, cfg.PriceFloorFetcher.Capacity)
+	cmpBools(t, "account_defaults.events_enabled", *cfg.AccountDefaults.EventsEnabled, false)
+	cmpNils(t, "account_defaults.events.enabled", cfg.AccountDefaults.Events.Enabled)
 
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
