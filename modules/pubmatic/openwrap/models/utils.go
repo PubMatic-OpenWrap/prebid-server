@@ -123,20 +123,11 @@ func ExtractDomain(rawURL string) (string, error) {
 	return u.Host, nil
 }
 
-// do not ud
+// hybrid/web request would have bidder params prepopulated.
+// TODO: refer request.ext.prebid.channel.name = pbjs instead?
 func IsHybrid(body []byte) bool {
-	defer func() {
-		if r := recover(); r != nil {
-			// glog.Error(string(debug.Stack()))
-		}
-	}()
-
 	_, _, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "prebid", "bidder", "pubmatic")
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // GetVersionLevelPropertyFromPartnerConfig returns a Version level property from the partner config map

@@ -684,24 +684,24 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx) int64 {
 
 	// found tmax value in request or db
 	if auctionTimeout != 0 {
-		if auctionTimeout < m.cfg.OpenWrap.Timeout.MinTimeout {
-			return m.cfg.OpenWrap.Timeout.MinTimeout
-		} else if auctionTimeout > m.cfg.OpenWrap.Timeout.MaxTimeout {
-			return m.cfg.OpenWrap.Timeout.MaxTimeout
+		if auctionTimeout < m.cfg.Timeout.MinTimeout {
+			return m.cfg.Timeout.MinTimeout
+		} else if auctionTimeout > m.cfg.Timeout.MaxTimeout {
+			return m.cfg.Timeout.MaxTimeout
 		}
 		return auctionTimeout
 	}
 
 	//Below piece of code is applicable for older profiles where ssTimeout is not set
 	//Here we will check the partner timeout and select max timeout considering timeout range
-	auctionTimeout = m.cfg.OpenWrap.Timeout.MinTimeout
+	auctionTimeout = m.cfg.Timeout.MinTimeout
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		partnerTO, _ := strconv.Atoi(partnerConfig[models.TIMEOUT])
-		if int64(partnerTO) > m.cfg.OpenWrap.Timeout.MaxTimeout {
-			auctionTimeout = m.cfg.OpenWrap.Timeout.MaxTimeout
+		if int64(partnerTO) > m.cfg.Timeout.MaxTimeout {
+			auctionTimeout = m.cfg.Timeout.MaxTimeout
 			break
 		}
-		if int64(partnerTO) >= m.cfg.OpenWrap.Timeout.MinTimeout {
+		if int64(partnerTO) >= m.cfg.Timeout.MinTimeout {
 			if auctionTimeout < int64(partnerTO) {
 				auctionTimeout = int64(partnerTO)
 			}

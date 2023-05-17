@@ -3,7 +3,7 @@ package adapters
 import (
 	"encoding/json"
 
-	ow_config "github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -67,7 +67,7 @@ func getBuilder(adapterName string) builder {
 }
 
 // InitBidders will initialise bidder alias, default bidder parameter json and builders for each bidder
-func InitBidders(cfg ow_config.SSHB) error {
+func InitBidders(cfg config.Config) error {
 	initBidderBuilderFactory()
 	return parseBidderParams(cfg)
 }

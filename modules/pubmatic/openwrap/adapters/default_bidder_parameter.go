@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	ow_config "github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -35,18 +35,18 @@ type ArrayItemsType struct {
 	Type string `json:"type"`
 }
 
-func parseBidderParams(cfg ow_config.SSHB) error {
+func parseBidderParams(cfg config.Config) error {
 	schemas, err := parseBidderSchemaDefinitions()
 	if err != nil {
 		return err
 	}
 
-	owParameterMappings := cfg.OpenWrap.BidderParamMapping
+	owParameterMappings := cfg.BidderParamMapping
 	if owParameterMappings == nil {
 		return errors.New("BidderParamMapping is not defined in config")
 	}
 
-	adapterParams = make(map[string]map[string]*ow_config.ParameterMapping)
+	adapterParams = make(map[string]map[string]*config.ParameterMapping)
 
 	for bidderName, jsonSchema := range schemas {
 
@@ -55,9 +55,9 @@ func parseBidderParams(cfg ow_config.SSHB) error {
 			continue
 		}
 
-		parameters := make(map[string]*ow_config.ParameterMapping)
+		parameters := make(map[string]*config.ParameterMapping)
 		for propertyName, propertyDef := range jsonSchema.Properties {
-			bidderParam := ow_config.ParameterMapping{}
+			bidderParam := config.ParameterMapping{}
 			bidderParam.BidderParamName = propertyName
 			bidderParam.KeyName = propertyName
 			bidderParam.Datatype = getType(propertyDef)
@@ -125,12 +125,12 @@ func parseBidderSchemaDefinitions() (map[string]*BidderParamJSON, error) {
 
 	schemaDirectory := getBidderParamsDirectory()
 	if schemaDirectory == "" {
-		return schemas, errors.New("Error failed to parse bidder params files")
+		return schemas, errors.New("error failed to parse bidder params files")
 	}
 
 	fileInfos, err := os.ReadDir(schemaDirectory)
 	if err != nil {
-		return schemas, errors.New("Error failed to parse bidder params files" + err.Error())
+		return schemas, errors.New("error failed to parse bidder params files" + err.Error())
 	}
 
 	bidderMap := openrtb_ext.BuildBidderMap()

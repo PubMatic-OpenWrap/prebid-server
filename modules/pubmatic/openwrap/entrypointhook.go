@@ -25,9 +25,6 @@ func (m OpenWrap) handleEntrypointHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	// TODO marshal and log rCtx when request.ext.prebid.trace=verbose
-
-	// TODO in all hooks
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{
 		Reject: true,
 	}
@@ -35,15 +32,12 @@ func (m OpenWrap) handleEntrypointHook(
 	var err error
 	var requestExtWrapper models.RequestExtWrapper
 	switch payload.Request.URL.Path {
-	// NYC_TODO: Both hybid and non-hybrid flow should be under same API "/openrtb2/auction"
-	// but modules should not executre of hybrid flow.
-	// check isHybrid()
 	case hookexecution.EndpointAuction:
-		if !models.IsHybrid(payload.Body) {
+		if !models.IsHybrid(payload.Body) { // new hybrid api should not execute module
 			return result, nil
 		}
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-	case OpenWrapAuction:
+	case OpenWrapAuction: // legacy hybrid api should not execute module
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
@@ -67,6 +61,9 @@ func (m OpenWrap) handleEntrypointHook(
 	queryParams := payload.Request.URL.Query()
 
 	rCtx := models.RequestCtx{
+		StartTime:                 time.Now().Unix(),
+		Debug:                     queryParams.Get(models.Debug) == "1",
+		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
@@ -77,16 +74,13 @@ func (m OpenWrap) handleEntrypointHook(
 		LoggerImpressionID:        requestExtWrapper.LoggerImpressionID,
 		ClientConfigFlag:          requestExtWrapper.ClientConfigFlag,
 		SSAI:                      requestExtWrapper.SSAI,
-		Aliases:                   make(map[string]string),
-		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
-		UA:                        payload.Request.Header.Get("User-Agent"),
-		Debug:                     queryParams.Get(models.Debug) == "1",
-		StartTime:                 time.Now().Unix(),
-		ImpBidCtx:                 make(map[string]models.ImpCtx),
 		IP:                        models.GetIP(payload.Request),
+		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
+		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
+		VideoErrorTrackerEndpoint: m.cfg.Tracker.VideoErrorTrackerEndpoint,
+		Aliases:                   make(map[string]string),
+		ImpBidCtx:                 make(map[string]models.ImpCtx),
 		PrebidBidderCode:          make(map[string]string),
-		TrackerEndpoint:           m.cfg.OpenWrap.Tracker.Endpoint,
-		VideoErrorTrackerEndpoint: m.cfg.OpenWrap.Tracker.VideoErrorTrackerEndpoint,
 		BidderResponseTimeMillis:  make(map[string]int),
 	}
 

@@ -12,9 +12,9 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	ow_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
-	ow_config "github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -24,12 +24,12 @@ const (
 )
 
 type OpenWrap struct {
-	cfg   ow_config.SSHB
-	cache ow_cache.Cache
+	cfg   config.Config
+	cache cache.Cache
 }
 
 func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, error) {
-	cfg := ow_config.SSHB{}
+	cfg := config.Config{}
 
 	err := json.Unmarshal(rawCfg, &cfg)
 	if err != nil {
@@ -38,14 +38,14 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 	patchConfig(&cfg)
 
 	glog.Info("Connecting to OpenWrap database...")
-	mysqlDriver, err := open("mysql", cfg.OpenWrap.Database)
+	mysqlDriver, err := open("mysql", cfg.Database)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("failed to open db connection: %v", err)
 	}
-	db := mysql.New(mysqlDriver, cfg.OpenWrap.Database)
+	db := mysql.New(mysqlDriver, cfg.Database)
 
 	// NYC_TODO: replace this with freecache and use concrete structure
-	cache := gocache.New(time.Duration(cfg.OpenWrap.Cache.CacheDefaultExpiry)*time.Second, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL)
+	cache := gocache.New(time.Duration(cfg.Cache.CacheDefaultExpiry)*time.Second, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL)
 	if cache == nil {
 		return OpenWrap{}, errors.New("error while initializing cache")
 	}
@@ -57,11 +57,11 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 
 	return OpenWrap{
 		cfg:   cfg,
-		cache: ow_gocache.New(cache, db, cfg.OpenWrap.Cache),
+		cache: ow_gocache.New(cache, db, cfg.Cache),
 	}, nil
 }
 
-func open(driverName string, cfg ow_config.Database) (*sql.DB, error) {
+func open(driverName string, cfg config.Database) (*sql.DB, error) {
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Database)
 
 	db, err := sql.Open(driverName, dataSourceName)
@@ -81,10 +81,7 @@ func open(driverName string, cfg ow_config.Database) (*sql.DB, error) {
 	return db, nil
 }
 
-func patchConfig(cfg *ow_config.SSHB) {
-	cfg.OpenWrap.Server.HostName = getHostName()
-	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.OpenWrap.Pixelview.OMScript, 1)
-	if cfg.OpenWrap.Stats.DefaultHostName == "" {
-		cfg.OpenWrap.Stats.DefaultHostName = "N:P"
-	}
+func patchConfig(cfg *config.Config) {
+	cfg.Server.HostName = getHostName()
+	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 }
