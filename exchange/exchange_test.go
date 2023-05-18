@@ -20,12 +20,15 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/experiment/adscert"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
@@ -79,7 +82,7 @@ func TestNewExchange(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 	for _, bidderName := range knownAdapters {
 		if _, ok := e.adapterMap[bidderName]; !ok {
 			if biddersInfo[string(bidderName)].IsEnabled() {
@@ -129,7 +132,7 @@ func TestCharacterEscape(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 
 	// 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs
 	//liveAdapters []openrtb_ext.BidderName,
@@ -359,6 +362,7 @@ func TestDebugBehaviour(t *testing.T) {
 			StartTime:         time.Now(),
 			HookExecutor:      &hookexecution.EmptyHookExecutor{},
 			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 		if test.generateWarnings {
 			var errL []error
@@ -527,6 +531,7 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 			StartTime:         time.Now(),
 			HookExecutor:      &hookexecution.EmptyHookExecutor{},
 			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 
 		e.adapterMap = map[openrtb_ext.BidderName]AdaptedBidder{
@@ -534,6 +539,7 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 			openrtb_ext.BidderTelaria:  AdaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: testCase.bidder2DebugEnabled}, ""),
 		}
 		// Run test
+
 		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 		// Assert no HoldAuction err
 		assert.NoErrorf(t, err, "ex.HoldAuction returned an err")
@@ -706,6 +712,7 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 			UserSyncs:         &emptyUsersync{},
 			HookExecutor:      &hookexecution.EmptyHookExecutor{},
 			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+			LoggableObject:    &analytics.LoggableAuctionObject{},
 		}
 
 		// Run test
@@ -798,7 +805,9 @@ func TestAdapterCurrency(t *testing.T) {
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
+
 	response, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 	assert.NoError(t, err)
 	assert.Equal(t, "some-request-id", response.ID, "Response ID")
@@ -813,175 +822,6 @@ func TestAdapterCurrency(t *testing.T) {
 	}
 }
 
-func TestFloorsSignalling(t *testing.T) {
-
-	fakeCurrencyClient := &fakeCurrencyRatesHttpClient{
-		responseBody: `{"dataAsOf":"2023-04-10","conversions":{"USD":{"MXN":10.00}}}`,
-	}
-	currencyConverter := currency.NewRateConverter(
-		fakeCurrencyClient,
-		"currency.com",
-		24*time.Hour,
-	)
-	currencyConverter.Run()
-
-	// Initialize Real Exchange
-	e := exchange{
-		cache: &wellBehavedCache{},
-		me:    &metricsConf.NilMetricsEngine{},
-		gdprPermsBuilder: fakePermissionsBuilder{
-			permissions: &permissionsMock{
-				allowAllBidders: true,
-			},
-		}.Builder,
-		currencyConverter: currencyConverter,
-		categoriesFetcher: nilCategoryFetcher{},
-		bidIDGenerator:    &mockBidIDGenerator{false, false},
-		floor:             config.PriceFloors{Enabled: true},
-	}
-	e.requestSplitter = requestSplitter{
-		me:               e.me,
-		gdprPermsBuilder: e.gdprPermsBuilder,
-	}
-
-	type testResults struct {
-		bidFloor    float64
-		bidFloorCur string
-		err         error
-		resolvedReq string
-	}
-
-	testCases := []struct {
-		desc         string
-		req          *openrtb_ext.RequestWrapper
-		floorsEnable bool
-		expected     testResults
-	}{
-		{
-			desc:         "no update in imp.bidfloor, floors disabled in account config",
-			floorsEnable: false,
-			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
-				ID: "some-request-id",
-				Imp: []openrtb2.Imp{{
-					ID:          "some-impression-id",
-					BidFloor:    15,
-					BidFloorCur: "USD",
-					Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}},
-					Ext:         json.RawMessage(`{"prebid":{}}`),
-				}},
-				Site: &openrtb2.Site{
-					Page:   "prebid.org",
-					Ext:    json.RawMessage(`{"amp":0}`),
-					Domain: "www.website.com",
-				},
-				Cur: []string{"USD"},
-				Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"floormincur":"USD","data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","values":{"banner|300x250|www.website.com":11,"*|*|www.test.com":15,"*|*|*":20},"Default":50,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true}}}`),
-			}},
-			expected: testResults{
-				bidFloor:    15.00,
-				bidFloorCur: "USD",
-			},
-		},
-		{
-			desc:         "no update in imp.bidfloor due to no rule matched",
-			floorsEnable: true,
-			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
-				ID: "some-request-id",
-				Imp: []openrtb2.Imp{{
-					ID:          "some-impression-id",
-					BidFloor:    15,
-					BidFloorCur: "USD",
-					Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}},
-					Ext:         json.RawMessage(`{"prebid":{}}`),
-				}},
-				Site: &openrtb2.Site{
-					Page:   "prebid.org",
-					Ext:    json.RawMessage(`{"amp":0}`),
-					Domain: "www.website.com",
-				},
-				Cur: []string{"USD"},
-				Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"floormincur":"USD","data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","values":{"banner|300x250|www.website123.com":10,"*|*|www.test.com":15},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true}}}`),
-			}},
-			expected: testResults{
-				bidFloor:    15.00,
-				bidFloorCur: "USD",
-			},
-		},
-		{
-			desc:         "update imp.bidfloor with matched rule value",
-			floorsEnable: true,
-			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
-				ID: "some-request-id",
-				Imp: []openrtb2.Imp{{
-					ID:          "some-impression-id",
-					BidFloor:    15,
-					BidFloorCur: "USD",
-					Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}},
-					Ext:         json.RawMessage(`{"prebid":{}}`),
-				}},
-				Site: &openrtb2.Site{
-					Page:   "prebid.org",
-					Ext:    json.RawMessage(`{"amp":0}`),
-					Domain: "www.website.com",
-				},
-				Cur: []string{"USD"},
-				Ext: json.RawMessage(`{"prebid":{"floors":{"floormin":1,"floormincur":"USD","data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","values":{"banner|300x250|www.website.com":10,"*|*|www.test.com":15,"*|*|*":20},"Default":50,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true}}}`),
-			}},
-			expected: testResults{
-				bidFloor:    10.00,
-				bidFloorCur: "USD",
-			},
-		},
-		{
-			desc:         "update resolved request with floors details",
-			floorsEnable: true,
-			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
-				ID: "some-request-id",
-				Imp: []openrtb2.Imp{{
-					ID:          "some-impression-id",
-					BidFloor:    15,
-					BidFloorCur: "USD",
-					Banner:      &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}},
-					Ext:         json.RawMessage(`{"prebid":{}}`),
-				}},
-				Site: &openrtb2.Site{
-					Page:   "prebid.org",
-					Ext:    json.RawMessage(`{"amp":0}`),
-					Domain: "www.website.com",
-				},
-				Test: 1,
-				Cur:  []string{"USD"},
-				Ext:  json.RawMessage(`{"prebid":{"floors":{"floormin":1,"floormincur":"USD","data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","values":{"banner|300x250|www.website.com":11,"*|*|www.test.com":15,"*|*|*":20},"Default":50,"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true}}}`),
-			}},
-			expected: testResults{
-				bidFloor:    11.00,
-				bidFloorCur: "USD",
-				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"bidfloor":11,"bidfloorcur":"USD","ext":{"prebid":{"floors":{"floorrule":"banner|300x250|www.website.com","floorrulevalue":11,"floorvalue":11}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"floors":{"floormin":1,"floormincur":"USD","data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|*|*":20,"*|*|www.test.com":15,"banner|300x250|www.website.com":11},"default":50}]},"enabled":true,"skipped":false,"fetchstatus":"none","location":"request"}}}}`,
-			},
-		},
-	}
-
-	for _, test := range testCases {
-		auctionRequest := &AuctionRequest{
-			BidRequestWrapper: test.req,
-			Account:           config.Account{DebugAllow: true, PriceFloors: config.AccountPriceFloors{Enabled: test.floorsEnable, MaxRule: 100, MaxSchemaDims: 5}},
-			UserSyncs:         &emptyUsersync{},
-			HookExecutor:      &hookexecution.EmptyHookExecutor{},
-		}
-		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
-
-		// Assertions
-		assert.Equal(t, test.expected.err, err, "Error")
-		assert.Equal(t, test.expected.bidFloor, auctionRequest.BidRequestWrapper.Imp[0].BidFloor, "Floor Value")
-		assert.Equal(t, test.expected.bidFloorCur, auctionRequest.BidRequestWrapper.Imp[0].BidFloorCur, "Floor Currency")
-
-		if test.req.Test == 1 {
-			actualResolvedRequest, _, _, _ := jsonparser.Get(outBidResponse.Ext, "debug", "resolvedrequest")
-			assert.JSONEq(t, test.expected.resolvedReq, string(actualResolvedRequest), "Resolved request is incorrect")
-		}
-	}
-
-}
 func TestGetAuctionCurrencyRates(t *testing.T) {
 
 	pbsRates := map[string]map[string]float64{
@@ -1348,10 +1188,12 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 				UserSyncs:         &emptyUsersync{},
 				HookExecutor:      &hookexecution.EmptyHookExecutor{},
 				TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+				LoggableObject:    &analytics.LoggableAuctionObject{},
 			}
 
 			// Run test
 			debugLog := DebugLog{}
+
 			outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 
 			// Assert return error, if any
@@ -1424,7 +1266,7 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, pbc, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, pbc, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 	// 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs
 	liveAdapters := []openrtb_ext.BidderName{bidderName}
 
@@ -1784,7 +1626,7 @@ func TestBidResponseCurrency(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 
 	liveAdapters := make([]openrtb_ext.BidderName, 1)
 	liveAdapters[0] = "appnexus"
@@ -1852,6 +1694,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: sampleSeatBid,
 				Cur:     "USD",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1866,6 +1710,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: emptySeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1880,6 +1726,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: sampleSeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1894,6 +1742,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: emptySeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 	}
@@ -1931,7 +1781,7 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, nil, gdprPermsBuilder, nil, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, nil, gdprPermsBuilder, nil, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 
 	liveAdapters := make([]openrtb_ext.BidderName, 1)
 	liveAdapters[0] = "appnexus"
@@ -2014,6 +1864,7 @@ func TestRaceIntegration(t *testing.T) {
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
@@ -2024,7 +1875,7 @@ func TestRaceIntegration(t *testing.T) {
 		},
 	}.Builder
 
-	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, &nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, &nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 	_, err = ex.HoldAuction(context.Background(), auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
@@ -2122,7 +1973,7 @@ func TestPanicRecovery(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 
 	chBids := make(chan *bidResponseWrapper, 1)
 	panicker := func(bidderRequest BidderRequest, conversions currency.Conversions) {
@@ -2192,7 +2043,7 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 			allowAllBidders: true,
 		},
 	}.Builder
-	e := NewExchange(adapters, &mockCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, categoriesFetcher, &adscert.NilSigner{}).(*exchange)
+	e := NewExchange(adapters, &mockCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, categoriesFetcher, &adscert.NilSigner{}, &floors.PriceFloorFetcher{}).(*exchange)
 
 	e.adapterMap[openrtb_ext.BidderBeachfront] = panicingAdapter{}
 	e.adapterMap[openrtb_ext.BidderAppnexus] = panicingAdapter{}
@@ -2231,8 +2082,10 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 	debugLog := DebugLog{}
+
 	_, err = e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
@@ -2327,7 +2180,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 	if spec.BidIDGenerator != nil {
 		*bidIdGenerator = *spec.BidIDGenerator
 	}
-	ex := newExchangeForTests(t, filename, spec.OutgoingRequests, aliases, privacyConfig, bidIdGenerator, spec.HostSChainFlag, spec.HostConfigBidValidation, spec.Server)
+	ex := newExchangeForTests(t, filename, spec.OutgoingRequests, aliases, privacyConfig, bidIdGenerator, spec.HostSChainFlag, spec.FloorEnabled, spec.HostConfigBidValidation, spec.Server)
 	biddersInAuction := findBiddersInAuction(t, filename, &spec.IncomingRequest.OrtbRequest)
 	debugLog := &DebugLog{}
 	if spec.DebugLog != nil {
@@ -2363,11 +2216,13 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 			},
 			DebugAllow:  true,
 			Validations: spec.AccountConfigBidValidation,
+			PriceFloors: config.AccountPriceFloors{Enabled: true},
 		},
-		UserSyncs:     mockIdFetcher(spec.IncomingRequest.Usersyncs),
-		ImpExtInfoMap: impExtInfoMap,
-		HookExecutor:  &hookexecution.EmptyHookExecutor{},
-		TCF2Config:    gdpr.NewTCF2Config(privacyConfig.GDPR.TCF2, config.AccountGDPR{}),
+		UserSyncs:      mockIdFetcher(spec.IncomingRequest.Usersyncs),
+		ImpExtInfoMap:  impExtInfoMap,
+		LoggableObject: &analytics.LoggableAuctionObject{},
+		HookExecutor:   &hookexecution.EmptyHookExecutor{},
+		TCF2Config:     gdpr.NewTCF2Config(privacyConfig.GDPR.TCF2, config.AccountGDPR{}),
 	}
 
 	if spec.MultiBid != nil {
@@ -2533,7 +2388,7 @@ func extractResponseTimes(t *testing.T, context string, bid *openrtb2.BidRespons
 	}
 }
 
-func newExchangeForTests(t *testing.T, filename string, expectations map[string]*bidderSpec, aliases map[string]string, privacyConfig config.Privacy, bidIDGenerator BidIDGenerator, hostSChainFlag bool, hostBidValidation config.Validations, server exchangeServer) Exchange {
+func newExchangeForTests(t *testing.T, filename string, expectations map[string]*bidderSpec, aliases map[string]string, privacyConfig config.Privacy, bidIDGenerator BidIDGenerator, hostSChainFlag, floorEnabled bool, hostBidValidation config.Validations, server exchangeServer) Exchange {
 	bidderAdapters := make(map[openrtb_ext.BidderName]AdaptedBidder, len(expectations))
 	bidderInfos := make(config.BidderInfos, len(expectations))
 	for _, bidderName := range openrtb_ext.CoreBidderNames() {
@@ -2622,6 +2477,9 @@ func newExchangeForTests(t *testing.T, filename string, expectations map[string]
 		server:                   config.Server{ExternalUrl: server.ExternalUrl, GvlID: server.GvlID, DataCenter: server.DataCenter},
 		bidValidationEnforcement: hostBidValidation,
 		requestSplitter:          requestSplitter,
+		floor: config.PriceFloors{
+			Enabled: floorEnabled,
+		},
 	}
 }
 
@@ -2714,6 +2572,12 @@ func TestCategoryMapping(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2734,10 +2598,10 @@ func TestCategoryMapping(t *testing.T) {
 	bid3 := openrtb2.Bid{ID: "bid_id3", ImpID: "imp_id3", Price: 30.0000, Cat: cats3, W: 1, H: 1}
 	bid4 := openrtb2.Bid{ID: "bid_id4", ImpID: "imp_id4", Price: 40.0000, Cat: cats4, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "AdapterOverride"}, nil, 0, false, "", 30.0000, "USD", ""}
-	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 40.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "AdapterOverride"}, nil, 0, false, "", 30.0000, "USD", "", 30.0000, nil}
+	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 40.0000, "USD", "", 40.0000, nil}
 
 	innerBids := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -2750,8 +2614,23 @@ func TestCategoryMapping(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
+	expectedRejectedBids := []analytics.RejectedBid{
+		{
+			Bid: &entities.PbsOrtbBid{
+				Bid:     bid1_4.Bid,
+				BidType: openrtb_ext.BidTypeVideo,
+				BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+					Duration: 30,
+				},
+				OriginalBidCPM:    40,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 40,
+			},
+			RejectionReason: openrtb3.LossBidCategoryMapping,
+		},
+	}
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -2761,6 +2640,7 @@ func TestCategoryMapping(t *testing.T) {
 	assert.Equal(t, "20.00_AdapterOverride_30s", bidCategory["bid_id3"], "Category mapping override from adapter didn't take")
 	assert.Equal(t, 3, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 3, len(bidCategory), "Bidders category mapping doesn't match")
+	assert.Equal(t, expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected bids for analytics don't match")
 }
 
 func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
@@ -2770,6 +2650,12 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -2789,10 +2675,10 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 	bid3 := openrtb2.Bid{ID: "bid_id3", ImpID: "imp_id3", Price: 30.0000, Cat: cats3, W: 1, H: 1}
 	bid4 := openrtb2.Bid{ID: "bid_id4", ImpID: "imp_id4", Price: 40.0000, Cat: cats4, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "AdapterOverride"}, nil, 0, false, "", 30.0000, "USD", ""}
-	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 50}, nil, 0, false, "", 40.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "AdapterOverride"}, nil, 0, false, "", 30.0000, "USD", "", 30.0000, nil}
+	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 50}, nil, 0, false, "", 40.0000, "USD", "", 40.0000, nil}
 
 	innerBids := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -2805,8 +2691,8 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	rejectedBids := []analytics.RejectedBid{}
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -2816,6 +2702,7 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 	assert.Equal(t, "20.00_50s", bidCategory["bid_id4"], "Category mapping doesn't match")
 	assert.Equal(t, 4, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 4, len(bidCategory), "Bidders category mapping doesn't match")
+	assert.Equal(t, []analytics.RejectedBid{}, rejectedBids, "Rejected Bids not matching")
 }
 
 func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
@@ -2823,6 +2710,13 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	categoriesFetcher, error := newCategoryFetcher("./test/category-mapping")
 	if error != nil {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
+	}
+
+	r := AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
 	}
 
 	requestExt := newExtRequestTranslateCategories(nil)
@@ -2843,9 +2737,9 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 20.0000, Cat: cats2, W: 1, H: 1}
 	bid3 := openrtb2.Bid{ID: "bid_id3", ImpID: "imp_id3", Price: 30.0000, Cat: cats3, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 30.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 30.0000, "USD", "", 30.0000, nil}
 
 	innerBids := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -2857,8 +2751,23 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
+	expectedRejectedBids := []analytics.RejectedBid{
+		{
+			Bid: &entities.PbsOrtbBid{
+				Bid:     &bid3,
+				BidType: openrtb_ext.BidTypeVideo,
+				BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+					Duration: 30,
+				},
+				OriginalBidCPM:    30,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 30,
+			},
+			RejectionReason: openrtb3.LossBidCategoryMapping,
+		},
+	}
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, 1, len(rejections), "There should be 1 bid rejection message")
@@ -2867,6 +2776,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 	assert.Equal(t, "20.00_Sports_50s", bidCategory["bid_id2"], "Category mapping doesn't match")
 	assert.Equal(t, 2, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 2, len(bidCategory), "Bidders category mapping doesn't match")
+	assert.Equal(t, expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids not matching")
 }
 
 func newExtRequestTranslateCategories(translateCategories *bool) openrtb_ext.ExtRequest {
@@ -2907,6 +2817,13 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	}
 
 	translateCategories := false
+
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestTranslateCategories(&translateCategories)
 
 	targData := &targetData{
@@ -2925,9 +2842,9 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 20.0000, Cat: cats2, W: 1, H: 1}
 	bid3 := openrtb2.Bid{ID: "bid_id3", ImpID: "imp_id3", Price: 30.0000, Cat: cats3, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 30.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 40}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 30.0000, "USD", "", 30.0000, nil}
 
 	innerBids := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -2939,8 +2856,8 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	rejectedBids := []analytics.RejectedBid{}
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be no bid rejection messages")
@@ -2949,6 +2866,8 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	assert.Equal(t, "20.00_IAB1-1000_30s", bidCategory["bid_id3"], "Bid should not be rejected")
 	assert.Equal(t, 3, len(adapterBids[bidderName1].Bids), "Bidders number doesn't match")
 	assert.Equal(t, 3, len(bidCategory), "Bidders category mapping doesn't match")
+	assert.Equal(t, []analytics.RejectedBid{}, rejectedBids, "Rejected Bids not matching")
+
 }
 
 func TestCategoryDedupe(t *testing.T) {
@@ -2958,6 +2877,12 @@ func TestCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequest()
 
 	targData := &targetData{
@@ -2977,11 +2902,11 @@ func TestCategoryDedupe(t *testing.T) {
 	bid4 := openrtb2.Bid{ID: "bid_id4", ImpID: "imp_id4", Price: 20.0000, Cat: cats4, W: 1, H: 1}
 	bid5 := openrtb2.Bid{ID: "bid_id5", ImpID: "imp_id5", Price: 20.0000, Cat: cats1, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 50}, nil, 0, false, "", 15.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_5 := entities.PbsOrtbBid{&bid5, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 50}, nil, 0, false, "", 15.0000, "USD", "", 15.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_5 := entities.PbsOrtbBid{&bid5, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
 
 	selectedBids := make(map[string]int)
 	expectedCategories := map[string]string{
@@ -3010,7 +2935,7 @@ func TestCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 3, len(rejections), "There should be 2 bid rejection messages")
@@ -3038,6 +2963,12 @@ func TestNoCategoryDedupe(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{},
+	}
 	requestExt := newExtRequestNoBrandCat()
 
 	targData := &targetData{
@@ -3056,11 +2987,11 @@ func TestNoCategoryDedupe(t *testing.T) {
 	bid4 := openrtb2.Bid{ID: "bid_id4", ImpID: "imp_id4", Price: 20.0000, Cat: cats4, W: 1, H: 1}
 	bid5 := openrtb2.Bid{ID: "bid_id5", ImpID: "imp_id5", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 14.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 14.0000, "USD", ""}
-	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_5 := entities.PbsOrtbBid{&bid5, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 14.0000, "USD", "", 14.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 14.0000, "USD", "", 14.0000, nil}
+	bid1_3 := entities.PbsOrtbBid{&bid3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_4 := entities.PbsOrtbBid{&bid4, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_5 := entities.PbsOrtbBid{&bid5, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
 
 	selectedBids := make(map[string]int)
 	expectedCategories := map[string]string{
@@ -3090,7 +3021,7 @@ func TestNoCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 2, len(rejections), "There should be 2 bid rejection messages")
@@ -3127,6 +3058,14 @@ func TestCategoryMappingBidderName(t *testing.T) {
 		includeWinners:   true,
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{
+			RejectedBids: []analytics.RejectedBid{},
+		},
+	}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
@@ -3136,8 +3075,8 @@ func TestCategoryMappingBidderName(t *testing.T) {
 	bid1 := openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 10.0000, Cat: cats2, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
 
 	innerBids1 := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -3155,7 +3094,7 @@ func TestCategoryMappingBidderName(t *testing.T) {
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be 0 bid rejection messages")
@@ -3164,6 +3103,7 @@ func TestCategoryMappingBidderName(t *testing.T) {
 	assert.Len(t, adapterBids[bidderName1].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, adapterBids[bidderName2].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, bidCategory, 2, "Bidders category mapping doesn't match")
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Rejected Bids don't match")
 }
 
 func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
@@ -3181,6 +3121,12 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 		includeWinners:   true,
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}},
+	}
 	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
@@ -3190,8 +3136,8 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	bid1 := openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 12.0000, Cat: cats2, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 12.0000, "USD", ""}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 12.0000, "USD", "", 12.0000, nil}
 
 	innerBids1 := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -3209,7 +3155,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
 
-	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be 0 bid rejection messages")
@@ -3218,6 +3164,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	assert.Len(t, adapterBids[bidderName1].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, adapterBids[bidderName2].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, bidCategory, 2, "Bidders category mapping doesn't match")
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Rejected bids don't match")
 }
 
 func TestBidRejectionErrors(t *testing.T) {
@@ -3243,12 +3190,13 @@ func TestBidRejectionErrors(t *testing.T) {
 	bidderName := openrtb_ext.BidderName("appnexus")
 
 	testCases := []struct {
-		description        string
-		reqExt             openrtb_ext.ExtRequest
-		bids               []*openrtb2.Bid
-		duration           int
-		expectedRejections []string
-		expectedCatDur     string
+		description          string
+		reqExt               openrtb_ext.ExtRequest
+		bids                 []*openrtb2.Bid
+		duration             int
+		expectedRejections   []string
+		expectedCatDur       string
+		expectedRejectedBids []analytics.RejectedBid
 	}{
 		{
 			description: "Bid should be rejected due to not containing a category",
@@ -3259,6 +3207,16 @@ func TestBidRejectionErrors(t *testing.T) {
 			duration: 30,
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: Bid did not contain a category",
+			},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
+				},
 			},
 		},
 		{
@@ -3271,6 +3229,16 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: Category mapping file for primary ad server: 'dfp', publisher: 'some_publisher' not found",
 			},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
+				},
+			},
 		},
 		{
 			description: "Bid should be rejected due to duration exceeding maximum",
@@ -3281,6 +3249,16 @@ func TestBidRejectionErrors(t *testing.T) {
 			duration: 70,
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: Bid duration exceeds maximum allowed",
+			},
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 70}},
+					Seat: "",
+				},
 			},
 		},
 		{
@@ -3295,6 +3273,16 @@ func TestBidRejectionErrors(t *testing.T) {
 				"bid rejected [bid ID: bid_id1] reason: Bid was deduplicated",
 			},
 			expectedCatDur: "10.00_VideoGames_30s",
+			expectedRejectedBids: []analytics.RejectedBid{
+				{
+					RejectionReason: openrtb3.LossBidCategoryMapping,
+					Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-1"}, W: 1, H: 1},
+						OriginalBidCPM: 10, OriginalBidCur: "USD", OriginalBidCPMUSD: 10,
+						BidType:  openrtb_ext.BidTypeVideo,
+						BidVideo: &openrtb_ext.ExtBidPrebidVideo{Duration: 30}},
+					Seat: "",
+				},
+			},
 		},
 	}
 
@@ -3302,7 +3290,7 @@ func TestBidRejectionErrors(t *testing.T) {
 		innerBids := []*entities.PbsOrtbBid{}
 		for _, bid := range test.bids {
 			currentBid := entities.PbsOrtbBid{
-				bid, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: test.duration}, nil, 0, false, "", 10.0000, "USD", ""}
+				bid, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: test.duration}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
 			innerBids = append(innerBids, &currentBid)
 		}
 
@@ -3310,7 +3298,13 @@ func TestBidRejectionErrors(t *testing.T) {
 
 		adapterBids[bidderName] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, *test.reqExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+		r := &AuctionRequest{
+			BidRequestWrapper: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{},
+			},
+			LoggableObject: &analytics.LoggableAuctionObject{},
+		}
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *test.reqExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		if len(test.expectedCatDur) > 0 {
 			// Bid deduplication case
@@ -3324,6 +3318,7 @@ func TestBidRejectionErrors(t *testing.T) {
 
 		assert.Empty(t, err, "Category mapping error should be empty")
 		assert.Equal(t, test.expectedRejections, rejections, test.description)
+		assert.Equal(t, test.expectedRejectedBids, r.LoggableObject.RejectedBids, "Rejected Bids did not match for %v", test.description)
 	}
 }
 
@@ -3332,6 +3327,15 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 	categoriesFetcher, error := newCategoryFetcher("./test/category-mapping")
 	if error != nil {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
+	}
+
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{
+			RejectedBids: []analytics.RejectedBid{},
+		},
 	}
 
 	requestExt := newExtRequestTranslateCategories(nil)
@@ -3350,8 +3354,8 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 	bidApn1 := openrtb2.Bid{ID: "bid_idApn1", ImpID: "imp_idApn1", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 	bidApn2 := openrtb2.Bid{ID: "bid_idApn2", ImpID: "imp_idApn2", Price: 10.0000, Cat: cats2, W: 1, H: 1}
 
-	bid1_Apn1 := entities.PbsOrtbBid{&bidApn1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_Apn2 := entities.PbsOrtbBid{&bidApn2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
+	bid1_Apn1 := entities.PbsOrtbBid{&bidApn1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_Apn2 := entities.PbsOrtbBid{&bidApn2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
 
 	innerBidsApn1 := []*entities.PbsOrtbBid{
 		&bid1_Apn1,
@@ -3373,7 +3377,7 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		adapterBids[bidderNameApn1] = &seatBidApn1
 		adapterBids[bidderNameApn2] = &seatBidApn2
 
-		bidCategory, _, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+		bidCategory, _, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.NoError(t, err, "Category mapping error should be empty")
 		assert.Len(t, rejections, 1, "There should be 1 bid rejection message")
@@ -3411,6 +3415,12 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
+	r := &AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{
+			BidRequest: &openrtb2.BidRequest{},
+		},
+		LoggableObject: &analytics.LoggableAuctionObject{RejectedBids: []analytics.RejectedBid{}},
+	}
 	requestExt := newExtRequestTranslateCategories(nil)
 
 	targData := &targetData{
@@ -3430,11 +3440,11 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 	bidApn2_1 := openrtb2.Bid{ID: "bid_idApn2_1", ImpID: "imp_idApn2_1", Price: 10.0000, Cat: cats2, W: 1, H: 1}
 	bidApn2_2 := openrtb2.Bid{ID: "bid_idApn2_2", ImpID: "imp_idApn2_2", Price: 20.0000, Cat: cats2, W: 1, H: 1}
 
-	bid1_Apn1_1 := entities.PbsOrtbBid{&bidApn1_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_Apn1_2 := entities.PbsOrtbBid{&bidApn1_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
+	bid1_Apn1_1 := entities.PbsOrtbBid{&bidApn1_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_Apn1_2 := entities.PbsOrtbBid{&bidApn1_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
 
-	bid1_Apn2_1 := entities.PbsOrtbBid{&bidApn2_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_Apn2_2 := entities.PbsOrtbBid{&bidApn2_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
+	bid1_Apn2_1 := entities.PbsOrtbBid{&bidApn2_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_Apn2_2 := entities.PbsOrtbBid{&bidApn2_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
 
 	innerBidsApn1 := []*entities.PbsOrtbBid{
 		&bid1_Apn1_1,
@@ -3457,7 +3467,7 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 	adapterBids[bidderNameApn1] = &seatBidApn1
 	adapterBids[bidderNameApn2] = &seatBidApn2
 
-	_, adapterBids, rejections, err := applyCategoryMapping(nil, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &fakeRandomDeduplicateBidBooleanGenerator{true})
+	_, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &fakeRandomDeduplicateBidBooleanGenerator{true})
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 
@@ -3481,7 +3491,7 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 
 	assert.Equal(t, 2, totalNumberOfbids, "2 bids total should be returned")
 	assert.Len(t, rejections, 2, "2 bids should be de-duplicated")
-
+	assert.Equal(t, []analytics.RejectedBid{}, r.LoggableObject.RejectedBids, "Bid Rejections not matching")
 	if firstBidderIndicator {
 		assert.Len(t, adapterBids[bidderNameApn1].Bids, 2)
 		assert.Len(t, adapterBids[bidderNameApn2].Bids, 0)
@@ -3512,9 +3522,9 @@ func TestRemoveBidById(t *testing.T) {
 	bidApn1_2 := openrtb2.Bid{ID: "bid_idApn1_2", ImpID: "imp_idApn1_2", Price: 20.0000, Cat: cats1, W: 1, H: 1}
 	bidApn1_3 := openrtb2.Bid{ID: "bid_idApn1_3", ImpID: "imp_idApn1_3", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 
-	bid1_Apn1_1 := entities.PbsOrtbBid{&bidApn1_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
-	bid1_Apn1_2 := entities.PbsOrtbBid{&bidApn1_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", ""}
-	bid1_Apn1_3 := entities.PbsOrtbBid{&bidApn1_3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", ""}
+	bid1_Apn1_1 := entities.PbsOrtbBid{&bidApn1_1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
+	bid1_Apn1_2 := entities.PbsOrtbBid{&bidApn1_2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 20.0000, "USD", "", 20.0000, nil}
+	bid1_Apn1_3 := entities.PbsOrtbBid{&bidApn1_3, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, 0, false, "", 10.0000, "USD", "", 10.0000, nil}
 
 	type aTest struct {
 		desc      string
@@ -3639,7 +3649,7 @@ func TestApplyDealSupport(t *testing.T) {
 			},
 		}
 
-		bid := entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, test.dealPriority, false, "", 0, "USD", ""}
+		bid := entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, test.dealPriority, false, "", 0, "USD", "", 0, nil}
 		bidCategory := map[string]string{
 			bid.Bid.ID: test.targ["hb_pb_cat_dur"],
 		}
@@ -3699,8 +3709,8 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 						"imp_id1": {
 							openrtb_ext.BidderName("appnexus"): {
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
 							},
 						},
 					},
@@ -3745,8 +3755,8 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 						"imp_id1": {
 							openrtb_ext.BidderName("appnexus"): {
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
 							},
 						},
 					},
@@ -3796,8 +3806,8 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 						"imp_id1": {
 							openrtb_ext.BidderName("appnexus"): {
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
-								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", ""},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
+								&entities.PbsOrtbBid{&openrtb2.Bid{ID: "789101"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, 5, false, "", 0, "USD", "", 0, nil},
 							},
 						},
 					},
@@ -3891,6 +3901,7 @@ func TestGetDealTiers(t *testing.T) {
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
 				"imp1": {openrtb_ext.BidderAppnexus: {Prefix: "tier1", MinDealTier: 5}},
+				"imp2": {},
 			},
 		},
 	}
@@ -3988,7 +3999,7 @@ func TestUpdateHbPbCatDur(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		bid := entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, test.dealPriority, false, "", 0, "USD", ""}
+		bid := entities.PbsOrtbBid{&openrtb2.Bid{ID: "123456"}, nil, "video", map[string]string{}, &openrtb_ext.ExtBidPrebidVideo{}, nil, test.dealPriority, false, "", 0, "USD", "", 0, nil}
 		bidCategory := map[string]string{
 			bid.Bid.ID: test.targ["hb_pb_cat_dur"],
 		}
@@ -4009,6 +4020,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 		impExtInfo         map[string]ImpExtInfo
 		origbidcpm         float64
 		origbidcur         string
+		origbidcpmusd      float64
 		expectedBidExt     string
 		expectedErrMessage string
 	}
@@ -4191,7 +4203,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		result, err := makeBidExtJSON(test.ext, &test.extBidPrebid, test.impExtInfo, "test_imp_id", test.origbidcpm, test.origbidcur)
+		result, err := makeBidExtJSON(test.ext, &test.extBidPrebid, test.impExtInfo, "test_imp_id", test.origbidcpm, test.origbidcur, test.origbidcpmusd)
 
 		if test.expectedErrMessage == "" {
 			assert.JSONEq(t, test.expectedBidExt, string(result), "Incorrect result")
@@ -4271,8 +4283,10 @@ func TestStoredAuctionResponses(t *testing.T) {
 			StoredAuctionResponses: test.storedAuctionResp,
 			HookExecutor:           &hookexecution.EmptyHookExecutor{},
 			TCF2Config:             gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+			LoggableObject:         &analytics.LoggableAuctionObject{},
 		}
 		// Run test
+
 		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 		if test.errorExpected {
 			assert.Error(t, err, "Error should be returned")
@@ -4605,9 +4619,11 @@ func TestAuctionDebugEnabled(t *testing.T) {
 		RequestType:       metrics.ReqTypeORTB2Web,
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := &DebugLog{DebugOverride: true, DebugEnabledOrOverridden: true}
+
 	resp, err := e.HoldAuction(ctx, auctionRequest, debugLog)
 
 	assert.NoError(t, err, "error should be nil")
@@ -4655,7 +4671,7 @@ func TestPassExperimentConfigsToHoldAuction(t *testing.T) {
 		},
 	}.Builder
 
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &signer).(*exchange)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, gdprPermsBuilder, currencyConverter, nilCategoryFetcher{}, &signer, &floors.PriceFloorFetcher{}).(*exchange)
 
 	// Define mock incoming bid requeset
 	mockBidRequest := &openrtb2.BidRequest{
@@ -4675,9 +4691,11 @@ func TestPassExperimentConfigsToHoldAuction(t *testing.T) {
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
+
 	_, err = e.HoldAuction(context.Background(), auctionRequest, &debugLog)
 
 	assert.NoError(t, err, "unexpected error occured")
@@ -5181,6 +5199,7 @@ type exchangeSpec struct {
 	FledgeEnabled              bool                   `json:"fledge_enabled,omitempty"`
 	MultiBid                   *multiBidSpec          `json:"multiBid,omitempty"`
 	Server                     exchangeServer         `json:"server,omitempty"`
+	FloorEnabled               bool                   `json:"floor_enabled"`
 }
 
 type multiBidSpec struct {
