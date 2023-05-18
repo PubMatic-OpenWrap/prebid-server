@@ -153,7 +153,7 @@ func TestCreateBidExtensionTargeting(t *testing.T) {
 	require.NotNil(t, ex.lastRequest, "The request never made it into the Exchange.")
 
 	// assert targeting set to default
-	expectedRequestExt := `{"prebid":{"cache":{"vastxml":{}},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"includebidderkeys":true,"includewinners":true,"includebrandcategory":{"primaryadserver":1,"publisher":"","withcategory":true}}}}`
+	expectedRequestExt := `{"prebid":{"cache":{"vastxml":{}},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"includebidderkeys":true,"includewinners":true,"includebrandcategory":{"primaryadserver":1,"publisher":"","withcategory":true,"skipdedup":false}}}}`
 	assert.JSONEq(t, expectedRequestExt, string(ex.lastRequest.Ext))
 }
 
@@ -850,8 +850,10 @@ func TestHandleError(t *testing.T) {
 
 	for _, tt := range tests {
 		vo := analytics.VideoObject{
-			Status: 200,
-			Errors: make([]error, 0),
+			LoggableAuctionObject: analytics.LoggableAuctionObject{
+				Status: 200,
+				Errors: make([]error, 0),
+			},
 		}
 
 		labels := metrics.Labels{
@@ -984,8 +986,10 @@ func TestParseVideoRequestWithDecodedUserAgentInHeader(t *testing.T) {
 
 func TestHandleErrorDebugLog(t *testing.T) {
 	vo := analytics.VideoObject{
-		Status: 200,
-		Errors: make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status: 200,
+			Errors: make([]error, 0),
+		},
 	}
 
 	labels := metrics.Labels{
@@ -1169,7 +1173,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_valid_sample.json",
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		}, {
@@ -1177,7 +1181,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_invalid_sample.json",
 			expectedStatus: 500,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
