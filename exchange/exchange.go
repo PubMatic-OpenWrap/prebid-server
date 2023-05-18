@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/adservertargeting"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -37,8 +36,8 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 )
 
 type extCacheInstructions struct {
@@ -211,7 +210,8 @@ type AuctionRequest struct {
 	PubID                 string
 	HookExecutor          hookexecution.StageExecutor
 	QueryParams           url.Values
-	LoggableObject        *analytics.LoggableAuctionObject
+	// LoggableObject
+	LoggableObject *analytics.LoggableAuctionObject
 }
 
 // BidderRequest holds the bidder specific request and all other
@@ -261,7 +261,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequestWrapper.Test, requestExtPrebid, r.Account.DebugAllow, debugLog)
 
 	// save incoming request with stored requests (if applicable) to return in debug logs
-	if responseDebugAllow || len(requestExtPrebid.AdServerTargeting) > 0 {
+	if responseDebugAllow {
 		if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
 			return nil, err
 		}
@@ -273,9 +273,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	}
 	e.me.RecordDebugRequest(responseDebugAllow || accountDebugAllow, r.PubID)
 
-	if r.RequestType == metrics.ReqTypeORTB2Web ||
-		r.RequestType == metrics.ReqTypeORTB2App ||
-		r.RequestType == metrics.ReqTypeAMP {
+	if r.RequestType == metrics.ReqTypeORTB2Web || r.RequestType == metrics.ReqTypeORTB2App {
 		//Extract First party data for auction endpoint only
 		resolvedFPD, fpdErrors := firstpartydata.ExtractFPDForBidders(r.BidRequestWrapper)
 		if len(fpdErrors) > 0 {
@@ -307,7 +305,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 		}
 		r.ResolvedBidRequest = resolvedBidReq
 	}
-
 	recordImpMetrics(r.BidRequestWrapper, e.me)
 
 	// Make our best guess if GDPR applies
@@ -325,6 +322,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 	}
 	bidderRequests, privacyLabels, errs := e.requestSplitter.cleanOpenRTBRequests(ctx, r, requestExtLegacy, gdprDefaultValue)
 	errs = append(errs, floorErrs...)
+
 	e.me.RecordRequestPrivacy(privacyLabels)
 
 	if len(r.StoredAuctionResponses) > 0 || len(r.StoredBidResponses) > 0 {
@@ -486,11 +484,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	// Build the response
 	bidResponse, err := e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper.BidRequest, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, r.PubID, errs)
-
-	bidResponse = adservertargeting.Apply(r.BidRequestWrapper, r.ResolvedBidRequest, bidResponse, r.QueryParams, bidResponseExt, r.Account.TruncateTargetAttribute)
-
-	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
-
 	return bidResponse, err
 }
 
@@ -904,6 +897,7 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	}
 
 	bidResponse.SeatBid = seatBids
+	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
 
 	return bidResponse, err
 }

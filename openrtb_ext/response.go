@@ -3,7 +3,7 @@ package openrtb_ext
 import (
 	"encoding/json"
 
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb3"
 )
 
 type NonBidStatusCode openrtb3.LossReason

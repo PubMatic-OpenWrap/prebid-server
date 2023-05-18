@@ -11,7 +11,6 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 )
 
-// Metrics is the legacy Metrics object (go-metrics) expanded to also satisfy the MetricsEngine interface
 type Metrics struct {
 	MetricsRegistry                metrics.Registry
 	ConnectionCounter              metrics.Counter
@@ -173,7 +172,7 @@ type ModuleMetrics struct {
 // testing routines to ensure that no metrics are written anywhere.
 //
 // This will be useful when removing endpoints, we can just run will the blank metrics function
-// rather than loading legacy metrics that never get filled.
+// rather than loading metrics that never get filled.
 // This will also eventually let us configure metrics, such as setting a limited set of metrics
 // for a production instance, and then expanding again when we need more debugging.
 func NewBlankMetrics(registry metrics.Registry, exchanges []openrtb_ext.BidderName, disabledMetrics config.DisabledMetrics, moduleStageNames map[string][]string) *Metrics {

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -1721,6 +1721,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: sampleSeatBid,
 				Cur:     "USD",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1735,6 +1737,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: emptySeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1749,6 +1753,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: sampleSeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 		{
@@ -1763,6 +1769,8 @@ func TestBidResponseCurrency(t *testing.T) {
 				ID:      "some-request-id",
 				SeatBid: emptySeatBid,
 				Cur:     "",
+				Ext: json.RawMessage(`{"responsetimemillis":{"appnexus":5},"tmaxrequest":500}
+`),
 			},
 		},
 	}
@@ -3328,6 +3336,7 @@ func TestBidRejectionErrors(t *testing.T) {
 		seatBid := entities.PbsOrtbSeatBid{Bids: innerBids, Currency: "USD"}
 
 		adapterBids[bidderName] = &seatBid
+
 		r := &AuctionRequest{
 			BidRequestWrapper: &openrtb_ext.RequestWrapper{
 				BidRequest: &openrtb2.BidRequest{},

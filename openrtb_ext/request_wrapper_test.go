@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -963,7 +963,7 @@ func TestImpWrapperGetImpExt(t *testing.T) {
 		},
 		{
 			description:  "Populated - Ext",
-			givenWrapper: ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"is_rewarded_inventory":1},"other":42, "tid": "test-tid"}`)}},
+			givenWrapper: ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"is_rewarded_inventory":1},"other":42,"tid":"test-tid"}`)}},
 			expectedImpExt: ImpExt{
 				ext: map[string]json.RawMessage{
 					"prebid": json.RawMessage(`{"is_rewarded_inventory":1}`),
