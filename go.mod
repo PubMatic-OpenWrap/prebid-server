@@ -80,12 +80,15 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/prebid/prebid-server => ./
+replace (
+	github.com/prebid/prebid-server => ./
 
-replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6
+	github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6
 
-replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
+	github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230518051948-62b5d3f90327
+	git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230518051948-62b5d3f90327
 
-replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0
+	github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0
+
+)

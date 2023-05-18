@@ -1,0 +1,64 @@
+package vastunwrap
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	vastunwrap "git.pubmatic.com/vastunwrap"
+	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/moduledeps"
+)
+
+type VastUnwrapModule struct {
+	cfg VastUnwrapModuleCfg
+}
+
+func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
+	return initVastUnrap(rawCfg, deps)
+}
+
+func initVastUnrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (VastUnwrapModule, error) {
+	cfg := VastUnwrapModuleCfg{}
+
+	err := json.Unmarshal(rawCfg, &cfg)
+	if err != nil {
+		return VastUnwrapModule{}, fmt.Errorf("invalid unwrap config: %v", err)
+	}
+
+	if cfg.VastUnWrapCfg.Enabled {
+		vastunwrap.InitUnWrapperConfig(cfg.VastUnWrapCfg)
+	}
+
+	return VastUnwrapModule{
+		cfg: cfg,
+	}, nil
+
+}
+
+// HandleRawBidderResponseHook unwraps VAST creatives if vast un-wrapper feature is enabled
+func (m VastUnwrapModule) HandleRawBidderResponseHook(
+	_ context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.RawBidderResponsePayload,
+) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+	result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
+
+	// if m.cfg.VastUnWrapCfg.Enabled {
+	return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
+	// }
+	return result, nil
+
+}
+
+// HandleEntrypointHook retrieves vast un-wrapper flag and User-agent proivded in request context
+func (m VastUnwrapModule) HandleEntrypointHook(
+	ctx context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.EntrypointPayload,
+) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	// if m.cfg.VastUnWrapCfg.Enabled {
+	return handleEntrypointHook(ctx, miCtx, payload)
+	// }
+	return hookstage.HookResult[hookstage.EntrypointPayload]{}, nil
+}
