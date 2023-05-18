@@ -124,7 +124,7 @@ func JsonifyAmpObject(ao *analytics.AmpObject, scope string) ([]byte, error) {
 			Status:               ao.Status,
 			Errors:               ao.Errors,
 			Request:              ao.Request,
-			AuctionResponse:      ao.AuctionResponse,
+			AuctionResponse:      ao.Response,
 			AmpTargetingValues:   ao.AmpTargetingValues,
 			Origin:               ao.Origin,
 			StartTime:            ao.StartTime,
