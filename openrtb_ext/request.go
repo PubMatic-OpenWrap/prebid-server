@@ -209,7 +209,7 @@ type ExtIncludeBrandCategory struct {
 	Publisher           string `json:"publisher"`
 	WithCategory        bool   `json:"withcategory"`
 	TranslateCategories *bool  `json:"translatecategories,omitempty"`
-	SkipDedup           bool   `json:"skipdedup"`
+	SkipDedup           bool   `json:"skipdedup,omitempty"`
 }
 
 // PriceGranularity defines the allowed values for bidrequest.ext.prebid.targeting.pricegranularity

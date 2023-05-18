@@ -48,6 +48,7 @@ type ExtResponsePrebid struct {
 	Modules          json.RawMessage   `json:"modules,omitempty"`
 	Fledge           *Fledge           `json:"fledge,omitempty"`
 	Targeting        map[string]string `json:"targeting,omitempty"`
+	Floors           *PriceFloorRules  `json:"floors,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge

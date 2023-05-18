@@ -232,8 +232,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		return nil, nil
 	}
 
-	err := r.HookExecutor.ExecuteProcessedAuctionStage(r.BidRequestWrapper)
 	var floorErrs []error
+	err := r.HookExecutor.ExecuteProcessedAuctionStage(r.BidRequestWrapper)
 	if err != nil {
 		return nil, err
 	}
@@ -264,10 +264,16 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		_, targData.cacheHost, targData.cachePath = e.cache.GetExtCacheData()
 	}
 
+	// Get currency rates conversions for the auction
+	conversions := e.getAuctionCurrencyRates(requestExtPrebid.CurrencyConversions)
+	if e.floor.Enabled {
+		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
+	}
+
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequestWrapper.Test, requestExtPrebid, r.Account.DebugAllow, debugLog)
 
 	// save incoming request with stored requests (if applicable) to return in debug logs
-	if responseDebugAllow {
+	if responseDebugAllow || len(requestExtPrebid.AdServerTargeting) > 0 {
 		if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
 			return nil, err
 		}
@@ -279,7 +285,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	}
 	e.me.RecordDebugRequest(responseDebugAllow || accountDebugAllow, r.PubID)
 
-	if r.RequestType == metrics.ReqTypeORTB2Web || r.RequestType == metrics.ReqTypeORTB2App {
+	if r.RequestType == metrics.ReqTypeORTB2Web || r.RequestType == metrics.ReqTypeORTB2App || r.RequestType == metrics.ReqTypeAMP {
 		//Extract First party data for auction endpoint only
 		resolvedFPD, fpdErrors := firstpartydata.ExtractFPDForBidders(r.BidRequestWrapper)
 		if len(fpdErrors) > 0 {
@@ -296,21 +302,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 	bidAdjustmentFactors := getExtBidAdjustmentFactors(requestExtPrebid)
 
-	// Get currency rates conversions for the auction
-	conversions := e.getAuctionCurrencyRates(requestExtPrebid.CurrencyConversions)
-
-	if e.floor.Enabled {
-		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
-	}
-
-	if responseDebugAllow {
-		//save incoming request with stored requests (if applicable) to return in debug logs
-		resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
-		if err != nil {
-			return nil, err
-		}
-		r.ResolvedBidRequest = resolvedBidReq
-	}
 	recordImpMetrics(r.BidRequestWrapper, e.me)
 
 	// Make our best guess if GDPR applies
@@ -497,6 +488,13 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			Message: warning.Error(),
 		}
 		bidResponseExt.Warnings[openrtb_ext.BidderReservedGeneral] = append(bidResponseExt.Warnings[openrtb_ext.BidderReservedGeneral], generalWarning)
+	}
+
+	if enabled, rules := floorsEnabled(r.Account, r.BidRequestWrapper); enabled && rules != nil {
+		if bidResponseExt.Prebid == nil {
+			bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{}
+		}
+		bidResponseExt.Prebid.Floors = rules
 	}
 
 	e.bidValidationEnforcement.SetBannerCreativeMaxSize(r.Account.Validations)

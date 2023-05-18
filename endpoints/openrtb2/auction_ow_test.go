@@ -3,7 +3,6 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
-
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
