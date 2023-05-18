@@ -7,7 +7,8 @@ import (
 
 // ExtBid defines the contract for bidresponse.seatbid.bid[i].ext
 type ExtBid struct {
-	Prebid *ExtBidPrebid `json:"prebid,omitempty"`
+	Prebid *ExtBidPrebid   `json:"prebid,omitempty"`
+	Bidder json.RawMessage `json:"bidder,omitempty"`
 }
 
 // ExtBidPrebid defines the contract for bidresponse.seatbid.bid[i].ext.prebid
@@ -25,6 +26,16 @@ type ExtBidPrebid struct {
 	Events            *ExtBidPrebidEvents `json:"events,omitempty"`
 	BidId             string              `json:"bidid,omitempty"`
 	Passthrough       json.RawMessage     `json:"passthrough,omitempty"`
+	Floors            *ExtBidFloors       `json:"floors,omitempty"`
+}
+
+// ExtBidPrebidFloors defines the contract for bidresponse.seatbid.bid[i].ext.prebid.floors
+type ExtBidFloors struct {
+	BidAdjustment  bool    `json:"bidAdjustment,omitempty"`
+	FloorRule      string  `json:"floorRule,omitempty"`
+	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorValue     float64 `json:"floorValue,omitempty"`
+	FloorCurrency  string  `json:"floorCurrency,omitempty"`
 }
 
 // ExtBidPrebidCache defines the contract for  bidresponse.seatbid.bid[i].ext.prebid.cache
@@ -62,6 +73,7 @@ type ExtBidPrebidMeta struct {
 type ExtBidPrebidVideo struct {
 	Duration        int    `json:"duration"`
 	PrimaryCategory string `json:"primary_category"`
+	VASTTagID       string `json:"vasttagid"`
 }
 
 // ExtBidPrebidEvents defines the contract for bidresponse.seatbid.bid[i].ext.prebid.events
@@ -176,4 +188,5 @@ const (
 	OriginalBidCpmKey       = "origbidcpm"
 	OriginalBidCurKey       = "origbidcur"
 	Passthrough             = "passthrough"
+	OriginalBidCpmUsdKey    = "origbidcpmusd"
 )

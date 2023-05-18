@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -175,16 +176,22 @@ func TestDefaults(t *testing.T) {
 	cmpNils(t, "host_schain_node", cfg.HostSChainNode)
 	cmpStrings(t, "datacenter", "", cfg.DataCenter)
 
-	//Assert the price floor default values
+	// Assert the price floor default values
 	cmpBools(t, "price_floors.enabled", false, cfg.PriceFloors.Enabled)
 
-	cmpBools(t, "account_defaults.price_floors.enabled", false, cfg.AccountDefaults.PriceFloors.Enabled)
-	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorsRate)
-	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", true, cfg.AccountDefaults.PriceFloors.AdjustForBidAdjustment)
+	cmpBools(t, "account_defaults.price_floors.enabled", true, cfg.AccountDefaults.PriceFloors.Enabled)
+	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorRate)
+	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", true, cfg.AccountDefaults.PriceFloors.BidAdjustment)
 	cmpBools(t, "account_defaults.price_floors.enforce_deal_floors", false, cfg.AccountDefaults.PriceFloors.EnforceDealFloors)
 	cmpBools(t, "account_defaults.price_floors.use_dynamic_data", false, cfg.AccountDefaults.PriceFloors.UseDynamicData)
-	cmpInts(t, "account_defaults.price_floors.max_rules", 100, cfg.AccountDefaults.PriceFloors.MaxRule)
-	cmpInts(t, "account_defaults.price_floors.max_schema_dims", 3, cfg.AccountDefaults.PriceFloors.MaxSchemaDims)
+	cmpBools(t, "account_defaults.price_floors.fetch.enabled", false, cfg.AccountDefaults.PriceFloors.Fetch.Enabled)
+	cmpInts(t, "account_defaults.price_floors.fetch.timeout_ms", 3000, cfg.AccountDefaults.PriceFloors.Fetch.Timeout)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_file_size_kb", 100, cfg.AccountDefaults.PriceFloors.Fetch.MaxFileSize)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", 1000, cfg.AccountDefaults.PriceFloors.Fetch.MaxRules)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", 86400, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
+	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 3600, cfg.AccountDefaults.PriceFloors.Fetch.Period)
+	cmpInts(t, "price_floor_fetcher.worker", 20, cfg.PriceFloorFetcher.Worker)
+	cmpInts(t, "price_floor_fetcher.capacity", 20000, cfg.PriceFloorFetcher.Capacity)
 
 	cmpBools(t, "hooks.enabled", false, cfg.Hooks.Enabled)
 	cmpStrings(t, "validations.banner_creative_max_size", "skip", cfg.Validations.BannerCreativeMaxSize)
@@ -448,12 +455,20 @@ price_floors:
 account_defaults:
     price_floors:
         enabled: true
-        enforce_floors_rate: 50
-        adjust_for_bid_adjustment: false
+        enforce_floors_rate: 100
+        adjust_for_bid_adjustment: true
         enforce_deal_floors: true
         use_dynamic_data: true
-        max_rules: 120
-        max_schema_dims: 5
+        fetch:
+            enabled: true
+            timeout_ms: 1000
+            max_file_size_kb: 100
+            max_rules: 1000
+            max_age_sec: 36000
+            period_sec: 7200
+price_floor_fetcher:
+  worker: 10
+  capacity: 20
 `)
 
 var oldStoredRequestsConfig = []byte(`
@@ -537,12 +552,18 @@ func TestFullConfig(t *testing.T) {
 	//Assert the price floor values
 	cmpBools(t, "price_floors.enabled", true, cfg.PriceFloors.Enabled)
 	cmpBools(t, "account_defaults.price_floors.enabled", true, cfg.AccountDefaults.PriceFloors.Enabled)
-	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 50, cfg.AccountDefaults.PriceFloors.EnforceFloorsRate)
-	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", false, cfg.AccountDefaults.PriceFloors.AdjustForBidAdjustment)
+	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorRate)
+	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", true, cfg.AccountDefaults.PriceFloors.BidAdjustment)
 	cmpBools(t, "account_defaults.price_floors.enforce_deal_floors", true, cfg.AccountDefaults.PriceFloors.EnforceDealFloors)
 	cmpBools(t, "account_defaults.price_floors.use_dynamic_data", true, cfg.AccountDefaults.PriceFloors.UseDynamicData)
-	cmpInts(t, "account_defaults.price_floors.max_rules", 120, cfg.AccountDefaults.PriceFloors.MaxRule)
-	cmpInts(t, "account_defaults.price_floors.max_schema_dims", 5, cfg.AccountDefaults.PriceFloors.MaxSchemaDims)
+	cmpBools(t, "account_defaults.price_floors.fetch.enabled", true, cfg.AccountDefaults.PriceFloors.Fetch.Enabled)
+	cmpInts(t, "account_defaults.price_floors.fetch.timeout_ms", 1000, cfg.AccountDefaults.PriceFloors.Fetch.Timeout)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_file_size_kb", 100, cfg.AccountDefaults.PriceFloors.Fetch.MaxFileSize)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", 1000, cfg.AccountDefaults.PriceFloors.Fetch.MaxRules)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", 36000, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
+	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 7200, cfg.AccountDefaults.PriceFloors.Fetch.Period)
+	cmpInts(t, "price_floor_fetcher.worker", 10, cfg.PriceFloorFetcher.Worker)
+	cmpInts(t, "price_floor_fetcher.capacity", 20, cfg.PriceFloorFetcher.Capacity)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
@@ -752,6 +773,15 @@ func TestValidateConfig(t *testing.T) {
 		Accounts: StoredRequests{
 			Files:         FileFetcherConfig{Enabled: true},
 			InMemoryCache: InMemoryCache{Type: "none"},
+		},
+		AccountDefaults: Account{
+			PriceFloors: AccountPriceFloors{
+				Fetch: AccountFloorFetch{
+					Period:  400,
+					Timeout: 20,
+					MaxAge:  700,
+				},
+			},
 		},
 	}
 
@@ -3189,5 +3219,195 @@ func TestTCF2FeatureOneVendorException(t *testing.T) {
 		value := tcf2.FeatureOneVendorException(tt.giveBidder)
 
 		assert.Equal(t, tt.wantIsVendorException, value, tt.description)
+	}
+}
+
+func TestAccountPriceFloorsValidate(t *testing.T) {
+	type fields struct {
+		Enabled           bool
+		EnforceFloorRate  int
+		BidAdjustment     bool
+		EnforceDealFloors bool
+		UseDynamicData    bool
+		Fetch             AccountFloorFetch
+	}
+	type args struct {
+		errs []error
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   []error
+	}{
+		{
+			name: "Enforce Floor rate is invalid",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  200,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     500,
+					MaxFileSize: 1,
+					MaxRules:    1,
+					MaxAge:      1000,
+					Period:      400,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.enforce_floors_rate should be between 0 and 100")},
+		},
+		{
+			name: "Max Age is less than Period",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     500,
+					MaxFileSize: 1,
+					MaxRules:    1,
+					MaxAge:      700,
+					Period:      800,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.period_sec should be less than account_defaults.price_floors.fetch.max_age_sec")},
+		},
+		{
+			name: "Period is less than 300",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     500,
+					MaxFileSize: 1,
+					MaxRules:    1,
+					MaxAge:      700,
+					Period:      200,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.period_sec should not be less than 300 seconds")},
+		},
+		{
+			name: "Invalid Max age",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     500,
+					MaxFileSize: 1,
+					MaxRules:    1,
+					MaxAge:      500,
+					Period:      400,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.max_age_sec should not be less than 600 seconds and greater than maximum integer value")},
+		},
+		{
+			name: "Invalid Timeout",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     1,
+					MaxFileSize: 1,
+					MaxRules:    1,
+					MaxAge:      700,
+					Period:      400,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.timeout_ms should be between 10 to 10,000 mili seconds")},
+		},
+		{
+			name: "Invalid Max rules",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     11,
+					MaxFileSize: 1,
+					MaxRules:    -1,
+					MaxAge:      700,
+					Period:      400,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.max_rules should not be less than 0 seconds and greater than maximum integer value")},
+		},
+		{
+			name: "Invalid Max file size",
+			fields: fields{
+				Enabled:           true,
+				EnforceFloorRate:  100,
+				BidAdjustment:     true,
+				EnforceDealFloors: true,
+				UseDynamicData:    true,
+				Fetch: AccountFloorFetch{
+					Enabled:     true,
+					Timeout:     11,
+					MaxFileSize: -1,
+					MaxRules:    1,
+					MaxAge:      700,
+					Period:      400,
+				},
+			},
+			args: args{
+				errs: []error{},
+			},
+			want: []error{errors.New("account_defaults.price_floors.fetch.max_file_size_kb should not be less than 0 seconds and greater than maximum integer value")},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pf := &AccountPriceFloors{
+				Enabled:           tt.fields.Enabled,
+				EnforceFloorRate:  tt.fields.EnforceFloorRate,
+				BidAdjustment:     tt.fields.BidAdjustment,
+				EnforceDealFloors: tt.fields.EnforceDealFloors,
+				UseDynamicData:    tt.fields.UseDynamicData,
+				Fetch:             tt.fields.Fetch,
+			}
+			if got := pf.validate(tt.args.errs); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AccountPriceFloors.validate() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

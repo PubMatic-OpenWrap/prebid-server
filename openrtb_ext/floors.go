@@ -38,7 +38,7 @@ type PriceFloorEndpoint struct {
 type PriceFloorData struct {
 	Currency            string                 `json:"currency,omitempty"`
 	SkipRate            int                    `json:"skiprate,omitempty"`
-	FloorsSchemaVersion string                 `json:"floorsschemaversion,omitempty"`
+	FloorsSchemaVersion string                 `json:"_,omitempty"`
 	ModelTimestamp      int                    `json:"modeltimestamp,omitempty"`
 	ModelGroups         []PriceFloorModelGroup `json:"modelgroups,omitempty"`
 	FloorProvider       string                 `json:"floorprovider,omitempty"`
@@ -67,9 +67,9 @@ type PriceFloorEnforcement struct {
 }
 
 type ImpFloorExt struct {
-	FloorRule      string  `json:"floorrule,omitempty"`
-	FloorRuleValue float64 `json:"floorrulevalue,omitempty"`
-	FloorValue     float64 `json:"floorvalue,omitempty"`
+	FloorRule      string  `json:"floorRule,omitempty"`
+	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorValue     float64 `json:"floorValue,omitempty"`
 }
 type Price struct {
 	FloorMin    float64 `json:"floormin,omitempty"`
@@ -92,7 +92,7 @@ func (Floors *PriceFloorRules) GetEnabled() bool {
 	return true
 }
 
-func (modelGroup PriceFloorModelGroup) Copy() PriceFloorModelGroup {
+func (modelGroup *PriceFloorModelGroup) Copy() *PriceFloorModelGroup {
 	newModelGroup := new(PriceFloorModelGroup)
 	newModelGroup.Currency = modelGroup.Currency
 	newModelGroup.ModelVersion = modelGroup.ModelVersion
@@ -110,5 +110,5 @@ func (modelGroup PriceFloorModelGroup) Copy() PriceFloorModelGroup {
 	for key, val := range modelGroup.Values {
 		newModelGroup.Values[key] = val
 	}
-	return *newModelGroup
+	return newModelGroup
 }
