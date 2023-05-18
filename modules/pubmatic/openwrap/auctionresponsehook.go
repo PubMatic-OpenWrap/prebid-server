@@ -153,7 +153,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(owbid, wbid, rctx.PreferDeals) {
+			if !ok || isNewWinningBid(owbid, wbid, rctx.SupportDeals) {
 				winningBids[bid.ImpID] = owbid
 			}
 

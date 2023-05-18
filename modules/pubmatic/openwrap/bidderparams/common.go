@@ -59,6 +59,10 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 		hw = append(hw, [2]int64{0, 0})
 	}
 
+	if imp.Native != nil {
+		hw = append(hw, [2]int64{1, 1})
+	}
+
 	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
 
 	var div string

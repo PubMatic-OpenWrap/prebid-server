@@ -42,7 +42,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
-		result.Reject = true
 		result.NbrCode = nbr.InvalidPublisherID
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
 		return result, fmt.Errorf("invalid publisher id : %v", err)
@@ -82,11 +81,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
-	rCtx.AdapterThrottleMap, err = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
-	if err != nil {
+	var allPartnersThrottledFlag bool
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	if allPartnersThrottledFlag {
 		result.NbrCode = nbr.AllPartnerThrottled
-		err = errors.New("failed to adapter throttle details: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
+		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
@@ -103,7 +102,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
 	requestExt.Prebid.Debug = rCtx.Debug
-	requestExt.Prebid.SupportDeals = rCtx.PreferDeals // && IsCTVAPIRequest(reqWrapper.RequestAPI),
+	// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
 	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
 		PriceGranularity:  priceGranularity,
@@ -257,7 +256,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		impExt.Wrapper = nil
-		impExt.Reward = nil //TODO move this to imp.ext.prebid.bidder.pubmatic.reward
+		impExt.Reward = nil
 		impExt.Bidder = nil
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
@@ -719,19 +718,10 @@ func isSendAllBids(rctx models.RequestCtx) bool {
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {
 		return true
-	} else if rctx.SSAuction == -1 {
-		//when ssauction flag is not present in request
-
-		//if platform is dislay, then by default send all bids is enabled
-		if rctx.Platform == models.PLATFORM_DISPLAY {
+	} else if rctx.SSAuction == -1 && rctx.Platform == models.PLATFORM_APP {
+		// if platform is in-app, then check if profile setting sendAllBids is set to 1
+		if models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.SendAllBidsKey) == "1" {
 			return true
-		}
-
-		//if platform is in-app, then check if profile setting sendAllBids is set to 1
-		if rctx.Platform == models.PLATFORM_APP {
-			if models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.SendAllBidsKey) == "1" {
-				return true
-			}
 		}
 	}
 	return false

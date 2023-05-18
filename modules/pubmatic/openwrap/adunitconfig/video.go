@@ -17,10 +17,6 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		}
 	}()
 
-	if (rCtx.Platform != models.PLATFORM_APP) && (rCtx.Platform != models.PLATFORM_VIDEO) && (rCtx.Platform != models.PLATFORM_DISPLAY) {
-		return
-	}
-
 	if rCtx.AdUnitConfig == nil || len(rCtx.AdUnitConfig.Config) == 0 {
 		return
 	}

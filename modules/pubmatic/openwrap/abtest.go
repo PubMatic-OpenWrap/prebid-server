@@ -9,32 +9,14 @@ import (
 
 // CheckABTestEnabled checks whether a given request is AB test enabled or not
 func CheckABTestEnabled(rctx models.RequestCtx) bool {
-
-	abTestEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.AbTestEnabled)
-
-	//for 2.5 display platform, check the abtest config flag in request.ext
-	if rctx.Platform == models.PLATFORM_DISPLAY {
-		if rctx.ABTestConfig == 1 && abTestEnabled == "1" {
-			return true
-		}
-		return false
-	}
-
-	//for pure server side platforms, check the abTestEnabled entry in DB
-	if abTestEnabled == "1" {
-		return true
-	}
-
-	return false
+	return models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.AbTestEnabled) == "1"
 }
 
 // ABTestProcessing function checks if test config should be applied and change the partner config accordingly
 func ABTestProcessing(rctx models.RequestCtx) (map[int]map[string]string, bool) {
 	//test config logic
-	if CheckABTestEnabled(rctx) {
-		if rctx.Platform == models.PLATFORM_DISPLAY || ApplyTestConfig(rctx) {
-			return UpdateTestConfig(rctx), true
-		}
+	if CheckABTestEnabled(rctx) && ApplyTestConfig(rctx) {
+		return UpdateTestConfig(rctx), true
 	}
 	return nil, false
 }
@@ -86,9 +68,8 @@ func UpdateTestConfig(rctx models.RequestCtx) map[int]map[string]string {
 				delete(newPartnerConfig, partnerID)
 			}
 		}
-		break
 
-	case models.TestTypeClientVsServerPath:
+	case models.TestTypeClientVsServerPath: // TODO: can we deprecate this AB test type
 		for partnerID := range rctx.PartnerConfigMap {
 			if partnerID == models.VersionLevelConfigID {
 				continue
@@ -98,7 +79,6 @@ func UpdateTestConfig(rctx models.RequestCtx) map[int]map[string]string {
 			replaceControlConfig(newPartnerConfig, partnerID, models.SERVER_SIDE_FLAG)
 
 		}
-		break
 	default:
 	}
 

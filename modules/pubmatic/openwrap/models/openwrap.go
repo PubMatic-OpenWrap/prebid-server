@@ -15,7 +15,7 @@ type RequestCtx struct {
 	LogInfoFlag                            int
 	SSAI                                   string
 	PartnerConfigMap                       map[int]map[string]string
-	PreferDeals                            bool
+	SupportDeals                           bool
 	Platform                               string
 	LoggerImpressionID                     string
 	ClientConfigFlag                       int

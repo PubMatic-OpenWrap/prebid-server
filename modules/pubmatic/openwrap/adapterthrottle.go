@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"errors"
 	"math/rand"
 	"strconv"
 
@@ -9,11 +8,11 @@ import (
 )
 
 // GetAdapterThrottleMap creates map of adapter and bool value which tells whether the adapter should be throtled or not
-func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string) (map[string]struct{}, error) {
+func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
 	adapterThrottleMap := make(map[string]struct{})
 	allPartnersThrottledFlag := true
 	for _, partnerConfig := range partnerConfigMap {
-		if "" == partnerConfig[models.SERVER_SIDE_FLAG] || partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
+		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 			continue
 		}
 		if ThrottleAdapter(partnerConfig) {
@@ -22,10 +21,8 @@ func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string) (map[stri
 			allPartnersThrottledFlag = false
 		}
 	}
-	if allPartnersThrottledFlag {
-		return adapterThrottleMap, errors.New("ErrAllPartnerThrottled")
-	}
-	return adapterThrottleMap, nil
+
+	return adapterThrottleMap, allPartnersThrottledFlag
 }
 
 // ThrottleAdapter this function returns bool value for whether a adapter should be throttled or not
