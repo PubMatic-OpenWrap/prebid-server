@@ -28,30 +28,26 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
 
-	kgpv := "" //regex match
 	hash := ""
 	var err error
-	var paramMap map[string]interface{}
-	selectedSlot := ""
+	var matchedSlot, matchedPattern string
 	isRegexSlot := false
 
-	isRegexKGP := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN] == models.REGEX_KGP
+	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
+	isRegexKGP := kgp == models.REGEX_KGP
 
 	// simple+regex key match
 	for _, slot := range slots {
-		matchedSlot, matchedPattern := GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
+		matchedSlot, matchedPattern = GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
 		if matchedSlot != "" {
-			selectedSlot = matchedSlot
 			extImpPubMatic.AdSlot = matchedSlot
 
 			if matchedPattern != "" {
 				isRegexSlot = true
-				kgpv = matchedPattern
 				// imp.TagID = hash
-
 				// TODO: handle kgpv case sensitivity in hashvaluemap
 				if slotMappingInfo.HashValueMap != nil {
-					if v, ok := slotMappingInfo.HashValueMap[kgpv]; ok {
+					if v, ok := slotMappingInfo.HashValueMap[matchedPattern]; ok {
 						extImpPubMatic.AdSlot = v
 						imp.TagID = hash // TODO, make imp pointer. But do other bidders accept hash as TagID?
 					}
@@ -62,16 +58,11 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		}
 	}
 
-	slotName := selectedSlot
-	if kgpv != "" {
-		slotName = kgpv
-	}
-	paramMap, _ = getSlotMappings(slotName, slotMap)
-
-	//overwrite
-	if paramMap != nil {
-		if kgpv == "" { //keep hash as is for regex
-			// use owSlotName to addres case insensitive slotname. EX slot= "/43743431/DMDEMO@300x250" and owSlotName="/43743431/DMDemo@300x250"
+	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
+		if matchedPattern == "" {
+			// use alternate names defined in DB for this slot if selection is non-regex
+			// use owSlotName to addres case insensitive slotname.
+			// Ex: slot="/43743431/DMDEMO@300x250" and owSlotName="/43743431/DMDemo@300x250"
 			if v, ok := paramMap[models.KEY_OW_SLOT_NAME]; ok {
 				if owSlotName, ok := v.(string); ok {
 					extImpPubMatic.AdSlot = owSlotName
@@ -79,7 +70,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			}
 		}
 
-		//Update slot key for PubMatic secondary flow
+		// Update slot key for PubMatic secondary flow
 		if v, ok := paramMap[models.KEY_SLOT_NAME]; ok {
 			if secondarySlotName, ok := v.(string); ok {
 				extImpPubMatic.AdSlot = secondarySlotName
@@ -87,21 +78,21 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		}
 	}
 
-	//last resort
+	// last resort: send slotname w/o size to translator
 	if extImpPubMatic.AdSlot == "" {
 		var div string
 		if impExt.Wrapper != nil {
 			div = impExt.Wrapper.Div
 		}
-		unmappedKPG := getDefaultMappingKGP(rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN])
+		unmappedKPG := getDefaultMappingKGP(kgp)
 		extImpPubMatic.AdSlot = GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
-			kgpv = slots[0]
+			matchedPattern = slots[0]
 		}
 	}
 
 	params, err := json.Marshal(extImpPubMatic)
-	return selectedSlot, kgpv, isRegexSlot, params, err
+	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
 func getDealTier(impExt models.ImpExtension, bidderCode string) *openrtb_ext.DealTier {

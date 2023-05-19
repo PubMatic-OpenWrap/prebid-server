@@ -219,9 +219,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 				PrebidBidderCode: prebidBidderCode,
 				MatchedSlot:      slot, // KGPSV
 				Params:           bidderParams,
-				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], //acutual slot
-				KGPV:             kgpv,                                                     //regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
-				IsRegex:          isRegex,                                                  //regex pattern
+				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
+				KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
+				IsRegex:          isRegex,                                                  // regex pattern
 			}
 
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
