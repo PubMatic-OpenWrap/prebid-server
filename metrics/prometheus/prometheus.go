@@ -85,6 +85,7 @@ type Metrics struct {
 	// Rejected Bids
 	rejectedBids *prometheus.CounterVec
 	bids         *prometheus.CounterVec
+	vastVersion  *prometheus.CounterVec
 	//rejectedBids         *prometheus.CounterVec
 	accountRejectedBid   *prometheus.CounterVec
 	accountFloorsRequest *prometheus.CounterVec
@@ -534,6 +535,11 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"rejected_bids",
 		"Count of rejected bids by publisher id, bidder and rejection reason code",
 		[]string{pubIDLabel, bidderLabel, codeLabel})
+
+	metrics.vastVersion = newCounter(cfg, reg,
+		"vast_version",
+		"Count of vast version by bidder and vast version",
+		[]string{bidderLabel, versionLabel})
 
 	metrics.dynamicFetchFailure = newCounter(cfg, reg,
 		"floors_account_fetch_err",
