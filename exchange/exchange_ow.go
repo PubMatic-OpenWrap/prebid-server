@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	vastVersionRegex = regexp.MustCompile(`<VAST\s*version=\s*"(.*?)"\s*>`)
+	vastVersionRegex = regexp.MustCompile(`<VAST\s*version\s*=\s*"(.*?)"\s*>`)
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine

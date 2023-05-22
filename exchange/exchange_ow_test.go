@@ -1135,7 +1135,6 @@ func TestRecordVastVersion(t *testing.T) {
 				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.2.1").Return()
 					return metricEngine
 				},
 			},
@@ -1150,7 +1149,6 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.2.1").Return()
 					return metricEngine
 				},
 			},
@@ -1165,7 +1163,6 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.2.1").Return()
 					return metricEngine
 				},
 			},
@@ -1186,7 +1183,6 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.2.1").Return()
 					return metricEngine
 				},
 			},
@@ -1207,7 +1203,6 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.2.1").Return()
 					return metricEngine
 				},
 			},
@@ -1275,6 +1270,30 @@ func TestRecordVastVersion(t *testing.T) {
 									     </Creatives>
 									   </InLine>
 									   </Ad>
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm with spaces in tag",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST version = "2.0">
 									</VAST>`,
 								},
 							},
