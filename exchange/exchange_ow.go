@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	vastVersionRegex = regexp.MustCompile(`<VAST\s*version\s*=\s*"(.*?)"\s*>`)
+	vastVersionRegex = regexp.MustCompile(`<VAST\s*version\s*=\s*(.*?)\s*>`)
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
@@ -198,6 +198,7 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 				continue
 			}
 			vastVersion := matches[1]
+			vastVersion = vastVersion[1 : len(vastVersion)-1]
 			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
 		}
 	}
