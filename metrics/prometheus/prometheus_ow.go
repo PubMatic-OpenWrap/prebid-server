@@ -9,12 +9,11 @@ import (
 )
 
 const (
-	pubIDLabel       = "pubid"
-	bidderLabel      = "bidder"
-	codeLabel        = "code"
-	profileLabel     = "profileid"
-	dealLabel        = "deal"
-	vastVersionLabel = "vast_version"
+	pubIDLabel   = "pubid"
+	bidderLabel  = "bidder"
+	codeLabel    = "code"
+	profileLabel = "profileid"
+	dealLabel    = "deal"
 )
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
@@ -103,7 +102,7 @@ func (m *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 // RecordVastVersion record the count of vast version labelled by bidder and vast version
 func (m *Metrics) RecordVastVersion(biddder, vastVersion string) {
 	m.vastVersion.With(prometheus.Labels{
-		bidderLabel:      biddder,
-		vastVersionLabel: vastVersion,
+		bidderLabel:  biddder,
+		versionLabel: vastVersion,
 	}).Inc()
 }

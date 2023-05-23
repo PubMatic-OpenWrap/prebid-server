@@ -539,7 +539,7 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	metrics.vastVersion = newCounter(cfg, reg,
 		"vast_version",
 		"Count of vast version by bidder and vast version",
-		[]string{bidderLabel, vastVersionLabel})
+		[]string{bidderLabel, versionLabel})
 
 	metrics.dynamicFetchFailure = newCounter(cfg, reg,
 		"floors_account_fetch_err",
