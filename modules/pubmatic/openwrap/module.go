@@ -32,21 +32,6 @@ func (m OpenWrap) HandleEntrypointHook(
 }
 
 // changes to init the request ctx with profile and request details
-func (m OpenWrap) HandleRawAuctionHook(
-	ctx context.Context,
-	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.RawAuctionRequestPayload,
-) (hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
-	defer func() {
-		if r := recover(); r != nil {
-			glog.Error("body:" + string(payload) + ". stacktrace:" + string(debug.Stack()))
-		}
-	}()
-
-	return m.handleRawAuctionHook(ctx, miCtx, payload)
-}
-
-// changes to init the request ctx with profile and request details
 func (m OpenWrap) HandleBeforeValidationHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
