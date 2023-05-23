@@ -849,7 +849,7 @@ func TestResolveFloors(t *testing.T) {
 					FloorDeals:  getTrue(),
 				},
 				FetchStatus:        openrtb_ext.FetchNone,
-				PriceFloorLocation: openrtb_ext.RequestLocation,
+				PriceFloorLocation: openrtb_ext.NoDataLocation,
 			},
 		},
 		{
@@ -1073,7 +1073,7 @@ func Test_createFloorsFrom(t *testing.T) {
 			},
 			want: &openrtb_ext.PriceFloorRules{
 				FetchStatus:        openrtb_ext.FetchNone,
-				PriceFloorLocation: openrtb_ext.RequestLocation,
+				PriceFloorLocation: openrtb_ext.NoDataLocation,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
 					EnforceRate: 100,

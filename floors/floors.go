@@ -185,6 +185,11 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, fetchStatus, floorLoc
 	}
 	finFloors.FetchStatus = fetchStatus
 	finFloors.PriceFloorLocation = floorLocation
+
+	if floorLocation == openrtb_ext.RequestLocation && finFloors.Data == nil {
+		finFloors.PriceFloorLocation = openrtb_ext.NoDataLocation
+	}
+
 	return finFloors, floorModelErrList
 }
 
