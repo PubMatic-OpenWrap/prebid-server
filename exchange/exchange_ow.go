@@ -190,6 +190,9 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 	for _, seatBid := range adapterBids {
 		for _, pbsBid := range seatBid.Bids {
+			if pbsBid.BidType != openrtb_ext.BidTypeVideo {
+				continue
+			}
 			if pbsBid.Bid.AdM == "" {
 				continue
 			}

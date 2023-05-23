@@ -1168,6 +1168,24 @@ func TestRecordVastVersion(t *testing.T) {
 			},
 		},
 		{
+			name: "Invalid Bid Type",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeBanner,
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
 			name: "No Adm in Bids",
 			args: args{
 				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
@@ -1177,6 +1195,7 @@ func TestRecordVastVersion(t *testing.T) {
 								Bid: &openrtb2.Bid{
 									AdM: "",
 								},
+								BidType: openrtb_ext.BidTypeVideo,
 							},
 						},
 					},
@@ -1197,6 +1216,7 @@ func TestRecordVastVersion(t *testing.T) {
 								Bid: &openrtb2.Bid{
 									AdM: "<Vast> <Vast>",
 								},
+								BidType: openrtb_ext.BidTypeVideo,
 							},
 						},
 					},
@@ -1215,7 +1235,7 @@ func TestRecordVastVersion(t *testing.T) {
 						BidderCoreName: "pubmatic",
 						Bids: []*entities.PbsOrtbBid{
 							{
-
+								BidType: openrtb_ext.BidTypeVideo,
 								Bid: &openrtb2.Bid{
 									AdM: `<VAST version="2.0">
 									  <Ad id="601364">
@@ -1291,7 +1311,7 @@ func TestRecordVastVersion(t *testing.T) {
 						BidderCoreName: "pubmatic",
 						Bids: []*entities.PbsOrtbBid{
 							{
-
+								BidType: openrtb_ext.BidTypeVideo,
 								Bid: &openrtb2.Bid{
 									AdM: `<VAST version = "2.0">
 									</VAST>`,
@@ -1312,6 +1332,7 @@ func TestRecordVastVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockMetricEngine := tt.args.getMetricsEngine()
 			recordVastVersion(mockMetricEngine, tt.args.adapterBids)
+			mockMetricEngine.AssertExpectations(t)
 		})
 	}
 }
