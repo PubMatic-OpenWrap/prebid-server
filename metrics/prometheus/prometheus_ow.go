@@ -100,9 +100,9 @@ func (m *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 }
 
 // RecordVastVersion record the count of vast version labelled by bidder and vast version
-func (m *Metrics) RecordVastVersion(biddder, vastVersion string) {
+func (m *Metrics) RecordVastVersion(coreBiddder, vastVersion string) {
 	m.vastVersion.With(prometheus.Labels{
-		bidderLabel:  biddder,
+		adapterLabel: coreBiddder,
 		versionLabel: vastVersion,
 	}).Inc()
 }

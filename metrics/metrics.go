@@ -503,5 +503,5 @@ type MetricsEngine interface {
 	RecordBids(pubid, profileid, bidder, deal string)
 
 	//RecordVastVersion record the count of vast version labelled by bidder and vast version
-	RecordVastVersion(bidder, vastVersion string)
+	RecordVastVersion(coreBidder, vastVersion string)
 }

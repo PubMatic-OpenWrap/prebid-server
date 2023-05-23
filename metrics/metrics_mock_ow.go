@@ -37,6 +37,6 @@ func (me *MetricsEngineMock) RecordBids(pubid, profileid, biddder, deal string) 
 }
 
 // RecordVastVersion mock
-func (me *MetricsEngineMock) RecordVastVersion(bidder, vastVersion string) {
-	me.Called(bidder, vastVersion)
+func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
+	me.Called(coreBidder, vastVersion)
 }
