@@ -64,18 +64,30 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrt
 	if err != nil || impExt == nil {
 		return
 	}
+	var bidExtFloors openrtb_ext.ExtBidFloors
 
 	prebidExt := impExt.GetPrebid()
-	if prebidExt == nil || prebidExt.Floors == nil {
+	if prebidExt != nil && prebidExt.Floors != nil {
+		bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
+		bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
+		bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
+		bidExtFloors.FloorCurrency = floorCurrency
+		bid.BidFloors = &bidExtFloors
 		return
+	} else {
+		if reqImp.Imp.BidFloor != 0 {
+			// prebidImpExt := &openrtb_ext.ExtImpPrebid{
+			// 	Floors: &openrtb_ext.ExtImpPrebidFloors{
+			// 		FloorValue: reqImp.Imp.BidFloor,
+			// 	},
+			// }
+			// prebidExt = prebidImpExt
+			bidExtFloors.FloorValue = reqImp.Imp.BidFloor
+			bidExtFloors.FloorCurrency = floorCurrency
+			bid.BidFloors = &bidExtFloors
+		}
 	}
 
-	var bidExtFloors openrtb_ext.ExtBidFloors
-	bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
-	bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
-	bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
-	bidExtFloors.FloorCurrency = floorCurrency
-	bid.BidFloors = &bidExtFloors
 }
 
 // enforceFloorToBids function does floors enforcement for each bid.
