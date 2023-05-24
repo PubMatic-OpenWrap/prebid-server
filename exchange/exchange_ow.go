@@ -177,7 +177,7 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 						deal = nodeal
 					}
 					metricsEngine.RecordBids(pubID, profileID, seatBid.Seat, deal)
-					pubmaticstats.IncDealBidCount(pubID, profileID, seatBid.Seat, deal)
+					pubmaticstats.IncBidResponseByDealCountInPBS(pubID, profileID, seatBid.Seat, deal)
 				}
 			}
 		}
