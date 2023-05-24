@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	pubmaticstats "github.com/PubMatic-OpenWrap/prebid-server/metrics/pubmatic_stats"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
@@ -176,6 +177,7 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 						deal = nodeal
 					}
 					metricsEngine.RecordBids(pubID, profileID, seatBid.Seat, deal)
+					pubmaticstats.IncDealBidCount(pubID, profileID, seatBid.Seat, deal)
 				}
 			}
 		}
