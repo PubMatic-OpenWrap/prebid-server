@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"strings"
 
-	pubmaticstats "github.com/PubMatic-OpenWrap/prebid-server/metrics/pubmatic_stats"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v17/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
+	pubmaticstats "github.com/prebid/prebid-server/metrics/pubmatic_stats"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"golang.org/x/net/publicsuffix"
 )
@@ -183,4 +183,11 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 		}
 	}
 
+}
+
+// recordPartnerTimeout captures the partnertimeout if any at publisher profile level
+func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
+	if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
+		pubmaticstats.IncPartnerTimeoutInPBS(pubID, profileID, aliasBidder)
+	}
 }
