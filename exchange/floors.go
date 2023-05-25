@@ -76,18 +76,11 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrt
 		return
 	} else {
 		if reqImp.Imp.BidFloor != 0 {
-			// prebidImpExt := &openrtb_ext.ExtImpPrebid{
-			// 	Floors: &openrtb_ext.ExtImpPrebidFloors{
-			// 		FloorValue: reqImp.Imp.BidFloor,
-			// 	},
-			// }
-			// prebidExt = prebidImpExt
 			bidExtFloors.FloorValue = reqImp.Imp.BidFloor
 			bidExtFloors.FloorCurrency = floorCurrency
 			bid.BidFloors = &bidExtFloors
 		}
 	}
-
 }
 
 // enforceFloorToBids function does floors enforcement for each bid.
