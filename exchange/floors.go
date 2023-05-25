@@ -74,12 +74,12 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrt
 			FloorCurrency:  reqImp.BidFloorCur,
 		}
 		return
-	} else {
-		if reqImp.Imp != nil && reqImp.Imp.BidFloor != 0 {
-			bid.BidFloors = &openrtb_ext.ExtBidFloors{
-				FloorValue:    reqImp.Imp.BidFloor,
-				FloorCurrency: reqImp.BidFloorCur,
-			}
+	}
+
+	if reqImp.Imp != nil && reqImp.Imp.BidFloor != 0 {
+		bid.BidFloors = &openrtb_ext.ExtBidFloors{
+			FloorValue:    reqImp.Imp.BidFloor,
+			FloorCurrency: reqImp.BidFloorCur,
 		}
 	}
 }
