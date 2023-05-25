@@ -58,27 +58,28 @@ func floorsEnabled(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	return account.PriceFloors.Enabled && reqEnabled, floorRules
 }
 
-func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrtbBid, floorCurrency string) {
+func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrtbBid) {
 
 	impExt, err := reqImp.GetImpExt()
 	if err != nil || impExt == nil {
 		return
 	}
-	var bidExtFloors openrtb_ext.ExtBidFloors
 
 	prebidExt := impExt.GetPrebid()
 	if prebidExt != nil && prebidExt.Floors != nil {
-		bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
-		bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
-		bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
-		bidExtFloors.FloorCurrency = floorCurrency
-		bid.BidFloors = &bidExtFloors
+		bid.BidFloors = &openrtb_ext.ExtBidFloors{
+			FloorRule:      prebidExt.Floors.FloorRule,
+			FloorRuleValue: prebidExt.Floors.FloorRuleValue,
+			FloorValue:     prebidExt.Floors.FloorValue,
+			FloorCurrency:  reqImp.BidFloorCur,
+		}
 		return
 	} else {
-		if reqImp.Imp.BidFloor != 0 {
-			bidExtFloors.FloorValue = reqImp.Imp.BidFloor
-			bidExtFloors.FloorCurrency = floorCurrency
-			bid.BidFloors = &bidExtFloors
+		if reqImp.Imp != nil && reqImp.Imp.BidFloor != 0 {
+			bid.BidFloors = &openrtb_ext.ExtBidFloors{
+				FloorValue:    reqImp.Imp.BidFloor,
+				FloorCurrency: reqImp.BidFloorCur,
+			}
 		}
 	}
 }
@@ -227,7 +228,7 @@ func updateBidExt(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids map[op
 			if !ok {
 				continue
 			}
-			updateBidExtWithFloors(reqImp, bid, reqImp.BidFloorCur)
+			updateBidExtWithFloors(reqImp, bid)
 		}
 	}
 }
