@@ -187,7 +187,9 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 
 // recordPartnerTimeout captures the partnertimeout if any at publisher profile level
 func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
-	if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
-		pubmaticstats.IncPartnerTimeoutInPBS(pubID, profileID, aliasBidder)
+	if metricEnabled, ok := ctx.Value(bidCountMetricEnabled).(bool); metricEnabled && ok {
+		if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
+			pubmaticstats.IncPartnerTimeoutInPBS(pubID, profileID, aliasBidder)
+		}
 	}
 }
