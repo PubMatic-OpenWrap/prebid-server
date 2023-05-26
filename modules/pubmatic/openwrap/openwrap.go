@@ -16,6 +16,8 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	metric_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -24,8 +26,9 @@ const (
 )
 
 type OpenWrap struct {
-	cfg   config.Config
-	cache cache.Cache
+	cfg          config.Config
+	cache        cache.Cache
+	metricEngine metrics.MetricsEngine
 }
 
 func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -56,8 +59,9 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 	}
 
 	return OpenWrap{
-		cfg:   cfg,
-		cache: ow_gocache.New(cache, db, cfg.Cache),
+		cfg:          cfg,
+		cache:        ow_gocache.New(cache, db, cfg.Cache),
+		metricEngine: metric_cfg.NewMetricsEngine(cfg.Metrics, ""),
 	}, nil
 }
 

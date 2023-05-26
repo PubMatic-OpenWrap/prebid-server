@@ -13,6 +13,8 @@ type Config struct {
 	BidderParamMapping map[string]map[string]*ParameterMapping `json:"bidder_param_mapping"`
 	Features           FeatureToggle
 	Log                Log
+
+	Metrics Metrics
 }
 
 type Server struct {
@@ -91,4 +93,41 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
+}
+
+type Metrics struct {
+	Stats      Stats
+	Prometheus Prometheus
+}
+
+type Stats struct {
+	UseHostName     bool // if true use actual_node_name:actual_pod_name into stats key
+	DefaultHostName string
+	//UDP parameters
+	StatsHost           string
+	StatsPort           string
+	StatsTickerInterval int //in minutes
+	CriticalThreshold   int
+	CriticalInterval    int //in minutes
+	StandardThreshold   int
+	StandardInterval    int //in minutes
+	//TCP parameters
+	PortTCP                   string
+	PublishInterval           int
+	PublishThreshold          int
+	Retries                   int
+	DialTimeout               int
+	KeepAliveDuration         int
+	MaxIdleConnections        int
+	MaxIdleConnectionsPerHost int
+}
+
+type Prometheus struct {
+	Enabled                   bool
+	UseSeparateServerInstance bool
+	Port                      int
+	ExposePrebidMetrics       bool
+	TimeoutMillisRaw          int
+	HBNamespace               string
+	HBSubsystem               string
 }
