@@ -12,7 +12,6 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
-	pubmaticstats "github.com/prebid/prebid-server/metrics/pubmatic_stats"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"golang.org/x/net/publicsuffix"
 )
@@ -177,19 +176,9 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 						deal = nodeal
 					}
 					metricsEngine.RecordBids(pubID, profileID, seatBid.Seat, deal)
-					pubmaticstats.IncBidResponseByDealCountInPBS(pubID, profileID, seatBid.Seat, deal)
 				}
 			}
 		}
 	}
 
-}
-
-// recordPartnerTimeout captures the partnertimeout if any at publisher profile level
-func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
-	if metricEnabled, ok := ctx.Value(bidCountMetricEnabled).(bool); metricEnabled && ok {
-		if profileID, ok := ctx.Value(owProfileId).(string); ok && profileID != "" {
-			pubmaticstats.IncPartnerTimeoutInPBS(pubID, profileID, aliasBidder)
-		}
-	}
 }
