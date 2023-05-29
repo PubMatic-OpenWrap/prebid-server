@@ -1887,7 +1887,7 @@ func TestUpdateBidExtWithFloors(t *testing.T) {
 					iw := openrtb_ext.ImpWrapper{
 						Imp: &openrtb2.Imp{
 							BidFloorCur: "WON",
-							Ext: json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`)},
+							Ext:         json.RawMessage(`{"prebid":{"floors":{"floorRule":"*|*|*","floorRuleValue":26.02,"floorValue":12,"floorMin":5,"FloorMinCur":"INR"}}}`)},
 					}
 					iw.RebuildImpressionExt()
 					return &iw
@@ -2156,12 +2156,12 @@ func TestUpdateBidExt(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb_ext.ExtBidFloors {
-				BidAdjustment: false,
-				FloorValue: 12,
+			want: &openrtb_ext.ExtBidFloors{
+				BidAdjustment:  false,
+				FloorValue:     12,
 				FloorRuleValue: 26.02,
-				FloorRule: "*|*|*",
-				FloorCurrency: "USD",
+				FloorRule:      "*|*|*",
+				FloorCurrency:  "USD",
 			},
 		},
 	}
