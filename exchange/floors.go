@@ -58,7 +58,7 @@ func floorsEnabled(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	return account.PriceFloors.Enabled && reqEnabled, floorRules
 }
 
-func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrtbBid, floorCurrency string) {
+func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrtbBid) {
 
 	impExt, err := reqImp.GetImpExt()
 	if err != nil || impExt == nil {
@@ -66,16 +66,22 @@ func updateBidExtWithFloors(reqImp *openrtb_ext.ImpWrapper, bid *entities.PbsOrt
 	}
 
 	prebidExt := impExt.GetPrebid()
-	if prebidExt == nil || prebidExt.Floors == nil {
+	if prebidExt != nil && prebidExt.Floors != nil {
+		bid.BidFloors = &openrtb_ext.ExtBidFloors{
+			FloorRule:      prebidExt.Floors.FloorRule,
+			FloorRuleValue: prebidExt.Floors.FloorRuleValue,
+			FloorValue:     prebidExt.Floors.FloorValue,
+			FloorCurrency:  reqImp.BidFloorCur,
+		}
 		return
 	}
 
-	var bidExtFloors openrtb_ext.ExtBidFloors
-	bidExtFloors.FloorRule = prebidExt.Floors.FloorRule
-	bidExtFloors.FloorRuleValue = prebidExt.Floors.FloorRuleValue
-	bidExtFloors.FloorValue = prebidExt.Floors.FloorValue
-	bidExtFloors.FloorCurrency = floorCurrency
-	bid.BidFloors = &bidExtFloors
+	if reqImp.Imp != nil && reqImp.Imp.BidFloor != 0 {
+		bid.BidFloors = &openrtb_ext.ExtBidFloors{
+			FloorValue:    reqImp.Imp.BidFloor,
+			FloorCurrency: reqImp.BidFloorCur,
+		}
+	}
 }
 
 // enforceFloorToBids function does floors enforcement for each bid.
@@ -112,7 +118,6 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 					reqImpCur = bidRequestWrapper.Cur[0]
 				}
 			}
-			updateBidExtWithFloors(reqImp, bid, reqImpCur)
 			rate, err := getCurrencyConversionRate(seatBid.Currency, reqImpCur, conversions)
 			if err != nil {
 				errMsg := fmt.Errorf("error in rate conversion from = %s to %s with bidder %s for impression id %s and bid id %s", seatBid.Currency, reqImpCur, bidderName, bid.Bid.ImpID, bid.Bid.ID)
@@ -174,6 +179,7 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entit
 		var enforceDealFloors bool
 		var floorsEnfocement bool
 		var updateReqExt bool
+		updateBidExt(r.BidRequestWrapper, seatBids)
 		floorsEnfocement = floors.RequestHasFloors(r.BidRequestWrapper.BidRequest)
 		if prebidExt != nil && floorsEnfocement {
 			if floorsEnfocement, updateReqExt = floors.ShouldEnforce(prebidExt.Floors, r.Account.PriceFloors.EnforceFloorRate, rand.Intn); floorsEnfocement {
@@ -205,4 +211,24 @@ func enforceFloors(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entit
 	}
 
 	return seatBids, rejectionsErrs
+}
+
+func updateBidExt(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	impMap := make(map[string]*openrtb_ext.ImpWrapper, bidRequestWrapper.LenImp())
+
+	//Maintaining BidRequest Impression Map
+	for _, v := range bidRequestWrapper.GetImp() {
+		impMap[v.ID] = v
+	}
+
+	for _, seatBid := range seatBids {
+
+		for _, bid := range seatBid.Bids {
+			reqImp, ok := impMap[bid.Bid.ImpID]
+			if !ok {
+				continue
+			}
+			updateBidExtWithFloors(reqImp, bid)
+		}
+	}
 }
