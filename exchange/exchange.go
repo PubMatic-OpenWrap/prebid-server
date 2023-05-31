@@ -351,6 +351,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r AuctionRequest, debugLog *
 
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
+		recordVastVersion(e.me, adapterBids)
 		//If floor enforcement config enabled then filter bids
 		adapterBids, enforceErrs := enforceFloors(&r, adapterBids, e.floor, conversions, responseDebugAllow)
 		errs = append(errs, enforceErrs...)

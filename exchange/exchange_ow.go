@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/golang/glog"
@@ -21,6 +22,10 @@ const (
 	bidCountMetricEnabled = "bidCountMetricEnabled"
 	owProfileId           = "owProfileId"
 	nodeal                = "nodeal"
+)
+
+var (
+	vastVersionRegex = regexp.MustCompile(`<VAST\s*version\s*=\s*(.*?)\s*>`)
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
@@ -182,7 +187,26 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 			}
 		}
 	}
+}
 
+func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	for _, seatBid := range adapterBids {
+		for _, pbsBid := range seatBid.Bids {
+			if pbsBid.BidType != openrtb_ext.BidTypeVideo {
+				continue
+			}
+			if pbsBid.Bid.AdM == "" {
+				continue
+			}
+			matches := vastVersionRegex.FindStringSubmatch(pbsBid.Bid.AdM)
+			if len(matches) < 2 {
+				continue
+			}
+			vastVersion := matches[1]
+			vastVersion = vastVersion[1 : len(vastVersion)-1]
+			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
+		}
+	}
 }
 
 // recordPartnerTimeout captures the partnertimeout if any at publisher profile level
