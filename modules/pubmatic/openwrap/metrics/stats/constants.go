@@ -19,7 +19,7 @@ const (
 const (
 	// ADD NEW STATS ID HERE
 
-	//statsKeyOpenWrapServerPanic : stats Key for Server Panic Hits
+	//statsKeyOpenWrapServerPanic stats Key for Server Panic Hits
 	statsKeyOpenWrapServerPanic = iota
 
 	//statsKeyPublisherNoConsentRequests stats Key for Counting requests for Publisher with no GDPR consent request respective publisher
@@ -238,7 +238,23 @@ const (
 	//statsKeyInjectTrackerErrorCount stats key for counting error during injecting tracker in Creative
 	statsKeyInjectTrackerErrorCount
 
+	//statsBidResponsesByDealUsingPBS stats key for counting number of bids received which for given deal id, profile id, publisherid
+	statsBidResponsesByDealUsingPBS
+
+	//statsBidResponsesByDealUsingHB stats key for counting number of bids received which for given deal id, profile id, publisherid
+	statsBidResponsesByDealUsingHB
+
+	// statsPartnerTimeoutInPBS stats key for countiing number of timeouts occured for given publisher and profile
+	statsPartnerTimeoutInPBS
+
 	// This is to declare the array of stats, add new stats above this
-	maxStats
-	// NOTE - DON'T ADD NEW STATS KEY BELOW THIS. NEW STATS SHOULD BE ADDED ABOVE maxStats
+	maxNumOfStats
+	// NOTE - DON'T ADD NEW STATS KEY BELOW THIS. NEW STATS SHOULD BE ADDED ABOVE maxNumOfStats
+)
+
+// constant to defines status-code used while sending stats to server
+const (
+	statusSetupFail = iota
+	statusPublishSuccess
+	statusPublishFail
 )

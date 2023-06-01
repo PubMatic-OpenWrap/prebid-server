@@ -2,25 +2,28 @@ package stats
 
 import (
 	"errors"
-	"fmt"
 )
 
 // Config will have the information required to initialise a stats client
 type Config struct {
 	Host                string
 	Port                string
-	Server              string
-	DC                  string
-	PublishingInterval  int // In minutes
-	PublishingThreshold int
-	Retries             int
-	DialTimeout         int // In seconds
-	KeepAliveDuration   int // In seconds
-	MaxIdleConns        int
-	MaxIdleConnsPerHost int
+	PublishingInterval  int // interval (in minutes) to publish stats to server
+	PublishingThreshold int // publish stats if number of stat-records present in map is higher than this threshold
+	Retries             int // max retries to publish stats to server
+	DialTimeout         int // http connection dial-timeout (in seconds)
+	KeepAliveDuration   int // http connection keep-alive-duration (in minutes)
+	MaxIdleConns        int // maximum idle connections across all hosts
+	MaxIdleConnsPerHost int // maximum idle connections per host
+	retryInterval       int // if failed to publish stat then wait for retryInterval seconds for next attempt
 
-	retryInterval int // In seconds
-	keyPostFix    string
+	// Timeout int TODO : http connection timeout ???
+	// maxChannelLength int TODO:  should we add ???
+
+	// TODO : remove
+	// Server              string
+	// DC                  string
+	// keyPostFix          string
 }
 
 func (c *Config) validate() (err error) {
@@ -28,15 +31,15 @@ func (c *Config) validate() (err error) {
 		return errors.New("stat server host and port cannot be empty")
 	}
 
-	if c.Server == "" {
-		c.Server = "svr0"
-	}
+	// if c.Server == "" {
+	// 	c.Server = "svr0"
+	// }
 
-	if c.DC == "" {
-		c.DC = "dc0"
-	}
+	// if c.DC == "" {
+	// 	c.DC = "dc0"
+	// }
 
-	c.keyPostFix = fmt.Sprintf(":%s:%s", c.DC, c.Server)
+	// c.keyPostFix = fmt.Sprintf(":%s:%s", c.DC, c.Server)
 
 	if c.PublishingInterval < minPublishingInterval {
 		c.PublishingInterval = minPublishingInterval
@@ -51,15 +54,16 @@ func (c *Config) validate() (err error) {
 			c.Retries = maxRetriesAllowed
 			c.retryInterval = minRetryDuration
 		} else {
-			c.retryInterval = (c.PublishingInterval * 60) / c.Retries
+			c.retryInterval = (c.PublishingInterval * 60) / c.Retries //180/5 36
 		}
 
-		if c.Retries > (c.PublishingInterval*60)/minRetryDuration {
-			c.Retries = (c.PublishingInterval * 60) / minRetryDuration
-			c.retryInterval = minRetryDuration
-		} else {
-			c.retryInterval = (c.PublishingInterval * 60) / c.Retries
-		}
+		// TODO : Why ???
+		// if c.Retries > (c.PublishingInterval*60)/minRetryDuration {
+		// 	c.Retries = (c.PublishingInterval * 60) / minRetryDuration
+		// 	c.retryInterval = minRetryDuration
+		// } else {
+		// 	c.retryInterval = (c.PublishingInterval * 60) / c.Retries
+		// }
 	}
 
 	if c.DialTimeout < minDialTimeout {

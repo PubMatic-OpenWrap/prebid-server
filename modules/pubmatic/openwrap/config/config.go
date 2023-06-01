@@ -101,18 +101,18 @@ type Metrics struct {
 }
 
 type Stats struct {
-	UseHostName     bool // if true use actual_node_name:actual_pod_name into stats key
-	DefaultHostName string
+	UseHostName bool // if true use actual_node_name:actual_pod_name into stats key
+	// DefaultHostName string // NOT_USED
 	//UDP parameters
-	StatsHost           string
-	StatsPort           string
-	StatsTickerInterval int //in minutes
-	CriticalThreshold   int
-	CriticalInterval    int //in minutes
-	StandardThreshold   int
-	StandardInterval    int //in minutes
+	StatsHost string
+	StatsPort string
+	// StatsTickerInterval int //in minutes // NOT_USED
+	CriticalThreshold int
+	CriticalInterval  int //in minutes
+	StandardThreshold int
+	StandardInterval  int //in minutes
 	//TCP parameters
-	PortTCP                   string
+	// PortTCP                   string // NOT_USED
 	PublishInterval           int
 	PublishThreshold          int
 	Retries                   int

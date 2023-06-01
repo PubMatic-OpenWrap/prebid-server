@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
@@ -69,6 +70,8 @@ type RequestCtx struct {
 	NoSeatBids  map[string]map[string][]openrtb2.Bid
 
 	BidderResponseTimeMillis map[string]int
+
+	MetricEngine metrics.MetricsEngine
 }
 
 type OwBid struct {

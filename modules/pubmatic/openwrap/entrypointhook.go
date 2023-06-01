@@ -51,6 +51,8 @@ func (m OpenWrap) handleEntrypointHook(
 		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
 	}
 
+	m.metricEngine.RecordOpenWrapServerPanicStats()
+
 	if err != nil || requestExtWrapper.ProfileId == 0 {
 		result.NbrCode = nbr.InvalidProfileID
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
@@ -81,6 +83,8 @@ func (m OpenWrap) handleEntrypointHook(
 		ImpBidCtx:                 make(map[string]models.ImpCtx),
 		PrebidBidderCode:          make(map[string]string),
 		BidderResponseTimeMillis:  make(map[string]int),
+
+		MetricEngine: m.metricEngine,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

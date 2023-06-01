@@ -18,15 +18,16 @@ func NewMetricsEngine(cfg ow_cfg.Metrics, host string) *DetailedMetricsEngine {
 	if cfg.Stats.StatsHost != "" {
 		// setup stats-server
 
-		returnEngine, err := stats.InitStat(host, cfg.Stats.DefaultHostName, cfg.Stats.StatsHost,
+		var err error
+		returnEngine.Stats, err = stats.InitStat(cfg.Stats.StatsHost, host, "sv3",
 			cfg.Stats.StandardInterval, cfg.Stats.CriticalThreshold, cfg.Stats.CriticalInterval,
 			cfg.Stats.StandardThreshold, cfg.Stats.StandardInterval, cfg.Stats.StatsPort,
 			cfg.Stats.PublishInterval, cfg.Stats.PublishThreshold, cfg.Stats.Retries, cfg.Stats.DialTimeout,
 			cfg.Stats.KeepAliveDuration, cfg.Stats.MaxIdleConnections, cfg.Stats.MaxIdleConnectionsPerHost,
 		)
 
-		if err == nil && returnEngine != nil {
-			engineList = append(engineList, returnEngine)
+		if err == nil && returnEngine.Stats != nil {
+			engineList = append(engineList, returnEngine.Stats)
 		}
 
 	}
