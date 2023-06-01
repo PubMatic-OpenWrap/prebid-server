@@ -1211,6 +1211,7 @@ func TestRecordVastVersion(t *testing.T) {
 			args: args{
 				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 					"pubmatic": {
+						BidderCoreName: "pubmatic",
 						Bids: []*entities.PbsOrtbBid{
 							{
 								Bid: &openrtb2.Bid{
@@ -1223,6 +1224,7 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "undefined").Return()
 					return metricEngine
 				},
 			},
@@ -1237,7 +1239,7 @@ func TestRecordVastVersion(t *testing.T) {
 							{
 								BidType: openrtb_ext.BidTypeVideo,
 								Bid: &openrtb2.Bid{
-									AdM: `<VAST version="2.0">
+									AdM: `<VAST version=\"2.0\">
 									  <Ad id="601364">
 									    <InLine>
 									      <AdSystem>Adsystem Example</AdSystem>
@@ -1313,7 +1315,31 @@ func TestRecordVastVersion(t *testing.T) {
 							{
 								BidType: openrtb_ext.BidTypeVideo,
 								Bid: &openrtb2.Bid{
-									AdM: `<VAST version = "2.0">
+									AdM: `<VAST version = "4.1">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.1").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm with multiple attributes",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST namespace="test" version = \"2.0\">
 									</VAST>`,
 								},
 							},
