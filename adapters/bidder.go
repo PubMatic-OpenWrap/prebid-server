@@ -156,6 +156,7 @@ type ExtraRequestInfo struct {
 	PbsEntryPoint              metrics.RequestType
 	GlobalPrivacyControlHeader string
 	CurrencyConversions        currency.Conversions
+	BidAdjustmentFactor        float64
 }
 
 func NewExtraRequestInfo(c currency.Conversions) ExtraRequestInfo {

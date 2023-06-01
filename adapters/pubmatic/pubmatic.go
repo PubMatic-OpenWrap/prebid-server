@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -104,7 +105,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
+		wrapperExtFromImp, pubIDFromImp, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, reqInfo.BidAdjustmentFactor)
 
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
@@ -303,7 +304,7 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, bidAdjustmentFactor float64) (*pubmaticWrapperExt, string, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 
@@ -358,6 +359,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		}
 	}
 
+	if bidAdjustmentFactor > 0 && imp.BidFloor > 0 {
+		imp.BidFloor = roundToFourDecimals(imp.BidFloor / bidAdjustmentFactor)
+	}
+
 	extMap := make(map[string]interface{}, 0)
 	if pubmaticExt.Keywords != nil && len(pubmaticExt.Keywords) != 0 {
 		addKeywordsToExt(pubmaticExt.Keywords, extMap)
@@ -395,6 +400,11 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 
 	return wrapExt, pubID, nil
+}
+
+// roundToFourDecimals retuns given value to 4 decimal points
+func roundToFourDecimals(in float64) float64 {
+	return math.Round(in*10000) / 10000
 }
 
 // extractPubmaticExtFromRequest parse the req.ext to fetch wrapper and acat params
