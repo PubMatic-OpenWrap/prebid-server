@@ -1224,7 +1224,7 @@ func TestRecordVastVersion(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "undefined").Return()
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", vastVersionUndefined).Return()
 					return metricEngine
 				},
 			},
@@ -1340,6 +1340,54 @@ func TestRecordVastVersion(t *testing.T) {
 								BidType: openrtb_ext.BidTypeVideo,
 								Bid: &openrtb2.Bid{
 									AdM: `<VAST namespace="test" version = \"2.0\">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found xml tag before Vast tag attributes",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.0">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm inside single quote",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST namespace="test" version = \'2.0\'>
 									</VAST>`,
 								},
 							},

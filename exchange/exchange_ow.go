@@ -22,6 +22,7 @@ const (
 	bidCountMetricEnabled = "bidCountMetricEnabled"
 	owProfileId           = "owProfileId"
 	nodeal                = "nodeal"
+	vastVersionUndefined  = "undefined"
 )
 
 var (
@@ -198,7 +199,7 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 			if pbsBid.Bid.AdM == "" {
 				continue
 			}
-			vastVersion := "undefined"
+			vastVersion := vastVersionUndefined
 			matches := vastVersionRegex.FindStringSubmatch(pbsBid.Bid.AdM)
 			if len(matches) == 2 {
 				vastVersion = matches[1]
