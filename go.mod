@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server
 
 go 1.19
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230418122827-89589b273e7c
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20230518051948-62b5d3f90327
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -51,6 +51,7 @@ require (
 )
 
 require (
+	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -88,3 +89,5 @@ replace github.com/prebid/prebid-server => ./
 replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
+
+replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0
