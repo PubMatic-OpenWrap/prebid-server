@@ -7,12 +7,18 @@ import (
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
 
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 )
 
 type VastUnwrapModule struct {
 	cfg VastUnwrapModuleCfg
+}
+
+// VastUnwrapModuleCfg contains the values read from the config file  for vast unwrapper module at boot time
+type VastUnwrapModuleCfg struct {
+	VastUnWrapCfg unWrapCfg.VastUnWrapCfg
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {

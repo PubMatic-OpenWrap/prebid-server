@@ -13,7 +13,7 @@ func builders() ModuleBuilders {
 			"ortb2blocking": prebidOrtb2blocking.Builder,
 		},
 		"pubmatic": {
-			"openwrap": vastunwrap.Builder,
+			"vastunwrap": vastunwrap.Builder,
 		},
 	}
 }
