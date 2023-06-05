@@ -19,7 +19,7 @@ func TestInitTCPStatsClient(t *testing.T) {
 	}
 
 	type want struct {
-		client *statsTCP
+		client *StatsTCP
 		err    error
 	}
 
@@ -60,7 +60,7 @@ func TestInitTCPStatsClient(t *testing.T) {
 				maxIdleConnPerHost: 10,
 			},
 			want: want{
-				client: &statsTCP{
+				client: &StatsTCP{
 					statsClient: &Client{
 						endpoint: "http://10.10.10.10:8000/stat?",
 						httpClient: &http.Client{

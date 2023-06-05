@@ -6,12 +6,12 @@ import (
 	"github.com/golang/glog"
 )
 
-type statsTCP struct {
+type StatsTCP struct {
 	statsClient *Client
 }
 
 func initTCPStatsClient(statIP, statPort string,
-	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDur, maxIdleConn, maxIdleConnPerHost int) (*statsTCP, error) {
+	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDur, maxIdleConn, maxIdleConnPerHost int) (*StatsTCP, error) {
 
 	cfg := Config{
 		Host: statIP,
@@ -33,223 +33,223 @@ func initTCPStatsClient(statIP, statPort string,
 		return nil, err
 	}
 
-	return &statsTCP{statsClient: sc}, nil
+	return &StatsTCP{statsClient: sc}, nil
 }
 
-func (st *statsTCP) RecordOpenWrapServerPanicStats() {
+func (st *StatsTCP) RecordOpenWrapServerPanicStats() {
 	st.statsClient.PublishStat(statKeys[statsKeyOpenWrapServerPanic], 1)
 }
 
-func (st *statsTCP) RecordPublisherPartnerStats(publisher, partner string) {
+func (st *StatsTCP) RecordPublisherPartnerStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPublisherPartnerImpStats(publisher, partner string, impCount int) {
+func (st *StatsTCP) RecordPublisherPartnerImpStats(publisher, partner string, impCount int) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerImpressions, publisher, partner), impCount)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerImpressions], publisher, partner), impCount)
 }
 
-func (st *statsTCP) RecordPublisherPartnerNoCookieStats(publisher, partner string) {
+func (st *StatsTCP) RecordPublisherPartnerNoCookieStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerNoCookieRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerNoCookieRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPartnerTimeoutErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordPartnerTimeoutErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPartnerTimeoutErrorRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPartnerTimeoutErrorRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordNobiderStatusErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordNobiderStatusErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyNobidderStatusErrorRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidderStatusErrorRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordNobidErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordNobidErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyNobidErrorRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrorRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordUnkownPrebidErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordUnkownPrebidErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyUnknownPrebidErrorResponse, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyUnknownPrebidErrorResponse], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordSlotNotMappedErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordSlotNotMappedErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeySlotunMappedErrorRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeySlotunMappedErrorRequests], publisher, partner), 1)
 
 }
 
-func (st *statsTCP) RecordMisConfigurationErrorStats(publisher, partner string) {
+func (st *StatsTCP) RecordMisConfigurationErrorStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyMisConfErrorRequests, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyMisConfErrorRequests], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPublisherProfileRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordPublisherProfileRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherProfileRequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherProfileRequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordPublisherInvalidProfileRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordPublisherInvalidProfileRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherInvProfileRequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileRequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
+func (st *StatsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherInvProfileImpressions, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], publisher, profileID), impCount)
 	//TODO @viral ;previously by 1 but now by impCount
 }
 
-func (st *statsTCP) RecordPublisherNoConsentRequests(publisher string) {
+func (st *StatsTCP) RecordPublisherNoConsentRequests(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherNoConsentRequests, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentRequests], publisher), 1)
 }
 
-func (st *statsTCP) RecordPublisherNoConsentImpressions(publisher string, impCount int) {
+func (st *StatsTCP) RecordPublisherNoConsentImpressions(publisher string, impCount int) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherNoConsentImpressions, publisher), impCount)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentImpressions], publisher), impCount)
 }
 
-func (st *statsTCP) RecordPublisherRequestStats(publisher string) {
+func (st *StatsTCP) RecordPublisherRequestStats(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPrebidRequests, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPrebidRequests], publisher), 1)
 }
 
-func (st *statsTCP) RecordNobidErrPrebidServerRequests(publisher string) {
+func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyNobidErrPrebidServerRequests, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrPrebidServerRequests], publisher), 1)
 }
 
-func (st *statsTCP) RecordNobidErrPrebidServerResponse(publisher string) {
+func (st *StatsTCP) RecordNobidErrPrebidServerResponse(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyNobidErrPrebidServerResponse, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrPrebidServerResponse], publisher), 1)
 }
 
-func (st *statsTCP) RecordInvalidCreativeStats(publisher, partner string) {
+func (st *StatsTCP) RecordInvalidCreativeStats(publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyInvalidCreatives, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyInvalidCreatives], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string) {
+func (st *StatsTCP) RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPlatformPublisherPartnerRequests, platform, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPlatformPublisherPartnerRequests], platform, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPlatformPublisherPartnerResponseStats(platform, publisher, partner string) {
+func (st *StatsTCP) RecordPlatformPublisherPartnerResponseStats(platform, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPlatformPublisherPartnerResponses, platform, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPlatformPublisherPartnerResponses], platform, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPublisherResponseEncodingErrorStats(publisher string) {
+func (st *StatsTCP) RecordPublisherResponseEncodingErrorStats(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherResponseEncodingErrors, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherResponseEncodingErrors], publisher), 1)
 }
 
-func (st *statsTCP) RecordPartnerResponseTimeStats(publisher, partner string, responseTime int) {
+func (st *StatsTCP) RecordPartnerResponseTimeStats(publisher, partner string, responseTime int) {
 	statKeyIndex := getStatsKeyIndexForResponseTime(responseTime)
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statKeyIndex, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statKeyIndex], publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPublisherResponseTimeStats(publisher string, responseTime int) {
+func (st *StatsTCP) RecordPublisherResponseTimeStats(publisher string, responseTime int) {
 	statKeyIndex := getStatsKeyIndexForResponseTime(responseTime)
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statKeyIndex, publisher, "overall"), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statKeyIndex], publisher, "overall"), 1)
 }
 
-func (st *statsTCP) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
+func (st *StatsTCP) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyLoggerErrorRequests, publisher, profileID, versionID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], publisher, profileID, versionID), 1)
 }
 
-func (st *statsTCP) RecordAMPPublisherRequests(publisher string) {
+func (st *StatsTCP) RecordAMPPublisherRequests(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyAMPPublisherRequests, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], publisher), 1)
 }
 
-func (st *statsTCP) RecordAMPCacheErrorRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordAMPCacheErrorRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyAMPCacheError, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPCacheError], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordPublisherInvalidProfileAMPRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordPublisherInvalidProfileAMPRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherInvProfileAMPRequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileAMPRequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordVideoBadRequests() {
+func (st *StatsTCP) RecordVideoBadRequests() {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoBadRequests), 1)
 	st.statsClient.PublishStat(statKeys[statsKeyVideoBadRequests], 1)
 }
 
-func (st *statsTCP) RecordVideoPublisherRequests(publisher string) {
+func (st *StatsTCP) RecordVideoPublisherRequests(publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoPublisherRequests, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoPublisherRequests], publisher), 1)
 }
 
-func (st *statsTCP) RecordVideoCacheErrorRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordVideoCacheErrorRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoCacheError, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoCacheError], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordPublisherInvalidProfileVideoRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordPublisherInvalidProfileVideoRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherInvProfileVideoRequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileVideoRequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) Record25BadRequests() {
+func (st *StatsTCP) Record25BadRequests() {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKey25BadRequests), 1)
 	st.statsClient.PublishStat(statKeys[statsKey25BadRequests], 1)
 }
 
-func (st *statsTCP) RecordAMPBadRequests() {
+func (st *StatsTCP) RecordAMPBadRequests() {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyAMPBadRequests), 1)
 	st.statsClient.PublishStat(statKeys[statsKeyAMPBadRequests], 1)
 }
 
-func (st *statsTCP) Record25PublisherRequests(publisher, platform string) {
+func (st *StatsTCP) Record25PublisherRequests(publisher, platform string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKey25PublisherRequests, GetPlatformForV25(request), publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKey25PublisherRequests], platform, publisher), 1)
 }
 
-func (st *statsTCP) RecordPrebidTimeoutRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordPrebidTimeoutRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPrebidTORequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPrebidTORequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordSSTimeoutRequests(publisher, profileID string) {
+func (st *StatsTCP) RecordSSTimeoutRequests(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeySsTORequests, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeySsTORequests], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordUidsCookieNotPresentErrorStats(publisher, profileID string) {
+func (st *StatsTCP) RecordUidsCookieNotPresentErrorStats(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyNoUIDSErrorRequest, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNoUIDSErrorRequest], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordVideoInstlImpsStats(publisher, profileID string) {
+func (st *StatsTCP) RecordVideoInstlImpsStats(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoInterstitialImpressions, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoInterstitialImpressions], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordVideoImpDisabledViaConfigStats(publisher, profileID string) {
+func (st *StatsTCP) RecordVideoImpDisabledViaConfigStats(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoImpDisabledViaConfig, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoImpDisabledViaConfig], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordBannerImpDisabledViaConfigStats(publisher, profileID string) {
+func (st *StatsTCP) RecordBannerImpDisabledViaConfigStats(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyBannerImpDisabledViaConfig, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyBannerImpDisabledViaConfig], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string) {
+func (st *StatsTCP) RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyVideoImpDisabledViaConnType, publisher, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoImpDisabledViaConnType], publisher, profileID), 1)
 }
 
-func (st *statsTCP) RecordPreProcessingTimeStats(publisher string, processingTime int) {
+func (st *StatsTCP) RecordPreProcessingTimeStats(publisher string, processingTime int) {
 	statKeyIndex := 0
 	switch {
 	case processingTime >= 100:
@@ -267,37 +267,37 @@ func (st *statsTCP) RecordPreProcessingTimeStats(publisher string, processingTim
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statKeyIndex], publisher), 1)
 }
 
-func (st *statsTCP) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisher string, profile string) {
+func (st *StatsTCP) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisher string, profile string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVPrebidFailedImpression, errorcode, publisher, profile), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVPrebidFailedImpression], errorcode, publisher, profile), 1)
 }
 
-func (st *statsTCP) RecordCTVRequests(endpoint string, platform string) {
+func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVRequests, endpoint, platform), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVRequests], endpoint, platform), 1)
 }
 
-func (st *statsTCP) RecordCTVBadRequests(endpoint string, errorCode int) {
+func (st *StatsTCP) RecordCTVBadRequests(endpoint string, errorCode int) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVBadRequests, endpoint, errorCode), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVBadRequests], endpoint, errorCode), 1)
 }
 
-func (st *statsTCP) RecordCTVPublisherRequests(endpoint string, publisher string, platform string) {
+func (st *StatsTCP) RecordCTVPublisherRequests(endpoint string, publisher string, platform string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVPublisherRequests, endpoint, platform, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], endpoint, platform, publisher), 1)
 }
 
-func (st *statsTCP) RecordCTVHTTPMethodRequests(endpoint string, publisher string, method string) {
+func (st *StatsTCP) RecordCTVHTTPMethodRequests(endpoint string, publisher string, method string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVHTTPMethodRequests, endpoint, publisher, method), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVHTTPMethodRequests], endpoint, publisher, method), 1)
 }
 
-func (st *statsTCP) RecordCTVInvalidReasonCount(errorCode int, publisher string) {
+func (st *StatsTCP) RecordCTVInvalidReasonCount(errorCode int, publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVValidationErr, errorCode, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVValidationErr], errorCode, publisher), 1)
 }
 
-func (st *statsTCP) RecordCTVIncompleteAdPodsCount(impCount int, reason string, publisher string) {
+func (st *StatsTCP) RecordCTVIncompleteAdPodsCount(impCount int, reason string, publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyIncompleteAdPods, reason, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyIncompleteAdPods], reason, publisher), 1)
 }
@@ -306,17 +306,17 @@ func (st *statsTCP) RecordCTVIncompleteAdPodsCount(impCount int, reason string, 
 // 	st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyCTVReqImpstWithConfig, source, publisher), 1)
 // }
 
-func (st *statsTCP) RecordCTVReqImpsWithDbConfigCount(publisher string) {
+func (st *StatsTCP) RecordCTVReqImpsWithDbConfigCount(publisher string) {
 	// tcpIncrCTVReqImpsWithConfigCount(st, "db", publisher)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVReqImpstWithConfig], "db", publisher), 1)
 }
 
-func (st *statsTCP) RecordCTVReqImpsWithReqConfigCount(publisher string) {
+func (st *StatsTCP) RecordCTVReqImpsWithReqConfigCount(publisher string) {
 	// tcpIncrCTVReqImpsWithConfigCount(st, "req", publisher)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVReqImpstWithConfig], "req", publisher), 1)
 }
 
-func (st *statsTCP) RecordAdPodGeneratedImpressionsCount(impCount int, publisher string) {
+func (st *StatsTCP) RecordAdPodGeneratedImpressionsCount(impCount int, publisher string) {
 	var impRange string
 	if impCount <= 3 {
 		impRange = "1-3"
@@ -331,12 +331,12 @@ func (st *statsTCP) RecordAdPodGeneratedImpressionsCount(impCount int, publisher
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyTotalAdPodImpression, impRange, publisher), 1)
 }
 
-func (st *statsTCP) RecordRequestAdPodGeneratedImpressionsCount(impCount int, publisher string) {
+func (st *StatsTCP) RecordRequestAdPodGeneratedImpressionsCount(impCount int, publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyReqTotalAdPodImpression, publisher), impCount)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqTotalAdPodImpression], publisher), impCount)
 }
 
-func (st *statsTCP) RecordAdPodSecondsMissedCount(seconds int, publisher string) {
+func (st *StatsTCP) RecordAdPodSecondsMissedCount(seconds int, publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyAdPodSecondsMissed, publisher), seconds)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAdPodSecondsMissed], publisher), seconds)
 }
@@ -345,72 +345,72 @@ func (st *statsTCP) RecordAdPodSecondsMissedCount(seconds int, publisher string)
 // 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyContentObjectPresent, location, publisher), 1)
 // }
 
-func (st *statsTCP) RecordReqImpsWithAppContentCount(publisher string) {
+func (st *StatsTCP) RecordReqImpsWithAppContentCount(publisher string) {
 	// tcpIncrRequestContentObjectPresentCount(st, "app", publisher)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], "app", publisher), 1)
 }
 
-func (st *statsTCP) RecordReqImpsWithSiteContentCount(publisher string) {
+func (st *StatsTCP) RecordReqImpsWithSiteContentCount(publisher string) {
 	// tcpIncrRequestContentObjectPresentCount(st, "site", publisher)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], "site", publisher), 1)
 }
 
-func (st *statsTCP) RecordAdPodImpressionYield(maxDuration int, minDuration int, publisher string) {
+func (st *StatsTCP) RecordAdPodImpressionYield(maxDuration int, minDuration int, publisher string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyReqImpDurationYield, maxDuration, minDuration, publisher), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqImpDurationYield], maxDuration, minDuration, publisher), 1)
 }
 
-func (st *statsTCP) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
+func (st *StatsTCP) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyReqWithAdPodCount, publisherID, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqWithAdPodCount], publisherID, profileID), 1)
 }
 
-func (st *statsTCP) RecordCTVKeyBidDuration(duration int, publisherID, profileID string) {
+func (st *StatsTCP) RecordCTVKeyBidDuration(duration int, publisherID, profileID string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyBidDuration, duration, publisherID, profileID), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyBidDuration], duration, publisherID, profileID), 1)
 }
 
-func (st *statsTCP) RecordAdomainPresentStats(creativeType, publisher, partner string) {
+func (st *StatsTCP) RecordAdomainPresentStats(creativeType, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerAdomainPresent, creativeType, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerAdomainPresent], creativeType, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordAdomainAbsentStats(creativeType, publisher, partner string) {
+func (st *StatsTCP) RecordAdomainAbsentStats(creativeType, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerAdomainAbsent, creativeType, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerAdomainAbsent], creativeType, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordCatPresentStats(creativeType, publisher, partner string) {
+func (st *StatsTCP) RecordCatPresentStats(creativeType, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerCatPresent, creativeType, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerCatPresent], creativeType, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordCatAbsentStats(creativeType, publisher, partner string) {
+func (st *StatsTCP) RecordCatAbsentStats(creativeType, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPublisherPartnerCatAbsent, creativeType, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerCatAbsent], creativeType, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordPBSAuctionRequestsStats() {
+func (st *StatsTCP) RecordPBSAuctionRequestsStats() {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyPBSAuctionRequests), 1)
 	st.statsClient.PublishStat(statKeys[statsKeyPBSAuctionRequests], 1)
 }
 
-func (st *statsTCP) RecordInjectTrackerErrorCount(adformat, publisher, partner string) {
+func (st *StatsTCP) RecordInjectTrackerErrorCount(adformat, publisher, partner string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsKeyInjectTrackerErrorCount, adformat, publisher, partner), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyInjectTrackerErrorCount], adformat, publisher, partner), 1)
 }
 
-func (st *statsTCP) RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId string) {
+func (st *StatsTCP) RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsBidResponsesByDealUsingPBS, publisher, profile, aliasBidder, dealId), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsBidResponsesByDealUsingPBS], publisher, profile, aliasBidder, dealId), 1)
 }
 
-func (st *statsTCP) RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string) {
+func (st *StatsTCP) RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsBidResponsesByDealUsingHB, publisher, profile, aliasBidder, dealId), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsBidResponsesByDealUsingHB], publisher, profile, aliasBidder, dealId), 1)
 }
 
-func (st *statsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder string) {
+func (st *StatsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder string) {
 	// st.statsClient.PublishStat(formStatKeyWithTrimmedDcPlaceHolder(statsPartnerTimeoutInPBS, publisher, profile, aliasBidder), 1)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsPartnerTimeoutInPBS], publisher, profile, aliasBidder), 1)
 }

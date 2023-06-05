@@ -11,7 +11,7 @@ var (
 )
 
 var once sync.Once
-var owStats *statsTCP
+var owStats *StatsTCP
 var owStatsErr error
 
 // stat represents a single stat-key along with its value
@@ -23,7 +23,7 @@ type stat struct {
 // InitStat initializes stats client
 func InitStat(statIP, defaultHost, actualHost, dcName, portTCP string,
 	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDuration,
-	maxIdleConnes, maxIdleConnesPerHost int) (*statsTCP, error) {
+	maxIdleConnes, maxIdleConnesPerHost int) (*StatsTCP, error) {
 
 	once.Do(func() {
 		// initStatKeys(criticalThreshold, criticalInterval, standardThreshold, standardInterval)

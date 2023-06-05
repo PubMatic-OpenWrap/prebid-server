@@ -135,7 +135,7 @@ func TestInitStat(t *testing.T) {
 	}
 
 	type want struct {
-		client *statsTCP
+		client *StatsTCP
 		err    error
 	}
 
