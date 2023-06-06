@@ -22,10 +22,10 @@ type Client struct {
 	config     *Config
 	httpClient HttpClient
 	endpoint   string
+	pubChan    chan stat
+	pubTicker  *time.Ticker
+	statMap    map[string]int
 	// logger    logger // TODO : ???
-	pubChan   chan stat
-	pubTicker *time.Ticker
-	statMap   map[string]int
 	// mu        sync.Mutex // TODO : not needed anymore
 }
 
@@ -66,9 +66,6 @@ func NewClient(cfg *Config) (*Client, error) {
 	}
 
 	go c.process()
-	// go c.startStatsCollector()
-	// go c.startStatsPublisher()
-
 	return c, nil
 }
 
@@ -81,7 +78,6 @@ func (sc *Client) PublishStat(key string, value int) {
 // It will publish the stats to server if
 // (1) number of stats reaches the PublishingThreshold or,
 // (2) PublishingInterval timeout occurs
-
 func (sc *Client) process() {
 
 	for {
@@ -101,38 +97,8 @@ func (sc *Client) process() {
 	}
 }
 
-// func (sc *Client) startStatsCollector() {
-// 	for {
-// 		select {
-// 		case stat := <-sc.pubChan:
-// 			// key := stat.validateStatKey()
-// 			key := stat.Key
-// 			// val, ok := sc.statMap[key]
-// 			sc.mu.Lock()
-// 			val, ok := sc.statMap[key] //calling this after mu.lock
-// 			if ok {
-// 				sc.statMap[key] = stat.Value + val
-// 			} else {
-// 				sc.statMap[key] = stat.Value
-// 			}
-// 			sc.mu.Unlock()
-// 			if len(sc.statMap) >= sc.config.PublishingThreshold {
-// 				sc.prepareStatsForPublishing() //it will wait till data published to stats server
-// 				sc.pubTicker.Reset(time.Duration(sc.config.PublishingInterval) * time.Minute)
-// 			}
-// 		}
-// 	}
-// }
-
-// func (sc *Client) startStatsPublisher() {
-// 	for {
-// 		select {
-// 		case <-sc.pubTicker.C:
-// 			sc.prepareStatsForPublishing()
-// 		}
-// 	}
-// }
-
+// prepareStatsForPublishing creates copy of map containing stat-key and value
+// and calls publishStatsToServer to publishes it to the stat-server
 func (sc *Client) prepareStatsForPublishing() {
 	if len(sc.statMap) != 0 {
 		collectedStats := sc.statMap
@@ -141,6 +107,8 @@ func (sc *Client) prepareStatsForPublishing() {
 	}
 }
 
+// publishStatsToServer sends the stats to the stat-server
+// in case of failure, it retries to send for Client.config.Retries number of times.
 func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 
 	sb, err := json.Marshal(statMap)

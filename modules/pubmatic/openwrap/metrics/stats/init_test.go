@@ -162,7 +162,7 @@ func TestInitStat(t *testing.T) {
 				maxIdleConnesPerHost: 10,
 			},
 			setup: func() want {
-				st, err := InitStat("10.10.10.10", "N:P", "node1.sv3:ssheader", "sv3", "8000", 10, 10, 3, 10, 10, 10, 10)
+				st, err := InitStatsClient("10.10.10.10", "N:P", "node1.sv3:ssheader", "sv3", "8000", 10, 10, 3, 10, 10, 10, 10)
 				return want{client: st, err: err}
 			},
 		},
@@ -172,7 +172,7 @@ func TestInitStat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.want = tt.setup()
 
-			InitStat(tt.args.hostIP, tt.args.defaultHost, tt.args.actualHost, tt.args.dcName,
+			InitStatsClient(tt.args.hostIP, tt.args.defaultHost, tt.args.actualHost, tt.args.dcName,
 				tt.args.portTCP, tt.args.pubInterval, tt.args.pubThreshold, tt.args.retries, tt.args.dialTimeout, tt.args.keepAliveDuration,
 				tt.args.maxIdleConnes, tt.args.maxIdleConnesPerHost)
 

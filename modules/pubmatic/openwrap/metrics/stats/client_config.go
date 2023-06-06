@@ -31,14 +31,6 @@ func (c *Config) validate() (err error) {
 		return errors.New("stat server host and port cannot be empty")
 	}
 
-	// if c.Server == "" {
-	// 	c.Server = "svr0"
-	// }
-
-	// if c.DC == "" {
-	// 	c.DC = "dc0"
-	// }
-
 	// c.keyPostFix = fmt.Sprintf(":%s:%s", c.DC, c.Server)
 
 	if c.PublishingInterval < minPublishingInterval {
@@ -48,22 +40,22 @@ func (c *Config) validate() (err error) {
 	}
 
 	if c.Retries > 0 {
-		maxRetriesAllowed := (c.PublishingInterval * 60) / minRetryDuration
+		// maxRetriesAllowed := (c.PublishingInterval * 60) / minRetryDuration
 
-		if c.Retries > maxRetriesAllowed {
-			c.Retries = maxRetriesAllowed
-			c.retryInterval = minRetryDuration
-		} else {
-			c.retryInterval = (c.PublishingInterval * 60) / c.Retries //180/5 36
-		}
-
-		// TODO : Why ???
-		// if c.Retries > (c.PublishingInterval*60)/minRetryDuration {
-		// 	c.Retries = (c.PublishingInterval * 60) / minRetryDuration
+		// if c.Retries > maxRetriesAllowed {
+		// 	c.Retries = maxRetriesAllowed
 		// 	c.retryInterval = minRetryDuration
 		// } else {
-		// 	c.retryInterval = (c.PublishingInterval * 60) / c.Retries
+		// 	c.retryInterval = (c.PublishingInterval * 60) / c.Retries //180/5 36
 		// }
+
+		// TODO : Why ???
+		if c.Retries > (c.PublishingInterval*60)/minRetryDuration {
+			c.Retries = (c.PublishingInterval * 60) / minRetryDuration
+			c.retryInterval = minRetryDuration
+		} else {
+			c.retryInterval = (c.PublishingInterval * 60) / c.Retries
+		}
 	}
 
 	if c.DialTimeout < minDialTimeout {

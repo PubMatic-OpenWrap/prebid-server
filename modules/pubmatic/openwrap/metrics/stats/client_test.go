@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/metrics/stats/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats/mock"
 
 	// "github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/metrics/stats/mock"
 	"github.com/stretchr/testify/assert"
