@@ -2,7 +2,8 @@ package vastunwrap
 
 import (
 	"fmt"
-	"reflect"
+
+	reflect "reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"

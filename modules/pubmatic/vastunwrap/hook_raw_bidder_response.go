@@ -104,6 +104,5 @@ func vastUnwrapCreative(input string, userAgent, bidid string, respChan chan<- *
 	respTime := int(time.Since(startTime).Milliseconds())
 
 	respChan <- &models.UnwrapReq{Adm: string(respBody), BidId: bidid, UnwrapCnt: wrapperCnt, RespTime: respTime, Err: err}
-	fmt.Printf("\n UnWrap Done for BidId = %v Cnt = %v in %v (ms)", bidid, wrapperCnt, respTime)
 	glog.Infof("\n UnWrap Done for BidId = %s Cnt = %d in %d (ms)", bidid, wrapperCnt, respTime)
 }
