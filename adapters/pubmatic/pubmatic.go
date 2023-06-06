@@ -571,7 +571,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					errs = append(errs, err)
 				}
 			}
-
+			typedBid.BidType = ""
 			bidResponse.Bids = append(bidResponse.Bids, typedBid)
 		}
 	}
