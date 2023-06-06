@@ -29,11 +29,11 @@ func handleEntrypointHook(
 		Reject: true,
 	}
 
-	rCtx := models.RequestCtx{
+	vastRequestContext := models.RequestCtx{
 		VastUnwrapFlag: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapperEnableKey),
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
-	result.ModuleContext[RequestContext] = rCtx
+	result.ModuleContext[RequestContext] = vastRequestContext
 
 	result.Reject = false
 	return result, nil

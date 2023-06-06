@@ -23,13 +23,13 @@ func handleRawBidderResponseHook(
 	moduleCtx hookstage.ModuleContext,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 
-	rCtx, ok := moduleCtx[RequestContext].(models.RequestCtx)
+	vastRequestContext, ok := moduleCtx[RequestContext].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
 	defer func() {
-		moduleCtx[RequestContext] = rCtx
+		moduleCtx[RequestContext] = vastRequestContext
 	}()
 
 	// allowedBids will store all bids that have passed the attribute check
@@ -39,7 +39,7 @@ func handleRawBidderResponseHook(
 	for _, bid := range payload.Bids {
 		bidMediaTypes := mediaTypesFromBid(bid)
 		if _, ok := bidMediaTypes[MediaTypeVideo]; ok {
-			go vastUnwrapCreative(bid.Bid.AdM, rCtx.UA, bid.Bid.ID, responseChannel)
+			go vastUnwrapCreative(bid.Bid.AdM, vastRequestContext.UA, bid.Bid.ID, responseChannel)
 		}
 	}
 
