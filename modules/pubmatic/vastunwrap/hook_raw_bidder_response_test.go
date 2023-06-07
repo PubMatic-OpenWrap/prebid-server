@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHandleRawBidderResponseHook(t *testing.T) {
@@ -57,8 +58,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotResult, err := handleRawBidderResponseHook(tt.args.payload, tt.args.moduleCtx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("handleRawBidderResponseHook() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(gotResult, tt.wantResult) {

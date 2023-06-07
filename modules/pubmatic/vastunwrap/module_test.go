@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
@@ -68,8 +69,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				cfg: tt.fields.cfg,
 			}
 			got, err := m.HandleEntrypointHook(tt.args.ctx, tt.args.miCtx, tt.args.payload)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("VastUnwrapModule.HandleEntrypointHook() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -146,8 +146,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				cfg: tt.fields.cfg,
 			}
 			got, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("VastUnwrapModule.HandleRawBidderResponseHook() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -192,8 +191,7 @@ func TestInitVastUnrap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := initVastUnrap(tt.args.rawCfg, tt.args.in1)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("initVastUnrap() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -238,8 +236,7 @@ func TestBuilder(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Builder(tt.args.rawCfg, tt.args.deps)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Builder() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
