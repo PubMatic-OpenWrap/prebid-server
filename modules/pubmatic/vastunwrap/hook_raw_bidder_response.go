@@ -85,6 +85,7 @@ func vastUnwrapCreative(input string, userAgent, bidid string, respChan chan<- *
 	httpReq, err := http.NewRequest(POST, UnwrapURL, strings.NewReader(input))
 	if err != nil {
 		respChan <- &models.UnwrapReq{Err: err}
+		return
 	}
 	httpReq.Header = headers
 
