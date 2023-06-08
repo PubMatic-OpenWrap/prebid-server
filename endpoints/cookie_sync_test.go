@@ -97,7 +97,6 @@ func TestNewCookieSyncEndpoint(t *testing.T) {
 	assert.Equal(t, expected.privacyConfig.bidderHashSet, result.privacyConfig.bidderHashSet)
 }
 
-// usersyncPrivacy
 func TestCookieSyncHandle(t *testing.T) {
 	syncTypeExpected := []usersync.SyncType{usersync.SyncTypeIFrame, usersync.SyncTypeRedirect}
 	sync := usersync.Sync{URL: "aURL", Type: usersync.SyncTypeRedirect, SupportCORS: true}
@@ -1373,7 +1372,7 @@ func TestCookieSyncWriteBidderMetrics(t *testing.T) {
 		test.setExpectations(&mockMetrics)
 
 		endpoint := &cookieSyncEndpoint{metrics: &mockMetrics}
-		endpoint.writeBidderMetrics(test.given)
+		endpoint.writeSyncerMetrics(test.given)
 
 		mockMetrics.AssertExpectations(t)
 	}

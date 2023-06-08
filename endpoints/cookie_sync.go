@@ -101,7 +101,7 @@ func (c *cookieSyncEndpoint) Handle(w http.ResponseWriter, r *http.Request, _ ht
 		c.handleResponse(w, request.SyncTypeFilter, cookie, privacyPolicies, nil)
 	case usersync.StatusOK:
 		c.metrics.RecordCookieSync(metrics.CookieSyncOK)
-		c.writeBidderMetrics(result.BiddersEvaluated)
+		c.writeSyncerMetrics(result.BiddersEvaluated)
 		c.handleResponse(w, request.SyncTypeFilter, cookie, privacyPolicies, result.SyncersChosen)
 	}
 }
@@ -121,7 +121,7 @@ func (c *cookieSyncEndpoint) parseRequest(r *http.Request) (usersync.Request, pr
 	if request.Account == "" {
 		request.Account = metrics.PublisherUnknown
 	}
-	account, fetchErrs := accountService.GetAccount(context.Background(), c.config, c.accountsFetcher, request.Account)
+	account, fetchErrs := accountService.GetAccount(context.Background(), c.config, c.accountsFetcher, request.Account, c.metrics)
 	if len(fetchErrs) > 0 {
 		return usersync.Request{}, privacy.Policies{}, combineErrors(fetchErrs)
 	}
@@ -130,7 +130,7 @@ func (c *cookieSyncEndpoint) parseRequest(r *http.Request) (usersync.Request, pr
 	if request.GDPR != nil {
 		gdprString = strconv.Itoa(*request.GDPR)
 	}
-	gdprSignal, err := gdpr.SignalParse(gdprString)
+	gdprSignal, err := gdpr.StrSignalParse(gdprString)
 	if err != nil {
 		return usersync.Request{}, privacy.Policies{}, err
 	}
@@ -329,7 +329,7 @@ func combineErrors(errs []error) error {
 	return errors.New(combinedErrors)
 }
 
-func (c *cookieSyncEndpoint) writeBidderMetrics(biddersEvaluated []usersync.BidderEvaluation) {
+func (c *cookieSyncEndpoint) writeSyncerMetrics(biddersEvaluated []usersync.BidderEvaluation) {
 	for _, bidder := range biddersEvaluated {
 		switch bidder.Status {
 		case usersync.StatusOK:

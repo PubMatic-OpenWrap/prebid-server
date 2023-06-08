@@ -6,7 +6,7 @@ import (
 
 	"github.com/prebid/prebid-server/exchange/entities"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/endpoints/events"
@@ -29,13 +29,20 @@ type eventTracking struct {
 func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.EventsEnabled,
+		enabledForAccount:  account.Events.IsEnabled(),
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
-		integrationType:    requestExtPrebid.Integration,
+		integrationType:    getIntegrationType(requestExtPrebid),
 		bidderInfos:        bidderInfos,
 		externalURL:        externalURL,
 	}
+}
+
+func getIntegrationType(requestExtPrebid *openrtb_ext.ExtRequestPrebid) string {
+	if requestExtPrebid != nil {
+		return requestExtPrebid.Integration
+	}
+	return ""
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
@@ -51,7 +58,7 @@ func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName
 
 // isModifyingVASTXMLAllowed returns true if this bidder config allows modifying VAST XML for event tracking
 func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
-	return ev.bidderInfos[bidderName].ModifyingVastXmlAllowed && (ev.enabledForAccount || ev.enabledForRequest)
+	return ev.bidderInfos[bidderName].ModifyingVastXmlAllowed && ev.isEventAllowed()
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
@@ -80,7 +87,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json
 func (ev *eventTracking) modifyBidJSON(pbsBid *entities.PbsOrtbBid, bidderName openrtb_ext.BidderName, jsonBytes []byte) ([]byte, error) {
-	if !(ev.enabledForAccount || ev.enabledForRequest) || pbsBid.BidType == openrtb_ext.BidTypeVideo {
+	if !ev.isEventAllowed() || pbsBid.BidType == openrtb_ext.BidTypeVideo {
 		return jsonBytes, nil
 	}
 	var winEventURL string
@@ -103,7 +110,7 @@ func (ev *eventTracking) modifyBidJSON(pbsBid *entities.PbsOrtbBid, bidderName o
 
 // makeBidExtEvents make the data for bid.ext.prebid.events if needed, otherwise returns nil
 func (ev *eventTracking) makeBidExtEvents(pbsBid *entities.PbsOrtbBid, bidderName openrtb_ext.BidderName) *openrtb_ext.ExtBidPrebidEvents {
-	if !(ev.enabledForAccount || ev.enabledForRequest) || pbsBid.BidType == openrtb_ext.BidTypeVideo {
+	if !ev.isEventAllowed() || pbsBid.BidType == openrtb_ext.BidTypeVideo {
 		return nil
 	}
 	return &openrtb_ext.ExtBidPrebidEvents{
@@ -127,4 +134,9 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 			Timestamp:   ev.auctionTimestampMs,
 			Integration: ev.integrationType,
 		})
+}
+
+// isEnabled checks if events are enabled by default or on account/request level
+func (ev *eventTracking) isEventAllowed() bool {
+	return ev.enabledForAccount || ev.enabledForRequest
 }

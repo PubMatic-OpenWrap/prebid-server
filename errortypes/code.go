@@ -30,6 +30,10 @@ const (
 	BidderLevelDebugDisabledWarningCode
 	DisabledCurrencyConversionWarningCode
 	AlternateBidderCodeWarningCode
+	MultiBidWarningCode
+	AdServerTargetingWarningCode
+	BidAdjustmentWarningCode
+	FloorBidRejectionWarningCode
 	AdpodPostFilteringWarningCode
 )
 

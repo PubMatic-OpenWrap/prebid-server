@@ -56,7 +56,6 @@ func TestMetricCountGatekeeping(t *testing.T) {
 	// Calculate Per-Adapter Cardinality
 	adapterCount := len(openrtb_ext.CoreBidderNames())
 	perAdapterCardinalityCount := adapterCardinalityCount / adapterCount
-
 	// Verify General Cardinality
 	// - This assertion provides a warning for newly added high-cardinality non-adapter specific metrics. The hardcoded limit
 	//   is an arbitrary soft ceiling. Thought should be given as to the value of the new metrics if you find yourself
@@ -518,6 +517,52 @@ func TestRequestTimeMetric(t *testing.T) {
 
 		result := getHistogramFromHistogramVec(m.requestsTimer, requestTypeLabel, string(requestType))
 		assertHistogram(t, test.description, result, test.expectedCount, test.expectedSum)
+	}
+}
+
+func TestRecordOverheadTimeMetric(t *testing.T) {
+	testCases := []struct {
+		description   string
+		overheadType  metrics.OverheadType
+		timeInMs      float64
+		expectedCount uint64
+		expectedSum   float64
+	}{
+		{
+			description:   "record-pre-bidder-overhead-time-1",
+			overheadType:  metrics.PreBidder,
+			timeInMs:      500,
+			expectedCount: 1,
+			expectedSum:   0.5,
+		},
+		{
+			description:   "record-pre-bidder-overhead-time-2",
+			overheadType:  metrics.PreBidder,
+			timeInMs:      400,
+			expectedCount: 2,
+			expectedSum:   0.9,
+		},
+		{
+			description:   "record-auction-response-overhead-time",
+			overheadType:  metrics.MakeAuctionResponse,
+			timeInMs:      500,
+			expectedCount: 1,
+			expectedSum:   0.5,
+		},
+		{
+			description:   "record-make-bidder-requests-overhead-time",
+			overheadType:  metrics.MakeBidderRequests,
+			timeInMs:      500,
+			expectedCount: 1,
+			expectedSum:   0.5,
+		},
+	}
+
+	metric := createMetricsForTesting()
+	for _, test := range testCases {
+		metric.RecordOverheadTime(test.overheadType, time.Duration(test.timeInMs)*time.Millisecond)
+		resultingHistogram := getHistogramFromHistogramVec(metric.overheadTimer, overheadTypeLabel, test.overheadType.String())
+		assertHistogram(t, test.description, resultingHistogram, test.expectedCount, test.expectedSum)
 	}
 }
 
@@ -1453,6 +1498,39 @@ func TestRecordTLSHandshakeTime(t *testing.T) {
 	}
 }
 
+func TestRecordBidderServerResponseTime(t *testing.T) {
+	testCases := []struct {
+		description   string
+		timeInMs      float64
+		expectedCount uint64
+		expectedSum   float64
+	}{
+		{
+			description:   "record-bidder-server-response-time-1",
+			timeInMs:      500,
+			expectedCount: 1,
+			expectedSum:   0.5,
+		},
+		{
+			description:   "record-bidder-server-response-time-2",
+			timeInMs:      400,
+			expectedCount: 1,
+			expectedSum:   0.4,
+		},
+	}
+	for _, test := range testCases {
+		pm := createMetricsForTesting()
+		pm.RecordBidderServerResponseTime(time.Duration(test.timeInMs) * time.Millisecond)
+
+		m := dto.Metric{}
+		pm.bidderServerResponseTimer.Write(&m)
+		histogram := *m.GetHistogram()
+
+		assert.Equal(t, test.expectedCount, histogram.GetSampleCount())
+		assert.Equal(t, test.expectedSum, histogram.GetSampleSum())
+	}
+}
+
 func TestRecordAdapterConnections(t *testing.T) {
 
 	type testIn struct {
@@ -2103,6 +2181,158 @@ func TestRecordModuleMetrics(t *testing.T) {
 		}
 	}
 }
+
+func TestRecordAccountGDPRPurposeWarningMetrics(t *testing.T) {
+	testCases := []struct {
+		name                   string
+		givenPurposeName       string
+		expectedP1MetricCount  float64
+		expectedP2MetricCount  float64
+		expectedP3MetricCount  float64
+		expectedP4MetricCount  float64
+		expectedP5MetricCount  float64
+		expectedP6MetricCount  float64
+		expectedP7MetricCount  float64
+		expectedP8MetricCount  float64
+		expectedP9MetricCount  float64
+		expectedP10MetricCount float64
+	}{
+		{
+			name:                  "Purpose1MetricIncremented",
+			givenPurposeName:      "purpose1",
+			expectedP1MetricCount: 1,
+		},
+		{
+			name:                  "Purpose2MetricIncremented",
+			givenPurposeName:      "purpose2",
+			expectedP2MetricCount: 1,
+		},
+		{
+			name:                  "Purpose3MetricIncremented",
+			givenPurposeName:      "purpose3",
+			expectedP3MetricCount: 1,
+		},
+		{
+			name:                  "Purpose4MetricIncremented",
+			givenPurposeName:      "purpose4",
+			expectedP4MetricCount: 1,
+		},
+		{
+			name:                  "Purpose5MetricIncremented",
+			givenPurposeName:      "purpose5",
+			expectedP5MetricCount: 1,
+		},
+		{
+			name:                  "Purpose6MetricIncremented",
+			givenPurposeName:      "purpose6",
+			expectedP6MetricCount: 1,
+		},
+		{
+			name:                  "Purpose7MetricIncremented",
+			givenPurposeName:      "purpose7",
+			expectedP7MetricCount: 1,
+		},
+		{
+			name:                  "Purpose8MetricIncremented",
+			givenPurposeName:      "purpose8",
+			expectedP8MetricCount: 1,
+		},
+		{
+			name:                  "Purpose9MetricIncremented",
+			givenPurposeName:      "purpose9",
+			expectedP9MetricCount: 1,
+		},
+		{
+			name:                   "Purpose10MetricIncremented",
+			givenPurposeName:       "purpose10",
+			expectedP10MetricCount: 1,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			m := createMetricsForTesting()
+			m.RecordAccountGDPRPurposeWarning("acct-id", test.givenPurposeName)
+
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose1, test.expectedP1MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose2, test.expectedP2MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose3, test.expectedP3MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose4, test.expectedP4MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose5, test.expectedP5MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose6, test.expectedP6MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose7, test.expectedP7MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose8, test.expectedP8MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose9, test.expectedP9MetricCount)
+			assertCounterValue(t, "", "Account Deprecation Warnings", m.accountDeprecationWarningsPurpose10, test.expectedP10MetricCount)
+		})
+	}
+}
+
+func TestRecordAccountGDPRChannelEnabledWarningMetrics(t *testing.T) {
+	testCases := []struct {
+		name                string
+		givenPubID          string
+		expectedMetricCount float64
+	}{
+		{
+			name:                "GdprChannelMetricIncremented",
+			givenPubID:          "acct-id",
+			expectedMetricCount: 1,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			m := createMetricsForTesting()
+			m.RecordAccountGDPRChannelEnabledWarning(test.givenPubID)
+
+			assertCounterValue(t, "", "GDPR Channel Enabled Deprecation Warnings", m.channelEnabledGDPR, test.expectedMetricCount)
+		})
+	}
+}
+
+func TestRecordAccountCCPAChannelEnabledWarningMetrics(t *testing.T) {
+	testCases := []struct {
+		name                string
+		givenPubID          string
+		expectedMetricCount float64
+	}{
+		{
+			name:                "CcpaChannelMetricIncremented",
+			givenPubID:          "acct-id",
+			expectedMetricCount: 1,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			m := createMetricsForTesting()
+			m.RecordAccountCCPAChannelEnabledWarning(test.givenPubID)
+
+			assertCounterValue(t, "", "CCPA Channel Enabled Deprecation Warnings", m.channelEnabledCCPA, test.expectedMetricCount)
+		})
+	}
+}
+
+func TestRecordAccountUpgradeStatusMetrics(t *testing.T) {
+	testCases := []struct {
+		name                string
+		givenPubID          string
+		expectedMetricCount float64
+	}{
+		{
+			name:                "AccountDeprecationMeterIncremented",
+			givenPubID:          "acct-id",
+			expectedMetricCount: 1,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			m := createMetricsForTesting()
+			m.RecordAccountUpgradeStatus(test.givenPubID)
+
+			assertCounterValue(t, "", "Account Depreciation Summary Meter should be incremented", m.accountDeprecationSummary, test.expectedMetricCount)
+		})
+	}
+}
+
 func TestRecordDynamicFetchFailure(t *testing.T) {
 	type testIn struct {
 		pubid, code string
