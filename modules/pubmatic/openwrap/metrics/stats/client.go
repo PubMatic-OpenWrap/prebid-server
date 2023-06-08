@@ -109,9 +109,12 @@ func (sc *Client) prepareStatsForPublishing() {
 	if len(sc.statMap) != 0 {
 		collectedStats := sc.statMap
 		sc.statMap = map[string]int{}
-		sc.pool.TrySubmit(func() {
+		status := sc.pool.TrySubmit(func() {
 			sc.publishStatsToServer(collectedStats)
 		})
+		if status {
+			glog.Error("[stats_fail] Failed to submit the publishStatsToServer task containing %d record to pool", len(collectedStats))
+		}
 	}
 }
 
