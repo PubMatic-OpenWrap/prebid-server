@@ -329,11 +329,11 @@ func TestProcess(t *testing.T) {
 	}
 
 	tests := []struct {
-		name               string
-		args               args
-		expectedMapSize    int
-		pushStatsToChannel func(*Client)
-		getMockHttpClient  func() HttpClient
+		name              string
+		args              args
+		expectedMapSize   int
+		setup             func(*Client)
+		getMockHttpClient func() HttpClient
 	}{
 		{
 			name: "PublishingThreshold_limit_reached",
@@ -353,9 +353,10 @@ func TestProcess(t *testing.T) {
 				sleepTime: time.Second * 2,
 			},
 			expectedMapSize: 0,
-			pushStatsToChannel: func(client *Client) {
+			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
 				client.PublishStat("key2", 2)
+				time.Sleep(time.Second * 2)
 			},
 			getMockHttpClient: func() HttpClient {
 				mockClient := mock.NewMockHttpClient(ctrl)
@@ -373,8 +374,7 @@ func TestProcess(t *testing.T) {
 						PublishingInterval:  1,
 						PublishingThreshold: 10,
 					},
-					pubChan: make(chan stat, 10),
-					// httpClient:   http.DefaultClient,
+					pubChan:      make(chan stat, 10),
 					pubTicker:    time.NewTicker(1 * time.Second),
 					shutDownChan: make(chan struct{}),
 					pool:         pond.New(5, 5),
@@ -382,9 +382,10 @@ func TestProcess(t *testing.T) {
 				sleepTime: time.Second * 3,
 			},
 			expectedMapSize: 0,
-			pushStatsToChannel: func(client *Client) {
+			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
 				client.PublishStat("key2", 2)
+				time.Sleep(time.Second * 3)
 			},
 			getMockHttpClient: func() HttpClient {
 				mockClient := mock.NewMockHttpClient(ctrl)
@@ -401,21 +402,22 @@ func TestProcess(t *testing.T) {
 						Retries:             1,
 						PublishingThreshold: 5,
 					},
-					pubChan: make(chan stat, 10),
-					// httpClient:   http.DefaultClient,
-					pubTicker:    time.NewTicker(10 * time.Second),
+					pubChan:      make(chan stat, 10),
+					pubTicker:    time.NewTicker(1 * time.Minute),
 					shutDownChan: make(chan struct{}),
 					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 3,
+				sleepTime: time.Second * 10,
 			},
-			expectedMapSize: 2,
-			pushStatsToChannel: func(client *Client) {
+			expectedMapSize: 0,
+			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
-				client.PublishStat("key2", 2)
+				client.ShutdownProcess()
+				time.Sleep(5 * time.Second)
 			},
 			getMockHttpClient: func() HttpClient {
 				mockClient := mock.NewMockHttpClient(ctrl)
+				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
 				return mockClient
 			},
 		},
@@ -427,10 +429,8 @@ func TestProcess(t *testing.T) {
 			client.httpClient = tt.getMockHttpClient()
 
 			go client.process()
-			tt.pushStatsToChannel(client)
+			tt.setup(client)
 
-			time.Sleep(tt.args.sleepTime) // wait time till stats-client publish stats to server
-			client.ShutdownProcess()
 			assert.Equal(t, tt.expectedMapSize, len(client.statMap))
 		})
 	}
