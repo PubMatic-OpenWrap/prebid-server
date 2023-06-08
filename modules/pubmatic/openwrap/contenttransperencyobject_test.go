@@ -90,7 +90,7 @@ func TestSetContentTransparencyObject(t *testing.T) {
 			wantPrebidTransparency: nil,
 		},
 		{
-			name: "Content Object Present",
+			name: "Valid Content Object Present",
 			args: args{
 				reqExt: models.RequestExt{
 					ExtRequest: openrtb_ext.ExtRequest{
