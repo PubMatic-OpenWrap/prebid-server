@@ -10,21 +10,23 @@ type StatsTCP struct {
 	statsClient *Client
 }
 
-func initTCPStatsClient(statIP, statPort string,
-	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDur, maxIdleConn, maxIdleConnPerHost int) (*StatsTCP, error) {
+func initTCPStatsClient(endpoint string,
+	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDur, maxIdleConn,
+	maxIdleConnPerHost, respHeaderTimeout, maxChannelLength, poolMaxWorkers, poolMaxCapacity int) (*StatsTCP, error) {
 
-	cfg := Config{
-		Host:                statIP,
-		Port:                statPort,
-		PublishingInterval:  pubInterval,
-		PublishingThreshold: pubThreshold,
-		Retries:             retries,
-		DialTimeout:         dialTimeout,
-		KeepAliveDuration:   keepAliveDur,
-		MaxIdleConns:        maxIdleConn,
-		MaxIdleConnsPerHost: maxIdleConnPerHost,
-		// Server: server,
-		// DC:                  dc, //TODO : remove ?
+	cfg := config{
+		Endpoint:              endpoint,
+		PublishingInterval:    pubInterval,
+		PublishingThreshold:   pubThreshold,
+		Retries:               retries,
+		DialTimeout:           dialTimeout,
+		KeepAliveDuration:     keepAliveDur,
+		MaxIdleConns:          maxIdleConn,
+		MaxIdleConnsPerHost:   maxIdleConnPerHost,
+		ResponseHeaderTimeout: respHeaderTimeout,
+		MaxChannelLength:      maxChannelLength,
+		PoolMaxWorkers:        poolMaxWorkers,
+		PoolMaxCapacity:       poolMaxCapacity,
 	}
 
 	sc, err := NewClient(&cfg)

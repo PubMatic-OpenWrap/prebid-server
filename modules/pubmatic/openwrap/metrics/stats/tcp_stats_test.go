@@ -13,9 +13,10 @@ import (
 func TestInitTCPStatsClient(t *testing.T) {
 
 	type args struct {
-		statIP, statPort string
+		endpoint string
 		pubInterval, pubThreshold, retries, dialTimeout,
-		keepAliveDur, maxIdleConn, maxIdleConnPerHost int
+		keepAliveDur, maxIdleConn, maxIdleConnPerHost, respHeaderTimeout,
+		maxChannelLength, poolMaxWorkers, poolMaxCapacity int
 	}
 
 	type want struct {
@@ -31,8 +32,7 @@ func TestInitTCPStatsClient(t *testing.T) {
 		{
 			name: "returns_error",
 			args: args{
-				statIP:             "10.10.10.10",
-				statPort:           "",
+				endpoint:           "",
 				pubInterval:        10,
 				pubThreshold:       10,
 				retries:            3,
@@ -43,14 +43,13 @@ func TestInitTCPStatsClient(t *testing.T) {
 			},
 			want: want{
 				client: nil,
-				err:    fmt.Errorf("invalid stats client configurations:stat server host and port cannot be empty"),
+				err:    fmt.Errorf("invalid stats client configurations:stat server endpoint cannot be empty"),
 			},
 		},
 		{
 			name: "returns_valid_client",
 			args: args{
-				statIP:             "10.10.10.10",
-				statPort:           "8000",
+				endpoint:           "http://10.10.10.10:8000/stat",
 				pubInterval:        10,
 				pubThreshold:       10,
 				retries:            3,
@@ -62,7 +61,7 @@ func TestInitTCPStatsClient(t *testing.T) {
 			want: want{
 				client: &StatsTCP{
 					statsClient: &Client{
-						endpoint: "http://10.10.10.10:8000/stat?",
+						endpoint: "http://10.10.10.10:8000/stat",
 						httpClient: &http.Client{
 							Transport: &http.Transport{
 								DialContext: (&net.Dialer{
@@ -74,19 +73,23 @@ func TestInitTCPStatsClient(t *testing.T) {
 								ResponseHeaderTimeout: 30 * time.Second,
 							},
 						},
-						config: &Config{
-							Host:                "10.10.10.10",
-							Port:                "8000",
-							PublishingInterval:  5,
-							PublishingThreshold: 1000,
-							Retries:             3,
-							DialTimeout:         10,
-							KeepAliveDuration:   15,
-							MaxIdleConns:        10,
-							MaxIdleConnsPerHost: 10,
-							retryInterval:       100,
+						config: &config{
+							Endpoint:              "http://10.10.10.10:8000/stat",
+							PublishingInterval:    5,
+							PublishingThreshold:   1000,
+							Retries:               3,
+							DialTimeout:           10,
+							KeepAliveDuration:     15,
+							MaxIdleConns:          10,
+							MaxIdleConnsPerHost:   10,
+							retryInterval:         100,
+							MaxChannelLength:      1000,
+							ResponseHeaderTimeout: 30,
+							PoolMaxWorkers:        minPoolWorker,
+							PoolMaxCapacity:       minPoolCapacity,
 						},
 						pubChan: make(chan stat, 1000),
+						statMap: map[string]int{},
 					},
 				},
 				err: nil,
@@ -96,9 +99,10 @@ func TestInitTCPStatsClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := initTCPStatsClient(tt.args.statIP, tt.args.statPort,
+			client, err := initTCPStatsClient(tt.args.endpoint,
 				tt.args.pubInterval, tt.args.pubThreshold, tt.args.retries, tt.args.dialTimeout, tt.args.keepAliveDur,
-				tt.args.maxIdleConn, tt.args.maxIdleConnPerHost)
+				tt.args.maxIdleConn, tt.args.maxIdleConnPerHost, tt.args.respHeaderTimeout, tt.args.maxChannelLength,
+				tt.args.poolMaxWorkers, tt.args.poolMaxCapacity)
 
 			assert.Equal(t, tt.want.err, err)
 			if err == nil {

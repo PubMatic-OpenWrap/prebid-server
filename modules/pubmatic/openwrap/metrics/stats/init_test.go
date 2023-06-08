@@ -129,9 +129,10 @@ func TestInitStatKeys(t *testing.T) {
 func TestInitStat(t *testing.T) {
 
 	type args struct {
-		hostIP, defaultHost, actualHost, dcName, portTCP string
+		endpoint, defaultHost, actualHost, dcName string
 		pubInterval, pubThreshold, retries, dialTimeout, keepAliveDuration,
-		maxIdleConnes, maxIdleConnesPerHost int
+		maxIdleConnes, maxIdleConnesPerHost, respHeaderTimeout, maxChannelLength,
+		poolMaxWorkers, poolMaxCapacity int
 	}
 
 	type want struct {
@@ -148,11 +149,10 @@ func TestInitStat(t *testing.T) {
 		{
 			name: "singleton_instance",
 			args: args{
-				hostIP:               "10.10.10.10",
+				endpoint:             "10.10.10.10",
 				defaultHost:          "N:P",
 				actualHost:           "node1.sv3:ssheader",
 				dcName:               "sv3",
-				portTCP:              "8000",
 				pubInterval:          10,
 				pubThreshold:         10,
 				retries:              3,
@@ -160,9 +160,13 @@ func TestInitStat(t *testing.T) {
 				keepAliveDuration:    10,
 				maxIdleConnes:        10,
 				maxIdleConnesPerHost: 10,
+				respHeaderTimeout:    10,
+				maxChannelLength:     10,
+				poolMaxWorkers:       10,
+				poolMaxCapacity:      10,
 			},
 			setup: func() want {
-				st, err := InitStatsClient("10.10.10.10", "N:P", "node1.sv3:ssheader", "sv3", "8000", 10, 10, 3, 10, 10, 10, 10)
+				st, err := InitStatsClient("10.10.10.10/stats", "N:P", "node1.sv3:ssheader", "sv3", 10, 10, 3, 10, 10, 10, 10, 10, 10, 10, 10)
 				return want{client: st, err: err}
 			},
 		},
@@ -172,9 +176,10 @@ func TestInitStat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.want = tt.setup()
 
-			InitStatsClient(tt.args.hostIP, tt.args.defaultHost, tt.args.actualHost, tt.args.dcName,
-				tt.args.portTCP, tt.args.pubInterval, tt.args.pubThreshold, tt.args.retries, tt.args.dialTimeout, tt.args.keepAliveDuration,
-				tt.args.maxIdleConnes, tt.args.maxIdleConnesPerHost)
+			InitStatsClient(tt.args.endpoint, tt.args.defaultHost, tt.args.actualHost, tt.args.dcName,
+				tt.args.pubInterval, tt.args.pubThreshold, tt.args.retries, tt.args.dialTimeout, tt.args.keepAliveDuration,
+				tt.args.maxIdleConnes, tt.args.maxIdleConnesPerHost, tt.args.respHeaderTimeout,
+				tt.args.maxChannelLength, tt.args.poolMaxWorkers, tt.args.poolMaxCapacity)
 
 			assert.Equal(t, tt.want.client, owStats)
 			assert.Equal(t, tt.want.err, owStatsErr)

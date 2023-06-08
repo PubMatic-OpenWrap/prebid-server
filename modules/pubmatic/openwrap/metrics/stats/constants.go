@@ -1,8 +1,6 @@
 package stats
 
 const (
-	statsChanLen = 1000
-
 	minPublishingInterval = 2  // In minutes
 	maxPublishingInterval = 5  // In minutes
 	minRetryDuration      = 35 // In seconds
@@ -13,7 +11,11 @@ const (
 	contentType     = "Content-Type"
 	applicationJSON = "application/json;charset=utf-8"
 
-	minPublishingThreshold = 1000
+	minPublishingThreshold   = 1000
+	minResponseHeaderTimeout = 30
+	minChannelLength         = 1000
+	minPoolWorker            = 10
+	minPoolCapacity          = 1000
 )
 
 const (

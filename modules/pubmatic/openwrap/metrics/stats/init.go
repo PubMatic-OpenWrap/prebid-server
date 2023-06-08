@@ -7,12 +7,11 @@ import (
 type statKeyName = string
 
 var (
-	statKeys [maxNumOfStats]statKeyName
+	statKeys   [maxNumOfStats]statKeyName
+	once       sync.Once
+	owStats    *StatsTCP
+	owStatsErr error
 )
-
-var once sync.Once
-var owStats *StatsTCP
-var owStatsErr error
 
 // stat represents a single stat-key along with its value
 type stat struct {
@@ -21,14 +20,16 @@ type stat struct {
 }
 
 // InitStatsClient initializes stats client
-func InitStatsClient(statIP, defaultHost, actualHost, dcName, portTCP string,
+func InitStatsClient(endpoint, defaultHost, actualHost, dcName string,
 	pubInterval, pubThreshold, retries, dialTimeout, keepAliveDuration,
-	maxIdleConnes, maxIdleConnesPerHost int) (*StatsTCP, error) {
+	maxIdleConnes, maxIdleConnesPerHost, respHeaderTimeout, maxChannelLength,
+	poolMaxWorkers, poolMaxCapacity int) (*StatsTCP, error) {
 
 	once.Do(func() {
 		initStatKeys(dcName+":"+defaultHost, dcName+":"+actualHost)
-		owStats, owStatsErr = initTCPStatsClient(statIP, portTCP, pubInterval, pubThreshold,
-			retries, dialTimeout, keepAliveDuration, maxIdleConnes, maxIdleConnesPerHost)
+		owStats, owStatsErr = initTCPStatsClient(endpoint, pubInterval, pubThreshold,
+			retries, dialTimeout, keepAliveDuration, maxIdleConnes, maxIdleConnesPerHost,
+			respHeaderTimeout, maxChannelLength, poolMaxWorkers, poolMaxCapacity)
 	})
 
 	return owStats, owStatsErr

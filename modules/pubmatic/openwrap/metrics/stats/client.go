@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
+	"github.com/alitto/pond"
 	"github.com/golang/glog"
 )
 
@@ -17,20 +16,27 @@ type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// TrySubmit attempts to send a task to this worker pool for execution. If the queue is full,
+// it will not wait for a worker to become idle. It returns true if it was able to dispatch
+// the task and false otherwise.
+type WorkerPool interface {
+	TrySubmit(task func()) bool
+}
+
 // Client is a StatClient. All stats related operation will be done using this.
 type Client struct {
-	config     *Config
-	httpClient HttpClient
-	endpoint   string
-	pubChan    chan stat
-	pubTicker  *time.Ticker
-	statMap    map[string]int
-	// logger    logger // TODO : ???
-	// mu        sync.Mutex // TODO : not needed anymore
+	config       *config
+	httpClient   HttpClient
+	endpoint     string
+	pubChan      chan stat
+	pubTicker    *time.Ticker
+	statMap      map[string]int
+	shutDownChan chan struct{}
+	pool         WorkerPool
 }
 
 // NewClient will validate the Config provided and return a new Client
-func NewClient(cfg *Config) (*Client, error) {
+func NewClient(cfg *config) (*Client, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, fmt.Errorf("invalid stats client configurations:%s", err.Error())
 	}
@@ -43,30 +49,29 @@ func NewClient(cfg *Config) (*Client, error) {
 			}).DialContext,
 			MaxIdleConns:          cfg.MaxIdleConns,
 			MaxIdleConnsPerHost:   cfg.MaxIdleConnsPerHost,
-			ResponseHeaderTimeout: 30 * time.Second,
+			ResponseHeaderTimeout: time.Duration(cfg.ResponseHeaderTimeout) * time.Second,
 		},
-		//  Timeout: , //TODO: do we need this timeout ??
-	}
-
-	u := url.URL{
-		Scheme:     "http",
-		Host:       net.JoinHostPort(cfg.Host, cfg.Port),
-		Path:       "stat",
-		ForceQuery: true,
 	}
 
 	c := &Client{
-		config:     cfg,
-		httpClient: client,
-		endpoint:   u.String(),
-		// logger:    lgr,
-		pubChan:   make(chan stat, statsChanLen), // TODO : statsChanLen should it be configurable ???
-		pubTicker: time.NewTicker(time.Duration(cfg.PublishingInterval) * time.Minute),
-		statMap:   make(map[string]int),
+		config:       cfg,
+		httpClient:   client,
+		endpoint:     cfg.Endpoint,
+		pubChan:      make(chan stat, cfg.MaxChannelLength),
+		pubTicker:    time.NewTicker(time.Duration(cfg.PublishingInterval) * time.Minute),
+		statMap:      make(map[string]int),
+		shutDownChan: make(chan struct{}),
+		pool:         pond.New(cfg.PoolMaxWorkers, cfg.PoolMaxCapacity),
 	}
 
 	go c.process()
+
 	return c, nil
+}
+
+// ShutdownProcess will perform the graceful shutdown operation
+func (sc *Client) ShutdownProcess() {
+	sc.shutDownChan <- struct{}{}
 }
 
 // PublishStat will push a stat to pubChan channel.
@@ -83,9 +88,7 @@ func (sc *Client) process() {
 	for {
 		select {
 		case stat := <-sc.pubChan:
-			val := sc.statMap[stat.Key] // if key is absent then val will be 0
-			sc.statMap[stat.Key] = stat.Value + val
-
+			sc.statMap[stat.Key] = sc.statMap[stat.Key] + stat.Value
 			if len(sc.statMap) >= sc.config.PublishingThreshold {
 				sc.prepareStatsForPublishing()
 				sc.pubTicker.Reset(time.Duration(sc.config.PublishingInterval) * time.Minute)
@@ -93,6 +96,9 @@ func (sc *Client) process() {
 
 		case <-sc.pubTicker.C:
 			sc.prepareStatsForPublishing()
+
+		case <-sc.shutDownChan:
+			return
 		}
 	}
 }
@@ -103,7 +109,9 @@ func (sc *Client) prepareStatsForPublishing() {
 	if len(sc.statMap) != 0 {
 		collectedStats := sc.statMap
 		sc.statMap = map[string]int{}
-		go sc.publishStatsToServer(collectedStats)
+		sc.pool.TrySubmit(func() {
+			sc.publishStatsToServer(collectedStats)
+		})
 	}
 }
 
@@ -116,44 +124,40 @@ func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 		glog.Errorf("[stats_fail] Json unmarshal fail: %v", err)
 		return statusSetupFail
 	}
-	// glog.Info("[stats] Stats to be sent to server: %s", string(sb))
 
-	req, err := http.NewRequest(http.MethodPost, sc.endpoint, io.NopCloser(bytes.NewBuffer(sb)))
+	req, err := http.NewRequest(http.MethodPost, sc.endpoint, bytes.NewBuffer(sb))
 	if err != nil {
 		glog.Errorf("[stats_fail] Failed to form request to sent stats to server: %v", err)
 		return statusSetupFail
 	}
 
 	req.Header.Add(contentType, applicationJSON)
-
 	for retry := 0; retry < sc.config.Retries; retry++ {
 
 		startTime := time.Now()
 		resp, err := sc.httpClient.Do(req)
 		elapsedTime := time.Since(startTime)
 
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			// glog.Info("[stats_success] Stats sent to server successfully")
-			return statusPublishSuccess
-		}
-
 		code := 0
 		if resp != nil {
 			code = resp.StatusCode
-			if resp.Body != nil {
-				resp.Body.Close()
-			}
+			defer resp.Body.Close()
 		}
 
-		if retry >= (sc.config.Retries - 1) {
+		if err == nil && code == http.StatusOK {
+			glog.Infof("[stats_success] retry:[%d] nstats:[%d] time:[%v]", retry, len(statMap), elapsedTime)
+			return statusPublishSuccess
+		}
+
+		if retry == (sc.config.Retries - 1) {
 			glog.Errorf("[stats_fail] retry:[%d] status:[%d] nstats:[%d] time:[%v] error:[%v]", retry, code, len(statMap), elapsedTime, err)
 			break
 		}
 
-		// glog.Info("[stats_retry] retry:[%d] status:[%d] nstats:[%v] time:[%v] error:[%v]", retry, code, len(statMap), elapsedTime, err)
 		if sc.config.retryInterval > 0 {
 			time.Sleep(time.Duration(sc.config.retryInterval) * time.Second)
 		}
 	}
+
 	return statusPublishFail
 }

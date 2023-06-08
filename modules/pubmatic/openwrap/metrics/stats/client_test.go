@@ -1,23 +1,24 @@
 package stats
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/alitto/pond"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats/mock"
-
-	// "github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/metrics/stats/mock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClient(t *testing.T) {
 
 	type args struct {
-		cfg *Config
+		cfg *config
 	}
 
 	type want struct {
@@ -33,21 +34,20 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "invalid_config",
 			args: args{
-				cfg: &Config{
-					Host: "",
+				cfg: &config{
+					Endpoint: "",
 				},
 			},
 			want: want{
-				err:        fmt.Errorf("invalid stats client configurations:stat server host and port cannot be empty"),
+				err:        fmt.Errorf("invalid stats client configurations:stat server endpoint cannot be empty"),
 				statClient: nil,
 			},
 		},
 		{
 			name: "valid_config",
 			args: args{
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
+				cfg: &config{
+					Endpoint:            "10.10.10.10:8080/stat",
 					PublishingInterval:  3,
 					DialTimeout:         minDialTimeout,
 					KeepAliveDuration:   minKeepAliveDuration,
@@ -61,17 +61,20 @@ func TestNewClient(t *testing.T) {
 			want: want{
 				err: nil,
 				statClient: &Client{
-					config: &Config{
-						Host:                "10.10.10.10",
-						Port:                "8000",
-						PublishingInterval:  3,
-						DialTimeout:         minDialTimeout,
-						KeepAliveDuration:   minKeepAliveDuration,
-						MaxIdleConns:        0,
-						MaxIdleConnsPerHost: 0,
-						PublishingThreshold: minPublishingThreshold,
-						Retries:             5,
-						retryInterval:       36,
+					config: &config{
+						Endpoint:              "10.10.10.10:8080/stat",
+						PublishingInterval:    3,
+						DialTimeout:           minDialTimeout,
+						KeepAliveDuration:     minKeepAliveDuration,
+						MaxIdleConns:          0,
+						MaxIdleConnsPerHost:   0,
+						PublishingThreshold:   minPublishingThreshold,
+						Retries:               5,
+						retryInterval:         36,
+						MaxChannelLength:      minChannelLength,
+						ResponseHeaderTimeout: minResponseHeaderTimeout,
+						PoolMaxWorkers:        minPoolWorker,
+						PoolMaxCapacity:       minPoolCapacity,
 					},
 					httpClient: &http.Client{
 						Transport: &http.Transport{
@@ -84,9 +87,10 @@ func TestNewClient(t *testing.T) {
 							ResponseHeaderTimeout: 30 * time.Second,
 						},
 					},
-					endpoint:  "http://10.10.10.10:8000/stat?",
-					pubChan:   make(chan stat, statsChanLen),
+					endpoint:  "10.10.10.10:8080/stat",
+					pubChan:   make(chan stat, minChannelLength),
 					pubTicker: time.NewTicker(time.Duration(3) * time.Minute),
+					statMap:   map[string]int{},
 				},
 			},
 		},
@@ -106,8 +110,8 @@ func compareClient(expectedClient, actualClient *Client, t *testing.T) {
 	if expectedClient != nil && actualClient != nil {
 		assert.Equal(t, expectedClient.endpoint, actualClient.endpoint, "Mismatched endpoint")
 		assert.Equal(t, expectedClient.config, actualClient.config, "Mismatched config")
-		assert.Equal(t, expectedClient.endpoint, actualClient.endpoint, "Mismatched endpoint")
 		assert.Equal(t, cap(expectedClient.pubChan), cap(actualClient.pubChan), "Mismatched pubChan capacity")
+		assert.Equal(t, expectedClient.statMap, actualClient.statMap, "Mismatched statMap")
 	}
 
 	if expectedClient != nil && actualClient == nil {
@@ -126,10 +130,15 @@ func TestPublishStat(t *testing.T) {
 		maxChanSize int
 	}
 
+	type want struct {
+		keyVal      map[string]int
+		channelSize int
+	}
+
 	tests := []struct {
-		name               string
-		args               args
-		expectedChanLength int
+		name string
+		args args
+		want want
 	}{
 		{
 			name: "push_multiple_stat",
@@ -140,7 +149,13 @@ func TestPublishStat(t *testing.T) {
 				},
 				maxChanSize: 2,
 			},
-			expectedChanLength: 2,
+			want: want{
+				keyVal: map[string]int{
+					"key1": 10,
+					"key2": 20,
+				},
+				channelSize: 2,
+			},
 		},
 	}
 
@@ -154,8 +169,9 @@ func TestPublishStat(t *testing.T) {
 			}
 
 			close(client.pubChan)
+			assert.Equal(t, tt.want.channelSize, len(client.pubChan))
 			for stat := range client.pubChan {
-				assert.Equal(t, stat.Value, tt.args.keyVal[stat.Key])
+				assert.Equal(t, stat.Value, tt.want.keyVal[stat.Key])
 			}
 		})
 	}
@@ -168,8 +184,9 @@ func TestPrepareStatsForPublishing(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		args args
+		name           string
+		args           args
+		expectedLength int
 	}{
 		{
 			name: "statMap_should_be_empty",
@@ -179,19 +196,21 @@ func TestPrepareStatsForPublishing(t *testing.T) {
 						"key1": 10,
 						"key2": 20,
 					},
-					config: &Config{
+					config: &config{
 						Retries: 1,
 					},
 					httpClient: http.DefaultClient,
+					pool:       pond.New(2, 2),
 				},
 			},
+			expectedLength: 0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.client.prepareStatsForPublishing()
-			assert.Equal(t, len(tt.args.client.statMap), 0)
+			assert.Equal(t, len(tt.args.client.statMap), tt.expectedLength)
 		})
 	}
 }
@@ -231,7 +250,7 @@ func TestPublishStatsToServer(t *testing.T) {
 			args: args{
 				statClient: &Client{
 					endpoint: "http://any-random-server.com",
-					config: &Config{
+					config: &config{
 						Retries: 1,
 					},
 					httpClient: mockClient,
@@ -241,7 +260,7 @@ func TestPublishStatsToServer(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500, Body: http.NoBody}, nil)
+				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
 			},
 			expStatusCode: statusPublishFail,
 		},
@@ -250,7 +269,7 @@ func TestPublishStatsToServer(t *testing.T) {
 			args: args{
 				statClient: &Client{
 					endpoint: "http://any-random-server.com",
-					config: &Config{
+					config: &config{
 						Retries:       3,
 						retryInterval: 1,
 					},
@@ -261,7 +280,7 @@ func TestPublishStatsToServer(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500}, nil).Times(3)
+				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader(nil))}, nil).Times(3)
 			},
 			expStatusCode: statusPublishFail,
 		},
@@ -270,7 +289,7 @@ func TestPublishStatsToServer(t *testing.T) {
 			args: args{
 				statClient: &Client{
 					endpoint: "http://any-random-server.com",
-					config: &Config{
+					config: &config{
 						Retries:       3,
 						retryInterval: 1,
 					},
@@ -282,8 +301,8 @@ func TestPublishStatsToServer(t *testing.T) {
 			},
 			setup: func() {
 				gomock.InOrder(
-					mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500}, nil),
-					mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200}, nil),
+					mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader(nil))}, nil),
+					mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil),
 				)
 			},
 			expStatusCode: statusPublishSuccess,
@@ -301,34 +320,47 @@ func TestPublishStatsToServer(t *testing.T) {
 
 func TestProcess(t *testing.T) {
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	type args struct {
 		client    *Client
 		sleepTime time.Duration
 	}
 
 	tests := []struct {
-		name  string
-		args  args
-		setup func(*Client)
+		name               string
+		args               args
+		expectedMapSize    int
+		pushStatsToChannel func(*Client)
+		getMockHttpClient  func() HttpClient
 	}{
 		{
 			name: "PublishingThreshold_limit_reached",
 			args: args{
 				client: &Client{
 					statMap: map[string]int{},
-					config: &Config{
-						Retries:            1,
-						PublishingInterval: 1,
+					config: &config{
+						Retries:             1,
+						PublishingInterval:  1,
+						PublishingThreshold: 2,
 					},
-					pubChan:    make(chan stat, 2),
-					httpClient: http.DefaultClient,
-					pubTicker:  time.NewTicker(1 * time.Minute),
+					pubChan:      make(chan stat, 2),
+					pubTicker:    time.NewTicker(1 * time.Minute),
+					shutDownChan: make(chan struct{}),
+					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 3,
+				sleepTime: time.Second * 2,
 			},
-			setup: func(client *Client) {
-				client.pubChan <- stat{Key: "key1", Value: 1}
-				client.pubChan <- stat{Key: "key2", Value: 2}
+			expectedMapSize: 0,
+			pushStatsToChannel: func(client *Client) {
+				client.PublishStat("key1", 1)
+				client.PublishStat("key2", 2)
+			},
+			getMockHttpClient: func() HttpClient {
+				mockClient := mock.NewMockHttpClient(ctrl)
+				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
+				return mockClient
 			},
 		},
 		{
@@ -336,19 +368,55 @@ func TestProcess(t *testing.T) {
 			args: args{
 				client: &Client{
 					statMap: map[string]int{},
-					config: &Config{
-						Retries:            1,
-						PublishingInterval: 1,
+					config: &config{
+						Retries:             1,
+						PublishingInterval:  1,
+						PublishingThreshold: 10,
 					},
-					pubChan:    make(chan stat, 10),
-					httpClient: http.DefaultClient,
-					pubTicker:  time.NewTicker(2 * time.Second),
+					pubChan: make(chan stat, 10),
+					// httpClient:   http.DefaultClient,
+					pubTicker:    time.NewTicker(1 * time.Second),
+					shutDownChan: make(chan struct{}),
+					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 5,
+				sleepTime: time.Second * 3,
 			},
-			setup: func(client *Client) {
-				client.pubChan <- stat{Key: "key1", Value: 1}
-				client.pubChan <- stat{Key: "key2", Value: 2}
+			expectedMapSize: 0,
+			pushStatsToChannel: func(client *Client) {
+				client.PublishStat("key1", 1)
+				client.PublishStat("key2", 2)
+			},
+			getMockHttpClient: func() HttpClient {
+				mockClient := mock.NewMockHttpClient(ctrl)
+				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
+				return mockClient
+			},
+		},
+		{
+			name: "graceful_shutdown_process",
+			args: args{
+				client: &Client{
+					statMap: map[string]int{},
+					config: &config{
+						Retries:             1,
+						PublishingThreshold: 5,
+					},
+					pubChan: make(chan stat, 10),
+					// httpClient:   http.DefaultClient,
+					pubTicker:    time.NewTicker(10 * time.Second),
+					shutDownChan: make(chan struct{}),
+					pool:         pond.New(5, 5),
+				},
+				sleepTime: time.Second * 3,
+			},
+			expectedMapSize: 2,
+			pushStatsToChannel: func(client *Client) {
+				client.PublishStat("key1", 1)
+				client.PublishStat("key2", 2)
+			},
+			getMockHttpClient: func() HttpClient {
+				mockClient := mock.NewMockHttpClient(ctrl)
+				return mockClient
 			},
 		},
 	}
@@ -356,12 +424,14 @@ func TestProcess(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := tt.args.client
+			client.httpClient = tt.getMockHttpClient()
 
-			go tt.setup(client) // push stats into the channel
 			go client.process()
-			time.Sleep(tt.args.sleepTime) // wait time till stats-client publish stats to server
+			tt.pushStatsToChannel(client)
 
-			assert.Equal(t, len(client.statMap), 0)
+			time.Sleep(tt.args.sleepTime) // wait time till stats-client publish stats to server
+			client.ShutdownProcess()
+			assert.Equal(t, tt.expectedMapSize, len(client.statMap))
 		})
 	}
 }

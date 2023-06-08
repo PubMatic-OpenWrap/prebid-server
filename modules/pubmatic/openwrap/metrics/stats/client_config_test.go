@@ -10,12 +10,12 @@ import (
 func TestValidate(t *testing.T) {
 
 	type args struct {
-		cfg *Config
+		cfg *config
 	}
 
 	type want struct {
 		err error
-		cfg *Config
+		cfg *config
 	}
 
 	tests := []struct {
@@ -24,41 +24,24 @@ func TestValidate(t *testing.T) {
 		want want
 	}{
 		{
-			name: "empty_host",
+			name: "empty_endpoint",
 			args: args{
-				cfg: &Config{
-					Host: "",
+				cfg: &config{
+					Endpoint: "",
 				},
 			},
 			want: want{
-				err: fmt.Errorf("stat server host and port cannot be empty"),
-				cfg: &Config{
-					Host: "",
-				},
-			},
-		},
-		{
-			name: "empty_port",
-			args: args{
-				cfg: &Config{
-					Host: "10.10.10.10",
-					Port: "",
-				},
-			},
-			want: want{
-				err: fmt.Errorf("stat server host and port cannot be empty"),
-				cfg: &Config{
-					Host: "10.10.10.10",
-					Port: "",
+				err: fmt.Errorf("stat server endpoint cannot be empty"),
+				cfg: &config{
+					Endpoint: "",
 				},
 			},
 		},
 		{
 			name: "lower_values_than_min_limit",
 			args: args{
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
+				cfg: &config{
+					Endpoint:            "10.10.10.10/stat",
 					PublishingInterval:  0,
 					DialTimeout:         0,
 					KeepAliveDuration:   0,
@@ -69,90 +52,99 @@ func TestValidate(t *testing.T) {
 			},
 			want: want{
 				err: nil,
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
-					PublishingInterval:  minPublishingInterval,
-					DialTimeout:         minDialTimeout,
-					KeepAliveDuration:   minKeepAliveDuration,
-					MaxIdleConns:        0,
-					MaxIdleConnsPerHost: 0,
-					PublishingThreshold: minPublishingThreshold,
+				cfg: &config{
+					Endpoint:              "10.10.10.10/stat",
+					PublishingInterval:    minPublishingInterval,
+					DialTimeout:           minDialTimeout,
+					KeepAliveDuration:     minKeepAliveDuration,
+					MaxIdleConns:          0,
+					MaxIdleConnsPerHost:   0,
+					PublishingThreshold:   minPublishingThreshold,
+					MaxChannelLength:      minChannelLength,
+					ResponseHeaderTimeout: minResponseHeaderTimeout,
+					PoolMaxWorkers:        minPoolWorker,
+					PoolMaxCapacity:       minPoolCapacity,
 				},
 			},
 		},
 		{
 			name: "high_PublishingInterval_than_max_limit",
 			args: args{
-				cfg: &Config{
-					Host:               "10.10.10.10",
-					Port:               "8000",
+				cfg: &config{
+					Endpoint:           "10.10.10.10/stat",
 					PublishingInterval: 10,
 				},
 			},
 			want: want{
 				err: nil,
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
-					PublishingInterval:  maxPublishingInterval,
-					DialTimeout:         minDialTimeout,
-					KeepAliveDuration:   minKeepAliveDuration,
-					MaxIdleConns:        0,
-					MaxIdleConnsPerHost: 0,
-					PublishingThreshold: minPublishingThreshold,
+				cfg: &config{
+					Endpoint:              "10.10.10.10/stat",
+					PublishingInterval:    maxPublishingInterval,
+					DialTimeout:           minDialTimeout,
+					KeepAliveDuration:     minKeepAliveDuration,
+					MaxIdleConns:          0,
+					MaxIdleConnsPerHost:   0,
+					PublishingThreshold:   minPublishingThreshold,
+					MaxChannelLength:      minChannelLength,
+					ResponseHeaderTimeout: minResponseHeaderTimeout,
+					PoolMaxWorkers:        minPoolWorker,
+					PoolMaxCapacity:       minPoolCapacity,
 				},
 			},
 		},
 		{
 			name: "high_Retries_than_maxRetriesAllowed",
 			args: args{
-				cfg: &Config{
-					Host:               "10.10.10.10",
-					Port:               "8000",
+				cfg: &config{
+					Endpoint:           "10.10.10.10/stat",
 					PublishingInterval: 3,
 					Retries:            100,
 				},
 			},
 			want: want{
 				err: nil,
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
-					PublishingInterval:  3,
-					DialTimeout:         minDialTimeout,
-					KeepAliveDuration:   minKeepAliveDuration,
-					MaxIdleConns:        0,
-					MaxIdleConnsPerHost: 0,
-					PublishingThreshold: minPublishingThreshold,
-					Retries:             5,
-					retryInterval:       minRetryDuration,
+				cfg: &config{
+					Endpoint:              "10.10.10.10/stat",
+					PublishingInterval:    3,
+					DialTimeout:           minDialTimeout,
+					KeepAliveDuration:     minKeepAliveDuration,
+					MaxIdleConns:          0,
+					MaxIdleConnsPerHost:   0,
+					PublishingThreshold:   minPublishingThreshold,
+					Retries:               5,
+					retryInterval:         minRetryDuration,
+					MaxChannelLength:      minChannelLength,
+					ResponseHeaderTimeout: minResponseHeaderTimeout,
+					PoolMaxWorkers:        minPoolWorker,
+					PoolMaxCapacity:       minPoolCapacity,
 				},
 			},
 		},
 		{
 			name: "valid_Retries_value",
 			args: args{
-				cfg: &Config{
-					Host:               "10.10.10.10",
-					Port:               "8000",
+				cfg: &config{
+					Endpoint:           "10.10.10.10/stat",
 					PublishingInterval: 3,
 					Retries:            5,
 				},
 			},
 			want: want{
 				err: nil,
-				cfg: &Config{
-					Host:                "10.10.10.10",
-					Port:                "8000",
-					PublishingInterval:  3,
-					DialTimeout:         minDialTimeout,
-					KeepAliveDuration:   minKeepAliveDuration,
-					MaxIdleConns:        0,
-					MaxIdleConnsPerHost: 0,
-					PublishingThreshold: minPublishingThreshold,
-					Retries:             5,
-					retryInterval:       36,
+				cfg: &config{
+					Endpoint:              "10.10.10.10/stat",
+					PublishingInterval:    3,
+					DialTimeout:           minDialTimeout,
+					KeepAliveDuration:     minKeepAliveDuration,
+					MaxIdleConns:          0,
+					MaxIdleConnsPerHost:   0,
+					PublishingThreshold:   minPublishingThreshold,
+					Retries:               5,
+					retryInterval:         36,
+					MaxChannelLength:      minChannelLength,
+					ResponseHeaderTimeout: minResponseHeaderTimeout,
+					PoolMaxWorkers:        minPoolWorker,
+					PoolMaxCapacity:       minPoolCapacity,
 				},
 			},
 		},
