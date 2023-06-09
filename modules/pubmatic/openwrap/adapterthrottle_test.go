@@ -19,10 +19,10 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 		partnerConfigMap map[int]map[string]string
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  map[string]struct{}
-		want1 bool
+		name                   string
+		args                   args
+		wantAdapterThrottled   map[string]struct{}
+		wantAllAdapterThrolled bool
 	}{
 		{
 			name: "All partner Seever side disabled",
@@ -32,8 +32,8 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 					2: {models.SERVER_SIDE_FLAG: "0", models.BidderCode: "apnx"},
 				},
 			},
-			want:  map[string]struct{}{},
-			want1: true,
+			wantAdapterThrottled:   map[string]struct{}{},
+			wantAllAdapterThrolled: true,
 		},
 		{
 			name: "One Partner throttled",
@@ -43,8 +43,8 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 					2: {models.SERVER_SIDE_FLAG: "1", models.BidderCode: "apnx", models.THROTTLE: "60"},
 				},
 			},
-			want:  map[string]struct{}{"pubm": {}},
-			want1: false,
+			wantAdapterThrottled:   map[string]struct{}{"pubm": {}},
+			wantAllAdapterThrolled: false,
 		},
 		{
 			name: "All Partner throttled",
@@ -54,8 +54,8 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 					2: {models.SERVER_SIDE_FLAG: "1", models.BidderCode: "apnx", models.THROTTLE: "0"},
 				},
 			},
-			want:  map[string]struct{}{"pubm": {}, "apnx": {}},
-			want1: true,
+			wantAdapterThrottled:   map[string]struct{}{"pubm": {}, "apnx": {}},
+			wantAllAdapterThrolled: true,
 		},
 		{
 			name: "No Partner throttled",
@@ -66,15 +66,15 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 					3: {models.SERVER_SIDE_FLAG: "1", models.BidderCode: "openx", models.THROTTLE: ""},
 				},
 			},
-			want:  map[string]struct{}{},
-			want1: false,
+			wantAdapterThrottled:   map[string]struct{}{},
+			wantAllAdapterThrolled: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetAdapterThrottleMap(tt.args.partnerConfigMap)
-			assert.Equal(t, got, tt.want, tt.name)
-			assert.Equal(t, got1, tt.want1, tt.name)
+			gotAdapterThrottled, gotAllAdapterThrolled := GetAdapterThrottleMap(tt.args.partnerConfigMap)
+			assert.Equal(t, gotAdapterThrottled, tt.wantAdapterThrottled, tt.name)
+			assert.Equal(t, gotAllAdapterThrolled, tt.wantAllAdapterThrolled, tt.name)
 		})
 	}
 }
