@@ -276,18 +276,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyBidDuration] = "hb:lfv:dur:%d:%s:%s:" + defaultServerName
 	//hb:lfv:dur:<duration>:<pub>:<prof>:<dc:node:pod>:
 
-	statKeys[statsKeyPublisherPartnerAdomainPresent] = "hb:dompres:%s:%s:%s:" + defaultServerName
-	//hb:dompres:<creativeType>:<pub>:<partner>:<dc:node:pod> - ADomain present in bid response
-
-	statKeys[statsKeyPublisherPartnerAdomainAbsent] = "hb:domabs:%s:%s:%s:" + defaultServerName
-	//hb:domabs:<creativeType>:<pub>:<partner>:<dc:node:pod> - ADomain absent in bid response
-
-	statKeys[statsKeyPublisherPartnerCatPresent] = "hb:catpres:%s:%s:%s:" + defaultServerName
-	//hb:catpres:<creativeType>:<pub>:<partner>:<dc:node:pod> - Category present in bid response
-
-	statKeys[statsKeyPublisherPartnerCatAbsent] = "hb:catabs:%s:%s:%s:" + defaultServerName
-	//hb:catabs:<creativeType>:<pub>:<partner>:<dc:node:pod> - Category absent in bid response
-
 	statKeys[statsKeyPBSAuctionRequests] = "hb:pbs:auc:" + defaultServerName
 	//hb:pbs:auc:<dc:node:pod> - no of PBS auction endpoint requests
 

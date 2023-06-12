@@ -8,4 +8,6 @@ const (
 	EndpointORTB  = "ortb"
 	EndpointVAST  = "vast"
 	Openwrap      = "openwrap"
+	ImpTypeBanner = "banner"
+	ImpTypeVideo  = "video"
 )

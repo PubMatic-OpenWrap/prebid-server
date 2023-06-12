@@ -222,18 +222,6 @@ const (
 	//statsKeyBidDuration for counting number of bids of video duration
 	statsKeyBidDuration
 
-	//StatsKeyPublisherPartnerAdomainPresent stats Key for counting Publisher Partner level Requests
-	statsKeyPublisherPartnerAdomainPresent
-
-	//StatsKeyPublisherPartnerAdomainAbsent stats Key for counting Publisher Partner level Requests
-	statsKeyPublisherPartnerAdomainAbsent
-
-	//StatsKeyPublisherPartnerCatPresent stats Key for counting Publisher Partner level Requests
-	statsKeyPublisherPartnerCatPresent
-
-	//StatsKeyPublisherPartnerCatAbsent stats Key for counting Publisher Partner level Requests
-	statsKeyPublisherPartnerCatAbsent
-
 	//statsKeyPBSAuctionRequests stats Key for counting PBS Auction endpoint Requests
 	statsKeyPBSAuctionRequests
 

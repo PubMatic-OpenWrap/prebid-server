@@ -278,22 +278,6 @@ func (st *StatsTCP) RecordCTVKeyBidDuration(duration int, publisherID, profileID
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyBidDuration], duration, publisherID, profileID), 1)
 }
 
-func (st *StatsTCP) RecordAdomainPresentStats(creativeType, publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerAdomainPresent], creativeType, publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordAdomainAbsentStats(creativeType, publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerAdomainAbsent], creativeType, publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordCatPresentStats(creativeType, publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerCatPresent], creativeType, publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordCatAbsentStats(creativeType, publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerCatAbsent], creativeType, publisher, partner), 1)
-}
-
 func (st *StatsTCP) RecordPBSAuctionRequestsStats() {
 	st.statsClient.PublishStat(statKeys[statsKeyPBSAuctionRequests], 1)
 }
