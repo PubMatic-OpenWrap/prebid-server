@@ -87,7 +87,7 @@ func (st *StatsTCP) RecordPublisherInvalidProfileRequests(endpoint, publisher, p
 	switch endpoint {
 	case "video":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileVideoRequests], publisher, profileID), 1)
-	case "AMP":
+	case "amp":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileAMPRequests], publisher, profileID), 1)
 	default:
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileRequests], publisher, profileID), 1)
@@ -205,11 +205,11 @@ func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
 
 func (st *StatsTCP) RecordBadRequests(endpoint string, errorCode int) {
 	switch endpoint {
-	case "AMP":
+	case "amp":
 		st.statsClient.PublishStat(statKeys[statsKeyAMPBadRequests], 1)
-	case "Video":
+	case "video":
 		st.statsClient.PublishStat(statKeys[statsKeyVideoBadRequests], 1)
-	case "V25":
+	case "v25":
 		st.statsClient.PublishStat(statKeys[statsKey25BadRequests], 1)
 	case "vast", "ortb", "json", "openwrap":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVBadRequests], endpoint, errorCode), 1)
@@ -317,11 +317,11 @@ func (st *StatsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder st
 func (st *StatsTCP) RecordPublisherRequests(endpoint, publisher, platform string) {
 
 	switch endpoint {
-	case "AMP":
+	case "amp":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], publisher), 1)
-	case "Video":
+	case "video":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoPublisherRequests], publisher), 1)
-	case "V25":
+	case "v25":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKey25PublisherRequests], platform, publisher), 1)
 	case "vast", "ortb", "json":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], endpoint, platform, publisher), 1)
@@ -330,9 +330,9 @@ func (st *StatsTCP) RecordPublisherRequests(endpoint, publisher, platform string
 
 func (st *StatsTCP) RecordCacheErrorRequests(endpoint, publisher, profileID string) {
 	switch endpoint {
-	case "AMP":
+	case "amp":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPCacheError], publisher, profileID), 1)
-	case "Video":
+	case "video":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoCacheError], publisher, profileID), 1)
 	}
 }
