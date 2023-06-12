@@ -30,7 +30,7 @@ func handleEntrypointHook(
 	}
 
 	vastRequestContext := models.RequestCtx{
-		VastUnwrapFlag: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapperEnableKey),
+		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled),
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext

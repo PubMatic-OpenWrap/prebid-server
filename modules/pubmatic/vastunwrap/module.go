@@ -51,7 +51,7 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 
 	if m.cfg.VastUnWrapCfg.Enabled {
-		return handleRawBidderResponseHook(payload, miCtx.ModuleContext)
+		return handleRawBidderResponseHook(payload, miCtx.ModuleContext, m.cfg.VastUnWrapCfg.APPConfig.UnwrapDefaultTimeout)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
 }

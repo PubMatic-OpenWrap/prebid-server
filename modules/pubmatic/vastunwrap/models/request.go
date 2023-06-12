@@ -9,6 +9,6 @@ type UnwrapReq struct {
 }
 
 type RequestCtx struct {
-	UA             string
-	VastUnwrapFlag bool
+	UA                  string
+	IsVastUnwrapEnabled bool
 }

@@ -24,26 +24,26 @@ func TestHandleEntrypointHook(t *testing.T) {
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), VastUnwrapperEnableKey, "0")
+						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "0")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
 				},
 			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: false}}},
+			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
 		},
 		{
 			name: "Enable Vast Unwrapper",
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), VastUnwrapperEnableKey, "1")
+						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
 				},
 			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: true}}},
+			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
 		},
 	}
 	for _, tt := range tests {
