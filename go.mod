@@ -21,9 +21,10 @@ require (
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pkg/errors v0.9.1
 	github.com/prebid/go-gdpr v1.11.0
 	github.com/prebid/go-gpp v0.1.1
-	github.com/prebid/openrtb/v17 v17.1.0
+	github.com/prebid/openrtb/v19 v19.0.0
 	github.com/prebid/prebid-server v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
@@ -36,8 +37,8 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yudai/gojsondiff v1.0.0
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	golang.org/x/net v0.5.0
-	golang.org/x/text v0.6.0
+	golang.org/x/net v0.7.0
+	golang.org/x/text v0.7.0
 	google.golang.org/grpc v1.46.2
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -61,7 +62,6 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -75,7 +75,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
@@ -84,6 +84,6 @@ require (
 
 replace github.com/prebid/prebid-server => ./
 
-replace github.com/prebid/openrtb/v17 => github.com/PubMatic-OpenWrap/prebid-openrtb/v17 v17.0.0-20230328045105-f4693e6a60f6
+replace github.com/prebid/openrtb/v19 => github.com/PubMatic-OpenWrap/prebid-openrtb/v19 v19.0.0-20230517094918-56ce40c97ced
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4

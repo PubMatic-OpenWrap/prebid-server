@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -12,12 +11,13 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/spf13/viper"
 
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 // Configuration specifies the static application config.
@@ -39,6 +39,7 @@ type Configuration struct {
 	// If empty, it will return a 204 with no content.
 	StatusResponse    string          `mapstructure:"status_response"`
 	AuctionTimeouts   AuctionTimeouts `mapstructure:"auction_timeouts_ms"`
+	TmaxAdjustments   TmaxAdjustments `mapstructure:"tmax_adjustments"`
 	CacheURL          Cache           `mapstructure:"cache"`
 	ExtCacheURL       ExternalCache   `mapstructure:"external_cache"`
 	RecaptchaSecret   string          `mapstructure:"recaptcha_secret"`
@@ -103,10 +104,10 @@ type Configuration struct {
 	// Hooks provides a way to specify hook execution plan for specific endpoints and stages
 	Hooks       Hooks       `mapstructure:"hooks"`
 	Validations Validations `mapstructure:"validations"`
+	PriceFloors PriceFloors `mapstructure:"price_floors"`
 
 	TrackerURL          string              `mapstructure:"tracker_url"`
 	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
-	PriceFloors         PriceFloors         `mapstructure:"price_floors"`
 	PriceFloorFetcher   PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
 }
 
@@ -154,16 +155,22 @@ func (cfg *Configuration) validate(v *viper.Viper) []error {
 	if cfg.AccountDefaults.Disabled {
 		glog.Warning(`With account_defaults.disabled=true, host-defined accounts must exist and have "disabled":false. All other requests will be rejected.`)
 	}
-	if cfg.AccountDefaults.Events.Enabled {
-		glog.Warning(`account_defaults.events will currently not do anything as the feature is still under development. Please follow https://github.com/prebid/prebid-server/issues/1725 for more updates`)
-	}
-	errs = cfg.Experiment.validate(errs)
-	errs = cfg.BidderInfos.validate(errs)
 
 	if cfg.PriceFloors.Enabled {
-		glog.Warning(`PriceFloors.Enabled will enforce floor feature which is still under development.`)
+		glog.Warning(`cfg.PriceFloors.Enabled will currently not do anything as price floors feature is still under development.`)
 	}
 
+	if len(cfg.AccountDefaults.Events.VASTEvents) > 0 {
+		errs = append(errs, errors.New("account_defaults.Events.VASTEvents has no effect as the feature is under development."))
+	}
+
+	if cfg.TmaxAdjustments.Enabled {
+		glog.Warning(`cfg.TmaxAdjustments.Enabled will currently not do anything as tmax adjustment feature is still under development.`)
+		cfg.TmaxAdjustments.Enabled = false
+	}
+
+	errs = cfg.Experiment.validate(errs)
+	errs = cfg.BidderInfos.validate(errs)
 	return errs
 }
 
@@ -172,38 +179,6 @@ type AuctionTimeouts struct {
 	Default uint64 `mapstructure:"default"`
 	// The max timeout is used as an absolute cap, to prevent excessively long ones. Use 0 for no cap
 	Max uint64 `mapstructure:"max"`
-}
-
-func (pf *AccountPriceFloors) validate(errs []error) []error {
-
-	if !(pf.EnforceFloorRate >= 0 && pf.EnforceFloorRate <= 100) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.enforce_floors_rate should be between 0 and 100`))
-	}
-
-	if pf.Fetch.Period > pf.Fetch.MaxAge {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.period_sec should be less than account_defaults.price_floors.fetch.max_age_sec`))
-	}
-
-	if pf.Fetch.Period < 300 {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.period_sec should not be less than 300 seconds`))
-	}
-
-	if !(pf.Fetch.MaxAge >= 600 && pf.Fetch.MaxAge < math.MaxInt32) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_age_sec should not be less than 600 seconds and greater than maximum integer value`))
-	}
-
-	if !(pf.Fetch.Timeout > 10 && pf.Fetch.Timeout < 10000) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.timeout_ms should be between 10 to 10,000 mili seconds`))
-	}
-
-	if !(pf.Fetch.MaxRules >= 0 && pf.Fetch.MaxRules < math.MaxInt32) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_rules should not be less than 0 seconds and greater than maximum integer value`))
-	}
-
-	if !(pf.Fetch.MaxFileSize >= 0 && pf.Fetch.MaxFileSize < math.MaxInt32) {
-		errs = append(errs, fmt.Errorf(`account_defaults.price_floors.fetch.max_file_size_kb should not be less than 0 seconds and greater than maximum integer value`))
-	}
-	return errs
 }
 
 func (cfg *AuctionTimeouts) validate(errs []error) []error {
@@ -746,6 +721,10 @@ func New(v *viper.Viper, bidderInfos BidderInfos, normalizeBidderName func(strin
 
 	// Update account defaults and generate base json for patch
 	c.AccountDefaults.CacheTTL = c.CacheURL.DefaultTTLs // comment this out to set explicitly in config
+
+	// Update the deprecated and new events enabled values for account defaults.
+	c.AccountDefaults.EventsEnabled, c.AccountDefaults.Events.Enabled = migrateConfigEventsEnabled(c.AccountDefaults.EventsEnabled, c.AccountDefaults.Events.Enabled)
+
 	if err := c.MarshalAccountDefaults(); err != nil {
 		return nil, err
 	}
@@ -1063,6 +1042,9 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("account_defaults.price_floors.adjust_for_bid_adjustment", true)
 	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", false)
 	v.SetDefault("account_defaults.price_floors.use_dynamic_data", false)
+	v.SetDefault("account_defaults.price_floors.max_rules", 100)
+	v.SetDefault("account_defaults.price_floors.max_schema_dims", 3)
+	v.SetDefault("account_defaults.events_enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.timeout_ms", 3000)
 	v.SetDefault("account_defaults.price_floors.fetch.max_file_size_kb", 100)
@@ -1082,6 +1064,11 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("debug.timeout_notification.sampling_rate", 0.0)
 	v.SetDefault("debug.timeout_notification.fail_only", false)
 	v.SetDefault("debug.override_token", "")
+
+	v.SetDefault("tmax_adjustments.enabled", false)
+	v.SetDefault("tmax_adjustments.bidder_response_duration_min_ms", 0)
+	v.SetDefault("tmax_adjustments.bidder_network_latency_buffer_ms", 0)
+	v.SetDefault("tmax_adjustments.pbs_response_preparation_duration_ms", 0)
 
 	/* IPv4
 	/*  Site Local: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
@@ -1435,6 +1422,28 @@ func migrateConfigDatabaseConnection(v *viper.Viper) {
 	}
 }
 
+// migrateConfigEventsEnabled is responsible for ensuring backward compatibility of events_enabled field.
+// This function copies the value of newField "events.enabled" and set it to the oldField "events_enabled".
+// This is necessary to achieve the desired order of precedence favoring the account values over the host values
+// given the account fetcher JSON merge mechanics.
+func migrateConfigEventsEnabled(oldFieldValue *bool, newFieldValue *bool) (updatedOldFieldValue, updatedNewFieldValue *bool) {
+	newField := "account_defaults.events.enabled"
+	oldField := "account_defaults.events_enabled"
+
+	updatedOldFieldValue = oldFieldValue
+	if oldFieldValue != nil {
+		glog.Warningf("%s is deprecated and should be changed to %s", oldField, newField)
+	}
+	if newFieldValue != nil {
+		if oldFieldValue != nil {
+			glog.Warningf("using %s and ignoring deprecated %s", newField, oldField)
+		}
+		updatedOldFieldValue = ptrutil.ToPtr(*newFieldValue)
+	}
+
+	return updatedOldFieldValue, nil
+}
+
 func isConfigInfoPresent(v *viper.Viper, prefix string, fields []string) bool {
 	prefix = prefix + "."
 	for _, field := range fields {
@@ -1453,6 +1462,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_requests.database.connection.port")
 	v.BindEnv("stored_requests.database.connection.user")
 	v.BindEnv("stored_requests.database.connection.password")
+	v.BindEnv("stored_requests.database.connection.query_string")
+	v.BindEnv("stored_requests.database.connection.tls.root_cert")
+	v.BindEnv("stored_requests.database.connection.tls.client_cert")
+	v.BindEnv("stored_requests.database.connection.tls.client_key")
 	v.BindEnv("stored_requests.database.fetcher.query")
 	v.BindEnv("stored_requests.database.fetcher.amp_query")
 	v.BindEnv("stored_requests.database.initialize_caches.timeout_ms")
@@ -1468,6 +1481,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_video_req.database.connection.port")
 	v.BindEnv("stored_video_req.database.connection.user")
 	v.BindEnv("stored_video_req.database.connection.password")
+	v.BindEnv("stored_video_req.database.connection.query_string")
+	v.BindEnv("stored_video_req.database.connection.tls.root_cert")
+	v.BindEnv("stored_video_req.database.connection.tls.client_cert")
+	v.BindEnv("stored_video_req.database.connection.tls.client_key")
 	v.BindEnv("stored_video_req.database.fetcher.query")
 	v.BindEnv("stored_video_req.database.initialize_caches.timeout_ms")
 	v.BindEnv("stored_video_req.database.initialize_caches.query")
@@ -1480,6 +1497,10 @@ func bindDatabaseEnvVars(v *viper.Viper) {
 	v.BindEnv("stored_responses.database.connection.port")
 	v.BindEnv("stored_responses.database.connection.user")
 	v.BindEnv("stored_responses.database.connection.password")
+	v.BindEnv("stored_responses.database.connection.query_string")
+	v.BindEnv("stored_responses.database.connection.tls.root_cert")
+	v.BindEnv("stored_responses.database.connection.tls.client_cert")
+	v.BindEnv("stored_responses.database.connection.tls.client_key")
 	v.BindEnv("stored_responses.database.fetcher.query")
 	v.BindEnv("stored_responses.database.initialize_caches.timeout_ms")
 	v.BindEnv("stored_responses.database.initialize_caches.query")
@@ -1528,4 +1549,23 @@ func isValidCookieSize(maxCookieSize int) error {
 		return fmt.Errorf("Configured cookie size is less than allowed minimum size of %d \n", MIN_COOKIE_SIZE_BYTES)
 	}
 	return nil
+}
+
+// Tmax Adjustments enables PBS to estimate the tmax value for bidders, indicating the allotted time for them to respond to a request.
+// It's important to note that the calculated tmax is just an estimate and will not be entirely precise.
+// PBS will calculate the bidder tmax as follows:
+// bidderTmax = request.tmax - reqProcessingTime - BidderNetworkLatencyBuffer - PBSResponsePreparationDuration
+// Note that reqProcessingTime is time taken by PBS to process a given request before it is sent to bid adapters and is computed at run time.
+type TmaxAdjustments struct {
+	// Enabled indicates whether bidder tmax should be calculated and passed on to bid adapters
+	Enabled bool `mapstructure:"enabled"`
+	// BidderNetworkLatencyBuffer accounts for network delays between PBS and bidder servers.
+	// A value of 0 indicates no network latency buffer should be accounted for when calculating the bidder tmax.
+	BidderNetworkLatencyBuffer uint `mapstructure:"bidder_network_latency_buffer_ms"`
+	// PBSResponsePreparationDuration accounts for amount of time required for PBS to process all bidder responses and generate final response for a request.
+	// A value of 0 indicates PBS response preparation time shouldn't be accounted for when calculating bidder tmax.
+	PBSResponsePreparationDuration uint `mapstructure:"pbs_response_preparation_duration_ms"`
+	// BidderResponseDurationMin is the minimum amount of time expected to get a response from a bidder request.
+	// PBS won't send a request to the bidder if the bidder tmax calculated is less than the BidderResponseDurationMin value
+	BidderResponseDurationMin uint `mapstructure:"bidder_response_duration_min_ms"`
 }

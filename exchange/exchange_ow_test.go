@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/analytics"
@@ -824,7 +824,7 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",
@@ -854,7 +854,7 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",

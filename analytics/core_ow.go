@@ -1,7 +1,7 @@
 package analytics
 
 import (
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/exchange/entities"
 )
 
