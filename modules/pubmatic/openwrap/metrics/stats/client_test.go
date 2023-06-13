@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -319,21 +320,15 @@ func TestPublishStatsToServer(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	type args struct {
-		client    *Client
-		sleepTime time.Duration
+		client *Client
 	}
 
 	tests := []struct {
-		name              string
-		args              args
-		expectedMapSize   int
-		setup             func(*Client)
-		getMockHttpClient func() HttpClient
+		name        string
+		args        args
+		setup       func(*Client)
+		getMockPool func(wg *sync.WaitGroup) (*gomock.Controller, WorkerPool)
 	}{
 		{
 			name: "PublishingThreshold_limit_reached",
@@ -348,20 +343,20 @@ func TestProcess(t *testing.T) {
 					pubChan:      make(chan stat, 2),
 					pubTicker:    time.NewTicker(1 * time.Minute),
 					shutDownChan: make(chan struct{}),
-					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 2,
 			},
-			expectedMapSize: 0,
 			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
 				client.PublishStat("key2", 2)
-				time.Sleep(time.Second * 2)
 			},
-			getMockHttpClient: func() HttpClient {
-				mockClient := mock.NewMockHttpClient(ctrl)
-				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
-				return mockClient
+			getMockPool: func(wg *sync.WaitGroup) (*gomock.Controller, WorkerPool) {
+				ctrl := gomock.NewController(t)
+				mockWorkerPool := mock.NewMockWorkerPool(ctrl)
+				mockWorkerPool.EXPECT().TrySubmit(gomock.Any()).DoAndReturn(func(task func()) bool {
+					wg.Done()
+					return true
+				})
+				return ctrl, mockWorkerPool
 			},
 		},
 		{
@@ -377,20 +372,20 @@ func TestProcess(t *testing.T) {
 					pubChan:      make(chan stat, 10),
 					pubTicker:    time.NewTicker(1 * time.Second),
 					shutDownChan: make(chan struct{}),
-					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 3,
 			},
-			expectedMapSize: 0,
 			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
 				client.PublishStat("key2", 2)
-				time.Sleep(time.Second * 3)
 			},
-			getMockHttpClient: func() HttpClient {
-				mockClient := mock.NewMockHttpClient(ctrl)
-				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
-				return mockClient
+			getMockPool: func(wg *sync.WaitGroup) (*gomock.Controller, WorkerPool) {
+				ctrl := gomock.NewController(t)
+				mockWorkerPool := mock.NewMockWorkerPool(ctrl)
+				mockWorkerPool.EXPECT().TrySubmit(gomock.Any()).DoAndReturn(func(task func()) bool {
+					wg.Done()
+					return true
+				})
+				return ctrl, mockWorkerPool
 			},
 		},
 		{
@@ -405,33 +400,40 @@ func TestProcess(t *testing.T) {
 					pubChan:      make(chan stat, 10),
 					pubTicker:    time.NewTicker(1 * time.Minute),
 					shutDownChan: make(chan struct{}),
-					pool:         pond.New(5, 5),
 				},
-				sleepTime: time.Second * 10,
 			},
-			expectedMapSize: 0,
 			setup: func(client *Client) {
 				client.PublishStat("key1", 1)
+				time.Sleep(1 * time.Second)
 				client.ShutdownProcess()
-				time.Sleep(5 * time.Second)
 			},
-			getMockHttpClient: func() HttpClient {
-				mockClient := mock.NewMockHttpClient(ctrl)
-				mockClient.EXPECT().Do(gomock.Any()).Return(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
-				return mockClient
+			getMockPool: func(wg *sync.WaitGroup) (*gomock.Controller, WorkerPool) {
+				ctrl := gomock.NewController(t)
+				mockWorkerPool := mock.NewMockWorkerPool(ctrl)
+				mockWorkerPool.EXPECT().TrySubmit(gomock.Any()).DoAndReturn(func(task func()) bool {
+					wg.Done()
+					return true
+				})
+				return ctrl, mockWorkerPool
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var wg sync.WaitGroup
+			wg.Add(1)
+
 			client := tt.args.client
-			client.httpClient = tt.getMockHttpClient()
+			ctrl, mockPool := tt.getMockPool(&wg)
+			defer ctrl.Finish()
+			client.pool = mockPool
 
 			go client.process()
+
 			tt.setup(client)
 
-			assert.Equal(t, tt.expectedMapSize, len(client.statMap))
+			wg.Wait()
 		})
 	}
 }

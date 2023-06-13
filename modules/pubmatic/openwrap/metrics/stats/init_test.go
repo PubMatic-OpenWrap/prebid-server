@@ -13,7 +13,7 @@ func TestInitStatKeys(t *testing.T) {
 	}
 
 	type want struct {
-		testKeys [84]string
+		testKeys [maxNumOfStats]string
 	}
 
 	tests := []struct {
@@ -28,7 +28,7 @@ func TestInitStatKeys(t *testing.T) {
 				actualServerName:  "sv3:node123.sv3:ssheaderbidding",
 			},
 			want: want{
-				testKeys: [84]string{
+				testKeys: [maxNumOfStats]string{
 					"hb:panic:sv3:node123.sv3:ssheaderbidding",
 					"hb:pubnocnsreq:%s:sv3:N:P",
 					"hb:pubnocnsimp:%s:sv3:N:P",
@@ -60,7 +60,7 @@ func TestInitStatKeys(t *testing.T) {
 					"hb:2.5:%s:pbrq:%s:sv3:N:P",
 					"hb:amp:badreq:sv3:N:P",
 					"hb:amp:pbrq:%s:sv3:N:P",
-					"hb:amp:ce::%s:%s:sv3:N:P",
+					"hb:amp:ce:%s:%s:sv3:N:P",
 					"hb:amp:pubinp:%s:%s:sv3:N:P",
 					"hb:vid:badreq:sv3:N:P",
 					"hb:vid:pbrq:%s:sv3:N:P",
@@ -104,10 +104,6 @@ func TestInitStatKeys(t *testing.T) {
 					"hb:lfv:impy:%d:%d:%s:sv3:N:P",
 					"hb:lfv:rwap:%s:%s:sv3:N:P",
 					"hb:lfv:dur:%d:%s:%s:sv3:N:P",
-					"hb:dompres:%s:%s:%s:sv3:N:P",
-					"hb:domabs:%s:%s:%s:sv3:N:P",
-					"hb:catpres:%s:%s:%s:sv3:N:P",
-					"hb:catabs:%s:%s:%s:sv3:N:P",
 					"hb:pbs:auc:sv3:N:P",
 					"hb:mistrack:%s:%s:%s:sv3:N:P",
 					"hb:pbs:dbc:%s:%s:%s:%s:sv3:N:P",

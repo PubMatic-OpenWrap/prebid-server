@@ -137,7 +137,7 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyAMPPublisherRequests] = "hb:amp:pbrq:%s:" + defaultServerName
 	//hb:amp:pbrq:<pub>:<dc:node:pod>
 
-	statKeys[statsKeyAMPCacheError] = "hb:amp:ce::%s:%s:" + defaultServerName
+	statKeys[statsKeyAMPCacheError] = "hb:amp:ce:%s:%s:" + defaultServerName
 	//hb:amp:ce:<pub>:<prof>:<dc:node:pod>
 
 	statKeys[statsKeyPublisherInvProfileAMPRequests] = "hb:amp:pubinp:%s:%s:" + defaultServerName
