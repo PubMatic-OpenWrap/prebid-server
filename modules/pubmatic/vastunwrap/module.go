@@ -30,7 +30,7 @@ func initVastUnrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (VastUnwrapM
 
 	err := json.Unmarshal(rawCfg, &cfg)
 	if err != nil {
-		return VastUnwrapModule{}, fmt.Errorf("invalid unwrap config: %v", err)
+		return VastUnwrapModule{}, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
 
 	if cfg.VastUnWrapCfg.Enabled {
