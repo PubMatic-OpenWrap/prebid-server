@@ -13,6 +13,5 @@ const (
 	POST                = "POST"
 	ContentType         = "Content-Type"
 	UnwrapTimeout       = "unwrap-timeout"
-	UnwrapTimeoutValue  = "1000"
 	MediaTypeVideo      = "video"
 )
