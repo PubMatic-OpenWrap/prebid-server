@@ -12,15 +12,17 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int) {
+func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int, unwrapURL string) {
+
 	startTime := time.Now()
 	wrapperCnt := 0
+
 	headers := http.Header{}
 
 	headers.Add(ContentType, "application/xml; charset=utf-8")
 	headers.Add(UserAgent, userAgent)
 	headers.Add(UnwrapTimeout, strconv.Itoa(unwrapDefaultTimeout))
-	httpReq, err := http.NewRequest(POST, UnwrapURL, strings.NewReader(bid.Bid.AdM))
+	httpReq, err := http.NewRequest(POST, unwrapURL, strings.NewReader(bid.Bid.AdM))
 	if err != nil {
 		return
 	}
@@ -33,7 +35,6 @@ func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
 	}
-
 	respBody := httpResp.Body.Bytes()
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)

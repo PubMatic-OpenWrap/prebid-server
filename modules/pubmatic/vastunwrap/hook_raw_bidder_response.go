@@ -11,7 +11,7 @@ type mediaTypes map[string]struct{}
 
 func handleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
-	moduleCtx hookstage.ModuleContext, unwrapDefaultTimeout int,
+	moduleCtx hookstage.ModuleContext, unwrapDefaultTimeout int, unwrapURL string,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 
 	vastRequestContext, ok := moduleCtx[RequestContext].(models.RequestCtx)
@@ -26,7 +26,8 @@ func handleRawBidderResponseHook(
 	for _, bid := range payload.Bids {
 		bidMediaTypes := mediaTypesFromBid(bid)
 		if _, ok := bidMediaTypes[MediaTypeVideo]; ok {
-			go doUnwrap(bid, vastRequestContext.UA, unwrapDefaultTimeout)
+			go doUnwrap(bid, vastRequestContext.UA, unwrapDefaultTimeout, unwrapURL)
+
 		}
 	}
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}

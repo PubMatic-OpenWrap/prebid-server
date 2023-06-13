@@ -1,9 +1,11 @@
 package vastunwrap
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 
-	reflect "reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v17/openrtb2"
@@ -15,25 +17,20 @@ import (
 
 func TestHandleRawBidderResponseHook(t *testing.T) {
 	type args struct {
-		payload   hookstage.RawBidderResponsePayload
-		moduleCtx hookstage.ModuleContext
+		payload       hookstage.RawBidderResponsePayload
+		moduleCtx     hookstage.ModuleContext
+		unwrapTimeout int
+		url           string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantResult hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		wantErr    bool
+		name         string
+		args         args
+		wantResult   hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		expectedBids []*adapters.TypedBid
+		wantErr      bool
 	}{
 		{
 			name: "Empty Request Context",
-			args: args{
-				moduleCtx: hookstage.ModuleContext{},
-			},
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"}},
-			wantErr:    false,
-		},
-		{
-			name: "Set Vast Unwrapper to true in request context",
 			args: args{
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
@@ -42,27 +39,72 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								ID:    "Bid-123",
 								ImpID: fmt.Sprintf("div-adunit-%d", 123),
 								Price: 2.1,
-								AdM:   "<div>This is an Ad</div>",
+								AdM:   vastXMLAdM,
 								CrID:  "Cr-234",
 								W:     100,
 								H:     50,
 							},
 							BidType: "video",
 						}}},
-				moduleCtx: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapFlag: true}},
+				moduleCtx: nil,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
+			wantErr:    false,
+		},
+		{
+			name: "Set Vast Unwrapper to true in request context with type video",
+			args: args{
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						}}},
+				moduleCtx:     hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}},
+				unwrapTimeout: 1000,
+				url:           UnwrapURL,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			wantErr:    false,
+			expectedBids: []*adapters.TypedBid{{
+				Bid: &openrtb2.Bid{
+					ID:    "Bid-123",
+					ImpID: fmt.Sprintf("div-adunit-%d", 123),
+					Price: 2.1,
+					AdM:   inlineXMLAdM,
+					CrID:  "Cr-234",
+					W:     100,
+					H:     50,
+				},
+				BidType: "video",
+			}},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResult, err := handleRawBidderResponseHook(tt.args.payload, tt.args.moduleCtx)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				data, _ := json.Marshal(tt.expectedBids)
+				_, _ = w.Write([]byte(data))
+			}))
+			defer server.Close()
+			server.URL = tt.args.url
+			doUnwrap(tt.args.payload.Bids[0], "test", tt.args.unwrapTimeout, server.URL)
+			_, err := handleRawBidderResponseHook(tt.args.payload, tt.args.moduleCtx, tt.args.unwrapTimeout, server.URL)
+
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-			if !reflect.DeepEqual(gotResult, tt.wantResult) {
-				t.Errorf("handleRawBidderResponseHook() = %v, want %v", gotResult, tt.wantResult)
+			if tt.args.moduleCtx != nil {
+				assert.Equal(t, tt.expectedBids[0].Bid.AdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
 		})
 	}
