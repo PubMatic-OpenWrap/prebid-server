@@ -80,6 +80,7 @@ func TestParseImpressionObject(t *testing.T) {
 		imp                      *openrtb2.Imp
 		extractWrapperExtFromImp bool
 		extractPubIDFromImp      bool
+		bidAdjustmentFactor      float64
 	}
 	tests := []struct {
 		name                string
@@ -88,6 +89,7 @@ func TestParseImpressionObject(t *testing.T) {
 		expectedPublisherId string
 		wantErr             bool
 		expectedBidfloor    float64
+		expectedImpExt      json.RawMessage
 	}{
 		{
 			name: "imp.bidfloor empty and kadfloor set",
@@ -98,6 +100,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor empty",
@@ -109,6 +112,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor invalid",
@@ -120,6 +124,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.12,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "imp.bidfloor set and kadfloor set, higher imp.bidfloor",
@@ -142,6 +147,7 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.13,
+			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
 			name: "kadfloor string set with whitespace",
@@ -153,15 +159,39 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			expectedBidfloor: 0.13,
+			expectedImpExt:   json.RawMessage(nil),
+		},
+		{
+			name: "kadfloor with bidAdjustmentFactor",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.13"}}`),
+				},
+				bidAdjustmentFactor: 0.9,
+			},
+			expectedBidfloor: 0.1444,
+			expectedImpExt:   json.RawMessage(nil),
+		},
+		{
+			name: "bidViewability Object is set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}}`),
+				},
+			},
+			expectedImpExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.bidAdjustmentFactor)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
 			assert.Equal(t, tt.expectedBidfloor, tt.args.imp.BidFloor)
+			assert.Equal(t, tt.expectedImpExt, tt.args.imp.Ext)
 		})
 	}
 }
@@ -174,6 +204,7 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 		name           string
 		args           args
 		expectedReqExt extRequestAdServer
+		expectedCookie []string
 		wantErr        bool
 	}{
 		{
@@ -289,9 +320,10 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotReqExt, err := extractPubmaticExtFromRequest(tt.args.request)
+			gotReqExt, gotCookie, err := extractPubmaticExtFromRequest(tt.args.request)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedReqExt, gotReqExt)
+			assert.Equal(t, tt.expectedCookie, gotCookie)
 		})
 	}
 }
@@ -354,8 +386,9 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}}], "ext": {"buyid": "testBuyId"}}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: nil,
 			wantResp: &adapters.BidderResponse{
@@ -372,11 +405,19 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
-							Ext:     json.RawMessage(`{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}`),
+							Ext:     json.RawMessage(`{"buyid":"testBuyId","deal_channel":1,"dspid":6,"prebiddealpriority":1}`),
 						},
 						DealPriority: 1,
 						BidType:      openrtb_ext.BidTypeBanner,
 						BidVideo:     &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets:   map[string]string{"hb_buyid_pubmatic": "testBuyId"},
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdvertiserID: 958,
+							AgencyID:     958,
+							NetworkID:    6,
+							DemandSource: "6",
+							MediaType:    "banner",
+						},
 					},
 				},
 				Currency: "USD",
@@ -389,6 +430,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: nil,
 			wantResp: &adapters.BidderResponse{
@@ -407,8 +449,50 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							DealID:  "testdeal",
 							Ext:     json.RawMessage(`{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}`),
 						},
-						BidType:  openrtb_ext.BidTypeBanner,
-						BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdvertiserID: 958,
+							AgencyID:     958,
+							NetworkID:    6,
+							DemandSource: "6",
+							MediaType:    "banner",
+						},
+					},
+				},
+				Currency: "USD",
+			},
+		},
+		{
+			name: "BidExt Nil cases",
+			args: args{
+				response: &adapters.ResponseData{
+					StatusCode: http.StatusOK,
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
+			},
+			wantErr: nil,
+			wantResp: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "7706636740145184841",
+							ImpID:   "test-imp-id",
+							Price:   0.500000,
+							AdID:    "29681110",
+							AdM:     "some-test-ad",
+							ADomain: []string{"pubmatic.com"},
+							CrID:    "29681110",
+							H:       250,
+							W:       300,
+							DealID:  "testdeal",
+							Ext:     json.RawMessage(`null`),
+						},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
 					},
 				},
 				Currency: "USD",

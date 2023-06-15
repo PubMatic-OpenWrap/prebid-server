@@ -84,6 +84,7 @@ type ExtRequestPrebid struct {
 	Macros            map[string]string               `json:"macros,omitempty"`
 	AdServerTargeting []AdServerTarget                `json:"adservertargeting,omitempty"`
 	BidAdjustments    *ExtRequestPrebidBidAdjustments `json:"bidadjustments,omitempty"`
+	Transparency      *TransparencyExt                `json:"transparency,omitempty"`
 }
 
 type AdServerTarget struct {
@@ -100,6 +101,15 @@ type Experiment struct {
 // AdsCert defines if Call Sign feature is enabled for request
 type AdsCert struct {
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+type TransparencyRule struct {
+	Include bool     `json:"include,omitempty"`
+	Keys    []string `json:"keys,omitempty"`
+}
+
+type TransparencyExt struct {
+	Content map[string]TransparencyRule `json:"content,omitempty"`
 }
 
 type BidderConfig struct {
@@ -199,10 +209,12 @@ type ExtIncludeBrandCategory struct {
 	Publisher           string `json:"publisher"`
 	WithCategory        bool   `json:"withcategory"`
 	TranslateCategories *bool  `json:"translatecategories,omitempty"`
+	SkipDedup           bool   `json:"skipdedup,omitempty"`
 }
 
 // PriceGranularity defines the allowed values for bidrequest.ext.prebid.targeting.pricegranularity
 type PriceGranularity struct {
+	Test      bool               `json:"test,omitempty"`
 	Precision *int               `json:"precision,omitempty"`
 	Ranges    []GranularityRange `json:"ranges,omitempty"`
 }
@@ -315,6 +327,23 @@ func NewPriceGranularityFromLegacyID(v string) (PriceGranularity, bool) {
 					Increment: 0.5,
 				},
 			},
+		}, true
+	case "ow-ctv-med":
+		return PriceGranularity{
+			Precision: &precision2,
+			Ranges: []GranularityRange{{
+				Min:       0,
+				Max:       100,
+				Increment: 0.5}},
+		}, true
+	case "testpg":
+		return PriceGranularity{
+			Test:      true,
+			Precision: &precision2,
+			Ranges: []GranularityRange{{
+				Min:       0,
+				Max:       50,
+				Increment: 50}},
 		}, true
 	}
 

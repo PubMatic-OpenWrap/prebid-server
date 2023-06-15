@@ -54,6 +54,15 @@ type ImpLabels struct {
 	NativeImps bool
 }
 
+// PodLabels defines metric labels describing algorithm type
+// and other labels as per scenario
+type PodLabels struct {
+	AlgorithmName    string // AlgorithmName which is used for generating impressions
+	NoOfImpressions  *int   // NoOfImpressions represents number of impressions generated
+	NoOfCombinations *int   // NoOfCombinations represents number of combinations generated
+	NoOfResponseBids *int   // NoOfResponseBids represents number of bids responded (including bids with similar duration)
+}
+
 // RequestLabels defines metric labels describing the result of a network request.
 type RequestLabels struct {
 	RequestStatus RequestStatus
@@ -429,7 +438,7 @@ type MetricsEngine interface {
 	RecordAdapterRequest(labels AdapterLabels)
 	RecordAdapterConnections(adapterName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration)
 	RecordDNSTime(dnsLookupTime time.Duration)
-	RecordTLSHandshakeTime(tlsHandshakeTime time.Duration)
+	RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration)
 	RecordBidderServerResponseTime(bidderServerResponseTime time.Duration)
 	RecordAdapterPanic(labels AdapterLabels)
 	RecordAdapterBidReceived(labels AdapterLabels, bidType openrtb_ext.BidType, hasAdm bool)
@@ -439,6 +448,9 @@ type MetricsEngine interface {
 	RecordSyncerRequest(key string, status SyncerCookieSyncStatus)
 	RecordSetUid(status SetUidStatus)
 	RecordSyncerSet(key string, status SyncerSetUidStatus)
+	RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName)
+	RecordRejectedBidsForAccount(pubId string)
+	RecordFloorsRequestForAccount(pubId string)
 	RecordStoredReqCacheResult(cacheResult CacheResult, inc int)
 	RecordStoredImpCacheResult(cacheResult CacheResult, inc int)
 	RecordAccountCacheResult(cacheResult CacheResult, inc int)
@@ -468,4 +480,50 @@ type MetricsEngine interface {
 	RecordAccountGDPRChannelEnabledWarning(account string)
 	RecordAccountCCPAChannelEnabledWarning(account string)
 	RecordAccountUpgradeStatus(account string)
+
+	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
+	// gives the bid response with multiple bids containing  same bid.ID
+	RecordAdapterDuplicateBidID(adaptor string, collisions int)
+
+	// RecordRequestHavingDuplicateBidID keeps track off how many request got bid.id collision
+	// detected
+	RecordRequestHavingDuplicateBidID()
+
+	// ad pod specific metrics
+
+	// RecordPodImpGenTime records number of impressions generated and time taken
+	// by underneath algorithm to generate them
+	// labels accept name of the algorithm and no of impressions generated
+	// startTime indicates the time at which algorithm started
+	// This function will take care of computing the elpased time
+	RecordPodImpGenTime(labels PodLabels, startTime time.Time)
+
+	// RecordPodCombGenTime records number of combinations generated and time taken
+	// by underneath algorithm to generate them
+	// labels accept name of the algorithm and no of combinations generated
+	// elapsedTime indicates the time taken by combination generator to compute all requested combinations
+	// This function will take care of computing the elpased time
+	RecordPodCombGenTime(labels PodLabels, elapsedTime time.Duration)
+
+	// RecordPodCompititveExclusionTime records time take by competitive exclusion
+	// to compute the final Ad pod Response.
+	// labels accept name of the algorithm and no of combinations evaluated, total bids
+	// elapsedTime indicates the time taken by competitive exclusion to form final ad pod response using combinations and exclusion algorithm
+	// This function will take care of computing the elpased time
+	RecordPodCompititveExclusionTime(labels PodLabels, elapsedTime time.Duration)
+
+	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
+	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
+
+	//RecordDynamicFetchFailure records the dynamic fetch failure labeled by pubid and reason code
+	RecordDynamicFetchFailure(pubId, code string)
+
+	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
+	RecordRejectedBids(pubid, bidder, code string)
+
+	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
+	RecordBids(pubid, profileid, bidder, deal string)
+
+	//RecordVastVersion record the count of vast version labelled by bidder and vast version
+	RecordVastVersion(coreBidder, vastVersion string)
 }

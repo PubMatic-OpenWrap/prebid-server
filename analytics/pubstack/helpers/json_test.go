@@ -11,7 +11,9 @@ import (
 
 func TestJsonifyAuctionObject(t *testing.T) {
 	ao := &analytics.AuctionObject{
-		Status: http.StatusOK,
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status: http.StatusOK,
+		},
 	}
 
 	_, err := JsonifyAuctionObject(ao, "scopeId")
@@ -20,7 +22,9 @@ func TestJsonifyAuctionObject(t *testing.T) {
 
 func TestJsonifyVideoObject(t *testing.T) {
 	vo := &analytics.VideoObject{
-		Status: http.StatusOK,
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status: http.StatusOK,
+		},
 	}
 
 	_, err := JsonifyVideoObject(vo, "scopeId")
@@ -50,9 +54,11 @@ func TestJsonifySetUIDObject(t *testing.T) {
 
 func TestJsonifyAmpObject(t *testing.T) {
 	ao := &analytics.AmpObject{
-		Status:             http.StatusOK,
-		Errors:             make([]error, 0),
-		AuctionResponse:    &openrtb2.BidResponse{},
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Status:   http.StatusOK,
+			Errors:   make([]error, 0),
+			Response: &openrtb2.BidResponse{},
+		},
 		AmpTargetingValues: map[string]string{},
 	}
 
