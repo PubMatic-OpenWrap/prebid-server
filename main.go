@@ -1,32 +1,30 @@
-package main
+package prebidServer
 
 import (
-	"flag"
 	"math/rand"
 	"net/http"
 	"path/filepath"
 	"runtime"
 	"time"
 
+	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/usersync"
+
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/router"
-	"github.com/prebid/prebid-server/server"
 	"github.com/prebid/prebid-server/util/task"
 
-	"github.com/golang/glog"
 	"github.com/spf13/viper"
 )
 
-func init() {
+var InfoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
+
+func InitPrebidServer(configFile string) {
 	rand.Seed(time.Now().UnixNano())
-}
 
-func main() {
-	flag.Parse() // required for glog flags and testing package flags
-
-	bidderInfoPath, err := filepath.Abs(infoDirectory)
+	bidderInfoPath, err := filepath.Abs(InfoDirectory)
 	if err != nil {
 		glog.Exitf("Unable to build configuration directory path: %v", err)
 	}
@@ -35,7 +33,7 @@ func main() {
 	if err != nil {
 		glog.Exitf("Unable to load bidder configurations: %v", err)
 	}
-	cfg, err := loadConfig(bidderInfos)
+	cfg, err := loadConfig(bidderInfos, configFile)
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
@@ -54,10 +52,7 @@ func main() {
 	}
 }
 
-const configFileName = "pbs"
-const infoDirectory = "./static/bidder-info"
-
-func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {
+func loadConfig(bidderInfos config.BidderInfos, configFileName string) (*config.Configuration, error) {
 	v := viper.New()
 	config.SetupViper(v, configFileName, bidderInfos)
 	return config.New(v, bidderInfos, openrtb_ext.NormalizeBidderName)
@@ -71,14 +66,34 @@ func serve(cfg *config.Configuration) error {
 	currencyConverterTickerTask := task.NewTickerTask(fetchingInterval, currencyConverter)
 	currencyConverterTickerTask.Start()
 
-	r, err := router.New(cfg, currencyConverter)
+	_, err := router.New(cfg, currencyConverter)
 	if err != nil {
 		return err
 	}
 
-	corsRouter := router.SupportCORS(r)
-	server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(currencyConverter, fetchingInterval), r.MetricsEngine)
-
-	r.Shutdown()
 	return nil
+}
+
+func OrtbAuction(w http.ResponseWriter, r *http.Request) error {
+	return router.OrtbAuctionEndpointWrapper(w, r)
+}
+
+var VideoAuction = func(w http.ResponseWriter, r *http.Request) error {
+	return router.VideoAuctionEndpointWrapper(w, r)
+}
+
+func GetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.GetUIDSWrapper(w, r)
+}
+
+func SetUIDS(w http.ResponseWriter, r *http.Request) {
+	router.SetUIDSWrapper(w, r)
+}
+
+func CookieSync(w http.ResponseWriter, r *http.Request) {
+	router.CookieSync(w, r)
+}
+
+func SyncerMap() map[string]usersync.Syncer {
+	return router.SyncerMap()
 }

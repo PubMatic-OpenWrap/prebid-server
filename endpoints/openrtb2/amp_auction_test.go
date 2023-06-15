@@ -1665,8 +1665,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: nil,
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				},
 			},
 		},
 		{
@@ -1674,8 +1676,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("data for tag_id='test' does not define the required imp array")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("data for tag_id='test' does not define the required imp array")},
+				},
 			},
 		},
 		{
@@ -1683,8 +1687,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "unknown",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"ext":{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}}],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				},
 			},
 		},
 		{
@@ -1692,46 +1698,49 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"ext":{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}}],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: nil,
-				Request: &openrtb2.BidRequest{
-					ID: "some-request-id",
-					Device: &openrtb2.Device{
-						IP: "192.0.2.1",
-					},
-					Site: &openrtb2.Site{
-						Page: "prebid.org",
-						Ext:  json.RawMessage(`{"amp":1}`),
-					},
-					Imp: []openrtb2.Imp{
-						{
-							ID: "some-impression-id",
-							Banner: &openrtb2.Banner{
-								Format: []openrtb2.Format{
-									{
-										W: 300,
-										H: 250,
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: nil,
+					Request: &openrtb2.BidRequest{
+						ID: "some-request-id",
+						Device: &openrtb2.Device{
+							IP: "192.0.2.1",
+						},
+						Site: &openrtb2.Site{
+							Page: "prebid.org",
+							Ext:  json.RawMessage(`{"amp":1}`),
+						},
+						Imp: []openrtb2.Imp{
+							{
+								ID: "some-impression-id",
+								Banner: &openrtb2.Banner{
+									Format: []openrtb2.Format{
+										{
+											W: 300,
+											H: 250,
+										},
 									},
 								},
+								Secure: func(val int8) *int8 { return &val }(1), //(*int8)(1),
+								Ext:    json.RawMessage(`{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}`),
 							},
-							Secure: func(val int8) *int8 { return &val }(1), //(*int8)(1),
-							Ext:    json.RawMessage(`{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}`),
 						},
+						AT:   1,
+						TMax: 500,
+						Ext:  json.RawMessage(`{"prebid":{"cache":{"bids":{}},"channel":{"name":"amp","version":""},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true}}}`),
 					},
-					AT:   1,
-					TMax: 500,
-					Ext:  json.RawMessage(`{"prebid":{"cache":{"bids":{}},"channel":{"name":"amp","version":""},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true}}}`),
-				},
-				AuctionResponse: &openrtb2.BidResponse{
-					SeatBid: []openrtb2.SeatBid{{
-						Bid: []openrtb2.Bid{{
-							AdM: "<script></script>",
-							Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{{
+							Bid: []openrtb2.Bid{{
+								AdM: "<script></script>",
+								Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
+							}},
+							Seat: "",
 						}},
-						Seat: "",
-					}},
-					Ext: json.RawMessage(`{ "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+						Ext: json.RawMessage(`{ "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+					},
 				},
+
 				AmpTargetingValues: map[string]string{
 					"hb_appnexus_pb": "1.20",
 					"hb_cache_id":    "some_id",
@@ -1746,45 +1755,47 @@ func TestBuildAmpObject(t *testing.T) {
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"ext":{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}}],"tmax":500}`),
 			exchange:        &mockAmpExchange{requestExt: json.RawMessage(`{ "prebid": {"targeting": { "test_key": "test_value", "hb_appnexus_pb": "9999" } }, "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`)},
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: nil,
-				Request: &openrtb2.BidRequest{
-					ID: "some-request-id",
-					Device: &openrtb2.Device{
-						IP: "192.0.2.1",
-					},
-					Site: &openrtb2.Site{
-						Page: "prebid.org",
-						Ext:  json.RawMessage(`{"amp":1}`),
-					},
-					Imp: []openrtb2.Imp{
-						{
-							ID: "some-impression-id",
-							Banner: &openrtb2.Banner{
-								Format: []openrtb2.Format{
-									{
-										W: 300,
-										H: 250,
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: nil,
+					Request: &openrtb2.BidRequest{
+						ID: "some-request-id",
+						Device: &openrtb2.Device{
+							IP: "192.0.2.1",
+						},
+						Site: &openrtb2.Site{
+							Page: "prebid.org",
+							Ext:  json.RawMessage(`{"amp":1}`),
+						},
+						Imp: []openrtb2.Imp{
+							{
+								ID: "some-impression-id",
+								Banner: &openrtb2.Banner{
+									Format: []openrtb2.Format{
+										{
+											W: 300,
+											H: 250,
+										},
 									},
 								},
+								Secure: func(val int8) *int8 { return &val }(1), //(*int8)(1),
+								Ext:    json.RawMessage(`{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}`),
 							},
-							Secure: func(val int8) *int8 { return &val }(1), //(*int8)(1),
-							Ext:    json.RawMessage(`{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}`),
 						},
+						AT:   1,
+						TMax: 500,
+						Ext:  json.RawMessage(`{"prebid":{"cache":{"bids":{}},"channel":{"name":"amp","version":""},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true}}}`),
 					},
-					AT:   1,
-					TMax: 500,
-					Ext:  json.RawMessage(`{"prebid":{"cache":{"bids":{}},"channel":{"name":"amp","version":""},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true}}}`),
-				},
-				AuctionResponse: &openrtb2.BidResponse{
-					SeatBid: []openrtb2.SeatBid{{
-						Bid: []openrtb2.Bid{{
-							AdM: "<script></script>",
-							Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{{
+							Bid: []openrtb2.Bid{{
+								AdM: "<script></script>",
+								Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
+							}},
+							Seat: "",
 						}},
-						Seat: "",
-					}},
-					Ext: json.RawMessage(`{ "prebid": {"targeting": { "test_key": "test_value", "hb_appnexus_pb": "9999" } }, "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+						Ext: json.RawMessage(`{ "prebid": {"targeting": { "test_key": "test_value", "hb_appnexus_pb": "9999" } }, "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+					},
 				},
 				AmpTargetingValues: map[string]string{
 					"hb_appnexus_pb": "1.20", // Bid level has higher priority than global
@@ -1814,7 +1825,7 @@ func TestBuildAmpObject(t *testing.T) {
 		assert.Equalf(t, test.expectedAmpObject.Status, actualAmpObject.Status, "Amp Object Status field doesn't match expected: %s\n", test.description)
 		assert.Lenf(t, actualAmpObject.Errors, len(test.expectedAmpObject.Errors), "Amp Object Errors array doesn't match expected: %s\n", test.description)
 		assert.Equalf(t, test.expectedAmpObject.Request, actualAmpObject.Request, "Amp Object BidRequest doesn't match expected: %s\n", test.description)
-		assert.Equalf(t, test.expectedAmpObject.AuctionResponse, actualAmpObject.AuctionResponse, "Amp Object BidResponse doesn't match expected: %s\n", test.description)
+		assert.Equalf(t, test.expectedAmpObject.Response, actualAmpObject.Response, "Amp Object BidResponse doesn't match expected: %s\n", test.description)
 		assert.Equalf(t, test.expectedAmpObject.AmpTargetingValues, actualAmpObject.AmpTargetingValues, "Amp Object AmpTargetingValues doesn't match expected: %s\n", test.description)
 		assert.Equalf(t, test.expectedAmpObject.Origin, actualAmpObject.Origin, "Amp Object Origin field doesn't match expected: %s\n", test.description)
 	}
@@ -1920,7 +1931,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "text/plain; charset=utf-8")
 			},
 		},
@@ -1931,7 +1942,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
