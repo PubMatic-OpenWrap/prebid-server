@@ -356,3 +356,7 @@ func getStatsKeyIndexForResponseTime(responseTime int) int {
 	}
 	return statKey
 }
+
+func (st *StatsTCP) Shutdown() {
+	st.statsClient.ShutdownProcess()
+}
