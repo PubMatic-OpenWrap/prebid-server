@@ -28,8 +28,10 @@ var ignoreKeys = map[string]bool{
 }
 
 func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
-	var slotMap map[string]models.SlotMapping
-	var slotMappingInfo models.SlotMappingInfo
+	var (
+		slotMap         map[string]models.SlotMapping
+		slotMappingInfo models.SlotMappingInfo
+	)
 
 	//don't read mappings from cache in case of test=2
 	if rctx.IsTestRequest == 0 {
