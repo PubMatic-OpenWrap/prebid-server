@@ -22,7 +22,7 @@ func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int
 	headers.Add(ContentType, "application/xml; charset=utf-8")
 	headers.Add(UserAgent, userAgent)
 	headers.Add(UnwrapTimeout, strconv.Itoa(unwrapDefaultTimeout))
-	httpReq, err := http.NewRequest(POST, unwrapURL, strings.NewReader(bid.Bid.AdM))
+	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
 	if err != nil {
 		return
 	}
