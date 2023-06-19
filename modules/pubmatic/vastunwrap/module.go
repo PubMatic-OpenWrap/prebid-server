@@ -13,12 +13,9 @@ import (
 )
 
 type VastUnwrapModule struct {
-	cfg VastUnwrapModuleCfg
-}
-
-// VastUnwrapModuleCfg contains the values read from the config file  for vast unwrapper module at boot time
-type VastUnwrapModuleCfg struct {
-	VastUnWrapCfg unWrapCfg.VastUnWrapCfg
+	Cfg               unWrapCfg.VastUnWrapCfg `mapstructure:"VastUnWrapCfg" json:"VastUnWrapCfg"`
+	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
+	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -26,21 +23,22 @@ func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, e
 }
 
 func initVastUnrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (VastUnwrapModule, error) {
-	cfg := VastUnwrapModuleCfg{}
+	vastUnwrapModuleCfg := VastUnwrapModule{}
 
-	err := json.Unmarshal(rawCfg, &cfg)
+	err := json.Unmarshal(rawCfg, &vastUnwrapModuleCfg)
 	if err != nil {
 		return VastUnwrapModule{}, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
 
-	if cfg.VastUnWrapCfg.Enabled {
-		vastunwrap.InitUnWrapperConfig(cfg.VastUnWrapCfg)
+	if vastUnwrapModuleCfg.Enabled {
+		vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	}
 
 	return VastUnwrapModule{
-		cfg: cfg,
+		Cfg:               vastUnwrapModuleCfg.Cfg,
+		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
+		Enabled:           vastUnwrapModuleCfg.Enabled,
 	}, nil
-
 }
 
 // HandleRawBidderResponseHook fetches rCtx and check for vast unwrapper flag to enable/disable vast unwrapping feature
@@ -50,8 +48,8 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 
-	if m.cfg.VastUnWrapCfg.Enabled {
-		return handleRawBidderResponseHook(payload, miCtx.ModuleContext, m.cfg.VastUnWrapCfg.APPConfig.UnwrapDefaultTimeout, UnwrapURL)
+	if m.Enabled {
+		return handleRawBidderResponseHook(payload, miCtx.ModuleContext, m.Cfg.APPConfig.UnwrapDefaultTimeout, UnwrapURL)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
 }
@@ -63,8 +61,8 @@ func (m VastUnwrapModule) HandleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 
-	if m.cfg.VastUnWrapCfg.Enabled {
-		return handleEntrypointHook(ctx, miCtx, payload)
+	if m.Enabled {
+		return handleEntrypointHook(ctx, miCtx, payload, m)
 	}
 	return hookstage.HookResult[hookstage.EntrypointPayload]{}, nil
 }

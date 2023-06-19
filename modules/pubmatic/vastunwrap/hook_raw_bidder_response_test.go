@@ -52,6 +52,41 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name: "Set Vast Unwrapper to false in request context with type video",
+			args: args{
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   "<div>This is an Ad</div>",
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						}}},
+				moduleCtx:     hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}},
+				unwrapTimeout: 1000,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			expectedBids: []*adapters.TypedBid{{
+				Bid: &openrtb2.Bid{
+					ID:    "Bid-123",
+					ImpID: fmt.Sprintf("div-adunit-%d", 123),
+					Price: 2.1,
+					AdM:   "<div>This is an Ad</div>",
+					CrID:  "Cr-234",
+					W:     100,
+					H:     50,
+				},
+				BidType: "video",
+			}},
+			wantErr: false,
+		},
+		{
 			name: "Set Vast Unwrapper to true in request context with type video",
 			args: args{
 				payload: hookstage.RawBidderResponsePayload{

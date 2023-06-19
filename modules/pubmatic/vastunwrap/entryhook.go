@@ -2,6 +2,7 @@ package vastunwrap
 
 import (
 	"context"
+	"math/rand"
 	"runtime/debug"
 
 	"github.com/golang/glog"
@@ -17,7 +18,7 @@ func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 func handleEntrypointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.EntrypointPayload,
+	payload hookstage.EntrypointPayload, config VastUnwrapModule,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -32,6 +33,10 @@ func handleEntrypointHook(
 	vastRequestContext := models.RequestCtx{
 		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled),
 	}
+	if vastRequestContext.IsVastUnwrapEnabled && rand.Intn(100) < config.TrafficPercentage {
+		vastRequestContext.IsVastUnwrapEnabled = true
+	}
+
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext
 

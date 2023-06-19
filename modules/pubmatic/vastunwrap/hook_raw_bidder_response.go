@@ -23,6 +23,11 @@ func handleRawBidderResponseHook(
 		moduleCtx[RequestContext] = vastRequestContext
 	}()
 
+	if !vastRequestContext.IsVastUnwrapEnabled {
+		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
+		return result, nil
+	}
+
 	for _, bid := range payload.Bids {
 		bidMediaTypes := mediaTypesFromBid(bid)
 		if _, ok := bidMediaTypes[MediaTypeVideo]; ok {
