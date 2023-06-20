@@ -76,6 +76,7 @@ func (sc *Client) ShutdownProcess() {
 
 // PublishStat will push a stat to pubChan channel.
 func (sc *Client) PublishStat(key string, value int) {
+	key = "TTT:" + key
 	sc.pubChan <- stat{Key: key, Value: value}
 }
 
