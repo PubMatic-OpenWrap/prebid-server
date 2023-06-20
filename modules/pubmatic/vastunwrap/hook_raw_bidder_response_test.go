@@ -113,7 +113,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					ID:    "Bid-123",
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
-					AdM:   inlineXMLAdM,
+					AdM:   vastXMLAdM,
 					CrID:  "Cr-234",
 					W:     100,
 					H:     50,

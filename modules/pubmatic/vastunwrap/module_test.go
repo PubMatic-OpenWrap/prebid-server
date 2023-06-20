@@ -149,7 +149,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 					ID:    "Bid-123",
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
-					AdM:   inlineXMLAdM,
+					AdM:   vastXMLAdM,
 					CrID:  "Cr-234",
 					W:     100,
 					H:     50,
@@ -220,7 +220,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.args.payload.Bids[0].Bid.AdM, tt.expectedBids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
+			assert.Equal(t, tt.expectedBids[0].Bid.AdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
 		})
 	}
 }

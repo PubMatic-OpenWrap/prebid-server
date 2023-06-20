@@ -26,9 +26,7 @@ func handleEntrypointHook(
 		}
 	}()
 
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{
-		Reject: true,
-	}
+	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 
 	vastRequestContext := models.RequestCtx{
 		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled),
