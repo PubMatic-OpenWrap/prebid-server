@@ -1,6 +1,7 @@
 package vastunwrap
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -12,7 +13,17 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int, unwrapURL string) {
+type UnwrapVast interface {
+	Dovastunwrap(r *http.Request, w http.ResponseWriter)
+}
+type Vast struct {
+}
+
+func (v *Vast) Dovastunwrap(r *http.Request, w http.ResponseWriter) {
+	unwrapper.UnwrapRequest(w, r)
+
+}
+func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int, unwrapURL string, vast UnwrapVast) {
 
 	startTime := time.Now()
 	wrapperCnt := 0
@@ -29,17 +40,18 @@ func doUnwrap(bid *adapters.TypedBid, userAgent string, unwrapDefaultTimeout int
 	httpReq.Header = headers
 
 	httpResp := httptest.NewRecorder()
-	unwrapper.UnwrapRequest(httpResp, httpReq)
-
+	vast.Dovastunwrap(httpReq, httpResp)
 	wrap_cnt := httpResp.Header().Get(UnwrapCount)
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
 	}
 	respBody := httpResp.Body.Bytes()
+	fmt.Printf("\n status code - %v \n ", httpResp.Code)
+	fmt.Printf("\n resp ADM- %v \n", string(respBody))
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
 		glog.Infof("\n UnWrap Done for BidId = %s Cnt = %d in %v (ms)", bid.Bid.ID, wrapperCnt, time.Since(startTime).Milliseconds())
-		return
 	}
+	// glog.Infof("\n UnWrap Response code = %s for BidId = %s ", httpResp.Code, bid.Bid.ID)
 	return
 }
