@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/analytics"
@@ -824,7 +824,7 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",
@@ -854,7 +854,7 @@ func TestUpdateRejectedBidExt(t *testing.T) {
 						{
 							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
 								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":""}}`),
+								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
 							},
 								OriginalBidCPM: 0,
 								BidType:        "",
@@ -1114,6 +1114,298 @@ func TestCallRecordBids(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockMetricEngine := tt.args.getMetricsEngine()
 			recordBids(tt.args.ctx, mockMetricEngine, tt.args.pubID, tt.args.adapterBids)
+			mockMetricEngine.AssertExpectations(t)
+		})
+	}
+}
+
+func TestRecordVastVersion(t *testing.T) {
+	type args struct {
+		metricsEngine    metrics.MetricsEngine
+		adapterBids      map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+		getMetricsEngine func() *metrics.MetricsEngineMock
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "No Bids",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Empty Bids in SeatBid",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Empty Bids in SeatBid",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Invalid Bid Type",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeBanner,
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "No Adm in Bids",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									AdM: "",
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "No version found in Adm",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									AdM: "<Vast> <Vast>",
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", vastVersionUndefined).Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST version=\"2.0\">
+									  <Ad id="601364">
+									    <InLine>
+									      <AdSystem>Adsystem Example</AdSystem>
+									      <AdTitle>VAST 2.0</AdTitle>
+									      <Description>VAST 2.0</Description>
+									      <Error>http://myErrorURL/error</Error>
+									      <Impression>http://myTrackingURL/impression</Impression>
+									      <Creatives>
+									        <Creative AdID="12345">
+									          <Linear>
+									           <Duration>00:00:30</Duration>
+									            <TrackingEvents>
+									              <Tracking event="creativeView">http://myTrackingURL/creativeView</Tracking>
+									              <Tracking event="start">http://myTrackingURL/start</Tracking>
+									              <Tracking event="midpoint">http://myTrackingURL/midpoint</Tracking>
+									              <Tracking event="firstQuartile">http://myTrackingURL/firstQuartile</Tracking>
+									              <Tracking event="thirdQuartile">http://myTrackingURL/thirdQuartile</Tracking>
+									              <Tracking event="complete">http://myTrackingURL/complete</Tracking>
+									            </TrackingEvents>
+									            <VideoClicks>
+									              <ClickThrough>http://www.examplemedia.com</ClickThrough>
+									              <ClickTracking>http://myTrackingURL/click</ClickTracking>
+									            </VideoClicks>
+									            <MediaFiles>
+									             <MediaFile delivery="progressive" type="video/x-flv" bitrate="500" width="400" height="300" scalable="true" maintainAspectRatio="true">
+									        http://demo.examplemedia.com/video/acudeo/Carrot_400x300_500kb.flv
+									          </MediaFile>
+									         </MediaFiles>
+									          </Linear>
+									    </Creative>
+									    <Creative AdID="601364-Companion">
+									      <CompanionAds>
+									           <Companion width="300" height="250">
+									             <StaticResource creativeType="image/jpeg">
+									             http://demo.examplemedia.com/vast/this_is_the_ad.jpg
+									             </StaticResource>
+									             <TrackingEvents>
+									               <Tracking event="creativeView">http://myTrackingURL/tracking</Tracking>
+									             </TrackingEvents>
+									           <CompanionClickThrough>http://www.examplemedia.com</CompanionClickThrough>
+									           </Companion>
+									           <Companion width="728" height="90">
+									             <StaticResource creativeType="image/jpeg">
+									             http://demo.examplemedia.com/vast/trackingbanner
+									             </StaticResource>
+									           <CompanionClickThrough>http://www.examplemedia.com</CompanionClickThrough>
+									           </Companion>
+									         </CompanionAds>
+									       </Creative>
+									     </Creatives>
+									   </InLine>
+									   </Ad>
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm with spaces in tag",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST version = "4.1">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "4.1").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm with multiple attributes",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST namespace="test" version = \"2.0\">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found xml tag before Vast tag attributes",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.0">
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "Version found in Adm inside single quote",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						BidderCoreName: "pubmatic",
+						Bids: []*entities.PbsOrtbBid{
+							{
+								BidType: openrtb_ext.BidTypeVideo,
+								Bid: &openrtb2.Bid{
+									AdM: `<VAST namespace="test" version = \'2.0\'>
+									</VAST>`,
+								},
+							},
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVastVersion", "pubmatic", "2.0").Return()
+					return metricEngine
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockMetricEngine := tt.args.getMetricsEngine()
+			recordVastVersion(mockMetricEngine, tt.args.adapterBids)
 			mockMetricEngine.AssertExpectations(t)
 		})
 	}

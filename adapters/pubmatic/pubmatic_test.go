@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
@@ -80,6 +80,7 @@ func TestParseImpressionObject(t *testing.T) {
 		imp                      *openrtb2.Imp
 		extractWrapperExtFromImp bool
 		extractPubIDFromImp      bool
+		bidAdjustmentFactor      float64
 	}
 	tests := []struct {
 		name                string
@@ -126,7 +127,7 @@ func TestParseImpressionObject(t *testing.T) {
 			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
-			name: "imp.bidfloor set and kadfloor set, preference to kadfloor",
+			name: "imp.bidfloor set and kadfloor set, higher imp.bidfloor",
 			args: args{
 				imp: &openrtb2.Imp{
 					BidFloor: 0.12,
@@ -134,7 +135,18 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.11"}}`),
 				},
 			},
-			expectedBidfloor: 0.11,
+			expectedBidfloor: 0.12,
+		},
+		{
+			name: "imp.bidfloor set and kadfloor set, higher kadfloor",
+			args: args{
+				imp: &openrtb2.Imp{
+					BidFloor: 0.12,
+					Video:    &openrtb2.Video{},
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.13"}}`),
+				},
+			},
+			expectedBidfloor: 0.13,
 			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
@@ -150,6 +162,18 @@ func TestParseImpressionObject(t *testing.T) {
 			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
+			name: "kadfloor with bidAdjustmentFactor",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.13"}}`),
+				},
+				bidAdjustmentFactor: 0.9,
+			},
+			expectedBidfloor: 0.1444,
+			expectedImpExt:   json.RawMessage(nil),
+		},
+		{
 			name: "bidViewability Object is set in imp.ext.prebid.pubmatic, pass to imp.ext",
 			args: args{
 				imp: &openrtb2.Imp{
@@ -162,7 +186,7 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.bidAdjustmentFactor)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)

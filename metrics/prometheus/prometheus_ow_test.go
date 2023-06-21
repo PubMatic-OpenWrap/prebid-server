@@ -89,3 +89,41 @@ func TestRecordBids(t *testing.T) {
 			})
 	}
 }
+
+func TestRecordVastVersion(t *testing.T) {
+	type testIn struct {
+		coreBidder, vastVersion string
+	}
+	type testOut struct {
+		expCount int
+	}
+	testCases := []struct {
+		description string
+		in          testIn
+		out         testOut
+	}{
+		{
+			description: "record vast version",
+			in: testIn{
+				coreBidder:  "bidder",
+				vastVersion: "2.0",
+			},
+			out: testOut{
+				expCount: 1,
+			},
+		},
+	}
+	for _, test := range testCases {
+		pm := createMetricsForTesting()
+		pm.RecordVastVersion(test.in.coreBidder, test.in.vastVersion)
+		assertCounterVecValue(t,
+			"",
+			"record vastVersion",
+			pm.vastVersion,
+			float64(test.out.expCount),
+			prometheus.Labels{
+				adapterLabel: test.in.coreBidder,
+				versionLabel: test.in.vastVersion,
+			})
+	}
+}

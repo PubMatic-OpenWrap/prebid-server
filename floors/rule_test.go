@@ -2,29 +2,27 @@ package floors
 
 import (
 	"encoding/json"
-	"reflect"
+	"errors"
 	"testing"
 
-	"github.com/magiconair/properties/assert"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrepareRuleCombinations(t *testing.T) {
-	tt := []struct {
+	testCases := []struct {
 		name string
 		in   []string
-		n    int
 		del  string
-		out  []string
+		exp  []string
 	}{
 		{
 			name: "Schema items, n = 1",
 			in:   []string{"A"},
-			n:    1,
 			del:  "|",
-			out: []string{
+			exp: []string{
 				"a",
 				"*",
 			},
@@ -32,9 +30,8 @@ func TestPrepareRuleCombinations(t *testing.T) {
 		{
 			name: "Schema items, n = 2",
 			in:   []string{"A", "B"},
-			n:    2,
 			del:  "|",
-			out: []string{
+			exp: []string{
 				"a|b",
 				"a|*",
 				"*|b",
@@ -44,9 +41,8 @@ func TestPrepareRuleCombinations(t *testing.T) {
 		{
 			name: "Schema items, n = 3",
 			in:   []string{"A", "B", "C"},
-			n:    3,
 			del:  "|",
-			out: []string{
+			exp: []string{
 				"a|b|c",
 				"a|b|*",
 				"a|*|c",
@@ -60,9 +56,8 @@ func TestPrepareRuleCombinations(t *testing.T) {
 		{
 			name: "Schema items, n = 4",
 			in:   []string{"A", "B", "C", "D"},
-			n:    4,
 			del:  "|",
-			out: []string{
+			exp: []string{
 				"a|b|c|d",
 				"a|b|c|*",
 				"a|b|*|d",
@@ -81,19 +76,113 @@ func TestPrepareRuleCombinations(t *testing.T) {
 				"*|*|*|*",
 			},
 		},
+		{
+			name: "Schema items, n = 1 with wildcards",
+			in:   []string{"*"},
+			del:  "|",
+			exp: []string{
+				"*",
+			},
+		},
+		{
+			name: "Schema items, n = 2 with wildcard at index = 0",
+			in:   []string{"*", "B"},
+			del:  "|",
+			exp: []string{
+				"*|b",
+				"*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 2 with wildcards at index = 1",
+			in:   []string{"A", "*"},
+			del:  "|",
+			exp: []string{
+				"a|*",
+				"*|*",
+			},
+		},
+
+		{
+			name: "Schema items, n = 2 wildcards at index = 0,1",
+			in:   []string{"*", "*"},
+			del:  "|",
+			exp: []string{
+				"*|*",
+			},
+		},
+
+		{
+			name: "Schema items, n = 3 wildcard at index = 0",
+			in:   []string{"*", "B", "C"},
+			del:  "|",
+			exp: []string{
+				"*|b|c",
+				"*|b|*",
+				"*|*|c",
+				"*|*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 3 wildcard at index = 1",
+			in:   []string{"A", "*", "C"},
+			del:  "|",
+			exp: []string{
+				"a|*|c",
+				"a|*|*",
+				"*|*|c",
+				"*|*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 3 with wildcard at index = 2",
+			in:   []string{"A", "B", "*"},
+			del:  "|",
+			exp: []string{
+				"a|b|*",
+				"a|*|*",
+				"*|b|*",
+				"*|*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 3 with wildcard at index = 0,2",
+			in:   []string{"*", "B", "*"},
+			del:  "|",
+			exp: []string{
+				"*|b|*",
+				"*|*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 3 with wildcard at index = 0,1",
+			in:   []string{"*", "*", "C"},
+			del:  "|",
+			exp: []string{
+				"*|*|c",
+				"*|*|*",
+			},
+		},
+		{
+			name: "Schema items, n = 3 with wildcard at index = 1,2",
+			in:   []string{"A", "*", "*"},
+			del:  "|",
+			exp: []string{
+				"a|*|*",
+				"*|*|*",
+			},
+		},
 	}
-	for _, tc := range tt {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			out := prepareRuleCombinations(tc.in, tc.n, tc.del)
-			if !reflect.DeepEqual(out, tc.out) {
-				t.Errorf("error: \nreturn:\t%v\nwant:\t%v", out, tc.out)
-			}
+			act := prepareRuleCombinations(tc.in, tc.del)
+			assert.Equal(t, tc.exp, act, tc.name)
 		})
 	}
 }
 
 func TestUpdateImpExtWithFloorDetails(t *testing.T) {
-	tt := []struct {
+	testCases := []struct {
 		name         string
 		matchedRule  string
 		floorRuleVal float64
@@ -107,7 +196,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			floorRuleVal: 5.5,
 			floorVal:     5.5,
 			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}}},
-			expected:     []byte(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5,"floorValue":5.5}}}`),
+			expected:     []byte(`{"prebid":{"floors":{"floorrule":"test|123|xyz","floorrulevalue":5.5,"floorvalue":5.5}}}`),
 		},
 		{
 			name:         "Empty ImpExt",
@@ -115,7 +204,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			floorRuleVal: 5.5,
 			floorVal:     5.5,
 			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: json.RawMessage{}}},
-			expected:     []byte(`{"prebid":{"floors":{"floorRule":"test|123|xyz","floorRuleValue":5.5,"floorValue":5.5}}}`),
+			expected:     []byte(`{"prebid":{"floors":{"floorrule":"test|123|xyz","floorrulevalue":5.5,"floorvalue":5.5}}}`),
 		},
 		{
 			name:         "With prebid Ext",
@@ -123,22 +212,30 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			floorRuleVal: 5.5,
 			floorVal:     15.5,
 			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
-			expected:     []byte(`{"prebid":{"floors":{"floorRule":"banner|www.test.com|*","floorRuleValue":5.5,"floorValue":15.5}}}`),
+			expected:     []byte(`{"prebid":{"floors":{"floorrule":"banner|www.test.com|*","floorrulevalue":5.5,"floorvalue":15.5}}}`),
+		},
+		{
+			name:         "non matching rule",
+			matchedRule:  "",
+			floorRuleVal: 5.5,
+			floorVal:     15.5,
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			expected:     []byte(`{"prebid":{"floors":{"floorvalue":15.5}}}`),
 		},
 	}
-	for _, tc := range tt {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			updateImpExtWithFloorDetails(tc.imp, tc.matchedRule, tc.floorRuleVal, tc.floorVal)
 			_ = tc.imp.RebuildImpressionExt()
-			if tc.imp.Ext != nil && !reflect.DeepEqual(tc.imp.Ext, tc.expected) {
-				t.Errorf("error: \nreturn:\t%v\n want:\t%v", string(tc.imp.Ext), string(tc.expected))
+			if tc.imp.Ext != nil {
+				assert.Equal(t, tc.imp.Ext, tc.expected, tc.name)
 			}
 		})
 	}
 }
 
 func TestCreateRuleKeys(t *testing.T) {
-	tt := []struct {
+	testCases := []struct {
 		name        string
 		floorSchema openrtb_ext.PriceFloorSchema
 		request     *openrtb2.BidRequest
@@ -165,7 +262,7 @@ func TestCreateRuleKeys(t *testing.T) {
 				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480, Placement: 1}}},
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
-			out:         []string{"video-instream", "640x480", "www.test.com"},
+			out:         []string{"video", "640x480", "www.test.com"},
 		},
 		{
 			name: "CreateRule with video mediatype, size and domain",
@@ -239,6 +336,54 @@ func TestCreateRuleKeys(t *testing.T) {
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
 			out:         []string{"chName", "USA", "tablet"},
+		},
+		{
+			name: "CreateRule with channel, country, deviceType=tablet",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "Windows NT touch"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+				Ext:    json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
+			out:         []string{"chName", "USA", "tablet"},
+		},
+		{
+			name: "CreateRule with channel, country, deviceType=desktop",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "Windows NT"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+				Ext:    json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
+			out:         []string{"chName", "USA", "desktop"},
+		},
+		{
+			name: "CreateRule with channel, country, deviceType=desktop",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+					Bundle: "bundle123",
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}, UA: "Windows NT"},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{Request: "Test"}}},
+				Ext:    json.RawMessage(`{"prebid": {"channel": {"name": "chName","version": "ver1"}}}`),
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"channel", "country", "deviceType"}},
+			out:         []string{"chName", "USA", "desktop"},
 		},
 		{
 			name: "CreateRule with channel, size, deviceType=desktop",
@@ -352,20 +497,32 @@ func TestCreateRuleKeys(t *testing.T) {
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"domain", "adUnitCode", "channel"}},
 			out:         []string{"www.test.com", "storedid_123", "*"},
 		},
+		{
+			name: "CreateRule with domain, adUnitCode, channel",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						Domain: "www.test.com",
+					},
+				},
+				Device: &openrtb2.Device{Geo: &openrtb2.Geo{Country: "USA"}},
+				Imp:    []openrtb2.Imp{{ID: "1234", Native: &openrtb2.Native{}, Ext: json.RawMessage(`{"prebid": {"storedrequest": {"id": "storedid_123"}}}`)}},
+			},
+			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"domain", "adUnitCode", "channel"}},
+			out:         []string{"www.test.com", "storedid_123", "*"},
+		},
 	}
-	for _, tc := range tt {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			out := createRuleKey(tc.floorSchema, tc.request, tc.request.Imp[0])
-			if !reflect.DeepEqual(out, tc.out) {
-				t.Errorf("error: \nreturn:\t%v\nwant:\t%v", out, tc.out)
-			}
+			out := createRuleKey(tc.floorSchema, &openrtb_ext.RequestWrapper{BidRequest: tc.request}, &openrtb_ext.ImpWrapper{Imp: &tc.request.Imp[0]})
+			assert.Equal(t, out, tc.out, tc.name)
 		})
 	}
 }
 
 func TestShouldSkipFloors(t *testing.T) {
 
-	tt := []struct {
+	testCases := []struct {
 		name                string
 		ModelGroupsSkipRate int
 		DataSkipRate        int
@@ -394,7 +551,7 @@ func TestShouldSkipFloors(t *testing.T) {
 			ModelGroupsSkipRate: 0,
 			DataSkipRate:        0,
 			RootSkipRate:        0,
-			randomGen:           func(i int) int { return 5 },
+			randomGen:           func(i int) int { return 0 },
 			out:                 false,
 		},
 		{
@@ -430,180 +587,80 @@ func TestShouldSkipFloors(t *testing.T) {
 			out:                 true,
 		},
 	}
-	for _, tc := range tt {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			out := shouldSkipFloors(tc.ModelGroupsSkipRate, tc.DataSkipRate, tc.RootSkipRate, tc.randomGen)
-			if !reflect.DeepEqual(out, tc.out) {
-				t.Errorf("error: \nreturn:\t%v\nwant:\t%v", out, tc.out)
-			}
+			assert.Equal(t, out, tc.out, tc.name)
 		})
 	}
 
-}
-
-func getIntPtr(v int) *int {
-	return &v
 }
 
 func TestSelectFloorModelGroup(t *testing.T) {
-	tt := []struct {
-		name                string
-		ModelGroup          []openrtb_ext.PriceFloorModelGroup
-		ModelVersion        string
-		fn                  func(int) int
-		expectedModelWeight int
+	weightNilModelGroup := openrtb_ext.PriceFloorModelGroup{ModelWeight: nil}
+	weight01ModelGroup := openrtb_ext.PriceFloorModelGroup{ModelWeight: getIntPtr(1)}
+	weight25ModelGroup := openrtb_ext.PriceFloorModelGroup{ModelWeight: getIntPtr(25)}
+	weight50ModelGroup := openrtb_ext.PriceFloorModelGroup{ModelWeight: getIntPtr(50)}
+
+	testCases := []struct {
+		name               string
+		ModelGroup         []openrtb_ext.PriceFloorModelGroup
+		fn                 func(int) int
+		expectedModelGroup []openrtb_ext.PriceFloorModelGroup
 	}{
 		{
-			name: "Version 3 Selection",
-			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
-				ModelWeight:  nil,
-				SkipRate:     20,
-				ModelVersion: "Version 3",
-				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-				Values: map[string]float64{
-					"banner|300x250|www.website.com": 1.01,
-					"banner|300x250|*":               2.01,
-					"banner|300x600|www.website.com": 3.01,
-					"banner|300x600|*":               4.01,
-					"banner|728x90|www.website.com":  5.01,
-					"banner|728x90|*":                6.01,
-					"banner|*|www.website.com":       7.01,
-					"banner|*|*":                     8.01,
-					"*|300x250|www.website.com":      9.01,
-					"*|300x250|*":                    10.01,
-					"*|300x600|www.website.com":      11.01,
-					"*|300x600|*":                    12.01,
-					"*|728x90|www.website.com":       13.01,
-					"*|728x90|*":                     14.01,
-					"*|*|www.website.com":            15.01,
-					"*|*|*":                          16.01,
-				}, Default: 0.01}},
-			ModelVersion:        "Version 3",
-			fn:                  func(i int) int { return 0 },
-			expectedModelWeight: 1,
-		},
-		{
-			name: "Version 2 Selection",
-			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
-				ModelWeight:  getIntPtr(25),
-				SkipRate:     20,
-				ModelVersion: "Version 2",
-				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-				Values: map[string]float64{
-					"banner|300x250|www.website.com": 1.01,
-					"banner|300x250|*":               2.01,
-					"banner|300x600|www.website.com": 3.01,
-					"banner|300x600|*":               4.01,
-					"banner|728x90|www.website.com":  5.01,
-					"banner|728x90|*":                6.01,
-					"banner|*|www.website.com":       7.01,
-					"banner|*|*":                     8.01,
-					"*|300x250|www.website.com":      9.01,
-					"*|300x250|*":                    10.01,
-					"*|300x600|www.website.com":      11.01,
-					"*|300x600|*":                    12.01,
-					"*|728x90|www.website.com":       13.01,
-					"*|728x90|*":                     14.01,
-					"*|*|www.website.com":            15.01,
-					"*|*|*":                          16.01,
-				}, Default: 0.01},
-				{
-					ModelWeight:  getIntPtr(50),
-					SkipRate:     10,
-					ModelVersion: "Version 1",
-					Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-					Values: map[string]float64{
-						"banner|300x250|www.website.com": 1.01,
-						"banner|300x250|*":               2.01,
-						"banner|300x600|www.website.com": 3.01,
-						"banner|300x600|*":               4.01,
-						"banner|728x90|www.website.com":  5.01,
-						"banner|728x90|*":                6.01,
-						"banner|*|www.website.com":       7.01,
-						"banner|*|*":                     8.01,
-						"*|300x250|www.website.com":      9.01,
-						"*|300x250|*":                    10.01,
-						"*|300x600|www.website.com":      11.01,
-						"*|300x600|*":                    12.01,
-						"*|728x90|www.website.com":       13.01,
-						"*|728x90|*":                     14.01,
-						"*|*|www.website.com":            15.01,
-						"*|*|*":                          16.01,
-					}, Default: 0.01},
+			name: "ModelGroup with default weight selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weightNilModelGroup,
 			},
-			ModelVersion:        "Version 2",
-			fn:                  func(i int) int { return 5 },
-			expectedModelWeight: 25,
+			fn: func(i int) int { return 0 },
+			expectedModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight01ModelGroup,
+			},
 		},
 		{
-			name: "Version 1 Selection",
-			ModelGroup: []openrtb_ext.PriceFloorModelGroup{{
-				ModelWeight:  getIntPtr(50),
-				SkipRate:     10,
-				ModelVersion: "Version 1",
-				Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-				Values: map[string]float64{
-					"banner|300x250|www.website.com": 1.01,
-					"banner|300x250|*":               2.01,
-					"banner|300x600|www.website.com": 3.01,
-					"banner|300x600|*":               4.01,
-					"banner|728x90|www.website.com":  5.01,
-					"banner|728x90|*":                6.01,
-					"banner|*|www.website.com":       7.01,
-					"banner|*|*":                     8.01,
-					"*|300x250|www.website.com":      9.01,
-					"*|300x250|*":                    10.01,
-					"*|300x600|www.website.com":      11.01,
-					"*|300x600|*":                    12.01,
-					"*|728x90|www.website.com":       13.01,
-					"*|728x90|*":                     14.01,
-					"*|*|www.website.com":            15.01,
-					"*|*|*":                          16.01,
-				}, Default: 0.01},
-				{
-					ModelWeight:  getIntPtr(25),
-					SkipRate:     20,
-					ModelVersion: "Version 2",
-					Schema:       openrtb_ext.PriceFloorSchema{Fields: []string{"mediaType", "size", "domain"}},
-					Values: map[string]float64{
-						"banner|300x250|www.website.com": 1.01,
-						"banner|300x250|*":               2.01,
-						"banner|300x600|www.website.com": 3.01,
-						"banner|300x600|*":               4.01,
-						"banner|728x90|www.website.com":  5.01,
-						"banner|728x90|*":                6.01,
-						"banner|*|www.website.com":       7.01,
-						"banner|*|*":                     8.01,
-						"*|300x250|www.website.com":      9.01,
-						"*|300x250|*":                    10.01,
-						"*|300x600|www.website.com":      11.01,
-						"*|300x600|*":                    12.01,
-						"*|728x90|www.website.com":       13.01,
-						"*|728x90|*":                     14.01,
-						"*|*|www.website.com":            15.01,
-						"*|*|*":                          16.01,
-					}, Default: 0.01}},
-			ModelVersion:        "Version 1",
-			fn:                  func(i int) int { return 55 },
-			expectedModelWeight: 50,
+			name: "ModelGroup with weight = 25 selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight25ModelGroup,
+				weight50ModelGroup,
+			},
+			fn: func(i int) int { return 5 },
+			expectedModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight25ModelGroup,
+			},
+		},
+		{
+			name: "ModelGroup with weight = 50 selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight50ModelGroup,
+			},
+			fn: func(i int) int { return 55 },
+			expectedModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight50ModelGroup,
+			},
+		},
+		{
+			name: "ModelGroup with weight = 25 selection",
+			ModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight25ModelGroup,
+				weight50ModelGroup,
+			},
+			fn: func(i int) int { return 80 },
+			expectedModelGroup: []openrtb_ext.PriceFloorModelGroup{
+				weight25ModelGroup,
+			},
 		},
 	}
 
-	for _, tc := range tt {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			resp := selectFloorModelGroup(tc.ModelGroup, tc.fn)
-
-			assert.Equal(t, *resp[0].ModelWeight, tc.expectedModelWeight)
-
-			if !reflect.DeepEqual(tc.ModelGroup[0].ModelVersion, tc.ModelVersion) {
-				t.Errorf("Floor Model Version mismatch error: \nreturn:\t%v\nwant:\t%v", tc.ModelGroup[0].ModelVersion, tc.ModelVersion)
-			}
-
+			assert.Equal(t, resp, tc.expectedModelGroup)
 		})
 	}
 }
 
-func Test_getMinFloorValue(t *testing.T) {
+func TestGetMinFloorValue(t *testing.T) {
 	rates := map[string]map[string]float64{
 		"USD": {
 			"INR": 81.17,
@@ -615,12 +672,12 @@ func Test_getMinFloorValue(t *testing.T) {
 		imp         openrtb2.Imp
 		conversions currency.Conversions
 	}
-	tests := []struct {
+	testCases := []struct {
 		name    string
 		args    args
 		want    float64
 		want1   string
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name: "Floor min is available in imp and floor ext",
@@ -628,9 +685,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 2.0, FloorMinCur: "INR", Data: &openrtb_ext.PriceFloorData{Currency: "INR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "INR","floorMin":1.0}}}`)},
 			},
-			want:    1,
-			want1:   "INR",
-			wantErr: false,
+			want:  1,
+			want1: "INR",
 		},
 		{
 			name: "Floor min and floor min currency is available in imp ext only",
@@ -638,9 +694,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "INR", "floorMin": 1.0}}}`)},
 			},
-			want:    0.0123,
-			want1:   "USD",
-			wantErr: false,
+			want:  0.0123,
+			want1: "USD",
 		},
 		{
 			name: "Floor min is available in floor ext only",
@@ -648,9 +703,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 1.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{}}}`)},
 			},
-			want:    1.0,
-			want1:   "EUR",
-			wantErr: false,
+			want:  1.0,
+			want1: "EUR",
 		},
 		{
 			name: "Floor min is available in floorExt and currency is available in imp",
@@ -658,9 +712,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 2.0, Data: &openrtb_ext.PriceFloorData{Currency: "INR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "INR"}}}`)},
 			},
-			want:    2,
-			want1:   "INR",
-			wantErr: false,
+			want:  2,
+			want1: "INR",
 		},
 		{
 			name: "Floor min is available in ImpExt and currency is available in floorExt",
@@ -668,9 +721,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "USD", Data: &openrtb_ext.PriceFloorData{Currency: "INR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"FloorMin": 2.0}}}`)},
 			},
-			want:    162.34,
-			want1:   "INR",
-			wantErr: false,
+			want:  162.34,
+			want1: "INR",
 		},
 		{
 			name: "Floor Min and floor Currency are in Imp and only floor currency is available in floor ext",
@@ -678,9 +730,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMinCur: "USD"},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":1.0}}}`)},
 			},
-			want:    1,
-			want1:   "USD",
-			wantErr: false,
+			want:  1,
+			want1: "USD",
 		},
 		{
 			name: "Currency are different in floor ext and imp",
@@ -688,9 +739,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 0.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "INR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":1.0}}}`)},
 			},
-			want:    81.17,
-			want1:   "INR",
-			wantErr: false,
+			want:  81.17,
+			want1: "INR",
 		},
 		{
 			name: "Floor min is 0 in imp ",
@@ -698,9 +748,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 2.0, FloorMinCur: "JPY", Data: &openrtb_ext.PriceFloorData{Currency: "INR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "USD","floorMin":0.0}}}`)},
 			},
-			want:    162.34,
-			want1:   "INR",
-			wantErr: false,
+			want:  162.34,
+			want1: "INR",
 		},
 		{
 			name: "Floor Currency is empty in imp",
@@ -708,9 +757,8 @@ func Test_getMinFloorValue(t *testing.T) {
 				floorExt: &openrtb_ext.PriceFloorRules{FloorMin: 1.0, FloorMinCur: "EUR", Data: &openrtb_ext.PriceFloorData{Currency: "EUR"}},
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{"prebid":{"floors":{"floorMinCur": "","floorMin":-1.0}}}`)},
 			},
-			want:    1.0,
-			want1:   "EUR",
-			wantErr: false,
+			want:  1.0,
+			want1: "EUR",
 		},
 		{
 			name: "Invalid input",
@@ -719,105 +767,456 @@ func Test_getMinFloorValue(t *testing.T) {
 				imp:      openrtb2.Imp{Ext: json.RawMessage(`{`)},
 			},
 			want:    0.0,
-			want1:   "USD",
-			wantErr: true,
+			want1:   "",
+			wantErr: errors.New("Error in getting FloorMin value : 'unexpected end of JSON input'"),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, got1, err := getMinFloorValue(tc.args.floorExt, &openrtb_ext.ImpWrapper{Imp: &tc.args.imp}, getCurrencyRates(rates))
+			assert.Equal(t, tc.wantErr, err, tc.name)
+			assert.Equal(t, tc.want, got, tc.name)
+			assert.Equal(t, tc.want1, got1, tc.name)
+		})
+	}
+}
+
+func TestSortCombinations(t *testing.T) {
+	type args struct {
+		comb            [][]int
+		numSchemaFields int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		expComb [][]int
+	}{
+		{
+			name: "With schema fields = 3",
+			args: args{
+				comb:            [][]int{{0}, {1}, {2}},
+				numSchemaFields: 3,
+			},
+			expComb: [][]int{{2}, {1}, {0}},
+		},
+		{
+			name: "With schema fields = 3",
+			args: args{
+				comb:            [][]int{{0, 1}, {1, 2}, {0, 2}},
+				numSchemaFields: 3,
+			},
+			expComb: [][]int{{1, 2}, {0, 2}, {0, 1}},
+		},
+		{
+			name: "With schema fields = 4",
+			args: args{
+				comb:            [][]int{{0, 1, 2}, {1, 2, 3}, {0, 2, 3}, {0, 1, 3}},
+				numSchemaFields: 3,
+			},
+			expComb: [][]int{{1, 2, 3}, {0, 2, 3}, {0, 1, 3}, {0, 1, 2}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := getMinFloorValue(tt.args.floorExt, tt.args.imp, getCurrencyRates(rates))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getMinFloorValue() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("getMinFloorValue() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("getMinFloorValue() got1 = %v, want %v", got1, tt.want1)
-			}
+			sortCombinations(tt.args.comb, tt.args.numSchemaFields)
+			assert.Equal(t, tt.expComb, tt.args.comb)
+		})
+	}
+}
+
+func TestGenerateCombinations(t *testing.T) {
+
+	tests := []struct {
+		name            string
+		numSchemaFields int
+		numWildCard     int
+		expComb         [][]int
+	}{
+		{
+			name:            "With schema fields = 3, wildcard = 1",
+			numSchemaFields: 3,
+			numWildCard:     1,
+			expComb:         [][]int{{0}, {1}, {2}},
+		},
+		{
+			name:            "With schema fields = 3, wildcard = 2",
+			numSchemaFields: 3,
+			numWildCard:     2,
+			expComb:         [][]int{{0, 1}, {0, 2}, {1, 2}},
+		},
+		{
+			name:            "With schema fields = 3, wildcard = 3",
+			numSchemaFields: 3,
+			numWildCard:     3,
+			expComb:         [][]int{{0, 1, 2}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotComb := generateCombinations(tt.numSchemaFields, tt.numWildCard)
+			assert.Equal(t, tt.expComb, gotComb)
 		})
 	}
 }
 
 func TestGetDeviceType(t *testing.T) {
-	type args struct {
+	tests := []struct {
+		name    string
 		request *openrtb2.BidRequest
+		want    string
+	}{
+		{
+			name:    "user agent contains Phone",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Phone Samsung Mobile; Win64; x64)"}},
+			want:    "phone",
+		},
+		{
+			name:    "user agent contains iPhone",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Safari(iPhone Apple Mobile)"}},
+			want:    "phone",
+		},
+		{
+			name:    "user agent contains Mobile.*Android",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Mobile Android; Win64; x64)"}},
+			want:    "phone",
+		},
+		{
+			name:    "user agent contains Android.*Mobile",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Redmi Mobile; Win64; x64)"}},
+			want:    "phone",
+		},
+		{
+			name:    "user agent contains Mobile.*Android",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Mobile pixel Android; Win64; x64)"}},
+			want:    "phone",
+		},
+		{
+			name:    "user agent contains Windows NT touch",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT touch 10.0; Win64; x64)"}},
+			want:    "tablet",
+		},
+		{
+			name:    "user agent contains ipad",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (ipad 13.10; Win64; x64)"}},
+			want:    "tablet",
+		},
+		{
+			name:    "user agent contains Window NT.*touch",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0; Touch)"}},
+			want:    "tablet",
+		},
+		{
+			name:    "user agent contains touch.* Window NT",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (touch realme Windows NT Win64; x64)"}},
+			want:    "tablet",
+		},
+		{
+			name:    "user agent contains Android",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android; Win64; x64)"}},
+			want:    "tablet",
+		},
+		{
+			name:    "user agent not matching phone or tablet",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}},
+			want:    "desktop",
+		},
+		{
+			name:    "empty user agent",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
+			want:    "*",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getDeviceType(&openrtb_ext.RequestWrapper{BidRequest: tt.request})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetAdUnitCode(t *testing.T) {
 	tests := []struct {
 		name string
-		args args
+		imp  *openrtb_ext.ImpWrapper
 		want string
 	}{
 		{
-			name: "user agent contains device type as tablet",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT touch 10.0; Win64; x64)"}},
-			},
-			want: "tablet",
+			name: "imp.ext.gpid",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"gpid":"test_gpid"}`)}},
+			want: "test_gpid",
 		},
 		{
-			name: "user agent contains Android.*Mobile",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android Redmi Mobile; Win64; x64)"}},
-			},
-			want: "phone",
+			name: "imp.TagID",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{TagID: "tag_1"}},
+			want: "tag_1",
 		},
 		{
-			name: "user agent contains Mobile.*Android",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Mobile pixel Android; Win64; x64)"}},
-			},
-			want: "phone",
+			name: "imp.ext.data.pbadslot",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"data":{"pbadslot":"pbslot_1"}}`)}},
+			want: "pbslot_1",
 		},
 		{
-			name: "user agent contains ipad",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (ipad 13.10; Win64; x64)"}},
-			},
-			want: "tablet",
+			name: "imp.ext.prebid.storedrequest.id",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"prebid": {"storedrequest":{"id":"123"}}}`)}},
+			want: "123",
 		},
 		{
-			name: "user agent contains Window NT.*touch",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT realme 7pro touch; Win64; x64)"}},
-			},
-			want: "tablet",
+			name: "empty adUnitCode",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{}},
+			want: "*",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAdUnitCode(tt.imp)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetGptSlot(t *testing.T) {
+	tests := []struct {
+		name string
+		imp  *openrtb_ext.ImpWrapper
+		want string
+	}{
+		{
+			name: "imp.ext.data.adserver.adslot",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"data":{"adserver": {"name": "gam", "adslot": "slot_1"}}}`)}},
+			want: "slot_1",
 		},
 		{
-			name: "user agent contains touch.* Window NT",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (touch realme Windows NT Win64; x64)"}},
-			},
-			want: "tablet",
+			name: "gptSlot = imp.ext.data.pbadslot",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{Ext: json.RawMessage(`{"data":{"pbadslot":"pbslot_1"}}`)}},
+			want: "pbslot_1",
 		},
 		{
-			name: "user agent contains Android",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Android; Win64; x64)"}},
-			},
-			want: "tablet",
-		},
-		{
-			name: "user agent contains desktop",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}},
-			},
-			want: "desktop",
-		},
-		{
-			name: "empty user agent",
-			args: args{
-				request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
-			},
+			name: "empty gptSlot",
+			imp:  &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{}},
 			want: "*",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getDeviceType(tt.args.request); got != tt.want {
-				t.Errorf("Actual deviceType: %v, Expected: %v", got, tt.want)
-			}
+			got := getGptSlot(tt.imp)
+			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGetSizeValue(t *testing.T) {
+	tests := []struct {
+		name string
+		imp  *openrtb2.Imp
+		want string
+	}{
+		{
+			name: "banner: only one size exists in imp.banner.format",
+			imp:  &openrtb2.Imp{Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}},
+			want: "300x250",
+		},
+		{
+			name: "banner: no imp.banner.format",
+			imp:  &openrtb2.Imp{Banner: &openrtb2.Banner{W: getInt64Ptr(320), H: getInt64Ptr(240)}},
+			want: "320x240",
+		},
+		{
+			name: "video:  imp.video.w and  imp.video.h present",
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240}},
+			want: "120x240",
+		},
+		{
+			name: "banner: more than one size exists in imp.banner.format",
+			imp:  &openrtb2.Imp{Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 200, H: 300}}}},
+			want: "*",
+		},
+		{
+			name: "Audo creative",
+			imp:  &openrtb2.Imp{Audio: &openrtb2.Audio{}},
+			want: "*",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSizeValue(tt.imp)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetMediaType(t *testing.T) {
+	tests := []struct {
+		name string
+		imp  *openrtb2.Imp
+		want string
+	}{
+		{
+			name: "more than one of these: imp.banner, imp.video, imp.native, imp.audio present",
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240}, Banner: &openrtb2.Banner{W: getInt64Ptr(320), H: getInt64Ptr(240)}},
+			want: "*",
+		},
+		{
+			name: "only banner present",
+			imp:  &openrtb2.Imp{Banner: &openrtb2.Banner{W: getInt64Ptr(320), H: getInt64Ptr(240)}},
+			want: "banner",
+		},
+		{
+			name: "video-outstream present",
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240, Placement: 2}},
+			want: "video-outstream",
+		},
+		{
+			name: "video-instream present",
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240, Placement: 1}},
+			want: "video",
+		},
+		{
+			name: "only audio",
+			imp:  &openrtb2.Imp{Audio: &openrtb2.Audio{MinDuration: 10}},
+			want: "audio",
+		},
+		{
+			name: "only native",
+			imp:  &openrtb2.Imp{Native: &openrtb2.Native{Request: "test_req"}},
+			want: "native",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getMediaType(tt.imp)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetSiteDomain(t *testing.T) {
+	type args struct {
+		request *openrtb_ext.RequestWrapper
+	}
+	tests := []struct {
+		name    string
+		request *openrtb_ext.RequestWrapper
+		want    string
+	}{
+		{
+			name:    "Site Domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Domain: "abc.xyz.com"}}},
+			want:    "abc.xyz.com",
+		},
+		{
+			name:    "Site Domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{}}},
+			want:    "*",
+		},
+		{
+			name:    "App Domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{Domain: "cde.rtu.com"}}},
+			want:    "cde.rtu.com",
+		},
+		{
+			name:    "App Domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{}}},
+			want:    "*",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSiteDomain(tt.request)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetPublisherDomain(t *testing.T) {
+	type args struct {
+	}
+	tests := []struct {
+		name    string
+		request *openrtb_ext.RequestWrapper
+		want    string
+	}{
+		{
+			name:    "Site publisher domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Publisher: &openrtb2.Publisher{Domain: "qwe.xyz.com"}}}},
+			want:    "qwe.xyz.com",
+		},
+		{
+			name:    "Site publisher domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Publisher: &openrtb2.Publisher{}}}},
+			want:    "*",
+		},
+		{
+			name:    "App publisher domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{Publisher: &openrtb2.Publisher{Domain: "xyz.com"}}}},
+			want:    "xyz.com",
+		},
+		{
+			name:    "App publisher domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{}}},
+			want:    "*",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getPublisherDomain(tt.request)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetDomain(t *testing.T) {
+	type args struct {
+	}
+	tests := []struct {
+		name    string
+		request *openrtb_ext.RequestWrapper
+		want    string
+	}{
+		{
+			name:    "Site domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Domain: "qwe.xyz.com", Publisher: &openrtb2.Publisher{Domain: "abc.xyz.com"}}}},
+			want:    "qwe.xyz.com",
+		},
+		{
+			name:    "Site publisher domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Publisher: &openrtb2.Publisher{Domain: "abc.xyz.com"}}}},
+			want:    "abc.xyz.com",
+		},
+		{
+			name:    "Site domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{Site: &openrtb2.Site{Publisher: &openrtb2.Publisher{}}}},
+			want:    "*",
+		},
+		{
+			name:    "App publisher domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{Domain: "abc.com", Publisher: &openrtb2.Publisher{Domain: "xyz.com"}}}},
+			want:    "abc.com",
+		},
+		{
+			name:    "App domain present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{Publisher: &openrtb2.Publisher{Domain: "xyz.com"}}}},
+			want:    "xyz.com",
+		},
+		{
+			name:    "App domain not present",
+			request: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{App: &openrtb2.App{}}},
+			want:    "*",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getDomain(tt.request)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func getIntPtr(v int) *int {
+	return &v
+}
+
+func getInt64Ptr(v int64) *int64 {
+	return &v
 }

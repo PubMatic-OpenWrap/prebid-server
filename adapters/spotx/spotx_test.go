@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/magiconair/properties/assert"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 )
 

@@ -35,3 +35,8 @@ func (me *MetricsEngineMock) RecordAdapterVideoBidDuration(labels AdapterLabels,
 func (me *MetricsEngineMock) RecordBids(pubid, profileid, biddder, deal string) {
 	me.Called(pubid, profileid, biddder, deal)
 }
+
+// RecordVastVersion mock
+func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
+	me.Called(coreBidder, vastVersion)
+}

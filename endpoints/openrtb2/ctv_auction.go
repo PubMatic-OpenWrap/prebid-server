@@ -18,8 +18,8 @@ import (
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -32,6 +32,7 @@ import (
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange"
+	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
@@ -81,7 +82,6 @@ func NewCTVEndpoint(
 		IPv4PrivateNetworks: cfg.RequestValidation.IPv4PrivateNetworksParsed,
 		IPv6PrivateNetworks: cfg.RequestValidation.IPv6PrivateNetworksParsed,
 	}
-	hookExecutor := hookexecution.NewHookExecutor(planBuilder, hookexecution.EndpointCtv, met)
 	var uuidGenerator uuidutil.UUIDGenerator
 	return httprouter.Handle((&ctvEndpointDeps{
 		endpointDeps: endpointDeps{
@@ -102,7 +102,7 @@ func NewCTVEndpoint(
 			nil,
 			ipValidator,
 			nil,
-			hookExecutor,
+			planBuilder,
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -147,9 +147,14 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.analytics.LogAuctionObject(&ao)
 	}()
 
+	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointCtv, deps.metricsEngine)
+
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels)
+	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecutor)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
+		return
+	}
+	if reqWrapper.RebuildRequestExt() != nil {
 		return
 	}
 	request = reqWrapper.BidRequest
@@ -195,7 +200,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	ctx := r.Context()
 
 	// Look up account now that we have resolved the pubID value
-	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID)
+	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID, deps.metricsEngine)
 	if len(acctIDErrs) > 0 {
 		errL = append(errL, acctIDErrs...)
 		writeError(errL, w, &deps.labels)
@@ -210,6 +215,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		defer cancel()
 	}
 
+	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
 	auctionRequest := exchange.AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           *account,
@@ -219,7 +225,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
 		LoggableObject:    &ao.LoggableAuctionObject,
-		HookExecutor:      deps.hookExecutor,
+		HookExecutor:      hookExecutor,
+		TCF2Config:        tcf2Config,
 	}
 
 	response, err = deps.holdAuction(ctx, auctionRequest)
@@ -290,7 +297,7 @@ func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exc
 		return &openrtb2.BidResponse{ID: deps.request.ID}, nil
 	}
 
-	return deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	return deps.ex.HoldAuction(ctx, &auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/

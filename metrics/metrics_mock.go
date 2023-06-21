@@ -71,6 +71,11 @@ func (me *MetricsEngineMock) RecordTLSHandshakeTime(bidderName openrtb_ext.Bidde
 	me.Called(bidderName, tlsHandshakeTime)
 }
 
+// RecordBidderServerResponseTime mock
+func (me *MetricsEngineMock) RecordBidderServerResponseTime(bidderServerResponseTime time.Duration) {
+	me.Called(bidderServerResponseTime)
+}
+
 // RecordAdapterBidReceived mock
 func (me *MetricsEngineMock) RecordAdapterBidReceived(labels AdapterLabels, bidType openrtb_ext.BidType, hasAdm bool) {
 	me.Called(labels, bidType, hasAdm)
@@ -84,6 +89,11 @@ func (me *MetricsEngineMock) RecordAdapterPrice(labels AdapterLabels, cpm float6
 // RecordAdapterTime mock
 func (me *MetricsEngineMock) RecordAdapterTime(labels AdapterLabels, length time.Duration) {
 	me.Called(labels, length)
+}
+
+// RecordOverheadTime mock
+func (me *MetricsEngineMock) RecordOverheadTime(overhead OverheadType, length time.Duration) {
+	me.Called(overhead, length)
 }
 
 // RecordCookieSync mock
@@ -218,9 +228,27 @@ func (me *MetricsEngineMock) RecordModuleExecutionError(labels ModuleLabels) {
 func (me *MetricsEngineMock) RecordModuleTimeout(labels ModuleLabels) {
 	me.Called(labels)
 }
+
+func (me *MetricsEngineMock) RecordAccountGDPRPurposeWarning(account string, purposeName string) {
+	me.Called(account, purposeName)
+}
+
+func (me *MetricsEngineMock) RecordAccountGDPRChannelEnabledWarning(account string) {
+	me.Called(account)
+}
+
+func (me *MetricsEngineMock) RecordAccountCCPAChannelEnabledWarning(account string) {
+	me.Called(account)
+}
+
+func (me *MetricsEngineMock) RecordAccountUpgradeStatus(account string) {
+	me.Called(account)
+}
+
 func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 	me.Called(pubid, bidder, code)
 }
+
 func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId, code string) {
 	me.Called(pubId, code)
 }

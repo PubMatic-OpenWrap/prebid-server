@@ -1,4 +1,4 @@
-package prebidServer
+package main_ow
 
 import (
 	"os"

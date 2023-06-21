@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/adcom1"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/adcom1"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -707,7 +707,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								W:              640,
 								H:              480,
 								StartDelay:     new(adcom1.StartDelay),
-								Placement:      adcom1.VideoInStream,
+								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
 								Skip:           new(int8),
 								SkipMin:        10,
@@ -1006,7 +1006,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								W:              640,
 								H:              480,
 								StartDelay:     new(adcom1.StartDelay),
-								Placement:      adcom1.VideoInStream,
+								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
 								Skip:           new(int8),
 								SkipMin:        10,
