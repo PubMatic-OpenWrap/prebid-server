@@ -47,6 +47,8 @@ type Queries struct {
 	GetAdunitConfigForLiveVersion     string
 	GetSlotNameHash                   string
 	GetPublisherVASTTagsQuery         string
+	GetAllFscDisabledPublishersQuery  string
+	GetAllDspFscPcntQuery             string
 }
 
 type Cache struct {
