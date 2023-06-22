@@ -57,4 +57,5 @@ type MetricsEngine interface {
 	RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string)
 	RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder string)
 	RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string)
+	Shutdown()
 }
