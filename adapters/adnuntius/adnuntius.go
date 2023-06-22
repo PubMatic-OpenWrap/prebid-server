@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -43,6 +43,7 @@ type AdUnit struct {
 			Amount   float64
 			Currency string
 		}
+		DealID          string `json:"dealId,omitempty"`
 		AdId            string
 		CreativeWidth   string
 		CreativeHeight  string
@@ -373,6 +374,7 @@ func generateBidResponse(adnResponse *AdnResponse, request *openrtb2.BidRequest)
 				W:       creativeWidth,
 				H:       creativeHeight,
 				AdID:    ad.AdId,
+				DealID:  ad.DealID,
 				CID:     ad.LineItemId,
 				CrID:    ad.CreativeId,
 				Price:   ad.Bid.Amount * 1000,

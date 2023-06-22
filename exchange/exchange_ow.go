@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
@@ -21,6 +22,11 @@ const (
 	bidCountMetricEnabled = "bidCountMetricEnabled"
 	owProfileId           = "owProfileId"
 	nodeal                = "nodeal"
+	vastVersionUndefined  = "undefined"
+)
+
+var (
+	vastVersionRegex = regexp.MustCompile(`<VAST.+version\s*=[\s\\"']*([\s0-9.]+?)[\\\s"']*>`)
 )
 
 // recordAdaptorDuplicateBidIDs finds the bid.id collisions for each bidder and records them with metrics engine
@@ -182,7 +188,26 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 			}
 		}
 	}
+}
 
+func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	for _, seatBid := range adapterBids {
+		for _, pbsBid := range seatBid.Bids {
+			if pbsBid.BidType != openrtb_ext.BidTypeVideo {
+				continue
+			}
+			if pbsBid.Bid.AdM == "" {
+				continue
+			}
+			vastVersion := vastVersionUndefined
+			matches := vastVersionRegex.FindStringSubmatch(pbsBid.Bid.AdM)
+			if len(matches) == 2 {
+				vastVersion = matches[1]
+			}
+
+			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
+		}
+	}
 }
 
 // recordPartnerTimeout captures the partnertimeout if any at publisher profile level

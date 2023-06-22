@@ -33,3 +33,7 @@ func (me *Metrics) RecordRejectedBids(pubid, biddder, code string) {
 // RecordBids as a noop
 func (me *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 }
+
+// RecordVastVersion as a noop
+func (me *Metrics) RecordVastVersion(biddder, vastVersion string) {
+}

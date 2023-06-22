@@ -91,11 +91,18 @@ func (m *Metrics) RecordRejectedBids(pubid, biddder, code string) {
 
 // RecordBids records bids labeled by pubid, profileid, bidder and deal
 func (m *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
-
 	m.bids.With(prometheus.Labels{
 		pubIDLabel:   pubid,
 		profileLabel: profileid,
 		bidderLabel:  biddder,
 		dealLabel:    deal,
+	}).Inc()
+}
+
+// RecordVastVersion record the count of vast version labelled by bidder and vast version
+func (m *Metrics) RecordVastVersion(coreBiddder, vastVersion string) {
+	m.vastVersion.With(prometheus.Labels{
+		adapterLabel: coreBiddder,
+		versionLabel: vastVersion,
 	}).Inc()
 }

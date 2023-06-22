@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -104,7 +105,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
+		wrapperExtFromImp, pubIDFromImp, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, reqInfo.BidAdjustmentFactor)
 
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
@@ -303,7 +304,7 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, bidAdjustmentFactor float64) (*pubmaticWrapperExt, string, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 
@@ -353,9 +354,13 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	if pubmaticExt.Kadfloor != "" {
 		bidfloor, err := strconv.ParseFloat(strings.TrimSpace(pubmaticExt.Kadfloor), 64)
 		if err == nil {
-			//do not overwrite existing value if kadfloor is invalid
-			imp.BidFloor = bidfloor
+			// In case of valid kadfloor, select maximum of original imp.bidfloor and kadfloor
+			imp.BidFloor = math.Max(bidfloor, imp.BidFloor)
 		}
+	}
+
+	if bidAdjustmentFactor > 0 && imp.BidFloor > 0 {
+		imp.BidFloor = roundToFourDecimals(imp.BidFloor / bidAdjustmentFactor)
 	}
 
 	extMap := make(map[string]interface{}, 0)
@@ -395,6 +400,11 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 
 	return wrapExt, pubID, nil
+}
+
+// roundToFourDecimals retuns given value to 4 decimal points
+func roundToFourDecimals(in float64) float64 {
+	return math.Round(in*10000) / 10000
 }
 
 // extractPubmaticExtFromRequest parse the req.ext to fetch wrapper and acat params

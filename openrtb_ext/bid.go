@@ -20,17 +20,17 @@ type ExtBidPrebid struct {
 	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
 	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
 	Targeting         map[string]string   `json:"targeting,omitempty"`
-	Type              BidType             `json:"type"`
+	TargetBidderCode  string              `json:"targetbiddercode,omitempty"`
+	Type              BidType             `json:"type,omitempty"`
 	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
 	Events            *ExtBidPrebidEvents `json:"events,omitempty"`
 	BidId             string              `json:"bidid,omitempty"`
 	Passthrough       json.RawMessage     `json:"passthrough,omitempty"`
-	Floors            *ExtBidFloors       `json:"floors,omitempty"`
+	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
 }
 
 // ExtBidPrebidFloors defines the contract for bidresponse.seatbid.bid[i].ext.prebid.floors
-type ExtBidFloors struct {
-	BidAdjustment  bool    `json:"bidAdjustment,omitempty"`
+type ExtBidPrebidFloors struct {
 	FloorRule      string  `json:"floorRule,omitempty"`
 	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
 	FloorValue     float64 `json:"floorValue,omitempty"`

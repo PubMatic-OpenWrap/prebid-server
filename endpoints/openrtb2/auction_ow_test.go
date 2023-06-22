@@ -6,14 +6,13 @@ import (
 
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/hooks"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -43,16 +42,16 @@ func TestValidateImpExtOW(t *testing.T) {
 			[]testCase{
 				{
 					description:    "Impression dropped for bidder with invalid bidder params",
-					impExt:         json.RawMessage(`{"appnexus":{"placement_id":"A"}}`),
-					expectedImpExt: `{"appnexus":{"placement_id":"A"}}`,
-					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"},
+					impExt:         json.RawMessage(`{"appnexus":{"placement_id":5.44}}`),
+					expectedImpExt: `{"appnexus":{"placement_id":5.44}}`,
+					expectedErrs: []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: [integer,string], given: number"},
 						fmt.Errorf("request.imp[%d].ext.prebid.bidder must contain at least one bidder", 0)},
 				},
 				{
 					description:    "Valid Bidder params + Invalid bidder params",
-					impExt:         json.RawMessage(`{"appnexus":{"placement_id":"A"},"pubmatic":{"publisherId":"156209"}}`),
-					expectedImpExt: `{"appnexus":{"placement_id":"A"},"pubmatic":{"publisherId":"156209"}}`,
-					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: integer, given: string"}},
+					impExt:         json.RawMessage(`{"appnexus":{"placement_id":5.44},"pubmatic":{"publisherId":"156209"}}`),
+					expectedImpExt: `{"appnexus":{"placement_id":5.44},"pubmatic":{"publisherId":"156209"}}`,
+					expectedErrs:   []error{&errortypes.BidderFailedSchemaValidation{Message: "request.imp[0].ext.prebid.bidder.appnexus failed validation.\nplacement_id: Invalid type. Expected: [integer,string], given: number"}},
 				},
 				{
 					description:    "Valid Bidder + Disabled Bidder + Invalid bidder params",
@@ -91,7 +90,7 @@ func TestValidateImpExtOW(t *testing.T) {
 		nil,
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
-		hookexecution.NewHookExecutor(hooks.EmptyPlanBuilder{}, hookexecution.EndpointAuction, &metricsConfig.NilMetricsEngine{}),
+		hooks.EmptyPlanBuilder{},
 	}
 
 	for _, group := range testGroups {
