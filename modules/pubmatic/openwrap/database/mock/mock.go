@@ -65,6 +65,36 @@ func (mr *MockDatabaseMockRecorder) GetAdunitConfig(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfig", reflect.TypeOf((*MockDatabase)(nil).GetAdunitConfig), arg0, arg1)
 }
 
+// GetFSCDisabledPublishers mocks base method.
+func (m *MockDatabase) GetFSCDisabledPublishers() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSCDisabledPublishers")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFSCDisabledPublishers indicates an expected call of GetFSCDisabledPublishers.
+func (mr *MockDatabaseMockRecorder) GetFSCDisabledPublishers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCDisabledPublishers", reflect.TypeOf((*MockDatabase)(nil).GetFSCDisabledPublishers))
+}
+
+// GetFSCThresholdPerDSP mocks base method.
+func (m *MockDatabase) GetFSCThresholdPerDSP() (map[int]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSCThresholdPerDSP")
+	ret0, _ := ret[0].(map[int]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP.
+func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCThresholdPerDSP))
+}
+
 // GetMappings mocks base method.
 func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMapping) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()

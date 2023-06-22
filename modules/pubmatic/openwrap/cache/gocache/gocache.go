@@ -28,6 +28,7 @@ func key(format string, v ...interface{}) string {
 // NYC_TODO: refactor this to inject any kind of cache,replace cache with freecache library
 // any db or cache should be injectable
 type cache struct {
+	sync.Map
 	cache *gocache.Cache
 	cfg   config.Cache
 	db    database.Database
