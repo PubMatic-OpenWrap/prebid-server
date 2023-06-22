@@ -37,7 +37,8 @@ mockgeninstall:
 	go install github.com/golang/mock/mockgen@v1.6.0
 
 mockgendb:
-	mkdir -p modules/pubmatic/openwrap/database/mock
+	mkdir -p modules/pubmatic/openwrap/database/mock modules/pubmatic/openwrap/database/mock_driver
+	mockgen database/sql/driver Driver,Connector,Conn,DriverContext > modules/pubmatic/openwrap/database/mock_driver/mock.go
 	mockgen github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/database Database > modules/pubmatic/openwrap/database/mock/mock.go
 
 mockgencache:
