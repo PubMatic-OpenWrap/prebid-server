@@ -70,5 +70,5 @@ type AdConfig struct {
 	Device         *openrtb2.Device `json:"device"`
 	Transparency   *Transparency    `json:"transparency,omitempty"`
 	Regex          *bool            `json:"regex"`
-	UniversalPixel UniversalPixel   `json:"universalpixel"`
+	UniversalPixel *UniversalPixel  `json:"universalpixel"`
 }
