@@ -1,6 +1,8 @@
 package vastunwrap
 
 import (
+	"sync"
+
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 
@@ -13,7 +15,7 @@ func handleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 	moduleCtx hookstage.ModuleContext, unwrapDefaultTimeout int, unwrapURL string,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-
+	wg := new(sync.WaitGroup)
 	vastRequestContext, ok := moduleCtx[RequestContext].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
@@ -31,10 +33,14 @@ func handleRawBidderResponseHook(
 	for _, bid := range payload.Bids {
 		bidMediaTypes := mediaTypesFromBid(bid)
 		if _, ok := bidMediaTypes[MediaTypeVideo]; ok {
-			go doUnwrap(bid, vastRequestContext.UA, unwrapDefaultTimeout, unwrapURL)
-
+			wg.Add(1)
+			go func(bid *adapters.TypedBid) {
+				defer wg.Done()
+				doUnwrap(bid, vastRequestContext.UA, unwrapDefaultTimeout, unwrapURL)
+			}(bid)
 		}
 	}
+	wg.Wait()
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 
 	changeSet.RawBidderResponse().Bids().Update(payload.Bids)
