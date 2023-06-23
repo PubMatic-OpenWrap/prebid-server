@@ -47,17 +47,28 @@ type Video struct {
 	Config  *VideoConfig `json:"config"`
 }
 
+// Struct for UniversalPixel
+type UniversalPixel struct {
+	Id        int      `json:"id,omitempty"`
+	Pixel     string   `json:"pixel,omitempty"`
+	PixelType string   `json:"pixeltype,omitempty"`
+	Pos       string   `json:"pos,omitempty"`
+	MediaType string   `json:"mediatype,omitempty"`
+	Partners  []string `json:"partners,omitempty"`
+}
+
 type AdConfig struct {
 	BidFloor    *float64                     `json:"bidfloor"`
 	BidFloorCur *string                      `json:"bidfloorcur"`
 	Floors      *openrtb_ext.PriceFloorRules `json:"floors"`
 
-	Exp          *int             `json:"exp"`
-	Banner       *Banner          `json:"banner"`
-	Native       *Native          `json:"native"`
-	Video        *Video           `json:"video"`
-	App          *openrtb2.App    `json:"app"`
-	Device       *openrtb2.Device `json:"device"`
-	Transparency *Transparency    `json:"transparency,omitempty"`
-	Regex        *bool            `json:"regex"`
+	Exp            *int             `json:"exp"`
+	Banner         *Banner          `json:"banner"`
+	Native         *Native          `json:"native"`
+	Video          *Video           `json:"video"`
+	App            *openrtb2.App    `json:"app"`
+	Device         *openrtb2.Device `json:"device"`
+	Transparency   *Transparency    `json:"transparency,omitempty"`
+	Regex          *bool            `json:"regex"`
+	UniversalPixel UniversalPixel   `json:"universalpixel"`
 }
