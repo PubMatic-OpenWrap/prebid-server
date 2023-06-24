@@ -58,6 +58,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		}
 	}
 
+	// RecordSlotNotMappedErrorStats
+	// AAA: we should record slot-not-map before this
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
 		if matchedPattern == "" {
 			// use alternate names defined in DB for this slot if selection is non-regex

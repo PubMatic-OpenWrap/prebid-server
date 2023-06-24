@@ -69,6 +69,9 @@ type RequestCtx struct {
 	NoSeatBids  map[string]map[string][]openrtb2.Bid
 
 	BidderResponseTimeMillis map[string]int
+
+	// TODO : confirm if this should be at request level ?
+	// MetricsEngine metrics.MetricsEngine
 }
 
 type OwBid struct {

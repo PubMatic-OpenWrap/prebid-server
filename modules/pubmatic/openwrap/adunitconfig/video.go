@@ -2,15 +2,17 @@ package adunitconfig
 
 import (
 	"runtime/debug"
+	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
-func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string, connectionType *adcom1.ConnectionType) (adUnitCtx models.AdUnitCtx) {
+func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string, connectionType *adcom1.ConnectionType, metricEngine metrics.MetricsEngine) (adUnitCtx models.AdUnitCtx) {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -28,6 +30,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if defaultAdUnitConfig.Video != nil && defaultAdUnitConfig.Video.Enabled != nil && !*defaultAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
 			return
 		}
 	}
@@ -44,6 +47,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
 			return
 		}
 	}
@@ -54,6 +58,8 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 	}
 
 	adUnitCtx.AllowedConnectionTypes = getDefaultAllowedConnectionTypes(rCtx.AdUnitConfig)
+
+	// RecordVideoImpDisabledViaConnTypeStats : TODO ???
 
 	// updateAllowedConnectionTypes := !adUnitCtx.UsingDefaultConfig
 	// if adUnitCtx.AppliedSlotAdUnitConfig != nil && adUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
+	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -24,8 +27,9 @@ const (
 )
 
 type OpenWrap struct {
-	cfg   config.Config
-	cache cache.Cache
+	cfg          config.Config
+	cache        cache.Cache
+	metricEngine metrics.MetricsEngine
 }
 
 func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -55,9 +59,15 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 
+	metricEngine, err := metrics_cfg.NewMetricsEngine(cfg)
+	if err != nil {
+		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
+	}
+
 	return OpenWrap{
-		cfg:   cfg,
-		cache: ow_gocache.New(cache, db, cfg.Cache),
+		cfg:          cfg,
+		cache:        ow_gocache.New(cache, db, cfg.Cache),
+		metricEngine: &metricEngine,
 	}, nil
 }
 
