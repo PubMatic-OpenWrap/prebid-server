@@ -429,3 +429,10 @@ func (me *MultiMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(publisher, 
 		thisME.RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
 	}
 }
+
+// Shutdown across all engines
+func (me *MultiMetricsEngine) Shutdown() {
+	for _, thisME := range *me {
+		thisME.Shutdown()
+	}
+}
