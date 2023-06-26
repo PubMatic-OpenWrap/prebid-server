@@ -171,7 +171,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.WinningBids = winningBids
 	if len(winningBids) == 0 {
-		m.metricEngine.RecordNobidErrPrebidServerResponse(strconv.Itoa(rctx.PubID))
+		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
 	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
@@ -196,7 +196,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	for k, v := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[k.String()] = v
-		m.metricEngine.RecordPartnerResponseTimeStats(strconv.Itoa(rctx.PubID), string(k), v)
+		m.metricEngine.RecordPartnerResponseTimeStats(rctx.PubIDStr, string(k), v)
 	}
 
 	// record error stats for bidder
@@ -207,9 +207,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 		switch errs[0].Code {
 		case errortypes.TimeoutErrorCode:
-			m.metricEngine.RecordPartnerTimeoutErrorStats(strconv.Itoa(rctx.PubID), string(bidder))
+			m.metricEngine.RecordPartnerTimeoutErrorStats(rctx.PubIDStr, string(bidder))
 		case errortypes.UnknownErrorCode:
-			m.metricEngine.RecordUnkownPrebidErrorStats(strconv.Itoa(rctx.PubID), string(bidder))
+			m.metricEngine.RecordUnkownPrebidErrorStats(rctx.PubIDStr, string(bidder))
 		}
 	}
 

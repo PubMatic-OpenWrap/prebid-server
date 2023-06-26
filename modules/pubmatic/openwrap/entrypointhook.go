@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/prebid/prebid-server/hooks/hookexecution"
@@ -85,6 +86,7 @@ func (m OpenWrap) handleEntrypointHook(
 		ImpBidCtx:                 make(map[string]models.ImpCtx),
 		PrebidBidderCode:          make(map[string]string),
 		BidderResponseTimeMillis:  make(map[string]int),
+		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

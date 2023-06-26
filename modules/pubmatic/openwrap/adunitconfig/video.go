@@ -2,7 +2,6 @@ package adunitconfig
 
 import (
 	"runtime/debug"
-	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
@@ -30,7 +29,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if defaultAdUnitConfig.Video != nil && defaultAdUnitConfig.Video.Enabled != nil && !*defaultAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
-			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
+			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
@@ -47,7 +46,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
-			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
+			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}

@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -42,7 +41,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, m
 			}
 
 			if errMsg != "" {
-				metricEngine.RecordInjectTrackerErrorCount(adformat, strconv.Itoa(rctx.PubID), seatBid.Seat)
+				metricEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = errors.Wrap(errs, errMsg)
 			}
 

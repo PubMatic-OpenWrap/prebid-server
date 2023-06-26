@@ -48,11 +48,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubID = pubID
+	rCtx.PubIDStr = strconv.Itoa(pubID)
 
 	if rCtx.UidCookie == nil {
-		m.metricEngine.RecordUidsCookieNotPresentErrorStats(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
+		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	}
-	m.metricEngine.RecordPublisherProfileRequests(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
+	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	// old-code records valid , but processVideo records few invalid as well
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
@@ -74,8 +75,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.InvalidProfileConfiguration
 		err = errors.New("failed to get profile data: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests("", strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))                             // TODO: decide the endpoint ? amp/video/v25
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID), len(payload.BidRequest.Imp)) //old-code this was incremented only for v25 & ctv
+		m.metricEngine.RecordPublisherInvalidProfileRequests("", rCtx.PubIDStr, rCtx.ProfileIDStr)                             // TODO: decide the endpoint ? amp/video/v25
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp)) //old-code this was incremented only for v25 & ctv
 		return result, err
 	}
 
@@ -99,7 +100,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -109,7 +110,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err = errors.New("failed to price granularity details: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -136,14 +137,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
-			m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID)) // not-avl-in-old-code
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr) // not-avl-in-old-code
 			return result, err
 		}
 
 		if imp.Video != nil {
 			//add stats for video instl impressions
 			if imp.Instl == 1 {
-				m.metricEngine.RecordVideoInstlImpsStats(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID))
+				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
 			}
 			if len(requestExt.Prebid.Macros) == 0 {
 				// provide custom macros for video event trackers
@@ -158,7 +159,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
-				m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID))
+				m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 				// AAA: should we continue from here ? other imps might be valid
 				return result, err
 			}
@@ -176,10 +177,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
 				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
-					m.metricEngine.RecordReqImpsWithAppContentCount(strconv.Itoa(rCtx.PubID))
+					m.metricEngine.RecordReqImpsWithAppContentCount(rCtx.PubIDStr)
 				}
 				if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
-					m.metricEngine.RecordReqImpsWithSiteContentCount(strconv.Itoa(rCtx.PubID))
+					m.metricEngine.RecordReqImpsWithSiteContentCount(rCtx.PubIDStr)
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType, m.metricEngine)
@@ -247,7 +248,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			if rCtx.Platform != "" { // not-checked-earlier, // old-code calls this here ; is it correct ?
-				m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, strconv.Itoa(rCtx.PubID), bidderCode)
+				m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 			}
 
 			bidderMeta[bidderCode] = models.PartnerData{
@@ -327,7 +328,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllSlotsDisabled
 		err = errors.New("All slots disabled: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 
@@ -335,7 +336,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
 		err = errors.New("server side partner not found: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(strconv.Itoa(rCtx.PubID))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 
