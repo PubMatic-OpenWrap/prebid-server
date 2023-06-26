@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
@@ -43,8 +45,10 @@ func NewMetricsEngine(cfg config.Config) (MultiMetricsEngine, error) {
 	}
 
 	// TODO: Set up the Prometheus metrics engine.
-
-	return engineList, nil
+	if len(engineList) > 0 {
+		return engineList, nil
+	}
+	return nil, fmt.Errorf("metric-engine is not configured")
 }
 
 // MultiMetricsEngine logs metrics to multiple metrics databases The can be useful in transitioning

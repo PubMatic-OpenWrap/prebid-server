@@ -24,6 +24,7 @@ func (m OpenWrap) HandleEntrypointHook(
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats()
 			glog.Error("body:" + string(payload.Body) + ". stacktrace:" + string(debug.Stack()))
 		}
 	}()
@@ -39,6 +40,7 @@ func (m OpenWrap) HandleBeforeValidationHook(
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats()
 			request, err := json.Marshal(payload)
 			if err != nil {
 				glog.Error("request:" + string(request) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))
@@ -58,6 +60,7 @@ func (m OpenWrap) HandleAuctionResponseHook(
 ) (hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats()
 			response, err := json.Marshal(payload)
 			if err != nil {
 				glog.Error("response:" + string(response) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -169,6 +170,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.WinningBids = winningBids
+	if len(winningBids) == 0 {
+		m.metricEngine.RecordNobidErrPrebidServerResponse(strconv.Itoa(rctx.PubID))
+	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
 	if len(droppedBids) != 0 {
@@ -192,6 +196,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	for k, v := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[k.String()] = v
+		m.metricEngine.RecordPartnerResponseTimeStats(strconv.Itoa(rctx.PubID), string(k), v)
+	}
+
+	// record error stats for bidder
+	for bidder, errs := range responseExt.Errors {
+		if len(errs) <= 0 {
+			continue
+		}
+
+		switch errs[0].Code {
+		case errortypes.TimeoutErrorCode:
+			m.metricEngine.RecordPartnerTimeoutErrorStats(strconv.Itoa(rctx.PubID), string(bidder))
+		case errortypes.UnknownErrorCode:
+			m.metricEngine.RecordUnkownPrebidErrorStats(strconv.Itoa(rctx.PubID), string(bidder))
+		}
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()
@@ -229,7 +248,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
-		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse, m.metricEngine)
 		if err != nil {
 			return ap, err
 		}
