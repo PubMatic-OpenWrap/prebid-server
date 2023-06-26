@@ -31,12 +31,11 @@ func ReadDealTiersFromImp(imp openrtb2.Imp) (DealTierBidderMap, error) {
 	var impExt map[string]struct {
 		DealTier *DealTier `json:"dealTier"`
 	}
-	if err := json.Unmarshal(imp.Ext, &impExt); err != nil {
-		return nil, err
-	}
-	for bidder, param := range impExt {
-		if param.DealTier != nil {
-			dealTiers[BidderName(bidder)] = *param.DealTier
+	if err := json.Unmarshal(imp.Ext, &impExt); err == nil {
+		for bidder, param := range impExt {
+			if param.DealTier != nil {
+				dealTiers[BidderName(bidder)] = *param.DealTier
+			}
 		}
 	}
 

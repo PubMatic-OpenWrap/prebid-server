@@ -5,7 +5,10 @@ import (
 
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 )
+
+type NonBidStatusCode openrtb3.LossReason
 
 // ExtBidResponse defines the contract for bidresponse.ext
 type ExtBidResponse struct {
@@ -48,7 +51,8 @@ type ExtResponsePrebid struct {
 	Fledge           *Fledge           `json:"fledge,omitempty"`
 	Targeting        map[string]string `json:"targeting,omitempty"`
 	// SeatNonBid holds the array of Bids which are either rejected, no bids inside bidresponse.ext.prebid.seatnonbid
-	SeatNonBid []SeatNonBid `json:"seatnonbid,omitempty"`
+	SeatNonBid []SeatNonBid     `json:"seatnonbid,omitempty"`
+	Floors     *PriceFloorRules `json:"floors,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
@@ -83,6 +87,7 @@ type ExtHttpCall struct {
 	RequestHeaders map[string][]string `json:"requestheaders"`
 	ResponseBody   string              `json:"responsebody"`
 	Status         int                 `json:"status"`
+	Params         map[string]int      `json:"params,omitempty"`
 }
 
 // CookieStatus describes the allowed values for bidresponse.ext.usersync.{bidder}.status
@@ -126,7 +131,9 @@ type ExtResponseNonBidPrebid struct {
 }
 
 type NonBidExt struct {
-	Prebid ExtResponseNonBidPrebid `json:"prebid"`
+	Prebid  ExtResponseNonBidPrebid `json:"prebid"`
+	IsAdPod *bool                   `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
+
 }
 
 // NonBid represnts the Non Bid Reason (statusCode) for given impression ID

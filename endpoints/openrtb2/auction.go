@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/bidadjustment"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/ortb"
 	"golang.org/x/net/publicsuffix"
@@ -60,6 +61,14 @@ import (
 const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
+const (
+	VastUnwrapperEnableKey = "enableVastUnwrapper"
+)
+
+func GetContextValueForField(ctx context.Context, field string) string {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper
+}
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")
@@ -158,10 +167,17 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
 
 	ao := analytics.AuctionObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context:      r.Context(),
+			Status:       http.StatusOK,
+			Errors:       make([]error, 0),
+			RejectedBids: []analytics.RejectedBid{},
+		},
 		StartTime: start,
 	}
+
+	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
+	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
 
 	labels := metrics.Labels{
 		Source:        metrics.DemandUnknown,
@@ -172,6 +188,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
+		recordRejectedBids(labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -191,7 +208,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
 
-	ctx := context.Background()
+	ctx := r.Context()
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
 	if timeout > 0 {
@@ -236,8 +253,10 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		PubID:                      labels.PubID,
 		HookExecutor:               hookExecutor,
 		TCF2Config:                 tcf2Config,
+		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
 	ao.RequestWrapper = req
 	ao.Account = account
 	var response *openrtb2.BidResponse
@@ -929,7 +948,7 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 				return errors.New("imp.ext.tid missing in the imp and error creating a random UID")
 			}
 			ie.SetTid(rawUUID.String())
-			impWrapper.RebuildImp()
+			impWrapper.RebuildImpressionExt()
 		}
 	}
 
@@ -1504,7 +1523,11 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 
 		if coreBidderNormalized, isValid := deps.bidderMap[coreBidder]; isValid {
 			if err := deps.paramsValidator.Validate(coreBidderNormalized, ext); err != nil {
-				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
+				msg := fmt.Sprintf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)
+
+				delete(prebid.Bidder, bidder)
+				glog.Errorf("BidderSchemaValidationError: %s", msg)
+				errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 			}
 		} else {
 			if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {

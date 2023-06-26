@@ -1665,8 +1665,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: nil,
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				},
 			},
 		},
 		{
@@ -1674,8 +1676,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "test",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("data for tag_id='test' does not define the required imp array")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("data for tag_id='test' does not define the required imp array")},
+				},
 			},
 		},
 		{
@@ -1683,8 +1687,10 @@ func TestBuildAmpObject(t *testing.T) {
 			inTagId:         "unknown",
 			inStoredRequest: json.RawMessage(`{"id":"some-request-id","site":{"page":"prebid.org"},"imp":[{"id":"some-impression-id","banner":{"format":[{"w":300,"h":250}]},"ext":{"prebid":{"bidder":{"appnexus":{"placementId":12883451}}}}}],"tmax":500}`),
 			expectedAmpObject: &analytics.AmpObject{
-				Status: http.StatusOK,
-				Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				LoggableAuctionObject: analytics.LoggableAuctionObject{
+					Status: http.StatusOK,
+					Errors: []error{fmt.Errorf("unexpected end of JSON input")},
+				},
 			},
 		},
 		{
@@ -1730,10 +1736,10 @@ func TestBuildAmpObject(t *testing.T) {
 							AdM: "<script></script>",
 							Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
 						}},
-						Seat: "",
-					}},
-					Ext: json.RawMessage(`{ "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+						Ext: json.RawMessage(`{ "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+					},
 				},
+
 				AmpTargetingValues: map[string]string{
 					"hb_appnexus_pb": "1.20",
 					"hb_cache_id":    "some_id",
@@ -1786,9 +1792,8 @@ func TestBuildAmpObject(t *testing.T) {
 							AdM: "<script></script>",
 							Ext: json.RawMessage(`{ "prebid": {"targeting": { "hb_pb": "1.20", "hb_appnexus_pb": "1.20", "hb_cache_id": "some_id"}}}`),
 						}},
-						Seat: "",
-					}},
-					Ext: json.RawMessage(`{ "prebid": {"targeting": { "test_key": "test_value", "hb_appnexus_pb": "9999" } }, "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+						Ext: json.RawMessage(`{ "prebid": {"targeting": { "test_key": "test_value", "hb_appnexus_pb": "9999" } }, "errors": {"openx":[ { "code": 1, "message": "The request exceeded the timeout allocated" } ] } }`),
+					},
 				},
 				AmpTargetingValues: map[string]string{
 					"hb_appnexus_pb": "1.20", // Bid level has higher priority than global
@@ -1932,7 +1937,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "text/plain; charset=utf-8")
 			},
 		},
@@ -1943,7 +1948,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}

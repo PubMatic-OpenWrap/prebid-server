@@ -119,8 +119,11 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	start := time.Now()
 
 	vo := analytics.VideoObject{
-		Status:    http.StatusOK,
-		Errors:    make([]error, 0),
+		LoggableAuctionObject: analytics.LoggableAuctionObject{
+			Context: r.Context(),
+			Status:  http.StatusOK,
+			Errors:  make([]error, 0),
+		},
 		StartTime: start,
 	}
 
