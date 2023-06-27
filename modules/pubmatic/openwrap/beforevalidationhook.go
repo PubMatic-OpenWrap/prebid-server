@@ -75,8 +75,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.InvalidProfileConfiguration
 		err = errors.New("failed to get profile data: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests("", rCtx.PubIDStr, rCtx.ProfileIDStr)                             // TODO: decide the endpoint ? amp/video/v25
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp)) //old-code this was incremented only for v25 & ctv
+		m.metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointV25, rCtx.PubIDStr, rCtx.ProfileIDStr) // TODO: decide the endpoint ? amp/video/v25
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, err
 	}
 
@@ -137,7 +137,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
-			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr) // not-avl-in-old-code
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 			return result, err
 		}
 
@@ -160,7 +160,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
-				// AAA: should we continue from here ? other imps might be valid
 				return result, err
 			}
 		}
