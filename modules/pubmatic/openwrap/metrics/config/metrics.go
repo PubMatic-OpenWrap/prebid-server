@@ -141,10 +141,16 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher
 
 // RecordPublisherNoConsentRequests across all engines
 func (me *MultiMetricsEngine) RecordPublisherNoConsentRequests(publisher string) {
+	for _, thisME := range *me {
+		thisME.RecordPublisherNoConsentRequests(publisher)
+	}
 }
 
 // RecordPublisherNoConsentImpressions across all engines
 func (me *MultiMetricsEngine) RecordPublisherNoConsentImpressions(publisher string, impCnt int) {
+	for _, thisME := range *me {
+		thisME.RecordPublisherNoConsentImpressions(publisher, impCnt)
+	}
 }
 
 // RecordPublisherRequestStats across all engines

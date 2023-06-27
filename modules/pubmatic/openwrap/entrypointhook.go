@@ -40,6 +40,7 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 	case OpenWrapAuction: // legacy hybrid api should not execute module
+		m.metricEngine.RecordPBSAuctionRequestsStats()
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
