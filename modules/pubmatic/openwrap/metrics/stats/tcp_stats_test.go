@@ -151,44 +151,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "RecordPublisherPartnerStats",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherPartnerRequests], "5890", "pubmatic"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherPartnerStats("5890", "pubmatic")
-			},
-		},
-		{
-			name: "RecordPublisherPartnerImpStats",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherPartnerImpressions], "5890", "pubmatic"): 10,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherPartnerImpStats("5890", "pubmatic", 10)
-			},
-		},
-		{
 			name: "RecordPublisherPartnerNoCookieStats",
 			args: args{
 				statTCP: &StatsTCP{
@@ -224,25 +186,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			callRecord: func(st *StatsTCP) {
 				st.RecordPartnerTimeoutErrorStats("5890", "pubmatic")
-			},
-		},
-		{
-			name: "RecordNobiderStatusErrorStats",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyNobidderStatusErrorRequests], "5890", "pubmatic"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordNobiderStatusErrorStats("5890", "pubmatic")
 			},
 		},
 		{
@@ -380,63 +323,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			callRecord: func(st *StatsTCP) {
 				st.RecordPublisherInvalidProfileImpressions("5890", "pubmatic", 10)
-			},
-		},
-		{
-			name: "RecordPublisherNoConsentRequests",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherNoConsentRequests], "5890"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherNoConsentRequests("5890")
-			},
-		},
-		{
-			name: "RecordPublisherNoConsentImpressions",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherNoConsentImpressions], "5890"): 11,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherNoConsentImpressions("5890", 11)
-			},
-		},
-		{
-			name: "RecordPublisherRequestStats",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherPrebidRequests], "5890"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherRequestStats("5890")
 			},
 		},
 		{
@@ -913,25 +799,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "RecordCTVIncompleteAdPodsCount",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 5),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyIncompleteAdPods], "reason", "5890"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordCTVIncompleteAdPodsCount(1, "reason", "5890")
-			},
-		},
-		{
 			name: "RecordCTVReqImpsWithDbConfigCount",
 			args: args{
 				statTCP: &StatsTCP{
@@ -992,25 +859,6 @@ func TestRecordFunctions(t *testing.T) {
 				st.RecordAdPodGeneratedImpressionsCount(6, "5890")
 				st.RecordAdPodGeneratedImpressionsCount(9, "5890")
 				st.RecordAdPodGeneratedImpressionsCount(11, "5890")
-			},
-		},
-		{
-			name: "RecordAdPodSecondsMissedCount",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 4),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyAdPodSecondsMissed], "5890"): 3,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordAdPodSecondsMissedCount(3, "5890")
 			},
 		},
 		{
@@ -1106,25 +954,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			callRecord: func(st *StatsTCP) {
 				st.RecordCTVReqCountWithAdPod("5890", "1234")
-			},
-		},
-		{
-			name: "RecordCTVKeyBidDuration",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyBidDuration], 10, "5890", "1234"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordCTVKeyBidDuration(10, "5890", "1234")
 			},
 		},
 		{
