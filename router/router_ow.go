@@ -12,6 +12,9 @@ const (
 	OpenWrapV25Video    = "/openrtb/2.5/video"
 	OpenWrapAmp         = "/openrtb/amp"
 	OpenWrapHealthcheck = "/healthcheck"
+	OpenWrapCTVOrtb     = "/video/openrtb"
+	OpenWrapCTVVast     = "/video/vast"
+	OpenWrapCTVJson     = "/video/json"
 )
 
 // Support legacy APIs for a grace period.
@@ -29,6 +32,16 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 	// OpenWrap AMP
 	r.POST(OpenWrapAmp, ampEndpoint)
+
+	// CTV/OTT
+	//GET
+	r.GET(OpenWrapCTVOrtb, openrtbEndpoint)
+	r.GET(OpenWrapCTVVast, openrtbEndpoint)
+	r.GET(OpenWrapCTVJson, openrtbEndpoint)
+	// POST
+	r.POST(OpenWrapCTVOrtb, openrtbEndpoint)
+	r.POST(OpenWrapCTVVast, openrtbEndpoint)
+	r.POST(OpenWrapCTVJson, openrtbEndpoint)
 
 	// healthcheck used by k8s
 	r.GET(OpenWrapHealthcheck, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
@@ -17,6 +18,9 @@ const (
 	OpenWrapV25      = "/openrtb/2.5"
 	OpenWrapV25Video = "/openrtb/2.5/video"
 	OpenWrapAmp      = "/openrtb/amp"
+	OpenWrapCTVOrtb  = "/video/openrtb"
+	OpenWrapCTVVast  = "/video/vast"
+	OpenWrapCTVJson  = "/video/json"
 )
 
 func (m OpenWrap) handleEntrypointHook(
@@ -46,6 +50,8 @@ func (m OpenWrap) handleEntrypointHook(
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 	case OpenWrapAmp:
 		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
+	case OpenWrapCTVOrtb, OpenWrapCTVVast, OpenWrapCTVJson:
+		requestExtWrapper, err = ctv.ConvertRequestAndGetRequestExtWrapper(payload, &result)
 	}
 
 	// init default for all modules
