@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/adpod"
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -131,7 +133,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
 	requestExt.Prebid.Debug = rCtx.Debug
-	// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
+	requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
 	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
 		PriceGranularity:  &priceGranularity,
@@ -142,9 +144,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 
+	if rCtx.IsCTVRequest {
+		err := ctv.FilterNonVideoImpressions(payload.BidRequest)
+		if err != nil {
+			result.NbrCode = nbr.InvalidVideoRequest
+			err = errors.New("video object is missing in the request : " + err.Error())
+			result.Errors = append(result.Errors, err.Error())
+			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			return result, err
+		}
+	}
+
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
-		var adpodExt *models.AdPod
 		imp := payload.BidRequest.Imp[i]
 
 		if imp.TagID == "" {
@@ -200,6 +212,23 @@ func (m OpenWrap) handleBeforeValidationHook(
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
 
+		var adpodConfig *models.AdPod
+		if rCtx.IsCTVRequest {
+			adpodConfig, err = adpod.ResolveAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig)
+			if err != nil {
+				result.NbrCode = nbr.InternalError
+				err = errors.New("failed to get adpod configurations: " + imp.ID)
+				result.Errors = append(result.Errors, err.Error())
+				return result, err
+			}
+			if err := adpod.IsValidAdPod(adpodConfig); err != nil {
+				result.NbrCode = nbr.InternalError
+				err = errors.New("invalid adpod configurations: " + imp.ID + " reason: " + err.Error())
+				result.Errors = append(result.Errors, err.Error())
+				return result, err
+			}
+		}
+
 		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
 			disabledSlots++
 
@@ -249,7 +278,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			case models.BidderVASTBidder:
-				slot, bidderParams, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
+				slot, bidderParams, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			}
@@ -325,6 +354,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				Bidders:           make(map[string]models.PartnerData),
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
+				AdpodConfig:       adpodConfig,
 			}
 		}
 

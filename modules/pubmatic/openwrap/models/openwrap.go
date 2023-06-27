@@ -108,6 +108,7 @@ type ImpCtx struct {
 
 	BannerAdUnitCtx AdUnitCtx
 	VideoAdUnitCtx  AdUnitCtx
+	AdpodConfig     *AdPod
 }
 
 type PartnerData struct {
