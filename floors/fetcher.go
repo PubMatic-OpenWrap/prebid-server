@@ -283,6 +283,10 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
 	}
 
+	if priceFloors.Data.UseFetchDataRate < 0 || priceFloors.Data.UseFetchDataRate > 100 {
+		return errors.New("useFetchDataRate should be greater than or equal to 0 and less than or equal to 100")
+	}
+
 	for _, modelGroup := range priceFloors.Data.ModelGroups {
 		if len(modelGroup.Values) == 0 || len(modelGroup.Values) > configs.MaxRules {
 			return errors.New("invalid number of floor rules, floor rules should be greater than zero and less than MaxRules specified in account config")

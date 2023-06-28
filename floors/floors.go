@@ -132,6 +132,12 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 	return true
 }
 
+// resolveDataRate will check if to use fetched data or request data
+func resolveDataRate(rate int) bool {
+	randomNumber := rand.Intn(100)
+	return randomNumber < rate
+}
+
 // resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
 	var errlist []error
@@ -144,7 +150,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	account.PriceFloors.Fetch.AccountID = account.ID
 	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess {
+	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && resolveDataRate(fetchResult.Data.UseFetchDataRate) {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {

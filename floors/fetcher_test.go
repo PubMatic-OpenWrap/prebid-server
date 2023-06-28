@@ -395,6 +395,32 @@ func TestValidatePriceFloorRules(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Invalid useFetchDataRate",
+			args: args{
+				configs: config.AccountFloorFetch{
+					Enabled:     true,
+					URL:         testURL,
+					Timeout:     5,
+					MaxFileSize: 20,
+					MaxRules:    1,
+					MaxAge:      20,
+					Period:      10,
+				},
+				priceFloors: &openrtb_ext.PriceFloorRules{
+					Data: &openrtb_ext.PriceFloorData{
+						SkipRate: 10,
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
+							Values: map[string]float64{
+								"*|*|www.website.com": 15.01,
+							},
+						}},
+						UseFetchDataRate: -11,
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

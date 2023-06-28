@@ -661,9 +661,7 @@ func TestEnforce(t *testing.T) {
 	for _, tt := range tests {
 		actEligibleBids, actErrs, actRejecteBids := Enforce(tt.args.bidRequestWrapper, tt.args.seatBids, config.Account{PriceFloors: tt.args.priceFloorsCfg}, tt.args.conversions)
 		assert.Equal(t, tt.expErrs, actErrs, tt.name)
-		if !reflect.DeepEqual(tt.expRejectedBids, actRejecteBids) {
-			assert.Fail(t, "rejected bids don't match")
-		}
+		assert.ElementsMatch(t, tt.expRejectedBids, actRejecteBids, "rejected bids don't match:"+tt.name)
 
 		if !reflect.DeepEqual(tt.expEligibleBids, actEligibleBids) {
 			assert.Fail(t, "eligible bids don't match")
