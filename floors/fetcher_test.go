@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -415,7 +416,7 @@ func TestValidatePriceFloorRules(t *testing.T) {
 								"*|*|www.website.com": 15.01,
 							},
 						}},
-						UseFetchDataRate: -11,
+						UseFetchDataRate: ptrutil.ToPtr(-11),
 					},
 				},
 			},

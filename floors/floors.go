@@ -25,6 +25,8 @@ const (
 	modelWeightMin   int    = 1
 	enforceRateMin   int    = 0
 	enforceRateMax   int    = 100
+	dataRateMin      int    = 0
+	dataRateMax      int    = 100
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -133,9 +135,12 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 }
 
 // resolveDataRate will check if to use fetched data or request data
-func resolveDataRate(rate int) bool {
-	randomNumber := rand.Intn(100)
-	return randomNumber < rate
+func resolveDataRate(rate *int) bool {
+	if rate == nil {
+		return true
+	}
+	randomNumber := rand.Intn(dataRateMax)
+	return randomNumber < *rate
 }
 
 // resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled

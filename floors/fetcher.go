@@ -279,11 +279,11 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		return errors.New("no model groups found in price floor data")
 	}
 
-	if priceFloors.Data.SkipRate < 0 || priceFloors.Data.SkipRate > 100 {
+	if priceFloors.Data.SkipRate < skipRateMin || priceFloors.Data.SkipRate > skipRateMax {
 		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
 	}
 
-	if priceFloors.Data.UseFetchDataRate < 0 || priceFloors.Data.UseFetchDataRate > 100 {
+	if priceFloors.Data.UseFetchDataRate != nil && (*priceFloors.Data.UseFetchDataRate < dataRateMin || *priceFloors.Data.UseFetchDataRate > dataRateMax) {
 		return errors.New("useFetchDataRate should be greater than or equal to 0 and less than or equal to 100")
 	}
 
