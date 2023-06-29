@@ -32,14 +32,21 @@ type Banner struct {
 	Enabled *bool         `json:"enabled"`
 	Config  *BannerConfig `json:"config"`
 }
-type Native struct {
-	Enabled *bool `json:"enabled"`
-}
 
 type VideoConfig struct {
 	openrtb2.Video
 	ConnectionType []int           `json:"connectiontype,omitempty"`
 	ClientConfig   json.RawMessage `json:"clientconfig"`
+}
+
+type Native struct {
+	Enabled *bool         `json:"enabled"`
+	Config  *NativeConfig `json:"config"`
+}
+
+type NativeConfig struct {
+	openrtb2.Native
+	ClientConfig json.RawMessage `json:"clientconfig"`
 }
 
 type Video struct {
