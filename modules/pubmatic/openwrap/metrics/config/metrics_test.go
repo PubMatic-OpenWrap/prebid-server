@@ -73,11 +73,8 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	endpoint := "in-app"
 	versionID := "1"
 	errorCode := 10
-	reason := "invalid_config"
 	processingTime := 10
 	method := "GET"
-	seconds := 1
-	duration := 10
 	maxDuration := 20
 	minDuration := 10
 	aliasBidder := "pubmatic-2"
@@ -86,20 +83,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 
 	// set the expectations
 	mockEngine.EXPECT().RecordOpenWrapServerPanicStats()
-	mockEngine.EXPECT().RecordPublisherPartnerStats(publisher, partner).Return()
-	mockEngine.EXPECT().RecordPublisherPartnerImpStats(publisher, partner, impCount)
 	mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats(publisher, partner)
 	mockEngine.EXPECT().RecordPartnerTimeoutErrorStats(publisher, partner)
-	mockEngine.EXPECT().RecordNobiderStatusErrorStats(publisher, partner)
 	mockEngine.EXPECT().RecordNobidErrorStats(publisher, partner)
 	mockEngine.EXPECT().RecordUnkownPrebidErrorStats(publisher, partner)
 	mockEngine.EXPECT().RecordSlotNotMappedErrorStats(publisher, partner)
 	mockEngine.EXPECT().RecordMisConfigurationErrorStats(publisher, partner)
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
-	mockEngine.EXPECT().RecordPublisherNoConsentRequests(publisher)
-	mockEngine.EXPECT().RecordPublisherNoConsentImpressions(publisher, impCount)
-	mockEngine.EXPECT().RecordPublisherRequestStats(publisher)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(publisher)
 	mockEngine.EXPECT().RecordInvalidCreativeStats(publisher, partner)
@@ -123,17 +114,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPublisherRequests(endpoint, publisher, platform)
 	mockEngine.EXPECT().RecordCTVHTTPMethodRequests(endpoint, publisher, method)
 	mockEngine.EXPECT().RecordCTVInvalidReasonCount(errorCode, publisher)
-	mockEngine.EXPECT().RecordCTVIncompleteAdPodsCount(impCount, reason, publisher)
 	mockEngine.EXPECT().RecordCTVReqImpsWithDbConfigCount(publisher)
 	mockEngine.EXPECT().RecordCTVReqImpsWithReqConfigCount(publisher)
 	mockEngine.EXPECT().RecordAdPodGeneratedImpressionsCount(impCount, publisher)
 	mockEngine.EXPECT().RecordRequestAdPodGeneratedImpressionsCount(impCount, publisher)
-	mockEngine.EXPECT().RecordAdPodSecondsMissedCount(seconds, publisher)
 	mockEngine.EXPECT().RecordReqImpsWithAppContentCount(publisher)
 	mockEngine.EXPECT().RecordReqImpsWithSiteContentCount(publisher)
 	mockEngine.EXPECT().RecordAdPodImpressionYield(maxDuration, minDuration, publisher)
 	mockEngine.EXPECT().RecordCTVReqCountWithAdPod(publisher, profile)
-	mockEngine.EXPECT().RecordCTVKeyBidDuration(duration, publisher, profile)
 	mockEngine.EXPECT().RecordPBSAuctionRequestsStats()
 	mockEngine.EXPECT().RecordInjectTrackerErrorCount(adFormat, publisher, partner)
 	mockEngine.EXPECT().RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId)
@@ -148,20 +136,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 
 	// call the functions
 	multiMetricEngine.RecordOpenWrapServerPanicStats()
-	multiMetricEngine.RecordPublisherPartnerStats(publisher, partner)
-	multiMetricEngine.RecordPublisherPartnerImpStats(publisher, partner, impCount)
 	multiMetricEngine.RecordPublisherPartnerNoCookieStats(publisher, partner)
 	multiMetricEngine.RecordPartnerTimeoutErrorStats(publisher, partner)
-	multiMetricEngine.RecordNobiderStatusErrorStats(publisher, partner)
 	multiMetricEngine.RecordNobidErrorStats(publisher, partner)
 	multiMetricEngine.RecordUnkownPrebidErrorStats(publisher, partner)
 	multiMetricEngine.RecordSlotNotMappedErrorStats(publisher, partner)
 	multiMetricEngine.RecordMisConfigurationErrorStats(publisher, partner)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
-	multiMetricEngine.RecordPublisherNoConsentRequests(publisher)
-	multiMetricEngine.RecordPublisherNoConsentImpressions(publisher, impCount)
-	multiMetricEngine.RecordPublisherRequestStats(publisher)
 	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher)
 	multiMetricEngine.RecordNobidErrPrebidServerResponse(publisher)
 	multiMetricEngine.RecordInvalidCreativeStats(publisher, partner)
@@ -185,17 +167,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPublisherRequests(endpoint, publisher, platform)
 	multiMetricEngine.RecordCTVHTTPMethodRequests(endpoint, publisher, method)
 	multiMetricEngine.RecordCTVInvalidReasonCount(errorCode, publisher)
-	multiMetricEngine.RecordCTVIncompleteAdPodsCount(impCount, reason, publisher)
 	multiMetricEngine.RecordCTVReqImpsWithDbConfigCount(publisher)
 	multiMetricEngine.RecordCTVReqImpsWithReqConfigCount(publisher)
 	multiMetricEngine.RecordAdPodGeneratedImpressionsCount(impCount, publisher)
 	multiMetricEngine.RecordRequestAdPodGeneratedImpressionsCount(impCount, publisher)
-	multiMetricEngine.RecordAdPodSecondsMissedCount(seconds, publisher)
 	multiMetricEngine.RecordReqImpsWithAppContentCount(publisher)
 	multiMetricEngine.RecordReqImpsWithSiteContentCount(publisher)
 	multiMetricEngine.RecordAdPodImpressionYield(maxDuration, minDuration, publisher)
 	multiMetricEngine.RecordCTVReqCountWithAdPod(publisher, profile)
-	multiMetricEngine.RecordCTVKeyBidDuration(duration, publisher, profile)
 	multiMetricEngine.RecordPBSAuctionRequestsStats()
 	multiMetricEngine.RecordInjectTrackerErrorCount(adFormat, publisher, partner)
 	multiMetricEngine.RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId)

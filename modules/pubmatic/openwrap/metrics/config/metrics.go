@@ -62,20 +62,6 @@ func (me *MultiMetricsEngine) RecordOpenWrapServerPanicStats() {
 	}
 }
 
-// RecordPublisherPartnerStats across all engines
-func (me *MultiMetricsEngine) RecordPublisherPartnerStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherPartnerStats(publisher, partner)
-	}
-}
-
-// RecordPublisherPartnerImpStats across all engines
-func (me *MultiMetricsEngine) RecordPublisherPartnerImpStats(publisher, partner string, impCount int) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherPartnerImpStats(publisher, partner, impCount)
-	}
-}
-
 // RecordPublisherPartnerNoCookieStats across all engines
 func (me *MultiMetricsEngine) RecordPublisherPartnerNoCookieStats(publisher, partner string) {
 	for _, thisME := range *me {
@@ -87,13 +73,6 @@ func (me *MultiMetricsEngine) RecordPublisherPartnerNoCookieStats(publisher, par
 func (me *MultiMetricsEngine) RecordPartnerTimeoutErrorStats(publisher, partner string) {
 	for _, thisME := range *me {
 		thisME.RecordPartnerTimeoutErrorStats(publisher, partner)
-	}
-}
-
-// RecordNobiderStatusErrorStats across all engines
-func (me *MultiMetricsEngine) RecordNobiderStatusErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordNobiderStatusErrorStats(publisher, partner)
 	}
 }
 
@@ -136,27 +115,6 @@ func (me *MultiMetricsEngine) RecordPublisherProfileRequests(publisher, profile 
 func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
 	for _, thisME := range *me {
 		thisME.RecordPublisherInvalidProfileImpressions(publisher, profileID, impCount)
-	}
-}
-
-// RecordPublisherNoConsentRequests across all engines
-func (me *MultiMetricsEngine) RecordPublisherNoConsentRequests(publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherNoConsentRequests(publisher)
-	}
-}
-
-// RecordPublisherNoConsentImpressions across all engines
-func (me *MultiMetricsEngine) RecordPublisherNoConsentImpressions(publisher string, impCnt int) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherNoConsentImpressions(publisher, impCnt)
-	}
-}
-
-// RecordPublisherRequestStats across all engines
-func (me *MultiMetricsEngine) RecordPublisherRequestStats(publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherRequestStats(publisher)
 	}
 }
 
@@ -321,13 +279,6 @@ func (me *MultiMetricsEngine) RecordCTVInvalidReasonCount(errorCode int, publish
 	}
 }
 
-// RecordCTVIncompleteAdPodsCount across all engines
-func (me *MultiMetricsEngine) RecordCTVIncompleteAdPodsCount(impCount int, reason string, publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordCTVIncompleteAdPodsCount(impCount, reason, publisher)
-	}
-}
-
 // RecordCTVReqImpsWithDbConfigCount across all engines
 func (me *MultiMetricsEngine) RecordCTVReqImpsWithDbConfigCount(publisher string) {
 	for _, thisME := range *me {
@@ -356,13 +307,6 @@ func (me *MultiMetricsEngine) RecordRequestAdPodGeneratedImpressionsCount(impCou
 	}
 }
 
-// RecordAdPodSecondsMissedCount across all engines
-func (me *MultiMetricsEngine) RecordAdPodSecondsMissedCount(seconds int, publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordAdPodSecondsMissedCount(seconds, publisher)
-	}
-}
-
 // RecordAdPodImpressionYield across all engines
 func (me *MultiMetricsEngine) RecordAdPodImpressionYield(maxDuration int, minDuration int, publisher string) {
 	for _, thisME := range *me {
@@ -374,13 +318,6 @@ func (me *MultiMetricsEngine) RecordAdPodImpressionYield(maxDuration int, minDur
 func (me *MultiMetricsEngine) RecordCTVReqCountWithAdPod(publisher, profile string) {
 	for _, thisME := range *me {
 		thisME.RecordCTVReqCountWithAdPod(publisher, profile)
-	}
-}
-
-// RecordCTVKeyBidDuration across all engines
-func (me *MultiMetricsEngine) RecordCTVKeyBidDuration(duration int, publisher, profile string) {
-	for _, thisME := range *me {
-		thisME.RecordCTVKeyBidDuration(duration, publisher, profile)
 	}
 }
 
