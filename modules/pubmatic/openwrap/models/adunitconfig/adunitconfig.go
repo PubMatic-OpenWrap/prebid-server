@@ -9,8 +9,8 @@ import (
 
 // AdUnitConfig type definition for Ad Unit config parsed from stored config JSON
 type AdUnitConfig struct {
-	ConfigPattern string               `json:"configPattern"`
-	Regex         bool                 `json:"regex"`
+	ConfigPattern string               `json:"configPattern,omitempty"`
+	Regex         bool                 `json:"regex,omitempty"`
 	Config        map[string]*AdConfig //`json:"config"`
 	// TODO add seperate default field
 	// Default map[string]*AdConfig `json:"default"`
@@ -25,33 +25,33 @@ type Transparency struct {
 
 type BannerConfig struct {
 	openrtb2.Banner
-	ClientConfig json.RawMessage `json:"clientconfig"`
+	ClientConfig json.RawMessage `json:"clientconfig,omitempty"`
 }
 
 type Banner struct {
-	Enabled *bool         `json:"enabled"`
-	Config  *BannerConfig `json:"config"`
+	Enabled *bool         `json:"enabled,omitempty"`
+	Config  *BannerConfig `json:"config,omitempty"`
 }
 
 type VideoConfig struct {
 	openrtb2.Video
 	ConnectionType []int           `json:"connectiontype,omitempty"`
-	ClientConfig   json.RawMessage `json:"clientconfig"`
+	ClientConfig   json.RawMessage `json:"clientconfig,omitempty"`
 }
 
 type Native struct {
-	Enabled *bool         `json:"enabled"`
-	Config  *NativeConfig `json:"config"`
+	Enabled *bool         `json:"enabled,omitempty"`
+	Config  *NativeConfig `json:"config,omitempty"`
 }
 
 type NativeConfig struct {
 	openrtb2.Native
-	ClientConfig json.RawMessage `json:"clientconfig"`
+	ClientConfig json.RawMessage `json:"clientconfig,omitempty"`
 }
 
 type Video struct {
-	Enabled *bool        `json:"enabled"`
-	Config  *VideoConfig `json:"config"`
+	Enabled *bool        `json:"enabled,omitempty"`
+	Config  *VideoConfig `json:"config,omitempty"`
 }
 
 // Struct for UniversalPixel
@@ -65,17 +65,17 @@ type UniversalPixel struct {
 }
 
 type AdConfig struct {
-	BidFloor    *float64                     `json:"bidfloor"`
-	BidFloorCur *string                      `json:"bidfloorcur"`
-	Floors      *openrtb_ext.PriceFloorRules `json:"floors"`
+	BidFloor    *float64                     `json:"bidfloor,omitempty"`
+	BidFloorCur *string                      `json:"bidfloorcur,omitempty"`
+	Floors      *openrtb_ext.PriceFloorRules `json:"floors,omitempty"`
 
-	Exp            *int             `json:"exp"`
-	Banner         *Banner          `json:"banner"`
-	Native         *Native          `json:"native"`
-	Video          *Video           `json:"video"`
-	App            *openrtb2.App    `json:"app"`
-	Device         *openrtb2.Device `json:"device"`
+	Exp            *int             `json:"exp,omitempty"`
+	Banner         *Banner          `json:"banner,omitempty"`
+	Native         *Native          `json:"native,omitempty"`
+	Video          *Video           `json:"video,omitempty"`
+	App            *openrtb2.App    `json:"app,omitempty"`
+	Device         *openrtb2.Device `json:"device,omitempty"`
 	Transparency   *Transparency    `json:"transparency,omitempty"`
-	Regex          *bool            `json:"regex"`
-	UniversalPixel []UniversalPixel `json:"universalpixel"`
+	Regex          *bool            `json:"regex,omitempty"`
+	UniversalPixel []UniversalPixel `json:"universalpixel,omitempty"`
 }
