@@ -33,6 +33,11 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersionID int) (*adunitconf
 		return nil, err
 	}
 
+	for k, v := range adunitConfig.Config {
+		adunitConfig.Config[strings.ToLower(k)] = v
+		// shall we delete the orignal key-val?
+	}
+
 	if adunitConfig.ConfigPattern == "" {
 		//Default configPattern value is "_AU_" if not present in db config
 		adunitConfig.ConfigPattern = models.MACRO_AD_UNIT_ID
