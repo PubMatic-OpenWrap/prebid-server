@@ -134,7 +134,7 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 	return true
 }
 
-// resolveDataRate will check if to use fetched data or request data
+// shouldUseFetchedData will check if to use fetched data or request data
 func shouldUseFetchedData(rate *int) bool {
 	if rate == nil {
 		return true
