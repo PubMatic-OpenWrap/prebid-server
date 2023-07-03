@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"regexp"
@@ -212,4 +213,25 @@ func getHostName() string {
 	serverName := nodeName + ":" + podName
 
 	return serverName
+}
+
+func validateCreativeForPlatform(eachBid openrtb2.Bid, platform string) error {
+	if platform == "" {
+		return nil
+	}
+	switch platform {
+	case models.PLATFORM_VIDEO:
+		if eachBid.AdM == "" {
+			return errors.New("Creative is empty")
+		}
+		// For Video requests, we could get Partner URI in Bid response
+		if strings.HasPrefix(eachBid.AdM, models.HTTPProtocol) {
+			return nil
+		}
+
+		if !(strings.Contains(eachBid.AdM, models.WrapperElement) || strings.Contains(eachBid.AdM, models.InlineElement)) {
+			return errors.New("Video creative not in required VAST format")
+		}
+	}
+	return nil
 }

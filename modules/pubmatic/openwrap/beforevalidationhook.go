@@ -39,6 +39,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+		if len(result.Errors) > 0 {
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, result.NbrCode)
+			// TODO; this Nbrcode does not match with HB's NBR error code
+			// HB-ErrAllPartnerThrottled(11) :	PBS-AllPartnerThrottled(506)
+		}
 	}()
 
 	pubID, err := getPubID(*payload.BidRequest)

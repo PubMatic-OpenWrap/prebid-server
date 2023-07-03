@@ -5,15 +5,21 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOpenWrap_handleEntrypointHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	defer ctrl.Finish()
+
 	type fields struct {
 		cfg   config.Config
 		cache cache.Cache
@@ -22,6 +28,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 		in0     context.Context
 		miCtx   hookstage.ModuleInvocationContext
 		payload hookstage.EntrypointPayload
+		setup   func(*mock.MockMetricsEngine)
 	}
 	tests := []struct {
 		name    string
@@ -48,6 +55,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
+				setup: func(mme *mock.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{},
 		},
@@ -78,6 +86,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
+				setup: func(mme *mock.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -105,6 +114,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						PrebidBidderCode:         make(map[string]string),
 						BidderResponseTimeMillis: make(map[string]int),
 						ProfileIDStr:             "5890",
+						Endpoint:                 models.EndpointV25,
 					},
 				},
 			},
@@ -136,6 +146,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1,"wiid":"4df09505-d0b2-4d70-94d9-dc41e8e777f7"}}}`),
 				},
+				setup: func(mme *mock.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -155,6 +166,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						PrebidBidderCode:          make(map[string]string),
 						BidderResponseTimeMillis:  make(map[string]int),
 						ProfileIDStr:              "5890",
+						Endpoint:                  models.EndpointV25,
 					},
 				},
 			},
@@ -179,6 +191,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileids":5890,"versionid":1}}}`),
 				},
+				setup: func(mme *mock.MockMetricsEngine) {
+					mme.EXPECT().RecordBadRequests(gomock.Any(), nbr.InvalidProfileID)
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				Reject:  true,
@@ -190,9 +205,12 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
+			tt.args.setup(mockEngine)
 			m := OpenWrap{
-				cfg:   tt.fields.cfg,
-				cache: tt.fields.cache,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: mockEngine,
 			}
 			got, err := m.handleEntrypointHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			assert.Equal(t, err, tt.wantErr)

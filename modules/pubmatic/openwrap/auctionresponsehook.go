@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -35,6 +35,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
+		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
 	// cache rctx for analytics
@@ -60,12 +61,16 @@ func (m OpenWrap) handleAuctionResponseHook(
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
+
+			if rctx.Platform != "" {
+				m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
+			}
+
 			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
 			if !ok {
 				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+bid.ImpID)
 				continue
 			}
-
 			partnerID := 0
 			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 				partnerID = bidderMeta.PartnerID
@@ -182,10 +187,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.Warnings = append(result.Warnings, warnings...)
 	}
 
-	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse)
-
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
-
 	responseExt := openrtb_ext.ExtBidResponse{}
 	// TODO use concrete structure
 	if len(payload.BidResponse.Ext) != 0 {
@@ -194,23 +195,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+
 	for k, v := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[k.String()] = v
 		m.metricEngine.RecordPartnerResponseTimeStats(rctx.PubIDStr, string(k), v)
-	}
-
-	// record error stats for bidder
-	for bidder, errs := range responseExt.Errors {
-		if len(errs) <= 0 {
-			continue
-		}
-
-		switch errs[0].Code {
-		case errortypes.TimeoutErrorCode:
-			m.metricEngine.RecordPartnerTimeoutErrorStats(rctx.PubIDStr, string(bidder))
-		case errortypes.UnknownErrorCode:
-			m.metricEngine.RecordUnkownPrebidErrorStats(rctx.PubIDStr, string(bidder))
-		}
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()
