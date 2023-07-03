@@ -135,7 +135,7 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 }
 
 // resolveDataRate will check if to use fetched data or request data
-func resolveDataRate(rate *int) bool {
+func shouldUseFetchedData(rate *int) bool {
 	if rate == nil {
 		return true
 	}
@@ -155,7 +155,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	account.PriceFloors.Fetch.AccountID = account.ID
 	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && resolveDataRate(fetchResult.Data.UseFetchDataRate) {
+	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
