@@ -11,7 +11,7 @@ import (
 type AdUnitConfig struct {
 	ConfigPattern string               `json:"configPattern,omitempty"`
 	Regex         bool                 `json:"regex,omitempty"`
-	Config        map[string]*AdConfig //`json:"config"`
+	Config        map[string]*AdConfig `json:"config"`
 	// TODO add seperate default field
 	// Default map[string]*AdConfig `json:"default"`
 }
