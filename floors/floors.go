@@ -25,6 +25,8 @@ const (
 	modelWeightMin   int    = 1
 	enforceRateMin   int    = 0
 	enforceRateMax   int    = 100
+	dataRateMin      int    = 0
+	dataRateMax      int    = 100
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -132,6 +134,15 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 	return true
 }
 
+// shouldUseFetchedData will check if to use fetched data or request data
+func shouldUseFetchedData(rate *int) bool {
+	if rate == nil {
+		return true
+	}
+	randomNumber := rand.Intn(dataRateMax)
+	return randomNumber < *rate
+}
+
 // resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
 	var errlist []error
@@ -144,7 +155,7 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	account.PriceFloors.Fetch.AccountID = account.ID
 	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess {
+	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {

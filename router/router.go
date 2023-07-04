@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -142,6 +143,11 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 			TLSHandshakeTimeout:   time.Duration(cfg.Client.TLSHandshakeTimeout) * time.Second,
 			ResponseHeaderTimeout: time.Duration(cfg.Client.ResponseHeaderTimeout) * time.Second,
+
+			Dial: (&net.Dialer{
+				Timeout:   time.Duration(cfg.Client.DialTimeout) * time.Millisecond,
+				KeepAlive: time.Duration(cfg.Client.DialKeepAlive) * time.Second,
+			}).Dial,
 		},
 	}
 
