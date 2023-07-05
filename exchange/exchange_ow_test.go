@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -13,12 +14,12 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/vastbidder"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +34,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	type want struct {
 		rejectedBidIds       []string
 		validBidCountPerSeat map[string]int
-		expectedRejectedBids []analytics.RejectedBid
+		expectedseatNonBids  nonBids
 	}
 	tests := []struct {
 		name string
@@ -49,7 +50,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 							BAdv: []string{"a.com"}, // block bids returned by a.com
 						},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
@@ -90,22 +90,32 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				expectedRejectedBids: []analytics.RejectedBid{
-					{
-						RejectionReason: openrtb3.LossBidAdvertiserBlocking,
-						Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-							ID:      "a.com_bid",
-							ADomain: []string{"a.com"},
-						}},
-						Seat: "",
-					},
-					{
-						RejectionReason: openrtb3.LossBidAdvertiserBlocking,
-						Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-							ID:      "reject_b.a.com.a.com.b.c.d.a.com",
-							ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
-						}},
-						Seat: "",
+				expectedseatNonBids: nonBids{
+					seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+						"": {
+							{
+								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+								Ext: openrtb_ext.NonBidExt{
+									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+										Bid: openrtb_ext.NonBidObject{
+											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
+											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
+										},
+									},
+								},
+							},
+							{
+								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+								Ext: openrtb_ext.NonBidExt{
+									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+										Bid: openrtb_ext.NonBidObject{
+											ID:      "a.com_bid",
+											ADomain: []string{"a.com"},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
@@ -121,7 +131,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tab_bidder_1"): {
@@ -137,7 +146,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tab_bidder_1": 2,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -147,7 +156,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
@@ -170,7 +178,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
 					"rtb_bidder_1": 2, // no bid must be rejected
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -180,7 +188,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adaptor_1"): {
@@ -195,7 +202,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adaptor_1": 1,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -205,7 +212,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
@@ -228,7 +234,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -238,7 +244,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
@@ -261,7 +266,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -271,7 +276,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"a.com"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("my_adapter"): {
@@ -287,7 +291,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
 				validBidCountPerSeat: map[string]int{"my_adapter": 1},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids:  nonBids{},
 			},
 		}, {
 			name: "multiple_badv",
@@ -296,7 +300,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com", "advertiser_2.com", "www.advertiser_3.com"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
@@ -330,7 +333,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		}, {
 			name: "multiple_adomain",
@@ -339,7 +342,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"www.advertiser_3.com"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
@@ -373,7 +375,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		}, {
 			name: "case_insensitive_badv", // case of domain not matters
@@ -382,7 +384,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"ADVERTISER_1.COM"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
@@ -398,7 +399,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -408,7 +409,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
@@ -424,7 +424,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -434,7 +434,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"http://blockme.shri"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
@@ -461,7 +460,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"block_bidder":         0,
 					"rtb_non_block_bidder": 4,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -471,7 +470,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"10th.college.puneunv.edu"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
@@ -489,7 +487,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"block_bidder": 1,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		}, {
 			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
@@ -498,7 +496,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"edu"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
@@ -516,7 +513,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 3,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 		{
@@ -526,7 +523,6 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"co.in"}},
 					},
-					LoggableObject: &analytics.LoggableAuctionObject{},
 				},
 				// co.in is valid public suffix
 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
@@ -543,7 +539,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 2,
 				},
-				expectedRejectedBids: []analytics.RejectedBid{},
+				expectedseatNonBids: nonBids{},
 			},
 		},
 	}
@@ -563,9 +559,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				seatBids[adaptor.BidderName] = sbids
 			}
 
+			seatNonBids := nonBids{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
-			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids)
+			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
 				// verify only eligible bids are returned
@@ -595,13 +592,13 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					continue // advertiser blocking is currently enabled only for tag bidders
 				}
 
-				sort.Slice(tt.args.advBlockReq.LoggableObject.RejectedBids, func(i, j int) bool {
-					return tt.args.advBlockReq.LoggableObject.RejectedBids[i].Bid.Bid.ID > tt.args.advBlockReq.LoggableObject.RejectedBids[j].Bid.Bid.ID
+				sort.Slice(seatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
+					return seatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
 				})
-				sort.Slice(tt.want.expectedRejectedBids, func(i, j int) bool {
-					return tt.want.expectedRejectedBids[i].Bid.Bid.ID > tt.want.expectedRejectedBids[j].Bid.Bid.ID
+				sort.Slice(tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
+					return tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
 				})
-				assert.Equal(t, tt.want.expectedRejectedBids, tt.args.advBlockReq.LoggableObject.RejectedBids, "Rejected Bids not matching")
+				assert.Equal(t, tt.want.expectedseatNonBids.seatNonBidsMap, seatNonBids.seatNonBidsMap, "SeatNonBids not matching")
 
 				for _, bid := range sBid.Bids {
 					if nil != bid.Bid.ADomain {
@@ -787,127 +784,6 @@ func TestMakeBidExtJSONOW(t *testing.T) {
 		} else {
 			assert.Contains(t, err.Error(), test.expectedErrMessage, "incorrect error message")
 		}
-	}
-}
-
-func TestUpdateRejectedBidExt(t *testing.T) {
-	type args struct {
-		loggableObject *analytics.LoggableAuctionObject
-	}
-	type want struct {
-		loggableObject *analytics.LoggableAuctionObject
-	}
-	type test struct {
-		name string
-		args args
-		want want
-	}
-
-	testCases := []test{
-		{
-			name: "nil rejected bid",
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{
-						{
-							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID: "b1",
-							},
-							},
-						},
-					},
-				},
-			},
-			want: want{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{
-						{
-							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
-							},
-								OriginalBidCPM: 0,
-								BidType:        "",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "malformed bid.ext json",
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{
-						{
-							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID: "b1",
-							},
-							},
-						},
-					},
-				},
-			},
-			want: want{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{
-						{
-							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID:  "b1",
-								Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{}}`),
-							},
-								OriginalBidCPM: 0,
-								BidType:        "",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "valid pbsOrtbBid",
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{{
-						Bid: &entities.PbsOrtbBid{
-							Bid: &openrtb2.Bid{
-								ID:  "b2",
-								Ext: json.RawMessage(`{"key":"value"}`),
-							},
-							DealPriority:   10,
-							OriginalBidCPM: 10,
-							BidType:        openrtb_ext.BidTypeBanner,
-						},
-						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossBidAdvertiserBlocking}},
-				},
-			},
-			want: want{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{
-						{
-							Bid: &entities.PbsOrtbBid{Bid: &openrtb2.Bid{
-								ID:  "b2",
-								Ext: json.RawMessage(`{"key":"value","origbidcpm":10,"prebid":{"dealpriority":10,"type":"banner"}}`),
-							},
-								DealPriority:   10,
-								OriginalBidCPM: 10,
-								BidType:        openrtb_ext.BidTypeBanner,
-							},
-							Seat:            "pubmatic",
-							RejectionReason: openrtb3.LossBidAdvertiserBlocking,
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			UpdateRejectedBidExt(test.args.loggableObject)
-			assert.Equal(t, test.want.loggableObject.RejectedBids[0].Bid.Bid.Ext, test.args.loggableObject.RejectedBids[0].Bid.Bid.Ext, "mismatched loggableObject for test-[%+v]", test.name)
-
-		})
 	}
 }
 
@@ -1408,5 +1284,166 @@ func TestRecordVastVersion(t *testing.T) {
 			recordVastVersion(mockMetricEngine, tt.args.adapterBids)
 			mockMetricEngine.AssertExpectations(t)
 		})
+	}
+}
+
+func TestGetPriceBucketStringOW(t *testing.T) {
+	low, _ := openrtb_ext.NewPriceGranularityFromLegacyID("low")
+	medium, _ := openrtb_ext.NewPriceGranularityFromLegacyID("medium")
+	high, _ := openrtb_ext.NewPriceGranularityFromLegacyID("high")
+	auto, _ := openrtb_ext.NewPriceGranularityFromLegacyID("auto")
+	dense, _ := openrtb_ext.NewPriceGranularityFromLegacyID("dense")
+	testPG, _ := openrtb_ext.NewPriceGranularityFromLegacyID("testpg")
+	custom1 := openrtb_ext.PriceGranularity{
+		Precision: ptrutil.ToPtr(2),
+		Ranges: []openrtb_ext.GranularityRange{
+			{
+				Min:       0.0,
+				Max:       5.0,
+				Increment: 0.03,
+			},
+			{
+				Min:       5.0,
+				Max:       10.0,
+				Increment: 0.1,
+			},
+		},
+	}
+
+	custom2 := openrtb_ext.PriceGranularity{
+		Precision: ptrutil.ToPtr(2),
+		Ranges: []openrtb_ext.GranularityRange{
+			{
+				Min:       0.0,
+				Max:       1.5,
+				Increment: 1.0,
+			},
+			{
+				Min:       1.5,
+				Max:       10.0,
+				Increment: 1.2,
+			},
+		},
+	}
+
+	// Define test cases
+	type aTest struct {
+		granularityId       string
+		granularity         openrtb_ext.PriceGranularity
+		expectedPriceBucket string
+	}
+	testGroups := []struct {
+		groupDesc string
+		cpm       float64
+		testCases []aTest
+	}{
+		{
+			groupDesc: "cpm below the max in every price bucket",
+			cpm:       1.87,
+			testCases: []aTest{
+				{"low", low, "1.50"},
+				{"medium", medium, "1.80"},
+				{"high", high, "1.87"},
+				{"auto", auto, "1.85"},
+				{"dense", dense, "1.87"},
+				{"testpg", testPG, "50.00"},
+				{"custom1", custom1, "1.86"},
+				{"custom2", custom2, "1.50"},
+			},
+		},
+		{
+			groupDesc: "cpm above the max in low price bucket",
+			cpm:       5.72,
+			testCases: []aTest{
+				{"low", low, "5.00"},
+				{"medium", medium, "5.70"},
+				{"high", high, "5.72"},
+				{"auto", auto, "5.70"},
+				{"dense", dense, "5.70"},
+				{"testpg", testPG, "50.00"},
+				{"custom1", custom1, "5.70"},
+				{"custom2", custom2, "5.10"},
+			},
+		},
+		{
+			groupDesc: "cpm equal the max for custom granularity",
+			cpm:       10,
+			testCases: []aTest{
+				{"custom1", custom1, "10.00"},
+				{"custom2", custom2, "9.90"},
+			},
+		},
+		{
+			groupDesc: "Precision value corner cases",
+			cpm:       1.876,
+			testCases: []aTest{
+				{
+					"Negative precision defaults to number of digits already in CPM float",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(-1), Ranges: []openrtb_ext.GranularityRange{{Max: 5, Increment: 0.05}}},
+					"1.85",
+				},
+				{
+					"Precision value equals zero, we expect to round up to the nearest integer",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(0), Ranges: []openrtb_ext.GranularityRange{{Max: 5, Increment: 0.05}}},
+					"2",
+				},
+				{
+					"Largest precision value PBS supports 15",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(15), Ranges: []openrtb_ext.GranularityRange{{Max: 5, Increment: 0.05}}},
+					"1.850000000000000",
+				},
+			},
+		},
+		{
+			groupDesc: "Increment value corner cases",
+			cpm:       1.876,
+			testCases: []aTest{
+				{
+					"Negative increment, return empty string",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(2), Ranges: []openrtb_ext.GranularityRange{{Max: 5, Increment: -0.05}}},
+					"",
+				},
+				{
+					"Zero increment, return empty string",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(2), Ranges: []openrtb_ext.GranularityRange{{Max: 5}}},
+					"",
+				},
+				{
+					"Increment value is greater than CPM itself, return zero float value",
+					openrtb_ext.PriceGranularity{Precision: ptrutil.ToPtr(2), Ranges: []openrtb_ext.GranularityRange{{Max: 5, Increment: 1.877}}},
+					"0.00",
+				},
+			},
+		},
+		{
+			groupDesc: "Negative Cpm, return empty string since it does not belong into any range",
+			cpm:       -1.876,
+			testCases: []aTest{{"low", low, ""}},
+		},
+		{
+			groupDesc: "Zero value Cpm, return the same, only in string format",
+			cpm:       0,
+			testCases: []aTest{{"low", low, "0.00"}},
+		},
+		{
+			groupDesc: "Large Cpm, return bucket Max",
+			cpm:       math.MaxFloat64,
+			testCases: []aTest{{"low", low, "5.00"}},
+		},
+		{
+			groupDesc: "cpm above max test price granularity value",
+			cpm:       60,
+			testCases: []aTest{
+				{"testpg", testPG, "50.00"},
+			},
+		},
+	}
+
+	for _, testGroup := range testGroups {
+		for i, test := range testGroup.testCases {
+			var priceBucket string
+			assert.NotPanics(t, func() { priceBucket = GetPriceBucketOW(testGroup.cpm, test.granularity) }, "Group: %s Granularity: %d", testGroup.groupDesc, i)
+			assert.Equal(t, test.expectedPriceBucket, priceBucket, "Group: %s Granularity: %s :: Expected %s, got %s from %f", testGroup.groupDesc, test.granularityId, test.expectedPriceBucket, priceBucket, testGroup.cpm)
+		}
 	}
 }

@@ -16,7 +16,6 @@ import (
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adservertargeting"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/bidadjustment"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -216,8 +215,6 @@ type AuctionRequest struct {
 	QueryParams           url.Values
 	// map of bidder to store duration needed for the MakeBids() calls and start time after MakeBids() calls
 	MakeBidsTimeInfo map[openrtb_ext.BidderName]adapters.MakeBidsTimeInfo
-	// LoggableObject
-	LoggableObject *analytics.LoggableAuctionObject
 }
 
 // BidderRequest holds the bidder specific request and all other
@@ -405,14 +402,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 				// Record request count with non-zero imp.bidfloor value
 				e.me.RecordFloorsRequestForAccount(r.PubID)
-
-				if r.LoggableObject != nil {
-					r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, floors.PbsOrtbBidToAnalyticsRejectedBid(rejectedBids)...)
-					if len(r.LoggableObject.RejectedBids) > 0 {
-						// Record rejected bid count at account level
-						e.me.RecordRejectedBidsForAccount(r.PubID)
-					}
+				if len(rejectedBids) > 0 {
+					// Record rejected bid count at account level
+					e.me.RecordRejectedBidsForAccount(r.PubID)
 				}
+				updateSeatNonBidsFloors(&seatNonBids, rejectedBids)
 			}
 
 			if responseDebugAllow {
@@ -427,7 +421,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids)
+		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids, &seatNonBids)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -1077,6 +1071,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						//TODO: add metrics
 						//if mapping required but no mapping file is found then discard the bid
 						bidsToRemove = append(bidsToRemove, bidInd)
+						seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 						reason := fmt.Sprintf("Category mapping file for primary ad server: '%s', publisher: '%s' not found", primaryAdServer, publisher)
 						rejections = updateRejections(rejections, bidID, reason)
 						continue
@@ -1100,6 +1095,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				//if the bid is above the range of the listed durations (and outside the buffer), reject the bid
 				if duration > durationRange[len(durationRange)-1] {
 					bidsToRemove = append(bidsToRemove, bidInd)
+					seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 					rejections = updateRejections(rejections, bidID, "Bid duration exceeds maximum allowed")
 					continue
 				}
@@ -1154,6 +1150,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						if dupe.bidderName == bidderName {
 							// An older bid from the current bidder
 							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
+							seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
 						} else {
 							// An older bid from a different seatBid we've already finished with
@@ -1174,6 +1171,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					} else {
 						// Remove this bid
 						bidsToRemove = append(bidsToRemove, bidInd)
+						seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
 						continue
 					}
@@ -1187,28 +1185,11 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 			sort.Ints(bidsToRemove)
 			if len(bidsToRemove) == len(seatBid.Bids) {
 				//if all bids are invalid - remove entire seat bid
-				for _, bid := range seatBid.Bids {
-
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bid,
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
-				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.Bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bids[remInd],
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.Bids = bids

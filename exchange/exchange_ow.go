@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/metrics/pubmatic_stats"
@@ -77,7 +77,7 @@ func normalizeDomain(domain string) (string, error) {
 // applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 // the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 // it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBids *nonBids) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}
 	nBadvs := []string{}
@@ -120,14 +120,8 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 						}
 					}
 					if rejectBid {
-						// Add rejectedBid for analytics logging.
-						if r.LoggableObject != nil {
-							r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-								RejectionReason: openrtb3.LossBidAdvertiserBlocking,
-								Bid:             bid,
-								Seat:            seatBid.Seat,
-							})
-						}
+						// Add rejected bid in seatNonBid.
+						seatNonBids.addBid(bid, int(openrtb3.LossBidAdvertiserBlocking), seatBid.Seat)
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -138,38 +132,6 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 		}
 	}
 	return seatBids, rejections
-}
-
-func UpdateRejectedBidExt(loggableObject *analytics.LoggableAuctionObject) {
-	for _, rejectedBid := range loggableObject.RejectedBids {
-		pbsOrtbBid := rejectedBid.Bid
-
-		if loggableObject != nil && pbsOrtbBid != nil && pbsOrtbBid.Bid != nil {
-
-			bidExtPrebid := &openrtb_ext.ExtBidPrebid{
-				DealPriority:      pbsOrtbBid.DealPriority,
-				DealTierSatisfied: pbsOrtbBid.DealTierSatisfied, //NOT_SET
-				Events:            pbsOrtbBid.BidEvents,         //NOT_REQ
-				Targeting:         pbsOrtbBid.BidTargets,        //NOT_REQ
-				Type:              pbsOrtbBid.BidType,
-				Meta:              pbsOrtbBid.BidMeta,
-				Video:             pbsOrtbBid.BidVideo,
-				BidId:             pbsOrtbBid.GeneratedBidID, //NOT_SET
-				Floors:            pbsOrtbBid.BidFloors,
-			}
-
-			rejBid := pbsOrtbBid.Bid
-
-			bidExtJSON, err := makeBidExtJSON(rejBid.Ext, bidExtPrebid, nil, pbsOrtbBid.Bid.ImpID,
-				pbsOrtbBid.OriginalBidCPM, pbsOrtbBid.OriginalBidCur, pbsOrtbBid.OriginalBidCPMUSD)
-
-			if err != nil {
-				glog.Warningf("For bid-id:[%v], bidder:[%v], makeBidExtJSON returned error - [%v]", rejBid.ID, rejectedBid.Seat, err)
-				return
-			}
-			rejBid.Ext = bidExtJSON
-		}
-	}
 }
 
 func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID string, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
@@ -217,4 +179,29 @@ func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
 			pubmaticstats.IncPartnerTimeoutInPBS(pubID, profileID, aliasBidder)
 		}
 	}
+}
+
+// updateSeatNonBidsFloors updates seatnonbid with rejectedBids due to floors
+func updateSeatNonBidsFloors(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
+	for _, pbsRejSeatBid := range rejectedBids {
+		for _, pbsRejBid := range pbsRejSeatBid.Bids {
+			var rejectionReason = openrtb3.LossBidBelowAuctionFloor
+			if pbsRejBid.Bid.DealID != "" {
+				rejectionReason = openrtb3.LossBidBelowDealFloor
+			}
+			seatNonBids.addBid(pbsRejBid, int(rejectionReason), pbsRejSeatBid.Seat)
+		}
+	}
+}
+
+// GetPriceBucketOW is the externally facing function for computing CPM buckets
+func GetPriceBucketOW(cpm float64, config openrtb_ext.PriceGranularity) string {
+	bid := openrtb2.Bid{
+		Price: cpm,
+	}
+	targetData := targetData{
+		priceGranularity:          config,
+		mediaTypePriceGranularity: openrtb_ext.MediaTypePriceGranularity{},
+	}
+	return GetPriceBucket(bid, targetData)
 }

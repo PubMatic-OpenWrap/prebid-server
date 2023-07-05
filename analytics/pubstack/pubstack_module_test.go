@@ -56,22 +56,21 @@ func TestNewModuleSuccess(t *testing.T) {
 			description: "auction events are only published when logging an auction object with auction feature on",
 			feature:     auction,
 			logObject: func(module analytics.PBSAnalyticsModule) {
-				module.LogAuctionObject(&analytics.AuctionObject{
-					LoggableAuctionObject: analytics.LoggableAuctionObject{Status: http.StatusOK}})
+				module.LogAuctionObject(&analytics.AuctionObject{Status: http.StatusOK})
 			},
 		},
 		{
 			description: "AMP events are only published when logging an AMP object with AMP feature on",
 			feature:     amp,
 			logObject: func(module analytics.PBSAnalyticsModule) {
-				module.LogAmpObject(&analytics.AmpObject{LoggableAuctionObject: analytics.LoggableAuctionObject{Status: http.StatusOK}})
+				module.LogAmpObject(&analytics.AmpObject{Status: http.StatusOK})
 			},
 		},
 		{
 			description: "video events are only published when logging a video object with video feature on",
 			feature:     video,
 			logObject: func(module analytics.PBSAnalyticsModule) {
-				module.LogVideoObject(&analytics.VideoObject{LoggableAuctionObject: analytics.LoggableAuctionObject{Status: http.StatusOK}})
+				module.LogVideoObject(&analytics.VideoObject{Status: http.StatusOK})
 			},
 		},
 		{

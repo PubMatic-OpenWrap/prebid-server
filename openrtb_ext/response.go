@@ -123,6 +123,17 @@ type NonBidObject struct {
 
 	OriginalBidCPM float64 `json:"origbidcpm,omitempty"`
 	OriginalBidCur string  `json:"origbidcur,omitempty"`
+
+	//OW specific fields
+	ID                string              `json:"id"`
+	DealPriority      int                 `json:"dealpriority,omitempty"`
+	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
+	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
+	Targeting         map[string]string   `json:"targeting,omitempty"`
+	Type              BidType             `json:"type,omitempty"`
+	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
+	BidId             string              `json:"bidid,omitempty"`
+	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
 }
 
 // ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext

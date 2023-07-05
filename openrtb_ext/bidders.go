@@ -263,7 +263,6 @@ const (
 	BidderUnruly            BidderName = "unruly"
 	BidderValueImpression   BidderName = "valueimpression"
 	BidderVASTBidder        BidderName = "vastbidder"
-	BidderVerizonMedia      BidderName = "verizonmedia"
 	BidderVideoByte         BidderName = "videobyte"
 	BidderVideoHeroes       BidderName = "videoheroes"
 	BidderVidoomy           BidderName = "vidoomy"
@@ -462,7 +461,6 @@ func CoreBidderNames() []BidderName {
 		BidderUnruly,
 		BidderValueImpression,
 		BidderVASTBidder,
-		BidderVerizonMedia,
 		BidderVideoByte,
 		BidderVideoHeroes,
 		BidderVidoomy,

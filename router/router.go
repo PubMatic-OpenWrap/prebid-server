@@ -2,33 +2,42 @@ package router
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
-	"github.com/prebid/prebid-server/floors"
-
-	"github.com/prebid/prebid-server/usersync"
-
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
+	"github.com/prebid/prebid-server/endpoints"
+	"github.com/prebid/prebid-server/endpoints/events"
+	infoEndpoints "github.com/prebid/prebid-server/endpoints/info"
+	"github.com/prebid/prebid-server/endpoints/openrtb2"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/experiment/adscert"
+	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/macros"
+	"github.com/prebid/prebid-server/metrics"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/pbs"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/router/aspects"
 	"github.com/prebid/prebid-server/server/ssl"
 	storedRequestsConf "github.com/prebid/prebid-server/stored_requests/config"
+	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/prebid-server/util/uuidutil"
+	"github.com/prebid/prebid-server/version"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang/glog"
@@ -108,10 +117,8 @@ type Router struct {
 	Shutdown        func()
 }
 
-var schemaDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-params"
-var infoDirectory = "/home/http/GO_SERVER/dmhbserver/static/bidder-info"
-
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
+	const schemaDirectory = "./static/bidder-params"
 
 	r = &Router{
 		Router: httprouter.New(),
@@ -126,32 +133,24 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Infof("Could not read certificates file: %s \n", readCertErr.Error())
 	}
 
-	g_transport = getTransport(cfg, certPool)
 	generalHttpClient := &http.Client{
-		Transport: g_transport,
-	}
-
-	/*
-		* Add Dialer:
-		* Add TLSHandshakeTimeout:
-		* MaxConnsPerHost: Max value should be QPS
-		* MaxIdleConnsPerHost:
-		* ResponseHeaderTimeout: Max Timeout from OW End
-		* No Need for MaxIdleConns:
-		*
-
 		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
+			Proxy:               http.ProxyFromEnvironment,
+			MaxConnsPerHost:     cfg.Client.MaxConnsPerHost,
+			MaxIdleConns:        cfg.Client.MaxIdleConns,
+			MaxIdleConnsPerHost: cfg.Client.MaxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(cfg.Client.IdleConnTimeout) * time.Second,
+			TLSClientConfig:     &tls.Config{RootCAs: certPool},
+
+			TLSHandshakeTimeout:   time.Duration(cfg.Client.TLSHandshakeTimeout) * time.Second,
+			ResponseHeaderTimeout: time.Duration(cfg.Client.ResponseHeaderTimeout) * time.Second,
+
 			Dial: (&net.Dialer{
-				Timeout:   100 * time.Millisecond,
-				KeepAlive: 30 * time.Second,
+				Timeout:   time.Duration(cfg.Client.DialTimeout) * time.Millisecond,
+				KeepAlive: time.Duration(cfg.Client.DialKeepAlive) * time.Second,
 			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			MaxIdleConnsPerHost:   (maxIdleConnsPerHost / size), // ideal needs to be defined diff?
-			MaxConnsPerHost:       (maxConnPerHost / size),
-			ResponseHeaderTimeout: responseHdrTimeout,
-		}
-	*/
+		},
+	}
 
 	cacheHttpClient := &http.Client{
 		Transport: &http.Transport{
@@ -189,9 +188,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	// Metrics engine
 	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
-	_, fetcher, _, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
+	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 	// todo(zachbadgett): better shutdown
-	// r.Shutdown = shutdown
+	r.Shutdown = shutdown
 
 	//Price Floor Fetcher
 	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloorFetcher.Worker, cfg.PriceFloorFetcher.Capacity,
@@ -240,13 +239,13 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	planBuilder := hooks.NewExecutionPlanBuilder(cfg.Hooks, repo)
 	macroReplacer := macros.NewStringIndexBasedReplacer()
 	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
-	/*var uuidGenerator uuidutil.UUIDRandomGenerator
+	var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
 	if err != nil {
 		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
 	}
 
-	ampEndpoint, err := openrtb2.NewApriceFloorFetchermpEndpoint(uuidGenerator, theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
+	ampEndpoint, err := openrtb2.NewAmpEndpoint(uuidGenerator, theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
 	if err != nil {
 		glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
 	}
@@ -292,7 +291,9 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg, syncersByBidder, gdprPermsBuilder, tcf2CfgBuilder, pbsAnalytics, accounts, r.MetricsEngine))
 	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
 	r.POST("/optout", userSyncDeps.OptOut)
-	r.GET("/optout", userSyncDeps.OptOut)*/
+	r.GET("/optout", userSyncDeps.OptOut)
+
+	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
 	g_syncers = syncersByBidder
 	g_metrics = r.MetricsEngine
@@ -312,6 +313,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_tcf2CfgBuilder = tcf2CfgBuilder
 	g_planBuilder = &planBuilder
 	g_currencyConversions = rateConvertor.Rates()
+
 	return r, nil
 }
 

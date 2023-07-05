@@ -115,12 +115,8 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAmp, deps.metricsEngine)
 
 	ao := analytics.AmpObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context:      r.Context(),
-			Status:       http.StatusOK,
-			Errors:       make([]error, 0),
-			RejectedBids: []analytics.RejectedBid{},
-		},
+		Status:    http.StatusOK,
+		Errors:    make([]error, 0),
 		StartTime: start,
 	}
 
@@ -240,7 +236,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		BidderImpReplaceImpID:      bidderImpReplaceImp,
 		PubID:                      labels.PubID,
 		HookExecutor:               hookExecutor,
-		LoggableObject:             &ao.LoggableAuctionObject,
 		QueryParams:                r.URL.Query(),
 		TCF2Config:                 tcf2Config,
 	}
@@ -295,7 +290,7 @@ func rejectAmpRequest(
 	errs []error,
 ) (metrics.Labels, analytics.AmpObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
-	ao.Response = response
+	ao.AuctionResponse = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
 	return sendAmpResponse(w, hookExecutor, &exchange.AuctionResponse{BidResponse: response}, reqWrapper, account, labels, ao, errs)
