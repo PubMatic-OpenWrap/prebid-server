@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	metricCfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -27,7 +28,8 @@ var once sync.Once
 
 // Module that can perform transactional logging
 type HTTPLogger struct {
-	cfg config.PubMaticWL
+	cfg          config.PubMaticWL
+	metricEngine metricCfg.MetricsEngine
 }
 
 // Writes AuctionObject to file
@@ -38,9 +40,21 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 	}()
 
-	url, headers := GetLogAuctionObjectAsURL(*ao, false, false)
+	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		glog.Error("Failed to get the request context")
+		return
+	}
+
+	var err error
+	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url != "" {
-		Send(url, headers)
+		err = Send(url, headers)
+	}
+
+	// record the logger failure
+	if url == "" || err != nil {
+		ow.metricEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, strconv.Itoa(rCtx.VersionID))
 	}
 }
 

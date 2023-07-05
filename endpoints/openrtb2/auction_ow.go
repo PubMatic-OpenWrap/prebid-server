@@ -59,7 +59,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	}
 
 	if rCtx.LogInfoFlag == 1 {
-		extBidResponse.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, true, true)
+		extBidResponse.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
 	}
 
 	// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/pull/2505
@@ -71,7 +71,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	// }
 
 	if rCtx.Debug {
-		extBidResponse.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, false, true)
+		extBidResponse.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
