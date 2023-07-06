@@ -141,7 +141,7 @@ func enforceFloorToBids(bidRequestWrapper *openrtb_ext.RequestWrapper, seatBids 
 					if bid.BidFloors != nil {
 						// Need USD for OW analytics
 						// TODO: Move this to better place where 'conversions' (deduced from host+request) is available
-						bid.BidFloors.FloorValueUSD = getOriginalBidCpmUsd(reqImp.BidFloor, reqImp.BidFloorCur, conversions)
+						// bid.BidFloors.FloorValueUSD = getOriginalBidCpmUsd(reqImp.BidFloor, reqImp.BidFloorCur, conversions)
 					}
 					rejectedBid := &entities.PbsOrtbSeatBid{
 						Currency: seatBid.Currency,
