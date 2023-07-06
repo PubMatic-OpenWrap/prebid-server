@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -279,8 +280,12 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		return errors.New("no model groups found in price floor data")
 	}
 
-	if priceFloors.Data.SkipRate < 0 || priceFloors.Data.SkipRate > 100 {
-		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
+	if priceFloors.Data.SkipRate < skipRateMin || priceFloors.Data.SkipRate > skipRateMax {
+		return fmt.Errorf("skip rate should be greater than or equal to %d and less than %d", skipRateMin, skipRateMax)
+	}
+
+	if priceFloors.Data.UseFetchDataRate != nil && (*priceFloors.Data.UseFetchDataRate < dataRateMin || *priceFloors.Data.UseFetchDataRate > dataRateMax) {
+		return fmt.Errorf("useFetchDataRate should be greater than or equal to %d and less than or equal to %d", dataRateMin, dataRateMax)
 	}
 
 	for _, modelGroup := range priceFloors.Data.ModelGroups {
