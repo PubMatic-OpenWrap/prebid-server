@@ -145,7 +145,7 @@ func TestDoUnwrap(t *testing.T) {
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
 					CrID:  "Cr-234",
-					AdM:   vastXMLAdM,
+					AdM:   inlineXMLAdM,
 					W:     100,
 					H:     50,
 				},

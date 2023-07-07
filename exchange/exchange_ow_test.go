@@ -711,7 +711,7 @@ func TestRecordAdaptorDuplicateBidIDs(t *testing.T) {
 		{scenario: "multiple bidders with bidder-1 no collision", bidderCollisions: &map[string]int{"bidder-1": 1, "bidder-2": 4}, hasCollision: true},
 		{scenario: "no bidders", bidderCollisions: nil, hasCollision: false},
 	}
-	testEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, nil, nil, nil)
+	testEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, nil, nil, nil, nil)
 
 	for _, testcase := range testCases {
 		var adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
