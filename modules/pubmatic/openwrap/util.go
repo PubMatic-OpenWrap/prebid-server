@@ -1,14 +1,17 @@
 package openwrap
 
 import (
-	"errors"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 var (
@@ -215,23 +218,40 @@ func getHostName() string {
 	return serverName
 }
 
-func validateCreativeForPlatform(eachBid openrtb2.Bid, platform string) error {
-	if platform == "" {
-		return nil
+func parseUIDCookies(httpReqUIDCookie *http.Cookie, hostCookie *config.HostCookie) *usersync.Cookie {
+
+	if httpReqUIDCookie != nil {
+		return usersync.ParseCookie(httpReqUIDCookie)
 	}
-	switch platform {
-	case models.PLATFORM_VIDEO:
-		if eachBid.AdM == "" {
-			return errors.New("Creative is empty")
-		}
-		// For Video requests, we could get Partner URI in Bid response
-		if strings.HasPrefix(eachBid.AdM, models.HTTPProtocol) {
-			return nil
+	return usersync.NewCookie()
+}
+
+// ParseRequestCookies parse request cookies
+func ParseRequestCookies(httpReqUIDCookie *http.Cookie, partnerConfigMap map[int]map[string]string) map[string]int {
+	cookieFlagMap := make(map[string]int)
+	pc := parseUIDCookies(httpReqUIDCookie, &config.HostCookie{})
+	for _, partnerConfig := range partnerConfigMap {
+		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+			continue
 		}
 
-		if !(strings.Contains(eachBid.AdM, models.WrapperElement) || strings.Contains(eachBid.AdM, models.InlineElement)) {
-			return errors.New("Video creative not in required VAST format")
+		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
+
+		syncerCode := adapters.ResolveOWBidder(partnerName)
+
+		matchedImpression := 0
+
+		syncer := models.SyncerMap[syncerCode]
+		if syncer != nil {
+			uid, _, _ := pc.GetUID(syncer.Key())
+
+			// Added flag in map for Cookie is present
+			// we are not considering if the cookie is active
+			if uid != "" {
+				matchedImpression = 1
+			}
 		}
+		cookieFlagMap[partnerConfig[models.BidderCode]] = matchedImpression
 	}
-	return nil
+	return cookieFlagMap
 }

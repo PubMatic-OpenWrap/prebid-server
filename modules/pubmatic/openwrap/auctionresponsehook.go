@@ -38,6 +38,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
+	partnerCookieMap := ParseRequestCookies(rctx.UidCookie, rctx.PartnerConfigMap)
+	for partner, cookieFlag := range partnerCookieMap {
+		// Cookie for Server Side partner is not present record stats data
+		if cookieFlag == 0 {
+			m.metricEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partner)
+		}
+	}
+
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
 		Activities: []hookanalytics.Activity{
