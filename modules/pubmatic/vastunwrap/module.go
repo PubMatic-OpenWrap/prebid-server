@@ -10,19 +10,21 @@ import (
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
+	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
 )
 
 type VastUnwrapModule struct {
 	Cfg               unWrapCfg.VastUnWrapCfg `mapstructure:"VastUnWrapCfg" json:"VastUnWrapCfg"`
 	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
 	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
+	MetricsEngine     stats.MetricsEngine
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
 	return initVastUnrap(rawCfg, deps)
 }
 
-func initVastUnrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (VastUnwrapModule, error) {
+func initVastUnrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnwrapModule, error) {
 	vastUnwrapModuleCfg := VastUnwrapModule{}
 
 	err := json.Unmarshal(rawCfg, &vastUnwrapModuleCfg)
@@ -33,11 +35,13 @@ func initVastUnrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (VastUnwrapM
 	if vastUnwrapModuleCfg.Enabled {
 		vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	}
+	metricEngine := stats.NewMetricsEngine(deps)
 
 	return VastUnwrapModule{
 		Cfg:               vastUnwrapModuleCfg.Cfg,
 		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
 		Enabled:           vastUnwrapModuleCfg.Enabled,
+		MetricsEngine:     metricEngine,
 	}, nil
 }
 
@@ -49,7 +53,7 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 
 	if m.Enabled {
-		return handleRawBidderResponseHook(payload, miCtx.ModuleContext, m.Cfg.APPConfig.UnwrapDefaultTimeout, UnwrapURL)
+		return handleRawBidderResponseHook(m, miCtx, payload, UnwrapURL)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
 }
