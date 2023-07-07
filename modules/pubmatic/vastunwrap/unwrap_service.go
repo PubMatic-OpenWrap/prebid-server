@@ -36,7 +36,7 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 	httpResp := httptest.NewRecorder()
 	unwrapper.UnwrapRequest(httpResp, httpReq)
 	wrap_cnt := httpResp.Header().Get(UnwrapCount)
-	respStatus := httpResp.Header().Get("unwrap-status")
+	respStatus := httpResp.Header().Get(UnwrapStatus)
 	if wrap_cnt != "" {
 		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
 	}
@@ -44,14 +44,15 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
 		glog.Infof("\n UnWrap Done for BidId = %s Cnt = %d in %v (ms)", bid.Bid.ID, wrapperCnt, time.Since(startTime).Milliseconds())
-		m.MetricsEngine.RecordRequestStatus(accountID, bidder, "Success")
+		m.MetricsEngine.RecordRequestStatus(accountID, bidder, Success)
 		return
 	}
-	if respStatus == "2" {
-		m.MetricsEngine.RecordRequestStatus(accountID, bidder, "Timeout")
+	if respStatus == UnwrapStatusTimeout {
+		m.MetricsEngine.RecordRequestStatus(accountID, bidder, Timeout)
+		glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)
 		return
 	}
 	glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)
-	m.MetricsEngine.RecordRequestStatus(accountID, bidder, "Failure")
+	m.MetricsEngine.RecordRequestStatus(accountID, bidder, Failure)
 	return
 }

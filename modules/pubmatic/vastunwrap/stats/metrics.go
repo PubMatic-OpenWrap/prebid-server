@@ -35,8 +35,8 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) *Metrics {
 
 	metrics.requestTime = newHistogramVec(cfg, metrics.Registry,
 		"vastunwrap_request_time",
-		"Time taken to serve the request in seconds", []string{"pubID", "bidder"},
-		[]float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1})
+		"Time taken to serve the vast unwrap request in Milliseconds", []string{"pubID", "bidder"},
+		[]float64{50, 100, 200, 300, 500})
 
 	return &metrics
 }
