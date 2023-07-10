@@ -80,7 +80,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.InvalidProfileConfiguration
 		err = errors.New("failed to get profile data: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointV25, rCtx.PubIDStr, rCtx.ProfileIDStr) // TODO: decide the endpoint ? amp/video/v25
+		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, err
 	}
@@ -92,6 +92,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
+
+	if rCtx.Platform != "" {
+		m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
+	}
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
 		rCtx.ABTestConfigApplied = 1
