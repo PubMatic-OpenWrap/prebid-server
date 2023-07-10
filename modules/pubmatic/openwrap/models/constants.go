@@ -399,3 +399,9 @@ const (
 	ImpTypeBanner = "banner"
 	ImpTypeVideo  = "video"
 )
+
+const (
+	PubPartnerErrNoBid              = "no_bid"
+	PubPartnerErrTimeout            = "timeout"
+	PubPartnerErrUnknownPrebidError = "unknown"
+)
