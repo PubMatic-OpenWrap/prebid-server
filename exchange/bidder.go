@@ -349,12 +349,14 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 						}
 
 						adjustmentFactor := 1.0
-						if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
-							adjustmentFactor = givenAdjustment
-						} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderRequest.BidderName.String()]; ok {
-							adjustmentFactor = givenAdjustment
-						}
 
+						if bidderName != openrtb_ext.BidderGroupm {
+							if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
+								adjustmentFactor = givenAdjustment
+							} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderRequest.BidderName.String()]; ok {
+								adjustmentFactor = givenAdjustment
+							}
+						}
 						originalBidCpm := 0.0
 						currencyAfterAdjustments := ""
 						originalBidCPMUSD := 0.0

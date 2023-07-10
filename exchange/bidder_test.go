@@ -2687,7 +2687,7 @@ func TestExtraBidWithBidAdjustments(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 21,
+					Price: 7,
 				},
 				DealPriority:   5,
 				BidType:        openrtb_ext.BidTypeVideo,
@@ -2801,7 +2801,7 @@ func TestExtraBidWithBidAdjustmentsUsingAdapterCode(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 14,
+					Price: 7,
 				},
 				DealPriority:   5,
 				BidType:        openrtb_ext.BidTypeVideo,
