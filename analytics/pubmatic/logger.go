@@ -321,7 +321,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 					if bidExt.Prebid.Floors.FloorCurrency == "USD" {
 						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
 					} else {
-						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValueUSD)
+						// pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValueUSD)
 					}
 				}
 			}

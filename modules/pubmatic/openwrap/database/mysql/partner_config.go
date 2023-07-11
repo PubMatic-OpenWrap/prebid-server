@@ -19,7 +19,7 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubId, profileId int, displayV
 	}
 
 	partnerConfigMap, err := db.getActivePartnerConfigurations(pubId, profileId, versionID)
-	if err != nil && partnerConfigMap[-1] != nil {
+	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
 	}
 	return partnerConfigMap, err
