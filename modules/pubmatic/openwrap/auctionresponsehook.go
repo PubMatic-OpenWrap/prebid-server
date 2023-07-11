@@ -38,13 +38,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
-	partnerCookieMap := ParseRequestCookies(rctx.UidCookie, rctx.PartnerConfigMap)
-	for partner, cookieFlag := range partnerCookieMap {
-		// Cookie for Server Side partner is not present record stats data
-		if cookieFlag == 0 {
-			m.metricEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partner)
-		}
-	}
+	RecordPublisherPartnerNoCookieStats(rctx, m.metricEngine)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -70,9 +64,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 
-			if rctx.Platform != "" {
-				m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
-			}
+			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
 
 			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
 			if !ok {
@@ -207,9 +199,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
-	for k, v := range responseExt.ResponseTimeMillis {
-		rctx.BidderResponseTimeMillis[k.String()] = v
-		m.metricEngine.RecordPartnerResponseTimeStats(rctx.PubIDStr, string(k), v)
+	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
+		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs
+		m.metricEngine.RecordPartnerResponseTimeStats(rctx.PubIDStr, string(bidder), responseTimeMs)
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()

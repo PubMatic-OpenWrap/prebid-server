@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +25,7 @@ func TestNewMetricsEngine(t *testing.T) {
 		{
 			name: "Valid configuration with stats endpoint",
 			cfg: config.Config{
-				Stats: config.Stats{
+				Stats: stats.Stats{
 					Endpoint:    "http://example.com",
 					UseHostName: true,
 				},
@@ -37,7 +38,7 @@ func TestNewMetricsEngine(t *testing.T) {
 		{
 			name: "Empty stats endpoint",
 			cfg: config.Config{
-				Stats: config.Stats{
+				Stats: stats.Stats{
 					Endpoint: "",
 				},
 			},

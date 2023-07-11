@@ -56,7 +56,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	defer func() {
 		if len(result.Errors) > 0 {
-			m.metricEngine.RecordBadRequests(endpoint, result.NbrCode)
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
 		}
 	}()
 

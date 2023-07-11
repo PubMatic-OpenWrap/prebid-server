@@ -40,9 +40,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if len(result.Errors) > 0 {
-			m.metricEngine.RecordBadRequests(rCtx.Endpoint, result.NbrCode)
-			// TODO; this Nbrcode does not match with HB's NBR error code
-			// HB-ErrAllPartnerThrottled(11) :	PBS-AllPartnerThrottled(506)
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
+
 		}
 	}()
 
@@ -87,15 +86,22 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
 	rCtx.Platform, _ = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+	if rCtx.Platform == "" {
+		result.NbrCode = nbr.InvalidPlatform
+		err = errors.New("failed to get platform data")
+		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+		return result, err
+	}
+
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
 
-	if rCtx.Platform != "" {
-		m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
-	}
+	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
 		rCtx.ABTestConfigApplied = 1
@@ -256,9 +262,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				continue
 			}
 
-			if rCtx.Platform != "" { // not-checked-earlier, // old-code calls this here ; is it correct ?
-				m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
-			}
+			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,

@@ -192,7 +192,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					Body: []byte(`{"ext":{"wrapper":{"profileids":5890,"versionid":1}}}`),
 				},
 				setup: func(mme *mock.MockMetricsEngine) {
-					mme.EXPECT().RecordBadRequests(gomock.Any(), nbr.InvalidProfileID)
+					mme.EXPECT().RecordBadRequests(gomock.Any(), 700)
 				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{

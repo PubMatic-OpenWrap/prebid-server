@@ -58,8 +58,6 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 
 	adUnitCtx.AllowedConnectionTypes = getDefaultAllowedConnectionTypes(rCtx.AdUnitConfig)
 
-	// RecordVideoImpDisabledViaConnTypeStats : TODO ???
-
 	// updateAllowedConnectionTypes := !adUnitCtx.UsingDefaultConfig
 	// if adUnitCtx.AppliedSlotAdUnitConfig != nil && adUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
 	// 	adUnitCtx.AppliedSlotAdUnitConfig.Video.Config != nil && len(adUnitCtx.AppliedSlotAdUnitConfig.Video.Config.ConnectionType) != 0 {
@@ -76,6 +74,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 	// 	if allowedConnectionTypes != nil && !checkValuePresentInArray(allowedConnectionTypes, int(*connectionType)) {
 	// 		f := false
 	// 		adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+	//      metricEngine.RecordVideoImpDisabledViaConnTypeStats(rCtx.PubIDStr,rCtx.ProfIDStr)
 	// 		return
 	// 	}
 	// }

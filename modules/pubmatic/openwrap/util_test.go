@@ -4,153 +4,147 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/usersync"
 )
 
-func TestParseRequestCookies(t *testing.T) {
-	type args struct {
-		httpReqUIDCookie *http.Cookie
-		partnerConfigMap map[int]map[string]string
-		syncerMap        map[string]usersync.Syncer
-	}
+func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 
-	type want struct {
-		partnerCookieMap map[string]int
+	ctrl := gomock.NewController(t)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	defer ctrl.Finish()
+
+	type args struct {
+		rctx models.RequestCtx
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name  string
+		args  args
+		setup func(*mock.MockMetricsEngine)
 	}{
 		{
 			name: "Empty cookies and empty partner config map",
 			args: args{
-				httpReqUIDCookie: nil,
-				partnerConfigMap: map[int]map[string]string{},
-				syncerMap:        make(map[string]usersync.Syncer),
+				rctx: models.RequestCtx{},
 			},
-			want: want{
-				partnerCookieMap: map[string]int{},
-			},
+			setup: func(mme *mock.MockMetricsEngine) {},
 		},
 		{
 			name: "Non-empty cookie and empty partner config map",
 			args: args{
-				httpReqUIDCookie: &http.Cookie{
-					Name:  "uid",
-					Value: "abc123",
+				rctx: models.RequestCtx{
+					UidCookie: &http.Cookie{
+						Name:  "uid",
+						Value: "abc123",
+					},
+					PartnerConfigMap: map[int]map[string]string{},
 				},
-				partnerConfigMap: map[int]map[string]string{},
-				syncerMap:        make(map[string]usersync.Syncer),
 			},
-			want: want{
-				partnerCookieMap: map[string]int{},
+			setup: func(mme *mock.MockMetricsEngine) {
+				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
 		{
 			name: "Empty cookie and non-empty partner config map",
 			args: args{
-				httpReqUIDCookie: nil,
-				partnerConfigMap: map[int]map[string]string{
-					1: {
-						models.SERVER_SIDE_FLAG:    "1",
-						models.PREBID_PARTNER_NAME: "partner1",
-						models.BidderCode:          "bidder1",
+				rctx: models.RequestCtx{
+					UidCookie: nil,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.SERVER_SIDE_FLAG:    "1",
+							models.PREBID_PARTNER_NAME: "partner1",
+							models.BidderCode:          "bidder1",
+						},
 					},
+					PubIDStr: "5890",
 				},
-				syncerMap: make(map[string]usersync.Syncer),
 			},
-			want: want{
-				partnerCookieMap: map[string]int{
-					"bidder1": 0,
-				},
+			setup: func(mme *mock.MockMetricsEngine) {
+				models.SyncerMap = make(map[string]usersync.Syncer)
+				mme.EXPECT().RecordPublisherPartnerNoCookieStats("5890", "bidder1")
 			},
 		},
 		{
 			name: "Non-empty cookie and client side partner in config map",
 			args: args{
-				httpReqUIDCookie: &http.Cookie{
-					Name:  "uid",
-					Value: "abc123",
-				},
-				partnerConfigMap: map[int]map[string]string{
-					1: {
-						models.SERVER_SIDE_FLAG:    "0",
-						models.PREBID_PARTNER_NAME: "partner1",
-						models.BidderCode:          "bidder1",
+				rctx: models.RequestCtx{
+					UidCookie: &http.Cookie{
+						Name:  "uid",
+						Value: "abc123",
 					},
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.SERVER_SIDE_FLAG:    "0",
+							models.PREBID_PARTNER_NAME: "partner1",
+							models.BidderCode:          "bidder1",
+						},
+					},
+					PubIDStr: "5890",
 				},
-				syncerMap: make(map[string]usersync.Syncer),
 			},
-			want: want{
-				partnerCookieMap: map[string]int{},
+			setup: func(mme *mock.MockMetricsEngine) {
+				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
 		{
 			name: "Non-empty cookie and client side partner in config map",
 			args: args{
-				httpReqUIDCookie: &http.Cookie{
-					Name:  "uid",
-					Value: "abc123",
-				},
-				partnerConfigMap: map[int]map[string]string{
-					1: {
-						models.SERVER_SIDE_FLAG:    "0",
-						models.PREBID_PARTNER_NAME: "partner1",
-						models.BidderCode:          "bidder1",
+				rctx: models.RequestCtx{
+					UidCookie: &http.Cookie{
+						Name:  "uid",
+						Value: "abc123",
 					},
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.SERVER_SIDE_FLAG:    "0",
+							models.PREBID_PARTNER_NAME: "partner1",
+							models.BidderCode:          "bidder1",
+						},
+					},
+					PubIDStr: "5890",
 				},
-				syncerMap: make(map[string]usersync.Syncer),
 			},
-			want: want{
-				partnerCookieMap: map[string]int{},
+			setup: func(mme *mock.MockMetricsEngine) {
+				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
 		{
 			name: "GetUID returns empty uid",
 			args: args{
-				httpReqUIDCookie: &http.Cookie{
-					Name:  "uid",
-					Value: "ewoJInRlbXBVSURzIjogewoJCSJwdWJtYXRpYyI6IHsKCQkJInVpZCI6ICI3RDc1RDI1Ri1GQUM5LTQ0M0QtQjJEMS1CMTdGRUUxMUUwMjciLAoJCQkiZXhwaXJlcyI6ICIyMDIyLTEwLTMxVDA5OjE0OjI1LjczNzI1Njg5OVoiCgkJfQoJfSwKCSJiZGF5IjogIjIwMjItMDUtMTdUMDY6NDg6MzguMDE3OTg4MjA2WiIKfQ==",
-				},
-				partnerConfigMap: map[int]map[string]string{
-					1: {
-						models.SERVER_SIDE_FLAG:    "1",
-						models.PREBID_PARTNER_NAME: "pubmatic",
-						models.BidderCode:          "pubmatic",
+				rctx: models.RequestCtx{
+					UidCookie: &http.Cookie{
+						Name:  "uid",
+						Value: "ewoJInRlbXBVSURzIjogewoJCSJwdWJtYXRpYyI6IHsKCQkJInVpZCI6ICI3RDc1RDI1Ri1GQUM5LTQ0M0QtQjJEMS1CMTdGRUUxMUUwMjciLAoJCQkiZXhwaXJlcyI6ICIyMDIyLTEwLTMxVDA5OjE0OjI1LjczNzI1Njg5OVoiCgkJfQoJfSwKCSJiZGF5IjogIjIwMjItMDUtMTdUMDY6NDg6MzguMDE3OTg4MjA2WiIKfQ==",
 					},
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.SERVER_SIDE_FLAG:    "1",
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+						},
+					},
+					PubIDStr: "5890",
 				},
-				syncerMap: map[string]usersync.Syncer{
+			},
+			setup: func(mme *mock.MockMetricsEngine) {
+				models.SyncerMap = map[string]usersync.Syncer{
 					"pubmatic": fakeSyncer{
 						key: "pubmatic",
 					},
-				},
-			},
-			want: want{
-				partnerCookieMap: map[string]int{
-					"pubmatic": 1,
-				},
+				}
+
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			models.SyncerMap = tc.args.syncerMap
-			result := ParseRequestCookies(tc.args.httpReqUIDCookie, tc.args.partnerConfigMap)
-
-			if len(result) != len(tc.want.partnerCookieMap) {
-				t.Errorf("Unexpected length of cookie flag map. Expected: %d, Got: %d", len(tc.want.partnerCookieMap), len(result))
-			}
-
-			for bidder, expectedFlag := range tc.want.partnerCookieMap {
-				if result[bidder] != expectedFlag {
-					t.Errorf("Unexpected flag for bidder %s. Expected: %d, Got: %d", bidder, expectedFlag, result[bidder])
-				}
-			}
+			tc.setup(mockEngine)
+			RecordPublisherPartnerNoCookieStats(tc.args.rctx, mockEngine)
 		})
 	}
 }
