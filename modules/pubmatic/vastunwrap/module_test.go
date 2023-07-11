@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,6 +103,9 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 }
 
 func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockMetricsEngine := mock_stats.NewMockMetricsEngine(ctrl)
 	type fields struct {
 		cfg VastUnwrapModule
 	}
@@ -116,12 +121,13 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 		expectedBids []*adapters.TypedBid
 		want         hookstage.HookResult[hookstage.RawBidderResponsePayload]
 		wantErr      bool
+		setup        func()
 	}{
 		{
 			name: "Vast unwrap is enabled in the config",
 			fields: fields{cfg: VastUnwrapModule{Enabled: true, Cfg: unWrapCfg.VastUnWrapCfg{
 				HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
-				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
+				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 1000, Debug: 1},
 				StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
@@ -144,6 +150,10 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 							BidType: "video",
 						}},
 				}},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
 			expectedBids: []*adapters.TypedBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "Bid-123",
@@ -202,19 +212,15 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := VastUnwrapModule{
-				Cfg:     tt.fields.cfg.Cfg,
-				Enabled: tt.fields.cfg.Enabled,
+			if tt.setup != nil {
+				tt.setup()
 			}
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				data, _ := json.Marshal(tt.expectedBids)
-				_, _ = w.Write([]byte(data))
-			}))
-			defer server.Close()
-			server.URL = UnwrapURL
-			doUnwrap(tt.args.payload.Bids[0], "test", 1000, server.URL)
-			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
+			m := VastUnwrapModule{
+				Cfg:           tt.fields.cfg.Cfg,
+				Enabled:       tt.fields.cfg.Enabled,
+				MetricsEngine: mockMetricsEngine,
+			}
+            _, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
@@ -240,7 +246,7 @@ func TestInitVastUnrap(t *testing.T) {
 			name: "Valid vast unwrap config",
 			args: args{
 				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrapcfg":{"max_wrapper_support":5,"app_config":{"debug":1,"unwrap_default_timeout":100},"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
-				in1:    moduledeps.ModuleDeps{},
+				in1:    moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
 			},
 			want: VastUnwrapModule{
 				Enabled: true,
@@ -262,8 +268,11 @@ func TestInitVastUnrap(t *testing.T) {
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("initVastUnrap() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Cfg, tt.want.Cfg) {
+				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got.Enabled, tt.want.Enabled) {
+				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
@@ -277,14 +286,14 @@ func TestBuilder(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    VastUnwrapModule
 		wantErr bool
 	}{
 		{
 			name: "Valid vast unwrap config",
 			args: args{
 				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrapcfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
-				deps:   moduledeps.ModuleDeps{},
+				deps:   moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
 			},
 			want: VastUnwrapModule{
 				Enabled: true,
@@ -306,8 +315,12 @@ func TestBuilder(t *testing.T) {
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Builder() = %v, want %v", got, tt.want)
+			got1, _ := got.(VastUnwrapModule)
+			if !reflect.DeepEqual(got1.Cfg, tt.want.Cfg) {
+				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1.Enabled, tt.want.Enabled) {
+				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
