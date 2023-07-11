@@ -31,6 +31,7 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	var endpoint string
 	var err error
 	var requestExtWrapper models.RequestExtWrapper
 	switch payload.Request.URL.Path {
@@ -44,17 +45,20 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+		endpoint = models.EndpointV25
 	case OpenWrapV25Video:
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+		endpoint = models.EndpointVideo
 	case OpenWrapAmp:
 		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
+		endpoint = models.EndpointAMP
 	default:
 		// we should return from here
 	}
 
 	defer func() {
 		if len(result.Errors) > 0 {
-			m.metricEngine.RecordBadRequests(payload.Request.URL.Path, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
 		}
 	}()
 
@@ -96,7 +100,7 @@ func (m OpenWrap) handleEntrypointHook(
 		PrebidBidderCode:          make(map[string]string),
 		BidderResponseTimeMillis:  make(map[string]int),
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
-		Endpoint:                  payload.Request.URL.Path,
+		Endpoint:                  endpoint,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
