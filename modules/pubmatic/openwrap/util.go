@@ -233,7 +233,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx, metricEngine me
 
 	cookie := parseUIDCookies(rctx.UidCookie)
 	for _, partnerConfig := range rctx.PartnerConfigMap {
-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+		if partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
 			continue
 		}
 
