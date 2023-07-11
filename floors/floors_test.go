@@ -602,7 +602,7 @@ func TestResolveFloors(t *testing.T) {
 		},
 	}
 
-	testCases := []struct {
+	tt := []struct {
 		name              string
 		bidRequestWrapper *openrtb_ext.RequestWrapper
 		account           config.Account
@@ -818,10 +818,12 @@ func TestResolveFloors(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), &MockFetch{})
-			assert.Equal(t, resolvedFloors, tc.expFloors, tc.name)
+			if !reflect.DeepEqual(resolvedFloors, tc.expFloors) {
+				t.Errorf("resolveFloors  error: \nreturn:\t%v\nwant:\t%v", printFloors(resolvedFloors), printFloors(tc.expFloors))
+			}
 		})
 	}
 }
