@@ -15,7 +15,7 @@ import (
 
 type VastUnwrapModule struct {
 	Cfg               unWrapCfg.VastUnWrapCfg `mapstructure:"VastUnWrapCfg" json:"VastUnWrapCfg"`
-	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
+	TrafficPercentage int                     `mapstructure:"TrafficPercentage" json:"TrafficPercentage"`
 	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine     stats.MetricsEngine
 }
