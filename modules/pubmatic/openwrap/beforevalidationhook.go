@@ -58,7 +58,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	}
 	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
-	// old-code records valid , but processVideo records few invalid as well
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {

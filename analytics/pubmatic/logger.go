@@ -13,7 +13,11 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
+func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo, forRespExt bool) (string, http.Header) {
+	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		return "", http.Header{}
+	}
 
 	wlog := WloggerRecord{
 		record: record{

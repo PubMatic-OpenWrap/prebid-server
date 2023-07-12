@@ -328,10 +328,8 @@ const (
 	DataTypeArrayOfFloats   = 6
 	DataTypeArrayOfStrings  = 7
 
-	Device         = "device"
-	DeviceType     = "deviceType"
-	WrapperElement = "Wrapper"
-	InlineElement  = "InLine"
+	Device     = "device"
+	DeviceType = "deviceType"
 )
 
 const (

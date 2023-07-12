@@ -70,8 +70,7 @@ type RequestCtx struct {
 
 	BidderResponseTimeMillis map[string]int
 
-	Endpoint string
-
+	Endpoint               string
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 }
 
