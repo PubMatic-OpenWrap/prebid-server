@@ -3,6 +3,7 @@ package modules
 import (
 	prebidOrtb2blocking "github.com/prebid/prebid-server/modules/prebid/ortb2blocking"
 	vastunwrap "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap"
+	pubmaticOpenwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 )
 
 // builders returns mapping between module name and its builder
@@ -14,6 +15,7 @@ func builders() ModuleBuilders {
 		},
 		"pubmatic": {
 			"vastunwrap": vastunwrap.Builder,
+			"openwrap": pubmaticOpenwrap.Builder,
 		},
 	}
 }

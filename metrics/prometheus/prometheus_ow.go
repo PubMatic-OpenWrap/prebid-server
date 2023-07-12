@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -15,6 +16,15 @@ const (
 	profileLabel = "profileid"
 	dealLabel    = "deal"
 )
+
+func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
+	httpCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of http requests.",
+	})
+	registry.MustRegister(httpCounter)
+	return httpCounter
+}
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 // gives the bid response with multiple bids containing  same bid.ID
@@ -105,4 +115,8 @@ func (m *Metrics) RecordVastVersion(coreBiddder, vastVersion string) {
 		adapterLabel: coreBiddder,
 		versionLabel: vastVersion,
 	}).Inc()
+}
+
+func (m *Metrics) RecordHttpCounter() {
+	m.httpCounter.Inc()
 }

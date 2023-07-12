@@ -145,6 +145,8 @@ type endpointDeps struct {
 }
 
 func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	deps.metricsEngine.RecordHttpCounter()
+
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
 	//
@@ -284,6 +286,11 @@ func rejectAuctionRequest(
 		response.ID = request.ID
 	}
 
+	// TODO merge this with success case
+	stageOutcomes := hookExecutor.GetOutcomes()
+	ao.HookExecutionOutcome = stageOutcomes
+	UpdateResponseExtOW(response, ao)
+
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
@@ -304,6 +311,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
+		UpdateResponseExtOW(response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -386,7 +394,6 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	if len(errs) > 0 {
 		return nil, nil, nil, nil, nil, nil, errs
 	}
-
 	storedBidRequestId, hasStoredBidRequest, storedRequests, storedImps, errs := deps.getStoredRequests(ctx, requestJson, impInfo)
 	if len(errs) > 0 {
 		return
@@ -447,6 +454,12 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 
 	if err := json.Unmarshal(requestJson, req.BidRequest); err != nil {
 		errs = []error{err}
+		return
+	}
+
+	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(req.BidRequest)
+	if rejectErr != nil {
+		errs = append(errs, rejectErr)
 		return
 	}
 

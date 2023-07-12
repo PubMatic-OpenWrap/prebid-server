@@ -29,3 +29,18 @@ build: test
 # image will build a docker image
 image:
 	docker build -t prebid-server .
+
+mockgen: mockgeninstall mockgendb
+
+# export GOBIN=~/go/bin; export PATH=$PATH:$GOBIN
+mockgeninstall:
+	go install github.com/golang/mock/mockgen@v1.6.0
+
+mockgendb:
+	mkdir -p modules/pubmatic/openwrap/database/mock modules/pubmatic/openwrap/database/mock_driver
+	mockgen database/sql/driver Driver,Connector,Conn,DriverContext > modules/pubmatic/openwrap/database/mock_driver/mock.go
+	mockgen github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/database Database > modules/pubmatic/openwrap/database/mock/mock.go
+
+mockgencache:
+	mkdir -p modules/pubmatic/openwrap/cache/mock
+	mockgen github.com/pm-nilesh-chate/prebid-server/modules/pubmatic/openwrap/cache Cache > modules/pubmatic/openwrap/cache/mock/mock.go

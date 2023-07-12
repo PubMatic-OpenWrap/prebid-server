@@ -526,4 +526,6 @@ type MetricsEngine interface {
 
 	//RecordVastVersion record the count of vast version labelled by bidder and vast version
 	RecordVastVersion(coreBidder, vastVersion string)
+
+	RecordHttpCounter()
 }

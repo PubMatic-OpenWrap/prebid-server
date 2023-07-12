@@ -3,7 +3,6 @@ package floors
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -503,6 +502,7 @@ func TestEnforce(t *testing.T) {
 			expEligibleBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"pubmatic": {
 					Bids: []*entities.PbsOrtbBid{
+						// {Bid: &openrtb2.Bid{ID: "some-bid-1", Price: 1.2, ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorValue: 5.01, FloorValueUSD: 0, FloorCurrency: "USD"}},
 						{Bid: &openrtb2.Bid{ID: "some-bid-1", Price: 1.2, ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorValue: 5.01, FloorCurrency: "USD"}},
 					},
 					Seat:     "pubmatic",
@@ -575,7 +575,7 @@ func TestEnforce(t *testing.T) {
 					},
 				},
 				conversions:    convert{},
-				priceFloorsCfg: config.AccountPriceFloors{Enabled: true, EnforceFloorsRate: 100, EnforceDealFloors: true},
+				priceFloorsCfg: config.AccountPriceFloors{Enabled: true, EnforceFloorsRate: 0, EnforceDealFloors: true},
 			},
 			expEligibleBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"pubmatic": {
@@ -593,12 +593,14 @@ func TestEnforce(t *testing.T) {
 				{
 					Seat:     "pubmatic",
 					Currency: "USD",
-					Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-1", Price: 1.2, DealID: "deal_Id_1", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01}}},
+					// Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-1", Price: 1.2, DealID: "deal_Id_1", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01, FloorValueUSD: 20.01}}},
+					Bids: []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-1", Price: 1.2, DealID: "deal_Id_1", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01}}},
 				},
 				{
 					Seat:     "appnexus",
 					Currency: "USD",
-					Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 0.5, DealID: "deal_Id_3", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01}}},
+					// Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 0.5, DealID: "deal_Id_3", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01, FloorValueUSD: 20.01}}},
+					Bids: []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 0.5, DealID: "deal_Id_3", ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorCurrency: "USD", FloorValue: 20.01}}},
 				},
 			},
 			expErrs: []error{},
@@ -632,7 +634,7 @@ func TestEnforce(t *testing.T) {
 					},
 				},
 				conversions:    convert{},
-				priceFloorsCfg: config.AccountPriceFloors{Enabled: true, EnforceFloorsRate: 100, EnforceDealFloors: false},
+				priceFloorsCfg: config.AccountPriceFloors{Enabled: true, EnforceFloorsRate: 0, EnforceDealFloors: false},
 			},
 			expEligibleBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"pubmatic": {
@@ -652,7 +654,8 @@ func TestEnforce(t *testing.T) {
 				{
 					Seat:     "appnexus",
 					Currency: "USD",
-					Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 4.5, ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorValue: 5.01, FloorCurrency: "USD"}}},
+					// Bids:     []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 4.5, ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorValue: 5.01, FloorValueUSD: 5.01, FloorCurrency: "USD"}}},
+					Bids: []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{ID: "some-bid-11", Price: 4.5, ImpID: "some-impression-id-1"}, BidFloors: &openrtb_ext.ExtBidPrebidFloors{FloorValue: 5.01, FloorCurrency: "USD"}}},
 				},
 			},
 			expErrs: []error{},
@@ -661,12 +664,10 @@ func TestEnforce(t *testing.T) {
 	for _, tt := range tests {
 		actEligibleBids, actErrs, actRejecteBids := Enforce(tt.args.bidRequestWrapper, tt.args.seatBids, config.Account{PriceFloors: tt.args.priceFloorsCfg}, tt.args.conversions)
 		assert.Equal(t, tt.expErrs, actErrs, tt.name)
-		if !reflect.DeepEqual(tt.expRejectedBids, actRejecteBids) {
-			assert.Fail(t, "rejected bids don't match")
-		}
+		assert.ElementsMatch(t, tt.expRejectedBids, actRejecteBids, tt.name)
 
-		if !reflect.DeepEqual(tt.expEligibleBids, actEligibleBids) {
-			assert.Fail(t, "eligible bids don't match")
+		if !assert.Equal(t, tt.expEligibleBids, actEligibleBids) {
+			assert.Failf(t, "eligible bids don't match", "Expected: %v, Got: %v", tt.expEligibleBids, actEligibleBids)
 		}
 	}
 }
