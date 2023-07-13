@@ -118,12 +118,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var errL []error
 
 	ao := analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context:      r.Context(),
-			Status:       http.StatusOK,
-			Errors:       make([]error, 0),
-			RejectedBids: []analytics.RejectedBid{},
-		},
+		Status: http.StatusOK,
+		Errors: make([]error, 0),
 	}
 
 	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
@@ -146,7 +142,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(deps.labels)
-		recordRejectedBids(deps.labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
+		recordRejectedBids(deps.labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(deps.labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -219,6 +215,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
+	reqWrapper.BidRequest = request
 	auctionRequest := exchange.AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           *account,
@@ -227,16 +224,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
-		LoggableObject:    &ao.LoggableAuctionObject,
 		HookExecutor:      hookExecuter,
 		TCF2Config:        tcf2Config,
 	}
 
-	response, err = deps.holdAuction(ctx, auctionRequest)
-	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
-	ao.Request = request
-	ao.Response = response
-	if err != nil || nil == response {
+	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)
+	ao.RequestWrapper = auctionRequest.BidRequestWrapper
+	if err != nil || auctionResponse == nil || auctionResponse.BidResponse == nil {
 		deps.labels.RequestStatus = metrics.RequestStatusErr
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Critical error while running the auction: %v", err)
@@ -245,6 +239,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
+	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
+	err = setSeatNonBidRaw(ao.RequestWrapper, auctionResponse)
+	if err != nil {
+		glog.Errorf("Error setting seat non-bid: %v", err)
+	}
+	response = auctionResponse.BidResponse
 	util.JLogf("BidResponse", response) //TODO: REMOVE LOG
 
 	if deps.isAdPodRequest {
@@ -291,13 +291,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*openrtb2.BidResponse, error) {
+func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*exchange.AuctionResponse, error) {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v CTVHoldAuction", deps.request.ID))
 
 	//Hold OpenRTB Standard Auction
 	if len(deps.request.Imp) == 0 {
 		//Dummy Response Object
-		return &openrtb2.BidResponse{ID: deps.request.ID}, nil
+		return &exchange.AuctionResponse{BidResponse: &openrtb2.BidResponse{ID: deps.request.ID}}, nil
 	}
 
 	return deps.ex.HoldAuction(ctx, &auctionRequest, nil)

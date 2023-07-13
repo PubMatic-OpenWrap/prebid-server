@@ -17,11 +17,10 @@ const TEST_DIR string = "testFiles"
 func TestSampleModule(t *testing.T) {
 	var count int
 	am := initAnalytics(&count)
-	am.LogAuctionObject(&analytics.AuctionObject{LoggableAuctionObject: analytics.LoggableAuctionObject{
+	am.LogAuctionObject(&analytics.AuctionObject{
 		Status:   http.StatusOK,
 		Errors:   nil,
 		Response: &openrtb2.BidResponse{},
-	},
 	})
 	if count != 1 {
 		t.Errorf("PBSAnalyticsModule failed at LogAuctionObject")

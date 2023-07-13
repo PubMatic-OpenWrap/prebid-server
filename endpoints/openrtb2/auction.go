@@ -167,12 +167,8 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
 
 	ao := analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context:      r.Context(),
-			Status:       http.StatusOK,
-			Errors:       make([]error, 0),
-			RejectedBids: []analytics.RejectedBid{},
-		},
+		Status:    http.StatusOK,
+		Errors:    make([]error, 0),
 		StartTime: start,
 	}
 
@@ -188,7 +184,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
-		recordRejectedBids(labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
+		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -253,10 +249,8 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		PubID:                      labels.PubID,
 		HookExecutor:               hookExecutor,
 		TCF2Config:                 tcf2Config,
-		LoggableObject:             &ao.LoggableAuctionObject,
 	}
 	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
-	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
 	ao.RequestWrapper = req
 	ao.Account = account
 	var response *openrtb2.BidResponse

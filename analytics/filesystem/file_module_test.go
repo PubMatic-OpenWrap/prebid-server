@@ -16,11 +16,9 @@ const TEST_DIR string = "testFiles"
 
 func TestAmpObject_ToJson(t *testing.T) {
 	ao := &analytics.AmpObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status:   http.StatusOK,
-			Errors:   make([]error, 0),
-			Response: &openrtb2.BidResponse{},
-		},
+		Status:             http.StatusOK,
+		Errors:             make([]error, 0),
+		AuctionResponse:    &openrtb2.BidResponse{},
 		AmpTargetingValues: map[string]string{},
 	}
 	if aoJson := jsonifyAmpObject(ao); strings.Contains(aoJson, "Transactional Logs Error") {
@@ -30,9 +28,7 @@ func TestAmpObject_ToJson(t *testing.T) {
 
 func TestAuctionObject_ToJson(t *testing.T) {
 	ao := &analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status: http.StatusOK,
-		},
+		Status: http.StatusOK,
 	}
 	if aoJson := jsonifyAuctionObject(ao); strings.Contains(aoJson, "Transactional Logs Error") {
 		t.Fatalf("AuctionObject failed to convert to json")
@@ -41,9 +37,7 @@ func TestAuctionObject_ToJson(t *testing.T) {
 
 func TestVideoObject_ToJson(t *testing.T) {
 	vo := &analytics.VideoObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status: http.StatusOK,
-		},
+		Status: http.StatusOK,
 	}
 	if voJson := jsonifyVideoObject(vo); strings.Contains(voJson, "Transactional Logs Error") {
 		t.Fatalf("AuctionObject failed to convert to json")

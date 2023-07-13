@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"context"
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -20,16 +19,6 @@ type PBSAnalyticsModule interface {
 	LogSetUIDObject(*SetUIDObject)
 	LogAmpObject(*AmpObject)
 	LogNotificationEventObject(*NotificationEvent)
-}
-
-// LoggableAuctionObject contains common attributes between AuctionObject, AmpObject, VideoObject
-type LoggableAuctionObject struct {
-	Context      context.Context
-	Status       int
-	Errors       []error
-	Request      *openrtb2.BidRequest
-	Response     *openrtb2.BidResponse
-	RejectedBids []RejectedBid
 }
 
 // Loggable object of a transaction at /openrtb2/auction endpoint

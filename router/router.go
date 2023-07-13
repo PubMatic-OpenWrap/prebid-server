@@ -245,7 +245,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
 	}
 
-	ampEndpoint, err := openrtb2.NewApriceFloorFetchermpEndpoint(uuidGenerator, theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
+	ampEndpoint, err := openrtb2.NewAmpEndpoint(uuidGenerator, theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
 	if err != nil {
 		glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
 	}
