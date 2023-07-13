@@ -5,28 +5,45 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	cfg "github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewMetricsEngine(t *testing.T) {
 
+	type args struct {
+		statConfig         *config.Config
+		prometheusConfig   *cfg.PrometheusMetrics
+		prometheusRegistry *prometheus.Registry
+	}
 	type want struct {
 		expectNilEngine bool
 		err             error
 	}
 	testCases := []struct {
 		name string
-		cfg  config.Config
+		args args
 		want want
 	}{
 		{
 			name: "Valid configuration with stats endpoint",
-			cfg: config.Config{
-				Stats: config.Stats{
-					Endpoint:    "http://example.com",
-					UseHostName: true,
+			args: args{
+				statConfig: &config.Config{
+					Stats: config.Stats{
+						Endpoint:    "http://example.com",
+						UseHostName: true,
+					},
+				},
+				prometheusRegistry: prometheus.NewRegistry(),
+				prometheusConfig: &cfg.PrometheusMetrics{
+					Port:             14404,
+					Namespace:        "ow",
+					Subsystem:        "pbs",
+					TimeoutMillisRaw: 10,
 				},
 			},
 			want: want{
@@ -35,11 +52,15 @@ func TestNewMetricsEngine(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty stats endpoint",
-			cfg: config.Config{
-				Stats: config.Stats{
-					Endpoint: "",
+			name: "No valid configuration",
+			args: args{
+				statConfig: &config.Config{
+					Stats: config.Stats{
+						Endpoint: "",
+					},
 				},
+				prometheusRegistry: nil,
+				prometheusConfig:   nil,
 			},
 			want: want{
 				expectNilEngine: true,
@@ -50,7 +71,7 @@ func TestNewMetricsEngine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actualOutput, actualError := NewMetricsEngine(tc.cfg)
+			actualOutput, actualError := NewMetricsEngine(tc.args.statConfig, tc.args.prometheusConfig, tc.args.prometheusRegistry)
 			assert.Equal(t, tc.want.expectNilEngine, actualOutput == nil)
 			assert.Equal(t, tc.want.err, actualError)
 		})
@@ -80,15 +101,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	aliasBidder := "pubmatic-2"
 	adFormat := "banner"
 	dealId := "pubdeal"
+	host := "sv3:xyz1234"
 
 	// set the expectations
-	mockEngine.EXPECT().RecordOpenWrapServerPanicStats()
+	mockEngine.EXPECT().RecordOpenWrapServerPanicStats(host, method)
 	mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats(publisher, partner)
-	mockEngine.EXPECT().RecordPartnerTimeoutErrorStats(publisher, partner)
-	mockEngine.EXPECT().RecordNobidErrorStats(publisher, partner)
-	mockEngine.EXPECT().RecordUnkownPrebidErrorStats(publisher, partner)
-	mockEngine.EXPECT().RecordSlotNotMappedErrorStats(publisher, partner)
-	mockEngine.EXPECT().RecordMisConfigurationErrorStats(publisher, partner)
+	mockEngine.EXPECT().RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
+	mockEngine.EXPECT().RecordPartnerConfigErrors(publisher, partner, models.PartnerErrSlotNotMapped)
+
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher)
@@ -118,8 +138,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordCTVReqImpsWithReqConfigCount(publisher)
 	mockEngine.EXPECT().RecordAdPodGeneratedImpressionsCount(impCount, publisher)
 	mockEngine.EXPECT().RecordRequestAdPodGeneratedImpressionsCount(impCount, publisher)
-	mockEngine.EXPECT().RecordReqImpsWithAppContentCount(publisher)
-	mockEngine.EXPECT().RecordReqImpsWithSiteContentCount(publisher)
+	mockEngine.EXPECT().RecordReqImpsWithContentCount(publisher, models.ContentTypeSite)
 	mockEngine.EXPECT().RecordAdPodImpressionYield(maxDuration, minDuration, publisher)
 	mockEngine.EXPECT().RecordCTVReqCountWithAdPod(publisher, profile)
 	mockEngine.EXPECT().RecordPBSAuctionRequestsStats()
@@ -135,13 +154,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine = append(multiMetricEngine, mockEngine)
 
 	// call the functions
-	multiMetricEngine.RecordOpenWrapServerPanicStats()
+	multiMetricEngine.RecordOpenWrapServerPanicStats(host, method)
 	multiMetricEngine.RecordPublisherPartnerNoCookieStats(publisher, partner)
-	multiMetricEngine.RecordPartnerTimeoutErrorStats(publisher, partner)
-	multiMetricEngine.RecordNobidErrorStats(publisher, partner)
-	multiMetricEngine.RecordUnkownPrebidErrorStats(publisher, partner)
-	multiMetricEngine.RecordSlotNotMappedErrorStats(publisher, partner)
-	multiMetricEngine.RecordMisConfigurationErrorStats(publisher, partner)
+	multiMetricEngine.RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
+	multiMetricEngine.RecordPartnerConfigErrors(publisher, partner, models.PartnerErrSlotNotMapped)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher)
@@ -171,8 +187,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordCTVReqImpsWithReqConfigCount(publisher)
 	multiMetricEngine.RecordAdPodGeneratedImpressionsCount(impCount, publisher)
 	multiMetricEngine.RecordRequestAdPodGeneratedImpressionsCount(impCount, publisher)
-	multiMetricEngine.RecordReqImpsWithAppContentCount(publisher)
-	multiMetricEngine.RecordReqImpsWithSiteContentCount(publisher)
+	multiMetricEngine.RecordReqImpsWithContentCount(publisher, models.ContentTypeSite)
 	multiMetricEngine.RecordAdPodImpressionYield(maxDuration, minDuration, publisher)
 	multiMetricEngine.RecordCTVReqCountWithAdPod(publisher, profile)
 	multiMetricEngine.RecordPBSAuctionRequestsStats()

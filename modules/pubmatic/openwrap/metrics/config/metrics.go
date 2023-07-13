@@ -3,16 +3,19 @@ package config
 import (
 	"fmt"
 
+	cfg "github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	ow_prometheus "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // NewMetricsEngine initialises the stats-client and prometheus and return them as MultiMetricsEngine
-func NewMetricsEngine(cfg config.Config) (MultiMetricsEngine, error) {
+func NewMetricsEngine(cfg *config.Config, prometheusCfg *cfg.PrometheusMetrics, prometheusRegistry *prometheus.Registry) (MultiMetricsEngine, error) {
 
 	// Create a list of metrics engines to use.
-	engineList := make(MultiMetricsEngine, 0, 1)
+	engineList := make(MultiMetricsEngine, 0, 2)
 
 	if cfg.Stats.Endpoint != "" {
 		hostName := cfg.Stats.DefaultHostName // Dummy hostname N:P
@@ -44,21 +47,26 @@ func NewMetricsEngine(cfg config.Config) (MultiMetricsEngine, error) {
 		engineList = append(engineList, sc)
 	}
 
-	// TODO: Set up the Prometheus metrics engine.
+	// Set up the Prometheus metrics engine.
+	if prometheusCfg != nil && prometheusRegistry != nil {
+		prometheusEngine := ow_prometheus.NewMetrics(prometheusCfg, prometheusRegistry)
+		engineList = append(engineList, prometheusEngine)
+	}
+
 	if len(engineList) > 0 {
 		return engineList, nil
 	}
 	return nil, fmt.Errorf("metric-engine is not configured")
 }
 
-// MultiMetricsEngine logs metrics to multiple metrics databases The can be useful in transitioning
+// MultiMetricsEngine logs metrics to multiple metrics databases These can be useful in transitioning
 // an instance from one engine to another, you can run both in parallel to verify stats match up.
 type MultiMetricsEngine []metrics.MetricsEngine
 
 // RecordOpenWrapServerPanicStats across all engines
-func (me *MultiMetricsEngine) RecordOpenWrapServerPanicStats() {
+func (me *MultiMetricsEngine) RecordOpenWrapServerPanicStats(host, method string) {
 	for _, thisME := range *me {
-		thisME.RecordOpenWrapServerPanicStats()
+		thisME.RecordOpenWrapServerPanicStats(host, method)
 	}
 }
 
@@ -70,37 +78,16 @@ func (me *MultiMetricsEngine) RecordPublisherPartnerNoCookieStats(publisher, par
 }
 
 // RecordPartnerTimeoutErrorStats across all engines
-func (me *MultiMetricsEngine) RecordPartnerTimeoutErrorStats(publisher, partner string) {
+func (me *MultiMetricsEngine) RecordPartnerResponseErrors(publisher, partner, err string) {
 	for _, thisME := range *me {
-		thisME.RecordPartnerTimeoutErrorStats(publisher, partner)
-	}
-}
-
-// RecordNobidErrorStats across all engines
-func (me *MultiMetricsEngine) RecordNobidErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordNobidErrorStats(publisher, partner)
-	}
-}
-
-// RecordUnkownPrebidErrorStats across all engines
-func (me *MultiMetricsEngine) RecordUnkownPrebidErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordUnkownPrebidErrorStats(publisher, partner)
-	}
-}
-
-// RecordSlotNotMappedErrorStats across all engines
-func (me *MultiMetricsEngine) RecordSlotNotMappedErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordSlotNotMappedErrorStats(publisher, partner)
+		thisME.RecordPartnerResponseErrors(publisher, partner, err)
 	}
 }
 
 // RecordMisConfigurationErrorStats across all engines
-func (me *MultiMetricsEngine) RecordMisConfigurationErrorStats(publisher, partner string) {
+func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, partner, err string) {
 	for _, thisME := range *me {
-		thisME.RecordMisConfigurationErrorStats(publisher, partner)
+		thisME.RecordPartnerConfigErrors(publisher, partner, err)
 	}
 }
 
@@ -321,17 +308,10 @@ func (me *MultiMetricsEngine) RecordCTVReqCountWithAdPod(publisher, profile stri
 	}
 }
 
-// RecordReqImpsWithAppContentCount across all engines
-func (me *MultiMetricsEngine) RecordReqImpsWithAppContentCount(publisher string) {
+// RecordReqImpsWithContentCount across all engines
+func (me *MultiMetricsEngine) RecordReqImpsWithContentCount(publisher, contentType string) {
 	for _, thisME := range *me {
-		thisME.RecordReqImpsWithAppContentCount(publisher)
-	}
-}
-
-// RecordReqImpsWithSiteContentCount across all engines
-func (me *MultiMetricsEngine) RecordReqImpsWithSiteContentCount(publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordReqImpsWithSiteContentCount(publisher)
+		thisME.RecordReqImpsWithContentCount(publisher, contentType)
 	}
 }
 

@@ -185,10 +185,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
 				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
-					m.metricEngine.RecordReqImpsWithAppContentCount(rCtx.PubIDStr)
+					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeApp)
 				}
 				if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
-					m.metricEngine.RecordReqImpsWithSiteContentCount(rCtx.PubIDStr)
+					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType, m.metricEngine)
@@ -252,7 +252,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil || len(bidderParams) == 0 {
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
-				m.metricEngine.RecordSlotNotMappedErrorStats(rCtx.PubIDStr, bidderCode)
+				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, bidderCode, models.PartnerErrSlotNotMapped)
 				continue
 			}
 

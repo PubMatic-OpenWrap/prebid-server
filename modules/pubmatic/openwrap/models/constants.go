@@ -389,19 +389,23 @@ const (
 const Pipe = "|"
 
 const (
-	EndpointV25   = "v25"
-	EndpointAMP   = "amp"
-	EndpointVideo = "video"
-	EndpointJson  = "json"
-	EndpointORTB  = "ortb"
-	EndpointVAST  = "vast"
-	Openwrap      = "openwrap"
-	ImpTypeBanner = "banner"
-	ImpTypeVideo  = "video"
+	EndpointV25     = "v25"
+	EndpointAMP     = "amp"
+	EndpointVideo   = "video"
+	EndpointJson    = "json"
+	EndpointORTB    = "ortb"
+	EndpointVAST    = "vast"
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
 )
 
 const (
-	PubPartnerErrNoBid              = "no_bid"
-	PubPartnerErrTimeout            = "timeout"
-	PubPartnerErrUnknownPrebidError = "unknown"
+	PartnerErrNoBid              = "no_bid"
+	PartnerErrTimeout            = "timeout"
+	PartnerErrUnknownPrebidError = "unknown"
+	PartnerErrSlotNotMapped      = "slot_not_mapped"
+	PartnerErrMisConfig          = "misconfig"
 )

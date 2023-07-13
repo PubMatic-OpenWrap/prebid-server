@@ -56,18 +56,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordAdPodImpressionYield(arg0, arg1, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdPodImpressionYield", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdPodImpressionYield), arg0, arg1, arg2)
 }
 
-// RecordAdPodSecondsMissedCount mocks base method
-func (m *MockMetricsEngine) RecordAdPodSecondsMissedCount(arg0 int, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordAdPodSecondsMissedCount", arg0, arg1)
-}
-
-// RecordAdPodSecondsMissedCount indicates an expected call of RecordAdPodSecondsMissedCount
-func (mr *MockMetricsEngineMockRecorder) RecordAdPodSecondsMissedCount(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdPodSecondsMissedCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdPodSecondsMissedCount), arg0, arg1)
-}
-
 // RecordBadRequests mocks base method
 func (m *MockMetricsEngine) RecordBadRequests(arg0 string, arg1 int) {
 	m.ctrl.T.Helper()
@@ -116,18 +104,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordCTVHTTPMethodRequests(arg0, arg1,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCTVHTTPMethodRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCTVHTTPMethodRequests), arg0, arg1, arg2)
 }
 
-// RecordCTVIncompleteAdPodsCount mocks base method
-func (m *MockMetricsEngine) RecordCTVIncompleteAdPodsCount(arg0 int, arg1, arg2 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordCTVIncompleteAdPodsCount", arg0, arg1, arg2)
-}
-
-// RecordCTVIncompleteAdPodsCount indicates an expected call of RecordCTVIncompleteAdPodsCount
-func (mr *MockMetricsEngineMockRecorder) RecordCTVIncompleteAdPodsCount(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCTVIncompleteAdPodsCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCTVIncompleteAdPodsCount), arg0, arg1, arg2)
-}
-
 // RecordCTVInvalidReasonCount mocks base method
 func (m *MockMetricsEngine) RecordCTVInvalidReasonCount(arg0 int, arg1 string) {
 	m.ctrl.T.Helper()
@@ -138,18 +114,6 @@ func (m *MockMetricsEngine) RecordCTVInvalidReasonCount(arg0 int, arg1 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordCTVInvalidReasonCount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCTVInvalidReasonCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCTVInvalidReasonCount), arg0, arg1)
-}
-
-// RecordCTVKeyBidDuration mocks base method
-func (m *MockMetricsEngine) RecordCTVKeyBidDuration(arg0 int, arg1, arg2 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordCTVKeyBidDuration", arg0, arg1, arg2)
-}
-
-// RecordCTVKeyBidDuration indicates an expected call of RecordCTVKeyBidDuration
-func (mr *MockMetricsEngineMockRecorder) RecordCTVKeyBidDuration(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCTVKeyBidDuration", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCTVKeyBidDuration), arg0, arg1, arg2)
 }
 
 // RecordCTVReqCountWithAdPod mocks base method
@@ -248,18 +212,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordInvalidCreativeStats(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvalidCreativeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordInvalidCreativeStats), arg0, arg1)
 }
 
-// RecordMisConfigurationErrorStats mocks base method
-func (m *MockMetricsEngine) RecordMisConfigurationErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordMisConfigurationErrorStats", arg0, arg1)
-}
-
-// RecordMisConfigurationErrorStats indicates an expected call of RecordMisConfigurationErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordMisConfigurationErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordMisConfigurationErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordMisConfigurationErrorStats), arg0, arg1)
-}
-
 // RecordNobidErrPrebidServerRequests mocks base method
 func (m *MockMetricsEngine) RecordNobidErrPrebidServerRequests(arg0 string) {
 	m.ctrl.T.Helper()
@@ -284,40 +236,16 @@ func (mr *MockMetricsEngineMockRecorder) RecordNobidErrPrebidServerResponse(arg0
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordNobidErrPrebidServerResponse", reflect.TypeOf((*MockMetricsEngine)(nil).RecordNobidErrPrebidServerResponse), arg0)
 }
 
-// RecordNobidErrorStats mocks base method
-func (m *MockMetricsEngine) RecordNobidErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordNobidErrorStats", arg0, arg1)
-}
-
-// RecordNobidErrorStats indicates an expected call of RecordNobidErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordNobidErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordNobidErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordNobidErrorStats), arg0, arg1)
-}
-
-// RecordNobiderStatusErrorStats mocks base method
-func (m *MockMetricsEngine) RecordNobiderStatusErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordNobiderStatusErrorStats", arg0, arg1)
-}
-
-// RecordNobiderStatusErrorStats indicates an expected call of RecordNobiderStatusErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordNobiderStatusErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordNobiderStatusErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordNobiderStatusErrorStats), arg0, arg1)
-}
-
 // RecordOpenWrapServerPanicStats mocks base method
-func (m *MockMetricsEngine) RecordOpenWrapServerPanicStats() {
+func (m *MockMetricsEngine) RecordOpenWrapServerPanicStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordOpenWrapServerPanicStats")
+	m.ctrl.Call(m, "RecordOpenWrapServerPanicStats", arg0, arg1)
 }
 
 // RecordOpenWrapServerPanicStats indicates an expected call of RecordOpenWrapServerPanicStats
-func (mr *MockMetricsEngineMockRecorder) RecordOpenWrapServerPanicStats() *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordOpenWrapServerPanicStats(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordOpenWrapServerPanicStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordOpenWrapServerPanicStats))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordOpenWrapServerPanicStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordOpenWrapServerPanicStats), arg0, arg1)
 }
 
 // RecordPBSAuctionRequestsStats mocks base method
@@ -332,6 +260,30 @@ func (mr *MockMetricsEngineMockRecorder) RecordPBSAuctionRequestsStats() *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPBSAuctionRequestsStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPBSAuctionRequestsStats))
 }
 
+// RecordPartnerConfigErrors mocks base method
+func (m *MockMetricsEngine) RecordPartnerConfigErrors(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPartnerConfigErrors", arg0, arg1, arg2)
+}
+
+// RecordPartnerConfigErrors indicates an expected call of RecordPartnerConfigErrors
+func (mr *MockMetricsEngineMockRecorder) RecordPartnerConfigErrors(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerConfigErrors", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerConfigErrors), arg0, arg1, arg2)
+}
+
+// RecordPartnerResponseErrors mocks base method
+func (m *MockMetricsEngine) RecordPartnerResponseErrors(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPartnerResponseErrors", arg0, arg1, arg2)
+}
+
+// RecordPartnerResponseErrors indicates an expected call of RecordPartnerResponseErrors
+func (mr *MockMetricsEngineMockRecorder) RecordPartnerResponseErrors(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerResponseErrors", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerResponseErrors), arg0, arg1, arg2)
+}
+
 // RecordPartnerResponseTimeStats mocks base method
 func (m *MockMetricsEngine) RecordPartnerResponseTimeStats(arg0, arg1 string, arg2 int) {
 	m.ctrl.T.Helper()
@@ -342,18 +294,6 @@ func (m *MockMetricsEngine) RecordPartnerResponseTimeStats(arg0, arg1 string, ar
 func (mr *MockMetricsEngineMockRecorder) RecordPartnerResponseTimeStats(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerResponseTimeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerResponseTimeStats), arg0, arg1, arg2)
-}
-
-// RecordPartnerTimeoutErrorStats mocks base method
-func (m *MockMetricsEngine) RecordPartnerTimeoutErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPartnerTimeoutErrorStats", arg0, arg1)
-}
-
-// RecordPartnerTimeoutErrorStats indicates an expected call of RecordPartnerTimeoutErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordPartnerTimeoutErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerTimeoutErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerTimeoutErrorStats), arg0, arg1)
 }
 
 // RecordPartnerTimeoutInPBS mocks base method
@@ -440,42 +380,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordPublisherInvalidProfileRequests(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherInvalidProfileRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherInvalidProfileRequests), arg0, arg1, arg2)
 }
 
-// RecordPublisherNoConsentImpressions mocks base method
-func (m *MockMetricsEngine) RecordPublisherNoConsentImpressions(arg0 string, arg1 int) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherNoConsentImpressions", arg0, arg1)
-}
-
-// RecordPublisherNoConsentImpressions indicates an expected call of RecordPublisherNoConsentImpressions
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherNoConsentImpressions(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherNoConsentImpressions", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherNoConsentImpressions), arg0, arg1)
-}
-
-// RecordPublisherNoConsentRequests mocks base method
-func (m *MockMetricsEngine) RecordPublisherNoConsentRequests(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherNoConsentRequests", arg0)
-}
-
-// RecordPublisherNoConsentRequests indicates an expected call of RecordPublisherNoConsentRequests
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherNoConsentRequests(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherNoConsentRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherNoConsentRequests), arg0)
-}
-
-// RecordPublisherPartnerImpStats mocks base method
-func (m *MockMetricsEngine) RecordPublisherPartnerImpStats(arg0, arg1 string, arg2 int) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherPartnerImpStats", arg0, arg1, arg2)
-}
-
-// RecordPublisherPartnerImpStats indicates an expected call of RecordPublisherPartnerImpStats
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherPartnerImpStats(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherPartnerImpStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherPartnerImpStats), arg0, arg1, arg2)
-}
-
 // RecordPublisherPartnerNoCookieStats mocks base method
 func (m *MockMetricsEngine) RecordPublisherPartnerNoCookieStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -488,18 +392,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordPublisherPartnerNoCookieStats(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherPartnerNoCookieStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherPartnerNoCookieStats), arg0, arg1)
 }
 
-// RecordPublisherPartnerStats mocks base method
-func (m *MockMetricsEngine) RecordPublisherPartnerStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherPartnerStats", arg0, arg1)
-}
-
-// RecordPublisherPartnerStats indicates an expected call of RecordPublisherPartnerStats
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherPartnerStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherPartnerStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherPartnerStats), arg0, arg1)
-}
-
 // RecordPublisherProfileRequests mocks base method
 func (m *MockMetricsEngine) RecordPublisherProfileRequests(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -510,18 +402,6 @@ func (m *MockMetricsEngine) RecordPublisherProfileRequests(arg0, arg1 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordPublisherProfileRequests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherProfileRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherProfileRequests), arg0, arg1)
-}
-
-// RecordPublisherRequestStats mocks base method
-func (m *MockMetricsEngine) RecordPublisherRequestStats(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherRequestStats", arg0)
-}
-
-// RecordPublisherRequestStats indicates an expected call of RecordPublisherRequestStats
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherRequestStats(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherRequestStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherRequestStats), arg0)
 }
 
 // RecordPublisherRequests mocks base method
@@ -572,28 +452,16 @@ func (mr *MockMetricsEngineMockRecorder) RecordPublisherWrapperLoggerFailure(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherWrapperLoggerFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherWrapperLoggerFailure), arg0, arg1, arg2)
 }
 
-// RecordReqImpsWithAppContentCount mocks base method
-func (m *MockMetricsEngine) RecordReqImpsWithAppContentCount(arg0 string) {
+// RecordReqImpsWithContentCount mocks base method
+func (m *MockMetricsEngine) RecordReqImpsWithContentCount(arg0, arg1 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordReqImpsWithAppContentCount", arg0)
+	m.ctrl.Call(m, "RecordReqImpsWithContentCount", arg0, arg1)
 }
 
-// RecordReqImpsWithAppContentCount indicates an expected call of RecordReqImpsWithAppContentCount
-func (mr *MockMetricsEngineMockRecorder) RecordReqImpsWithAppContentCount(arg0 interface{}) *gomock.Call {
+// RecordReqImpsWithContentCount indicates an expected call of RecordReqImpsWithContentCount
+func (mr *MockMetricsEngineMockRecorder) RecordReqImpsWithContentCount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordReqImpsWithAppContentCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordReqImpsWithAppContentCount), arg0)
-}
-
-// RecordReqImpsWithSiteContentCount mocks base method
-func (m *MockMetricsEngine) RecordReqImpsWithSiteContentCount(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordReqImpsWithSiteContentCount", arg0)
-}
-
-// RecordReqImpsWithSiteContentCount indicates an expected call of RecordReqImpsWithSiteContentCount
-func (mr *MockMetricsEngineMockRecorder) RecordReqImpsWithSiteContentCount(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordReqImpsWithSiteContentCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordReqImpsWithSiteContentCount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordReqImpsWithContentCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordReqImpsWithContentCount), arg0, arg1)
 }
 
 // RecordRequestAdPodGeneratedImpressionsCount mocks base method
@@ -620,18 +488,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordSSTimeoutRequests(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSSTimeoutRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSSTimeoutRequests), arg0, arg1)
 }
 
-// RecordSlotNotMappedErrorStats mocks base method
-func (m *MockMetricsEngine) RecordSlotNotMappedErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordSlotNotMappedErrorStats", arg0, arg1)
-}
-
-// RecordSlotNotMappedErrorStats indicates an expected call of RecordSlotNotMappedErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordSlotNotMappedErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSlotNotMappedErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSlotNotMappedErrorStats), arg0, arg1)
-}
-
 // RecordStatsKeyCTVPrebidFailedImpression mocks base method
 func (m *MockMetricsEngine) RecordStatsKeyCTVPrebidFailedImpression(arg0 int, arg1, arg2 string) {
 	m.ctrl.T.Helper()
@@ -654,18 +510,6 @@ func (m *MockMetricsEngine) RecordUidsCookieNotPresentErrorStats(arg0, arg1 stri
 func (mr *MockMetricsEngineMockRecorder) RecordUidsCookieNotPresentErrorStats(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUidsCookieNotPresentErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUidsCookieNotPresentErrorStats), arg0, arg1)
-}
-
-// RecordUnkownPrebidErrorStats mocks base method
-func (m *MockMetricsEngine) RecordUnkownPrebidErrorStats(arg0, arg1 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordUnkownPrebidErrorStats", arg0, arg1)
-}
-
-// RecordUnkownPrebidErrorStats indicates an expected call of RecordUnkownPrebidErrorStats
-func (mr *MockMetricsEngineMockRecorder) RecordUnkownPrebidErrorStats(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnkownPrebidErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnkownPrebidErrorStats), arg0, arg1)
 }
 
 // RecordVideoImpDisabledViaConnTypeStats mocks base method

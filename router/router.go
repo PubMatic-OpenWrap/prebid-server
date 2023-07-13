@@ -38,6 +38,7 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/uuidutil"
 	"github.com/prebid/prebid-server/version"
+	"github.com/prometheus/client_golang/prometheus"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang/glog"
@@ -182,7 +183,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		syncerKeys = append(syncerKeys, k)
 	}
 
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient}
+	prometheusRegistry := prometheus.NewRegistry()
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, PrometheusCfg: &cfg.Metrics.Prometheus, PrometheusRegistry: prometheusRegistry}
 	repo, moduleStageNames, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)

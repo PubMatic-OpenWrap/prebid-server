@@ -90,7 +90,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		} else {
-			metricEngine.RecordMisConfigurationErrorStats(rctx.PubIDStr, string(openrtb_ext.BidderPubmatic))
+			metricEngine.RecordPartnerConfigErrors(rctx.PubIDStr, string(openrtb_ext.BidderPubmatic), models.PartnerErrMisConfig)
 		}
 	}
 

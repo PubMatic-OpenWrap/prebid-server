@@ -2,14 +2,17 @@ package metrics
 
 // MetricsEngine is a generic interface to record PBS metrics into the desired backend
 type MetricsEngine interface {
-	RecordOpenWrapServerPanicStats()                               // DONE
+	RecordOpenWrapServerPanicStats(hostName, method string)        // DONE
 	RecordPublisherPartnerNoCookieStats(publisher, partner string) // DONE
-	RecordPartnerTimeoutErrorStats(publisher, partner string)      // DONE
-	RecordNobidErrorStats(publisher, partner string)               // DONE
-	RecordUnkownPrebidErrorStats(publisher, partner string)        // DONE
 
-	RecordSlotNotMappedErrorStats(publisher, partner string)    // DONE
-	RecordMisConfigurationErrorStats(publisher, partner string) // DONE
+	RecordPartnerResponseErrors(publisherID, partner, err string)
+	// RecordPartnerTimeoutErrorStats(publisher, partner string)      // DONE - pubPartnerRespErrors
+	// RecordNobidErrorStats(publisher, partner string)               // DONE - pubPartnerRespErrors
+	// RecordUnkownPrebidErrorStats(publisher, partner string)        // DONE - pubPartnerRespErrors
+
+	// RecordSlotNotMappedErrorStats(publisher, partner string)    // DONE
+	// RecordMisConfigurationErrorStats(publisher, partner string) // DONE
+	RecordPartnerConfigErrors(publisherID, partner, err string)
 
 	RecordPublisherProfileRequests(publisher, profileID string)                         //DONE
 	RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) // DONE
@@ -20,9 +23,9 @@ type MetricsEngine interface {
 
 	RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string)      // DONE
 	RecordPlatformPublisherPartnerResponseStats(platform, publisher, partner string) // DONE
+	RecordPartnerResponseTimeStats(publisher, partner string, responseTime int)      //DONE
 
-	RecordPublisherResponseEncodingErrorStats(publisher string)                 // CODE_NOT_AVL
-	RecordPartnerResponseTimeStats(publisher, partner string, responseTime int) // SAME => RecordAdapterTime
+	RecordPublisherResponseEncodingErrorStats(publisher string) // CODE_NOT_AVL
 
 	RecordPublisherResponseTimeStats(publisher string, responseTimeMs int)      // DONE
 	RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) // DONE
@@ -40,7 +43,8 @@ type MetricsEngine interface {
 	RecordUidsCookieNotPresentErrorStats(publisher, profileID string)     // DONE
 	RecordVideoInstlImpsStats(publisher, profileID string)                // DONE
 	RecordImpDisabledViaConfigStats(impType, publisher, profileID string) // DONE
-	RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string)   // CODE_NOT_AVL
+
+	RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string) // CODE_NOT_AVL
 
 	RecordPublisherRequests(endpoint string, publisher string, platform string) //DONE
 
@@ -55,8 +59,9 @@ type MetricsEngine interface {
 	RecordAdPodImpressionYield(maxDuration int, minDuration int, publisher string)
 	RecordCTVReqCountWithAdPod(publisherID, profileID string)
 
-	RecordReqImpsWithAppContentCount(publisher string)  //DONE
-	RecordReqImpsWithSiteContentCount(publisher string) //DONE
+	RecordReqImpsWithContentCount(publisher, contentType string) //DONE
+	// RecordReqImpsWithAppContentCount(publisher string)  //DONE
+	// RecordReqImpsWithSiteContentCount(publisher string) //DONE
 
 	RecordPBSAuctionRequestsStats()                                    // REALLY_NEED ?
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string) //DONE
