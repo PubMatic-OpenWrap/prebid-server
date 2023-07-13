@@ -339,14 +339,6 @@ func (m *Metrics) RecordPublisherResponseTimeStats(publisherID string, responseT
 	}).Observe(float64(responseTimeMs))
 }
 
-func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisherID, profileID, versionID string) {
-	m.pubProfVersionLoggerFailure.With(prometheus.Labels{
-		pubIDLabel:     publisherID,
-		profileIDLabel: profileID,
-		// we will not record at version level for prometheus as its not useful
-	}).Inc()
-}
-
 func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, profileID string) {
 	m.pubProfEndpointInvalidRequests.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
@@ -406,6 +398,9 @@ func (m *Metrics) RecordInjectTrackerErrorCount(adformat, publisherID, partner s
 		partnerLabel:  partner,
 	}).Inc()
 }
+
+// TODO- record logger failure using prebid-core's metric-engine
+func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {}
 
 // TODO - really need ?
 func (m *Metrics) RecordPBSAuctionRequestsStats() {}
