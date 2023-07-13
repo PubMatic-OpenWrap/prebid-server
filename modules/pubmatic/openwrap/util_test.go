@@ -144,7 +144,8 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setup(mockEngine)
-			RecordPublisherPartnerNoCookieStats(tc.args.rctx, mockEngine)
+			tc.args.rctx.MetricsEngine = mockEngine
+			RecordPublisherPartnerNoCookieStats(tc.args.rctx)
 		})
 	}
 }

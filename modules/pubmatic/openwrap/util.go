@@ -9,7 +9,6 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/usersync"
@@ -229,7 +228,7 @@ func parseUIDCookies(uidCookie *http.Cookie) *usersync.Cookie {
 }
 
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
-func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx, metricEngine metrics.MetricsEngine) {
+func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 
 	cookie := parseUIDCookies(rctx.UidCookie)
 	for _, partnerConfig := range rctx.PartnerConfigMap {
@@ -245,7 +244,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx, metricEngine me
 				continue
 			}
 		}
-		metricEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partnerConfig[models.BidderCode])
+		rctx.MetricsEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partnerConfig[models.BidderCode])
 	}
 }
 

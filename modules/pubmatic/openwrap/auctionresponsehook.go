@@ -38,7 +38,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
-	RecordPublisherPartnerNoCookieStats(rctx, m.metricEngine)
+	RecordPublisherPartnerNoCookieStats(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -239,7 +239,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
-		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse, m.metricEngine)
+		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 		if err != nil {
 			return ap, err
 		}

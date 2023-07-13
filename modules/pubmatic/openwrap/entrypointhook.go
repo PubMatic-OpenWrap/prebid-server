@@ -101,6 +101,7 @@ func (m OpenWrap) handleEntrypointHook(
 		BidderResponseTimeMillis:  make(map[string]int),
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
+		MetricsEngine:             m.metricEngine,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

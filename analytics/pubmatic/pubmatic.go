@@ -42,7 +42,8 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
 	if rCtx == nil {
-		glog.Error("Failed to get the request context")
+		glog.Errorf("Failed to get the request context from HookExecutionOutcome. The owlogger will not be sent to server for pub:[%d], profile:[%d], version:[%d].",
+			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 		return
 	}
 

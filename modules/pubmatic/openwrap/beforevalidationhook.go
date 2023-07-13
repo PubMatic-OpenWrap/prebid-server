@@ -196,8 +196,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 					m.metricEngine.RecordReqImpsWithSiteContentCount(rCtx.PubIDStr)
 				}
 			}
-			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType, m.metricEngine)
-			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div, m.metricEngine)
+			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
+			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
 
 		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
@@ -247,7 +247,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			var bidderParams json.RawMessage
 			switch prebidBidderCode {
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, m.metricEngine)
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			case models.BidderVASTBidder:
 				slot, bidderParams, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
 			default:
