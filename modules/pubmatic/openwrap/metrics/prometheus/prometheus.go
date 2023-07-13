@@ -60,7 +60,6 @@ type Metrics struct {
 const (
 	pubIDLabel     = "pub_id"
 	profileIDLabel = "prof_id"
-	versionIDLabel = "version_id"
 	partnerLabel   = "partner"
 	platformLabel  = "platform"
 	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
@@ -200,8 +199,8 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	// publisher-profile-version level metrics
 	metrics.pubProfVersionLoggerFailure = newCounter(cfg, promRegistry,
 		"owlogger_failures",
-		"Count failures while sending owlogger at publisher, profile, version level.",
-		[]string{pubIDLabel, profileIDLabel, versionIDLabel},
+		"Count failures while sending owlogger at publisher, profile level.",
+		[]string{pubIDLabel, profileIDLabel},
 	)
 
 	// publisher-profile-endpoint level metrics
@@ -342,7 +341,7 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisherID, profileID, ve
 	m.pubProfVersionLoggerFailure.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
 		profileIDLabel: profileID,
-		versionIDLabel: versionID,
+		// we will not record at version level for prometheus as its not useful
 	}).Inc()
 }
 
