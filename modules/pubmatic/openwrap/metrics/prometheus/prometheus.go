@@ -350,7 +350,7 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 func (m *Metrics) RecordBadRequests(endpoint string, errorCode int) {
 	m.endpointBadRequest.With(prometheus.Labels{
 		endpointLabel: endpoint,
-		errorLabel:    strconv.Itoa(errorCode),
+		nbrLabel:      strconv.Itoa(errorCode),
 	}).Inc()
 }
 
