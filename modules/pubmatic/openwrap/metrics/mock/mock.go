@@ -213,15 +213,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordInvalidCreativeStats(arg0, arg1 i
 }
 
 // RecordNobidErrPrebidServerRequests mocks base method
-func (m *MockMetricsEngine) RecordNobidErrPrebidServerRequests(arg0 string) {
+func (m *MockMetricsEngine) RecordNobidErrPrebidServerRequests(arg0 string, arg1 int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordNobidErrPrebidServerRequests", arg0)
+	m.ctrl.Call(m, "RecordNobidErrPrebidServerRequests", arg0, arg1)
 }
 
 // RecordNobidErrPrebidServerRequests indicates an expected call of RecordNobidErrPrebidServerRequests
-func (mr *MockMetricsEngineMockRecorder) RecordNobidErrPrebidServerRequests(arg0 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordNobidErrPrebidServerRequests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordNobidErrPrebidServerRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordNobidErrPrebidServerRequests), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordNobidErrPrebidServerRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordNobidErrPrebidServerRequests), arg0, arg1)
 }
 
 // RecordNobidErrPrebidServerResponse mocks base method

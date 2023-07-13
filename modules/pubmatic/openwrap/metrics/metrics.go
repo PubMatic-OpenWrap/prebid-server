@@ -16,7 +16,7 @@ type MetricsEngine interface {
 
 	RecordPublisherProfileRequests(publisher, profileID string)                         //DONE
 	RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) // DONE
-	RecordNobidErrPrebidServerRequests(publisher string)                                // DONE
+	RecordNobidErrPrebidServerRequests(publisher string, nbr int)                       // DONE
 	RecordNobidErrPrebidServerResponse(publisher string)                                // DONE
 
 	RecordInvalidCreativeStats(publisher, partner string) // WONT_DO

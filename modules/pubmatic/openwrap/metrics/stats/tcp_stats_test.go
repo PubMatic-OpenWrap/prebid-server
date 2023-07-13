@@ -342,7 +342,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordNobidErrPrebidServerRequests("5890")
+				st.RecordNobidErrPrebidServerRequests("5890", 0)
 			},
 		},
 		{

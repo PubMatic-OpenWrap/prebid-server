@@ -55,7 +55,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	defer func() {
-		if len(result.Errors) > 0 {
+		if result.Reject {
 			m.metricEngine.RecordBadRequests(endpoint, result.NbrCode)
 		}
 	}()

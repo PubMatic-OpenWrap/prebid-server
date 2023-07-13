@@ -39,8 +39,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
-		if len(result.Errors) > 0 {
+		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, result.NbrCode)
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			// TODO; this Nbrcode does not match with HB's NBR error code
 			// HB-ErrAllPartnerThrottled(11) :	PBS-AllPartnerThrottled(506)
 		}
@@ -109,7 +110,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -119,7 +119,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err = errors.New("failed to price granularity details: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -146,7 +145,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
-			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 			return result, err
 		}
 
@@ -168,7 +166,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
-				m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 				return result, err
 			}
 		}
@@ -337,7 +334,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllSlotsDisabled
 		err = errors.New("All slots disabled: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 
@@ -345,7 +341,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
 		err = errors.New("server side partner not found: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 

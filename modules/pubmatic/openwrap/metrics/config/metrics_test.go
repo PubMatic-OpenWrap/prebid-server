@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
@@ -111,7 +112,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
-	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher)
+	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher, nbr.AllPartnerThrottled)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(publisher)
 	mockEngine.EXPECT().RecordInvalidCreativeStats(publisher, partner)
 	mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(platform, publisher, partner)
@@ -160,7 +161,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPartnerConfigErrors(publisher, partner, models.PartnerErrSlotNotMapped)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
-	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher)
+	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher, nbr.AllPartnerThrottled)
 	multiMetricEngine.RecordNobidErrPrebidServerResponse(publisher)
 	multiMetricEngine.RecordInvalidCreativeStats(publisher, partner)
 	multiMetricEngine.RecordPlatformPublisherPartnerReqStats(platform, publisher, partner)

@@ -106,9 +106,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher
 }
 
 // RecordNobidErrPrebidServerRequests across all engines
-func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string) {
+func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	for _, thisME := range *me {
-		thisME.RecordNobidErrPrebidServerRequests(publisher)
+		thisME.RecordNobidErrPrebidServerRequests(publisher, nbr)
 	}
 }
 

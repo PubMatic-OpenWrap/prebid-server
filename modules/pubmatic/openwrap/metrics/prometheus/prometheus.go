@@ -158,9 +158,9 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 	// publisher level metrics
 	metrics.pubRequestValidationErrors = newCounter(cfg, promRegistry,
-		"validation_errors",
-		"Count request validation failures at publisher level.",
-		[]string{pubIDLabel},
+		"request_validation_errors",
+		"Count request validation failures along with NBR at publisher level.",
+		[]string{pubIDLabel, nbrLabel},
 	)
 
 	metrics.pubNoBidResponseErrors = newCounter(cfg, promRegistry,
@@ -196,6 +196,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, partnerLabel, platformLabel},
 	)
 
+	// TODO - move this to prebid-core
 	// publisher-profile-version level metrics
 	metrics.pubProfVersionLoggerFailure = newCounter(cfg, promRegistry,
 		"owlogger_failures",
@@ -296,9 +297,10 @@ func (m *Metrics) RecordPublisherInvalidProfileImpressions(publisherID, profileI
 	}).Add(float64(impCount))
 }
 
-func (m *Metrics) RecordNobidErrPrebidServerRequests(publisherID string) {
+func (m *Metrics) RecordNobidErrPrebidServerRequests(publisherID string, nbr int) {
 	m.pubRequestValidationErrors.With(prometheus.Labels{
 		pubIDLabel: publisherID,
+		nbrLabel:   strconv.Itoa(nbr),
 	}).Inc()
 }
 
@@ -375,7 +377,7 @@ func (m *Metrics) RecordVideoInstlImpsStats(publisherID, profileID string) {
 }
 
 func (m *Metrics) RecordImpDisabledViaConfigStats(impType, publisherID, profileID string) {
-	m.pubProfVidInstlImps.With(prometheus.Labels{
+	m.pubProfImpDisabledViaConfig.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
 		profileIDLabel: profileID,
 		impTypeLabel:   impType,
