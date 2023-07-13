@@ -7,12 +7,11 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, metricEngine metrics.MetricsEngine) (string, string, bool, []byte, error) {
+func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: strconv.Itoa(rctx.PubID),
@@ -90,7 +89,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		} else {
-			metricEngine.RecordPartnerConfigErrors(rctx.PubIDStr, string(openrtb_ext.BidderPubmatic), models.PartnerErrMisConfig)
+			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, string(openrtb_ext.BidderPubmatic), models.PartnerErrMisConfig)
 		}
 	}
 

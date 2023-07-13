@@ -8,6 +8,7 @@ import (
 	cfg "github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,7 +35,7 @@ func TestNewMetricsEngine(t *testing.T) {
 			name: "Valid configuration with stats endpoint",
 			args: args{
 				statConfig: &config.Config{
-					Stats: config.Stats{
+					Stats: stats.Stats{
 						Endpoint:    "http://example.com",
 						UseHostName: true,
 					},
@@ -56,7 +57,7 @@ func TestNewMetricsEngine(t *testing.T) {
 			name: "No valid configuration",
 			args: args{
 				statConfig: &config.Config{
-					Stats: config.Stats{
+					Stats: stats.Stats{
 						Endpoint: "",
 					},
 				},

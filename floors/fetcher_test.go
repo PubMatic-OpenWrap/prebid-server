@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -390,6 +391,32 @@ func TestValidatePriceFloorRules(t *testing.T) {
 								"*|*|www.website.com": 15.01,
 							},
 						}},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid useFetchDataRate",
+			args: args{
+				configs: config.AccountFloorFetch{
+					Enabled:     true,
+					URL:         testURL,
+					Timeout:     5,
+					MaxFileSize: 20,
+					MaxRules:    1,
+					MaxAge:      20,
+					Period:      10,
+				},
+				priceFloors: &openrtb_ext.PriceFloorRules{
+					Data: &openrtb_ext.PriceFloorData{
+						SkipRate: 10,
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
+							Values: map[string]float64{
+								"*|*|www.website.com": 15.01,
+							},
+						}},
+						UseFetchDataRate: ptrutil.ToPtr(-11),
 					},
 				},
 			},

@@ -5,12 +5,11 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
-func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string, metricEngine metrics.MetricsEngine) (adUnitCtx models.AdUnitCtx) {
+func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string) (adUnitCtx models.AdUnitCtx) {
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
@@ -26,7 +25,7 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 		if defaultAdUnitConfig.Banner != nil && defaultAdUnitConfig.Banner.Enabled != nil && !*defaultAdUnitConfig.Banner.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
-			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
@@ -46,7 +45,7 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 		if adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
-			metricEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}

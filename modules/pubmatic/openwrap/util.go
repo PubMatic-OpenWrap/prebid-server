@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/usersync"
 )
 
@@ -218,40 +218,64 @@ func getHostName() string {
 	return serverName
 }
 
-func parseUIDCookies(httpReqUIDCookie *http.Cookie, hostCookie *config.HostCookie) *usersync.Cookie {
+// parseUIDCookies returns the parsed-cookie if uidCookie is nil else returns new cookie object
+func parseUIDCookies(uidCookie *http.Cookie) *usersync.Cookie {
 
-	if httpReqUIDCookie != nil {
-		return usersync.ParseCookie(httpReqUIDCookie)
+	if uidCookie != nil {
+		return usersync.ParseCookie(uidCookie)
 	}
 	return usersync.NewCookie()
 }
 
-// ParseRequestCookies parse request cookies
-func ParseRequestCookies(httpReqUIDCookie *http.Cookie, partnerConfigMap map[int]map[string]string) map[string]int {
-	cookieFlagMap := make(map[string]int)
-	pc := parseUIDCookies(httpReqUIDCookie, &config.HostCookie{})
-	for _, partnerConfig := range partnerConfigMap {
-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+// RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
+func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
+
+	cookie := parseUIDCookies(rctx.UidCookie)
+	for _, partnerConfig := range rctx.PartnerConfigMap {
+		if partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
 			continue
 		}
 
 		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
-
-		syncerCode := adapters.ResolveOWBidder(partnerName)
-
-		matchedImpression := 0
-
-		syncer := models.SyncerMap[syncerCode]
+		syncer := models.SyncerMap[adapters.ResolveOWBidder(partnerName)]
 		if syncer != nil {
-			uid, _, _ := pc.GetUID(syncer.Key())
-
-			// Added flag in map for Cookie is present
-			// we are not considering if the cookie is active
+			uid, _, _ := cookie.GetUID(syncer.Key())
 			if uid != "" {
-				matchedImpression = 1
+				continue
 			}
 		}
-		cookieFlagMap[partnerConfig[models.BidderCode]] = matchedImpression
+		rctx.MetricsEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partnerConfig[models.BidderCode])
 	}
-	return cookieFlagMap
+}
+
+// getPubmaticErrorCode is temporary function which returns the pubmatic specific error code for standardNBR code
+func getPubmaticErrorCode(standardNBR int) int {
+	switch standardNBR {
+	case nbr.InvalidPublisherID:
+		return 604 // ErrMissingPublisherID
+
+	case nbr.InvalidRequest:
+		return 18 // ErrBadRequest
+
+	case nbr.InvalidProfileID:
+		return 700 // ErrMissingProfileID
+
+	case nbr.AllPartnerThrottled:
+		return 11 // ErrAllPartnerThrottled
+
+	case nbr.InvalidPriceGranularityConfig:
+		return 26 // ErrPrebidInvalidCustomPriceGranularity
+
+	case nbr.InvalidImpressionTagID:
+		return 605 // ErrMissingTagID
+
+	case nbr.InvalidProfileConfiguration, nbr.InvalidPlatform, nbr.AllSlotsDisabled, nbr.ServerSidePartnerNotConfigured:
+		return 6 // ErrInvalidConfiguration
+
+	case nbr.InternalError:
+		return 17 // ErrInvalidImpression
+
+	}
+
+	return -1
 }

@@ -5,11 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
-func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, metricEngine metrics.MetricsEngine) (*openrtb2.BidResponse, error) {
+func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
@@ -41,7 +40,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, m
 			}
 
 			if errMsg != "" {
-				metricEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
+				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = errors.Wrap(errs, errMsg)
 			}
 

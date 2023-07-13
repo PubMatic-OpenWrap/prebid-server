@@ -20,4 +20,5 @@ const (
 	ServerSidePartnerNotConfigured
 	AllSlotsDisabled
 	InvalidVideoRequest
+	InvalidPlatform
 )
