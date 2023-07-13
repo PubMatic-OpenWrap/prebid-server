@@ -26,6 +26,11 @@ type ExtBidResponse struct {
 	Usersync map[BidderName]*ExtResponseSyncData `json:"usersync,omitempty"`
 	// Prebid defines the contract for bidresponse.ext.prebid
 	Prebid *ExtResponsePrebid `json:"prebid,omitempty"`
+
+	OwMatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
+	OwSendAllBids       int             `json:"sendallbids,omitempty"`
+	OwLogInfo           *OwLogInfo      `json:"loginfo,omitempty"`
+	OwLogger            string          `json:"owlogger,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug

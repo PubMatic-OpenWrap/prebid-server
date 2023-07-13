@@ -37,3 +37,6 @@ func (me *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 // RecordVastVersion as a noop
 func (me *Metrics) RecordVastVersion(biddder, vastVersion string) {
 }
+
+func (me *Metrics) RecordHttpCounter() {
+}

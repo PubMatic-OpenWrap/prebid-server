@@ -142,6 +142,8 @@ type Metrics struct {
 	podCompExclTimer *prometheus.HistogramVec
 
 	metricsDisabled config.DisabledMetrics
+
+	httpCounter prometheus.Counter
 }
 
 const (
@@ -675,6 +677,8 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120})
 
 	preloadLabelValues(&metrics, syncerKeys, moduleStageNames)
+
+	metrics.httpCounter = newHttpCounter(cfg, reg)
 
 	return &metrics
 }

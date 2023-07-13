@@ -461,9 +461,9 @@ type LMT struct {
 }
 
 type Analytics struct {
-	File     FileLogs `mapstructure:"file"`
-	Pubstack Pubstack `mapstructure:"pubstack"`
-	PubMatic PubMatic `mapstructure:"pubmatic"`
+	File     FileLogs   `mapstructure:"file"`
+	Pubstack Pubstack   `mapstructure:"pubstack"`
+	PubMatic PubMaticWL `mapstructure:"pubmatic"`
 }
 
 type CurrencyConverter struct {
@@ -497,8 +497,15 @@ type Pubstack struct {
 	ConfRefresh string         `mapstructure:"configuration_refresh_delay"`
 }
 
-type PubMatic struct {
-	Enabled bool `mapstructure:"enabled"`
+type PubMaticWL struct {
+	Enabled        bool `mapstructure:"enabled"`
+	Endpoint       string
+	PublicEndpoint string
+	MaxClients     int32
+	MaxConnections int
+	MaxCalls       int
+	RespTimeout    int
+	Client         HTTPClient `mapstructure:"http_client"`
 }
 
 type PubstackBuffer struct {
