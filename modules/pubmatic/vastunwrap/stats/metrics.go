@@ -31,11 +31,11 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) *Metrics {
 	metrics.requests = newCounter(cfg, metrics.Registry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by publisher ID, bidder and status.",
-		[]string{"pubID", "bidder", "status"})
+		[]string{"pub_id", "bidder", "status"})
 
 	metrics.requestTime = newHistogramVec(cfg, metrics.Registry,
 		"vastunwrap_request_time",
-		"Time taken to serve the vast unwrap request in Milliseconds", []string{"pubID", "bidder"},
+		"Time taken to serve the vast unwrap request in Milliseconds", []string{"pub_id", "bidder"},
 		[]float64{50, 100, 200, 300, 500})
 
 	return &metrics
@@ -67,18 +67,18 @@ func newHistogramVec(cfg moduledeps.ModuleDeps, registry *prometheus.Registry, n
 }
 
 // RecordRequest record counter with vast unwrap status
-func (m *Metrics) RecordRequestStatus(pubID, bidder, status string) {
+func (m *Metrics) RecordRequestStatus(pub_id, bidder, status string) {
 	m.requests.With(prometheus.Labels{
-		"pubID":  pubID,
+		"pub_id": pub_id,
 		"bidder": bidder,
 		"status": status,
 	}).Inc()
 }
 
 // RecordRequestReadTime records time takent to complete vast unwrap
-func (m *Metrics) RecordRequestTime(pubId string, bidder string, requestTime time.Duration) {
+func (m *Metrics) RecordRequestTime(pub_id string, bidder string, requestTime time.Duration) {
 	m.requestTime.With(prometheus.Labels{
-		"pubID":  pubId,
+		"pub_id": pub_id,
 		"bidder": bidder,
 	}).Observe(float64(requestTime.Milliseconds()))
 }

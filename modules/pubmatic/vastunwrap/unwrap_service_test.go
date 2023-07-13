@@ -41,7 +41,6 @@ func TestDoUnwrap(t *testing.T) {
 				url:       UnwrapURL,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
@@ -64,7 +63,6 @@ func TestDoUnwrap(t *testing.T) {
 				url:       UnwrapURL,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{
@@ -100,7 +98,6 @@ func TestDoUnwrap(t *testing.T) {
 				url:       "testURL",
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{
@@ -136,7 +133,6 @@ func TestDoUnwrap(t *testing.T) {
 				url:       UnwrapURL,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{

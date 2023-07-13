@@ -151,7 +151,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 						}},
 				}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			expectedBids: []*adapters.TypedBid{{
@@ -220,7 +219,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				Enabled:       tt.fields.cfg.Enabled,
 				MetricsEngine: mockMetricsEngine,
 			}
-            _, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
+			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
