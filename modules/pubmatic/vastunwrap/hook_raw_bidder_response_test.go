@@ -127,7 +127,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				BidType: "video",
 			}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestTime(gomock.Any(), gomock.Any(), gomock.Any())
 				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			wantErr: false,
