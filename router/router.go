@@ -29,6 +29,7 @@ import (
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules"
 	"github.com/prebid/prebid-server/modules/moduledeps"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
@@ -170,6 +171,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if len(errs) > 0 {
 		return nil, errortypes.NewAggregateError("user sync", errs)
 	}
+	// set the syncerMap for pubmatic ow module
+	models.SetSyncerMap(syncersByBidder)
 
 	syncerKeys := make([]string, 0, len(syncersByBidder))
 	syncerKeysHashSet := map[string]struct{}{}

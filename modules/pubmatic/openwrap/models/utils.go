@@ -12,7 +12,14 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/prebid-server/usersync"
 )
+
+var SyncerMap map[string]usersync.Syncer
+
+func SetSyncerMap(s map[string]usersync.Syncer) {
+	SyncerMap = s
+}
 
 // IsCTVAPIRequest will return true if reqAPI is from CTV EndPoint
 func IsCTVAPIRequest(api string) bool {

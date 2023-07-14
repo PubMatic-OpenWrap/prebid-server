@@ -38,9 +38,23 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 	}()
 
-	url, headers := GetLogAuctionObjectAsURL(*ao, false, false)
+	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		// glog.Errorf("Failed to get the request context for AuctionObject - [%v]", ao)
+		// add this log once complete header-bidding code is migrated to modules
+		return
+	}
+
+	var err error
+	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url != "" {
-		Send(url, headers)
+		err = Send(url, headers)
+	}
+
+	// record the logger failure
+	if url == "" || err != nil {
+		glog.Errorf("Failed to send the owlogger for pub:[%d], profile:[%d], version:[%d].",
+			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 	}
 }
 

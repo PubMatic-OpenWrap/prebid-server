@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
@@ -34,7 +35,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
+		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
+
+	RecordPublisherPartnerNoCookieStats(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -59,12 +63,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
+
+			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
+
 			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
 			if !ok {
 				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+bid.ImpID)
 				continue
 			}
-
 			partnerID := 0
 			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 				partnerID = bidderMeta.PartnerID
@@ -169,6 +175,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.WinningBids = winningBids
+	if len(winningBids) == 0 {
+		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
+	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
 	if len(droppedBids) != 0 {
@@ -178,10 +187,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.Warnings = append(result.Warnings, warnings...)
 	}
 
-	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse)
-
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
-
 	responseExt := openrtb_ext.ExtBidResponse{}
 	// TODO use concrete structure
 	if len(payload.BidResponse.Ext) != 0 {
@@ -190,8 +195,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	for k, v := range responseExt.ResponseTimeMillis {
-		rctx.BidderResponseTimeMillis[k.String()] = v
+	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+
+	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
+		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs
+		m.metricEngine.RecordPartnerResponseTimeStats(rctx.PubIDStr, string(bidder), responseTimeMs)
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()

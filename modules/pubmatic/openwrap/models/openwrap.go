@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
@@ -69,6 +70,10 @@ type RequestCtx struct {
 	NoSeatBids  map[string]map[string][]openrtb2.Bid
 
 	BidderResponseTimeMillis map[string]int
+
+	Endpoint               string
+	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
+	MetricsEngine          metrics.MetricsEngine
 }
 
 type OwBid struct {

@@ -25,6 +25,7 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 		if defaultAdUnitConfig.Banner != nil && defaultAdUnitConfig.Banner.Enabled != nil && !*defaultAdUnitConfig.Banner.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
@@ -44,6 +45,7 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 		if adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
