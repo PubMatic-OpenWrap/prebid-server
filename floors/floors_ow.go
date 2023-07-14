@@ -4,10 +4,7 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -18,24 +15,6 @@ func RequestHasFloors(bidRequest *openrtb2.BidRequest) bool {
 		}
 	}
 	return false
-}
-
-func PbsOrtbBidToAnalyticsRejectedBid(pbsRejSeatBids []*entities.PbsOrtbSeatBid) []analytics.RejectedBid {
-	var rejectedBid []analytics.RejectedBid
-	for _, pbsRejSeatBid := range pbsRejSeatBids {
-		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			var rejectionReason = openrtb3.LossBidBelowAuctionFloor
-			if pbsRejBid.Bid.DealID != "" {
-				rejectionReason = openrtb3.LossBidBelowDealFloor
-			}
-			rejectedBid = append(rejectedBid, analytics.RejectedBid{
-				Bid:             pbsRejBid,
-				Seat:            pbsRejSeatBid.Seat,
-				RejectionReason: rejectionReason,
-			})
-		}
-	}
-	return rejectedBid
 }
 
 // resolveFloorMin gets floorMin value from request and dynamic fetched data

@@ -63,7 +63,7 @@ func (c *cache) populateCacheWithWrapperSlotMappings(pubid int, partnerConfigMap
 
 			cfgMap := partnerConfigMap[partnerID]
 			bidderCode := cfgMap[models.BidderCode]
-			if bidderCode == string(openrtb_ext.BidderPubmatic) || bidderCode == string(openrtb_ext.BidderGroupm) {
+			if bidderCode == string(openrtb_ext.BidderPubmatic) {
 				//Adding slotName from DB in fieldMap for PubMatic, as slotName from DB should be sent to PubMatic instead of slotName from request
 				//This is required for case in-sensitive mapping
 				mappingJSONObj[models.KEY_OW_SLOT_NAME] = slotMapping.SlotName

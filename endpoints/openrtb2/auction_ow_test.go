@@ -8,7 +8,6 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -112,8 +111,8 @@ func TestValidateImpExtOW(t *testing.T) {
 func TestRecordRejectedBids(t *testing.T) {
 
 	type args struct {
-		pubid   string
-		rejBids []analytics.RejectedBid
+		pubid       string
+		seatNonBids []openrtb_ext.SeatNonBid
 	}
 
 	type want struct {
@@ -128,7 +127,7 @@ func TestRecordRejectedBids(t *testing.T) {
 		{
 			description: "empty rejected bids",
 			args: args{
-				rejBids: []analytics.RejectedBid{},
+				seatNonBids: []openrtb_ext.SeatNonBid{},
 			},
 			want: want{
 				expectedCalls: 0,
@@ -138,22 +137,28 @@ func TestRecordRejectedBids(t *testing.T) {
 			description: "rejected bids",
 			args: args{
 				pubid: "1010",
-				rejBids: []analytics.RejectedBid{
+				seatNonBids: []openrtb_ext.SeatNonBid{
 					{
-						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossBidAdvertiserExclusions,
+						NonBid: []openrtb_ext.NonBid{
+							{
+								StatusCode: int(openrtb3.LossBidAdvertiserExclusions),
+							},
+							{
+								StatusCode: int(openrtb3.LossBidBelowDealFloor),
+							},
+							{
+								StatusCode: int(openrtb3.LossBidAdvertiserExclusions),
+							},
+						},
+						Seat: "pubmatic",
 					},
 					{
-						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossBidBelowDealFloor,
-					},
-					{
-						Seat:            "pubmatic",
-						RejectionReason: openrtb3.LossBidAdvertiserExclusions,
-					},
-					{
-						Seat:            "appnexus",
-						RejectionReason: openrtb3.LossBidBelowDealFloor,
+						NonBid: []openrtb_ext.NonBid{
+							{
+								StatusCode: int(openrtb3.LossBidBelowDealFloor),
+							},
+						},
+						Seat: "appnexus",
 					},
 				},
 			},
@@ -167,7 +172,7 @@ func TestRecordRejectedBids(t *testing.T) {
 		me := &metrics.MetricsEngineMock{}
 		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
 
-		recordRejectedBids(test.args.pubid, test.args.rejBids, me)
+		recordRejectedBids(test.args.pubid, test.args.seatNonBids, me)
 		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }
