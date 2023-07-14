@@ -1505,7 +1505,7 @@ func (m mockRejectionHook) HandleBeforeValidationHook(
 	_ hookstage.ModuleInvocationContext,
 	_ hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true, NbrCode: m.nbr}, nil
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
 }
 
 func (m mockRejectionHook) HandleProcessedAuctionHook(
