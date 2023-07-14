@@ -43,7 +43,7 @@ type Metrics struct {
 	pubPartnerPlatformResponses *prometheus.CounterVec
 
 	// publisher-profile-version level metrics
-	pubProfVersionLoggerFailure *prometheus.CounterVec
+	// pubProfVersionLoggerFailure *prometheus.CounterVec
 
 	// publisher-profile-endpoint level metrics
 	pubProfEndpointInvalidRequests *prometheus.CounterVec
@@ -163,6 +163,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, nbrLabel},
 	)
 
+	// TODO -description ? its error if there is no winning bid
 	metrics.pubNoBidResponseErrors = newCounter(cfg, promRegistry,
 		"no_bid_responses",
 		"Count requests for which bid response is empty at publisher level.",
@@ -198,11 +199,11 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 	// TODO - move this to prebid-core
 	// publisher-profile-version level metrics
-	metrics.pubProfVersionLoggerFailure = newCounter(cfg, promRegistry,
-		"owlogger_failures",
-		"Count failures while sending owlogger at publisher, profile level.",
-		[]string{pubIDLabel, profileIDLabel},
-	)
+	// metrics.pubProfVersionLoggerFailure = newCounter(cfg, promRegistry,
+	// 	"owlogger_failures",
+	// 	"Count failures while sending owlogger at publisher, profile level.",
+	// 	[]string{pubIDLabel, profileIDLabel},
+	// )
 
 	// publisher-profile-endpoint level metrics
 	metrics.pubProfEndpointInvalidRequests = newCounter(cfg, promRegistry,
