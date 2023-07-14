@@ -21,17 +21,15 @@ type VastUnwrapModule struct {
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
-	return initVastUnrap(rawCfg, deps)
+	return initVastUnwrap(rawCfg, deps)
 }
 
-func initVastUnrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnwrapModule, error) {
+func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnwrapModule, error) {
 	vastUnwrapModuleCfg := VastUnwrapModule{}
-
 	err := json.Unmarshal(rawCfg, &vastUnwrapModuleCfg)
 	if err != nil {
-		return VastUnwrapModule{}, fmt.Errorf("invalid vastunwrap config: %v", err)
+		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
-
 	if vastUnwrapModuleCfg.Enabled {
 		vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	}

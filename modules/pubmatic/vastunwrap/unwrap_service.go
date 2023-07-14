@@ -3,6 +3,7 @@ package vastunwrap
 import (
 	"net/http"
 	"net/http/httptest"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +17,15 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 
 	startTime := time.Now()
 	var respStatus string
+	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
+		return
+	}
 	defer func() {
 		// respTime := time.Since(startTime)
 		// m.MetricsEngine.RecordRequestTime(accountID, bidder, respTime)
+		if r := recover(); r != nil {
+			glog.Error("AdM:" + bid.Bid.AdM + ". stacktrace:" + string(debug.Stack()))
+		}
 		m.MetricsEngine.RecordRequestStatus(accountID, bidder, respStatus)
 	}()
 	wrapperCnt := 0
@@ -42,6 +49,7 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
 		glog.Infof("\n UnWrap Done for BidId = %s Cnt = %d in %v (ms)", bid.Bid.ID, wrapperCnt, time.Since(startTime).Milliseconds())
+		return
 	}
 	glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)
 	return

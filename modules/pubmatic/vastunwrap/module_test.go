@@ -230,7 +230,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 	}
 }
 
-func TestInitVastUnrap(t *testing.T) {
+func TestInitVastUnwrap(t *testing.T) {
 	type args struct {
 		rawCfg json.RawMessage
 		in1    moduledeps.ModuleDeps
@@ -263,15 +263,15 @@ func TestInitVastUnrap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := initVastUnrap(tt.args.rawCfg, tt.args.in1)
+			got, err := initVastUnwrap(tt.args.rawCfg, tt.args.in1)
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
 			if !reflect.DeepEqual(got.Cfg, tt.want.Cfg) {
-				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.Enabled, tt.want.Enabled) {
-				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
@@ -316,10 +316,10 @@ func TestBuilder(t *testing.T) {
 			}
 			got1, _ := got.(VastUnwrapModule)
 			if !reflect.DeepEqual(got1.Cfg, tt.want.Cfg) {
-				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got1.Enabled, tt.want.Enabled) {
-				t.Errorf("initVastUnrap() = %#v, want %#v", got, tt.want)
+				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
