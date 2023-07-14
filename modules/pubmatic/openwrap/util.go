@@ -1,13 +1,17 @@
 package openwrap
 
 import (
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 var (
@@ -212,4 +216,66 @@ func getHostName() string {
 	serverName := nodeName + ":" + podName
 
 	return serverName
+}
+
+// parseUIDCookies returns the parsed-cookie if uidCookie is nil else returns new cookie object
+func parseUIDCookies(uidCookie *http.Cookie) *usersync.Cookie {
+
+	if uidCookie != nil {
+		return usersync.ParseCookie(uidCookie)
+	}
+	return usersync.NewCookie()
+}
+
+// RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
+func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
+
+	cookie := parseUIDCookies(rctx.UidCookie)
+	for _, partnerConfig := range rctx.PartnerConfigMap {
+		if partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
+			continue
+		}
+
+		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
+		syncer := models.SyncerMap[adapters.ResolveOWBidder(partnerName)]
+		if syncer != nil {
+			uid, _, _ := cookie.GetUID(syncer.Key())
+			if uid != "" {
+				continue
+			}
+		}
+		rctx.MetricsEngine.RecordPublisherPartnerNoCookieStats(rctx.PubIDStr, partnerConfig[models.BidderCode])
+	}
+}
+
+// getPubmaticErrorCode is temporary function which returns the pubmatic specific error code for standardNBR code
+func getPubmaticErrorCode(standardNBR int) int {
+	switch standardNBR {
+	case nbr.InvalidPublisherID:
+		return 604 // ErrMissingPublisherID
+
+	case nbr.InvalidRequest:
+		return 18 // ErrBadRequest
+
+	case nbr.InvalidProfileID:
+		return 700 // ErrMissingProfileID
+
+	case nbr.AllPartnerThrottled:
+		return 11 // ErrAllPartnerThrottled
+
+	case nbr.InvalidPriceGranularityConfig:
+		return 26 // ErrPrebidInvalidCustomPriceGranularity
+
+	case nbr.InvalidImpressionTagID:
+		return 605 // ErrMissingTagID
+
+	case nbr.InvalidProfileConfiguration, nbr.InvalidPlatform, nbr.AllSlotsDisabled, nbr.ServerSidePartnerNotConfigured:
+		return 6 // ErrInvalidConfiguration
+
+	case nbr.InternalError:
+		return 17 // ErrInvalidImpression
+
+	}
+
+	return -1
 }

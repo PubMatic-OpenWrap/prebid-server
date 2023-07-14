@@ -5,11 +5,13 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]map[string][]openrtb2.Bid {
+func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt *openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 	// responded bidders per impression
 	seatBids := make(map[string]map[string]struct{}, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
@@ -54,6 +56,9 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 					ImpID: impID,
 					Ext:   newNoBidExt(rctx, impID),
 				})
+
+				// record error stats for each bidder
+				m.recordErrorStats(rctx, bidResponseExt, bidder)
 			}
 		}
 	}
@@ -153,4 +158,20 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 	}
 
 	return bidResponse, nil
+}
+
+func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt *openrtb_ext.ExtBidResponse, bidder string) {
+	bidderErr, ok := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
+	if ok && len(bidderErr) > 0 {
+		switch bidderErr[0].Code {
+		case errortypes.TimeoutErrorCode:
+			m.metricEngine.RecordPartnerTimeoutErrorStats(rctx.PubIDStr, bidder)
+		case errortypes.UnknownErrorCode:
+			m.metricEngine.RecordUnkownPrebidErrorStats(rctx.PubIDStr, bidder)
+		default:
+			m.metricEngine.RecordNobidErrorStats(rctx.PubIDStr, bidder)
+		}
+	} else {
+		m.metricEngine.RecordNobidErrorStats(rctx.PubIDStr, bidder)
+	}
 }

@@ -39,6 +39,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+		if len(result.Errors) > 0 {
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
+
+		}
 	}()
 
 	pubID, err := getPubID(*payload.BidRequest)
@@ -48,6 +52,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubID = pubID
+	rCtx.PubIDStr = strconv.Itoa(pubID)
+
+	if rCtx.UidCookie == nil {
+		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+	}
+	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
@@ -68,16 +78,29 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.InvalidProfileConfiguration
 		err = errors.New("failed to get profile data: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, err
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
 	rCtx.Platform, _ = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+	if rCtx.Platform == "" {
+		result.NbrCode = nbr.InvalidPlatform
+		err = errors.New("failed to get platform data")
+		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+		return result, err
+	}
+
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
+
+	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
 		rCtx.ABTestConfigApplied = 1
@@ -91,6 +114,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -100,6 +124,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err = errors.New("failed to price granularity details: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -126,12 +151,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 			return result, err
 		}
 
-		if len(requestExt.Prebid.Macros) == 0 && imp.Video != nil {
-			// provide custom macros for video event trackers
-			requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+		if imp.Video != nil {
+			//add stats for video instl impressions
+			if imp.Instl == 1 {
+				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+			}
+			if len(requestExt.Prebid.Macros) == 0 {
+				// provide custom macros for video event trackers
+				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+			}
 		}
 
 		impExt := &models.ImpExtension{}
@@ -141,6 +173,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
+				m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 				return result, err
 			}
 		}
@@ -154,6 +187,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
+			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
+			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
+				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
+					m.metricEngine.RecordReqImpsWithAppContentCount(rCtx.PubIDStr)
+				}
+				if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
+					m.metricEngine.RecordReqImpsWithSiteContentCount(rCtx.PubIDStr)
+				}
+			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
@@ -215,8 +257,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil || len(bidderParams) == 0 {
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
+				m.metricEngine.RecordSlotNotMappedErrorStats(rCtx.PubIDStr, bidderCode)
 				continue
 			}
+
+			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
@@ -295,6 +340,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllSlotsDisabled
 		err = errors.New("All slots disabled: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 
@@ -302,6 +348,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
 		err = errors.New("server side partner not found: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 

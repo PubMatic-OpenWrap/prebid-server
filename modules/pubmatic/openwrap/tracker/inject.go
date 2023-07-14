@@ -12,6 +12,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
+			var errMsg string
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {
@@ -27,15 +28,22 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 				// 	trackers = append(trackers, tracker)
 				// }
 				trackers := []models.OWTracker{tracker}
+
 				var err error
 				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
 				if err != nil {
-					errs = errors.Wrap(errs, fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error()))
+					errMsg = fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error())
 				}
 			case models.Native:
 			default:
-				errs = errors.Wrap(errs, fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID))
+				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
 			}
+
+			if errMsg != "" {
+				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
+				errs = errors.Wrap(errs, errMsg)
+			}
+
 		}
 	}
 	return bidResponse, errs

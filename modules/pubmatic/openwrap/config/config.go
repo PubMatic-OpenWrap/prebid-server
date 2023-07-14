@@ -1,6 +1,10 @@
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+)
 
 // Config contains the values read from the config file at boot time
 type Config struct {
@@ -12,10 +16,12 @@ type Config struct {
 	PixelView PixelView
 	Features  FeatureToggle
 	Log       Log
+	Stats     stats.Stats
 }
 
 type Server struct {
 	HostName string
+	DCName   string //Name of the data center
 }
 
 type Database struct {

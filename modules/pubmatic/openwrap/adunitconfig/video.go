@@ -28,6 +28,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if defaultAdUnitConfig.Video != nil && defaultAdUnitConfig.Video.Enabled != nil && !*defaultAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
@@ -44,6 +45,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		if adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled {
 			f := false
 			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
 			return
 		}
 	}
@@ -71,6 +73,7 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 	// 	if allowedConnectionTypes != nil && !checkValuePresentInArray(allowedConnectionTypes, int(*connectionType)) {
 	// 		f := false
 	// 		adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
+	//      rCtx.MetricsEngine.RecordVideoImpDisabledViaConnTypeStats(rCtx.PubIDStr,rCtx.ProfIDStr)
 	// 		return
 	// 	}
 	// }
