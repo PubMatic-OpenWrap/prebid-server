@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange/entities"
@@ -127,7 +126,6 @@ func runTargetingAuction(t *testing.T, mockBids map[openrtb_ext.BidderName][]*op
 		UserSyncs:         &emptyUsersync{},
 		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
-		LoggableObject:    &analytics.LoggableAuctionObject{},
 	}
 
 	debugLog := DebugLog{}
@@ -917,7 +915,7 @@ func TestSetTargeting(t *testing.T) {
 	for _, test := range TargetingTests {
 		auc := &test.Auction
 		// Set rounded prices from the auction data
-		auc.setRoundedPrices(test.TargetData.priceGranularity)
+		auc.setRoundedPrices(test.TargetData)
 		winningBids := make(map[string]*entities.PbsOrtbBid)
 		// Set winning bids from the auction data
 		for imp, bidsByBidder := range auc.winningBidsByBidder {

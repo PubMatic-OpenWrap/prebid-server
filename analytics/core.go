@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"context"
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -22,39 +21,41 @@ type PBSAnalyticsModule interface {
 	LogNotificationEventObject(*NotificationEvent)
 }
 
-// LoggableAuctionObject contains common attributes between AuctionObject, AmpObject, VideoObject
-type LoggableAuctionObject struct {
-	Context      context.Context
-	Status       int
-	Errors       []error
-	Request      *openrtb2.BidRequest
-	Response     *openrtb2.BidResponse
-	RejectedBids []RejectedBid
-}
-
 // Loggable object of a transaction at /openrtb2/auction endpoint
 type AuctionObject struct {
-	LoggableAuctionObject
+	Status               int
+	Errors               []error
+	Response             *openrtb2.BidResponse
 	Account              *config.Account
 	StartTime            time.Time
 	HookExecutionOutcome []hookexecution.StageOutcome
+	SeatNonBid           []openrtb_ext.SeatNonBid
+	RequestWrapper       *openrtb_ext.RequestWrapper
 }
 
 // Loggable object of a transaction at /openrtb2/amp endpoint
 type AmpObject struct {
-	LoggableAuctionObject
+	Status               int
+	Errors               []error
+	AuctionResponse      *openrtb2.BidResponse
 	AmpTargetingValues   map[string]string
 	Origin               string
 	StartTime            time.Time
 	HookExecutionOutcome []hookexecution.StageOutcome
+	SeatNonBid           []openrtb_ext.SeatNonBid
+	RequestWrapper       *openrtb_ext.RequestWrapper
 }
 
 // Loggable object of a transaction at /openrtb2/video endpoint
 type VideoObject struct {
-	LoggableAuctionObject
-	VideoRequest  *openrtb_ext.BidRequestVideo
-	VideoResponse *openrtb_ext.BidResponseVideo
-	StartTime     time.Time
+	Status         int
+	Errors         []error
+	Response       *openrtb2.BidResponse
+	VideoRequest   *openrtb_ext.BidRequestVideo
+	VideoResponse  *openrtb_ext.BidResponseVideo
+	StartTime      time.Time
+	SeatNonBid     []openrtb_ext.SeatNonBid
+	RequestWrapper *openrtb_ext.RequestWrapper
 }
 
 // Loggable object of a transaction at /setuid

@@ -34,33 +34,33 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo, forRespExt bo
 		},
 	}
 
-	if ao.Request.User != nil {
+	if ao.RequestWrapper.User != nil {
 		extUser := openrtb_ext.ExtUser{}
-		_ = json.Unmarshal(ao.Request.User.Ext, &extUser)
+		_ = json.Unmarshal(ao.RequestWrapper.User.Ext, &extUser)
 		wlog.ConsentString = extUser.Consent
 	}
 
-	if ao.Request.Device != nil {
-		wlog.IP = ao.Request.Device.IP
-		wlog.UserAgent = ao.Request.Device.UA
+	if ao.RequestWrapper.Device != nil {
+		wlog.IP = ao.RequestWrapper.Device.IP
+		wlog.UserAgent = ao.RequestWrapper.Device.UA
 	}
 
-	if ao.Request.Regs != nil {
+	if ao.RequestWrapper.Regs != nil {
 		extReg := openrtb_ext.ExtRegs{}
-		_ = json.Unmarshal(ao.Request.Regs.Ext, &extReg)
+		_ = json.Unmarshal(ao.RequestWrapper.Regs.Ext, &extReg)
 		if extReg.GDPR != nil {
 			wlog.GDPR = *extReg.GDPR
 		}
 	}
 
 	//log device object
-	wlog.logDeviceObject(*rCtx, rCtx.UA, ao.Request, rCtx.Platform)
+	wlog.logDeviceObject(*rCtx, rCtx.UA, ao.RequestWrapper.BidRequest, rCtx.Platform)
 
 	//log content object
-	if nil != ao.Request.Site {
-		wlog.logContentObject(ao.Request.Site.Content)
-	} else if nil != ao.Request.App {
-		wlog.logContentObject(ao.Request.App.Content)
+	if nil != ao.RequestWrapper.Site {
+		wlog.logContentObject(ao.RequestWrapper.Site.Content)
+	} else if nil != ao.RequestWrapper.App {
+		wlog.logContentObject(ao.RequestWrapper.App.Content)
 	}
 
 	var ipr map[string][]PartnerRecord
@@ -73,7 +73,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, logInfo, forRespExt bo
 
 	// parent bidder could in one of the above and we need them by prebid's bidderCode and not seat(could be alias)
 	slots := make([]SlotRecord, 0)
-	for _, imp := range ao.Request.Imp {
+	for _, imp := range ao.RequestWrapper.Imp {
 		reward := 0
 		var incomingSlots []string
 		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
@@ -148,7 +148,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 	// Seat-impID (based on impID as default bids do not have ID). Shall we generate unique ID's for them?
 	rejectedBids := map[string]map[string]struct{}{}
 	loggerSeat := make(map[string][]openrtb2.Bid)
-	for _, seatBids := range ao.RejectedBids {
+	// TODO : Uncomment and modify to add seatnonbids in logger
+	/*for _, seatBids := range ao.RejectedBids {
 		if _, ok := rejectedBids[seatBids.Seat]; !ok {
 			rejectedBids[seatBids.Seat] = map[string]struct{}{}
 		}
@@ -158,7 +159,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			loggerSeat[seatBids.Seat] = append(loggerSeat[seatBids.Seat], *seatBids.Bid.Bid)
 		}
-	}
+	}*/
 	for _, seatBid := range ao.Response.SeatBid {
 		for _, bid := range seatBid.Bid {
 			// Check if this is a default and RejectedBids bid. Ex. only one bid by pubmatic it was rejected by floors.

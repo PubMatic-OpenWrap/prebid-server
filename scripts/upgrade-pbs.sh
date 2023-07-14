@@ -2,11 +2,11 @@
 
 prefix="v"
 to_major=0
-to_minor=230
+to_minor=259
 to_patch=0
 upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
-attempt=4
+attempt=1
 
 usage="
 Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch

@@ -15,18 +15,20 @@ import (
 )
 
 // recordRejectedBids records the rejected bids and respective rejection reason code
-func recordRejectedBids(pubID string, rejBids []analytics.RejectedBid, metricEngine metrics.MetricsEngine) {
+func recordRejectedBids(pubID string, seatNonBids []openrtb_ext.SeatNonBid, metricEngine metrics.MetricsEngine) {
 
 	var found bool
 	var codeLabel string
 	reasonCodeMap := make(map[openrtb3.NonBidStatusCode]string)
 
-	for _, bid := range rejBids {
-		if codeLabel, found = reasonCodeMap[bid.RejectionReason]; !found {
-			codeLabel = strconv.FormatInt(int64(bid.RejectionReason), 10)
-			reasonCodeMap[bid.RejectionReason] = codeLabel
+	for _, seatNonbid := range seatNonBids {
+		for _, nonBid := range seatNonbid.NonBid {
+			if codeLabel, found = reasonCodeMap[openrtb3.NonBidStatusCode(nonBid.StatusCode)]; !found {
+				codeLabel = strconv.FormatInt(int64(nonBid.StatusCode), 10)
+				reasonCodeMap[openrtb3.NonBidStatusCode(nonBid.StatusCode)] = codeLabel
+			}
+			metricEngine.RecordRejectedBids(pubID, seatNonbid.Seat, codeLabel)
 		}
-		metricEngine.RecordRejectedBids(pubID, bid.Seat, codeLabel)
 	}
 }
 

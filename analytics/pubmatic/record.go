@@ -6,14 +6,12 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 // WloggerRecord structure for wrapper analytics logger object
 type WloggerRecord struct {
 	record
-	NonBidRejections map[string]analytics.RejectedBid
 }
 
 type record struct {
