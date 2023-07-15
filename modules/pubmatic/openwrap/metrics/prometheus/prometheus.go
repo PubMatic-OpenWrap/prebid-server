@@ -9,18 +9,14 @@ import (
 
 // Metrics defines the Prometheus metrics backing the MetricsEngine implementation.
 type Metrics struct {
-	// Registerer prometheus.Registerer
-	// Gatherer   *prometheus.Registry
 
 	// general metrics
 	panics *prometheus.CounterVec
 	// pbsAuctionRequests *prometheus.CounterVec  //TODO - do we really need this ?
 
 	// publisher-partner level metrics
-	pubPartnerNoCookie   *prometheus.CounterVec
-	pubPartnerRespErrors *prometheus.CounterVec // pubPartnerNoBids + pubPartnerUnknownErrs + pubPartnerTimeouts
-	// pubPartnerSlotNotMappedErrors *prometheus.CounterVec //TODO  club ? pubPartnerSlotNotMappedError + pubPartnerMisConfigError
-	// pubPartnerMisConfigErrors     *prometheus.CounterVec
+	pubPartnerNoCookie            *prometheus.CounterVec
+	pubPartnerRespErrors          *prometheus.CounterVec
 	pubPartnerConfigErrors        *prometheus.CounterVec
 	pubPartnerInjectTrackerErrors *prometheus.CounterVec
 	pubPartnerResponseTimeMs      *prometheus.HistogramVec
@@ -33,7 +29,7 @@ type Metrics struct {
 	pubProfImpDisabledViaConfig *prometheus.CounterVec
 
 	// publisher level metrics
-	pubRequestValidationErrors *prometheus.CounterVec // TODO : should we add profiles + error as label ?
+	pubRequestValidationErrors *prometheus.CounterVec // TODO : should we add profiles as label ?
 	pubNoBidResponseErrors     *prometheus.CounterVec
 	pubResponseTime            *prometheus.HistogramVec
 	pubImpsWithContent         *prometheus.CounterVec
@@ -42,7 +38,7 @@ type Metrics struct {
 	pubPartnerPlatformRequests  *prometheus.CounterVec
 	pubPartnerPlatformResponses *prometheus.CounterVec
 
-	// publisher-profile-version level metrics
+	// publisher-profile-version level metrics // TODO- move this metric to prebid-core
 	// pubProfVersionLoggerFailure *prometheus.CounterVec
 
 	// publisher-profile-endpoint level metrics
@@ -59,15 +55,15 @@ type Metrics struct {
 
 const (
 	pubIDLabel     = "pub_id"
-	profileIDLabel = "prof_id"
+	profileIDLabel = "profile_id"
 	partnerLabel   = "partner"
 	platformLabel  = "platform"
 	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
 	apiTypeLabel   = "api_type"
 	impTypeLabel   = "imp_type" //TODO -confirm ?
-	adFormatLabel  = "adformat"
+	adFormatLabel  = "ad_format"
 	contentLabel   = "content" //TODO -confirm ?
-	nbrLabel       = "nbr"
+	nbrLabel       = "nbr"     // TODO - errcode ?
 	errorLabel     = "error"
 	hostLabel      = "host" // combination of node:pod
 	methodLabel    = "method"
@@ -107,8 +103,8 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 	metrics.pubPartnerConfigErrors = newCounter(cfg, promRegistry,
 		"partner_config_errors",
-		"Count partner configuration errors at publisher, partner level.",
-		[]string{pubIDLabel, partnerLabel, errorLabel},
+		"Count partner configuration errors at publisher, profile, partner level.",
+		[]string{pubIDLabel, profileIDLabel, partnerLabel, errorLabel},
 	)
 
 	metrics.pubPartnerInjectTrackerErrors = newCounter(cfg, promRegistry,
@@ -197,14 +193,6 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, partnerLabel, platformLabel},
 	)
 
-	// TODO - move this to prebid-core
-	// publisher-profile-version level metrics
-	// metrics.pubProfVersionLoggerFailure = newCounter(cfg, promRegistry,
-	// 	"owlogger_failures",
-	// 	"Count failures while sending owlogger at publisher, profile level.",
-	// 	[]string{pubIDLabel, profileIDLabel},
-	// )
-
 	// publisher-profile-endpoint level metrics
 	metrics.pubProfEndpointInvalidRequests = newCounter(cfg, promRegistry,
 		"invalid_requests",
@@ -276,11 +264,12 @@ func (m *Metrics) RecordPartnerResponseErrors(publisherID, partner, err string) 
 	}).Inc()
 }
 
-func (m *Metrics) RecordPartnerConfigErrors(publisherID, partner, err string) {
+func (m *Metrics) RecordPartnerConfigErrors(publisherID, profileID, partner, err string) {
 	m.pubPartnerConfigErrors.With(prometheus.Labels{
-		pubIDLabel:   publisherID,
-		partnerLabel: partner,
-		errorLabel:   err,
+		pubIDLabel:     publisherID,
+		profileIDLabel: profileID,
+		partnerLabel:   partner,
+		errorLabel:     err,
 	}).Inc()
 }
 

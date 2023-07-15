@@ -243,7 +243,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordPartnerConfigErrors("5890", "pubmatic", models.PartnerErrSlotNotMapped)
+				st.RecordPartnerConfigErrors("5890", "1234", "pubmatic", models.PartnerErrSlotNotMapped)
 			},
 		},
 		{
@@ -262,7 +262,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordPartnerConfigErrors("5890", "pubmatic", models.PartnerErrMisConfig)
+				st.RecordPartnerConfigErrors("5890", "1234", "pubmatic", models.PartnerErrMisConfig)
 			},
 		},
 		{

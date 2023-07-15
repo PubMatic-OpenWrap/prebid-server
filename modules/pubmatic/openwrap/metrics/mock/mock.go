@@ -261,15 +261,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordPBSAuctionRequestsStats() *gomock
 }
 
 // RecordPartnerConfigErrors mocks base method
-func (m *MockMetricsEngine) RecordPartnerConfigErrors(arg0, arg1, arg2 string) {
+func (m *MockMetricsEngine) RecordPartnerConfigErrors(arg0, arg1, arg2, arg3 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPartnerConfigErrors", arg0, arg1, arg2)
+	m.ctrl.Call(m, "RecordPartnerConfigErrors", arg0, arg1, arg2, arg3)
 }
 
 // RecordPartnerConfigErrors indicates an expected call of RecordPartnerConfigErrors
-func (mr *MockMetricsEngineMockRecorder) RecordPartnerConfigErrors(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordPartnerConfigErrors(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerConfigErrors", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerConfigErrors), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerConfigErrors", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerConfigErrors), arg0, arg1, arg2, arg3)
 }
 
 // RecordPartnerResponseErrors mocks base method

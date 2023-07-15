@@ -88,8 +88,9 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		extImpPubMatic.AdSlot = GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
-		} else {
-			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, string(openrtb_ext.BidderPubmatic), models.PartnerErrMisConfig)
+		}
+		if extImpPubMatic.AdSlot == "" {
+			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, rctx.ProfileIDStr, string(openrtb_ext.BidderPubmatic), models.PartnerErrMisConfig)
 		}
 	}
 

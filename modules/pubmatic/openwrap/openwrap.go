@@ -58,7 +58,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 
-	metricEngine, err := metrics_cfg.NewMetricsEngine(&cfg, moduleDeps.PrometheusCfg, moduleDeps.PrometheusRegistry)
+	metricEngine, err := metrics_cfg.NewMetricsEngine(&cfg, moduleDeps.MetricsCfg, moduleDeps.MetricsRegistry)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}

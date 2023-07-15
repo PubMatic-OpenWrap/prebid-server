@@ -253,7 +253,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil || len(bidderParams) == 0 {
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
-				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, bidderCode, models.PartnerErrSlotNotMapped)
+				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
 				continue
 			}
 

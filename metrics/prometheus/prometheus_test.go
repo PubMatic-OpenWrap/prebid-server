@@ -22,7 +22,7 @@ func createMetricsForTesting() *Metrics {
 		Port:      8080,
 		Namespace: "prebid",
 		Subsystem: "server",
-	}, config.DisabledMetrics{}, syncerKeys, modulesStages, prometheus.NewRegistry())
+	}, nil, config.DisabledMetrics{}, syncerKeys, modulesStages)
 }
 
 func TestMetricCountGatekeeping(t *testing.T) {
@@ -1647,11 +1647,14 @@ func TestDisabledMetrics(t *testing.T) {
 		Port:      8080,
 		Namespace: "prebid",
 		Subsystem: "server",
-	}, config.DisabledMetrics{
-		AdapterConnectionMetrics:  true,
-		AdapterGDPRRequestBlocked: true,
 	},
-		nil, nil, prometheus.NewRegistry())
+		prometheus.NewRegistry(),
+		config.DisabledMetrics{
+			AdapterConnectionMetrics:  true,
+			AdapterGDPRRequestBlocked: true,
+		},
+		nil,
+		nil)
 
 	// Assert counter vector was not initialized
 	assert.Nil(t, prometheusMetrics.adapterReusedConnections, "Counter Vector adapterReusedConnections should be nil")

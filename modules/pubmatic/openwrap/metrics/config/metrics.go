@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	cfg "github.com/prebid/prebid-server/config"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	ow_prometheus "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/prometheus"
@@ -12,7 +13,7 @@ import (
 )
 
 // NewMetricsEngine initialises the stats-client and prometheus and return them as MultiMetricsEngine
-func NewMetricsEngine(cfg *config.Config, prometheusCfg *cfg.PrometheusMetrics, prometheusRegistry *prometheus.Registry) (MultiMetricsEngine, error) {
+func NewMetricsEngine(cfg *config.Config, metricsCfg *cfg.Metrics, metricsRegistry metrics_cfg.MetricsRegistry) (MultiMetricsEngine, error) {
 
 	// Create a list of metrics engines to use.
 	engineList := make(MultiMetricsEngine, 0, 2)
@@ -48,9 +49,12 @@ func NewMetricsEngine(cfg *config.Config, prometheusCfg *cfg.PrometheusMetrics, 
 	}
 
 	// Set up the Prometheus metrics engine.
-	if prometheusCfg != nil && prometheusRegistry != nil {
-		prometheusEngine := ow_prometheus.NewMetrics(prometheusCfg, prometheusRegistry)
-		engineList = append(engineList, prometheusEngine)
+	if metricsCfg != nil && metricsRegistry != nil && metricsRegistry[metrics_cfg.PrometheusRegistry] != nil {
+		prometheusRegistry, ok := metricsRegistry[metrics_cfg.PrometheusRegistry].(*prometheus.Registry)
+		if ok && prometheusRegistry != nil {
+			prometheusEngine := ow_prometheus.NewMetrics(&metricsCfg.Prometheus, prometheusRegistry)
+			engineList = append(engineList, prometheusEngine)
+		}
 	}
 
 	if len(engineList) > 0 {
@@ -85,9 +89,9 @@ func (me *MultiMetricsEngine) RecordPartnerResponseErrors(publisher, partner, er
 }
 
 // RecordMisConfigurationErrorStats across all engines
-func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, partner, err string) {
+func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, profile, partner, err string) {
 	for _, thisME := range *me {
-		thisME.RecordPartnerConfigErrors(publisher, partner, err)
+		thisME.RecordPartnerConfigErrors(publisher, profile, partner, err)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	cfg "github.com/prebid/prebid-server/config"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
@@ -18,13 +19,14 @@ import (
 func TestNewMetricsEngine(t *testing.T) {
 
 	type args struct {
-		statConfig         *config.Config
-		prometheusConfig   *cfg.PrometheusMetrics
-		prometheusRegistry *prometheus.Registry
+		owConfig        *config.Config
+		metricsRegistry metrics_cfg.MetricsRegistry
+		metricsCfg      *cfg.Metrics
 	}
 	type want struct {
-		expectNilEngine bool
-		err             error
+		expectNilEngine  bool
+		err              error
+		metricsEngineCnt int
 	}
 	testCases := []struct {
 		name string
@@ -32,50 +34,99 @@ func TestNewMetricsEngine(t *testing.T) {
 		want want
 	}{
 		{
-			name: "Valid configuration with stats endpoint",
+			name: "valid_configurations",
 			args: args{
-				statConfig: &config.Config{
+				owConfig: &config.Config{
 					Stats: stats.Stats{
 						Endpoint:    "http://example.com",
 						UseHostName: true,
 					},
 				},
-				prometheusRegistry: prometheus.NewRegistry(),
-				prometheusConfig: &cfg.PrometheusMetrics{
-					Port:             14404,
-					Namespace:        "ow",
-					Subsystem:        "pbs",
-					TimeoutMillisRaw: 10,
+				metricsRegistry: metrics_cfg.MetricsRegistry{
+					metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+				},
+				metricsCfg: &cfg.Metrics{
+					Prometheus: cfg.PrometheusMetrics{
+						Port:             14404,
+						Namespace:        "ow",
+						Subsystem:        "pbs",
+						TimeoutMillisRaw: 10,
+					},
 				},
 			},
 			want: want{
-				expectNilEngine: false,
-				err:             nil,
+				expectNilEngine:  false,
+				err:              nil,
+				metricsEngineCnt: 2,
 			},
 		},
 		{
-			name: "No valid configuration",
+			name: "empty_stat_config_and_nil_metrics_config",
 			args: args{
-				statConfig: &config.Config{
+				owConfig: &config.Config{
 					Stats: stats.Stats{
 						Endpoint: "",
 					},
 				},
-				prometheusRegistry: nil,
-				prometheusConfig:   nil,
+				metricsRegistry: metrics_cfg.MetricsRegistry{
+					metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+				},
+				metricsCfg: nil,
 			},
 			want: want{
 				expectNilEngine: true,
 				err:             fmt.Errorf("metric-engine is not configured"),
 			},
 		},
+		{
+			name: "empty_stat_config_and_nil_metrics_registry",
+			args: args{
+				owConfig: &config.Config{
+					Stats: stats.Stats{
+						Endpoint: "",
+					},
+				},
+				metricsRegistry: metrics_cfg.MetricsRegistry{
+					metrics_cfg.PrometheusRegistry: nil,
+				},
+				metricsCfg: &cfg.Metrics{
+					Prometheus: cfg.PrometheusMetrics{},
+				},
+			},
+			want: want{
+				expectNilEngine: true,
+				err:             fmt.Errorf("metric-engine is not configured"),
+			},
+		},
+		{
+			name: "empty_stat_and_valid_metrics_cfg_and_registry",
+			args: args{
+				owConfig: &config.Config{
+					Stats: stats.Stats{
+						Endpoint: "",
+					},
+				},
+				metricsRegistry: metrics_cfg.MetricsRegistry{
+					metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+				},
+				metricsCfg: &cfg.Metrics{
+					Prometheus: cfg.PrometheusMetrics{},
+				},
+			},
+			want: want{
+				expectNilEngine:  false,
+				err:              nil,
+				metricsEngineCnt: 1,
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actualOutput, actualError := NewMetricsEngine(tc.args.statConfig, tc.args.prometheusConfig, tc.args.prometheusRegistry)
+			actualOutput, actualError := NewMetricsEngine(tc.args.owConfig, tc.args.metricsCfg, tc.args.metricsRegistry)
 			assert.Equal(t, tc.want.expectNilEngine, actualOutput == nil)
 			assert.Equal(t, tc.want.err, actualError)
+			assert.Equal(t, tc.want.metricsEngineCnt, len(actualOutput))
 		})
 	}
 }
@@ -109,7 +160,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordOpenWrapServerPanicStats(host, method)
 	mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats(publisher, partner)
 	mockEngine.EXPECT().RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
-	mockEngine.EXPECT().RecordPartnerConfigErrors(publisher, partner, models.PartnerErrSlotNotMapped)
+	mockEngine.EXPECT().RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
@@ -159,7 +210,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordOpenWrapServerPanicStats(host, method)
 	multiMetricEngine.RecordPublisherPartnerNoCookieStats(publisher, partner)
 	multiMetricEngine.RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
-	multiMetricEngine.RecordPartnerConfigErrors(publisher, partner, models.PartnerErrSlotNotMapped)
+	multiMetricEngine.RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher, nbr.AllPartnerThrottled)

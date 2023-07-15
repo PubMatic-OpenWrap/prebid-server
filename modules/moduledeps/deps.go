@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/prebid/prebid-server/config"
-	"github.com/prometheus/client_golang/prometheus"
+	metricsCfg "github.com/prebid/prebid-server/metrics/config"
 )
 
 // ModuleDeps provides dependencies that custom modules may need for hooks execution.
 // Additional dependencies can be added here if modules need something more.
 type ModuleDeps struct {
-	HTTPClient         *http.Client
-	PrometheusCfg      *config.PrometheusMetrics
-	PrometheusRegistry *prometheus.Registry
+	HTTPClient      *http.Client
+	MetricsCfg      *config.Metrics
+	MetricsRegistry metricsCfg.MetricsRegistry
 }

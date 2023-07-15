@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	prometheusmetrics "github.com/prebid/prebid-server/metrics/prometheus"
@@ -12,9 +13,25 @@ import (
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
 
+type RegistryType = string
+type MetricsRegistry map[RegistryType]interface{}
+
+const (
+	PrometheusRegistry RegistryType = "prometheus"
+	InfluxRegistry     RegistryType = "influx"
+)
+
+// NewMetricsRegistry returns the map of metrics-engine-name and its respective registry
+func NewMetricsRegistry() MetricsRegistry {
+	return MetricsRegistry{
+		PrometheusRegistry: prometheus.NewRegistry(),
+		InfluxRegistry:     gometrics.NewPrefixedRegistry("prebidserver."),
+	}
+}
+
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
 // for this instance.
-func NewMetricsEngine(cfg *config.Configuration, adapterList []openrtb_ext.BidderName, syncerKeys []string, moduleStageNames map[string][]string, promRegistry *prometheus.Registry) *DetailedMetricsEngine {
+func NewMetricsEngine(cfg *config.Configuration, metricsRegistry MetricsRegistry, adapterList []openrtb_ext.BidderName, syncerKeys []string, moduleStageNames map[string][]string) *DetailedMetricsEngine {
 	// Create a list of metrics engines to use.
 	// Capacity of 2, as unlikely to have more than 2 metrics backends, and in the case
 	// of 1 we won't use the list so it will be garbage collected.
@@ -26,22 +43,36 @@ func NewMetricsEngine(cfg *config.Configuration, adapterList []openrtb_ext.Bidde
 		returnEngine.GoMetrics = metrics.NewMetrics(gometrics.NewPrefixedRegistry("prebidserver."), adapterList, cfg.Metrics.Disabled, syncerKeys, moduleStageNames)
 		engineList = append(engineList, returnEngine.GoMetrics)
 
+		// Get the registry for influxdb
+		influxRegistry, ok := metricsRegistry[InfluxRegistry].(gometrics.Registry)
+		if !ok || influxRegistry == nil {
+			glog.Info("Failed to get the influxRegistry from MetricsRegistry, creating new instance of influx registry.")
+			influxRegistry = gometrics.NewPrefixedRegistry("prebidserver.")
+		}
+
 		// Set up the Influx logger
 		go influxdb.InfluxDB(
-			returnEngine.GoMetrics.MetricsRegistry,                             // metrics registry
+			influxRegistry, // metrics registry
 			time.Second*time.Duration(cfg.Metrics.Influxdb.MetricSendInterval), // Configurable interval
-			cfg.Metrics.Influxdb.Host,                                          // the InfluxDB url
-			cfg.Metrics.Influxdb.Database,                                      // your InfluxDB database
-			cfg.Metrics.Influxdb.Measurement,                                   // your measurement
-			cfg.Metrics.Influxdb.Username,                                      // your InfluxDB user
-			cfg.Metrics.Influxdb.Password,                                      // your InfluxDB password,
-			cfg.Metrics.Influxdb.AlignTimestamps,                               // align timestamps
+			cfg.Metrics.Influxdb.Host,            // the InfluxDB url
+			cfg.Metrics.Influxdb.Database,        // your InfluxDB database
+			cfg.Metrics.Influxdb.Measurement,     // your measurement
+			cfg.Metrics.Influxdb.Username,        // your InfluxDB user
+			cfg.Metrics.Influxdb.Password,        // your InfluxDB password,
+			cfg.Metrics.Influxdb.AlignTimestamps, // align timestamps
 		)
 		// Influx is not added to the engine list as goMetrics takes care of it already.
 	}
 	if cfg.Metrics.Prometheus.Port != 0 {
+		// Get the prometheus registry
+		prometheusRegistry, ok := metricsRegistry[PrometheusRegistry].(*prometheus.Registry)
+		if !ok || prometheusRegistry == nil {
+			glog.Info("Failed to get the prometheusRegistry from MetricsRegistry, creating new instance of prometheus registry.")
+			prometheusRegistry = prometheus.NewRegistry()
+		}
+
 		// Set up the Prometheus metrics.
-		returnEngine.PrometheusMetrics = prometheusmetrics.NewMetrics(cfg.Metrics.Prometheus, cfg.Metrics.Disabled, syncerKeys, moduleStageNames, promRegistry)
+		returnEngine.PrometheusMetrics = prometheusmetrics.NewMetrics(cfg.Metrics.Prometheus, prometheusRegistry, cfg.Metrics.Disabled, syncerKeys, moduleStageNames)
 		engineList = append(engineList, returnEngine.PrometheusMetrics)
 	}
 
