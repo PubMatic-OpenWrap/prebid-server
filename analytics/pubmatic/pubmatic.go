@@ -40,7 +40,8 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
 	if rCtx == nil {
-		glog.Errorf("Failed to get the request context from HookExecutionOutcome inside LogAuctionObject.")
+		// glog.Errorf("Failed to get the request context for AuctionObject - [%v]", ao)
+		// add this log once complete header-bidding code is migrated to modules
 		return
 	}
 
