@@ -8,13 +8,13 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/adpod"
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -214,14 +214,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.ResolveAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig)
+			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap)
 			if err != nil {
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to get adpod configurations: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				return result, err
 			}
-			if err := adpod.IsValidAdPod(adpodConfig); err != nil {
+			if err := adpod.Validate(adpodConfig); err != nil {
 				result.NbrCode = nbr.InternalError
 				err = errors.New("invalid adpod configurations: " + imp.ID + " reason: " + err.Error())
 				result.Errors = append(result.Errors, err.Error())
