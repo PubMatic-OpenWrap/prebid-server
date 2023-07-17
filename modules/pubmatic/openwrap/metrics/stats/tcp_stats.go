@@ -58,8 +58,8 @@ func (st *StatsTCP) RecordPartnerResponseErrors(publisher, partner, err string) 
 	}
 }
 
-func (st *StatsTCP) RecordPartnerConfigErrors(publisher, profile, partner, err string) {
-	switch err {
+func (st *StatsTCP) RecordPartnerConfigErrors(publisher, profile, partner string, errcode int) {
+	switch errcode {
 	case models.PartnerErrMisConfig:
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyMisConfErrorRequests], publisher, partner), 1)
 	case models.PartnerErrSlotNotMapped:

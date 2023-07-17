@@ -89,9 +89,9 @@ func (me *MultiMetricsEngine) RecordPartnerResponseErrors(publisher, partner, er
 }
 
 // RecordMisConfigurationErrorStats across all engines
-func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, profile, partner, err string) {
+func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, profile, partner string, errcode int) {
 	for _, thisME := range *me {
-		thisME.RecordPartnerConfigErrors(publisher, profile, partner, err)
+		thisME.RecordPartnerConfigErrors(publisher, profile, partner, errcode)
 	}
 }
 

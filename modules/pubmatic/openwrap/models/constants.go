@@ -403,6 +403,10 @@ const (
 	PartnerErrNoBid              = "no_bid"
 	PartnerErrTimeout            = "timeout"
 	PartnerErrUnknownPrebidError = "unknown"
-	PartnerErrSlotNotMapped      = "slot_not_mapped"
-	PartnerErrMisConfig          = "misconfig"
+)
+
+// enum to report the error at partner-config level
+const (
+	PartnerErrSlotNotMapped = iota // 0
+	PartnerErrMisConfig            //1
 )

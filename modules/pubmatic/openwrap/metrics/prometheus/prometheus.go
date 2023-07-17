@@ -12,7 +12,6 @@ type Metrics struct {
 
 	// general metrics
 	panics *prometheus.CounterVec
-	// pbsAuctionRequests *prometheus.CounterVec  //TODO - do we really need this ?
 
 	// publisher-partner level metrics
 	pubPartnerNoCookie            *prometheus.CounterVec
@@ -38,9 +37,6 @@ type Metrics struct {
 	pubPartnerPlatformRequests  *prometheus.CounterVec
 	pubPartnerPlatformResponses *prometheus.CounterVec
 
-	// publisher-profile-version level metrics // TODO- move this metric to prebid-core
-	// pubProfVersionLoggerFailure *prometheus.CounterVec
-
 	// publisher-profile-endpoint level metrics
 	pubProfEndpointInvalidRequests *prometheus.CounterVec
 
@@ -60,10 +56,10 @@ const (
 	platformLabel  = "platform"
 	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
 	apiTypeLabel   = "api_type"
-	impTypeLabel   = "imp_type" //TODO -confirm ?
+	impFormatLabel = "imp_format" //TODO -confirm ?
 	adFormatLabel  = "ad_format"
-	contentLabel   = "content" //TODO -confirm ?
-	nbrLabel       = "nbr"     // TODO - errcode ?
+	sourceLabel    = "source" //TODO -confirm ?
+	nbrLabel       = "nbr"    // TODO - errcode ?
 	errorLabel     = "error"
 	hostLabel      = "host" // combination of node:pod
 	methodLabel    = "method"
@@ -80,12 +76,6 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of prebid server panics in openwrap module.",
 		[]string{hostLabel, methodLabel},
 	)
-
-	// metrics.pbsAuctionRequests = newCounter(cfg, promRegistry
-	// 	"pbs_auction_requests",
-	// 	"Count /pbs/auction requests.",
-	// 	[]string{"node", "pod", "method"},
-	// )
 
 	// publisher-partner level metrics
 	// TODO : check description of this
@@ -117,8 +107,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"partner_response_time",
 		"Time taken by each partner to respond in milli-seconds labeled by publisher.",
 		[]string{pubIDLabel, partnerLabel},
-		[]float64{10, 30, 50, 100, 200, 500},
-		//TODO- decide buckets
+		[]float64{10, 50, 100, 250, 500, 1000},
 	)
 
 	// publisher-profile level metrics
@@ -149,7 +138,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.pubProfImpDisabledViaConfig = newCounter(cfg, promRegistry,
 		"imps_disabled_via_config",
 		"Count banner/video impressions disabled via config at publisher, profile level.",
-		[]string{pubIDLabel, profileIDLabel, impTypeLabel},
+		[]string{pubIDLabel, profileIDLabel, impFormatLabel},
 	)
 
 	// publisher level metrics
@@ -170,14 +159,13 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"pub_response_time",
 		"Total time taken by request in milli-seconds at publisher level.",
 		[]string{pubIDLabel},
-		[]float64{50, 100, 200, 300, 500, 1000},
-		//TODO- decide buckets
+		[]float64{10, 50, 100, 250, 500, 1000},
 	)
 
 	metrics.pubImpsWithContent = newCounter(cfg, promRegistry,
 		"imps_with_content",
 		"Count impressions having app/site content at publisher level.",
-		[]string{pubIDLabel, contentLabel},
+		[]string{pubIDLabel, sourceLabel},
 		//TODO - contentLabel ??
 	)
 
@@ -264,12 +252,12 @@ func (m *Metrics) RecordPartnerResponseErrors(publisherID, partner, err string) 
 	}).Inc()
 }
 
-func (m *Metrics) RecordPartnerConfigErrors(publisherID, profileID, partner, err string) {
+func (m *Metrics) RecordPartnerConfigErrors(publisherID, profileID, partner string, errcode int) {
 	m.pubPartnerConfigErrors.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
 		profileIDLabel: profileID,
 		partnerLabel:   partner,
-		errorLabel:     err,
+		errorLabel:     strconv.Itoa(errcode),
 	}).Inc()
 }
 
@@ -362,7 +350,7 @@ func (m *Metrics) RecordImpDisabledViaConfigStats(impType, publisherID, profileI
 	m.pubProfImpDisabledViaConfig.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
 		profileIDLabel: profileID,
-		impTypeLabel:   impType,
+		impFormatLabel: impType,
 	}).Inc()
 }
 
@@ -376,8 +364,8 @@ func (m *Metrics) RecordPublisherRequests(endpoint string, publisherID string, p
 
 func (m *Metrics) RecordReqImpsWithContentCount(publisherID, content string) {
 	m.pubImpsWithContent.With(prometheus.Labels{
-		pubIDLabel:   publisherID,
-		contentLabel: content,
+		pubIDLabel:  publisherID,
+		sourceLabel: content,
 	}).Inc()
 }
 

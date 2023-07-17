@@ -261,7 +261,7 @@ func (mr *MockMetricsEngineMockRecorder) RecordPBSAuctionRequestsStats() *gomock
 }
 
 // RecordPartnerConfigErrors mocks base method
-func (m *MockMetricsEngine) RecordPartnerConfigErrors(arg0, arg1, arg2, arg3 string) {
+func (m *MockMetricsEngine) RecordPartnerConfigErrors(arg0, arg1, arg2 string, arg3 int) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordPartnerConfigErrors", arg0, arg1, arg2, arg3)
 }
