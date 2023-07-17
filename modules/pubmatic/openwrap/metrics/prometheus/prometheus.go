@@ -148,10 +148,9 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, nbrLabel},
 	)
 
-	// TODO -description ? its error if there is no winning bid
 	metrics.pubNoBidResponseErrors = newCounter(cfg, promRegistry,
-		"no_bid_responses",
-		"Count requests for which bid response is empty at publisher level.",
+		"no_bid",
+		"Count of zero bid responses at publisher level.",
 		[]string{pubIDLabel},
 	)
 
