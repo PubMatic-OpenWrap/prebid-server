@@ -40,9 +40,6 @@ func TestDoUnwrap(t *testing.T) {
 				userAgent: "testUA",
 				url:       UnwrapURL,
 			},
-			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
-			},
 		},
 		{
 			name: "doUnwrap for adtype video with Empty ADM",
@@ -61,9 +58,6 @@ func TestDoUnwrap(t *testing.T) {
 				},
 				userAgent: "testUA",
 				url:       UnwrapURL,
-			},
-			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{
 				Bid: &openrtb2.Bid{
@@ -98,7 +92,7 @@ func TestDoUnwrap(t *testing.T) {
 				url:       "testURL",
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "2")
 			},
 			expectedBid: &adapters.TypedBid{
 				Bid: &openrtb2.Bid{
@@ -133,7 +127,7 @@ func TestDoUnwrap(t *testing.T) {
 				url:       UnwrapURL,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
 			},
 			expectedBid: &adapters.TypedBid{
 				Bid: &openrtb2.Bid{
@@ -158,7 +152,6 @@ func TestDoUnwrap(t *testing.T) {
 			if tt.args.bid.Bid.AdM != "" {
 				assert.Equal(t, tt.expectedBid.Bid.AdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
-
 		})
 	}
 }

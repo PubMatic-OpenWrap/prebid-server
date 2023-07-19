@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
@@ -17,9 +16,10 @@ func TestHandleEntrypointHook(t *testing.T) {
 		config  VastUnwrapModule
 	}
 	tests := []struct {
-		name string
-		args args
-		want hookstage.HookResult[hookstage.EntrypointPayload]
+		name      string
+		args      args
+		randomNum int
+		want      hookstage.HookResult[hookstage.EntrypointPayload]
 	}{
 		{
 			name: "Disable Vast Unwrapper",
@@ -32,13 +32,6 @@ func TestHandleEntrypointHook(t *testing.T) {
 					}(),
 				},
 				config: VastUnwrapModule{
-					Cfg: unWrapCfg.VastUnWrapCfg{
-						HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
-						APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-						StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
-						ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-						LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
-					},
 					TrafficPercentage: 2,
 					Enabled:           false,
 				},
@@ -46,7 +39,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
 		},
 		{
-			name: "Enable Vast Unwrapper",
+			name: "Enable Vast Unwrapper with random number less than traffic percentage",
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
@@ -56,22 +49,54 @@ func TestHandleEntrypointHook(t *testing.T) {
 					}(),
 				},
 				config: VastUnwrapModule{
-					Cfg: unWrapCfg.VastUnWrapCfg{
-						HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
-						APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-						StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
-						ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-						LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
-					},
 					TrafficPercentage: 2,
-					Enabled:           false,
 				},
 			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+			randomNum: 1,
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+		},
+		{
+			name: "Enable Vast Unwrapper with random number equal to traffic percenatge",
+			args: args{
+				payload: hookstage.EntrypointPayload{
+					Request: func() *http.Request {
+						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
+						return r
+					}(),
+				},
+				config: VastUnwrapModule{
+					TrafficPercentage: 2,
+				},
+			},
+			randomNum: 2,
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
+		},
+		{
+			name: "Enable Vast Unwrapper with random number greater than traffic percenatge",
+			args: args{
+				payload: hookstage.EntrypointPayload{
+					Request: func() *http.Request {
+						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
+						return r
+					}(),
+				},
+				config: VastUnwrapModule{
+					TrafficPercentage: 2,
+				},
+			},
+			randomNum: 5,
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			oldRandomNumberGen := getRandomNumber
+			getRandomNumber = func() int { return tt.randomNum }
+			defer func() {
+				getRandomNumber = oldRandomNumberGen
+			}()
 			got, _ := handleEntrypointHook(nil, hookstage.ModuleInvocationContext{}, tt.args.payload, tt.args.config)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("handleEntrypointHook() = %v, want %v", got, tt.want)

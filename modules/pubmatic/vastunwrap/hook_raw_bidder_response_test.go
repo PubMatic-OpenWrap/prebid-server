@@ -35,25 +35,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "Empty Request Context",
-			args: args{
-				module: VastUnwrapModule{},
-				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
-							},
-							BidType: "video",
-						}}},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{},
-			},
+			name:       "Empty Request Context",
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 			wantErr:    false,
 		},
@@ -109,8 +91,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								H:     50,
 							},
 							BidType: "video",
-						}}},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+						},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -127,7 +112,139 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				BidType: "video",
 			}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6")
+			},
+			wantErr: false,
+		},
+		{
+			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
+			args: args{
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-456",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-789",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						}},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+				url:                 UnwrapURL,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			expectedBids: []*adapters.TypedBid{{
+				Bid: &openrtb2.Bid{
+					ID:    "Bid-123",
+					ImpID: fmt.Sprintf("div-adunit-%d", 123),
+					Price: 2.1,
+					AdM:   vastXMLAdM,
+					CrID:  "Cr-234",
+					W:     100,
+					H:     50,
+				},
+				BidType: "video",
+			},
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   vastXMLAdM,
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+			},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6").AnyTimes()
+			},
+			wantErr: false,
+		},
+		{
+			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
+			args: args{
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-456",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-789",
+								W:     100,
+								H:     50,
+							},
+							BidType: "banner",
+						}},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+				url:                 UnwrapURL,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			expectedBids: []*adapters.TypedBid{{
+				Bid: &openrtb2.Bid{
+					ID:    "Bid-123",
+					ImpID: fmt.Sprintf("div-adunit-%d", 123),
+					Price: 2.1,
+					AdM:   vastXMLAdM,
+					CrID:  "Cr-234",
+					W:     100,
+					H:     50,
+				},
+				BidType: "video",
+			},
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   vastXMLAdM,
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+			},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6").AnyTimes()
 			},
 			wantErr: false,
 		},
@@ -138,7 +255,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				tt.setup()
 			}
 			_, err := handleRawBidderResponseHook(tt.args.module, tt.args.moduleInvocationCtx, tt.args.payload, "test")
-
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}

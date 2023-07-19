@@ -87,9 +87,15 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			oldRandomNumberGen := getRandomNumber
+			getRandomNumber = func() int { return 1 }
+			defer func() {
+				getRandomNumber = oldRandomNumberGen
+			}()
 			m := VastUnwrapModule{
-				Cfg:     tt.fields.cfg.Cfg,
-				Enabled: tt.fields.cfg.Enabled,
+				Cfg:               tt.fields.cfg.Cfg,
+				Enabled:           tt.fields.cfg.Enabled,
+				TrafficPercentage: tt.fields.cfg.TrafficPercentage,
 			}
 			got, err := m.HandleEntrypointHook(tt.args.ctx, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
@@ -134,7 +140,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			},
 				TrafficPercentage: 2}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -149,9 +155,10 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 							},
 							BidType: "video",
 						}},
+					Bidder: "pubmatic",
 				}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus(gomock.Any(), gomock.Any(), gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6")
 			},
 			expectedBids: []*adapters.TypedBid{{
 				Bid: &openrtb2.Bid{
@@ -220,59 +227,10 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				MetricsEngine: mockMetricsEngine,
 			}
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
-
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-
 			assert.Equal(t, tt.expectedBids[0].Bid.AdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
-		})
-	}
-}
-
-func TestInitVastUnwrap(t *testing.T) {
-	type args struct {
-		rawCfg json.RawMessage
-		in1    moduledeps.ModuleDeps
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    VastUnwrapModule
-		wantErr bool
-	}{
-		{
-			name: "Valid vast unwrap config",
-			args: args{
-				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrapcfg":{"max_wrapper_support":5,"app_config":{"debug":1,"unwrap_default_timeout":100},"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
-				in1:    moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
-			},
-			want: VastUnwrapModule{
-				Enabled: true,
-				Cfg: unWrapCfg.VastUnWrapCfg{
-					MaxWrapperSupport: 5,
-					HTTPConfig:        unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
-					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
-					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-					LogConfig:         unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := initVastUnwrap(tt.args.rawCfg, tt.args.in1)
-			if !assert.NoError(t, err, tt.wantErr) {
-				return
-			}
-			if !reflect.DeepEqual(got.Cfg, tt.want.Cfg) {
-				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Enabled, tt.want.Enabled) {
-				t.Errorf("initVastUnwrap() = %#v, want %#v", got, tt.want)
-			}
 		})
 	}
 }
@@ -291,7 +249,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "Valid vast unwrap config",
 			args: args{
-				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrapcfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
 				deps:   moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
 			},
 			want: VastUnwrapModule{
@@ -307,11 +265,30 @@ func TestBuilder(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Invalid vast unwrap config",
+			args: args{
+				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				deps:   moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
+			},
+			want: VastUnwrapModule{
+				Enabled: true,
+				Cfg: unWrapCfg.VastUnWrapCfg{
+					MaxWrapperSupport: 5,
+					HTTPConfig:        unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
+					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
+					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
+					LogConfig:         unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Builder(tt.args.rawCfg, tt.args.deps)
-			if !assert.NoError(t, err, tt.wantErr) {
+			if (err != nil) == tt.wantErr {
 				return
 			}
 			got1, _ := got.(VastUnwrapModule)

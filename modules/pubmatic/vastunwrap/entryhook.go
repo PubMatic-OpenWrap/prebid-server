@@ -15,6 +15,10 @@ func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	return vastEnableUnwrapper == "1"
 }
 
+var getRandomNumber = func() int {
+	return rand.Intn(100)
+}
+
 func handleEntrypointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
@@ -25,19 +29,11 @@ func handleEntrypointHook(
 			glog.Error("body:" + string(payload.Body) + ". stacktrace:" + string(debug.Stack()))
 		}
 	}()
-
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
-
 	vastRequestContext := models.RequestCtx{
-		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled),
+		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled) && getRandomNumber() < config.TrafficPercentage,
 	}
-	if vastRequestContext.IsVastUnwrapEnabled && rand.Intn(100) < config.TrafficPercentage {
-		vastRequestContext.IsVastUnwrapEnabled = true
-	}
-
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext
-
-	result.Reject = false
 	return result, nil
 }

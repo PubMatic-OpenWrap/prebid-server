@@ -2,7 +2,6 @@ package vastunwrap
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -14,7 +13,6 @@ import (
 )
 
 func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
-
 	startTime := time.Now()
 	var respStatus string
 	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
@@ -28,7 +26,6 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 		}
 		m.MetricsEngine.RecordRequestStatus(accountID, bidder, respStatus)
 	}()
-	wrapperCnt := 0
 	headers := http.Header{}
 	headers.Add(ContentType, "application/xml; charset=utf-8")
 	headers.Add(UserAgent, userAgent)
@@ -38,13 +35,10 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 		return
 	}
 	httpReq.Header = headers
-	httpResp := httptest.NewRecorder()
+	httpResp := NewCustomRecorder()
 	unwrapper.UnwrapRequest(httpResp, httpReq)
-	wrap_cnt := httpResp.Header().Get(UnwrapCount)
 	respStatus = httpResp.Header().Get(UnwrapStatus)
-	if wrap_cnt != "" {
-		wrapperCnt, _ = strconv.Atoi(wrap_cnt)
-	}
+	wrapperCnt, _ := strconv.ParseInt(httpResp.Header().Get(UnwrapCount), 10, 0)
 	respBody := httpResp.Body.Bytes()
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
