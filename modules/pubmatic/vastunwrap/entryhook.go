@@ -21,7 +21,7 @@ var getRandomNumber = func() int {
 
 func handleEntrypointHook(
 	_ context.Context,
-	miCtx hookstage.ModuleInvocationContext,
+	_ hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload, config VastUnwrapModule,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	defer func() {
@@ -31,7 +31,7 @@ func handleEntrypointHook(
 	}()
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 	vastRequestContext := models.RequestCtx{
-		IsVastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), isVastUnWrapEnabled) && getRandomNumber() < config.TrafficPercentage,
+		VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled) && getRandomNumber() < config.TrafficPercentage,
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext

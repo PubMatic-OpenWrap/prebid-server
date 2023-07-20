@@ -7,7 +7,6 @@ package mock
 import (
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
-	time "time"
 )
 
 // MockMetricsEngine is a mock of MetricsEngine interface
@@ -45,14 +44,14 @@ func (mr *MockMetricsEngineMockRecorder) RecordRequestStatus(arg0, arg1, arg2 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestStatus), arg0, arg1, arg2)
 }
 
-// RecordRequestTime mocks base method
-func (m *MockMetricsEngine) RecordRequestTime(arg0, arg1 string, arg2 time.Duration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordRequestTime", arg0, arg1, arg2)
-}
+// // RecordRequestTime mocks base method
+// func (m *MockMetricsEngine) RecordRequestTime(arg0, arg1 string, arg2 time.Duration) {
+// 	m.ctrl.T.Helper()
+// 	m.ctrl.Call(m, "RecordRequestTime", arg0, arg1, arg2)
+// }
 
-// RecordRequestTime indicates an expected call of RecordRequestTime
-func (mr *MockMetricsEngineMockRecorder) RecordRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestTime), arg0, arg1, arg2)
-}
+// // RecordRequestTime indicates an expected call of RecordRequestTime
+// func (mr *MockMetricsEngineMockRecorder) RecordRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+// 	mr.mock.ctrl.T.Helper()
+// 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestTime), arg0, arg1, arg2)
+// }

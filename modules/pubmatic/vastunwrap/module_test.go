@@ -52,15 +52,15 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 			},
 				TrafficPercentage: 2}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
 				}},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 		},
 		{
 			name: "Vast unwrap is disabled in the config",
@@ -77,7 +77,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				miCtx: hookstage.ModuleInvocationContext{},
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -140,7 +140,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			},
 				TrafficPercentage: 2}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -185,7 +185,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			},
 				TrafficPercentage: 2}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
+				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{

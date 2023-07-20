@@ -30,9 +30,7 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 	if err != nil {
 		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
-	if vastUnwrapModuleCfg.Enabled {
-		vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
-	}
+	vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	metricEngine := metrics.NewMetricsEngine(deps)
 	return VastUnwrapModule{
 		Cfg:               vastUnwrapModuleCfg.Cfg,

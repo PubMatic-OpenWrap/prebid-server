@@ -5,7 +5,7 @@ const (
 	OpenWrapV25         = "/openrtb/2.5"
 	OpenWrapVideo       = "/openrtb/video"
 	OpenWrapAmp         = "/openrtb/amp"
-	isVastUnWrapEnabled = "enableVastUnwrapper"
+	VastUnwrapEnabled   = "enableVastUnwrapper"
 	RequestContext      = "rctx"
 	UserAgent           = "User-Agent"
 	UnwrapCount         = "unwrap-count"

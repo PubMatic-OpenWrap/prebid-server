@@ -5,15 +5,13 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"time"
 
 	unwrapper "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
-	startTime := time.Now()
+func doUnwrapandUpdateBid(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
 	var respStatus string
 	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
 		return
@@ -38,11 +36,9 @@ func doUnwrap(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwr
 	httpResp := NewCustomRecorder()
 	unwrapper.UnwrapRequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(UnwrapStatus)
-	wrapperCnt, _ := strconv.ParseInt(httpResp.Header().Get(UnwrapCount), 10, 0)
 	respBody := httpResp.Body.Bytes()
 	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
-		glog.Infof("\n UnWrap Done for BidId = %s Cnt = %d in %v (ms)", bid.Bid.ID, wrapperCnt, time.Since(startTime).Milliseconds())
 		return
 	}
 	glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)

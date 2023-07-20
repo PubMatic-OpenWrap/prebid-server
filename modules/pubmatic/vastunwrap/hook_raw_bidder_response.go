@@ -20,7 +20,7 @@ func handleRawBidderResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
 		return result, nil
 	}
-	if !vastRequestContext.IsVastUnwrapEnabled {
+	if !vastRequestContext.VastUnwrapEnabled {
 		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
 		return result, nil
 	}
@@ -33,7 +33,7 @@ func handleRawBidderResponseHook(
 			wg.Add(1)
 			go func(bid *adapters.TypedBid) {
 				defer wg.Done()
-				doUnwrap(m, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+				doUnwrapandUpdateBid(m, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
 			}(bid)
 		}
 	}

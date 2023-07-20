@@ -148,7 +148,7 @@ func TestDoUnwrap(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			doUnwrap(tt.args.module, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
+			doUnwrapandUpdateBid(tt.args.module, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
 			if tt.args.bid.Bid.AdM != "" {
 				assert.Equal(t, tt.expectedBid.Bid.AdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}

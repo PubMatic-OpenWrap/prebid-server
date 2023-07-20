@@ -26,7 +26,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "0")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "0")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -36,14 +36,14 @@ func TestHandleEntrypointHook(t *testing.T) {
 					Enabled:           false,
 				},
 			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
+			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 		},
 		{
 			name: "Enable Vast Unwrapper with random number less than traffic percentage",
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -53,14 +53,14 @@ func TestHandleEntrypointHook(t *testing.T) {
 				},
 			},
 			randomNum: 1,
-			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: true}}},
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 		},
 		{
 			name: "Enable Vast Unwrapper with random number equal to traffic percenatge",
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -70,14 +70,14 @@ func TestHandleEntrypointHook(t *testing.T) {
 				},
 			},
 			randomNum: 2,
-			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 		},
 		{
 			name: "Enable Vast Unwrapper with random number greater than traffic percenatge",
 			args: args{
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), isVastUnWrapEnabled, "1")
+						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -87,7 +87,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 				},
 			},
 			randomNum: 5,
-			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{IsVastUnwrapEnabled: false}}},
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 		},
 	}
 	for _, tt := range tests {
