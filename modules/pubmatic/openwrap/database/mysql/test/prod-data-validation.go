@@ -27,7 +27,9 @@ func Main(tst *testing.T) {
 
 	invalidAdunitsMap := make(map[string]bool)
 	validAdunitsMap := make(map[string]bool)
-	// failed := []string{}
+	invalidAucDetails := [][]string{
+		{"pubid", "profileid", "versionid", "create_date", "update_date", "current_adunit_config", "expected_adunit_config"},
+	}
 	invalidAUC := [][]string{}
 	validAUC := [][]string{}
 	r := bufio.NewReader(file)
@@ -54,6 +56,15 @@ func Main(tst *testing.T) {
 				Count(line[len(line)-1], invalidAdunitsMap)
 				iv += 1
 				// fmt.Println("[INVALID!!!, ", line[:len(line)-1], " current:", line[len(line)-1], "]")
+
+				if err != nil {
+					invalidAucDetails = append(invalidAucDetails, append(line, err.Error()))
+				} else if newAdunitConfigObj == nil {
+					invalidAucDetails = append(invalidAucDetails, append(line, "invalid json"))
+				} else {
+					invalidAucDetails = append(invalidAucDetails, append(line, "adunits expected under fields 'config'"))
+				}
+
 				goto l
 			}
 
@@ -77,6 +88,8 @@ func Main(tst *testing.T) {
 				invalidAUC = append(invalidAUC, line)
 				Count(line[len(line)-1], invalidAdunitsMap)
 				iv += 1
+
+				invalidAucDetails = append(invalidAucDetails, append(line, string(newAdunitConfigBytes)))
 			} else {
 				Count(line[len(line)-1], validAdunitsMap)
 				validAUC = append(validAUC, line)
@@ -111,6 +124,18 @@ func Main(tst *testing.T) {
 	defer writer.Flush()
 	// write all rows at once
 	writer.WriteAll(validAUC)
+
+	// create a file
+	file, err = os.Create("invalid_adunit_config_details.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	// initialize csv writer
+	writer = csv.NewWriter(file)
+	defer writer.Flush()
+	// write all rows at once
+	writer.WriteAll(invalidAucDetails)
 
 	writeMapKeysToFile("valid_adunits_list.txt", validAdunitsMap)
 	writeMapKeysToFile("invalid_adunits_list.txt", invalidAdunitsMap)
