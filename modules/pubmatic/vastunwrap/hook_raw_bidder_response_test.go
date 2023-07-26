@@ -5,7 +5,9 @@ import (
 
 	"testing"
 
+	vastunwrap "git.pubmatic.com/vastunwrap"
 	"git.pubmatic.com/vastunwrap/config"
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -35,14 +37,17 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name:       "Empty Request Context",
+			name: "Empty Request Context",
+			args: args{
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 			wantErr:    false,
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -75,9 +80,51 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Set Vast Unwrapper to true in request context with invalid vast xml",
+			args: args{
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   invalidVastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				url:                 UnwrapURL,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			expectedBids: []*adapters.TypedBid{{
+				Bid: &openrtb2.Bid{
+					ID:    "Bid-123",
+					ImpID: fmt.Sprintf("div-adunit-%d", 123),
+					Price: 2.1,
+					AdM:   invalidVastXMLAdM,
+					CrID:  "Cr-234",
+					W:     100,
+					H:     50,
+				},
+				BidType: "video",
+			}},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "1").AnyTimes()
+			},
+			wantErr: true,
+		},
+		{
 			name: "Set Vast Unwrapper to true in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -104,7 +151,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					ID:    "Bid-123",
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
-					AdM:   vastXMLAdM,
+					AdM:   inlineXMLAdM,
 					CrID:  "Cr-234",
 					W:     100,
 					H:     50,
@@ -112,14 +159,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				BidType: "video",
 			}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6")
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 			},
 			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -157,7 +204,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					ID:    "Bid-123",
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
-					AdM:   vastXMLAdM,
+					AdM:   inlineXMLAdM,
 					CrID:  "Cr-234",
 					W:     100,
 					H:     50,
@@ -169,7 +216,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						ID:    "Bid-456",
 						ImpID: fmt.Sprintf("div-adunit-%d", 123),
 						Price: 2.1,
-						AdM:   vastXMLAdM,
+						AdM:   inlineXMLAdM,
 						CrID:  "Cr-789",
 						W:     100,
 						H:     50,
@@ -178,14 +225,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 			},
 			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -223,7 +270,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					ID:    "Bid-123",
 					ImpID: fmt.Sprintf("div-adunit-%d", 123),
 					Price: 2.1,
-					AdM:   vastXMLAdM,
+					AdM:   inlineXMLAdM,
 					CrID:  "Cr-234",
 					W:     100,
 					H:     50,
@@ -244,7 +291,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "6").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 			},
 			wantErr: false,
 		},
@@ -254,6 +301,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+			vastunwrap.InitUnWrapperConfig(tt.args.module.Cfg)
 			_, err := handleRawBidderResponseHook(tt.args.module, tt.args.moduleInvocationCtx, tt.args.payload, "test")
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
