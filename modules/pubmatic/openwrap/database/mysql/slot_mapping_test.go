@@ -1,0 +1,464 @@
+package mysql
+
+import (
+	"database/sql"
+	"regexp"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
+)
+
+func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
+	type fields struct {
+		cfg config.Database
+	}
+	type args struct {
+		pubId int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[string]models.SlotMapping
+		wantErr bool
+		setup   func() *sql.DB
+	}{
+		{
+			name:    "empty query in config file",
+			want:    map[string]models.SlotMapping{},
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				return db
+			},
+		},
+		{
+			name: "valid pubmatic slotmappings",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+					},
+				},
+			},
+			args: args{
+				pubId: 5890,
+			},
+			want: map[string]models.SlotMapping{
+				"adunit": {
+					PartnerId:    1,
+					AdapterId:    1,
+					VersionId:    0,
+					SlotName:     "adunit",
+					MappingJson:  "{\"adtag\":\"234\",\"site\":\"123\",\"floor\":\"0.12\",\"gaid\":\"3\"}",
+					SlotMappings: map[string]interface{}{"adtag": "234", "floor": "0.12", "gaid": "3", "owSlotName": "adunit", "site": "123"}, Hash: "", OrderID: 0,
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
+					AddRow("adunit", "300x250", 123, 234, 3, 0.12)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+
+				return db
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &mySqlDB{
+				conn: tt.setup(),
+				cfg:  tt.fields.cfg,
+			}
+			got, err := db.GetPubmaticSlotMappings(tt.args.pubId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mySqlDB.GetPubmaticSlotMappings() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
+	type fields struct {
+		cfg config.Database
+	}
+	type args struct {
+		pubID int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[string]string
+		wantErr bool
+		setup   func() *sql.DB
+	}{
+		{
+			name:    "empty query in config file",
+			want:    map[string]string{},
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				return db
+			},
+		},
+		{
+			name: "valid publisher slotnamehash",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = `,
+					},
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want: map[string]string{
+				"/43743431/DMDemo1@160x600": "2fb84286ede5b20e82b0601df0c7e454",
+				"/43743431/DMDemo2@160x600": "2aa34b52a9e941c1594af7565e599c8d",
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "hash"}).
+					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
+					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = 5890`)).WillReturnRows(rows)
+
+				return db
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &mySqlDB{
+				conn: tt.setup(),
+				cfg:  tt.fields.cfg,
+			}
+			got, err := db.GetPublisherSlotNameHash(tt.args.pubID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mySqlDB.GetPublisherSlotNameHash() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
+	type fields struct {
+		cfg config.Database
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+		profileId        int
+		displayVersion   int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[int][]models.SlotMapping
+		wantErr bool
+		setup   func() *sql.DB
+	}{
+		{
+			name:    "empty query in config file",
+			want:    map[int][]models.SlotMapping{},
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				return db
+			},
+		},
+		{
+			name: "invalid partnerId in wrapper slot mapping with displayversion 0",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetWrapperLiveVersionSlotMappings: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wpsm.partner_id IN ( #PARTNER_IDS ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+					},
+				},
+			},
+			args: args{
+				partnerConfigMap: formTestPartnerConfig(),
+				profileId:        19109,
+				displayVersion:   0,
+			},
+			want: map[int][]models.SlotMapping{
+				10: {
+					{
+						PartnerId:    10,
+						AdapterId:    1,
+						VersionId:    1,
+						SlotName:     "/43743431/DMDemo2@160x600",
+						MappingJson:  "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: nil,
+						Hash:         "",
+						OrderID:      0,
+					},
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
+					AddRow("10_112", 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
+					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wpsm.partner_id IN ( 0 ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+
+				return db
+			},
+		},
+		{
+			name: "valid wrapper slot mapping with displayversion 0",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetWrapperLiveVersionSlotMappings: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wpsm.partner_id IN ( #PARTNER_IDS ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+					},
+				},
+			},
+			args: args{
+				partnerConfigMap: formTestPartnerConfig(),
+				profileId:        19109,
+				displayVersion:   0,
+			},
+			want: map[int][]models.SlotMapping{
+				10: {
+					{
+						PartnerId:    10,
+						AdapterId:    1,
+						VersionId:    1,
+						SlotName:     "/43743431/DMDemo1@160x600",
+						MappingJson:  "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: nil,
+						Hash:         "",
+						OrderID:      0,
+					},
+					{
+						PartnerId:    10,
+						AdapterId:    1,
+						VersionId:    1,
+						SlotName:     "/43743431/DMDemo2@160x600",
+						MappingJson:  "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: nil,
+						Hash:         "",
+						OrderID:      0,
+					},
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
+					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
+					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wpsm.partner_id IN ( 0 ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+
+				return db
+			},
+		},
+		{
+			name: "valid wrapper slot mapping with displayversion 0",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetWrapperSlotMappingsQuery: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm join wrapper_version wv on wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION and wpsm.partner_id in (#PARTNER_IDS) and wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+					},
+				},
+			},
+			args: args{
+				partnerConfigMap: formTestPartnerConfig(),
+				profileId:        19109,
+				displayVersion:   4,
+			},
+			want: map[int][]models.SlotMapping{
+				10: {
+					{
+						PartnerId:    10,
+						AdapterId:    1,
+						VersionId:    1,
+						SlotName:     "/43743431/DMDemo1@160x600",
+						MappingJson:  "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: nil,
+						Hash:         "",
+						OrderID:      0,
+					},
+					{
+						PartnerId:    10,
+						AdapterId:    1,
+						VersionId:    1,
+						SlotName:     "/43743431/DMDemo2@160x600",
+						MappingJson:  "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: nil,
+						Hash:         "",
+						OrderID:      0,
+					},
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
+					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
+					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm join wrapper_version wv on wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wv.display_version = 4 and wpsm.partner_id in (0) and wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+
+				return db
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &mySqlDB{
+				conn: tt.setup(),
+				cfg:  tt.fields.cfg,
+			}
+			got, err := db.GetWrapperSlotMappings(tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mySqlDB.GetWrapperSlotMappings() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_mySqlDB_GetMappings(t *testing.T) {
+	type args struct {
+		slotKey string
+		slotMap map[string]models.SlotMapping
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]interface{}
+		wantErr bool
+	}{
+		{
+			name:    "empty_data",
+			args:    args{},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "slotmapping_notfound",
+			args: args{
+				slotKey: "key1",
+				slotMap: map[string]models.SlotMapping{
+					"slot1": {},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "slotmapping_found_with_empty_fieldmap",
+			args: args{
+				slotKey: "slot1",
+				slotMap: map[string]models.SlotMapping{
+					"slot1": {},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "slotmapping_found_with_fieldmap",
+			args: args{
+				slotKey: "slot1",
+				slotMap: map[string]models.SlotMapping{
+					"slot1": {
+						SlotMappings: map[string]interface{}{
+							"key1": "value1",
+							"key2": "value2",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			wantErr: false,
+		},
+		{
+			name: "key_case_sensitive",
+			args: args{
+				slotKey: "SLOT1",
+				slotMap: map[string]models.SlotMapping{
+					"slot1": {
+						SlotMappings: map[string]interface{}{
+							"key1": "value1",
+							"key2": "value2",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &mySqlDB{}
+			got, err := db.GetMappings(tt.args.slotKey, tt.args.slotMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mySqlDB.GetMappings() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func formTestPartnerConfig() map[int]map[string]string {
+
+	partnerConfigMap := make(map[int]map[string]string)
+
+	partnerConfigMap[0] = map[string]string{
+		"partnerId":         "10",
+		"prebidPartnerName": "pubmatic",
+		"serverSideEnabled": "1",
+		"level":             "multi",
+		"kgp":               "_AU_@_W_x_H",
+		"timeout":           "220",
+	}
+
+	return partnerConfigMap
+}

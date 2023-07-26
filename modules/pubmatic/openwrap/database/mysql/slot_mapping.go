@@ -11,12 +11,12 @@ import (
 )
 
 // Return the list of Pubmatic slot mappings
-func (db *mySqlDB) GetPubmaticSlotMappings(pubId int) map[string]models.SlotMapping {
+func (db *mySqlDB) GetPubmaticSlotMappings(pubId int) (map[string]models.SlotMapping, error) {
 	pmSlotMappings := make(map[string]models.SlotMapping, 0)
 	rows, err := db.conn.Query(db.cfg.Queries.GetPMSlotToMappings,
 		pubId, models.MAX_SLOT_COUNT)
 	if nil != err {
-		return pmSlotMappings
+		return pmSlotMappings, err
 	}
 
 	defer rows.Close()
@@ -50,17 +50,17 @@ func (db *mySqlDB) GetPubmaticSlotMappings(pubId int) map[string]models.SlotMapp
 		slotMapping.SlotMappings = mappingJsonObj
 		pmSlotMappings[strings.ToLower(slotMapping.SlotName)] = slotMapping
 	}
-	return pmSlotMappings
+	return pmSlotMappings, nil
 }
 
 // GetPublisherSlotNameHash Returns a map of all slot names and hashes for a publisher
-func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) map[string]string {
+func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error) {
 	nameHashMap := make(map[string]string)
 
-	query := formSlotNameHashQuery(pubID)
+	query := db.formSlotNameHashQuery(pubID)
 	rows, err := db.conn.Query(query)
 	if err != nil {
-		return nameHashMap
+		return nameHashMap, err
 	}
 	defer rows.Close()
 
@@ -73,18 +73,17 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) map[string]string {
 	}
 
 	//vastTagHookPublisherSlotName(nameHashMap, pubID)
-	return nameHashMap
+	return nameHashMap, nil
 }
 
 // Return the list of wrapper slot mappings
-func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]string, profileId, displayVersion int) map[int][]models.SlotMapping {
+func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]string, profileId, displayVersion int) (map[int][]models.SlotMapping, error) {
 	partnerSlotMappingMap := make(map[int][]models.SlotMapping)
 
-	var query string
-	query = formWrapperSlotMappingQuery(profileId, displayVersion, partnerConfigMap)
+	query := db.formWrapperSlotMappingQuery(profileId, displayVersion, partnerConfigMap)
 	rows, err := db.conn.Query(query)
 	if err != nil {
-		return partnerSlotMappingMap
+		return partnerSlotMappingMap, err
 	}
 	defer rows.Close()
 
@@ -107,7 +106,7 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 
 	}
 	//vastTagHookPartnerSlotMapping(partnerSlotMappingMap, profileId, displayVersion)
-	return partnerSlotMappingMap
+	return partnerSlotMappingMap, nil
 }
 
 // GetMappings will returns slotMapping from map based on slotKey
@@ -120,7 +119,7 @@ func (db *mySqlDB) GetMappings(slotKey string, slotMap map[string]models.SlotMap
 	return fieldMap, nil
 }
 
-func formWrapperSlotMappingQuery(profileID, displayVersion int, partnerConfigMap map[int]map[string]string) string {
+func (db *mySqlDB) formWrapperSlotMappingQuery(profileID, displayVersion int, partnerConfigMap map[int]map[string]string) string {
 	var query string
 	var partnerIDStr string
 	for partnerID := range partnerConfigMap {
@@ -139,6 +138,7 @@ func formWrapperSlotMappingQuery(profileID, displayVersion int, partnerConfigMap
 	return query
 }
 
-func formSlotNameHashQuery(pubID int) (query string) {
+func (db *mySqlDB) formSlotNameHashQuery(pubID int) (query string) {
+	//TODO : Remove #PUB_ID from GetSlotNameHash Query
 	return fmt.Sprint(db.cfg.Queries.GetSlotNameHash, pubID)
 }

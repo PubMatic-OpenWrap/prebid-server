@@ -13,8 +13,7 @@ import (
 
 func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 	type fields struct {
-		conn *sql.DB
-		cfg  config.Database
+		cfg config.Database
 	}
 	type args struct {
 		profileID        int
