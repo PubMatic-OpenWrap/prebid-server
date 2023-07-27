@@ -16,8 +16,8 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
-		profileID        int
-		displayVersionID int
+		profileID      int
+		displayVersion int
 	}
 	tests := []struct {
 		name    string
@@ -49,8 +49,8 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        5890,
-				displayVersionID: 0,
+				profileID:      5890,
+				displayVersion: 0,
 			},
 			want: &adunitconfig.AdUnitConfig{
 				ConfigPattern: "_AU_",
@@ -79,8 +79,8 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        5890,
-				displayVersionID: 1,
+				profileID:      5890,
+				displayVersion: 1,
 			},
 			want: &adunitconfig.AdUnitConfig{
 				ConfigPattern: "_AU_",
@@ -109,8 +109,8 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        5890,
-				displayVersionID: 0,
+				profileID:      5890,
+				displayVersion: 0,
 			},
 			want:    nil,
 			wantErr: true,
@@ -134,8 +134,8 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        5890,
-				displayVersionID: 1,
+				profileID:      5890,
+				displayVersion: 1,
 			},
 			want: &adunitconfig.AdUnitConfig{
 				ConfigPattern: "_DIV_",
@@ -163,7 +163,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			}
 			defer db.conn.Close()
 
-			got, err := db.GetAdunitConfig(tt.args.profileID, tt.args.displayVersionID)
+			got, err := db.GetAdunitConfig(tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetAdunitConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return

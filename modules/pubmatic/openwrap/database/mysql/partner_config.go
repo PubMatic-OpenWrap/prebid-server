@@ -12,20 +12,20 @@ import (
 
 // return the list of active server side header bidding partners
 // with their configurations at publisher-profile-version level
-func (db *mySqlDB) GetActivePartnerConfigurations(pubId, profileId int, displayVersion int) (map[int]map[string]string, error) {
-	versionID, displayVersionID, err := db.getVersionID(profileId, displayVersion, pubId)
+func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayVersion int) (map[int]map[string]string, error) {
+	versionID, displayVersionID, err := db.getVersionID(profileID, displayVersion, pubID)
 	if err != nil {
 		return nil, err
 	}
 
-	partnerConfigMap, err := db.getActivePartnerConfigurations(pubId, profileId, versionID)
+	partnerConfigMap, err := db.getActivePartnerConfigurations(versionID)
 	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
 	}
 	return partnerConfigMap, err
 }
 
-func (db *mySqlDB) getActivePartnerConfigurations(pubId, profileId int, versionID int) (map[int]map[string]string, error) {
+func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[string]string, error) {
 	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, versionID, versionID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
@@ -38,11 +38,10 @@ func (db *mySqlDB) getActivePartnerConfigurations(pubId, profileId int, versionI
 
 	partnerConfigMap := make(map[int]map[string]string, 0)
 	for rows.Next() {
-		var partnerID int
-		var keyName string
-		var value string
-		var prebidPartnerName, bidderCode string
-		var entityTypeID, testConfig, isAlias int
+		var (
+			keyName, value, prebidPartnerName, bidderCode string
+			partnerID, entityTypeID, testConfig, isAlias  int
+		)
 		if err := rows.Scan(&partnerID, &prebidPartnerName, &bidderCode, &isAlias, &entityTypeID, &testConfig, &keyName, &value); err != nil {
 			continue
 		}
@@ -75,16 +74,15 @@ func (db *mySqlDB) getActivePartnerConfigurations(pubId, profileId int, versionI
 	return partnerConfigMap, nil
 }
 
-func (db *mySqlDB) getVersionID(profileID, displayVersionID, pubID int) (int, int, error) {
-	var versionID, displayVersionIDFromDB int
+func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int, error) {
 	var row *sql.Row
-
-	if displayVersionID == 0 {
+	if displayVersion == 0 {
 		row = db.conn.QueryRow(db.cfg.Queries.LiveVersionInnerQuery, profileID, pubID)
 	} else {
-		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, profileID, displayVersionID, pubID)
+		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, profileID, displayVersion, pubID)
 	}
 
+	var versionID, displayVersionIDFromDB int
 	err := row.Scan(&versionID, &displayVersionIDFromDB)
 	if err != nil {
 		return versionID, displayVersionIDFromDB, err

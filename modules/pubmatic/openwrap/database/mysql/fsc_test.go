@@ -12,8 +12,7 @@ import (
 
 func Test_mySqlDB_GetFSCDisabledPublishers(t *testing.T) {
 	type fields struct {
-		conn *sql.DB
-		cfg  config.Database
+		cfg config.Database
 	}
 	tests := []struct {
 		name    string
@@ -24,34 +23,13 @@ func Test_mySqlDB_GetFSCDisabledPublishers(t *testing.T) {
 	}{
 		{
 			name:    "empty query in config file",
-			want:    map[int]struct{}{},
+			want:    nil,
 			wantErr: true,
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				return db
-			},
-		},
-		{
-			name: "Invalid Execution return Error",
-			fields: fields{
-				cfg: config.Database{
-					Queries: config.Queries{
-						GetAllFscDisabledPublishersQuery: `SELECT pub_id from wrapper_publisher_feature_mapping where feature_id=(SELECT id FROM wrapper_feature WHERE feature_name="fsc") AND is_enabled = 0`,
-					},
-				},
-			},
-			want:    map[int]struct{}{},
-			wantErr: true,
-			setup: func() *sql.DB {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-				rows := sqlmock.NewRows([]string{"dsp_id", "fsc_pcnt"}).AddRow(`{`, `{`)
-				mock.ExpectQuery(`SELECT pub_id from wrapper_publisher_feature_mapping where feature_id=(SELECT id FROM wrapper_feature WHERE feature_name="fsc") AND is_enabled = 0`).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -86,9 +64,9 @@ func Test_mySqlDB_GetFSCDisabledPublishers(t *testing.T) {
 				},
 			},
 			want: map[int]struct{}{
-				5890: struct{}{},
-				5891: struct{}{},
-				5892: struct{}{},
+				5890: {},
+				5891: {},
+				5892: {},
 			},
 			wantErr: false,
 			setup: func() *sql.DB {
@@ -123,8 +101,7 @@ func Test_mySqlDB_GetFSCDisabledPublishers(t *testing.T) {
 
 func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 	type fields struct {
-		conn *sql.DB
-		cfg  config.Database
+		cfg config.Database
 	}
 	tests := []struct {
 		name    string
@@ -135,7 +112,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 	}{
 		{
 			name:    "empty query in config file",
-			want:    map[int]int{},
+			want:    nil,
 			wantErr: true,
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()

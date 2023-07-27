@@ -16,7 +16,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
-		pubId int
+		pubID int
 	}
 	tests := []struct {
 		name    string
@@ -48,7 +48,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId: 5890,
+				pubID: 5890,
 			},
 			want: map[string]models.SlotMapping{
 				"adunit": {
@@ -80,7 +80,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetPubmaticSlotMappings(tt.args.pubId)
+			got, err := db.GetPubmaticSlotMappings(tt.args.pubID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetPubmaticSlotMappings() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -170,7 +170,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 	}
 	type args struct {
 		partnerConfigMap map[int]map[string]string
-		profileId        int
+		profileID        int
 		displayVersion   int
 	}
 	tests := []struct {
@@ -204,7 +204,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			},
 			args: args{
 				partnerConfigMap: formTestPartnerConfig(),
-				profileId:        19109,
+				profileID:        19109,
 				displayVersion:   0,
 			},
 			want: map[int][]models.SlotMapping{
@@ -246,7 +246,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			},
 			args: args{
 				partnerConfigMap: formTestPartnerConfig(),
-				profileId:        19109,
+				profileID:        19109,
 				displayVersion:   0,
 			},
 			want: map[int][]models.SlotMapping{
@@ -298,7 +298,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			},
 			args: args{
 				partnerConfigMap: formTestPartnerConfig(),
-				profileId:        19109,
+				profileID:        19109,
 				displayVersion:   4,
 			},
 			want: map[int][]models.SlotMapping{
@@ -346,7 +346,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetWrapperSlotMappings(tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
+			got, err := db.GetWrapperSlotMappings(tt.args.partnerConfigMap, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetWrapperSlotMappings() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -15,8 +15,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
-		pubId          int
-		profileId      int
+		pubID          int
+		profileID      int
 		displayVersion int
 	}
 	tests := []struct {
@@ -37,8 +37,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:          5890,
-				profileId:      19109,
+				pubID:          5890,
+				profileID:      19109,
 				displayVersion: 0,
 			},
 
@@ -57,6 +57,36 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			},
 		},
 		{
+			name: "error getting partnercofnig",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				pubID:          5890,
+				profileID:      19109,
+				displayVersion: 0,
+			},
+
+			want:    nil,
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+
+				return db
+			},
+		},
+		{
 			name: "valid partnerconfig with displayversion is 0",
 			fields: fields{
 				cfg: config.Database{
@@ -68,8 +98,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:          5890,
-				profileId:      19109,
+				pubID:          5890,
+				profileID:      19109,
 				displayVersion: 0,
 			},
 
@@ -125,8 +155,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:          5890,
-				profileId:      19109,
+				pubID:          5890,
+				profileID:      19109,
 				displayVersion: 3,
 			},
 
@@ -177,7 +207,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetActivePartnerConfigurations(tt.args.pubId, tt.args.profileId, tt.args.displayVersion)
+			got, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -192,8 +222,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
-		pubId     int
-		profileId int
 		versionID int
 	}
 	tests := []struct {
@@ -227,8 +255,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 1,
 			},
 			want:    map[int]map[string]string{},
@@ -255,8 +281,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 123,
 			},
 			want: map[int]map[string]string{
@@ -301,8 +325,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 123,
 			},
 			want: map[int]map[string]string{
@@ -353,8 +375,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 123,
 			},
 			want: map[int]map[string]string{
@@ -408,8 +428,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 123,
 			},
 
@@ -461,8 +479,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				},
 			},
 			args: args{
-				pubId:     5890,
-				profileId: 1234,
 				versionID: 123,
 			},
 			want: map[int]map[string]string{
@@ -510,7 +526,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.getActivePartnerConfigurations(tt.args.pubId, tt.args.profileId, tt.args.versionID)
+			got, err := db.getActivePartnerConfigurations(tt.args.versionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -525,9 +541,9 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
-		profileID        int
-		displayVersionID int
-		pubID            int
+		profileID      int
+		displayVersion int
+		pubID          int
 	}
 	tests := []struct {
 		name                           string
@@ -548,11 +564,10 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        19109,
-				displayVersionID: 0,
-				pubID:            5890,
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
 			},
-
 			expectedVersionID:              0,
 			expectedDisplayVersionIDFromDB: 0,
 			wantErr:                        true,
@@ -580,9 +595,9 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        19109,
-				displayVersionID: 0,
-				pubID:            5890,
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
 			},
 
 			expectedVersionID:              251,
@@ -612,9 +627,9 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				},
 			},
 			args: args{
-				profileID:        19109,
-				displayVersionID: 3,
-				pubID:            5890,
+				profileID:      19109,
+				displayVersion: 3,
+				pubID:          5890,
 			},
 
 			expectedVersionID:              251,
@@ -639,7 +654,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, got1, err := db.getVersionID(tt.args.profileID, tt.args.displayVersionID, tt.args.pubID)
+			got, got1, err := db.getVersionID(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getVersionID() error = %v, wantErr %v", err, tt.wantErr)
 				return

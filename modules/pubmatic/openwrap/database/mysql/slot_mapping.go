@@ -11,10 +11,10 @@ import (
 )
 
 // Return the list of Pubmatic slot mappings
-func (db *mySqlDB) GetPubmaticSlotMappings(pubId int) (map[string]models.SlotMapping, error) {
+func (db *mySqlDB) GetPubmaticSlotMappings(pubID int) (map[string]models.SlotMapping, error) {
 	pmSlotMappings := make(map[string]models.SlotMapping, 0)
 	rows, err := db.conn.Query(db.cfg.Queries.GetPMSlotToMappings,
-		pubId, models.MAX_SLOT_COUNT)
+		pubID, models.MAX_SLOT_COUNT)
 	if nil != err {
 		return pmSlotMappings, err
 	}
@@ -77,10 +77,10 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error
 }
 
 // Return the list of wrapper slot mappings
-func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]string, profileId, displayVersion int) (map[int][]models.SlotMapping, error) {
+func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]string, profileID, displayVersion int) (map[int][]models.SlotMapping, error) {
 	partnerSlotMappingMap := make(map[int][]models.SlotMapping)
 
-	query := db.formWrapperSlotMappingQuery(profileId, displayVersion, partnerConfigMap)
+	query := db.formWrapperSlotMappingQuery(profileID, displayVersion, partnerConfigMap)
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return partnerSlotMappingMap, err
