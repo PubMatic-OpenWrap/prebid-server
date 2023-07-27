@@ -37,11 +37,11 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) *Metrics {
 	metrics.Registry = cfg.Registry
 	metrics.requests = newCounter(cfg, metrics.Registry,
 		"vastunwrap_status",
-		"Count of vast unwrap requests labeled by bidder and status.",
+		"Count of vast unwrap requests labeled by status",
 		[]string{bidderLabel, statusLabel})
 	metrics.wrapperCount = newCounter(cfg, metrics.Registry,
 		"vastunwrap_wrapper_count",
-		"Count of wrapper levels labeled by bidder and wrapper count.",
+		"Count of vast unwrap levels labeled by bidder",
 		[]string{bidderLabel, wrapperCountLabel})
 	metrics.requestTime = newHistogramVec(cfg, metrics.Registry,
 		"vastunwrap_request_time",

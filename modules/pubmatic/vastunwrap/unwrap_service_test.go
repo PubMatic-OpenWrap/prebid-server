@@ -95,7 +95,6 @@ func TestDoUnwrap(t *testing.T) {
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "2")
-				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "0")
 				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{
@@ -169,7 +168,6 @@ func TestDoUnwrap(t *testing.T) {
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "0")
 				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
 			},
 			expectedBid: &adapters.TypedBid{

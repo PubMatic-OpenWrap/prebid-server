@@ -118,7 +118,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			}},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1").AnyTimes()
-				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "0").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any()).AnyTimes()
 			},
 			wantErr: true,

@@ -25,8 +25,10 @@ func doUnwrapandUpdateBid(m VastUnwrapModule, bid *adapters.TypedBid, userAgent 
 		}
 		respTime := time.Since(startTime)
 		m.MetricsEngine.RecordRequestTime(bidder, respTime)
-		m.MetricsEngine.RecordWrapperCount(bidder, strconv.Itoa(int(wrapperCnt)))
 		m.MetricsEngine.RecordRequestStatus(bidder, respStatus)
+		if respStatus == "0" {
+			m.MetricsEngine.RecordWrapperCount(bidder, strconv.Itoa(int(wrapperCnt)))
+		}
 	}()
 	headers := http.Header{}
 	headers.Add(ContentType, "application/xml; charset=utf-8")
