@@ -139,6 +139,5 @@ func (db *mySqlDB) formWrapperSlotMappingQuery(profileID, displayVersion int, pa
 }
 
 func (db *mySqlDB) formSlotNameHashQuery(pubID int) (query string) {
-	//TODO : Remove #PUB_ID from GetSlotNameHash Query
-	return fmt.Sprint(db.cfg.Queries.GetSlotNameHash, pubID)
+	return fmt.Sprintf(db.cfg.Queries.GetSlotNameHash, pubID)
 }

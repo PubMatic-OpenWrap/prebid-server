@@ -122,7 +122,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = `,
+						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = %d`,
 					},
 				},
 			},
