@@ -117,7 +117,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				BidType: "video",
 			}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any()).AnyTimes()
 			},
 			wantErr: true,
 		},
@@ -159,7 +160,9 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				BidType: "video",
 			}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any()).AnyTimes()
 			},
 			wantErr: false,
 		},
@@ -225,7 +228,9 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any()).AnyTimes()
 			},
 			wantErr: false,
 		},
@@ -291,7 +296,9 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any()).AnyTimes()
 			},
 			wantErr: false,
 		},

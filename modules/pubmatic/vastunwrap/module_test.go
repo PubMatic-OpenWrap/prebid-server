@@ -160,7 +160,9 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 					Bidder: "pubmatic",
 				}},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
 			},
 			expectedBids: []*adapters.TypedBid{{
 				Bid: &openrtb2.Bid{
