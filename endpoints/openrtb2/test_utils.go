@@ -31,6 +31,7 @@ import (
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -95,7 +96,7 @@ type testConfigValues struct {
 
 type brokenExchange struct{}
 
-func (e *brokenExchange) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+func (e *brokenExchange) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 	return nil, errors.New("Critical, unrecoverable error.")
 }
 
@@ -849,15 +850,17 @@ type mockExchange struct {
 	lastRequest *openrtb2.BidRequest
 }
 
-func (m *mockExchange) HoldAuction(ctx context.Context, auctionRequest *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+func (m *mockExchange) HoldAuction(ctx context.Context, auctionRequest *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 	r := auctionRequest.BidRequestWrapper
 	m.lastRequest = r.BidRequest
-	return &openrtb2.BidResponse{
-		SeatBid: []openrtb2.SeatBid{{
-			Bid: []openrtb2.Bid{{
-				AdM: "<script></script>",
+	return &exchange.AuctionResponse{
+		BidResponse: &openrtb2.BidResponse{
+			SeatBid: []openrtb2.SeatBid{{
+				Bid: []openrtb2.Bid{{
+					AdM: "<script></script>",
+				}},
 			}},
-		}},
+		},
 	}, nil
 }
 
@@ -886,7 +889,7 @@ type warningsCheckExchange struct {
 	auctionRequest exchange.AuctionRequest
 }
 
-func (e *warningsCheckExchange) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+func (e *warningsCheckExchange) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 	e.auctionRequest = *r
 	return nil, nil
 }
@@ -897,13 +900,16 @@ type nobidExchange struct {
 	gotRequest *openrtb2.BidRequest
 }
 
-func (e *nobidExchange) HoldAuction(ctx context.Context, auctionRequest *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+func (e *nobidExchange) HoldAuction(ctx context.Context, auctionRequest *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 	r := auctionRequest.BidRequestWrapper
 	e.gotRequest = r.BidRequest
-	return &openrtb2.BidResponse{
-		ID:    r.BidRequest.ID,
-		BidID: "test bid id",
-		NBR:   openrtb3.NoBidUnknownError.Ptr(),
+
+	return &exchange.AuctionResponse{
+		BidResponse: &openrtb2.BidResponse{
+			ID:    r.BidRequest.ID,
+			BidID: "test bid id",
+			NBR:   openrtb3.NoBidUnknownError.Ptr(),
+		},
 	}, nil
 }
 
@@ -1168,7 +1174,7 @@ type exchangeTestWrapper struct {
 	actualValidatedBidReq *openrtb2.BidRequest
 }
 
-func (te *exchangeTestWrapper) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*openrtb2.BidResponse, error) {
+func (te *exchangeTestWrapper) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 
 	// rebuild/resync the request in the request wrapper.
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
@@ -1213,6 +1219,7 @@ func buildTestExchange(testCfg *testConfigValues, adapterMap map[openrtb_ext.Bid
 		mockCurrencyConverter,
 		mockFetcher,
 		&adscert.NilSigner{},
+		macros.NewStringIndexBasedReplacer(),
 		&floors.PriceFloorFetcher{},
 	)
 
@@ -1417,6 +1424,7 @@ func (p *fakePermissions) AuctionActivitiesAllowed(ctx context.Context, bidderCo
 type mockPlanBuilder struct {
 	entrypointPlan               hooks.Plan[hookstage.Entrypoint]
 	rawAuctionPlan               hooks.Plan[hookstage.RawAuctionRequest]
+	beforeRequestValidation      hooks.Plan[hookstage.BeforeValidationRequest]
 	processedAuctionPlan         hooks.Plan[hookstage.ProcessedAuctionRequest]
 	bidderRequestPlan            hooks.Plan[hookstage.BidderRequest]
 	rawBidderResponsePlan        hooks.Plan[hookstage.RawBidderResponse]
@@ -1430,6 +1438,10 @@ func (m mockPlanBuilder) PlanForEntrypointStage(_ string) hooks.Plan[hookstage.E
 
 func (m mockPlanBuilder) PlanForRawAuctionStage(_ string, _ *config.Account) hooks.Plan[hookstage.RawAuctionRequest] {
 	return m.rawAuctionPlan
+}
+
+func (m mockPlanBuilder) PlanForValidationStage(_ string, _ *config.Account) hooks.Plan[hookstage.BeforeValidationRequest] {
+	return m.beforeRequestValidation
 }
 
 func (m mockPlanBuilder) PlanForProcessedAuctionStage(_ string, _ *config.Account) hooks.Plan[hookstage.ProcessedAuctionRequest] {
@@ -1469,6 +1481,7 @@ func makePlan[H any](hook H) hooks.Plan[H] {
 
 type mockRejectionHook struct {
 	nbr int
+	err error
 }
 
 func (m mockRejectionHook) HandleEntrypointHook(
@@ -1476,7 +1489,7 @@ func (m mockRejectionHook) HandleEntrypointHook(
 	_ hookstage.ModuleInvocationContext,
 	_ hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	return hookstage.HookResult[hookstage.EntrypointPayload]{Reject: true, NbrCode: m.nbr}, nil
+	return hookstage.HookResult[hookstage.EntrypointPayload]{Reject: true, NbrCode: m.nbr}, m.err
 }
 
 func (m mockRejectionHook) HandleRawAuctionHook(
@@ -1484,7 +1497,15 @@ func (m mockRejectionHook) HandleRawAuctionHook(
 	_ hookstage.ModuleInvocationContext,
 	_ hookstage.RawAuctionRequestPayload,
 ) (hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
-	return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{Reject: true, NbrCode: m.nbr}, nil
+	return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
+}
+
+func (m mockRejectionHook) HandleBeforeValidationHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.BeforeValidationRequestPayload,
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
 }
 
 func (m mockRejectionHook) HandleProcessedAuctionHook(
@@ -1492,7 +1513,7 @@ func (m mockRejectionHook) HandleProcessedAuctionHook(
 	_ hookstage.ModuleInvocationContext,
 	_ hookstage.ProcessedAuctionRequestPayload,
 ) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
-	return hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{Reject: true, NbrCode: m.nbr}, nil
+	return hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
 }
 
 func (m mockRejectionHook) HandleBidderRequestHook(
@@ -1506,7 +1527,7 @@ func (m mockRejectionHook) HandleBidderRequestHook(
 		result.NbrCode = m.nbr
 	}
 
-	return result, nil
+	return result, m.err
 }
 
 func (m mockRejectionHook) HandleRawBidderResponseHook(

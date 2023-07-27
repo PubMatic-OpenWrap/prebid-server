@@ -42,24 +42,12 @@ func (st *StatsTCP) RecordOpenWrapServerPanicStats() {
 	st.statsClient.PublishStat(statKeys[statsKeyOpenWrapServerPanic], 1)
 }
 
-func (st *StatsTCP) RecordPublisherPartnerStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerRequests], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordPublisherPartnerImpStats(publisher, partner string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerImpressions], publisher, partner), impCount)
-}
-
 func (st *StatsTCP) RecordPublisherPartnerNoCookieStats(publisher, partner string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerNoCookieRequests], publisher, partner), 1)
 }
 
 func (st *StatsTCP) RecordPartnerTimeoutErrorStats(publisher, partner string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPartnerTimeoutErrorRequests], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordNobiderStatusErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidderStatusErrorRequests], publisher, partner), 1)
 }
 
 func (st *StatsTCP) RecordNobidErrorStats(publisher, partner string) {
@@ -97,18 +85,6 @@ func (st *StatsTCP) RecordPublisherInvalidProfileRequests(endpoint, publisher, p
 func (st *StatsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], publisher, profileID), impCount)
 	//TODO @viral ;previously by 1 but now by impCount
-}
-
-func (st *StatsTCP) RecordPublisherNoConsentRequests(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentRequests], publisher), 1)
-}
-
-func (st *StatsTCP) RecordPublisherNoConsentImpressions(publisher string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentImpressions], publisher), impCount)
-}
-
-func (st *StatsTCP) RecordPublisherRequestStats(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPrebidRequests], publisher), 1)
 }
 
 func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string) {
@@ -224,10 +200,6 @@ func (st *StatsTCP) RecordCTVInvalidReasonCount(errorCode int, publisher string)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVValidationErr], errorCode, publisher), 1)
 }
 
-func (st *StatsTCP) RecordCTVIncompleteAdPodsCount(impCount int, reason string, publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyIncompleteAdPods], reason, publisher), 1)
-}
-
 func (st *StatsTCP) RecordCTVReqImpsWithDbConfigCount(publisher string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVReqImpstWithConfig], "db", publisher), 1)
 }
@@ -254,10 +226,6 @@ func (st *StatsTCP) RecordRequestAdPodGeneratedImpressionsCount(impCount int, pu
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqTotalAdPodImpression], publisher), impCount)
 }
 
-func (st *StatsTCP) RecordAdPodSecondsMissedCount(seconds int, publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAdPodSecondsMissed], publisher), seconds)
-}
-
 func (st *StatsTCP) RecordReqImpsWithAppContentCount(publisher string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], "app", publisher), 1)
 }
@@ -272,10 +240,6 @@ func (st *StatsTCP) RecordAdPodImpressionYield(maxDuration int, minDuration int,
 
 func (st *StatsTCP) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqWithAdPodCount], publisherID, profileID), 1)
-}
-
-func (st *StatsTCP) RecordCTVKeyBidDuration(duration int, publisherID, profileID string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyBidDuration], duration, publisherID, profileID), 1)
 }
 
 func (st *StatsTCP) RecordPBSAuctionRequestsStats() {
@@ -355,4 +319,8 @@ func getStatsKeyIndexForResponseTime(responseTime int) int {
 		statKey = statsKeyL50
 	}
 	return statKey
+}
+
+func (st *StatsTCP) Shutdown() {
+	st.statsClient.ShutdownProcess()
 }

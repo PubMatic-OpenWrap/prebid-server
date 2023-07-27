@@ -16,7 +16,6 @@ import (
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adservertargeting"
-	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/bidadjustment"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -27,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
+	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/prebid_cache_client"
@@ -49,7 +49,7 @@ type extCacheInstructions struct {
 // Exchange runs Auctions. Implementations must be threadsafe, and will be shared across many goroutines.
 type Exchange interface {
 	// HoldAuction executes an OpenRTB v2.5 Auction.
-	HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error)
+	HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*AuctionResponse, error)
 }
 
 // IdFetcher can find the user's ID for a specific Bidder.
@@ -77,6 +77,7 @@ type exchange struct {
 	server                   config.Server
 	bidValidationEnforcement config.Validations
 	requestSplitter          requestSplitter
+	macroReplacer            macros.Replacer
 	floor                    config.PriceFloors
 	trakerURL                string
 	priceFloorFetcher        *floors.PriceFloorFetcher
@@ -128,7 +129,7 @@ func (randomDeduplicateBidBooleanGenerator) Generate() bool {
 	return rand.Intn(100) < 50
 }
 
-func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, floorFetcher *floors.PriceFloorFetcher) Exchange {
+func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, macroReplacer macros.Replacer, floorFetcher *floors.PriceFloorFetcher) Exchange {
 	bidderToSyncerKey := map[string]string{}
 	for bidder, syncer := range syncersByBidder {
 		bidderToSyncerKey[bidder] = syncer.Key()
@@ -172,6 +173,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 		server:                   config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter},
 		bidValidationEnforcement: cfg.Validations,
 		requestSplitter:          requestSplitter,
+		macroReplacer:            macroReplacer,
 		floor:                    cfg.PriceFloors,
 
 		trakerURL:         cfg.TrackerURL,
@@ -213,8 +215,6 @@ type AuctionRequest struct {
 	QueryParams           url.Values
 	// map of bidder to store duration needed for the MakeBids() calls and start time after MakeBids() calls
 	MakeBidsTimeInfo map[openrtb_ext.BidderName]adapters.MakeBidsTimeInfo
-	// LoggableObject
-	LoggableObject *analytics.LoggableAuctionObject
 }
 
 // BidderRequest holds the bidder specific request and all other
@@ -228,7 +228,7 @@ type BidderRequest struct {
 	ImpReplaceImpId       map[string]bool
 }
 
-func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*openrtb2.BidResponse, error) {
+func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*AuctionResponse, error) {
 	if r == nil {
 		return nil, nil
 	}
@@ -380,6 +380,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		auc            *auction
 		cacheErrs      []error
 		bidResponseExt *openrtb_ext.ExtBidResponse
+		seatNonBids    = nonBids{}
 	)
 
 	if anyBidsReturned {
@@ -401,14 +402,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
 				// Record request count with non-zero imp.bidfloor value
 				e.me.RecordFloorsRequestForAccount(r.PubID)
-
-				if r.LoggableObject != nil {
-					r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, floors.PbsOrtbBidToAnalyticsRejectedBid(rejectedBids)...)
-					if len(r.LoggableObject.RejectedBids) > 0 {
-						// Record rejected bid count at account level
-						e.me.RecordRejectedBidsForAccount(r.PubID)
-					}
+				if len(rejectedBids) > 0 {
+					// Record rejected bid count at account level
+					e.me.RecordRejectedBidsForAccount(r.PubID)
 				}
+				updateSeatNonBidsFloors(&seatNonBids, rejectedBids)
 			}
 
 			if responseDebugAllow {
@@ -423,7 +421,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids)
+		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids, &seatNonBids)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -432,7 +430,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExtPrebid.Targeting != nil && requestExtPrebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r, *requestExtPrebid.Targeting, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r, *requestExtPrebid.Targeting, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
@@ -465,7 +463,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			// A non-nil auction is only needed if targeting is active. (It is used below this block to extract cache keys)
 			auc = newAuction(adapterBids, len(r.BidRequestWrapper.Imp), targData.preferDeals)
 			auc.validateAndUpdateMultiBid(adapterBids, targData.preferDeals, r.Account.DefaultBidLimit)
-			auc.setRoundedPrices(targData.priceGranularity)
+			auc.setRoundedPrices(*targData)
 
 			if requestExtPrebid.SupportDeals {
 				dealErrs := applyDealSupport(r.BidRequestWrapper.BidRequest, auc, bidCategory, multiBidMap)
@@ -535,7 +533,17 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	bidResponse = adservertargeting.Apply(r.BidRequestWrapper, r.ResolvedBidRequest, bidResponse, r.QueryParams, bidResponseExt, r.Account.TruncateTargetAttribute)
 
 	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
-	return bidResponse, err
+
+	bidResponseExt = setSeatNonBid(bidResponseExt, seatNonBids)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuctionResponse{
+		BidResponse:    bidResponse,
+		ExtBidResponse: bidResponseExt,
+	}, nil
 }
 
 func buildMakeBidsTimeInfoMap(adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra) map[openrtb_ext.BidderName]adapters.MakeBidsTimeInfo {
@@ -967,7 +975,6 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 			bidResponse.Cur = adapterSeatBids.Currency
 		}
 	}
-
 	bidResponse.SeatBid = seatBids
 
 	return bidResponse, err
@@ -983,7 +990,7 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBids *nonBids) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	res := make(map[string]string)
 
@@ -1040,7 +1047,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 			bidID := bid.Bid.ID
 			var duration int
 			var category string
-			var pb string
+			var priceBucket string
 
 			if bid.BidVideo != nil {
 				duration = bid.BidVideo.Duration
@@ -1054,6 +1061,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					//on receiving bids from adapters if no unique IAB category is returned  or if no ad server category is returned discard the bid
 					bidsToRemove = append(bidsToRemove, bidInd)
 					rejections = updateRejections(rejections, bidID, "Bid did not contain a category")
+					seatNonBids.addBid(bid, int(ResponseRejectedCategoryMappingInvalid), string(bidderName))
 					continue
 				}
 				if translateCategories {
@@ -1063,6 +1071,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						//TODO: add metrics
 						//if mapping required but no mapping file is found then discard the bid
 						bidsToRemove = append(bidsToRemove, bidInd)
+						seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 						reason := fmt.Sprintf("Category mapping file for primary ad server: '%s', publisher: '%s' not found", primaryAdServer, publisher)
 						rejections = updateRejections(rejections, bidID, reason)
 						continue
@@ -1075,7 +1084,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 
 			// TODO: consider should we remove bids with zero duration here?
 
-			pb = GetPriceBucket(bid.Bid.Price, targData.priceGranularity)
+			priceBucket = GetPriceBucket(*bid.Bid, *targData)
 
 			newDur := duration
 			if len(targeting.DurationRangeSec) > 0 {
@@ -1086,6 +1095,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				//if the bid is above the range of the listed durations (and outside the buffer), reject the bid
 				if duration > durationRange[len(durationRange)-1] {
 					bidsToRemove = append(bidsToRemove, bidInd)
+					seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 					rejections = updateRejections(rejections, bidID, "Bid duration exceeds maximum allowed")
 					continue
 				}
@@ -1106,10 +1116,10 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 			var categoryDuration string
 			var dupeKey string
 			if brandCatExt.WithCategory {
-				categoryDuration = fmt.Sprintf("%s_%s_%ds", pb, category, newDur)
+				categoryDuration = fmt.Sprintf("%s_%s_%ds", priceBucket, category, newDur)
 				dupeKey = category
 			} else {
-				categoryDuration = fmt.Sprintf("%s_%ds", pb, newDur)
+				categoryDuration = fmt.Sprintf("%s_%ds", priceBucket, newDur)
 				dupeKey = categoryDuration
 			}
 
@@ -1124,7 +1134,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					if err != nil {
 						dupeBidPrice = 0
 					}
-					currBidPrice, err := strconv.ParseFloat(pb, 64)
+					currBidPrice, err := strconv.ParseFloat(priceBucket, 64)
 					if err != nil {
 						currBidPrice = 0
 					}
@@ -1140,6 +1150,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						if dupe.bidderName == bidderName {
 							// An older bid from the current bidder
 							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
+							seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
 						} else {
 							// An older bid from a different seatBid we've already finished with
@@ -1160,41 +1171,25 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					} else {
 						// Remove this bid
 						bidsToRemove = append(bidsToRemove, bidInd)
+						seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
 						continue
 					}
 				}
 			}
 			res[bidID] = categoryDuration
-			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: pb}
+			dedupe[dupeKey] = bidDedupe{bidderName: bidderName, bidIndex: bidInd, bidID: bidID, bidPrice: priceBucket}
 		}
 
 		if len(bidsToRemove) > 0 {
 			sort.Ints(bidsToRemove)
 			if len(bidsToRemove) == len(seatBid.Bids) {
 				//if all bids are invalid - remove entire seat bid
-				for _, bid := range seatBid.Bids {
-
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bid,
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
-				}
 				seatBidsToRemove = append(seatBidsToRemove, bidderName)
 			} else {
 				bids := seatBid.Bids
 				for i := len(bidsToRemove) - 1; i >= 0; i-- {
 					remInd := bidsToRemove[i]
-					if r.LoggableObject != nil {
-						r.LoggableObject.RejectedBids = append(r.LoggableObject.RejectedBids, analytics.RejectedBid{
-							Bid:             bids[remInd],
-							RejectionReason: openrtb3.LossBidCategoryMapping,
-							Seat:            seatBid.Seat,
-						})
-					}
 					bids = append(bids[:remInd], bids[remInd+1:]...)
 				}
 				seatBid.Bids = bids
@@ -1293,11 +1288,12 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 		// Defering the filling of bidResponseExt.Usersync[bidderName] until later
 
 	}
+
 	return bidResponseExt
 }
 
 // Return an openrtb seatBid for a bidder
-// BuildBidResponse is responsible for ensuring nil bid seatbids are not included
+// buildBidResponse is responsible for ensuring nil bid seatbids are not included
 func (e *exchange) makeSeatBid(adapterBid *entities.PbsOrtbSeatBid, adapter openrtb_ext.BidderName, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, bidResponseExt *openrtb_ext.ExtBidResponse, pubID string) *openrtb2.SeatBid {
 	seatBid := &openrtb2.SeatBid{
 		Seat:  adapter.String(),
@@ -1514,20 +1510,6 @@ func listBiddersWithRequests(bidderRequests []BidderRequest) []openrtb_ext.Bidde
 	return liveAdapters
 }
 
-func getPrebidMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
-	if bid.Ext != nil {
-		var bidExt openrtb_ext.ExtBid
-		err := json.Unmarshal(bid.Ext, &bidExt)
-		if err == nil && bidExt.Prebid != nil {
-			return openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
-		}
-	}
-
-	return "", &errortypes.BadServerResponse{
-		Message: fmt.Sprintf("Failed to parse bid mediatype for impression \"%s\"", bid.ImpID),
-	}
-}
-
 func buildStoredAuctionResponse(storedAuctionResponses map[string]json.RawMessage) (
 	map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid,
 	*openrtb_ext.Fledge,
@@ -1548,29 +1530,9 @@ func buildStoredAuctionResponse(storedAuctionResponses map[string]json.RawMessag
 			//set imp id from request
 			for i := range seat.Bid {
 				seat.Bid[i].ImpID = impId
-				mType := seat.Bid[i].MType
-				var bidType openrtb_ext.BidType
-				if mType > 0 {
-					switch mType {
-					case openrtb2.MarkupBanner:
-						bidType = openrtb_ext.BidTypeBanner
-					case openrtb2.MarkupVideo:
-						bidType = openrtb_ext.BidTypeVideo
-					case openrtb2.MarkupAudio:
-						bidType = openrtb_ext.BidTypeAudio
-					case openrtb2.MarkupNative:
-						bidType = openrtb_ext.BidTypeNative
-					default:
-						return nil, nil, nil, &errortypes.BadServerResponse{
-							Message: fmt.Sprintf("Failed to parse bid mType for impression \"%s\"", seat.Bid[i].ImpID),
-						}
-					}
-				} else {
-					var err error
-					bidType, err = getPrebidMediaTypeForBid(seat.Bid[i])
-					if err != nil {
-						return nil, nil, nil, err
-					}
+				bidType, err := getMediaTypeForBid(seat.Bid[i])
+				if err != nil {
+					return nil, nil, nil, err
 				}
 				bidsToAdd = append(bidsToAdd, &entities.PbsOrtbBid{Bid: &seat.Bid[i], BidType: bidType})
 			}
@@ -1688,4 +1650,20 @@ func setErrorMessageSecureMarkup(validationType string) string {
 		return "bidResponse secure markup warning: insecure creative in secure contexts"
 	}
 	return ""
+}
+
+// setSeatNonBid adds SeatNonBids within bidResponse.Ext.Prebid.SeatNonBid
+func setSeatNonBid(bidResponseExt *openrtb_ext.ExtBidResponse, seatNonBids nonBids) *openrtb_ext.ExtBidResponse {
+	if len(seatNonBids.seatNonBidsMap) == 0 {
+		return bidResponseExt
+	}
+	if bidResponseExt == nil {
+		bidResponseExt = &openrtb_ext.ExtBidResponse{}
+	}
+	if bidResponseExt.Prebid == nil {
+		bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{}
+	}
+
+	bidResponseExt.Prebid.SeatNonBid = seatNonBids.get()
+	return bidResponseExt
 }

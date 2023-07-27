@@ -179,6 +179,11 @@ func TestDefaults(t *testing.T) {
 	//Assert the price floor default values
 	cmpBools(t, "price_floors.enabled", false, cfg.PriceFloors.Enabled)
 
+	// Assert compression related defaults
+	cmpBools(t, "enable_gzip", false, cfg.EnableGzip)
+	cmpBools(t, "compression.request.enable_gzip", false, cfg.Compression.Request.GZIP)
+	cmpBools(t, "compression.response.enable_gzip", false, cfg.Compression.Response.GZIP)
+
 	cmpBools(t, "account_defaults.price_floors.enabled", true, cfg.AccountDefaults.PriceFloors.Enabled)
 	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorsRate)
 	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", true, cfg.AccountDefaults.PriceFloors.AdjustForBidAdjustment)
@@ -386,6 +391,12 @@ external_url: http://prebid-server.prebid.org/
 host: prebid-server.prebid.org
 port: 1234
 admin_port: 5678
+enable_gzip: false
+compression:
+    request:
+        enable_gzip: true
+    response:
+        enable_gzip: false
 garbage_collector_threshold: 1
 datacenter: "1"
 auction_timeouts_ms:
@@ -597,6 +608,11 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 7200, cfg.AccountDefaults.PriceFloors.Fetch.Period)
 	cmpInts(t, "price_floor_fetcher.worker", 10, cfg.PriceFloorFetcher.Worker)
 	cmpInts(t, "price_floor_fetcher.capacity", 20, cfg.PriceFloorFetcher.Capacity)
+
+	// Assert compression related defaults
+	cmpBools(t, "enable_gzip", false, cfg.EnableGzip)
+	cmpBools(t, "compression.request.enable_gzip", true, cfg.Compression.Request.GZIP)
+	cmpBools(t, "compression.response.enable_gzip", false, cfg.Compression.Response.GZIP)
 
 	//Assert the NonStandardPublishers was correctly unmarshalled
 	assert.Equal(t, []string{"pub1", "pub2"}, cfg.GDPR.NonStandardPublishers, "gdpr.non_standard_publishers")
@@ -2582,7 +2598,8 @@ func TestMigrateConfigDatabaseQueryParams(t *testing.T) {
 
 	v := viper.New()
 	v.SetConfigType("yaml")
-	v.ReadConfig(bytes.NewBuffer(config))
+	err := v.ReadConfig(bytes.NewBuffer(config))
+	assert.NoError(t, err)
 
 	migrateConfigDatabaseConnection(v)
 
@@ -2603,6 +2620,74 @@ func TestMigrateConfigDatabaseQueryParams(t *testing.T) {
 	assert.Equal(t, want_queries.fetcher_amp_query, v.GetString("stored_responses.database.fetcher.amp_query"))
 	assert.Equal(t, want_queries.poll_for_updates_query, v.GetString("stored_responses.database.poll_for_updates.query"))
 	assert.Equal(t, want_queries.poll_for_updates_amp_query, v.GetString("stored_responses.database.poll_for_updates.amp_query"))
+}
+
+func TestMigrateConfigCompression(t *testing.T) {
+	testCases := []struct {
+		desc                string
+		config              []byte
+		wantEnableGZIP      bool
+		wantReqGZIPEnabled  bool
+		wantRespGZIPEnabled bool
+	}{
+
+		{
+			desc:                "New config and old config not set",
+			config:              []byte{},
+			wantEnableGZIP:      false,
+			wantReqGZIPEnabled:  false,
+			wantRespGZIPEnabled: false,
+		},
+		{
+			desc: "Old config set, new config not set",
+			config: []byte(`
+                    enable_gzip: true
+                    `),
+			wantEnableGZIP:      true,
+			wantRespGZIPEnabled: true,
+			wantReqGZIPEnabled:  false,
+		},
+		{
+			desc: "Old config not set, new config set",
+			config: []byte(`
+                    compression:
+                        response:
+                            enable_gzip: true
+                        request:
+                            enable_gzip: false
+                    `),
+			wantEnableGZIP:      false,
+			wantRespGZIPEnabled: true,
+			wantReqGZIPEnabled:  false,
+		},
+		{
+			desc: "Old config set and new config set",
+			config: []byte(`
+                    enable_gzip: true
+                    compression:
+                        response:
+                            enable_gzip: false
+                        request:
+                            enable_gzip: true
+                    `),
+			wantEnableGZIP:      true,
+			wantRespGZIPEnabled: false,
+			wantReqGZIPEnabled:  true,
+		},
+	}
+
+	for _, test := range testCases {
+		v := viper.New()
+		v.SetConfigType("yaml")
+		err := v.ReadConfig(bytes.NewBuffer(test.config))
+		assert.NoError(t, err)
+
+		migrateConfigCompression(v)
+
+		assert.Equal(t, test.wantEnableGZIP, v.GetBool("enable_gzip"), test.desc)
+		assert.Equal(t, test.wantReqGZIPEnabled, v.GetBool("compression.request.enable_gzip"), test.desc)
+		assert.Equal(t, test.wantRespGZIPEnabled, v.GetBool("compression.response.enable_gzip"), test.desc)
+	}
 }
 
 func TestIsConfigInfoPresent(t *testing.T) {

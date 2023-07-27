@@ -18,6 +18,7 @@ import (
 	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/experiment/adscert"
 	"github.com/prebid/prebid-server/hooks"
+	"github.com/prebid/prebid-server/macros"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
@@ -95,6 +96,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
 		empty_fetcher.EmptyFetcher{},
 		&adscert.NilSigner{},
+		macros.NewStringIndexBasedReplacer(),
 		&floors.PriceFloorFetcher{},
 	)
 

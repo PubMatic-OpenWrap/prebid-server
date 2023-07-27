@@ -24,10 +24,12 @@ import (
 	"github.com/prebid/prebid-server/floors"
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/hooks"
+	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/metrics"
 	metricsConf "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules"
 	"github.com/prebid/prebid-server/modules/moduledeps"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/pbs"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
@@ -169,6 +171,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if len(errs) > 0 {
 		return nil, errortypes.NewAggregateError("user sync", errs)
 	}
+	// set the syncerMap for pubmatic ow module
+	models.SetSyncerMap(syncersByBidder)
 
 	syncerKeys := make([]string, 0, len(syncersByBidder))
 	syncerKeysHashSet := map[string]struct{}{}
@@ -236,7 +240,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	}
 
 	planBuilder := hooks.NewExecutionPlanBuilder(cfg.Hooks, repo)
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, priceFloorFetcher)
+	macroReplacer := macros.NewStringIndexBasedReplacer()
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
 	var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder)
 	if err != nil {

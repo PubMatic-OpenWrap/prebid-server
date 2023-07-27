@@ -1,11 +1,13 @@
 package openrtb2
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -154,6 +156,8 @@ type endpointDeps struct {
 }
 
 func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	deps.metricsEngine.RecordHttpCounter()
+
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
 	//
@@ -165,12 +169,8 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
 
 	ao := analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context:      r.Context(),
-			Status:       http.StatusOK,
-			Errors:       make([]error, 0),
-			RejectedBids: []analytics.RejectedBid{},
-		},
+		Status:    http.StatusOK,
+		Errors:    make([]error, 0),
 		StartTime: start,
 	}
 
@@ -186,7 +186,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
-		recordRejectedBids(labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
+		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -199,7 +199,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 
 	if rejectErr := hookexecution.FindFirstRejectOrNil(errL); rejectErr != nil {
-		ao.Request = req.BidRequest
+		ao.RequestWrapper = req
 		labels, ao = rejectAuctionRequest(*rejectErr, w, hookExecutor, req.BidRequest, account, labels, ao)
 		return
 	}
@@ -251,13 +251,16 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		PubID:                      labels.PubID,
 		HookExecutor:               hookExecutor,
 		TCF2Config:                 tcf2Config,
-		LoggableObject:             &ao.LoggableAuctionObject,
 	}
-	response, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
-	exchange.UpdateRejectedBidExt(auctionRequest.LoggableObject)
-	ao.Request = req.BidRequest
-	ao.Response = response
+	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	ao.RequestWrapper = req
 	ao.Account = account
+	var response *openrtb2.BidResponse
+	if auctionResponse != nil {
+		response = auctionResponse.BidResponse
+	}
+	ao.Response = response
+	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
 		if errortypes.ReadCode(err) == errortypes.BadInputErrorCode {
@@ -276,10 +279,41 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		return
 	}
 
+	err = setSeatNonBidRaw(req, auctionResponse)
+	if err != nil {
+		glog.Errorf("Error setting seat non-bid: %v", err)
+	}
 	labels, ao = sendAuctionResponse(w, hookExecutor, response, req.BidRequest, account, labels, ao)
 	if len(ao.Errors) == 0 {
 		recordResponsePreparationMetrics(auctionRequest.MakeBidsTimeInfo, deps.metricsEngine)
 	}
+}
+
+// setSeatNonBidRaw is transitional function for setting SeatNonBid inside bidResponse.Ext
+// Because,
+// 1. today exchange.HoldAuction prepares and marshals some piece of response.Ext which is then used by auction.go, amp_auction.go and video_auction.go
+// 2. As per discussion with Prebid Team we are planning to move away from - HoldAuction building openrtb2.BidResponse. instead respective auction modules will build this object
+// 3. So, we will need this method to do first,  unmarshalling of response.Ext
+func setSeatNonBidRaw(request *openrtb_ext.RequestWrapper, auctionResponse *exchange.AuctionResponse) error {
+	if auctionResponse == nil || auctionResponse.BidResponse == nil {
+		return nil
+	}
+	// unmarshalling is required here, until we are moving away from bidResponse.Ext, which is populated
+	// by HoldAuction
+	response := auctionResponse.BidResponse
+	respExt := &openrtb_ext.ExtBidResponse{}
+	if err := json.Unmarshal(response.Ext, &respExt); err != nil {
+		return err
+	}
+	if setSeatNonBid(respExt, request, auctionResponse) {
+		if respExtJson, err := json.Marshal(respExt); err == nil {
+			response.Ext = respExtJson
+			return nil
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func rejectAuctionRequest(
@@ -295,6 +329,11 @@ func rejectAuctionRequest(
 	if request != nil {
 		response.ID = request.ID
 	}
+
+	// TODO merge this with success case
+	stageOutcomes := hookExecutor.GetOutcomes()
+	ao.HookExecutionOutcome = stageOutcomes
+	UpdateResponseExtOW(response, ao)
 
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
@@ -316,6 +355,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
+		UpdateResponseExtOW(response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -359,27 +399,48 @@ func sendAuctionResponse(
 //
 // If the errors list has at least one element, then no guarantees are made about the returned request.
 func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metrics.Labels, hookExecutor hookexecution.HookStageExecutor) (req *openrtb_ext.RequestWrapper, impExtInfoMap map[string]exchange.ImpExtInfo, storedAuctionResponses stored_responses.ImpsWithBidResponses, storedBidResponses stored_responses.ImpBidderStoredResp, bidderImpReplaceImpId stored_responses.BidderImpReplaceImpID, account *config.Account, errs []error) {
-	req = &openrtb_ext.RequestWrapper{}
-	req.BidRequest = &openrtb2.BidRequest{}
 	errs = nil
-
-	// Pull the request body into a buffer, so we have it for later usage.
-	lr := &io.LimitedReader{
-		R: httpRequest.Body,
+	var err error
+	var r io.ReadCloser = httpRequest.Body
+	reqContentEncoding := httputil.ContentEncoding(httpRequest.Header.Get("Content-Encoding"))
+	if reqContentEncoding != "" {
+		if !deps.cfg.Compression.Request.IsSupported(reqContentEncoding) {
+			errs = []error{fmt.Errorf("Content-Encoding of type %s is not supported", reqContentEncoding)}
+			return
+		} else {
+			r, err = getCompressionEnabledReader(httpRequest.Body, reqContentEncoding)
+			if err != nil {
+				errs = []error{err}
+				return
+			}
+		}
+	}
+	defer r.Close()
+	limitedReqReader := &io.LimitedReader{
+		R: r,
 		N: deps.cfg.MaxRequestSize,
 	}
-	requestJson, err := io.ReadAll(lr)
+
+	requestJson, err := ioutil.ReadAll(limitedReqReader)
 	if err != nil {
 		errs = []error{err}
 		return
 	}
-	// If the request size was too large, read through the rest of the request body so that the connection can be reused.
-	if lr.N <= 0 {
-		if written, err := io.Copy(io.Discard, httpRequest.Body); written > 0 || err != nil {
-			errs = []error{fmt.Errorf("Request size exceeded max size of %d bytes.", deps.cfg.MaxRequestSize)}
+
+	if limitedReqReader.N <= 0 {
+		// Limited Reader returns 0 if the request was exactly at the max size or over the limit.
+		// This is because it only reads up to N bytes. To check if the request was too large,
+		//  we need to look at the next byte of its underlying reader, limitedReader.R.
+		if _, err := limitedReqReader.R.Read(make([]byte, 1)); err != io.EOF {
+			// Discard the rest of the request body so that the connection can be reused.
+			io.Copy(io.Discard, httpRequest.Body)
+			errs = []error{fmt.Errorf("request size exceeded max size of %d bytes.", deps.cfg.MaxRequestSize)}
 			return
 		}
 	}
+
+	req = &openrtb_ext.RequestWrapper{}
+	req.BidRequest = &openrtb2.BidRequest{}
 
 	requestJson, rejectErr := hookExecutor.ExecuteEntrypointStage(httpRequest, requestJson)
 	if rejectErr != nil {
@@ -398,7 +459,6 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	if len(errs) > 0 {
 		return nil, nil, nil, nil, nil, nil, errs
 	}
-
 	storedBidRequestId, hasStoredBidRequest, storedRequests, storedImps, errs := deps.getStoredRequests(ctx, requestJson, impInfo)
 	if len(errs) > 0 {
 		return
@@ -462,6 +522,12 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		return
 	}
 
+	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(req.BidRequest)
+	if rejectErr != nil {
+		errs = append(errs, rejectErr)
+		return
+	}
+
 	if err := mergeBidderParams(req); err != nil {
 		errs = []error{err}
 		return
@@ -489,6 +555,15 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	}
 
 	return
+}
+
+func getCompressionEnabledReader(body io.ReadCloser, contentEncoding httputil.ContentEncoding) (io.ReadCloser, error) {
+	switch contentEncoding {
+	case httputil.ContentEncodingGZIP:
+		return gzip.NewReader(body)
+	default:
+		return nil, fmt.Errorf("unsupported compression type '%s'", contentEncoding)
+	}
 }
 
 // hasPayloadUpdatesAt checks if there are any successful payload updates at given stage
@@ -1607,29 +1682,50 @@ func validateTargeting(t *openrtb_ext.ExtRequestTargeting) error {
 	}
 
 	if t.PriceGranularity != nil {
-		pg := t.PriceGranularity
-
-		if pg.Precision == nil {
-			return errors.New("Price granularity error: precision is required")
-		} else if *pg.Precision < 0 {
-			return errors.New("Price granularity error: precision must be non-negative")
-		} else if *pg.Precision > openrtb_ext.MaxDecimalFigures {
-			return fmt.Errorf("Price granularity error: precision of more than %d significant figures is not supported", openrtb_ext.MaxDecimalFigures)
-		}
-
-		var prevMax float64 = 0
-		for _, gr := range pg.Ranges {
-			if gr.Max <= prevMax {
-				return errors.New(`Price granularity error: range list must be ordered with increasing "max"`)
-			}
-
-			if gr.Increment <= 0.0 {
-				return errors.New("Price granularity error: increment must be a nonzero positive number")
-			}
-			prevMax = gr.Max
+		if err := validatePriceGranularity(t.PriceGranularity); err != nil {
+			return err
 		}
 	}
 
+	if t.MediaTypePriceGranularity.Video != nil {
+		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Video); err != nil {
+			return err
+		}
+	}
+	if t.MediaTypePriceGranularity.Banner != nil {
+		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Banner); err != nil {
+			return err
+		}
+	}
+	if t.MediaTypePriceGranularity.Native != nil {
+		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Native); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validatePriceGranularity(pg *openrtb_ext.PriceGranularity) error {
+	if pg.Precision == nil {
+		return errors.New("Price granularity error: precision is required")
+	} else if *pg.Precision < 0 {
+		return errors.New("Price granularity error: precision must be non-negative")
+	} else if *pg.Precision > openrtb_ext.MaxDecimalFigures {
+		return fmt.Errorf("Price granularity error: precision of more than %d significant figures is not supported", openrtb_ext.MaxDecimalFigures)
+	}
+
+	var prevMax float64 = 0
+	for _, gr := range pg.Ranges {
+		if gr.Max <= prevMax {
+			return errors.New(`Price granularity error: range list must be ordered with increasing "max"`)
+		}
+
+		if gr.Increment <= 0.0 {
+			return errors.New("Price granularity error: increment must be a nonzero positive number")
+		}
+		prevMax = gr.Max
+	}
 	return nil
 }
 
