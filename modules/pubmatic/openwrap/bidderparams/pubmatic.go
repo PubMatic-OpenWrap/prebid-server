@@ -89,9 +89,6 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		}
-		if extImpPubMatic.AdSlot == "" {
-			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, rctx.ProfileIDStr, rctx.PartnerConfigMap[partnerID][models.BidderCode], models.PartnerErrMisConfig)
-		}
 	}
 
 	params, err := json.Marshal(extImpPubMatic)

@@ -408,5 +408,4 @@ const (
 // enum to report the error at partner-config level
 const (
 	PartnerErrSlotNotMapped = iota // 0
-	PartnerErrMisConfig            //1
 )
