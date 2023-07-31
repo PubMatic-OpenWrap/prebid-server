@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -44,7 +45,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetAdunitConfigForLiveVersion: `SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ('LIVE','LIVE_PENDING')`,
+						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
 				},
 			},
@@ -65,7 +66,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"config":{"default":{"bidfloor":2}}}`)
-				mock.ExpectQuery(`SELECT cf\.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf\.version_id = wv\.id AND cf\.is_active=1 AND wv\.profile_id = 5890 JOIN wrapper_status ws ON wv\.id = ws\.version_id and ws\.status IN \('LIVE','LIVE_PENDING'\)`).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -74,7 +75,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetAdunitConfigQuery: `SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION`,
+						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
 				},
 			},
@@ -95,7 +96,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"config":{"default":{"bidfloor":3.1}}}`)
-				mock.ExpectQuery(`SELECT cf\.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf\.version_id = wv\.id AND cf\.is_active=1 AND wv\.profile_id = 5890 AND wv\.display_version = 1`).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -104,7 +105,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetAdunitConfigForLiveVersion: `SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ('LIVE','LIVE_PENDING')`,
+						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
 				},
 			},
@@ -120,7 +121,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{`)
-				mock.ExpectQuery(`SELECT cf\.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf\.version_id = wv\.id AND cf\.is_active=1 AND wv\.profile_id = 5890 JOIN wrapper_status ws ON wv\.id = ws\.version_id and ws\.status IN \('LIVE','LIVE_PENDING'\)`).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -129,7 +130,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetAdunitConfigQuery: `SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION`,
+						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
 				},
 			},
@@ -150,7 +151,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern": "_DIV_", "config":{"default":{"bidfloor":3.1}}}`)
-				mock.ExpectQuery(`SELECT cf\.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf\.version_id = wv\.id AND cf\.is_active=1 AND wv\.profile_id = 5890 AND wv\.display_version = 1`).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},

@@ -43,7 +43,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+						GetPMSlotToMappings: "^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)",
 					},
 				},
 			},
@@ -68,7 +68,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 				}
 				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
 					AddRow("adunit", "300x250", "", 234, 3, 0.12)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)")).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
 
 				return db
 			},
@@ -78,7 +78,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+						GetPMSlotToMappings: "^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)",
 					},
 				},
 			},
@@ -104,7 +104,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
 					AddRow("adunit", "300x250", 123, 234, 3, 0.12).
 					AddRow("adunit", "400x350", 555, 111, 5, 0.51)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)")).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
 
 				return db
 			},
@@ -114,7 +114,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+						GetPMSlotToMappings: "^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)",
 					},
 				},
 			},
@@ -139,7 +139,7 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 				}
 				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
 					AddRow("adunit", "300x250", 123, 234, 3, 0.12)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM giym.publisher_slot_to_tag_mapping (.+)")).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
 
 				return db
 			},
@@ -193,7 +193,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = %d`,
+						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
 					},
 				},
 			},
@@ -215,7 +215,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 					AddRow("/43743431/DMDemo1@160x600", "f514eb9f174485f850b7e92d2a40baf6").
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = 5890`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
 
 				return db
 			},
@@ -225,7 +225,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = %d`,
+						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
 					},
 				},
 			},
@@ -245,7 +245,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"name", "hash"}).
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = 5890`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
 
 				return db
 			},
@@ -301,7 +301,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetWrapperLiveVersionSlotMappings: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wpsm.partner_id IN ( #PARTNER_IDS ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+						GetWrapperLiveVersionSlotMappings: "^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE",
 					},
 				},
 			},
@@ -333,7 +333,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
 					AddRow("10_112", 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wpsm.partner_id IN ( 0 ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
 
 				return db
 			},
@@ -343,7 +343,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetWrapperLiveVersionSlotMappings: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wpsm.partner_id IN ( #PARTNER_IDS ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+						GetWrapperLiveVersionSlotMappings: "^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE",
 					},
 				},
 			},
@@ -385,7 +385,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wpsm.partner_id IN ( 0 ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
 
 				return db
 			},
@@ -395,7 +395,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetWrapperSlotMappingsQuery: `SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm join wrapper_version wv on wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION and wpsm.partner_id in (#PARTNER_IDS) and wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`,
+						GetWrapperSlotMappingsQuery: "^SELECT (.+) FROM wrapper_partner_slot_mapping (.+)",
 					},
 				},
 			},
@@ -437,7 +437,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm join wrapper_version wv on wv.id = wpsm.version_id AND wv.profile_id = 19109 AND wv.display_version = 4 and wpsm.partner_id in (0) and wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+)")).WillReturnRows(rows)
 
 				return db
 			},

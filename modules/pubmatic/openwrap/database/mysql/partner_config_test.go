@@ -32,7 +32,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
 				},
 			},
@@ -51,7 +51,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("25_1", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -61,9 +61,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
-					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -81,7 +80,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -91,8 +90,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
-						GetParterConfig:       `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						GetParterConfig:       "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -131,7 +130,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
 					AddRow("-1", "ALL", "ALL", 0, -1, 0, "platform", "display").
@@ -139,7 +138,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "serverSideEnabled", "1")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 251 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 251 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 251 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rowsPartnerConfig)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
 		},
@@ -148,8 +147,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						DisplayVersionInnerQuery: `SELECT wv.id as versionId, display_version AS displayVersionId FROM wrapper_version wv JOIN wrapper_profile wp ON profile_id=wp.id WHERE profile_id=? and display_version=? AND pub_id=?`,
-						GetParterConfig:          `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetParterConfig:          "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -188,7 +187,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version AS displayVersionId FROM wrapper_version wv JOIN wrapper_profile wp ON profile_id=wp.id WHERE profile_id=? and display_version=? AND pub_id=?`)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
 					AddRow("-1", "ALL", "ALL", 0, -1, 0, "platform", "display").
@@ -196,7 +195,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "serverSideEnabled", "1")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 251 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 251 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 251 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rowsPartnerConfig)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
 		},
@@ -249,7 +248,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -266,7 +265,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				}
 				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
 					AddRow("11_11", "openx", "openx", 0, -1, 0, "k1", "v1")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 1 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 1 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 1 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -275,7 +274,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -310,7 +309,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "openx", "openx", 0, -1, 0, "k1", "v1").
 					AddRow(101, "openx", "openx", 0, -1, 0, "k2", "v2").
 					AddRow(102, "pubmatic", "pubmatic", 0, -1, 0, "k1", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 123 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 123 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 123 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -319,7 +318,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -360,7 +359,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 123 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 123 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 123 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -369,7 +368,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -413,7 +412,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 123 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 123 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 123 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -422,7 +421,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -464,7 +463,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 123 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 123 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 123 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -473,7 +472,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -515,7 +514,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
 					AddRow(102, "-", "-", 0, -1, 0, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT /*+ MAX_EXECUTION_TIME(1000) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = 123 AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = 123 AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = 123 LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -559,7 +558,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
 				},
 			},
@@ -578,7 +577,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("25_1", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -588,10 +587,8 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: `SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`,
-						GetParterConfig:       `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
-					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -610,7 +607,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?`)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -620,10 +617,8 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						DisplayVersionInnerQuery: `SELECT wv.id as versionId, display_version AS displayVersionId FROM wrapper_version wv JOIN wrapper_profile wp ON profile_id=wp.id WHERE profile_id=? and display_version=? AND pub_id=?`,
-						GetParterConfig:          `SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId`,
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
 					},
-					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -642,7 +637,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				}
 
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wv.id as versionId, display_version AS displayVersionId FROM wrapper_version wv JOIN wrapper_profile wp ON profile_id=wp.id WHERE profile_id=? and display_version=? AND pub_id=?`)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},

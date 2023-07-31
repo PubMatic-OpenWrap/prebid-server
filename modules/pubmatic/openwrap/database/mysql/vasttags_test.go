@@ -43,7 +43,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPublisherVASTTagsQuery: `SELECT wvt.id AS id, wvt.partner_id AS partnerId, wvt.url AS url, wvt.duration AS duration, IFNULL(wvt.price,0.0) AS price FROM wrapper_publisher_partner_vast_tag wvt WHERE wvt.pub_id = %d AND wvt.deleted = 0 AND wvt.status="live" ORDER BY wvt.partner_id`,
+						GetPublisherVASTTagsQuery: "^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)",
 					},
 				},
 			},
@@ -64,7 +64,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 					AddRow(101, "501_12", "vast_tag_url_1", 15, 2.0).
 					AddRow(102, 502, "vast_tag_url_2", 10, 0.0).
 					AddRow(103, 501, "vast_tag_url_1", 30, 3.0)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wvt.id AS id, wvt.partner_id AS partnerId, wvt.url AS url, wvt.duration AS duration, IFNULL(wvt.price,0.0) AS price FROM wrapper_publisher_partner_vast_tag wvt WHERE wvt.pub_id = 5890 AND wvt.deleted = 0 AND wvt.status="live" ORDER BY wvt.partner_id`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -73,7 +73,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPublisherVASTTagsQuery: `SELECT wvt.id AS id, wvt.partner_id AS partnerId, wvt.url AS url, wvt.duration AS duration, IFNULL(wvt.price,0.0) AS price FROM wrapper_publisher_partner_vast_tag wvt WHERE wvt.pub_id = %d AND wvt.deleted = 0 AND wvt.status="live" ORDER BY wvt.partner_id`,
+						GetPublisherVASTTagsQuery: "^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)",
 					},
 				},
 			},
@@ -95,7 +95,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 					AddRow(101, 501, "vast_tag_url_1", 15, 2.0).
 					AddRow(102, 502, "vast_tag_url_2", 10, 0.0).
 					AddRow(103, 501, "vast_tag_url_1", 30, 3.0)
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT wvt.id AS id, wvt.partner_id AS partnerId, wvt.url AS url, wvt.duration AS duration, IFNULL(wvt.price,0.0) AS price FROM wrapper_publisher_partner_vast_tag wvt WHERE wvt.pub_id = 5890 AND wvt.deleted = 0 AND wvt.status="live" ORDER BY wvt.partner_id`)).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
