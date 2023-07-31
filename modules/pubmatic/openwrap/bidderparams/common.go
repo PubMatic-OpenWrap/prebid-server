@@ -27,7 +27,7 @@ var ignoreKeys = map[string]bool{
 	models.IsAlias:              true,
 }
 
-func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
+func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, bidderCode string) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
 	var slotMap map[string]models.SlotMapping
 	var slotMappingInfo models.SlotMappingInfo
 
@@ -76,6 +76,8 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 		if slot != "" {
 			slots = append(slots, slot)
 			// NYC_TODO: break at i=0 for pubmatic?
+		} else {
+			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, rctx.ProfileIDStr, bidderCode, models.PartnerErrMisConfig)
 		}
 	}
 

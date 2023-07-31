@@ -13,12 +13,12 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
-func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod) (string, json.RawMessage, error) {
+func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod, bidderCode string) (string, json.RawMessage, error) {
 	if imp.Video == nil {
 		return "", nil, nil
 	}
 
-	slots, slotMap, _, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	slots, slotMap, _, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID, bidderCode)
 	if len(slots) == 0 {
 		return "", nil, nil
 	}
