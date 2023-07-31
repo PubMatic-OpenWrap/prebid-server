@@ -18,7 +18,7 @@ type Metrics struct {
 	pubPartnerRespErrors          *prometheus.CounterVec
 	pubPartnerConfigErrors        *prometheus.CounterVec
 	pubPartnerInjectTrackerErrors *prometheus.CounterVec
-	pubPartnerResponseTimeMs      *prometheus.HistogramVec
+	pubPartnerResponseTimeSecs    *prometheus.HistogramVec
 
 	// publisher-profile level metrics
 	pubProfRequests             *prometheus.CounterVec
@@ -68,6 +68,8 @@ const (
 // NewMetrics initializes a new Prometheus metrics instance.
 func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 
+	standardTimeBuckets := []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
+
 	metrics := Metrics{}
 
 	// general metrics
@@ -103,11 +105,11 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, partnerLabel, adFormatLabel},
 	)
 
-	metrics.pubPartnerResponseTimeMs = newHistogramVec(cfg, promRegistry,
+	metrics.pubPartnerResponseTimeSecs = newHistogramVec(cfg, promRegistry,
 		"partner_response_time",
-		"Time taken by each partner to respond in milli-seconds labeled by publisher.",
+		"Time taken by each partner to respond in seconds labeled by publisher.",
 		[]string{pubIDLabel, partnerLabel},
-		[]float64{10, 50, 100, 250, 500, 1000},
+		standardTimeBuckets,
 	)
 
 	// publisher-profile level metrics
@@ -156,9 +158,9 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 	metrics.pubResponseTime = newHistogramVec(cfg, promRegistry,
 		"pub_response_time",
-		"Total time taken by request in milli-seconds at publisher level.",
+		"Total time taken by request in seconds at publisher level.",
 		[]string{pubIDLabel},
-		[]float64{10, 50, 100, 250, 500, 1000},
+		standardTimeBuckets,
 	)
 
 	metrics.pubImpsWithContent = newCounter(cfg, promRegistry,
@@ -304,16 +306,16 @@ func (m *Metrics) RecordPlatformPublisherPartnerResponseStats(platform, publishe
 }
 
 func (m *Metrics) RecordPartnerResponseTimeStats(publisherID, partner string, responseTimeMs int) {
-	m.pubPartnerResponseTimeMs.With(prometheus.Labels{
+	m.pubPartnerResponseTimeSecs.With(prometheus.Labels{
 		pubIDLabel:   publisherID,
 		partnerLabel: partner,
-	}).Observe(float64(responseTimeMs))
+	}).Observe(float64(responseTimeMs) / 1000)
 }
 
 func (m *Metrics) RecordPublisherResponseTimeStats(publisherID string, responseTimeMs int) {
 	m.pubResponseTime.With(prometheus.Labels{
 		pubIDLabel: publisherID,
-	}).Observe(float64(responseTimeMs))
+	}).Observe(float64(responseTimeMs) / 1000)
 }
 
 func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, profileID string) {
