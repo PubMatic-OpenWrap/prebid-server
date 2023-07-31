@@ -67,6 +67,18 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
         fi
 
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/database$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/database\/mock$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/database\/mock_driver$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock_driver"
+        fi
+
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/metrics$ ]]; then
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
         fi
