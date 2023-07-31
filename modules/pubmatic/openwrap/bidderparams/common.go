@@ -77,9 +77,7 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 			slots = append(slots, slot)
 			// NYC_TODO: break at i=0 for pubmatic?
 		} else {
-			if partnerConfig, ok := rctx.PartnerConfigMap[partnerID]; ok {
-				rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, rctx.ProfileIDStr, partnerConfig[models.BidderCode], models.PartnerErrMisConfig)
-			}
+			rctx.MetricsEngine.RecordPartnerConfigErrors(rctx.PubIDStr, rctx.ProfileIDStr, rctx.PartnerConfigMap[partnerID][models.BidderCode], models.PartnerErrMisConfig)
 		}
 	}
 
