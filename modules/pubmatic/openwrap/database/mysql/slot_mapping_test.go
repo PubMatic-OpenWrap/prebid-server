@@ -39,6 +39,77 @@ func Test_mySqlDB_GetPubmaticSlotMappings(t *testing.T) {
 			},
 		},
 		{
+			name: "empty site_id in pubmatic slotmappings",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+					},
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want: map[string]models.SlotMapping{
+				"adunit": {
+					PartnerId:    1,
+					AdapterId:    1,
+					VersionId:    0,
+					SlotName:     "adunit",
+					MappingJson:  "{\"adtag\":\"0\",\"site\":\"0\",\"floor\":\"0.00\",\"gaid\":\"0\"}",
+					SlotMappings: map[string]interface{}{"adtag": "0", "floor": "0.00", "gaid": "0", "owSlotName": "adunit", "site": "0"}, Hash: "", OrderID: 0,
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
+					AddRow("adunit", "300x250", "", 234, 3, 0.12)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+
+				return db
+			},
+		},
+		{
+			name: "duplicate slotname in pubmatic slotmappings",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetPMSlotToMappings: `SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`,
+					},
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want: map[string]models.SlotMapping{
+				"adunit": {
+					PartnerId:    1,
+					AdapterId:    1,
+					VersionId:    0,
+					SlotName:     "adunit",
+					MappingJson:  "{\"adtag\":\"111\",\"site\":\"555\",\"floor\":\"0.51\",\"gaid\":\"5\"}",
+					SlotMappings: map[string]interface{}{"adtag": "111", "floor": "0.51", "gaid": "5", "owSlotName": "adunit", "site": "555"}, Hash: "", OrderID: 0,
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"slot_name", "pm_size", "pm_site_id", "ad_tag_id", "ga_id", "floor"}).
+					AddRow("adunit", "300x250", 123, 234, 3, 0.12).
+					AddRow("adunit", "400x350", 555, 111, 5, 0.51)
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?`)).WithArgs(5890, models.MAX_SLOT_COUNT).WillReturnRows(rows)
+
+				return db
+			},
+		},
+		{
 			name: "valid pubmatic slotmappings",
 			fields: fields{
 				cfg: config.Database{
@@ -114,6 +185,38 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
+				return db
+			},
+		},
+		{
+			name: "duplicate slotname in publisher slotnamehash",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetSlotNameHash: `SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = %d`,
+					},
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want: map[string]string{
+				"/43743431/DMDemo1@160x600": "2fb84286ede5b20e82b0601df0c7e454",
+				"/43743431/DMDemo2@160x600": "2aa34b52a9e941c1594af7565e599c8d",
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "hash"}).
+					AddRow("/43743431/DMDemo1@160x600", "eb15e9be2d65f0268ff498572d3bb53e").
+					AddRow("/43743431/DMDemo1@160x600", "f514eb9f174485f850b7e92d2a40baf6").
+					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
+					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				mock.ExpectQuery(regexp.QuoteMeta(`SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = 5890`)).WillReturnRows(rows)
+
 				return db
 			},
 		},
@@ -288,7 +391,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 			},
 		},
 		{
-			name: "valid wrapper slot mapping with displayversion 0",
+			name: "valid wrapper slot mapping with displayversion non-zero",
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
