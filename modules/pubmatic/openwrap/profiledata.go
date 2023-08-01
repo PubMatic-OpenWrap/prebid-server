@@ -13,7 +13,7 @@ func (m OpenWrap) getProfileData(rCtx models.RequestCtx, bidRequest openrtb2.Bid
 			platform = models.PLATFORM_APP
 		}
 
-		return getTestModePartnerConfigMap(rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID, platform), nil
+		return getTestModePartnerConfigMap(platform, m.cfg.Timeout.HBTimeout, rCtx.DisplayID), nil
 	}
 
 	return m.cache.GetPartnerConfigMap(rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)

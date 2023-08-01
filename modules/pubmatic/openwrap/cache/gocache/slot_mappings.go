@@ -11,37 +11,41 @@ import (
 )
 
 // PopulateCacheWithPubSlotNameHash will put the slot names and hashes for a publisher in cache
-func (c *cache) populateCacheWithPubSlotNameHash(pubid int) {
-	cacheKey := key(PubSlotNameHash, pubid)
-	if _, ok := c.cache.Get(cacheKey); ok {
+func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
+	cacheKey := key(PubSlotNameHash, pubID)
+
+	publisherSlotNameHashMap, err := c.db.GetPublisherSlotNameHash(pubID)
+	if err != nil {
 		return
 	}
-
-	publisherSlotNameHashMap, _ := c.db.GetPublisherSlotNameHash(pubid)
 	if publisherSlotNameHashMap != nil {
 		c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	}
+	return
 }
 
 // PopulateCacheWithWrapperSlotMappings will get the SlotMappings from database and put them in cache.
-func (c *cache) populateCacheWithWrapperSlotMappings(pubid int, partnerConfigMap map[int]map[string]string, profileId, displayVersion int) {
-	partnerSlotMappingMap, _ := c.db.GetWrapperSlotMappings(partnerConfigMap, profileId, displayVersion)
+func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) (err error) {
+	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
+	if err != nil {
+		return
+	}
 
 	//put a version level dummy entry in cache denoting mappings are present for this version
-	cacheKey := key(PUB_SLOT_INFO, pubid, profileId, displayVersion, 0)
+	cacheKey := key(PUB_SLOT_INFO, pubID, profileID, displayVersion, 0)
 	c.cache.Set(cacheKey, make(map[string]models.SlotMapping, 0), getSeconds(c.cfg.CacheDefaultExpiry))
 
 	if len(partnerSlotMappingMap) == 0 {
 		for _, partnerConf := range partnerConfigMap {
 			partnerID, _ := strconv.Atoi(partnerConf[models.PARTNER_ID])
-			cacheKey = key(PUB_SLOT_INFO, pubid, profileId, displayVersion, partnerID)
+			cacheKey = key(PUB_SLOT_INFO, pubID, profileID, displayVersion, partnerID)
 			c.cache.Set(cacheKey, make(map[string]models.SlotMapping, 0), getSeconds(c.cfg.CacheDefaultExpiry))
 		}
 		return
 	}
 
 	var nameHashMap map[string]string
-	obj, ok := c.cache.Get(key(PubSlotNameHash, pubid))
+	obj, ok := c.cache.Get(key(PubSlotNameHash, pubID))
 	if ok && obj != nil {
 		nameHashMap = obj.(map[string]string)
 	}
@@ -74,16 +78,17 @@ func (c *cache) populateCacheWithWrapperSlotMappings(pubid int, partnerConfigMap
 			slotNameToHashValueMap[slotMapping.SlotName] = slotMapping.Hash
 			slotNameOrderedList = append(slotNameOrderedList, slotMapping.SlotName)
 		}
-		cacheKey = key(PUB_SLOT_INFO, pubid, profileId, displayVersion, partnerID)
+		cacheKey = key(PUB_SLOT_INFO, pubID, profileID, displayVersion, partnerID)
 		c.cache.Set(cacheKey, slotNameToMappingMap, getSeconds(c.cfg.CacheDefaultExpiry))
 
 		slotMappingInfoObj := models.SlotMappingInfo{
 			OrderedSlotList: slotNameOrderedList,
 			HashValueMap:    slotNameToHashValueMap,
 		}
-		cacheKey = key(PubSlotHashInfo, pubid, profileId, displayVersion, partnerID)
+		cacheKey = key(PubSlotHashInfo, pubID, profileID, displayVersion, partnerID)
 		c.cache.Set(cacheKey, slotMappingInfoObj, getSeconds(c.cfg.CacheDefaultExpiry))
 	}
+	return
 }
 
 // GetMappingsFromCacheV25 will return mapping of each partner in partnerConf map
