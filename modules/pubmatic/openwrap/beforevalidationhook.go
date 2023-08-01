@@ -39,9 +39,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
-		if len(result.Errors) > 0 {
+		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
-
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
 
@@ -114,7 +114,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -124,7 +123,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err = errors.New("failed to price granularity details: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, err
 	}
 
@@ -151,7 +149,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
-			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 			return result, err
 		}
 
@@ -173,7 +170,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
-				m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 				return result, err
 			}
 		}
@@ -190,10 +186,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
 				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
-					m.metricEngine.RecordReqImpsWithAppContentCount(rCtx.PubIDStr)
+					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeApp)
 				}
 				if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
-					m.metricEngine.RecordReqImpsWithSiteContentCount(rCtx.PubIDStr)
+					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
@@ -257,7 +253,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil || len(bidderParams) == 0 {
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
-				m.metricEngine.RecordSlotNotMappedErrorStats(rCtx.PubIDStr, bidderCode)
+				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
 				continue
 			}
 
@@ -340,7 +336,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllSlotsDisabled
 		err = errors.New("All slots disabled: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 
@@ -348,7 +343,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
 		err = errors.New("server side partner not found: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr)
 		return result, nil
 	}
 

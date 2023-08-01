@@ -1406,7 +1406,7 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 	adapterList := make([]openrtb_ext.BidderName, 0, 2)
 	syncerKeys := []string{}
 	var moduleStageNames map[string][]string
-	testEngine := metricsConf.NewMetricsEngine(cfg, adapterList, syncerKeys, moduleStageNames)
+	testEngine := metricsConf.NewMetricsEngine(cfg, metricsConf.NewMetricsRegistry(), adapterList, syncerKeys, moduleStageNames)
 	//	2) Init new exchange with said configuration
 	handlerNoBidServer := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }
 	server := httptest.NewServer(http.HandlerFunc(handlerNoBidServer))
@@ -2606,7 +2606,7 @@ func newExchangeForTests(t *testing.T, filename string, expectations map[string]
 		}
 	}
 
-	metricsEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, openrtb_ext.CoreBidderNames(), nil, nil)
+	metricsEngine := metricsConf.NewMetricsEngine(&config.Configuration{}, metricsConf.NewMetricsRegistry(), openrtb_ext.CoreBidderNames(), nil, nil)
 	requestSplitter := requestSplitter{
 		bidderToSyncerKey: bidderToSyncerKey,
 		me:                metricsEngine,
@@ -5003,7 +5003,7 @@ func TestCallSignHeader(t *testing.T) {
 
 func TestValidateBannerCreativeSize(t *testing.T) {
 	exchange := exchange{bidValidationEnforcement: config.Validations{MaxCreativeWidth: 100, MaxCreativeHeight: 100},
-		me: metricsConf.NewMetricsEngine(&config.Configuration{}, openrtb_ext.CoreBidderNames(), nil, nil),
+		me: metricsConf.NewMetricsEngine(&config.Configuration{}, metricsConf.NewMetricsRegistry(), openrtb_ext.CoreBidderNames(), nil, nil),
 	}
 	testCases := []struct {
 		description                 string
@@ -5054,7 +5054,7 @@ func TestValidateBannerCreativeSize(t *testing.T) {
 
 func TestValidateBidAdM(t *testing.T) {
 	exchange := exchange{bidValidationEnforcement: config.Validations{MaxCreativeWidth: 100, MaxCreativeHeight: 100},
-		me: metricsConf.NewMetricsEngine(&config.Configuration{}, openrtb_ext.CoreBidderNames(), nil, nil),
+		me: metricsConf.NewMetricsEngine(&config.Configuration{}, metricsConf.NewMetricsRegistry(), openrtb_ext.CoreBidderNames(), nil, nil),
 	}
 	testCases := []struct {
 		description         string
