@@ -76,7 +76,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = nbr.InvalidProfileConfiguration
-		err = errors.New("failed to get profile data: " + err.Error())
+		if err != nil {
+			err = errors.New("failed to get profile data: " + err.Error())
+		} else {
+			err = errors.New("failed to get profile data: received empty data")
+		}
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
@@ -334,14 +338,22 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled
-		err = errors.New("All slots disabled: " + err.Error())
+		if err != nil {
+			err = errors.New("All slots disabled: " + err.Error())
+		} else {
+			err = errors.New("All slots disabled")
+		}
 		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
 
 	if !serviceSideBidderPresent {
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
-		err = errors.New("server side partner not found: " + err.Error())
+		if err != nil {
+			err = errors.New("server side partner not found: " + err.Error())
+		} else {
+			err = errors.New("server side partner not found")
+		}
 		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
