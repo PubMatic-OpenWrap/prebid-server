@@ -13,22 +13,6 @@ import (
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
 
-type RegistryType = string
-type MetricsRegistry map[RegistryType]interface{}
-
-const (
-	PrometheusRegistry RegistryType = "prometheus"
-	InfluxRegistry     RegistryType = "influx"
-)
-
-// NewMetricsRegistry returns the map of metrics-engine-name and its respective registry
-func NewMetricsRegistry() MetricsRegistry {
-	return MetricsRegistry{
-		PrometheusRegistry: prometheus.NewRegistry(),
-		InfluxRegistry:     gometrics.NewPrefixedRegistry("prebidserver."),
-	}
-}
-
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
 // for this instance.
 func NewMetricsEngine(cfg *config.Configuration, metricsRegistry MetricsRegistry, adapterList []openrtb_ext.BidderName, syncerKeys []string, moduleStageNames map[string][]string) *DetailedMetricsEngine {
