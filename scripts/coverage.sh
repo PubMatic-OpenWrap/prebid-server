@@ -29,6 +29,56 @@ generate_cover_data() {
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/util\/task$ ]]; then
             cover+=" -coverpkg=github.com/prebid/prebid-server/util/task"
         fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/router$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/router"
+        fi
+
+        # temporarily disable openwrap, remove as we add full support to each package
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/adapters$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/adunitconfig$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/bidderparams$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/cache$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/cache\/gocache$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/cache\/mock$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/config$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/database$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/metrics$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+        fi
+
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/metrics\/stats$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+        fi
+
         go test ${cover} "$pkg"
     done
 

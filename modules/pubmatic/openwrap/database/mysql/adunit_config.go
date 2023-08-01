@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,23 +10,23 @@ import (
 )
 
 // GetAdunitConfig - Method to get adunit config for a given profile and display version from giym DB
-func (db *mySqlDB) GetAdunitConfig(profileID, displayVersionID int) (*adunitconfig.AdUnitConfig, error) {
-	var adunitConfigJSON string
-	adunitConfig := new(adunitconfig.AdUnitConfig)
+func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig.AdUnitConfig, error) {
 	adunitConfigQuery := ""
-	if displayVersionID == 0 {
+	if displayVersion == 0 {
 		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigForLiveVersion
 	} else {
 		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigQuery
 	}
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, profileIdKey, strconv.Itoa(profileID), -1)
-	adunitConfigQuery = strings.Replace(adunitConfigQuery, displayVersionKey, strconv.Itoa(displayVersionID), -1)
+	adunitConfigQuery = strings.Replace(adunitConfigQuery, displayVersionKey, strconv.Itoa(displayVersion), -1)
+
+	var adunitConfigJSON string
 	err := db.conn.QueryRow(adunitConfigQuery).Scan(&adunitConfigJSON)
 	if err != nil {
-		err = fmt.Errorf("[QUERY_FAILED] Name:[%v] Error:[%v]", "GetAdunitConfig", err.Error())
 		return nil, err
 	}
 
+	adunitConfig := &adunitconfig.AdUnitConfig{}
 	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
 	if err != nil {
 		return nil, err
