@@ -28,10 +28,9 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 	vasttags := models.PublisherVASTTags{}
 	for rows.Next() {
 		var vastTag models.VASTTag
-		if err := rows.Scan(&vastTag.ID, &vastTag.PartnerID, &vastTag.URL, &vastTag.Duration, &vastTag.Price); err != nil {
-			continue
+		if err := rows.Scan(&vastTag.ID, &vastTag.PartnerID, &vastTag.URL, &vastTag.Duration, &vastTag.Price); err == nil {
+			vasttags[vastTag.ID] = &vastTag
 		}
-		vasttags[vastTag.ID] = &vastTag
 	}
 	return vasttags, nil
 }
