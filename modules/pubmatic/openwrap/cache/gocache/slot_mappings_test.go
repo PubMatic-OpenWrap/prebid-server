@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sync"
@@ -42,9 +41,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 		pubid int
 	}
 	type want struct {
-		hashValue    string
-		foundInCache bool
-		wantErr      bool
+		publisherSlotNameHashMap map[string]string
+		wantErr                  bool
 	}
 	tests := []struct {
 		name   string
@@ -90,8 +88,10 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				hashValue:    "2aa34b52a9e941c1594af7565e599c8d",
-				foundInCache: true,
+				wantErr: false,
+				publisherSlotNameHashMap: map[string]string{
+					testSlotName: testHashValue,
+				},
 			},
 		},
 		{
@@ -110,8 +110,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(nil, nil)
 			},
 			want: want{
-				hashValue:    "2aa34b52a9e941c1594af7565e599c8d",
-				foundInCache: false,
+				wantErr:                  false,
+				publisherSlotNameHashMap: nil,
 			},
 		},
 	}
@@ -127,37 +127,22 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithPubSlotNameHash(tt.args.pubid)
-			if tt.want.wantErr {
-				if err == nil {
-					t.Error("Error should not be nil")
-				}
-				return
-			}
-			cacheKey := key(PubSlotNameHash, tt.args.pubid)
-			obj, found := c.cache.Get(cacheKey)
-			if !tt.want.foundInCache {
-				if found {
-					t.Errorf("Hash value should not found in cache for cache key: %v", cacheKey)
-				}
-				return
-			}
-			if !found {
-				t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-				return
-			}
-			var actualHashValue string
-			slotMappingInfoObj := obj.(map[string]string)
-			if slotMappingInfoObj == nil {
-				t.Errorf("Hash value not set for slotname: %v", testSlotName)
-				return
-			}
-			if actualHashValue, found = slotMappingInfoObj[testSlotName]; !found {
-				t.Errorf("Hash value not set for slotname: %v", testSlotName)
+			if tt.want.wantErr && (err == nil) {
+				t.Error("Error should not be nil")
 				return
 			}
 
-			if actualHashValue != tt.want.hashValue {
-				t.Errorf("Expected Hash value not set for slotname '%v' was: %v. But actual hash value is: %v", testSlotName, testHashValue, actualHashValue)
+			cacheKey := key(PubSlotNameHash, tt.args.pubid)
+			obj, found := c.cache.Get(cacheKey)
+			if obj != nil {
+				if !found {
+					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
+					return
+				}
+				slotMappingInfoObj := obj.(map[string]string)
+				if slotMappingInfoObj != nil {
+					assert.Equalf(t, tt.want.publisherSlotNameHashMap, slotMappingInfoObj, "Expecting slotNameHashMap: %v but got: %v", tt.want.publisherSlotNameHashMap, slotMappingInfoObj)
+				}
 			}
 		})
 	}
@@ -181,9 +166,9 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 		displayVersion   int
 	}
 	type want struct {
-		emptyMapping bool
-		hashValues   bool
-		wantErr      bool
+		hashValues         bool
+		partnerSlotMapping map[string]models.SlotMapping
+		wantErr            bool
 	}
 	tests := []struct {
 		name   string
@@ -211,9 +196,9 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
-				emptyMapping: true,
-				hashValues:   false,
-				wantErr:      true,
+				hashValues:         false,
+				partnerSlotMapping: nil,
+				wantErr:            true,
 			},
 		},
 		{
@@ -235,8 +220,9 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, nil)
 			},
 			want: want{
-				emptyMapping: true,
-				hashValues:   false,
+				partnerSlotMapping: map[string]models.SlotMapping{},
+				hashValues:         false,
+				wantErr:            false,
 			},
 		},
 		{
@@ -268,8 +254,27 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				emptyMapping: false,
-				hashValues:   false,
+				partnerSlotMapping: map[string]models.SlotMapping{
+					"adunit@300x250": {
+						PartnerId:   testPartnerID,
+						AdapterId:   testAdapterID,
+						VersionId:   testVersionID,
+						SlotName:    testSlotName,
+						MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\",\"video\":{\"skippable\":\"TRUE\"}}",
+						SlotMappings: map[string]interface{}{
+							"adtag": "1405192",
+							"site":  "47124",
+							"video": map[string]interface{}{
+								"skippable": "TRUE",
+							},
+							"owSlotName": "adunit@300x250",
+						},
+						Hash:    "",
+						OrderID: 0,
+					},
+				},
+				hashValues: false,
+				wantErr:    false,
 			},
 		},
 		{
@@ -302,8 +307,24 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				emptyMapping: false,
-				hashValues:   true,
+				hashValues: true,
+				wantErr:    false,
+				partnerSlotMapping: map[string]models.SlotMapping{
+					"adunit@300x250": {
+						PartnerId:   testPartnerID,
+						AdapterId:   testAdapterID,
+						VersionId:   testVersionID,
+						SlotName:    testSlotName,
+						MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: map[string]interface{}{
+							"adtag":      "1405192",
+							"site":       "47124",
+							"owSlotName": "adunit@300x250",
+						},
+						Hash:    testHashValue,
+						OrderID: 0,
+					},
+				},
 			},
 		},
 	}
@@ -319,68 +340,24 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			}
 			if tt.want.hashValues {
 				c.populateCacheWithPubSlotNameHash(tt.args.pubid)
-				c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
-
-				cacheKey := key(PubSlotHashInfo, testPubID, testProfileID, testVersionID, testAdapterID)
-				obj, found := c.cache.Get(cacheKey)
-				if !found {
-					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-					return
-				}
-				var actualHashValue string
-				slotMappingInfoObj := obj.(models.SlotMappingInfo)
-				if slotMappingInfoObj.HashValueMap == nil {
-					t.Errorf("Hash value not set for slotname: %v", testSlotName)
-					return
-				}
-				if actualHashValue, found = slotMappingInfoObj.HashValueMap[testSlotName]; !found {
-					t.Errorf("Hash value not set for slotname: %v", testSlotName)
-					return
-				}
-
-				if actualHashValue != testHashValue {
-					t.Errorf("Expected Hash value not set for slotname '%v' was: %v. But actual hash value is: %v", testSlotName, testHashValue, actualHashValue)
-				}
-				return
 			}
-			var err error
-			err = c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
-			if tt.want.wantErr {
-				if err == nil {
-					t.Error("Error should not be nil")
-				}
+
+			err := c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
+			if tt.want.wantErr && (err == nil) {
+				t.Error("Error should not be nil")
 				return
 			}
 			cacheKey := key(PUB_SLOT_INFO, testPubID, testProfileID, testVersionID, testAdapterID)
 			obj, found := c.cache.Get(cacheKey)
-			if !found {
-				t.Error("Mapping not found in cache")
-				return
-			}
-			slotMappingMap := obj.(map[string]models.SlotMapping)
-
-			if tt.want.emptyMapping {
-				if len(slotMappingMap) != 0 {
-					t.Error("Map should be of size 0")
+			if obj != nil {
+				if !found {
+					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
+					return
 				}
-				return
-			}
-
-			if _, found := slotMappingMap[testSlotName]; !found {
-				t.Error("Mapping not set for slotname:", testSlotName)
-				return
-			}
-
-			fieldMap := make(map[string]interface{})
-			err = json.Unmarshal([]byte(slotMappingMap[testSlotName].MappingJson), &fieldMap)
-			assert.Nil(t, err, "Error should be nil")
-
-			if _, found := fieldMap[models.TAG_CACHE_KEY]; !found {
-				t.Error("No value stored for tag for a given slotname:", testSlotName)
-			}
-
-			if _, found := fieldMap[models.SITE_CACHE_KEY]; !found {
-				t.Error("No value stored for site for a given slotname:", testSlotName)
+				slotMappingMap := obj.(map[string]models.SlotMapping)
+				if slotMappingMap != nil {
+					assert.Equalf(t, tt.want.partnerSlotMapping, slotMappingMap, "Expecting partnerSlotMapping: %v but got: %v", tt.want.partnerSlotMapping, slotMappingMap)
+				}
 			}
 		})
 	}

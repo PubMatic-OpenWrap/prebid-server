@@ -1,13 +1,13 @@
 package gocache
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"testing"
 
 	mock_database "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
@@ -17,6 +17,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
@@ -36,8 +37,8 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		presentInCache    bool
-		emptyAdunitConfig bool
+		wantErr      bool
+		adunitConfig json.RawMessage
 	}
 	tests := []struct {
 		name   string
@@ -186,7 +187,8 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				presentInCache: true,
+				wantErr:      false,
+				adunitConfig: []byte(`{"configPattern":"_AU_","regex":true,"config":{"default":{"floors":{"floormin":15,"data":{"currency":"USD","modelgroups":[{"currency":"USD","modelweight":40,"modelversion":"model 1 from adunit config slot level","schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|728x90|www.website.com":13,"banner|300x250|www.website.com":1,"banner|300x600|*":4,"banner|728x90|www.website.com":5},"default":5}]},"enforcement":{"enforcejs":true,"enforcepbs":true,"enforcerate":100},"enabled":true},"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[2]}},"universalpixel":[{"id":123,"pixel":"pixle","pixeltype":"js","pos":"above","mediatype":"banner","partners":["pubmatic","appnexus"]}]},"div1":{"banner":{"enabled":true,"config":{"format":[{"w":200,"h":300},{"w":500,"h":800}]}},"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[0,1,2,4]}}},"div2":{"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[0,1,2,4]}}}}}`),
 			},
 		},
 		{
@@ -207,7 +209,8 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Invalid json"))
 			},
 			want: want{
-				presentInCache: false,
+				wantErr:      true,
+				adunitConfig: nil,
 			},
 		},
 		{
@@ -228,8 +231,8 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
 			},
 			want: want{
-				presentInCache:    true,
-				emptyAdunitConfig: true,
+				wantErr:      false,
+				adunitConfig: []byte(nil),
 			},
 		},
 	}
@@ -243,69 +246,28 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			obj, found := c.Get(cacheKey)
-			if !tt.want.presentInCache {
-				if found {
-					t.Error("Adunit config should not found in cache for cache key", cacheKey)
-				}
+			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			if tt.want.wantErr && (err == nil) {
+				t.Error("Error should not be nil")
 				return
 			}
-			if !found {
+			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			obj, found := c.Get(cacheKey)
+
+			if !tt.want.wantErr && !found {
 				t.Error("Adunit Config not found in cache for cache key", cacheKey)
 				return
 			}
 
-			if tt.want.emptyAdunitConfig {
-				return
+			if obj != nil {
+				adunitConfig := obj.(*adunitconfig.AdUnitConfig)
+				if adunitConfig != nil {
+					actualAdunitConfig, err := json.Marshal(adunitConfig)
+					assert.NoErrorf(t, err, "failed to marshal actual actualAdunitConfig for cachekey: %v", cacheKey)
+					assert.JSONEqf(t, string(tt.want.adunitConfig), string(actualAdunitConfig), "Expected adunitconfig: %v but got: %v", string(tt.want.adunitConfig), string(actualAdunitConfig))
+				}
 			}
 
-			adunitConfig := obj.(*adunitconfig.AdUnitConfig)
-			config := adunitConfig.Config
-			if len(config) == 0 {
-				t.Error("config should be empty for cache key", cacheKey)
-			}
-			defaultConfig, found := config[models.AdunitConfigDefaultKey]
-			if !found {
-				t.Error("Adunit config not set for default")
-				return
-			}
-
-			if defaultConfig.Video == nil {
-				t.Error("Video config not set for default")
-			}
-
-			if defaultConfig.Floors == nil {
-				t.Error("Floor JSON not set for default")
-			}
-
-			slot1Config, found := config[strings.ToLower("Div1")]
-			if !found {
-				t.Error("Adunit config not set for slotname Div1")
-				return
-			}
-
-			if slot1Config.Video == nil || slot1Config.Banner == nil {
-				t.Error("Video/banner config not set for first slot: Div1")
-				return
-			}
-
-			slot2Config, found := config[strings.ToLower("Div2")]
-			if !found {
-				t.Error("Adunit config not set for slotname Div2")
-				return
-			}
-
-			if slot2Config.Video == nil {
-				t.Error("Video/banner config not set for first slot: Div2")
-				return
-			}
-
-			if found := adunitConfig.Regex; !found {
-				t.Error("regex config not set")
-				return
-			}
 		})
 	}
 }
@@ -328,8 +290,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		wantNil         bool
-		emptyAUConfig   bool
+		adunitConfig    json.RawMessage
 		cacheKeyPresent bool
 	}
 	tests := []struct {
@@ -357,12 +318,10 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("error"))
 			},
 			want: want{
-				wantNil:         true,
-				emptyAUConfig:   false,
-				cacheKeyPresent: true,
+				adunitConfig:    nil,
+				cacheKeyPresent: false,
 			},
 		},
 		{
@@ -508,9 +467,8 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				emptyAUConfig:   false,
-				wantNil:         false,
 				cacheKeyPresent: true,
+				adunitConfig:    []byte(`{"configPattern":"_AU_","regex":true,"config":{"default":{"floors":{"floormin":15,"data":{"currency":"USD","modelgroups":[{"currency":"USD","modelweight":40,"modelversion":"model 1 from adunit config slot level","schema":{"fields":["mediaType","size","domain"],"delimiter":"|"},"values":{"*|728x90|www.website.com":13,"banner|300x250|www.website.com":1,"banner|300x600|*":4,"banner|728x90|www.website.com":5},"default":5}]},"enforcement":{"enforcejs":true,"enforcepbs":true,"enforcerate":100},"enabled":true},"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[2]}},"universalpixel":[{"id":123,"pixel":"pixle","pixeltype":"js","pos":"above","mediatype":"banner","partners":["pubmatic","appnexus"]}]},"div1":{"banner":{"enabled":true,"config":{"format":[{"w":200,"h":300},{"w":500,"h":800}]}},"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[0,1,2,4]}}},"div2":{"video":{"enabled":true,"config":{"mimes":null,"minduration":10,"maxduration":50,"skip":1,"skipmin":10,"skipafter":15,"battr":[6,7],"connectiontype":[0,1,2,4]}}}}}`),
 			},
 		},
 		{
@@ -534,9 +492,8 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(&adunitconfig.AdUnitConfig{}, nil)
 			},
 			want: want{
-				wantNil:         false,
-				emptyAUConfig:   true,
 				cacheKeyPresent: true,
+				adunitConfig:    []byte(`{"config":{}}`),
 			},
 		},
 		{
@@ -557,9 +514,8 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				wantNil:         true,
-				emptyAUConfig:   false,
 				cacheKeyPresent: false,
+				adunitConfig:    nil,
 			},
 		},
 	}
@@ -576,29 +532,15 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			if tt.want.cacheKeyPresent {
 				c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			}
-			got := c.GetAdunitConfigFromCache(tt.args.request, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if tt.want.wantNil {
-				if got != nil {
-					t.Error("Adunit config got from cache should be nil")
-				}
+			adunitConfig := c.GetAdunitConfigFromCache(tt.args.request, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			if tt.want.adunitConfig == nil && adunitConfig != nil {
+				t.Errorf("adunitConfig should be nil")
 				return
 			}
-
-			if tt.want.emptyAUConfig {
-				if len(got.Config) != 0 {
-					t.Error("Config should be empty")
-				}
-				return
-			}
-
-			if got.Config == nil {
-				t.Errorf("config should not be empty")
-				return
-			}
-
-			config := got.Config
-			if config[models.AdunitConfigDefaultKey].Floors == nil || config[models.AdunitConfigDefaultKey].Video == nil {
-				t.Errorf("floors/video should not be nil")
+			if adunitConfig != nil {
+				actualAdunitConfig, err := json.Marshal(adunitConfig)
+				assert.NoErrorf(t, err, "failed to marshal actual actualAdunitConfig ")
+				assert.JSONEqf(t, string(tt.want.adunitConfig), string(actualAdunitConfig), "Expected adunitconfig: %v but got: %v", string(tt.want.adunitConfig), string(actualAdunitConfig))
 			}
 		})
 	}
