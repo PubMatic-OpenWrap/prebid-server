@@ -162,6 +162,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	}
 	type want struct {
 		wantErr      bool
+		cacheEntry   bool
 		adunitConfig *adunitconfig.AdUnitConfig
 	}
 	tests := []struct {
@@ -190,6 +191,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			},
 			want: want{
 				wantErr:      true,
+				cacheEntry:   false,
 				adunitConfig: nil,
 			},
 		},
@@ -212,6 +214,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			},
 			want: want{
 				wantErr:      false,
+				cacheEntry:   true,
 				adunitConfig: testAdunitConfig,
 			},
 		},
@@ -234,6 +237,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			},
 			want: want{
 				wantErr:      false,
+				cacheEntry:   true,
 				adunitConfig: nil,
 			},
 		},
@@ -249,20 +253,16 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if tt.want.wantErr == (err == nil) {
-				t.Error("Error should not be nil")
-				return
-			}
+			assert.Equal(t, tt.want.wantErr, err != nil)
+
 			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			obj, found := c.Get(cacheKey)
-
-			if !tt.want.wantErr == !found {
-				t.Error("Adunit Config not found in cache for cache key", cacheKey)
-				return
-			}
-			if obj != nil {
-				adunitConfig := obj.(*adunitconfig.AdUnitConfig)
-				assert.Equal(t, tt.want.adunitConfig, adunitConfig, "Expected: %v but got %v", tt.want.adunitConfig, adunitConfig)
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.adunitConfig, obj.(*adunitconfig.AdUnitConfig))
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, obj)
 			}
 		})
 	}
