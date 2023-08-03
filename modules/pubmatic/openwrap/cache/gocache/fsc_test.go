@@ -6,11 +6,11 @@ import (
 	"sync"
 	"testing"
 
-	mock_database "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
 )
 
 func TestGetFSCDisabledPublishers(t *testing.T) {
@@ -34,13 +34,13 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 		{
 			name: "Valid Data present in DB, return same",
 			want: map[int]struct{}{
-				5890: struct{}{},
-				5891: struct{}{},
+				5890: {},
+				5891: {},
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetFSCDisabledPublishers().Return(map[int]struct{}{
-					5890: struct{}{},
-					5891: struct{}{},
+					5890: {},
+					5891: {},
 				}, nil)
 			},
 			fields: fields{
