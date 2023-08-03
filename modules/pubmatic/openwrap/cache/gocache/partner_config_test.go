@@ -5,11 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	mock_database "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
