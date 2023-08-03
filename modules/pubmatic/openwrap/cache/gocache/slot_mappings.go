@@ -21,7 +21,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 }
 
 // PopulateCacheWithWrapperSlotMappings will get the SlotMappings from database and put them in cache.
-func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) (err error) {
+func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) error {
 	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
 
 	//put a version level dummy entry in cache denoting mappings are present for this version
@@ -34,7 +34,7 @@ func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap
 			cacheKey = key(PUB_SLOT_INFO, pubID, profileID, displayVersion, partnerID)
 			c.cache.Set(cacheKey, make(map[string]models.SlotMapping, 0), getSeconds(c.cfg.CacheDefaultExpiry))
 		}
-		return
+		return err
 	}
 
 	var nameHashMap map[string]string
@@ -81,7 +81,8 @@ func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap
 		cacheKey = key(PubSlotHashInfo, pubID, profileID, displayVersion, partnerID)
 		c.cache.Set(cacheKey, slotMappingInfoObj, getSeconds(c.cfg.CacheDefaultExpiry))
 	}
-	return
+
+	return nil
 }
 
 // GetMappingsFromCacheV25 will return mapping of each partner in partnerConf map
