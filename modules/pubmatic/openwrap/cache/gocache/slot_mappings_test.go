@@ -43,8 +43,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 	}
 	type want struct {
 		publisherSlotNameHashMap map[string]string
-		wantErr                  bool
 		err                      error
+		cacheEntry               bool
 	}
 	tests := []struct {
 		name   string
@@ -69,8 +69,9 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
-				wantErr: true,
-				err:     fmt.Errorf("Error from the DB"),
+				cacheEntry:               false,
+				publisherSlotNameHashMap: nil,
+				err:                      fmt.Errorf("Error from the DB"),
 			},
 		},
 		{
@@ -91,8 +92,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				wantErr: false,
-				err:     nil,
+				cacheEntry: true,
+				err:        nil,
 				publisherSlotNameHashMap: map[string]string{
 					testSlotName: testHashValue,
 				},
@@ -114,8 +115,9 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(nil, nil)
 			},
 			want: want{
-				wantErr:                  false,
+				cacheEntry:               true,
 				publisherSlotNameHashMap: nil,
+				err:                      nil,
 			},
 		},
 	}
@@ -130,20 +132,16 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithPubSlotNameHash(tt.args.pubid)
-			if tt.want.wantErr {
-				assert.EqualError(t, err, tt.want.err.Error(), "Expected: %v but got: %v", tt.want.err.Error(), err)
-				return
-			}
-
+			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PubSlotNameHash, tt.args.pubid)
-			obj, found := c.cache.Get(cacheKey)
-			if !found {
-				t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-				return
+			publisherSlotNameHashMap, found := c.cache.Get(cacheKey)
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.publisherSlotNameHashMap, publisherSlotNameHashMap)
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, publisherSlotNameHashMap)
 			}
-
-			slotMappingInfoObj := obj.(map[string]string)
-			assert.Equalf(t, tt.want.publisherSlotNameHashMap, slotMappingInfoObj, "Expecting slotNameHashMap: %v but got: %v", tt.want.publisherSlotNameHashMap, slotMappingInfoObj)
 		})
 	}
 }
@@ -168,8 +166,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 		displayVersion   int
 	}
 	type want struct {
+		cacheEntry         bool
 		partnerSlotMapping map[string]models.SlotMapping
-		wantErr            bool
 		err                error
 	}
 	tests := []struct {
@@ -198,8 +196,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
+				cacheEntry:         false,
 				partnerSlotMapping: nil,
-				wantErr:            true,
 				err:                fmt.Errorf("Error from the DB"),
 			},
 		},
@@ -222,8 +220,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, nil)
 			},
 			want: want{
+				cacheEntry:         true,
 				partnerSlotMapping: map[string]models.SlotMapping{},
-				wantErr:            false,
 				err:                nil,
 			},
 		},
@@ -256,6 +254,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				}, nil)
 			},
 			want: want{
+				cacheEntry: true,
 				partnerSlotMapping: map[string]models.SlotMapping{
 					"adunit@300x250": {
 						PartnerId:   testPartnerID,
@@ -275,8 +274,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 						OrderID: 0,
 					},
 				},
-				wantErr: false,
-				err:     nil,
+				err: nil,
 			},
 		},
 		{
@@ -310,8 +308,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				wantErr: false,
-				err:     nil,
+				cacheEntry: true,
+				err:        nil,
 				partnerSlotMapping: map[string]models.SlotMapping{
 					"adunit@300x250": {
 						PartnerId:   testPartnerID,
@@ -342,20 +340,17 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
-			if tt.want.wantErr {
-				assert.EqualError(t, err, tt.want.err.Error(), "Expected: %v but got: %v", tt.want.err.Error(), err)
-				return
-			}
+			assert.Equal(t, tt.want.err, err)
 
 			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testAdapterID)
-			obj, found := c.cache.Get(cacheKey)
-			if !found {
-				t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-				return
+			partnerSlotMapping, found := c.cache.Get(cacheKey)
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.partnerSlotMapping, partnerSlotMapping)
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, partnerSlotMapping)
 			}
-
-			slotMappingMap := obj.(map[string]models.SlotMapping)
-			assert.Equalf(t, tt.want.partnerSlotMapping, slotMappingMap, "Expecting partnerSlotMapping: %v but got: %v", tt.want.partnerSlotMapping, slotMappingMap)
 		})
 	}
 }

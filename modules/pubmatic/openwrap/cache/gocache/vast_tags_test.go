@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_cache_populatePublisherVASTTags(t *testing.T) {
@@ -31,7 +32,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 		pubid int
 	}
 	type want struct {
-		wantErr           bool
+		cacheEntry        bool
+		err               error
 		PublisherVASTTags models.PublisherVASTTags
 	}
 	tests := []struct {
@@ -57,7 +59,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherVASTTags(5890).Return(nil, fmt.Errorf("Error in returning PublisherVASTTags from the DB"))
 			},
 			want: want{
-				wantErr:           true,
+				cacheEntry:        false,
+				err:               fmt.Errorf("Error in returning PublisherVASTTags from the DB"),
 				PublisherVASTTags: nil,
 			},
 		},
@@ -82,7 +85,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				wantErr: false,
+				cacheEntry: true,
+				err:        nil,
 				PublisherVASTTags: map[int]*models.VASTTag{
 					101: {ID: 101, PartnerID: 501, URL: "vast_tag_url_1", Duration: 15, Price: 2.0},
 					102: {ID: 102, PartnerID: 502, URL: "vast_tag_url_2", Duration: 10, Price: 0.0},
@@ -106,7 +110,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherVASTTags(5890).Return(nil, nil)
 			},
 			want: want{
-				wantErr:           false,
+				cacheEntry:        true,
+				err:               nil,
 				PublisherVASTTags: models.PublisherVASTTags{},
 			},
 		},
@@ -122,22 +127,16 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populatePublisherVASTTags(tt.args.pubid)
-			if tt.want.wantErr {
-				if err == nil {
-					t.Error("Error should not be nil")
-				}
-				return
-			}
+			assert.Equal(t, tt.want.err, err)
+
 			cacheKey := key(PubVASTTags, tt.args.pubid)
 			PublisherVASTTags, found := c.cache.Get(cacheKey)
-			if !tt.want.wantErr {
-				if !found {
-					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-					return
-				} else if !reflect.DeepEqual(PublisherVASTTags, tt.want.PublisherVASTTags) {
-					t.Errorf("Expected= %v, but got= %v", tt.want.PublisherVASTTags, PublisherVASTTags)
-				}
-
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.PublisherVASTTags, PublisherVASTTags)
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, PublisherVASTTags)
 			}
 		})
 	}

@@ -161,8 +161,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		wantErr      bool
+		err          error
 		adunitConfig *adunitconfig.AdUnitConfig
+		cacheEntry   bool
 	}
 	tests := []struct {
 		name   string
@@ -189,8 +190,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Invalid json"))
 			},
 			want: want{
-				wantErr:      true,
+				err:          fmt.Errorf("Invalid json"),
 				adunitConfig: nil,
+				cacheEntry:   false,
 			},
 		},
 		{
@@ -211,8 +213,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(testAdunitConfig, nil)
 			},
 			want: want{
-				wantErr:      false,
+				err:          nil,
 				adunitConfig: testAdunitConfig,
+				cacheEntry:   true,
 			},
 		},
 		{
@@ -233,8 +236,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
 			},
 			want: want{
-				wantErr:      false,
+				err:          nil,
 				adunitConfig: nil,
+				cacheEntry:   true,
 			},
 		},
 	}
@@ -249,20 +253,15 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if tt.want.wantErr == (err == nil) {
-				t.Error("Error should not be nil")
-				return
-			}
+			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			obj, found := c.Get(cacheKey)
-
-			if !tt.want.wantErr == !found {
-				t.Error("Adunit Config not found in cache for cache key", cacheKey)
-				return
-			}
-			if obj != nil {
-				adunitConfig := obj.(*adunitconfig.AdUnitConfig)
-				assert.Equal(t, tt.want.adunitConfig, adunitConfig, "Expected: %v but got %v", tt.want.adunitConfig, adunitConfig)
+			adunitconfig, found := c.Get(cacheKey)
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.adunitConfig, adunitconfig)
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, adunitconfig)
 			}
 		})
 	}

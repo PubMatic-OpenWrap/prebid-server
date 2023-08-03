@@ -124,8 +124,9 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		wantErr bool
-		err     error
+		cacheEntry       bool
+		err              error
+		partnerConfigMap map[int]map[string]string
 	}
 	tests := []struct {
 		name   string
@@ -149,8 +150,9 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				wantErr: true,
-				err:     fmt.Errorf("Error from the DB"),
+				cacheEntry:       false,
+				err:              fmt.Errorf("Error from the DB"),
+				partnerConfigMap: nil,
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
@@ -171,8 +173,19 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				wantErr: false,
-				err:     nil,
+				cacheEntry: true,
+				err:        nil,
+				partnerConfigMap: map[int]map[string]string{
+					1: {
+						"bidderCode":        "pubmatic",
+						"kgp":               "_AU_@_W_x_H",
+						"level":             "multi",
+						"partnerId":         "1",
+						"prebidPartnerName": "pubmatic",
+						"serverSideEnabled": "1",
+						"timeout":           "220",
+					},
+				},
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
@@ -205,8 +218,9 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				wantErr: true,
-				err:     fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
+				cacheEntry:       false,
+				err:              fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
+				partnerConfigMap: nil,
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, nil)
@@ -224,20 +238,15 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				db:    tt.fields.db,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if tt.want.wantErr {
-				assert.EqualError(t, err, tt.want.err.Error(), "Expected: %v but got: %v", tt.want.err.Error(), err)
-				return
-			}
-
+			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PUB_HB_PARTNER, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			obj, found := c.Get(cacheKey)
-			if !found {
-				t.Error("Parner Config not added in cache")
-				return
-			}
-			partnerConfigMap := obj.(map[int]map[string]string)
-			if _, found := partnerConfigMap[testAdapterID]; !found {
-				t.Error("Parner Config not added in map")
+			partnerConfigMap, found := c.Get(cacheKey)
+			if tt.want.cacheEntry {
+				assert.True(t, found)
+				assert.Equal(t, tt.want.partnerConfigMap, partnerConfigMap)
+			} else {
+				assert.False(t, found)
+				assert.Nil(t, partnerConfigMap)
 			}
 		})
 	}
