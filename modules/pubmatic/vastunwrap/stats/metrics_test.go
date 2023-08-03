@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prebid/prebid-server/config"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -11,8 +13,24 @@ import (
 )
 
 func createMetricsForTesting() *Metrics {
-	cfg := moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()}
-	return NewMetricsEngine(cfg)
+	cfg := moduledeps.ModuleDeps{
+		MetricsRegistry: metrics_cfg.MetricsRegistry{
+			metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+		},
+		MetricsCfg: &config.Metrics{
+			Prometheus: config.PrometheusMetrics{
+				Port:             14404,
+				Namespace:        "ow",
+				Subsystem:        "pbs",
+				TimeoutMillisRaw: 10,
+			},
+		},
+	}
+	metrics_engine, err := NewMetricsEngine(cfg)
+	if err != nil {
+		return &Metrics{}
+	}
+	return metrics_engine
 }
 
 func TestRecordRequestTime(t *testing.T) {

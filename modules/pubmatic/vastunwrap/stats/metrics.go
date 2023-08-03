@@ -1,8 +1,11 @@
 package metrics
 
 import (
+	"errors"
 	"time"
 
+	"github.com/prebid/prebid-server/config"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,28 +35,37 @@ type Metrics struct {
 
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
 // for this instance.
-func NewMetricsEngine(cfg moduledeps.ModuleDeps) *Metrics {
+func NewMetricsEngine(cfg moduledeps.ModuleDeps) (*Metrics, error) {
 	metrics := Metrics{}
-	metrics.Registry = cfg.Registry
-	metrics.requests = newCounter(cfg, metrics.Registry,
+	// Set up the Prometheus metrics engine.
+	if cfg.MetricsCfg != nil && cfg.MetricsRegistry != nil && cfg.MetricsRegistry[metrics_cfg.PrometheusRegistry] != nil {
+		prometheusRegistry, ok := cfg.MetricsRegistry[metrics_cfg.PrometheusRegistry].(*prometheus.Registry)
+		if prometheusRegistry == nil {
+			return &metrics, errors.New("Prometheus registry is nil")
+		}
+		if ok && prometheusRegistry != nil {
+			metrics.Registry = prometheusRegistry
+		}
+	}
+	metrics.requests = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
 		[]string{bidderLabel, statusLabel})
-	metrics.wrapperCount = newCounter(cfg, metrics.Registry,
+	metrics.wrapperCount = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_wrapper_count",
 		"Count of vast unwrap levels labeled by bidder",
 		[]string{bidderLabel, wrapperCountLabel})
-	metrics.requestTime = newHistogramVec(cfg, metrics.Registry,
+	metrics.requestTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_request_time",
 		"Time taken to serve the vast unwrap request in Milliseconds", []string{bidderLabel},
 		[]float64{50, 100, 200, 300, 500})
-	return &metrics
+	return &metrics, nil
 }
 
-func newCounter(cfg moduledeps.ModuleDeps, registry *prometheus.Registry, name, help string, labels []string) *prometheus.CounterVec {
+func newCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string) *prometheus.CounterVec {
 	opts := prometheus.CounterOpts{
-		Namespace: cfg.PrometheusMetrics.Namespace,
-		Subsystem: cfg.PrometheusMetrics.Subsystem,
+		Namespace: cfg.Namespace,
+		Subsystem: cfg.Subsystem,
 		Name:      name,
 		Help:      help,
 	}
@@ -62,10 +74,10 @@ func newCounter(cfg moduledeps.ModuleDeps, registry *prometheus.Registry, name, 
 	return counter
 }
 
-func newHistogramVec(cfg moduledeps.ModuleDeps, registry *prometheus.Registry, name, help string, labels []string, buckets []float64) *prometheus.HistogramVec {
+func newHistogramVec(cfg config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string, buckets []float64) *prometheus.HistogramVec {
 	opts := prometheus.HistogramOpts{
-		Namespace: cfg.PrometheusMetrics.Namespace,
-		Subsystem: cfg.PrometheusMetrics.Subsystem,
+		Namespace: cfg.Namespace,
+		Subsystem: cfg.Subsystem,
 		Name:      name,
 		Help:      help,
 		Buckets:   buckets,

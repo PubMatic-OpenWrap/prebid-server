@@ -14,7 +14,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
@@ -255,7 +257,19 @@ func TestBuilder(t *testing.T) {
 			name: "Valid vast unwrap config",
 			args: args{
 				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
-				deps:   moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
+				deps: moduledeps.ModuleDeps{
+					MetricsRegistry: metrics_cfg.MetricsRegistry{
+						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+					},
+					MetricsCfg: &config.Metrics{
+						Prometheus: config.PrometheusMetrics{
+							Port:             14404,
+							Namespace:        "ow",
+							Subsystem:        "pbs",
+							TimeoutMillisRaw: 10,
+						},
+					},
+				},
 			},
 			want: VastUnwrapModule{
 				Enabled: true,
@@ -274,8 +288,19 @@ func TestBuilder(t *testing.T) {
 			name: "Invalid vast unwrap config",
 			args: args{
 				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
-				deps:   moduledeps.ModuleDeps{Registry: prometheus.NewRegistry()},
-			},
+				deps: moduledeps.ModuleDeps{
+					MetricsRegistry: metrics_cfg.MetricsRegistry{
+						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
+					},
+					MetricsCfg: &config.Metrics{
+						Prometheus: config.PrometheusMetrics{
+							Port:             14404,
+							Namespace:        "ow",
+							Subsystem:        "pbs",
+							TimeoutMillisRaw: 10,
+						},
+					},
+				}},
 			want: VastUnwrapModule{
 				Enabled: true,
 				Cfg: unWrapCfg.VastUnWrapCfg{

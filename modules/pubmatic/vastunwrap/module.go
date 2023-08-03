@@ -31,7 +31,10 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
 	vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
-	metricEngine := metrics.NewMetricsEngine(deps)
+	metricEngine, err := metrics.NewMetricsEngine(deps)
+	if err != nil {
+		return vastUnwrapModuleCfg, fmt.Errorf("Prometheus registry is nil")
+	}
 	return VastUnwrapModule{
 		Cfg:               vastUnwrapModuleCfg.Cfg,
 		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
