@@ -15,7 +15,7 @@ func (db *mySqlDB) GetPubmaticSlotMappings(pubID int) (map[string]models.SlotMap
 	pmSlotMappings := make(map[string]models.SlotMapping, 0)
 	rows, err := db.conn.Query(db.cfg.Queries.GetPMSlotToMappings,
 		pubID, models.MAX_SLOT_COUNT)
-	if nil != err {
+	if err != nil {
 		return pmSlotMappings, err
 	}
 

@@ -7,20 +7,24 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
-func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) {
+func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) (err error) {
 	adunitConfig, err := c.db.GetAdunitConfig(profileID, displayVersion)
 	if err != nil {
 		return
 	}
 
-	caseFoldConfigMap := make(map[string]*adunitconfig.AdConfig, len(adunitConfig.Config))
-	for k, v := range adunitConfig.Config {
-		caseFoldConfigMap[strings.ToLower(k)] = v
+	if adunitConfig != nil {
+		caseFoldConfigMap := make(map[string]*adunitconfig.AdConfig, len(adunitConfig.Config))
+		for k, v := range adunitConfig.Config {
+			v.UniversalPixel = validUPixels(v.UniversalPixel)
+			caseFoldConfigMap[strings.ToLower(k)] = v
+		}
+		adunitConfig.Config = caseFoldConfigMap
 	}
-	adunitConfig.Config = caseFoldConfigMap
 
 	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
 	c.cache.Set(cacheKey, adunitConfig, getSeconds(c.cfg.CacheDefaultExpiry))
+	return
 }
 
 // GetAdunitConfigFromCache this function gets adunit config from cache for a given request
