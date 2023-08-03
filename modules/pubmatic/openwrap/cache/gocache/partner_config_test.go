@@ -39,7 +39,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 		setup   func()
 	}{
 		{
-			name: "test",
+			name: "get_partnerConfig_map",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				cfg: config.Cache{

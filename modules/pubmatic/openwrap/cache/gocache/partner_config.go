@@ -56,12 +56,13 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	if err != nil {
 		return
 	}
+
 	if len(partnerConfigMap) == 0 {
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
-	} else {
-		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-		c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
-		c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
-		return
 	}
+
+	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
+	c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
+	c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
+	return
 }
