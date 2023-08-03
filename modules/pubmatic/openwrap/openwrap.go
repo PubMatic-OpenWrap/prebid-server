@@ -31,7 +31,7 @@ type OpenWrap struct {
 	metricEngine metrics.MetricsEngine
 }
 
-func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, error) {
+func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
 	cfg := config.Config{}
 
 	err := json.Unmarshal(rawCfg, &cfg)
@@ -58,7 +58,7 @@ func initOpenWrap(rawCfg json.RawMessage, _ moduledeps.ModuleDeps) (OpenWrap, er
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 
-	metricEngine, err := metrics_cfg.NewMetricsEngine(cfg)
+	metricEngine, err := metrics_cfg.NewMetricsEngine(&cfg, moduleDeps.MetricsCfg, moduleDeps.MetricsRegistry)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}

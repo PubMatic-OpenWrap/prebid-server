@@ -17,7 +17,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubid int) {
 		return
 	}
 
-	publisherSlotNameHashMap := c.db.GetPublisherSlotNameHash(pubid)
+	publisherSlotNameHashMap, _ := c.db.GetPublisherSlotNameHash(pubid)
 	if publisherSlotNameHashMap != nil {
 		c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	}
@@ -25,7 +25,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubid int) {
 
 // PopulateCacheWithWrapperSlotMappings will get the SlotMappings from database and put them in cache.
 func (c *cache) populateCacheWithWrapperSlotMappings(pubid int, partnerConfigMap map[int]map[string]string, profileId, displayVersion int) {
-	partnerSlotMappingMap := c.db.GetWrapperSlotMappings(partnerConfigMap, profileId, displayVersion)
+	partnerSlotMappingMap, _ := c.db.GetWrapperSlotMappings(partnerConfigMap, profileId, displayVersion)
 
 	//put a version level dummy entry in cache denoting mappings are present for this version
 	cacheKey := key(PUB_SLOT_INFO, pubid, profileId, displayVersion, 0)

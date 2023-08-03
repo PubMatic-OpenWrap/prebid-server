@@ -48,16 +48,16 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		return
 	}
 
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		return
+	}
+
 	extBidResponse := openrtb_ext.ExtBidResponse{}
 	if len(bidResponse.Ext) != 0 {
 		if err := json.Unmarshal(bidResponse.Ext, &extBidResponse); err != nil {
 			return
 		}
-	}
-
-	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
-	if rCtx == nil {
-		return
 	}
 
 	if rCtx.LogInfoFlag == 1 {

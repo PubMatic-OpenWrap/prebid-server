@@ -39,7 +39,6 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/uuidutil"
 	"github.com/prebid/prebid-server/version"
-	"github.com/prometheus/client_golang/prometheus"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang/glog"
@@ -183,15 +182,15 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	for k := range syncerKeysHashSet {
 		syncerKeys = append(syncerKeys, k)
 	}
-	reg := prometheus.NewRegistry()
 
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, PrometheusMetrics: cfg.Metrics.Prometheus, Registry: reg}
+	metricsRegistry := metricsConf.NewMetricsRegistry()
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry}
 	repo, moduleStageNames, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)
 	}
 	// Metrics engine
-	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames, reg)
+	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 	// todo(zachbadgett): better shutdown
 	r.Shutdown = shutdown
