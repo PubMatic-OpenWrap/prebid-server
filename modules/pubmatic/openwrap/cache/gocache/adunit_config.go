@@ -10,7 +10,7 @@ import (
 func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) (err error) {
 	adunitConfig, err := c.db.GetAdunitConfig(profileID, displayVersion)
 	if err != nil {
-		return
+		return err
 	}
 
 	if adunitConfig != nil {

@@ -5,13 +5,13 @@ import (
 )
 
 // PopulatePublisherVASTTags will put publisher level VAST Tag details into cache
-func (c *cache) populatePublisherVASTTags(pubID int) (err error) {
+func (c *cache) populatePublisherVASTTags(pubID int) error {
 	cacheKey := key(PubVASTTags, pubID)
 
 	//get publisher level vast tag details from DB
 	publisherVASTTags, err := c.db.GetPublisherVASTTags(pubID)
 	if err != nil {
-		return
+		return err
 	}
 
 	if publisherVASTTags == nil {
@@ -19,7 +19,7 @@ func (c *cache) populatePublisherVASTTags(pubID int) (err error) {
 	}
 
 	c.cache.Set(cacheKey, publisherVASTTags, getSeconds(c.cfg.VASTTagCacheExpiry))
-	return
+	return nil
 }
 
 // GetPublisherVASTTagsFromCache read publisher level vast tag details from cache

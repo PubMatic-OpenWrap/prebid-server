@@ -2,6 +2,8 @@ package gocache
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
@@ -11,36 +13,42 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 
 	pubLockKey := key("%d", pubID)
 	if mapNameHash, ok := c.cache.Get(key(PubSlotNameHash, pubID)); !ok || mapNameHash == nil {
-		c.LockAndLoad(pubLockKey, func() error {
+		errPubSlotNameHash := c.LockAndLoad(pubLockKey, func() error {
 			dbAccessed = true
 			return c.populateCacheWithPubSlotNameHash(pubID)
 		})
+		if errPubSlotNameHash != nil {
+			err = errors.Wrap(err, errPubSlotNameHash.Error())
+		}
 		//TODO: Add stat if error from the DB
 	}
 
 	if vastTags, ok := c.cache.Get(key(PubVASTTags, pubID)); !ok || vastTags == nil {
-		c.LockAndLoad(pubLockKey, func() error {
+		errPublisherVASTTag := c.LockAndLoad(pubLockKey, func() error {
 			dbAccessed = true
 			return c.populatePublisherVASTTags(pubID)
 		})
+		if errPublisherVASTTag != nil {
+			err = errors.Wrap(err, errPublisherVASTTag.Error())
+		}
 		//TODO: Add stat if error from the DB
 	}
 
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	if obj, ok := c.cache.Get(cacheKey); ok && obj != nil {
-		return obj.(map[int]map[string]string), nil
+		return obj.(map[int]map[string]string), err
 	}
 
 	lockKey := key("%d%d%d", pubID, profileID, displayVersion)
-	err = c.LockAndLoad(lockKey, func() error {
+	if errGetPartnerConfig := c.LockAndLoad(lockKey, func() error {
 		dbAccessed = true
 		return c.getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion)
-
-	})
+	}); errGetPartnerConfig != nil {
+		err = errors.Wrap(err, errGetPartnerConfig.Error())
+	}
 
 	var partnerConfigMap map[int]map[string]string
-	obj, ok := c.cache.Get(cacheKey)
-	if ok && obj != nil {
+	if obj, ok := c.cache.Get(cacheKey); ok && obj != nil {
 		partnerConfigMap = obj.(map[int]map[string]string)
 	}
 
@@ -62,7 +70,11 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-	c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
-	c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
+	if errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
+		err = errors.Wrap(err, errWrapperSlotMapping.Error())
+	}
+	if errAdunitConfig := c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion); errAdunitConfig != nil {
+		err = errors.Wrap(err, errAdunitConfig.Error())
+	}
 	return
 }
