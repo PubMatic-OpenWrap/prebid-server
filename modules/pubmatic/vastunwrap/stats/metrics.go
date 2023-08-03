@@ -39,13 +39,11 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) (*Metrics, error) {
 	metrics := Metrics{}
 	// Set up the Prometheus metrics engine.
 	if cfg.MetricsCfg != nil && cfg.MetricsRegistry != nil && cfg.MetricsRegistry[metrics_cfg.PrometheusRegistry] != nil {
-		prometheusRegistry, ok := cfg.MetricsRegistry[metrics_cfg.PrometheusRegistry].(*prometheus.Registry)
-		if prometheusRegistry == nil {
-			return &metrics, errors.New("Prometheus registry is nil")
-		}
-		if ok && prometheusRegistry != nil {
-			metrics.Registry = prometheusRegistry
-		}
+		prometheusRegistry, _ := cfg.MetricsRegistry[metrics_cfg.PrometheusRegistry].(*prometheus.Registry)
+		metrics.Registry = prometheusRegistry
+	}
+	if metrics.Registry == nil {
+		return &metrics, errors.New("Prometheus registry is nil")
 	}
 	metrics.requests = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_status",
