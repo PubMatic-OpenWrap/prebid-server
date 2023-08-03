@@ -25,7 +25,7 @@ func Test_key(t *testing.T) {
 		want string
 	}{
 		{
-			name: "test",
+			name: "get_key",
 			args: args{
 				format: PUB_SLOT_INFO,
 				v:      []interface{}{5890, 123, 1, 10},
@@ -57,7 +57,7 @@ func TestNew(t *testing.T) {
 		args args
 	}{
 		{
-			name: "test",
+			name: "new_cache_instance",
 			args: args{
 				goCache:  gocache.New(100, 100),
 				database: mockDatabase,
@@ -85,7 +85,7 @@ func Test_getSeconds(t *testing.T) {
 		want time.Duration
 	}{
 		{
-			name: "test",
+			name: "get_to_seconds",
 			args: args{
 				duration: 10,
 			},
@@ -123,7 +123,7 @@ func Test_cache_Set(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "test",
+			name: "set_to_cache",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
@@ -181,7 +181,7 @@ func Test_cache_Get(t *testing.T) {
 		want1  bool
 	}{
 		{
-			name: "test",
+			name: "get_from_cache",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,

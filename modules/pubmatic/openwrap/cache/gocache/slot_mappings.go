@@ -18,9 +18,8 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 	if err != nil {
 		return
 	}
-	if publisherSlotNameHashMap != nil {
-		c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
-	}
+	//This call may set nil publisherSlotNameHashMap in cache
+	c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
 }
 

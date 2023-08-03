@@ -51,10 +51,6 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
         fi
 
-        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/cache$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-        fi
-
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/config$ ]]; then
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
         fi

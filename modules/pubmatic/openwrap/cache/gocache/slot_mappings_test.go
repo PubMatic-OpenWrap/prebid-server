@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	mock_database "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/golang/mock/gomock"
@@ -43,6 +44,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 	type want struct {
 		publisherSlotNameHashMap map[string]string
 		wantErr                  bool
+		err                      error
 	}
 	tests := []struct {
 		name   string
@@ -68,6 +70,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			},
 			want: want{
 				wantErr: true,
+				err:     fmt.Errorf("Error from the DB"),
 			},
 		},
 		{
@@ -89,6 +92,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			},
 			want: want{
 				wantErr: false,
+				err:     nil,
 				publisherSlotNameHashMap: map[string]string{
 					testSlotName: testHashValue,
 				},
@@ -121,29 +125,25 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				Map:   tt.fields.Map,
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
 			err := c.populateCacheWithPubSlotNameHash(tt.args.pubid)
-			if tt.want.wantErr && (err == nil) {
-				t.Error("Error should not be nil")
+			if tt.want.wantErr {
+				assert.EqualError(t, err, tt.want.err.Error(), "Expected: %v but got: %v", tt.want.err.Error(), err)
 				return
 			}
 
 			cacheKey := key(PubSlotNameHash, tt.args.pubid)
 			obj, found := c.cache.Get(cacheKey)
-			if obj != nil {
-				if !found {
-					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-					return
-				}
-				slotMappingInfoObj := obj.(map[string]string)
-				if slotMappingInfoObj != nil {
-					assert.Equalf(t, tt.want.publisherSlotNameHashMap, slotMappingInfoObj, "Expecting slotNameHashMap: %v but got: %v", tt.want.publisherSlotNameHashMap, slotMappingInfoObj)
-				}
+			if !found {
+				t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
+				return
 			}
+
+			slotMappingInfoObj := obj.(map[string]string)
+			assert.Equalf(t, tt.want.publisherSlotNameHashMap, slotMappingInfoObj, "Expecting slotNameHashMap: %v but got: %v", tt.want.publisherSlotNameHashMap, slotMappingInfoObj)
 		})
 	}
 }
@@ -152,6 +152,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+
+	newCache := gocache.New(10, 10)
 
 	type fields struct {
 		Map   sync.Map
@@ -166,9 +168,9 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 		displayVersion   int
 	}
 	type want struct {
-		hashValues         bool
 		partnerSlotMapping map[string]models.SlotMapping
 		wantErr            bool
+		err                error
 	}
 	tests := []struct {
 		name   string
@@ -180,14 +182,14 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 		{
 			name: "Error from the DB",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
 			},
 			args: args{
-				pubid:            testPubID,
+				pubid:            58901,
 				partnerConfigMap: formTestPartnerConfig(),
 				profileId:        testProfileID,
 				displayVersion:   testVersionID,
@@ -196,22 +198,22 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
-				hashValues:         false,
 				partnerSlotMapping: nil,
 				wantErr:            true,
+				err:                fmt.Errorf("Error from the DB"),
 			},
 		},
 		{
 			name: "empty_mappings",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
 			},
 			args: args{
-				pubid:            testPubID,
+				pubid:            58902,
 				partnerConfigMap: formTestPartnerConfig(),
 				profileId:        testProfileID,
 				displayVersion:   testVersionID,
@@ -221,21 +223,21 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			},
 			want: want{
 				partnerSlotMapping: map[string]models.SlotMapping{},
-				hashValues:         false,
 				wantErr:            false,
+				err:                nil,
 			},
 		},
 		{
 			name: "valid_mappings",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
 			},
 			args: args{
-				pubid:            testPubID,
+				pubid:            58903,
 				partnerConfigMap: formTestPartnerConfig(),
 				profileId:        testProfileID,
 				displayVersion:   testVersionID,
@@ -273,27 +275,28 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 						OrderID: 0,
 					},
 				},
-				hashValues: false,
-				wantErr:    false,
+				wantErr: false,
+				err:     nil,
 			},
 		},
 		{
 			name: "HashValues",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
 			},
 			args: args{
-				pubid:            testPubID,
+				pubid:            58904,
 				partnerConfigMap: formTestPartnerConfig(),
 				profileId:        testProfileID,
 				displayVersion:   testVersionID,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(map[string]string{testSlotName: testHashValue}, nil)
+				cacheKey := key(PubSlotNameHash, 58904)
+				newCache.Set(cacheKey, map[string]string{testSlotName: testHashValue}, time.Duration(1)*time.Second)
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
 					1: {
 						{
@@ -307,8 +310,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				}, nil)
 			},
 			want: want{
-				hashValues: true,
-				wantErr:    false,
+				wantErr: false,
+				err:     nil,
 				partnerSlotMapping: map[string]models.SlotMapping{
 					"adunit@300x250": {
 						PartnerId:   testPartnerID,
@@ -338,27 +341,21 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if tt.want.hashValues {
-				c.populateCacheWithPubSlotNameHash(tt.args.pubid)
-			}
-
 			err := c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
-			if tt.want.wantErr && (err == nil) {
-				t.Error("Error should not be nil")
+			if tt.want.wantErr {
+				assert.EqualError(t, err, tt.want.err.Error(), "Expected: %v but got: %v", tt.want.err.Error(), err)
 				return
 			}
-			cacheKey := key(PUB_SLOT_INFO, testPubID, testProfileID, testVersionID, testAdapterID)
+
+			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testAdapterID)
 			obj, found := c.cache.Get(cacheKey)
-			if obj != nil {
-				if !found {
-					t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
-					return
-				}
-				slotMappingMap := obj.(map[string]models.SlotMapping)
-				if slotMappingMap != nil {
-					assert.Equalf(t, tt.want.partnerSlotMapping, slotMappingMap, "Expecting partnerSlotMapping: %v but got: %v", tt.want.partnerSlotMapping, slotMappingMap)
-				}
+			if !found {
+				t.Errorf("Hash value not found in cache for cache key: %v", cacheKey)
+				return
 			}
+
+			slotMappingMap := obj.(map[string]models.SlotMapping)
+			assert.Equalf(t, tt.want.partnerSlotMapping, slotMappingMap, "Expecting partnerSlotMapping: %v but got: %v", tt.want.partnerSlotMapping, slotMappingMap)
 		})
 	}
 }
@@ -367,6 +364,8 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+
+	newCache := gocache.New(10, 10)
 
 	type fields struct {
 		Map   sync.Map
@@ -380,7 +379,6 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 	}
 	type want struct {
 		mappings map[string]models.SlotMapping
-		wantNil  bool
 	}
 	tests := []struct {
 		name   string
@@ -392,7 +390,7 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 		{
 			name: "non_nil_partnerConf_map",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				db:    mockDatabase,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
@@ -400,24 +398,30 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			},
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 123,
+					PubID:     testPubID,
+					ProfileID: testProfileID,
 					DisplayID: 1,
 				},
-				partnerID: 1,
+				partnerID: testAdapterID,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
-					1: {
-						{
-							PartnerId:   testPartnerID,
-							AdapterId:   testAdapterID,
-							VersionId:   testVersionID,
-							SlotName:    testSlotName,
-							MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+				cacheKey := key(PUB_SLOT_INFO, testPubID, testProfileID, testVersionID, testAdapterID)
+				newCache.Set(cacheKey, map[string]models.SlotMapping{
+					"adunit@300x250": {
+						PartnerId:   10,
+						AdapterId:   1,
+						VersionId:   1,
+						SlotName:    "adunit@300x250",
+						MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
+						SlotMappings: map[string]interface{}{
+							"adtag":      "1405192",
+							"site":       "47124",
+							"owSlotName": "adunit@300x250",
 						},
+						Hash:    "",
+						OrderID: 0,
 					},
-				}, nil)
+				}, time.Duration(1)*time.Second)
 			},
 			want: want{
 				mappings: map[string]models.SlotMapping{
@@ -436,13 +440,12 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 						OrderID: 0,
 					},
 				},
-				wantNil: false,
 			},
 		},
 		{
 			name: "nil_partnerConf_map",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				db:    mockDatabase,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
@@ -450,15 +453,14 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			},
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 123,
-					DisplayID: 1,
+					PubID:     testPubID,
+					ProfileID: testProfileID,
+					DisplayID: 2,
 				},
 				partnerID: 1,
 			},
 			want: want{
 				mappings: nil,
-				wantNil:  true,
 			},
 		},
 	}
@@ -472,9 +474,6 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if !tt.want.wantNil {
-				c.populateCacheWithWrapperSlotMappings(tt.args.rctx.PubID, formTestPartnerConfig(), tt.args.rctx.ProfileID, tt.args.rctx.DisplayID)
-			}
 			if got := c.GetMappingsFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappings) {
 				t.Errorf("cache.GetMappingsFromCacheV25() = %v, want %v", got, tt.want)
 			}
@@ -486,6 +485,8 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+
+	newCache := gocache.New(10, 10)
 
 	type fields struct {
 		Map   sync.Map
@@ -499,7 +500,6 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 	}
 	type want struct {
 		mappinInfo models.SlotMappingInfo
-		wantEmpty  bool
 	}
 	tests := []struct {
 		name   string
@@ -511,7 +511,7 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 		{
 			name: "non_empty_SlotMappingInfo",
 			fields: fields{
-				cache: gocache.New(100, 100),
+				cache: newCache,
 				db:    mockDatabase,
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
@@ -519,25 +519,20 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			},
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 123,
-					DisplayID: 1,
+					PubID:     testPubID,
+					ProfileID: testProfileID,
+					DisplayID: testVersionID,
 				},
 				partnerID: 1,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(map[string]string{testSlotName: testHashValue}, nil)
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
-					1: {
-						{
-							PartnerId:   testPartnerID,
-							AdapterId:   testAdapterID,
-							VersionId:   testVersionID,
-							SlotName:    testSlotName,
-							MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\"}",
-						},
+				cacheKey := key(PubSlotHashInfo, testPubID, testProfileID, testVersionID, testAdapterID)
+				newCache.Set(cacheKey, models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@300x250"},
+					HashValueMap: map[string]string{
+						"adunit@300x250": "2aa34b52a9e941c1594af7565e599c8d",
 					},
-				}, nil)
+				}, time.Duration(1)*time.Second)
 			},
 			want: want{
 				mappinInfo: models.SlotMappingInfo{
@@ -546,7 +541,6 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 						"adunit@300x250": "2aa34b52a9e941c1594af7565e599c8d",
 					},
 				},
-				wantEmpty: false,
 			},
 		},
 		{
@@ -568,8 +562,8 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			},
 			want: want{
 				mappinInfo: models.SlotMappingInfo{},
-				wantEmpty:  true,
 			},
+			setup: func() {},
 		},
 	}
 	for _, tt := range tests {
@@ -582,10 +576,6 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
-			}
-			if !tt.want.wantEmpty {
-				c.populateCacheWithPubSlotNameHash(tt.args.rctx.PubID)
-				c.populateCacheWithWrapperSlotMappings(tt.args.rctx.PubID, formTestPartnerConfig(), tt.args.rctx.ProfileID, tt.args.rctx.DisplayID)
 			}
 			if got := c.GetSlotToHashValueMapFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappinInfo) {
 				t.Errorf("cache.GetSlotToHashValueMapFromCacheV25() = %v, want %v", got, tt.want.mappinInfo)
