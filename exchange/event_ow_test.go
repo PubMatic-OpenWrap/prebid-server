@@ -24,7 +24,7 @@ var textXML = `<VAST version="4.2" xmlns="http://www.iab.com/VAST">
 	  <![CDATA[VAST 4.0 Pilot - Scenario 5]]>
 	</AdTitle>
 	<Creatives>
-	  <Creative id="5481" sequence="1" adId="2447226">
+	  <Creative id="abc123" sequence="1" adId="2447226">
 		<Linear>
 		  <TrackingEvents>
 			<Tracking event="start" ><![CDATA[https://example.com/tracking/start]]></Tracking>

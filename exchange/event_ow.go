@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	creativeId = regexp.MustCompile(`^<Creative.*id\s*=\s*"([0-9]*)".*>$`)
+	creativeId = regexp.MustCompile(`^<Creative.*id\s*=\s*"([a-z,A-Z,0-9]+)".*>$`)
 )
 
 const (
