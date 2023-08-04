@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
@@ -59,6 +60,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// if payload.BidResponse.NBR != nil {
 	// 	return result, nil
 	// }
+
+	if rctx.IsCTVRequest {
+		errs := auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx.ImpBidCtx)
+		if len(errs) > 0 {
+			for i := range errs {
+				result.Errors = append(result.Errors, errs[i].Error())
+			}
+		}
+	}
 
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {

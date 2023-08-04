@@ -238,6 +238,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	if err != nil {
 		return nil, err
 	}
+	r.BidRequestWrapper = &openrtb_ext.RequestWrapper{
+		BidRequest: r.BidRequestWrapper.BidRequest,
+	}
+	r.BidRequestWrapper.RebuildRequest()
 
 	requestExt, err := r.BidRequestWrapper.GetRequestExt()
 	if err != nil {

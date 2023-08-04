@@ -26,6 +26,9 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+	defer func() {
+		moduleCtx.ModuleContext["rctx"] = rctx
+	}()
 
 	var imps []openrtb2.Imp
 	var errs []error

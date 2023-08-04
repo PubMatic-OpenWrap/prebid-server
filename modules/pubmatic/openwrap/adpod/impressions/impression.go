@@ -24,20 +24,13 @@ type ImpGenerator interface {
 	// Algorithm() int // returns algorithm used for computing number of impressions
 }
 
-// ImpAdPodConfig configuration for creating ads in adpod
-type ImpAdPodConfig struct {
-	ImpID          string `json:"id,omitempty"`
-	SequenceNumber int8   `json:"seq,omitempty"`
-	MinDuration    int64  `json:"minduration,omitempty"`
-	MaxDuration    int64  `json:"maxduration,omitempty"`
-}
-
 func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.ImpCtx) ([]openrtb2.Imp, []error) {
 	var imps []openrtb2.Imp
 	var errs []error
 
 	for _, imp := range request.Imp {
-		impConfig, err := getAdPodImpConfig(&imp, impCtx[imp.ID].AdpodConfig)
+		eachImpCtx := impCtx[imp.ID]
+		impConfig, err := getAdPodImpConfig(&imp, eachImpCtx.AdpodConfig)
 		if impConfig == nil {
 			imps = append(imps, imp)
 			if err != nil {
@@ -45,6 +38,9 @@ func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.
 			}
 			continue
 		}
+
+		eachImpCtx.ImpAdPodCfg = impConfig
+		impCtx[imp.ID] = eachImpCtx
 
 		for i := range impConfig {
 			video := *imp.Video
@@ -71,7 +67,7 @@ func generateImpressionID(impID string, seqNo int) string {
 }
 
 // getAdPodImpsConfigs will return number of impressions configurations within adpod
-func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod) ([]*ImpAdPodConfig, error) {
+func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod) ([]*models.ImpAdPodConfig, error) {
 	// This case for non adpod video impression
 	if adpod == nil {
 		return nil, nil
@@ -91,9 +87,9 @@ func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod) ([]*ImpAdPodConfi
 		return nil, errors.New("unable to generate impressions for adpod for impression: " + imp.ID)
 	}
 
-	config := make([]*ImpAdPodConfig, len(impRanges))
+	config := make([]*models.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {
-		eachConfig := ImpAdPodConfig{
+		eachConfig := models.ImpAdPodConfig{
 			ImpID:          generateImpressionID(imp.ID, i+1),
 			MinDuration:    value[0],
 			MaxDuration:    value[1],
