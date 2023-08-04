@@ -111,7 +111,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 				hbc := o.getUniqueBids(durations)
 				hbc.timeTakenCombGen = combGenElapsedTime
 				responseCh <- hbc
-				util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:])
+				util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v combGenElapsedTime:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:], combGenElapsedTime)
 			}
 			wg.Done()
 		}()

@@ -8,6 +8,9 @@
 package combination
 
 import (
+	"time"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -50,6 +53,7 @@ func NewCombination(buckets types.BidsBuckets, podMinDuration, podMaxDuration ui
 // Get next valid combination
 // Retuns empty slice if all combinations are generated
 func (c *Combination) Get() []int {
+	defer util.TimeTrack(time.Now(), "GET Combinations")
 	nextComb := c.generator.Next()
 	nextCombInt := make([]int, len(nextComb))
 	cnt := 0
