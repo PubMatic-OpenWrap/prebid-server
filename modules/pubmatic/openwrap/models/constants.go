@@ -330,6 +330,12 @@ const (
 
 	Device     = "device"
 	DeviceType = "deviceType"
+
+	//constants for Universal Pixel
+	PixelTypeUrl  = "url"
+	PixelTypeJS   = "js"
+	PixelPosAbove = "above"
+	PixelPosBelow = "below"
 )
 
 const (
@@ -385,17 +391,30 @@ const (
 )
 
 const Pipe = "|"
+const (
+	EndpointV25     = "v25"
+	EndpointAMP     = "amp"
+	EndpointVideo   = "video"
+	EndpointJson    = "json"
+	EndpointORTB    = "ortb"
+	EndpointVAST    = "vast"
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
+)
 
 const (
-	EndpointV25   = "v25"
-	EndpointAMP   = "amp"
-	EndpointVideo = "video"
-	EndpointJson  = "json"
-	EndpointORTB  = "ortb"
-	EndpointVAST  = "vast"
-	Openwrap      = "openwrap"
-	ImpTypeBanner = "banner"
-	ImpTypeVideo  = "video"
+	PartnerErrNoBid              = "no_bid"
+	PartnerErrTimeout            = "timeout"
+	PartnerErrUnknownPrebidError = "unknown"
+)
+
+// enum to report the error at partner-config level
+const (
+	PartnerErrSlotNotMapped = iota // 0
+	PartnerErrMisConfig            //1
 )
 
 const (

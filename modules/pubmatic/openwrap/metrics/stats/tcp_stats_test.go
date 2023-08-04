@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -147,7 +148,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordOpenWrapServerPanicStats()
+				st.RecordOpenWrapServerPanicStats("", "")
 			},
 		},
 		{
@@ -185,7 +186,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordPartnerTimeoutErrorStats("5890", "pubmatic")
+				st.RecordPartnerResponseErrors("5890", "pubmatic", models.PartnerErrTimeout)
 			},
 		},
 		{
@@ -204,7 +205,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordNobidErrorStats("5890", "pubmatic")
+				st.RecordPartnerResponseErrors("5890", "pubmatic", models.PartnerErrNoBid)
 			},
 		},
 		{
@@ -223,7 +224,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordUnkownPrebidErrorStats("5890", "pubmatic")
+				st.RecordPartnerResponseErrors("5890", "pubmatic", models.PartnerErrUnknownPrebidError)
 			},
 		},
 		{
@@ -242,7 +243,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordSlotNotMappedErrorStats("5890", "pubmatic")
+				st.RecordPartnerConfigErrors("5890", "1234", "pubmatic", models.PartnerErrSlotNotMapped)
 			},
 		},
 		{
@@ -261,7 +262,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordMisConfigurationErrorStats("5890", "pubmatic")
+				st.RecordPartnerConfigErrors("5890", "1234", "pubmatic", models.PartnerErrMisConfig)
 			},
 		},
 		{
@@ -341,7 +342,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordNobidErrPrebidServerRequests("5890")
+				st.RecordNobidErrPrebidServerRequests("5890", 0)
 			},
 		},
 		{
@@ -896,7 +897,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordReqImpsWithAppContentCount("5890")
+				st.RecordReqImpsWithContentCount("5890", models.ContentTypeApp)
 			},
 		},
 		{
@@ -915,7 +916,7 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordReqImpsWithSiteContentCount("5890")
+				st.RecordReqImpsWithContentCount("5890", models.ContentTypeSite)
 			},
 		},
 		{

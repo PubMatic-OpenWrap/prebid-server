@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/golang/glog"
@@ -10,17 +9,16 @@ import (
 func (db *mySqlDB) GetFSCDisabledPublishers() (map[int]struct{}, error) {
 	rows, err := db.conn.Query(db.cfg.Queries.GetAllFscDisabledPublishersQuery)
 	if err != nil {
-		err = fmt.Errorf("[QUERY_FAILED] Name:[%v] Error:[%v]", "GetFSCDisabledPublishers", err.Error())
-		return map[int]struct{}{}, err
+		return nil, err
 	}
 	defer rows.Close()
+
 	fscDisabledPublishers := make(map[int]struct{})
 	for rows.Next() {
 		var pubid int
-		if err := rows.Scan(&pubid); err != nil {
-			continue
+		if err := rows.Scan(&pubid); err == nil {
+			fscDisabledPublishers[pubid] = struct{}{}
 		}
-		fscDisabledPublishers[pubid] = struct{}{}
 	}
 	return fscDisabledPublishers, nil
 }
@@ -28,10 +26,10 @@ func (db *mySqlDB) GetFSCDisabledPublishers() (map[int]struct{}, error) {
 func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
 	rows, err := db.conn.Query(db.cfg.Queries.GetAllDspFscPcntQuery)
 	if err != nil {
-		err = fmt.Errorf("[QUERY_FAILED] Name:[%v] Error:[%v]", "GetFSCThresholdPerDSP", err.Error())
-		return map[int]int{}, err
+		return nil, err
 	}
 	defer rows.Close()
+
 	fscDspThresholds := make(map[int]int)
 	for rows.Next() {
 		var dspId int

@@ -161,17 +161,17 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 }
 
 func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt *openrtb_ext.ExtBidResponse, bidder string) {
+
+	responseError := models.PartnerErrNoBid
+
 	bidderErr, ok := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
 	if ok && len(bidderErr) > 0 {
 		switch bidderErr[0].Code {
 		case errortypes.TimeoutErrorCode:
-			m.metricEngine.RecordPartnerTimeoutErrorStats(rctx.PubIDStr, bidder)
+			responseError = models.PartnerErrTimeout
 		case errortypes.UnknownErrorCode:
-			m.metricEngine.RecordUnkownPrebidErrorStats(rctx.PubIDStr, bidder)
-		default:
-			m.metricEngine.RecordNobidErrorStats(rctx.PubIDStr, bidder)
+			responseError = models.PartnerErrUnknownPrebidError
 		}
-	} else {
-		m.metricEngine.RecordNobidErrorStats(rctx.PubIDStr, bidder)
 	}
+	m.metricEngine.RecordPartnerResponseErrors(rctx.PubIDStr, bidder, responseError)
 }
