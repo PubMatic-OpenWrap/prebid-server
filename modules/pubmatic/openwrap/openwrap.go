@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/moduledeps"
@@ -62,12 +63,13 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}
-
-	return OpenWrap{
+	ow := OpenWrap{
 		cfg:          cfg,
 		cache:        ow_gocache.New(cache, db, cfg.Cache, &metricEngine),
 		metricEngine: &metricEngine,
-	}, nil
+	}
+	fullscreenclickability.Init(ow.cache, cfg.Cache.CacheDefaultExpiry)
+	return ow, nil
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {
