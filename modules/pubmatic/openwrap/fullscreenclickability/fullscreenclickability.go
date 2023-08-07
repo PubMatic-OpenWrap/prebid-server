@@ -7,7 +7,6 @@ import (
 
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	// "git.pubmatic.com/PubMatic/go-common/logger"
 )
 
 type fsc struct {
@@ -77,11 +76,11 @@ func updateFscConfigMapsFromCache(c cache.Cache) {
 
 	var err error
 	if fscConfigs.disabledPublishers, err = c.GetFSCDisabledPublishers(); err != nil {
-		// logger.Error(err.Error())
+		//TODO: add logger.Error(err.Error())
 
 	}
 	if fscConfigs.thresholdsPerDsp, err = c.GetFSCThresholdPerDSP(); err != nil {
-		// logger.Error(err.Error())
+		//TODO: add logger.Error(err.Error())
 	}
 
 }
@@ -94,18 +93,18 @@ func IsFscApplicable(pubId int, seat string, dspId int) bool {
 	return false
 }
 
-// // Exposed for test cases
-// func SetAndResetFscWithMockCache(mockDb dbcache.Cache, dspThresholdMap map[int]int) func() {
-// 	fscConfigs.cache = mockDb
-// 	//mockDspID entry for testing fsc=1
-// 	fscConfigs.thresholdsPerDsp = dspThresholdMap
-// 	return func() {
-// 		fscConfigs.cache = nil
-// 		fscConfigs.thresholdsPerDsp = make(map[int]int)
-// 	}
-// }
+// Exposed for test cases
+func SetAndResetFscWithMockCache(mockDb cache.Cache, dspThresholdMap map[int]int) func() {
+	fscConfigs.cache = mockDb
+	//mockDspID entry for testing fsc=1
+	fscConfigs.thresholdsPerDsp = dspThresholdMap
+	return func() {
+		fscConfigs.cache = nil
+		fscConfigs.thresholdsPerDsp = make(map[int]int)
+	}
+}
 
 // func ResetInitFscReloaderTest() {
 // 	//setting empty to mock routine
-// 	initiateFscReloader = func(c dbcache.Cache, expiryTime int) {}
+// 	initiateReloader = func(c cache.Cache, expiryTime int) {}
 // }
