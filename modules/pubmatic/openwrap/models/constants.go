@@ -330,6 +330,12 @@ const (
 
 	Device     = "device"
 	DeviceType = "deviceType"
+
+	//constants for Universal Pixel
+	PixelTypeUrl  = "url"
+	PixelTypeJS   = "js"
+	PixelPosAbove = "above"
+	PixelPosBelow = "below"
 )
 
 const (
