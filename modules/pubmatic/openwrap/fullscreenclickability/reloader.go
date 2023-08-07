@@ -3,7 +3,7 @@ package fullscreenclickability
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 )
 
 var initiateReloader = func(c cache.Cache, expiryTime int) {

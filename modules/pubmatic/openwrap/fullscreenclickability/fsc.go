@@ -5,8 +5,8 @@ import (
 
 	"sync"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	// "git.pubmatic.com/PubMatic/go-common/logger"
 )
 
