@@ -10,9 +10,17 @@ import (
 )
 
 func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string) (adUnitCtx models.AdUnitCtx) {
+
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
+		}
+	}()
+
+	bannerAdUnitConfigEnabled := true
+	defer func() {
+		if imp.Banner != nil && !bannerAdUnitConfigEnabled {
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		}
 	}()
 
@@ -23,9 +31,8 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 	defaultAdUnitConfig, ok := rCtx.AdUnitConfig.Config[models.AdunitConfigDefaultKey]
 	if ok && defaultAdUnitConfig != nil {
 		if defaultAdUnitConfig.Banner != nil && defaultAdUnitConfig.Banner.Enabled != nil && !*defaultAdUnitConfig.Banner.Enabled {
-			f := false
-			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
-			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			bannerAdUnitConfigEnabled = false
+			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &bannerAdUnitConfigEnabled}}
 			return
 		}
 	}
@@ -43,9 +50,8 @@ func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 	adUnitCtx.SelectedSlotAdUnitConfig, adUnitCtx.MatchedSlot, adUnitCtx.IsRegex, adUnitCtx.MatchedRegex = selectSlot(rCtx, height, width, imp.TagID, div, rCtx.Source)
 	if adUnitCtx.SelectedSlotAdUnitConfig != nil && adUnitCtx.SelectedSlotAdUnitConfig.Banner != nil {
 		if adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Banner.Enabled {
-			f := false
-			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &f}}
-			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeBanner, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			bannerAdUnitConfigEnabled = false
+			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Banner: &adunitconfig.Banner{Enabled: &bannerAdUnitConfigEnabled}}
 			return
 		}
 	}
