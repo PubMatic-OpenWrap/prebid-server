@@ -2,6 +2,7 @@ package stats
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -280,6 +281,14 @@ func (st *StatsTCP) RecordCacheErrorRequests(endpoint, publisher, profileID stri
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoCacheError], publisher, profileID), 1)
 	}
 }
+
+func (st *StatsTCP) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {}
+
+func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
+
+func (st *StatsTCP) RecordRequestTime(requestType string, sendTime time.Duration) {}
+
+func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
 
 // getStatsKeyIndexForResponseTime returns respective stats key for a given responsetime
 func getStatsKeyIndexForResponseTime(responseTime int) int {

@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,6 +47,14 @@ type Metrics struct {
 	// publisher-platform-endpoint level metrics
 	pubPlatformEndpointRequests *prometheus.CounterVec
 
+	getProfileData *prometheus.HistogramVec
+
+	sendLoggerData *prometheus.HistogramVec
+
+	requestTime *prometheus.HistogramVec
+
+	dbQueryError *prometheus.CounterVec
+
 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
 }
 
@@ -63,6 +72,7 @@ const (
 	errorLabel     = "error"
 	hostLabel      = "host" // combination of node:pod
 	methodLabel    = "method"
+	queryTypeLabel = "query_type"
 )
 
 // NewMetrics initializes a new Prometheus metrics instance.
@@ -201,6 +211,27 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"endpoint_requests",
 		"Count requests at publisher, platform, endpoint level.",
 		[]string{pubIDLabel, platformLabel, endpointLabel},
+	)
+
+	metrics.getProfileData = newHistogramVec(cfg, promRegistry,
+		"sshb_profile_data_get_time",
+		"Time taken to get the profile data in seconds", []string{endpointLabel, profileIDLabel},
+		standardTimeBuckets)
+
+	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
+		"sshb_logger_data_send_time",
+		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
+		standardTimeBuckets)
+
+	metrics.requestTime = newHistogramVec(cfg, promRegistry,
+		"sshb_request_time",
+		"Time taken to serve the request in seconds", []string{endpointLabel},
+		standardTimeBuckets)
+
+	metrics.dbQueryError = newCounter(cfg, promRegistry,
+		"sshb_db_query_failed",
+		"Count failed db calls at profile, version level",
+		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
 
 	return &metrics
@@ -375,6 +406,38 @@ func (m *Metrics) RecordInjectTrackerErrorCount(adformat, publisherID, partner s
 		adFormatLabel: adformat,
 		pubIDLabel:    publisherID,
 		partnerLabel:  partner,
+	}).Inc()
+}
+
+// RecordGetProfileDataTime as a noop
+func (m *Metrics) RecordGetProfileDataTime(endpoint, profileID string, getTime time.Duration) {
+	m.getProfileData.With(prometheus.Labels{
+		endpointLabel:  endpoint,
+		profileIDLabel: profileID,
+	}).Observe(float64(getTime.Seconds()))
+}
+
+// RecordSendLoggerDataTime as a noop
+func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime time.Duration) {
+	m.sendLoggerData.With(prometheus.Labels{
+		endpointLabel:  endpoint,
+		profileIDLabel: profileID,
+	}).Observe(float64(sendTime.Seconds()))
+}
+
+// RecordSendLoggerDataTime as a noop
+func (m *Metrics) RecordRequestTime(endpoint string, requestTime time.Duration) {
+	m.requestTime.With(prometheus.Labels{
+		endpointLabel: endpoint,
+	}).Observe(float64(requestTime.Seconds()))
+}
+
+// RecordDBQueryFailure as a noop
+func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
+	m.dbQueryError.With(prometheus.Labels{
+		queryTypeLabel: queryType,
+		pubIDLabel:     publisher,
+		profileIDLabel: profile,
 	}).Inc()
 }
 

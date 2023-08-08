@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -26,8 +27,8 @@ func (db *mySqlDB) GetPubmaticSlotMappings(pubID int) (map[string]models.SlotMap
 
 		err := rows.Scan(&slotInfo.SlotName, &slotInfo.AdSize, &slotInfo.SiteId,
 			&slotInfo.AdTagId, &slotInfo.GId, &slotInfo.Floor)
-		if nil != err {
-			//continue
+		if err != nil {
+			glog.Errorf("pubmatic slot mappings row scan failed for %d", pubID)
 		}
 		slotMapping.PartnerId = models.PUBMATIC_PARTNER_ID //hardcoding partnerId for pubmatic
 		slotMapping.AdapterId = models.PUBMATIC_ADAPTER_ID //hardcoding adapterId for pubmatic
@@ -90,7 +91,7 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 	for rows.Next() {
 		var slotMapping = models.SlotMapping{}
 		err := rows.Scan(&slotMapping.PartnerId, &slotMapping.AdapterId, &slotMapping.VersionId, &slotMapping.SlotName, &slotMapping.MappingJson, &slotMapping.OrderID)
-		if nil != err {
+		if err != nil {
 			continue
 		}
 

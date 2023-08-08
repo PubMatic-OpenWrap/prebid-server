@@ -1,5 +1,7 @@
 package metrics
 
+import "time"
+
 // MetricsEngine is a generic interface to record PBS metrics into the desired backend
 type MetricsEngine interface {
 	RecordOpenWrapServerPanicStats(hostName, method string)
@@ -54,6 +56,11 @@ type MetricsEngine interface {
 	// stats-server specific metrics
 	RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId string)
 	RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string)
+
+	RecordGetProfileDataTime(endpoint, profile string, getTime time.Duration)
+	RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration)
+	RecordRequestTime(endpoint string, requestTime time.Duration)
+	RecordDBQueryFailure(queryType, publisher, profile string)
 
 	Shutdown()
 }

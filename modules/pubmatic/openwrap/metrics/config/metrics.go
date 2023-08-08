@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	cfg "github.com/prebid/prebid-server/config"
 	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
@@ -358,6 +359,34 @@ func (me *MultiMetricsEngine) RecordPartnerTimeoutInPBS(publisher, profile, alia
 func (me *MultiMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(publisher, profile string) {
 	for _, thisME := range *me {
 		thisME.RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
+	}
+}
+
+// RecordGetProfileDataTime across all engines
+func (me *MultiMetricsEngine) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordGetProfileDataTime(requestType, profileid, getTime)
+	}
+}
+
+// RecordSendLoggerDataTime across all engines
+func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	}
+}
+
+// RecordRequestTime across all engines
+func (me *MultiMetricsEngine) RecordRequestTime(endpoint string, sendTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordRequestTime(endpoint, sendTime)
+	}
+}
+
+// RecordDBQueryFailure across all engines
+func (me *MultiMetricsEngine) RecordDBQueryFailure(queryType, publisher, profile string) {
+	for _, thisME := range *me {
+		thisME.RecordDBQueryFailure(queryType, publisher, profile)
 	}
 }
 

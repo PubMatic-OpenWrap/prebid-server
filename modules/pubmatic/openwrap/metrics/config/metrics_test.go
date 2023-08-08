@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	cfg "github.com/prebid/prebid-server/config"
@@ -155,6 +156,8 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	adFormat := "banner"
 	dealId := "pubdeal"
 	host := "sv3:xyz1234"
+	getTime, sendTime, requestTime := 300*time.Millisecond, 300*time.Millisecond, 300*time.Millisecond
+	queryType := models.AdunitConfigQuery
 
 	// set the expectations
 	mockEngine.EXPECT().RecordOpenWrapServerPanicStats(host, method)
@@ -200,6 +203,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId)
 	mockEngine.EXPECT().RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder)
 	mockEngine.EXPECT().RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
+	mockEngine.EXPECT().RecordGetProfileDataTime(endpoint, profile, getTime)
+	mockEngine.EXPECT().RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	mockEngine.EXPECT().RecordRequestTime(endpoint, requestTime)
+	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
 	mockEngine.EXPECT().Shutdown()
 
 	// create the multi-metric engine
@@ -249,5 +256,9 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId)
 	multiMetricEngine.RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder)
 	multiMetricEngine.RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
+	multiMetricEngine.RecordGetProfileDataTime(endpoint, profile, getTime)
+	multiMetricEngine.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	multiMetricEngine.RecordRequestTime(endpoint, requestTime)
+	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
 	multiMetricEngine.Shutdown()
 }

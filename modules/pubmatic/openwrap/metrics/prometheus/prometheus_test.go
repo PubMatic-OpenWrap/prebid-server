@@ -3,6 +3,7 @@ package prometheus
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -298,6 +299,51 @@ func TestRecordPublisherResponseTimeStats(t *testing.T) {
 		pubIDLabel, "5890")
 
 	assertHistogram(t, "pub_response_time", resultingHistogram, 1, 3)
+}
+
+func TestRecordGetProfileDataTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordGetProfileDataTime("v25", "59201", 300*time.Millisecond)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.getProfileData,
+		endpointLabel, "v25", profileIDLabel, "59201")
+
+	assertHistogram(t, "sshb_profile_data_get_time", resultingHistogram, 1, 0.3)
+}
+
+func TestRecordSendLoggerDataTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordSendLoggerDataTime("v25", "59201", 300*time.Millisecond)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.sendLoggerData,
+		endpointLabel, "v25", profileIDLabel, "59201")
+
+	assertHistogram(t, "sshb_logger_data_send_time", resultingHistogram, 1, 0.3)
+}
+
+func TestRecordRequestTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordRequestTime("v25", 250*time.Millisecond)
+	resultingHistogram := getHistogramFromHistogramVec(m.requestTime,
+		endpointLabel, "v25")
+
+	assertHistogram(t, "sshb_request_time", resultingHistogram, 1, 0.25)
+}
+
+func TestRecordDBQueryFailure(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordDBQueryFailure(models.AdunitConfigForLiveVersion, "5890", "59201")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "sshb_db_query_failed", m.dbQueryError,
+		expectedCount,
+		prometheus.Labels{
+			queryTypeLabel: models.AdunitConfigForLiveVersion,
+			pubIDLabel:     "5890",
+			profileIDLabel: "59201",
+		})
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {

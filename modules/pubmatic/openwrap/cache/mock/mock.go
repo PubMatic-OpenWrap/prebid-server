@@ -109,18 +109,18 @@ func (mr *MockCacheMockRecorder) GetMappingsFromCacheV25(arg0, arg1 interface{})
 }
 
 // GetPartnerConfigMap mocks base method
-func (m *MockCache) GetPartnerConfigMap(arg0, arg1, arg2 int) (map[int]map[string]string, error) {
+func (m *MockCache) GetPartnerConfigMap(arg0, arg1, arg2 int, arg3 string) (map[int]map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPartnerConfigMap", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetPartnerConfigMap", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(map[int]map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPartnerConfigMap indicates an expected call of GetPartnerConfigMap
-func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2, arg3)
 }
 
 // GetPublisherVASTTagsFromCache mocks base method

@@ -11,6 +11,8 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,11 +48,13 @@ func TestNew(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
 
 	type args struct {
-		goCache  *gocache.Cache
-		database database.Database
-		cfg      config.Cache
+		goCache       *gocache.Cache
+		database      database.Database
+		cfg           config.Cache
+		metricsEngine metrics.MetricsEngine
 	}
 	tests := []struct {
 		name string
@@ -64,12 +68,13 @@ func TestNew(t *testing.T) {
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
+				metricsEngine: mockEngine,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cache := New(tt.args.goCache, tt.args.database, tt.args.cfg)
+			cache := New(tt.args.goCache, tt.args.database, tt.args.cfg, tt.args.metricsEngine)
 			assert.NotNil(t, cache, "chache object should not be nl")
 		})
 	}
