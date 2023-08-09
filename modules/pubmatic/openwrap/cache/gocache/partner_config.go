@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -88,7 +89,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if errAdunitConfig.Error() == adunitconfig.ErrAdUnitUnmarshal.Error() {
+		if errors.Is(errAdunitConfig, adunitconfig.ErrAdUnitUnmarshal) {
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
