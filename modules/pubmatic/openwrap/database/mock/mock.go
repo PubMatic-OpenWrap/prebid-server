@@ -139,21 +139,6 @@ func (mr *MockDatabaseMockRecorder) GetPublisherVASTTags(arg0 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTags", reflect.TypeOf((*MockDatabase)(nil).GetPublisherVASTTags), arg0)
 }
 
-// GetPubmaticSlotMappings mocks base method
-func (m *MockDatabase) GetPubmaticSlotMappings(arg0 int) (map[string]models.SlotMapping, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPubmaticSlotMappings", arg0)
-	ret0, _ := ret[0].(map[string]models.SlotMapping)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPubmaticSlotMappings indicates an expected call of GetPubmaticSlotMappings
-func (mr *MockDatabaseMockRecorder) GetPubmaticSlotMappings(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubmaticSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetPubmaticSlotMappings), arg0)
-}
-
 // GetWrapperSlotMappings mocks base method
 func (m *MockDatabase) GetWrapperSlotMappings(arg0 map[int]map[string]string, arg1, arg2 int) (map[int][]models.SlotMapping, error) {
 	m.ctrl.T.Helper()

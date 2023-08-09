@@ -59,7 +59,6 @@ type MetricsEngine interface {
 
 	RecordGetProfileDataTime(endpoint, profile string, getTime time.Duration)
 	RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration)
-	RecordRequestTime(endpoint string, requestTime time.Duration)
 	RecordDBQueryFailure(queryType, publisher, profile string)
 
 	Shutdown()

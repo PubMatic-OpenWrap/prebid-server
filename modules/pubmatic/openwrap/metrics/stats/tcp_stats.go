@@ -286,8 +286,6 @@ func (st *StatsTCP) RecordGetProfileDataTime(requestType, profileid string, getT
 
 func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
 
-func (st *StatsTCP) RecordRequestTime(requestType string, sendTime time.Duration) {}
-
 func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
 
 // getStatsKeyIndexForResponseTime returns respective stats key for a given responsetime

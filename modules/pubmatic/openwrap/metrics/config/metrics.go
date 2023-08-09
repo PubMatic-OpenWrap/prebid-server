@@ -376,13 +376,6 @@ func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string,
 	}
 }
 
-// RecordRequestTime across all engines
-func (me *MultiMetricsEngine) RecordRequestTime(endpoint string, sendTime time.Duration) {
-	for _, thisME := range *me {
-		thisME.RecordRequestTime(endpoint, sendTime)
-	}
-}
-
 // RecordDBQueryFailure across all engines
 func (me *MultiMetricsEngine) RecordDBQueryFailure(queryType, publisher, profile string) {
 	for _, thisME := range *me {

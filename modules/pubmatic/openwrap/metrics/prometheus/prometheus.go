@@ -214,22 +214,17 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	)
 
 	metrics.getProfileData = newHistogramVec(cfg, promRegistry,
-		"sshb_profile_data_get_time",
+		"profile_data_get_time",
 		"Time taken to get the profile data in seconds", []string{endpointLabel, profileIDLabel},
 		standardTimeBuckets)
 
 	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
-		"sshb_logger_data_send_time",
+		"logger_data_send_time",
 		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
 		standardTimeBuckets)
 
-	metrics.requestTime = newHistogramVec(cfg, promRegistry,
-		"sshb_request_time",
-		"Time taken to serve the request in seconds", []string{endpointLabel},
-		standardTimeBuckets)
-
 	metrics.dbQueryError = newCounter(cfg, promRegistry,
-		"sshb_db_query_failed",
+		"db_query_failed",
 		"Count failed db calls at profile, version level",
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
@@ -423,13 +418,6 @@ func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime 
 		endpointLabel:  endpoint,
 		profileIDLabel: profileID,
 	}).Observe(float64(sendTime.Seconds()))
-}
-
-// RecordSendLoggerDataTime as a noop
-func (m *Metrics) RecordRequestTime(endpoint string, requestTime time.Duration) {
-	m.requestTime.With(prometheus.Labels{
-		endpointLabel: endpoint,
-	}).Observe(float64(requestTime.Seconds()))
 }
 
 // RecordDBQueryFailure as a noop
