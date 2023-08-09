@@ -14,7 +14,7 @@ type fsc struct {
 	disabledPublishers map[int]struct{}
 	thresholdsPerDsp   map[int]int
 	sync.RWMutex
-	serviceStop chan (bool)
+	serviceStop chan struct{}
 }
 
 var fscConfigs fsc
@@ -27,7 +27,7 @@ func Init(c cache.Cache, defaultExpiry int) {
 	fscConfigs.cache = c
 	fscConfigs.disabledPublishers = make(map[int]struct{})
 	fscConfigs.thresholdsPerDsp = make(map[int]int)
-	fscConfigs.serviceStop = make(chan bool)
+	fscConfigs.serviceStop = make(chan struct{})
 
 	go initiateReloader(c, defaultExpiry)
 	// logger.Info("Initialized FSC cache update reloaders for publisher and dsp fsc configuraitons")
@@ -65,9 +65,9 @@ func predictFscValue(threshold int) bool {
 	return (rand.Intn(100)) < threshold
 }
 
-func StopFscReloaderService() {
+func StopReloaderService() {
 	//updating serviceStop flag to true
-	fscConfigs.serviceStop <- true
+	close(fscConfigs.serviceStop)
 }
 
 func updateFscConfigMapsFromCache(c cache.Cache) {

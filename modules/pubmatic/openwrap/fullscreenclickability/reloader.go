@@ -7,16 +7,16 @@ import (
 )
 
 var initiateReloader = func(c cache.Cache, expiryTime int) {
-	// logger.Info("FSC Reloader start")
+	//  add log starting Reloader
 	ticker := time.NewTicker(time.Duration(expiryTime) * time.Second)
 	for {
 		//Populating FscConfigMaps
 		updateFscConfigMapsFromCache(c)
 		select {
+		case <-ticker.C:
+			// add log for cache-refresh-reloader
 		case <-fscConfigs.serviceStop:
 			return
-		case <-ticker.C:
-			// logger.Info("FSC Reloader loads cache @%v", t)
 		}
 	}
 }
