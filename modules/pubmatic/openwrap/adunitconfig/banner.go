@@ -10,7 +10,6 @@ import (
 )
 
 func UpdateBannerObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string) (adUnitCtx models.AdUnitCtx) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Error(string(debug.Stack()))
