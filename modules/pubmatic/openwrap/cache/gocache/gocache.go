@@ -8,6 +8,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 )
 
 const (
@@ -30,21 +31,23 @@ func key(format string, v ...interface{}) string {
 // any db or cache should be injectable
 type cache struct {
 	sync.Map
-	cache *gocache.Cache
-	cfg   config.Cache
-	db    database.Database
+	cache        *gocache.Cache
+	cfg          config.Cache
+	db           database.Database
+	metricEngine metrics.MetricsEngine
 }
 
 var c *cache
 var cOnce sync.Once
 
-func New(goCache *gocache.Cache, database database.Database, cfg config.Cache) *cache {
+func New(goCache *gocache.Cache, database database.Database, cfg config.Cache, metricEngine metrics.MetricsEngine) *cache {
 	cOnce.Do(
 		func() {
 			c = &cache{
-				cache: goCache,
-				db:    database,
-				cfg:   cfg,
+				cache:        goCache,
+				db:           database,
+				cfg:          cfg,
+				metricEngine: metricEngine,
 			}
 		})
 	return c

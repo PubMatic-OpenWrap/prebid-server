@@ -416,3 +416,20 @@ const (
 	PartnerErrSlotNotMapped = iota // 0
 	PartnerErrMisConfig            //1
 )
+
+// constants for query_type label in stats
+const (
+	PartnerConfigQuery             = "GetParterConfig"
+	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery              = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                   = "GetSlotNameHash"
+	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
+	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
+	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
+	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
+	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	//PMSlotToMappings               = "GetPMSlotToMappings"
+)

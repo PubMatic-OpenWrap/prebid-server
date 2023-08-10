@@ -1,15 +1,20 @@
 package gocache
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
-	"github.com/pkg/errors"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
-func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[int]map[string]string, error) {
+func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoint string) (map[int]map[string]string, error) {
 	dbAccessed := false
 	var err error
+	startTime := time.Now()
 
 	pubLockKey := key("%d", pubID)
 	if mapNameHash, ok := c.cache.Get(key(PubSlotNameHash, pubID)); !ok || mapNameHash == nil {
@@ -18,9 +23,9 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 			return c.populateCacheWithPubSlotNameHash(pubID)
 		})
 		if errPubSlotNameHash != nil {
-			err = errors.Wrap(err, errPubSlotNameHash.Error())
+			c.metricEngine.RecordDBQueryFailure(models.SlotNameHash, strconv.Itoa(pubID), strconv.Itoa(profileID))
+			err = errorWrap(err, errPubSlotNameHash)
 		}
-		//TODO: Add stat if error from the DB
 	}
 
 	if vastTags, ok := c.cache.Get(key(PubVASTTags, pubID)); !ok || vastTags == nil {
@@ -29,9 +34,9 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 			return c.populatePublisherVASTTags(pubID)
 		})
 		if errPublisherVASTTag != nil {
-			err = errors.Wrap(err, errPublisherVASTTag.Error())
+			c.metricEngine.RecordDBQueryFailure(models.PublisherVASTTagsQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
+			err = errorWrap(err, errPublisherVASTTag)
 		}
-		//TODO: Add stat if error from the DB
 	}
 
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
@@ -44,7 +49,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 		dbAccessed = true
 		return c.getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion)
 	}); errGetPartnerConfig != nil {
-		err = errors.Wrap(err, errGetPartnerConfig.Error())
+		err = errorWrap(err, errGetPartnerConfig)
 	}
 
 	var partnerConfigMap map[int]map[string]string
@@ -53,7 +58,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 	}
 
 	if dbAccessed {
-		//TODO: add stat to RecordGetProfileDataTime
+		c.metricEngine.RecordGetProfileDataTime(endpoint, strconv.Itoa(profileID), time.Since(startTime))
 	}
 	return partnerConfigMap, err
 }
@@ -62,6 +67,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
 	if err != nil {
+		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		return
 	}
 
@@ -71,10 +77,23 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 
 	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	if errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
-		err = errors.Wrap(err, errWrapperSlotMapping.Error())
+		err = errorWrap(err, errWrapperSlotMapping)
+		queryType := models.WrapperSlotMappingsQuery
+		if displayVersion == 0 {
+			queryType = models.WrapperLiveVersionSlotMappings
+		}
+		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 	}
 	if errAdunitConfig := c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion); errAdunitConfig != nil {
-		err = errors.Wrap(err, errAdunitConfig.Error())
+		queryType := models.AdunitConfigQuery
+		if displayVersion == 0 {
+			queryType = models.AdunitConfigForLiveVersion
+		}
+		if errors.Is(errAdunitConfig, adunitconfig.ErrAdUnitUnmarshal) {
+			queryType = models.AdUnitFailUnmarshal
+		}
+		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		err = errorWrap(err, errAdunitConfig)
 	}
 	return
 }
