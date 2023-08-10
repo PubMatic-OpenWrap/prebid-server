@@ -3,18 +3,20 @@ package fullscreenclickability
 import (
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 )
 
+// These reloaders will be called only to Forced-Write into Cache post timer based call.
 var initiateReloader = func(c cache.Cache, expiryTime int) {
-	//  add log starting Reloader
+	glog.Info("FSC Reloader start")
 	ticker := time.NewTicker(time.Duration(expiryTime) * time.Second)
 	for {
 		//Populating FscConfigMaps
 		updateFscConfigMapsFromCache(c)
 		select {
-		case <-ticker.C:
-			// add log for cache-refresh-reloader
+		case t := <-ticker.C:
+			glog.Info("FSC Reloader loads cache @", t)
 		case <-fscConfigs.serviceStop:
 			return
 		}

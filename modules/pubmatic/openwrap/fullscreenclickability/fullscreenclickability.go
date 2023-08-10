@@ -5,6 +5,7 @@ import (
 
 	"sync"
 
+	"github.com/golang/glog"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -19,8 +20,6 @@ type fsc struct {
 
 var fscConfigs fsc
 
-// These reloaders will be called only to Forced-Write into Cache post timer based call.
-
 // Initializing reloader with cache-refresh default-expiry + 30 mins (to avoid DB load post cache refresh)
 func Init(c cache.Cache, defaultExpiry int) {
 	//init fsc configs
@@ -29,8 +28,8 @@ func Init(c cache.Cache, defaultExpiry int) {
 	fscConfigs.thresholdsPerDsp = make(map[int]int)
 	fscConfigs.serviceStop = make(chan struct{})
 
-	go initiateReloader(c, defaultExpiry)
-	// logger.Info("Initialized FSC cache update reloaders for publisher and dsp fsc configuraitons")
+	go initiateReloader(c, defaultExpiry+1800)
+	glog.Info("Initialized FSC cache update reloaders for publisher and dsp fsc configuraitons")
 
 }
 
@@ -40,13 +39,11 @@ func GetFscInstance() *fsc {
 }
 
 /*
-	IsUnderFSCThreshold:- returns fsc 1/0 based on
-
+IsUnderFSCThreshold:- returns fsc 1/0 based on:
 1. When publisher has disabled FSC in DB, return 0
 2. If FSC is enabled for publisher(default), consider DSP-threshold , and predict value of fsc 0 or 1.
 3. If dspId is not present return 0
 */
-
 func (f *fsc) IsUnderFSCThreshold(pubid int, dspid int) int {
 	f.RLock()
 	defer f.RUnlock()
@@ -70,19 +67,20 @@ func StopReloaderService() {
 	close(fscConfigs.serviceStop)
 }
 
+// fetch and update fsc config maps from DB
 func updateFscConfigMapsFromCache(c cache.Cache) {
+	disabledPublishers, err := c.GetFSCDisabledPublishers()
+	if err != nil {
+		glog.Error("ErrUpdateFscCache:", err.Error())
+	}
+	thresholdsPerDsp, err := c.GetFSCThresholdPerDSP()
+	if err != nil {
+		glog.Error("ErrUpdateFscCache:", err.Error())
+	}
 	fscConfigs.Lock()
-	defer fscConfigs.Unlock()
-
-	var err error
-	if fscConfigs.disabledPublishers, err = c.GetFSCDisabledPublishers(); err != nil {
-		//TODO: add logger.Error(err.Error())
-
-	}
-	if fscConfigs.thresholdsPerDsp, err = c.GetFSCThresholdPerDSP(); err != nil {
-		//TODO: add logger.Error(err.Error())
-	}
-
+	fscConfigs.disabledPublishers = disabledPublishers
+	fscConfigs.thresholdsPerDsp = thresholdsPerDsp
+	fscConfigs.Unlock()
 }
 
 // IsFscApplicable returns true if fsc can be applied (fsc=1)
