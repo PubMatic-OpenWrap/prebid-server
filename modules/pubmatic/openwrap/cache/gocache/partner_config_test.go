@@ -166,9 +166,8 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 			}
-
 			c.db, c.metricEngine = tt.setup(ctrl)
-			defer ctrl.Finish()
+
 			got, err := c.GetPartnerConfigMap(tt.args.pubID, tt.args.profileID, tt.args.displayVersion, tt.args.endpoint)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cache.GetPartnerConfigMap() error = %v, wantErr %v", err, tt.wantErr)
@@ -246,9 +245,7 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 			}
-
 			c.db, c.metricEngine = tt.setup(ctrl)
-			defer ctrl.Finish()
 
 			var wg sync.WaitGroup
 			for i := 0; i < 10; i++ {
