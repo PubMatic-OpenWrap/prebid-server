@@ -23,10 +23,12 @@ var fscConfigs fsc
 // Initializing reloader with cache-refresh default-expiry + 30 mins (to avoid DB load post cache refresh)
 func Init(c cache.Cache, defaultExpiry int) {
 	//init fsc configs
-	fscConfigs.cache = c
-	fscConfigs.disabledPublishers = make(map[int]struct{})
-	fscConfigs.thresholdsPerDsp = make(map[int]int)
-	fscConfigs.serviceStop = make(chan struct{})
+	fscConfigs = fsc{
+		cache:              c,
+		disabledPublishers: make(map[int]struct{}),
+		thresholdsPerDsp:   make(map[int]int),
+		serviceStop:        make(chan struct{}),
+	}
 
 	go initiateReloader(c, defaultExpiry+1800)
 	glog.Info("Initialized FSC cache update reloaders for publisher and dsp fsc configuraitons")
