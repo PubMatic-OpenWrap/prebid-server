@@ -16,6 +16,8 @@ type Cache interface {
 	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
 
+	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
+
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 }
