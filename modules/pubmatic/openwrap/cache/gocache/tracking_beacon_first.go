@@ -1,4 +1,4 @@
-// Package dbcache contains caching functionalities of header-bidding repostiry
+// Package gocache contains caching functionalities of header-bidding repostiry
 // This file provides caching functionalities for tracking-beacon-first (TBF) feature details
 // associated with publishers. It includes methods to interact with the underlying database package
 // for retrieving and caching publisher level TBF data.

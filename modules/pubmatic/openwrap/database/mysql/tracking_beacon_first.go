@@ -1,4 +1,4 @@
-// Package database provides functionalities to interact with the giym database.
+// Package mysql provides functionalities to interact with the giym database.
 // This file is used for retrieving and managing data related to the tracking-beacon-first (TBF) feature for publishers.
 // This includes methods to fetch and process tracking-beacon-first traffic details associated
 // with publisher IDs from the giym database.
