@@ -4292,7 +4292,6 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 		bidAdjustmentFactor map[string]float64
 		expectedImp         []openrtb2.Imp
 	}{
-
 		{
 			description:        "BidFloor Adjustment Done for Appnexus",
 			gdprAccountEnabled: &falseValue,
@@ -4321,7 +4320,6 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 				Ext: json.RawMessage(`{"bidder":{"placementId":1}}`),
 			}},
 		},
-
 		{
 			description:        "bidAjustement Not provided",
 			gdprAccountEnabled: &falseValue,
@@ -4351,39 +4349,18 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 			}},
 		},
 	}
-
 	for _, test := range testCases {
 		req := newBidRequest(t)
-		// req.User.Ext = json.RawMessage(`{"consent":"` + test.gdprConsent + `"}`)
-		// req.Regs = &openrtb2.Regs{
-		// 	Ext: json.RawMessage(`{"gdpr":` + test.gdpr + `}`),
-		// }
-
-		// privacyConfig := config.Privacy{
-		// 	GDPR: config.GDPR{
-		// 		DefaultValue: test.gdprDefaultValue,
-		// 		TCF2: config.TCF2{
-		// 			Enabled: test.gdprHostEnabled,
-		// 		},
-		// 	},
-		// }
-
 		accountConfig := config.Account{
 			GDPR: config.AccountGDPR{
 				Enabled: &falseValue,
 			},
 		}
-
 		auctionReq := AuctionRequest{
 			BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
 			UserSyncs:         &emptyUsersync{},
 			Account:           accountConfig,
-			// TCF2Config: gdpr.NewTCF2Config(
-			// 	privacyConfig.GDPR.TCF2,
-			// 	accountConfig.GDPR,
-			// ),
 		}
-
 		gdprPermissionsBuilder := fakePermissionsBuilder{
 			permissions: &permissionsMock{
 				allowAllBidders: true,
@@ -4392,22 +4369,16 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 				activitiesError: test.permissionsError,
 			},
 		}.Builder
-
 		reqSplitter := &requestSplitter{
 			bidderToSyncerKey: map[string]string{},
 			me:                &metrics.MetricsEngineMock{},
-			//	privacyConfig:     privacyConfig,
-			gdprPermsBuilder: gdprPermissionsBuilder,
-			hostSChainNode:   nil,
-			bidderInfo:       config.BidderInfos{},
+			gdprPermsBuilder:  gdprPermissionsBuilder,
+			hostSChainNode:    nil,
+			bidderInfo:        config.BidderInfos{},
 		}
-
 		results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, test.bidAdjustmentFactor)
 		result := results[0]
-		b, _ := json.Marshal(result)
-		fmt.Println(string(b))
 		assert.Nil(t, errs)
-
 		assert.Equal(t, test.expectedImp, result.BidRequest.Imp, test.description)
 	}
 }
