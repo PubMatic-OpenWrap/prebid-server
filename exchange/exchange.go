@@ -743,9 +743,6 @@ func (e *exchange) getAllBids(
 			reqInfo := adapters.NewExtraRequestInfo(conversions)
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			reqInfo.GlobalPrivacyControlHeader = globalPrivacyControlHeader
-			if bidAjustmentFactor, ok := bidAdjustments[bidderRequest.BidderName.String()]; ok && bidFloorAdjustment {
-				reqInfo.BidAdjustmentFactor = bidAjustmentFactor
-			}
 			reqInfo.BidderRequestStartTime = start
 
 			bidReqOptions := bidRequestOptions{
