@@ -267,6 +267,10 @@ func applyBidAdjustmentToFloor(allBidderRequests []BidderRequest, bidAdjustmentF
 			bidAdjustment = bidAdjustemntValue
 		}
 
+		if bidAdjustment == 1.0 {
+			continue
+		}
+
 		for index, imp := range bidderRequest.BidRequest.Imp {
 			imp.BidFloor = imp.BidFloor / bidAdjustment
 			bidderRequest.BidRequest.Imp[index] = imp
