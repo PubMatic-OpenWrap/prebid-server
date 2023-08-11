@@ -64,46 +64,46 @@ func RequestStatuses() []metrics.RequestStatus {
 // newSSHBMetrics initializes a new Prometheus metrics instance with preloaded label values for SSHB service
 func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) {
 	metrics.owRequests = newCounter(cfg, promRegistry,
-		"requests",
+		"sshb_requests",
 		"Count of total requests to header-bidding server labeled by type and status.",
 		[]string{requestTypeLabel, requestStatusLabel})
 
 	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
-		"logger_data_send_time",
+		"sshb_logger_data_send_time",
 		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
 		standardTimeBuckets)
 
 	metrics.owRequestTime = newHistogramVec(cfg, promRegistry,
-		"sshb_request_time",
+		"sshb_sshb_request_time",
 		"Time taken to serve the request in seconds", []string{apiTypeLabel},
 		[]float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1})
 
-	metrics.lurlSent = newCounter(cfg, promRegistry, "lurl_sent", "Count of lurl success, fail, drop and channel_full request sent labeled by publisherID, partner", []string{pubIdLabel, partnerLable, statusLabel})
+	metrics.lurlSent = newCounter(cfg, promRegistry, "sshb_lurl_sent", "Count of lurl success, fail, drop and channel_full request sent labeled by publisherID, partner", []string{pubIdLabel, partnerLable, statusLabel})
 
-	metrics.lurlBatchSent = newCounter(cfg, promRegistry, "lurl_batch_sent", "Count of lurl Batch success, fail and drop request sent to wtracker ", []string{statusLabel})
+	metrics.lurlBatchSent = newCounter(cfg, promRegistry, "sshb_lurl_batch_sent", "Count of lurl Batch success, fail and drop request sent to wtracker ", []string{statusLabel})
 
 	metrics.bids = newCounter(cfg, promRegistry,
-		"bids",
+		"sshb_bids",
 		"Count of bids by publisher id, profile, bidder and deal",
 		[]string{pubIDLabel, profileLabel, bidderLabel, dealLabel})
 
 	metrics.prebidTimeoutRequests = newCounter(cfg, promRegistry,
-		"request_prebid_timeout",
+		"sshb_request_prebid_timeout",
 		"count no of requests in which prebid timeouts",
 		[]string{pubIDLabel, profileLabel})
 
 	metrics.partnerTimeoutRequest = newCounter(cfg, promRegistry,
-		"request_partner_timeout",
+		"sshb_request_partner_timeout",
 		"count no of requests in which partner timeouts",
 		[]string{pubIDLabel, profileLabel, bidderLabel})
 
 	metrics.ctvUaAccuracy = newCounter(cfg, promRegistry,
-		"ctv_user_agent_accuracy",
+		"sshb_ctv_user_agent_accuracy",
 		"Count of requests detected by Ctv user agent regex labeled by pub id and status.",
 		[]string{pubIdLabel, statusLabel})
 
 	metrics.panicCounts = newCounter(cfg, promRegistry,
-		"panic",
+		"sshb_panic",
 		"Counts the header-bidding server panic.",
 		[]string{nodeNameLabel, podNameLabel, methodNameLabel, endpointLabel})
 
