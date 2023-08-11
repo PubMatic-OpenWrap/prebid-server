@@ -30,7 +30,7 @@ build: test
 image:
 	docker build -t prebid-server .
 
-mockgen: mockgeninstall mockgendb mockgencache
+mockgen: mockgeninstall mockgendb mockgencache mockgenprometheus
 
 # export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN   
 mockgeninstall:
@@ -44,3 +44,7 @@ mockgendb:
 mockgencache:
 	mkdir -p modules/pubmatic/openwrap/cache/mock
 	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache Cache > modules/pubmatic/openwrap/cache/mock/mock.go
+
+mockgenmetrics:
+	mkdir -p modules/pubmatic/openwrap/metrics/mock
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go

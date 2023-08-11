@@ -5,6 +5,7 @@ import (
 
 	"time"
 
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +16,7 @@ func TestRequestMetric(t *testing.T) {
 	requestType := ReqTypeORTB25Web
 	requestStatus := RequestStatusOK
 
-	m.RecordRequest(Labels{
+	m.RecordRequest(metrics.Labels{
 		RType:         requestType,
 		RequestStatus: requestStatus,
 	})
@@ -33,7 +34,7 @@ func TestMetrics_RecordLurlSent(t *testing.T) {
 	m := createMetricsForTesting()
 
 	type args struct {
-		labels LurlStatusLabels
+		labels metrics.LurlStatusLabels
 	}
 	tests := []struct {
 		name string
@@ -42,7 +43,7 @@ func TestMetrics_RecordLurlSent(t *testing.T) {
 		{
 			name: "LurSent success",
 			args: args{
-				labels: LurlStatusLabels{
+				labels: metrics.LurlStatusLabels{
 					PublisherID: "123",
 					Partner:     "pubmatic",
 					Status:      "success",
@@ -52,7 +53,7 @@ func TestMetrics_RecordLurlSent(t *testing.T) {
 		{
 			name: "LurSent fail",
 			args: args{
-				labels: LurlStatusLabels{
+				labels: metrics.LurlStatusLabels{
 					PublisherID: "123",
 					Partner:     "pubmatic",
 					Status:      "fail",
@@ -62,7 +63,7 @@ func TestMetrics_RecordLurlSent(t *testing.T) {
 		{
 			name: "LurSent drop",
 			args: args{
-				labels: LurlStatusLabels{
+				labels: metrics.LurlStatusLabels{
 					PublisherID: "123",
 					Partner:     "pubmatic",
 					Status:      "drop",
@@ -72,7 +73,7 @@ func TestMetrics_RecordLurlSent(t *testing.T) {
 		{
 			name: "LurSent channel_full",
 			args: args{
-				labels: LurlStatusLabels{
+				labels: metrics.LurlStatusLabels{
 					PublisherID: "123",
 					Partner:     "pubmatic",
 					Status:      "channel_full",
@@ -96,7 +97,7 @@ func TestMetrics_RecordLurlBatchSent(t *testing.T) {
 	m := createMetricsForTesting()
 
 	type args struct {
-		labels LurlBatchStatusLabels
+		labels metrics.LurlBatchStatusLabels
 	}
 	tests := []struct {
 		name string
@@ -105,7 +106,7 @@ func TestMetrics_RecordLurlBatchSent(t *testing.T) {
 		{
 			name: "LurBatchSent success",
 			args: args{
-				labels: LurlBatchStatusLabels{
+				labels: metrics.LurlBatchStatusLabels{
 					Status: "success",
 				},
 			},
@@ -113,7 +114,7 @@ func TestMetrics_RecordLurlBatchSent(t *testing.T) {
 		{
 			name: "LurBatchSent fail",
 			args: args{
-				labels: LurlBatchStatusLabels{
+				labels: metrics.LurlBatchStatusLabels{
 					Status: "fail",
 				},
 			},
@@ -121,7 +122,7 @@ func TestMetrics_RecordLurlBatchSent(t *testing.T) {
 		{
 			name: "LurBatchSent drop",
 			args: args{
-				labels: LurlBatchStatusLabels{
+				labels: metrics.LurlBatchStatusLabels{
 					Status: "drop",
 				},
 			},

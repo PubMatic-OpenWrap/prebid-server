@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -26,48 +27,24 @@ const (
 	methodNameLabel    = "method_name"
 )
 
-// Labels defines the labels that can be attached to the metrics.
-type Labels struct {
-	RType         RequestType
-	RequestStatus RequestStatus
-}
-
-// RequestType : Request type enumeration
-type RequestType string
-
-// RequestStatus : The request return status
-type RequestStatus string
-
-// LurlStatusLabels defines labels applicable for LURL sent
-type LurlStatusLabels struct {
-	PublisherID string
-	Partner     string
-	Status      string
-}
-
-// LurlBatchStatusLabels defines labels applicable for LURL batche sent
-type LurlBatchStatusLabels struct {
-	Status string
-}
-
 // The request types (endpoints)
 const (
-	ReqTypeORTB25Web RequestType = "openrtb25-web"
-	ReqTypeORTB25App RequestType = "openrtb25-app"
-	ReqTypeAMP       RequestType = "amp"
-	ReqTypeVideo     RequestType = "video"
+	ReqTypeORTB25Web metrics.RequestType = "openrtb25-web"
+	ReqTypeORTB25App metrics.RequestType = "openrtb25-app"
+	ReqTypeAMP       metrics.RequestType = "amp"
+	ReqTypeVideo     metrics.RequestType = "video"
 )
 
 // Request/return status
 const (
-	RequestStatusOK       RequestStatus = "ok"
-	RequestStatusBadInput RequestStatus = "badinput"
-	RequestStatusErr      RequestStatus = "err"
+	RequestStatusOK       metrics.RequestStatus = "ok"
+	RequestStatusBadInput metrics.RequestStatus = "badinput"
+	RequestStatusErr      metrics.RequestStatus = "err"
 )
 
-// RequestTypes returns all possible values for RequestType
-func RequestTypes() []RequestType {
-	return []RequestType{
+// RequestTypes returns all possible values for metrics.RequestType
+func RequestTypes() []metrics.RequestType {
+	return []metrics.RequestType{
 		ReqTypeORTB25Web,
 		ReqTypeORTB25App,
 		ReqTypeAMP,
@@ -75,27 +52,13 @@ func RequestTypes() []RequestType {
 	}
 }
 
-// RequestStatuses return all possible values for RequestStatus
-func RequestStatuses() []RequestStatus {
-	return []RequestStatus{
+// RequestStatuses return all possible values for metrics.RequestStatus
+func RequestStatuses() []metrics.RequestStatus {
+	return []metrics.RequestStatus{
 		RequestStatusOK,
 		RequestStatusBadInput,
 		RequestStatusErr,
 	}
-}
-
-// MetricsEngine is a generic interface to record header-bidding metrics into the desired backend
-type MetricsEngine interface {
-	RecordRequest(labels Labels) // ignores adapter. only statusOk and statusErr fom status
-	RecordLurlSent(labels LurlStatusLabels)
-	RecordLurlBatchSent(labels LurlBatchStatusLabels)
-	RecordBids(pubid, profileid, biddder, deal string)
-	RecordPrebidTimeoutRequests(pubid, profileid string)
-	RecordPartnerTimeoutRequests(pubid, profileid, bidder string)
-	RecordCtvUaAccuracy(pubId, status string)
-	RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration)
-	RecordRequestTime(requestType string, requestTime time.Duration)
-	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
 }
 
 // newSSHBMetrics initializes a new Prometheus metrics instance with preloaded label values for SSHB service
@@ -148,7 +111,7 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 }
 
 // RecordRequest across all engines
-func (m *Metrics) RecordRequest(labels Labels) {
+func (m *Metrics) RecordRequest(labels metrics.Labels) {
 	m.owRequests.With(prometheus.Labels{
 		requestTypeLabel:   string(labels.RType),
 		requestStatusLabel: string(labels.RequestStatus),
@@ -156,7 +119,7 @@ func (m *Metrics) RecordRequest(labels Labels) {
 }
 
 // RecordLurlSent records lurl status success, fail, drop and channel_fool
-func (m *Metrics) RecordLurlSent(labels LurlStatusLabels) {
+func (m *Metrics) RecordLurlSent(labels metrics.LurlStatusLabels) {
 	m.lurlSent.With(prometheus.Labels{
 		pubIdLabel:   labels.PublisherID,
 		partnerLable: labels.Partner,
@@ -165,7 +128,7 @@ func (m *Metrics) RecordLurlSent(labels LurlStatusLabels) {
 }
 
 // RecordLurlBatchSent records lurl batchs sent to wtracker
-func (m *Metrics) RecordLurlBatchSent(labels LurlBatchStatusLabels) {
+func (m *Metrics) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels) {
 	m.lurlBatchSent.With(prometheus.Labels{
 		statusLabel: labels.Status,
 	}).Inc()

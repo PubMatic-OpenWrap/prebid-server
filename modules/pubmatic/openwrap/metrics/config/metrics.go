@@ -369,13 +369,6 @@ func (me *MultiMetricsEngine) RecordGetProfileDataTime(requestType, profileid st
 	}
 }
 
-// RecordSendLoggerDataTime across all engines
-func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
-	for _, thisME := range *me {
-		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
-	}
-}
-
 // RecordDBQueryFailure across all engines
 func (me *MultiMetricsEngine) RecordDBQueryFailure(queryType, publisher, profile string) {
 	for _, thisME := range *me {
@@ -387,5 +380,60 @@ func (me *MultiMetricsEngine) RecordDBQueryFailure(queryType, publisher, profile
 func (me *MultiMetricsEngine) Shutdown() {
 	for _, thisME := range *me {
 		thisME.Shutdown()
+	}
+}
+
+func (me *MultiMetricsEngine) RecordRequest(labels metrics.Labels) {
+	for _, thisME := range *me {
+		thisME.RecordRequest(labels)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordLurlSent(labels metrics.LurlStatusLabels) {
+	for _, thisME := range *me {
+		thisME.RecordLurlSent(labels)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels) {
+	for _, thisME := range *me {
+		thisME.RecordLurlBatchSent(labels)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
+	for _, thisME := range *me {
+		thisME.RecordBids(pubid, profileid, biddder, deal)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordPartnerTimeoutRequests(pubid, profileid, bidder string) {
+	for _, thisME := range *me {
+		thisME.RecordPartnerTimeoutRequests(pubid, profileid, bidder)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordCtvUaAccuracy(pubId, status string) {
+	for _, thisME := range *me {
+		thisME.RecordCtvUaAccuracy(pubId, status)
+	}
+}
+
+// RecordSendLoggerDataTime across all engines
+func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordRequestTime(requestType string, requestTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordRequestTime(requestType, requestTime)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName, podName string) {
+	for _, thisME := range *me {
+		thisME.RecordOWServerPanic(endpoint, methodName, nodeName, podName)
 	}
 }
