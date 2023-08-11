@@ -7,6 +7,7 @@ package mock
 import (
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockMetricsEngine is a mock of MetricsEngine interface
@@ -174,6 +175,30 @@ func (m *MockMetricsEngine) RecordCacheErrorRequests(arg0, arg1, arg2 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordCacheErrorRequests(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCacheErrorRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCacheErrorRequests), arg0, arg1, arg2)
+}
+
+// RecordDBQueryFailure mocks base method
+func (m *MockMetricsEngine) RecordDBQueryFailure(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordDBQueryFailure", arg0, arg1, arg2)
+}
+
+// RecordDBQueryFailure indicates an expected call of RecordDBQueryFailure
+func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDBQueryFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordDBQueryFailure), arg0, arg1, arg2)
+}
+
+// RecordGetProfileDataTime mocks base method
+func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordGetProfileDataTime", arg0, arg1, arg2)
+}
+
+// RecordGetProfileDataTime indicates an expected call of RecordGetProfileDataTime
+func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0, arg1, arg2)
 }
 
 // RecordImpDisabledViaConfigStats mocks base method
@@ -486,6 +511,18 @@ func (m *MockMetricsEngine) RecordSSTimeoutRequests(arg0, arg1 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordSSTimeoutRequests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSSTimeoutRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSSTimeoutRequests), arg0, arg1)
+}
+
+// RecordSendLoggerDataTime mocks base method
+func (m *MockMetricsEngine) RecordSendLoggerDataTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordSendLoggerDataTime", arg0, arg1, arg2)
+}
+
+// RecordSendLoggerDataTime indicates an expected call of RecordSendLoggerDataTime
+func (mr *MockMetricsEngineMockRecorder) RecordSendLoggerDataTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSendLoggerDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSendLoggerDataTime), arg0, arg1, arg2)
 }
 
 // RecordStatsKeyCTVPrebidFailedImpression mocks base method

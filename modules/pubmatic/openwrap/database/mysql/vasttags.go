@@ -20,7 +20,6 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 
 	rows, err := db.conn.Query(getActiveVASTTagsQuery)
 	if err != nil {
-		err = fmt.Errorf("[QUERY_FAILED] Name:[%v] Error:[%v]", "GetPublisherVASTTags", err.Error())
 		return nil, err
 	}
 	defer rows.Close()

@@ -10,25 +10,23 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_cache_GetPartnerConfigMap(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockDatabase := mock_database.NewMockDatabase(ctrl)
-
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
 		cfg   config.Cache
-		db    database.Database
 	}
 	type args struct {
-		pubid          int
-		profileid      int
-		displayversion int
+		pubID          int
+		profileID      int
+		displayVersion int
+		endpoint       string
 	}
 	tests := []struct {
 		name    string
@@ -36,24 +34,26 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 		args    args
 		want    map[int]map[string]string
 		wantErr bool
-		setup   func()
+		setup   func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine)
 	}{
 		{
-			name: "get_partnerConfig_map",
+			name: "get_valid_partnerConfig_map",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 					VASTTagCacheExpiry: 1000,
 				},
-				db: mockDatabase,
 			},
 			args: args{
-				pubid:          testPubID,
-				profileid:      testProfileID,
-				displayversion: testVersionID,
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+				endpoint:       models.EndpointV25,
 			},
-			setup: func() {
+			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine) {
+				mockDatabase := mock_database.NewMockDatabase(ctrl)
+				mockEngine := mock.NewMockMetricsEngine(ctrl)
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
 				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
@@ -69,24 +69,189 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 						},
 					},
 				}, nil)
+				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointV25, "123", gomock.Any()).Return().Times(1)
+				return mockDatabase, mockEngine
+			},
+			wantErr: false,
+			want: map[int]map[string]string{
+				1: {
+					"partnerId":         "1",
+					"prebidPartnerName": "pubmatic",
+					"serverSideEnabled": "1",
+					"level":             "multi",
+					"kgp":               "_AU_@_W_x_H",
+					"timeout":           "220",
+					"bidderCode":        "pubmatic",
+				},
+			},
+		},
+		{
+			name: "db_queries_failed_getting_partnerConfig_map",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 1000,
+					VASTTagCacheExpiry: 1000,
+				},
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+				endpoint:       models.EndpointV25,
+			},
+			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine) {
+				mockDatabase := mock_database.NewMockDatabase(ctrl)
+				mockEngine := mock.NewMockMetricsEngine(ctrl)
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointV25, "123", gomock.Any()).Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.SlotNameHash, "5890", "123").Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.PartnerConfigQuery, "5890", "123").Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.PublisherVASTTagsQuery, "5890", "123").Return()
+				return mockDatabase, mockEngine
+			},
+			wantErr: true,
+			want:    nil,
+		},
+		{
+			name: "db_queries_failed_getting_adunitconfig_and_wrapper_slotmappings",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 1000,
+					VASTTagCacheExpiry: 1000,
+				},
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: 0,
+				endpoint:       models.EndpointAMP,
+			},
+			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine) {
+				mockDatabase := mock_database.NewMockDatabase(ctrl)
+				mockEngine := mock.NewMockMetricsEngine(ctrl)
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, 0).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
+				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, adunitconfig.ErrAdUnitUnmarshal)
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123").Return().Times(1)
+				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperLiveVersionSlotMappings, "5890", "123").Return().Times(1)
+				return mockDatabase, mockEngine
+			},
+			wantErr: true,
+			want: map[int]map[string]string{
+				1: {
+					"partnerId":         "1",
+					"prebidPartnerName": "pubmatic",
+					"serverSideEnabled": "1",
+					"level":             "multi",
+					"kgp":               "_AU_@_W_x_H",
+					"timeout":           "220",
+					"bidderCode":        "pubmatic",
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
 			c := &cache{
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
-				db:    tt.fields.db,
 			}
+			c.db, c.metricEngine = tt.setup(ctrl)
+
+			got, err := c.GetPartnerConfigMap(tt.args.pubID, tt.args.profileID, tt.args.displayVersion, tt.args.endpoint)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("cache.GetPartnerConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
+	type fields struct {
+		Map   sync.Map
+		cache *gocache.Cache
+		cfg   config.Cache
+	}
+	type args struct {
+		pubID          int
+		profileID      int
+		displayVersion int
+		endpoint       string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[int]map[string]string
+		wantErr bool
+		setup   func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine)
+	}{
+		{
+			name: "get_partnerConfig_map",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 1000,
+					VASTTagCacheExpiry: 1000,
+				},
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+				endpoint:       models.EndpointV25,
+			},
+			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock.MockMetricsEngine) {
+				mockDatabase := mock_database.NewMockDatabase(ctrl)
+				mockEngine := mock.NewMockMetricsEngine(ctrl)
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
+				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
+					1: {
+						{
+							PartnerId:   testPartnerID,
+							AdapterId:   testAdapterID,
+							VersionId:   testVersionID,
+							SlotName:    testSlotName,
+							MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\",\"video\":{\"skippable\":\"TRUE\"}}",
+						},
+					},
+				}, nil)
+				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointV25, "123", gomock.Any()).Return().Times(1)
+				return mockDatabase, mockEngine
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			c := &cache{
+				cache: tt.fields.cache,
+				cfg:   tt.fields.cfg,
+			}
+			c.db, c.metricEngine = tt.setup(ctrl)
+
 			var wg sync.WaitGroup
 			for i := 0; i < 10; i++ {
 				wg.Add(1)
 				go func() {
-					c.GetPartnerConfigMap(tt.args.pubid, tt.args.profileid, tt.args.displayversion)
+					c.GetPartnerConfigMap(tt.args.pubID, tt.args.profileID, tt.args.displayVersion, tt.args.endpoint)
 					wg.Done()
 				}()
 			}
@@ -102,7 +267,6 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			if _, found := partnerConfigMap[testAdapterID]; !found {
 				t.Error("Parner Config not added in map")
 			}
-			//TODO: Add validation to check prometheus stat called only once
 		})
 	}
 }
@@ -111,6 +275,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
 
 	type fields struct {
 		Map   sync.Map
@@ -156,6 +321,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.PartnerConfigQuery, "5890", "123").Return()
 			},
 		},
 		{
@@ -233,9 +399,10 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				cache: tt.fields.cache,
-				cfg:   tt.fields.cfg,
-				db:    tt.fields.db,
+				cache:        tt.fields.cache,
+				cfg:          tt.fields.cfg,
+				db:           tt.fields.db,
+				metricEngine: mockEngine,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			assert.Equal(t, tt.want.err, err)
