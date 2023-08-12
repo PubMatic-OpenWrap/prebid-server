@@ -445,3 +445,20 @@ const (
 	// min duration = max duration. In case 'round up' this algorithm will not be executed.Instead
 	ByDurationRanges
 )
+
+// constants for query_type label in stats
+const (
+	PartnerConfigQuery             = "GetParterConfig"
+	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery              = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                   = "GetSlotNameHash"
+	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
+	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
+	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
+	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
+	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	//PMSlotToMappings               = "GetPMSlotToMappings"
+)

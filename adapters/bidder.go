@@ -158,7 +158,6 @@ type ExtraRequestInfo struct {
 	BidderRequestStartTime     time.Time
 	GlobalPrivacyControlHeader string
 	CurrencyConversions        currency.Conversions
-	BidAdjustmentFactor        float64
 	MakeBidsTimeInfo           MakeBidsTimeInfo
 }
 

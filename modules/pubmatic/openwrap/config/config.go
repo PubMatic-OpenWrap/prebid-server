@@ -55,6 +55,7 @@ type Queries struct {
 	GetPublisherVASTTagsQuery         string
 	GetAllFscDisabledPublishersQuery  string
 	GetAllDspFscPcntQuery             string
+	GetTBFRateQuery                   string
 }
 
 type Cache struct {

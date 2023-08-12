@@ -11,6 +11,8 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 func TestGetFSCDisabledPublishers(t *testing.T) {
@@ -18,6 +20,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
@@ -57,6 +60,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 			want: map[int]struct{}{},
 			setup: func() {
 				mockDatabase.EXPECT().GetFSCDisabledPublishers().Return(map[int]struct{}{}, errors.New("QUERY FAILED"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AllFscDisabledPublishersQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),
@@ -74,9 +78,10 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				cache: tt.fields.cache,
-				cfg:   tt.fields.cfg,
-				db:    tt.fields.db,
+				cache:        tt.fields.cache,
+				cfg:          tt.fields.cfg,
+				db:           tt.fields.db,
+				metricEngine: mockEngine,
 			}
 			got, err := c.GetFSCDisabledPublishers()
 			if (err != nil) != tt.wantErr {
@@ -96,6 +101,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
+	mockEngine := mock.NewMockMetricsEngine(ctrl)
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
@@ -135,6 +141,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 			want: map[int]int{},
 			setup: func() {
 				mockDatabase.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, errors.New("QUERY FAILD"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AllDspFscPcntQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),
@@ -152,9 +159,10 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				cache: tt.fields.cache,
-				cfg:   tt.fields.cfg,
-				db:    tt.fields.db,
+				cache:        tt.fields.cache,
+				cfg:          tt.fields.cfg,
+				db:           tt.fields.db,
+				metricEngine: mockEngine,
 			}
 			got, err := c.GetFSCThresholdPerDSP()
 			if (err != nil) != tt.wantErr {

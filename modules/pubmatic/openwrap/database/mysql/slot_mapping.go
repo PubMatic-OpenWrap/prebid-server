@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,49 +8,6 @@ import (
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
-
-// Return the list of Pubmatic slot mappings
-func (db *mySqlDB) GetPubmaticSlotMappings(pubID int) (map[string]models.SlotMapping, error) {
-	pmSlotMappings := make(map[string]models.SlotMapping, 0)
-	rows, err := db.conn.Query(db.cfg.Queries.GetPMSlotToMappings,
-		pubID, models.MAX_SLOT_COUNT)
-	if err != nil {
-		return pmSlotMappings, err
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		slotInfo := models.SlotInfo{}
-		slotMapping := models.SlotMapping{}
-
-		err := rows.Scan(&slotInfo.SlotName, &slotInfo.AdSize, &slotInfo.SiteId,
-			&slotInfo.AdTagId, &slotInfo.GId, &slotInfo.Floor)
-		if nil != err {
-			//continue
-		}
-		slotMapping.PartnerId = models.PUBMATIC_PARTNER_ID //hardcoding partnerId for pubmatic
-		slotMapping.AdapterId = models.PUBMATIC_ADAPTER_ID //hardcoding adapterId for pubmatic
-		slotMapping.SlotName = slotInfo.SlotName           //+ "@" + slotInfo.AdSize
-		//adtag, site, floor hardcoded as this code is to be removed once pmapi moves to wrapper workflow
-		slotMapping.MappingJson =
-			"{\"adtag\":\"" + strconv.Itoa(slotInfo.AdTagId) + "\"," +
-				"\"site\":\"" + strconv.Itoa(slotInfo.SiteId) + "\"," +
-				"\"floor\":\"" + strconv.FormatFloat(slotInfo.Floor, 'f', 2, 64) + "\"," +
-				"\"gaid\":\"" + strconv.Itoa(slotInfo.GId) + "\"}"
-		var mappingJsonObj map[string]interface{}
-		if err := json.Unmarshal([]byte(slotMapping.MappingJson), &mappingJsonObj); err != nil {
-			continue
-		}
-
-		//Adding slotName from DB in fieldMap for PubMatic, as slotName from DB should be sent to PubMatic instead of slotName from request
-		//This is required for case in-sensitive mapping
-		mappingJsonObj[models.KEY_OW_SLOT_NAME] = slotMapping.SlotName
-
-		slotMapping.SlotMappings = mappingJsonObj
-		pmSlotMappings[strings.ToLower(slotMapping.SlotName)] = slotMapping
-	}
-	return pmSlotMappings, nil
-}
 
 // GetPublisherSlotNameHash Returns a map of all slot names and hashes for a publisher
 func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error) {
@@ -90,7 +46,7 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 	for rows.Next() {
 		var slotMapping = models.SlotMapping{}
 		err := rows.Scan(&slotMapping.PartnerId, &slotMapping.AdapterId, &slotMapping.VersionId, &slotMapping.SlotName, &slotMapping.MappingJson, &slotMapping.OrderID)
-		if nil != err {
+		if err != nil {
 			continue
 		}
 
