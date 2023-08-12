@@ -43,7 +43,10 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 }
 
 func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string) (*models.AdPod, error) {
-	adpodConfigs, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig)
+	adpodConfigs, ok, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig)
+	if !ok {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +68,7 @@ func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequ
 
 }
 
-func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig) (*models.AdPod, error) {
+func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig) (*models.AdPod, bool, error) {
 	var adpodConfig models.AdPod
 
 	// Check in impression extension
@@ -73,7 +76,10 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, "adpod")
 		if len(adpodBytes) > 0 && err == nil {
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
-			return &adpodConfig, err
+			if err != nil {
+				return nil, true, err
+			}
+			return &adpodConfig, true, err
 		}
 	}
 
@@ -88,17 +94,20 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, "adpod")
 		if len(adpodBytes) > 0 && err == nil {
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
-			return &adpodConfig, err
+			if err != nil {
+				return nil, true, err
+			}
+			return &adpodConfig, true, err
 		}
 	}
 
-	return nil, errors.New("no adpod configs found")
+	return nil, false, nil
 
 }
 
 func Validate(config *models.AdPod) error {
 	if config == nil {
-		return errors.New("empty adpod object")
+		return nil
 	}
 
 	if config.MinAds <= 0 {
