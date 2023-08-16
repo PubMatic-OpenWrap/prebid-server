@@ -93,7 +93,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 	wg := new(sync.WaitGroup) // ensures each step generating impressions is finished
 	lock := sync.Mutex{}
 	ticker := time.NewTicker(timeout)
-
+	responseCh <- o.getUniqueBids(o.comb.Get())
 	combinationCount := 0
 	for i := 0; i < maxRoutines; i++ {
 		wg.Add(1)
