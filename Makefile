@@ -30,9 +30,9 @@ build: test
 image:
 	docker build -t prebid-server .
 
-mockgen: mockgeninstall mockgendb
+mockgen: mockgeninstall mockgendb mockgencache
 
-# export GOBIN=~/go/bin; export PATH=$PATH:$GOBIN
+# export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN   
 mockgeninstall:
 	go install github.com/golang/mock/mockgen@v1.6.0
 

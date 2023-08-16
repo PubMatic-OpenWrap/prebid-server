@@ -11,11 +11,9 @@ import (
 
 // GetAdunitConfig - Method to get adunit config for a given profile and display version from giym DB
 func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig.AdUnitConfig, error) {
-	adunitConfigQuery := ""
+	adunitConfigQuery := db.cfg.Queries.GetAdunitConfigQuery
 	if displayVersion == 0 {
 		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigForLiveVersion
-	} else {
-		adunitConfigQuery = db.cfg.Queries.GetAdunitConfigQuery
 	}
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, profileIdKey, strconv.Itoa(profileID), -1)
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, displayVersionKey, strconv.Itoa(displayVersion), -1)
@@ -29,7 +27,7 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	adunitConfig := &adunitconfig.AdUnitConfig{}
 	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
 	if err != nil {
-		return nil, err
+		return nil, adunitconfig.ErrAdUnitUnmarshal
 	}
 
 	for k, v := range adunitConfig.Config {

@@ -17,6 +17,13 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		}
 	}()
 
+	videoAdUnitConfigEnabled := true
+	defer func() {
+		if imp.Video != nil && !videoAdUnitConfigEnabled {
+			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
+		}
+	}()
+
 	if rCtx.AdUnitConfig == nil || len(rCtx.AdUnitConfig.Config) == 0 {
 		return
 	}
@@ -26,9 +33,8 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 		adUnitCtx.UsingDefaultConfig = true
 
 		if defaultAdUnitConfig.Video != nil && defaultAdUnitConfig.Video.Enabled != nil && !*defaultAdUnitConfig.Video.Enabled {
-			f := false
-			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
-			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			videoAdUnitConfigEnabled = false
+			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &videoAdUnitConfigEnabled}}
 			return
 		}
 	}
@@ -43,9 +49,8 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 	if adUnitCtx.SelectedSlotAdUnitConfig != nil && adUnitCtx.SelectedSlotAdUnitConfig.Video != nil {
 		adUnitCtx.UsingDefaultConfig = false
 		if adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled != nil && !*adUnitCtx.SelectedSlotAdUnitConfig.Video.Enabled {
-			f := false
-			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &f}}
-			rCtx.MetricsEngine.RecordImpDisabledViaConfigStats(models.ImpTypeVideo, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			videoAdUnitConfigEnabled = false
+			adUnitCtx.AppliedSlotAdUnitConfig = &adunitconfig.AdConfig{Video: &adunitconfig.Video{Enabled: &videoAdUnitConfigEnabled}}
 			return
 		}
 	}

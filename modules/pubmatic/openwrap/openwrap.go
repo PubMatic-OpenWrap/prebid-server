@@ -65,7 +65,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	return OpenWrap{
 		cfg:          cfg,
-		cache:        ow_gocache.New(cache, db, cfg.Cache),
+		cache:        ow_gocache.New(cache, db, cfg.Cache, &metricEngine),
 		metricEngine: &metricEngine,
 	}, nil
 }
