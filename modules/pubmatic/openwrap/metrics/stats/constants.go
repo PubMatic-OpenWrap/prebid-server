@@ -24,15 +24,6 @@ const (
 	//statsKeyOpenWrapServerPanic stats Key for Server Panic Hits
 	statsKeyOpenWrapServerPanic = iota
 
-	//statsKeyPublisherNoConsentRequests stats Key for Counting requests for Publisher with no GDPR consent request respective publisher
-	statsKeyPublisherNoConsentRequests
-
-	//statsKeyPublisherNoConsentImpressions stats Key for Counting number of impressions lost in request due to no  GDPR consent for respective publisher
-	statsKeyPublisherNoConsentImpressions
-
-	//statsKeyPublisherPrebidRequests stats Key to count Requests to Prebid Server for respective publisher
-	statsKeyPublisherPrebidRequests
-
 	//statsKeyNobidErrPrebidServerRequests stats Key to count  Prebid Server Requests with  No AdUnit for respective publisher
 	statsKeyNobidErrPrebidServerRequests
 
@@ -69,12 +60,6 @@ const (
 	//statsKeyVideoImpDisabledViaConnType stats Key for Counting video interstitial impressions that are disabled because of connection type for a publisher/profile
 	statsKeyVideoImpDisabledViaConnType
 
-	//statsKeyPublisherPartnerRequests stats Key for counting Publisher Partner level Requests
-	statsKeyPublisherPartnerRequests
-
-	//statsKeyPublisherPartnerImpressions stats Key for counting Publisher Partner level Impressions
-	statsKeyPublisherPartnerImpressions
-
 	//statsKeyPublisherPartnerNoCookieRequests stats Key for counting requests without cookie at Publisher Partner level
 	statsKeyPublisherPartnerNoCookieRequests
 
@@ -92,9 +77,6 @@ const (
 
 	//statsKeyNobidErrorRequests stats Key for counting No Bid cases from respective partner
 	statsKeyNobidErrorRequests
-
-	//statsKeyNobidderStatusErrorRequests stats Key for counting No Bidders Status present in Prebid  Server response
-	statsKeyNobidderStatusErrorRequests
 
 	//statsKeyLoggerErrorRequests stats Key for counting number of Wrapper logger failures for a given publisher,profile  and version
 	statsKeyLoggerErrorRequests
@@ -205,23 +187,16 @@ const (
 	statsKeyCTVHTTPMethodRequests
 	//statsKeyCTVValidationDetail for tracking error with granularity
 	statsKeyCTVValidationErr
-	//statsKeyIncompleteAdPods for tracking incomplete AdPods because of any reason
-	statsKeyIncompleteAdPods
 	//statsKeyCTVReqImpstWithConfig for tracking requests that had config and were not overwritten by database config
 	statsKeyCTVReqImpstWithConfig
 	//statsKeyTotalAdPodImpression for tracking no of AdPod impressions
 	statsKeyTotalAdPodImpression
 	//statsKeyAdPodSecondsMissed for tracking no pf seconds that were missed because of our algos
 	statsKeyReqTotalAdPodImpression
-	//statsKeyReqAdPodSecondsMissed for tracking no pf seconds that were missed because of our algos
-	statsKeyAdPodSecondsMissed
 	//statsKeyReqImpDurationYield is for tracking the number on adpod impressions generated for give min and max request imp durations
 	statsKeyReqImpDurationYield
 	//statsKeyReqWithAdPodCount if for counting requests with AdPods
 	statsKeyReqWithAdPodCount
-	//statsKeyBidDuration for counting number of bids of video duration
-	statsKeyBidDuration
-
 	//statsKeyPBSAuctionRequests stats Key for counting PBS Auction endpoint Requests
 	statsKeyPBSAuctionRequests
 

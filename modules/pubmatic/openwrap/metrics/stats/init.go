@@ -44,15 +44,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyOpenWrapServerPanic] = "hb:panic:" + actualServerName
 	//hb:panic:<dc:node:pod>
 
-	//publisher level stats
-	statKeys[statsKeyPublisherNoConsentRequests] = "hb:pubnocnsreq:%s:" + defaultServerName
-	//hb:pubnocnsreq:<pub>:<dc:node:pod>
-
-	statKeys[statsKeyPublisherNoConsentImpressions] = "hb:pubnocnsimp:%s:" + defaultServerName
-	//hb:pubnocnsimp:<pub>:<dc:node:pod>
-
-	statKeys[statsKeyPublisherPrebidRequests] = "hb:pubrq:%s:" + defaultServerName
-
 	// statKeys[statsKeyNobidErrPrebidServerRequests] = "hb:pubnbreq:%s:", SendThresh: criticalThreshold, SendTimeInterval: time.Minute * time.Duration(criticalInterval)}
 	statKeys[statsKeyNobidErrPrebidServerRequests] = "hb:pubnbreq:%s:" + defaultServerName
 	//hb:pubnbreq:<pub>:<dc:node:pod>
@@ -91,13 +82,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyVideoImpDisabledViaConnType] = "hb:ppdisimpct:%s:%s:" + defaultServerName
 	//hb:ppdisimpct:<pub>:<prof>:<dc:node:pod>
 
-	//publisher-partner level stats
-	statKeys[statsKeyPublisherPartnerRequests] = "hb:pprq:%s:%s:" + defaultServerName
-	//hb:pprq:<pub>:<partner>:<dc:node:pod>
-
-	statKeys[statsKeyPublisherPartnerImpressions] = "hb:ppimp:%s:%s:" + defaultServerName
-	//hb:ppimp:<pub>:<partner>:<dc:node:pod>
-
 	statKeys[statsKeyPublisherPartnerNoCookieRequests] = "hb:ppnc:%s:%s:" + defaultServerName
 	//hb:ppnc:<pub>:<partner>:<dc:node:pod>
 
@@ -115,9 +99,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 
 	statKeys[statsKeyNobidErrorRequests] = "hb:nber:%s:%s:" + defaultServerName
 	//hb:nber:<pub>:<partner>:<dc:node:pod>
-
-	statKeys[statsKeyNobidderStatusErrorRequests] = "hb:nbse:%s:%s:" + defaultServerName
-	//hb:nbse:<pub>:<partner>:<dc:node:pod>
 
 	statKeys[statsKeyLoggerErrorRequests] = "hb:wle:%s:%s:%s:" + defaultServerName
 	//hb:nber:<pub>:<prof>:<version>:<dc:node:pod>
@@ -252,9 +233,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyCTVValidationErr] = "hb:lfv:ivr:%d:%s:" + defaultServerName
 	//hb:lfv:ivr:<error_code>:<pub>:<dc:node:pod>
 
-	statKeys[statsKeyIncompleteAdPods] = "hb:lfv:nip:%s:%s:" + defaultServerName
-	//hb:lfv:nip:<reason>:<pub>:<dc:node:pod>
-
 	statKeys[statsKeyCTVReqImpstWithConfig] = "hb:lfv:rwc:%s:%s:" + defaultServerName
 	//hb:lfv:rwc:<req:db>:<pub>:<dc:node:pod>
 
@@ -264,17 +242,11 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsKeyReqTotalAdPodImpression] = "hb:lfv:rtpi:%s:" + defaultServerName
 	//hb:lfv:rtpi:<pub>:<dc:node:pod>
 
-	statKeys[statsKeyAdPodSecondsMissed] = "hb:lfv:sm:%s:" + defaultServerName
-	//hb:lfv:sm:<pub>:<dc:node:pod>
-
 	statKeys[statsKeyReqImpDurationYield] = "hb:lfv:impy:%d:%d:%s:" + defaultServerName
 	//hb:lfv:impy:<max_duration>:<min_duration>:<pub>:<dc:node:pod>
 
 	statKeys[statsKeyReqWithAdPodCount] = "hb:lfv:rwap:%s:%s:" + defaultServerName
 	//hb:lfv:rwap:<pub>:<prof>:<dc:node:pod>
-
-	statKeys[statsKeyBidDuration] = "hb:lfv:dur:%d:%s:%s:" + defaultServerName
-	//hb:lfv:dur:<duration>:<pub>:<prof>:<dc:node:pod>:
 
 	statKeys[statsKeyPBSAuctionRequests] = "hb:pbs:auc:" + defaultServerName
 	//hb:pbs:auc:<dc:node:pod> - no of PBS auction endpoint requests

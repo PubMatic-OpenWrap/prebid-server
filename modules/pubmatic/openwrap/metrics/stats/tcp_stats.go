@@ -2,8 +2,10 @@ package stats
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 type StatsTCP struct {
@@ -38,45 +40,32 @@ func initTCPStatsClient(endpoint string,
 	return &StatsTCP{statsClient: sc}, nil
 }
 
-func (st *StatsTCP) RecordOpenWrapServerPanicStats() {
+func (st *StatsTCP) RecordOpenWrapServerPanicStats(host, method string) {
 	st.statsClient.PublishStat(statKeys[statsKeyOpenWrapServerPanic], 1)
-}
-
-func (st *StatsTCP) RecordPublisherPartnerStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerRequests], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordPublisherPartnerImpStats(publisher, partner string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerImpressions], publisher, partner), impCount)
 }
 
 func (st *StatsTCP) RecordPublisherPartnerNoCookieStats(publisher, partner string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPartnerNoCookieRequests], publisher, partner), 1)
 }
 
-func (st *StatsTCP) RecordPartnerTimeoutErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPartnerTimeoutErrorRequests], publisher, partner), 1)
+func (st *StatsTCP) RecordPartnerResponseErrors(publisher, partner, err string) {
+	switch err {
+	case models.PartnerErrTimeout:
+		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPartnerTimeoutErrorRequests], publisher, partner), 1)
+	case models.PartnerErrNoBid:
+		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrorRequests], publisher, partner), 1)
+	case models.PartnerErrUnknownPrebidError:
+		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyUnknownPrebidErrorResponse], publisher, partner), 1)
+	}
 }
 
-func (st *StatsTCP) RecordNobiderStatusErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidderStatusErrorRequests], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordNobidErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrorRequests], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordUnkownPrebidErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyUnknownPrebidErrorResponse], publisher, partner), 1)
-}
-
-func (st *StatsTCP) RecordSlotNotMappedErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeySlotunMappedErrorRequests], publisher, partner), 1)
-
-}
-
-func (st *StatsTCP) RecordMisConfigurationErrorStats(publisher, partner string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyMisConfErrorRequests], publisher, partner), 1)
+func (st *StatsTCP) RecordPartnerConfigErrors(publisher, profile, partner string, errcode int) {
+	switch errcode {
+	case models.PartnerErrMisConfig:
+		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyMisConfErrorRequests], publisher, partner), 1)
+	case models.PartnerErrSlotNotMapped:
+		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeySlotunMappedErrorRequests], publisher, partner), 1)
+	}
 }
 
 func (st *StatsTCP) RecordPublisherProfileRequests(publisher, profileID string) {
@@ -99,19 +88,7 @@ func (st *StatsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileI
 	//TODO @viral ;previously by 1 but now by impCount
 }
 
-func (st *StatsTCP) RecordPublisherNoConsentRequests(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentRequests], publisher), 1)
-}
-
-func (st *StatsTCP) RecordPublisherNoConsentImpressions(publisher string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherNoConsentImpressions], publisher), impCount)
-}
-
-func (st *StatsTCP) RecordPublisherRequestStats(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherPrebidRequests], publisher), 1)
-}
-
-func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string) {
+func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrPrebidServerRequests], publisher), 1)
 }
 
@@ -224,10 +201,6 @@ func (st *StatsTCP) RecordCTVInvalidReasonCount(errorCode int, publisher string)
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVValidationErr], errorCode, publisher), 1)
 }
 
-func (st *StatsTCP) RecordCTVIncompleteAdPodsCount(impCount int, reason string, publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyIncompleteAdPods], reason, publisher), 1)
-}
-
 func (st *StatsTCP) RecordCTVReqImpsWithDbConfigCount(publisher string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVReqImpstWithConfig], "db", publisher), 1)
 }
@@ -254,16 +227,8 @@ func (st *StatsTCP) RecordRequestAdPodGeneratedImpressionsCount(impCount int, pu
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqTotalAdPodImpression], publisher), impCount)
 }
 
-func (st *StatsTCP) RecordAdPodSecondsMissedCount(seconds int, publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAdPodSecondsMissed], publisher), seconds)
-}
-
-func (st *StatsTCP) RecordReqImpsWithAppContentCount(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], "app", publisher), 1)
-}
-
-func (st *StatsTCP) RecordReqImpsWithSiteContentCount(publisher string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], "site", publisher), 1)
+func (st *StatsTCP) RecordReqImpsWithContentCount(publisher, contentType string) {
+	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyContentObjectPresent], contentType, publisher), 1)
 }
 
 func (st *StatsTCP) RecordAdPodImpressionYield(maxDuration int, minDuration int, publisher string) {
@@ -272,10 +237,6 @@ func (st *StatsTCP) RecordAdPodImpressionYield(maxDuration int, minDuration int,
 
 func (st *StatsTCP) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyReqWithAdPodCount], publisherID, profileID), 1)
-}
-
-func (st *StatsTCP) RecordCTVKeyBidDuration(duration int, publisherID, profileID string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyBidDuration], duration, publisherID, profileID), 1)
 }
 
 func (st *StatsTCP) RecordPBSAuctionRequestsStats() {
@@ -321,6 +282,12 @@ func (st *StatsTCP) RecordCacheErrorRequests(endpoint, publisher, profileID stri
 	}
 }
 
+func (st *StatsTCP) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {}
+
+func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
+
+func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
+
 // getStatsKeyIndexForResponseTime returns respective stats key for a given responsetime
 func getStatsKeyIndexForResponseTime(responseTime int) int {
 	statKey := 0
@@ -355,4 +322,8 @@ func getStatsKeyIndexForResponseTime(responseTime int) int {
 		statKey = statsKeyL50
 	}
 	return statKey
+}
+
+func (st *StatsTCP) Shutdown() {
+	st.statsClient.ShutdownProcess()
 }

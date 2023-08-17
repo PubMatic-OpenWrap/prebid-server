@@ -119,11 +119,8 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	start := time.Now()
 
 	vo := analytics.VideoObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context: r.Context(),
-			Status:  http.StatusOK,
-			Errors:  make([]error, 0),
-		},
+		Status:    http.StatusOK,
+		Errors:    make([]error, 0),
 		StartTime: start,
 	}
 
@@ -309,12 +306,17 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		LegacyLabels:               labels,
 		GlobalPrivacyControlHeader: secGPC,
 		PubID:                      labels.PubID,
-		HookExecutor:               hookexecution.EmptyHookExecutor{},
+		HookExecutor:               &hookexecution.EmptyHookExecutor{},
 	}
 
-	response, err := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
-	vo.Request = bidReqWrapper.BidRequest
+	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
+	vo.RequestWrapper = bidReqWrapper
+	var response *openrtb2.BidResponse
+	if auctionResponse != nil {
+		response = auctionResponse.BidResponse
+	}
 	vo.Response = response
+	vo.SeatNonBid = auctionResponse.GetSeatNonBid()
 	if err != nil {
 		errL := []error{err}
 		handleError(&labels, w, errL, &vo, &debugLog)
@@ -329,6 +331,10 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if bidReq.Test == 1 {
+		err = setSeatNonBidRaw(bidReqWrapper, auctionResponse)
+		if err != nil {
+			glog.Errorf("Error setting seat non-bid: %v", err)
+		}
 		bidResp.Ext = response.Ext
 	}
 
