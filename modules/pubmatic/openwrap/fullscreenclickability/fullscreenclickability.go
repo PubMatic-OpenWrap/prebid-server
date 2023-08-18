@@ -98,4 +98,3 @@ func SetAndResetFscWithMockCache(mockDb cache.Cache, dspThresholdMap map[int]int
 		fscConfigs.thresholdsPerDsp = make(map[int]int)
 	}
 }
-
