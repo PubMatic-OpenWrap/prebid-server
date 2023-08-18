@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
 )
 
@@ -198,4 +199,12 @@ func Atof(value string, decimalplaces int) (float64, error) {
 	}
 
 	return floatValue, nil
+}
+
+// IsPubmaticCorePartner returns true when the partner is pubmatic or internally an alias of pubmatic
+func IsPubmaticCorePartner(partnerName string) bool {
+	if partnerName == string(openrtb_ext.BidderPubmatic) || partnerName == BidderPubMaticSecondaryAlias {
+		return true
+	}
+	return false
 }

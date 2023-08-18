@@ -16,6 +16,7 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -62,12 +63,13 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}
-
-	return OpenWrap{
+	ow := OpenWrap{
 		cfg:          cfg,
 		cache:        ow_gocache.New(cache, db, cfg.Cache, &metricEngine),
 		metricEngine: &metricEngine,
-	}, nil
+	}
+	fullscreenclickability.Init(ow.cache, cfg.Cache.CacheDefaultExpiry)
+	return ow, nil
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {
