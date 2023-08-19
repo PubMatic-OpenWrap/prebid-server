@@ -37,6 +37,7 @@ type cache struct {
 	metricEngine metrics.MetricsEngine
 }
 
+var Cache *cache
 var c *cache
 var cOnce sync.Once
 
@@ -49,6 +50,7 @@ func New(goCache *gocache.Cache, database database.Database, cfg config.Cache, m
 				cfg:          cfg,
 				metricEngine: metricEngine,
 			}
+			Cache = c
 		})
 	return c
 }

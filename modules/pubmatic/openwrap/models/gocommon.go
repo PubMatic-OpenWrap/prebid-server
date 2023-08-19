@@ -391,3 +391,12 @@ func CheckIfValidQueryParamFlag(values url.Values, key string) bool {
 	}
 	return validationFailed
 }
+
+// integration types
+const (
+	TypeTag    = "tag"
+	TypeInline = "inline"
+	TypeAmp    = "amp"
+	TypeSDK    = "sdk"
+	TypeS2S    = "s2s"
+)

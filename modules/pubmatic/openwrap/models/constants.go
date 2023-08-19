@@ -433,3 +433,10 @@ const (
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 )
+
+const (
+	SoftFloor = 0
+	HardFloor = 1
+	Success   = "success"
+	Failure   = "failure"
+)

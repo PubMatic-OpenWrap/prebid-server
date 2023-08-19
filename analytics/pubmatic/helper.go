@@ -70,6 +70,7 @@ func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
 		Cat:     content.Cat,
 	}
 }
+
 func getSizeForPlatform(width, height int64, platform string) string {
 	s := models.GetSize(width, height)
 	if platform == models.PLATFORM_VIDEO {

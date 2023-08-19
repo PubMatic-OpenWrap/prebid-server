@@ -50,7 +50,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	}
 
 	//log device object
-	wlog.logDeviceObject(*rCtx, rCtx.UA, ao.RequestWrapper.BidRequest, rCtx.Platform)
+	wlog.logDeviceObject(rCtx, rCtx.UA, ao.RequestWrapper.BidRequest, rCtx.Platform)
 
 	//log content object
 	if nil != ao.RequestWrapper.Site {
@@ -157,6 +157,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 	}*/
 	for _, seatBid := range ao.Response.SeatBid {
+		//ignore reserved biddercodes
+		if seatBid.Seat == string(openrtb_ext.BidderOWPrebidCTV) {
+			continue
+		}
+
 		for _, bid := range seatBid.Bid {
 			// Check if this is a default and RejectedBids bid. Ex. only one bid by pubmatic it was rejected by floors.
 			// Module would add a 0 bid. So, we want to skip this zero bid to avoid duplicate or incomplete data and log the correct one that was rejected.
@@ -317,7 +322,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 
 				if bidExt.Prebid.Floors != nil {
-					pr.FloorRule = bidExt.Prebid.Floors.FloorRule
+					// pr.FloorRule = bidExt.Prebid.Floors.FloorRule
 					pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
 					if bidExt.Prebid.Floors.FloorCurrency == "USD" {
 						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)

@@ -12,6 +12,8 @@ const (
 	BidderDistrictmAlias         = "districtm"
 	BidderDistrictmDMXAlias      = "districtmDMX"
 	BidderPubMaticSecondaryAlias = "pubmatic2"
+	BidderPubMatic               = "pubmatic"
+	BidderGroupM                 = "groupm"
 )
 
 const (
