@@ -61,8 +61,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// 	return result, nil
 	// }
 
+	var winningAdpodBidIds map[string][]string
+	var errs []error
 	if rctx.IsCTVRequest {
-		errs := auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx.ImpBidCtx)
+		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx.ImpBidCtx)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
@@ -70,15 +72,17 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	winningBids := make(map[string]models.OwBid, 0)
+	winningBids := models.WinningBids{}
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-
 			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
 
-			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bidId := bid.ID
+
+			impCtx, ok := rctx.ImpBidCtx[impId]
 			if !ok {
-				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+bid.ImpID)
+				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+impId)
 				continue
 			}
 			partnerID := 0
@@ -93,8 +97,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if len(bid.Ext) != 0 { //NYC_TODO: most of the fields should be filled even if unmarshal fails
 				err := json.Unmarshal(bid.Ext, bidExt)
 				if err != nil {
-					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+bid.ID)
+					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+bidId)
 					// continue
+				}
+
+				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+					bidId = bidExt.Prebid.BidId
 				}
 
 				// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
@@ -145,10 +153,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 					bidExt.Video.BAttr = impCtx.Video.BAttr
 					bidExt.Video.PlaybackMethod = impCtx.Video.PlaybackMethod
 					if rctx.ClientConfigFlag == 1 {
-						bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "video")
+						bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, impId, "video")
 					}
 				} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
-					cc := adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "banner")
+					cc := adunitconfig.GetClientConfigForMediaType(rctx, impId, "banner")
 					if len(cc) != 0 {
 						if bidExt.Banner == nil {
 							bidExt.Banner = &models.ExtBidBanner{}
@@ -164,23 +172,25 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			owbid := models.OwBid{
-				ID:                   bid.ID,
+				ID:                   bidId,
 				NetEcpm:              bidExt.NetECPM,
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
-			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(owbid, wbid, rctx.SupportDeals) {
-				winningBids[bid.ImpID] = owbid
+
+			if rctx.IsCTVRequest && CheckWinningBidId(bidId, winningAdpodBidIds[impId]) {
+				winningBids.AppendBid(impId, owbid)
+			} else {
+				winningBids.AddBid(impId, owbid, rctx.SupportDeals)
 			}
 
 			// cache for bid details for logger and tracker
 			if impCtx.BidCtx == nil {
 				impCtx.BidCtx = make(map[string]models.BidCtx)
 			}
-			impCtx.BidCtx[bid.ID] = models.BidCtx{
+			impCtx.BidCtx[bidId] = models.BidCtx{
 				BidExt: *bidExt,
 			}
-			rctx.ImpBidCtx[bid.ImpID] = impCtx
+			rctx.ImpBidCtx[impId] = impCtx
 		}
 	}
 
@@ -277,7 +287,17 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 		for i := range bidResponse.SeatBid {
 			filteredBid := make([]openrtb2.Bid, 0, len(bidResponse.SeatBid[i].Bid))
 			for _, bid := range bidResponse.SeatBid[i].Bid {
-				if b, ok := rctx.WinningBids[bid.ImpID]; ok && b.ID == bid.ID {
+				bid.ImpID, _ = models.GetImpressionID(bid.ImpID)
+				bidId := bid.ID
+				bidExt := &models.BidExt{}
+				if len(bid.Ext) > 0 {
+					_ = json.Unmarshal(bid.Ext, bidExt)
+
+					if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+						bidId = bidExt.Prebid.BidId
+					}
+				}
+				if rctx.WinningBids.IsWinningBid(bid.ImpID, bidId) {
 					filteredBid = append(filteredBid, bid)
 				}
 			}
@@ -315,7 +335,17 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 				continue
 			}
 
-			bidCtx, ok := impCtx.BidCtx[bid.ID]
+			bidId := bid.ID
+			bidExt := &models.BidExt{}
+			if len(bid.Ext) > 0 {
+				_ = json.Unmarshal(bid.Ext, bidExt)
+
+				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+					bidId = bidExt.Prebid.BidId
+				}
+			}
+
+			bidCtx, ok := impCtx.BidCtx[bidId]
 			if !ok {
 				continue
 			}
@@ -327,22 +357,6 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 	return bidResponse, nil
 }
 
-// isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
-func isNewWinningBid(bid, wbid models.OwBid, preferDeals bool) bool {
-	if preferDeals {
-		//only wbid has deal
-		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
-			return false
-		}
-		//only bid has deal
-		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
-			return true
-		}
-	}
-	//both have deal or both do not have deal
-	return bid.NetEcpm > wbid.NetEcpm
-}
-
 func getPlatformName(platform string) string {
 	if platform == models.PLATFORM_APP {
 		return models.PlatformAppTargetingKey
@@ -352,4 +366,18 @@ func getPlatformName(platform string) string {
 
 func getIntPtr(i int) *int {
 	return &i
+}
+
+func CheckWinningBidId(bidId string, wbidIds []string) bool {
+	if len(wbidIds) == 0 {
+		return false
+	}
+
+	for i := range wbidIds {
+		if bidId == wbidIds[i] {
+			return true
+		}
+	}
+
+	return false
 }

@@ -6,17 +6,12 @@ import (
 	"math"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
-)
-
-const (
-	impressionIDSeparator = `_`
 )
 
 type Bid struct {
@@ -37,56 +32,22 @@ type AdPodBid struct {
 	SeatName      string
 }
 
-func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, impCtx map[string]models.ImpCtx) []error {
+func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, impCtx map[string]models.ImpCtx) (map[string][]string, []error) {
+	var winningBidIds map[string][]string
+	var errs []error
+
 	if len(response.SeatBid) == 0 {
-		return nil
+		return winningBidIds, errs
 	}
 
-	finalSeatBids := make([]openrtb2.SeatBid, 0, len(impCtx))
-
-	impAdpodBidsMap, videoSeatBids := generateAdpodBids(response.SeatBid, impCtx)
-	if len(videoSeatBids) > 0 {
-		finalSeatBids = append(finalSeatBids, videoSeatBids...)
-	}
-
+	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, impCtx)
 	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, impCtx)
 	if len(errs) > 0 {
-		return errs
+		return nil, errs
 	}
+	winningBidIds = GetWinningBidsIds(adpodBids)
 
-	adPodSeatBid := getAdpodSeatBids(adpodBids, impCtx)
-	if adPodSeatBid != nil {
-		finalSeatBids = append(finalSeatBids, *adPodSeatBid)
-	}
-
-	response.SeatBid = finalSeatBids
-
-	return nil
-}
-
-// getImpressionID will return impression id and sequence number
-func getImpressionID(id string) (string, int) {
-	//get original impression id and sequence number
-	ImpID, sequenceNumber := DecodeImpressionID(id)
-	if sequenceNumber < 0 {
-		return id, -1
-	}
-
-	return ImpID, sequenceNumber
-}
-
-func DecodeImpressionID(id string) (string, int) {
-	index := strings.LastIndex(id, impressionIDSeparator)
-	if index == -1 {
-		return id, 0
-	}
-
-	sequence, err := strconv.Atoi(id[index+1:])
-	if err != nil || sequence == 0 {
-		return id, 0
-	}
-
-	return id[:index], sequence
+	return winningBidIds, nil
 }
 
 // GetTargeting returns the value of targeting key associated with bidder
@@ -114,12 +75,14 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 	impAdpodBidsMap := make(map[string]*AdPodBid)
 	videoSeatBids := make([]openrtb2.SeatBid, 0)
 
-	for _, seat := range seatBids {
+	for i := range seatBids {
+		seat := seatBids[i]
 		videoBids := make([]openrtb2.Bid, 0)
-		for _, bid := range seat.Bid {
+		for j := range seat.Bid {
+			bid := &seat.Bid[j]
 			if len(bid.ID) == 0 {
 				bidID, err := uuid.NewV4()
-				if nil != err {
+				if err != nil {
 					continue
 				}
 				bid.ID = bidID.String()
@@ -130,32 +93,49 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 				continue
 			}
 
-			impId, sequence := getImpressionID(bid.ImpID)
+			impId, sequence := models.GetImpressionID(bid.ImpID)
 			eachImpCtx, ok := impCtx[impId]
 			if !ok {
 				// Bid is rejected due to invalid imp id
 				continue
 			}
 
-			value, err := GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), bid)
+			value, err := GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if err == nil {
 				// ignore error
-				addTargetingKey(&bid, openrtb_ext.HbCategoryDurationKey, value)
+				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
 			}
 
-			value, err = GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), bid)
+			value, err = GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if err == nil {
 				// ignore error
-				addTargetingKey(&bid, openrtb_ext.HbpbConstantKey, value)
+				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
 			}
 			if eachImpCtx.AdpodConfig == nil {
-				videoBids = append(videoBids, bid)
+				videoBids = append(videoBids, *bid)
 				continue
 			}
 
 			ext := openrtb_ext.ExtBid{}
 			if bid.Ext != nil {
 				json.Unmarshal(bid.Ext, &ext)
+			}
+
+			// if deps.cfg.GenerateBidID == false {
+			// 	//making unique bid.id's per impression
+			// 	bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
+			// }
+
+			//get duration of creative
+			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, eachImpCtx.ImpAdPodCfg[sequence-1].MaxDuration)
+
+			eachImpBid := Bid{
+				Bid:               bid,
+				ExtBid:            ext,
+				Status:            status,
+				Duration:          int(duration),
+				DealTierSatisfied: GetDealTierSatisfied(&ext),
+				Seat:              seat.Seat,
 			}
 
 			//Adding adpod bids
@@ -168,22 +148,7 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 				impAdpodBidsMap[impId] = impBids
 			}
 
-			// if deps.cfg.GenerateBidID == false {
-			// 	//making unique bid.id's per impression
-			// 	bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
-			// }
-
-			//get duration of creative
-			duration, status := getBidDuration(&bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, eachImpCtx.ImpAdPodCfg[sequence-1].MaxDuration)
-
-			impBids.Bids = append(impBids.Bids, &Bid{
-				Bid:               &bid,
-				ExtBid:            ext,
-				Status:            status,
-				Duration:          int(duration),
-				DealTierSatisfied: GetDealTierSatisfied(&ext),
-				Seat:              seat.Seat,
-			})
+			impBids.Bids = append(impBids.Bids, &eachImpBid)
 
 		}
 		if len(videoBids) > 0 {

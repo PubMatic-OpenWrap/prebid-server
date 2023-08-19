@@ -15,10 +15,75 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 )
 
+const (
+	impressionIDSeparator = `_`
+)
+
 var SyncerMap map[string]usersync.Syncer
 
 func SetSyncerMap(s map[string]usersync.Syncer) {
 	SyncerMap = s
+}
+
+type WinningBids map[string][]OwBid
+
+func (w WinningBids) IsWinningBid(impId, bidId string) bool {
+	var isWinningBid bool
+
+	wbids, ok := w[impId]
+	if !ok {
+		return isWinningBid
+	}
+
+	for i := range wbids {
+		if bidId == wbids[i].ID {
+			isWinningBid = true
+			break
+		}
+	}
+
+	return isWinningBid
+}
+
+func (w WinningBids) AddBid(impId string, bid OwBid, preferDeals bool) {
+	wbid, ok := w[impId]
+	if !ok {
+		wbid = make([]OwBid, 1)
+		wbid[0] = bid
+		w[impId] = wbid
+		return
+	}
+
+	if isNewWinningBid(bid, wbid[0], preferDeals) {
+		wbid[0] = bid
+		w[impId] = wbid
+	}
+}
+
+func (w WinningBids) AppendBid(impId string, bid OwBid) {
+	wbid, ok := w[impId]
+	if !ok {
+		wbid = make([]OwBid, 0)
+	}
+
+	wbid = append(wbid, bid)
+	w[impId] = wbid
+}
+
+// isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
+func isNewWinningBid(bid, wbid OwBid, preferDeals bool) bool {
+	if preferDeals {
+		//only wbid has deal
+		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			return false
+		}
+		//only bid has deal
+		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			return true
+		}
+	}
+	//both have deal or both do not have deal
+	return bid.NetEcpm > wbid.NetEcpm
 }
 
 // IsCTVAPIRequest will return true if reqAPI is from CTV EndPoint
@@ -198,4 +263,29 @@ func Atof(value string, decimalplaces int) (float64, error) {
 	}
 
 	return floatValue, nil
+}
+
+// getImpressionID will return impression id and sequence number
+func GetImpressionID(id string) (string, int) {
+	//get original impression id and sequence number
+	ImpID, sequenceNumber := DecodeImpressionID(id)
+	if sequenceNumber < 0 {
+		return id, -1
+	}
+
+	return ImpID, sequenceNumber
+}
+
+func DecodeImpressionID(id string) (string, int) {
+	index := strings.LastIndex(id, impressionIDSeparator)
+	if index == -1 {
+		return id, 0
+	}
+
+	sequence, err := strconv.Atoi(id[index+1:])
+	if err != nil || sequence == 0 {
+		return id, 0
+	}
+
+	return id[:index], sequence
 }

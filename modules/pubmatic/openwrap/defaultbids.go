@@ -16,20 +16,22 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	seatBids := make(map[string]map[string]struct{}, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			if seatBids[bid.ImpID] == nil {
-				seatBids[bid.ImpID] = make(map[string]struct{})
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			if seatBids[impId] == nil {
+				seatBids[impId] = make(map[string]struct{})
 			}
-			seatBids[bid.ImpID][seatBid.Seat] = struct{}{}
+			seatBids[impId][seatBid.Seat] = struct{}{}
 		}
 	}
 
 	// consider responded but dropped bids to avoid false nobid entries
 	for seat, bids := range rctx.DroppedBids {
 		for _, bid := range bids {
-			if seatBids[bid.ImpID] == nil {
-				seatBids[bid.ImpID] = make(map[string]struct{})
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			if seatBids[impId] == nil {
+				seatBids[impId] = make(map[string]struct{})
 			}
-			seatBids[bid.ImpID][seat] = struct{}{}
+			seatBids[impId][seat] = struct{}{}
 		}
 	}
 

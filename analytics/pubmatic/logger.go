@@ -243,8 +243,14 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			var bidExt models.BidExt
-			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
-				bidExt = bidCtx.BidExt
+			_ = json.Unmarshal(bid.Ext, &bidExt)
+			// if err != nil {
+			// 	return nil, err   // Handle Error
+			// }
+
+			bidId := bid.ID
+			if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+				bidId = bidExt.Prebid.BidId
 			}
 
 			price := bid.Price
@@ -285,7 +291,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DealID:      bid.DealID,
 			}
 
-			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bid.ID {
+			if rCtx.WinningBids.IsWinningBid(bid.ImpID, bidId) {
 				pr.WinningBidStaus = 1
 			}
 

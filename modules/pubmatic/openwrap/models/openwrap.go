@@ -65,7 +65,7 @@ type RequestCtx struct {
 	Source, Origin string
 
 	SendAllBids bool
-	WinningBids map[string]OwBid
+	WinningBids WinningBids
 	DroppedBids map[string][]openrtb2.Bid
 	NoSeatBids  map[string]map[string][]openrtb2.Bid
 
@@ -102,14 +102,12 @@ type ImpCtx struct {
 	Type              string // banner, video, native, etc
 	Bidders           map[string]PartnerData
 	NonMapped         map[string]struct{}
-
-	NewExt json.RawMessage
-	BidCtx map[string]BidCtx
-
-	BannerAdUnitCtx AdUnitCtx
-	VideoAdUnitCtx  AdUnitCtx
-	AdpodConfig     *AdPod
-	ImpAdPodCfg     []*ImpAdPodConfig
+	NewExt            json.RawMessage
+	BidCtx            map[string]BidCtx
+	BannerAdUnitCtx   AdUnitCtx
+	VideoAdUnitCtx    AdUnitCtx
+	AdpodConfig       *AdPod
+	ImpAdPodCfg       []*ImpAdPodConfig
 }
 
 type PartnerData struct {

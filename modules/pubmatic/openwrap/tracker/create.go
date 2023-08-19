@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -22,6 +23,16 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bidId := bid.ID
+			bidExt := &models.BidExt{}
+			if len(bid.Ext) > 0 {
+				_ = json.Unmarshal(bid.Ext, bidExt)
+
+				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+					bidId = bidExt.Prebid.BidId
+				}
+			}
 			tracker := models.Tracker{
 				PubID:     rctx.PubID,
 				ProfileID: fmt.Sprintf("%d", rctx.ProfileID),
@@ -31,7 +42,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 				IID:       rctx.LoggerImpressionID,
 				Platform:  int(rctx.DevicePlatform),
 				SSAI:      rctx.SSAI,
-				ImpID:     bid.ImpID,
+				ImpID:     impId,
 			}
 
 			tagid := ""
@@ -46,13 +57,13 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			var isRegex bool
 			var kgp, kgpv, kgpsv string
 
-			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
+			if impCtx, ok := rctx.ImpBidCtx[impId]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					matchedSlot = bidderMeta.MatchedSlot
 					partnerID = bidderMeta.PrebidBidderCode
 				}
 
-				if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
+				if bidCtx, ok := impCtx.BidCtx[bidId]; ok {
 					if bidResponse.Cur != "USD" {
 						price = bidCtx.OriginalBidCPMUSD
 					}
@@ -115,11 +126,11 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 				tagid = impCtx.TagID
 				tracker.Secure = impCtx.Secure
-				isRewardInventory = getRewardedInventoryFlag(rctx.ImpBidCtx[bid.ImpID].IsRewardInventory)
+				isRewardInventory = getRewardedInventoryFlag(rctx.ImpBidCtx[impId].IsRewardInventory)
 			}
 
 			if seatBid.Seat == "pubmatic" {
-				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
+				pmMkt[impId] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,
@@ -127,12 +138,12 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			}
 
 			tracker.Adunit = tagid
-			tracker.SlotID = fmt.Sprintf("%s_%s", bid.ImpID, tagid)
+			tracker.SlotID = fmt.Sprintf("%s_%s", impId, tagid)
 			tracker.RewardedInventory = isRewardInventory
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:  partnerID,
 				BidderCode: seatBid.Seat,
-				BidID:      bid.ID,
+				BidID:      bidId,
 				OrigBidID:  bid.ID,
 				KGPV:       kgpv,
 				NetECPM:    float64(netECPM),
@@ -153,7 +164,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 				finalTrackerURL = trackURL.String()
 			}
 
-			trackers[bid.ID] = models.OWTracker{
+			trackers[bidId] = models.OWTracker{
 				Tracker:       tracker,
 				TrackerURL:    finalTrackerURL,
 				Price:         price,

@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -26,11 +27,32 @@ func allowTargetingKey(key string) bool {
 	return strings.HasPrefix(key, models.HbBuyIdPrefix)
 }
 
-func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (droppedBids map[string][]openrtb2.Bid, warnings []string) {
-	if rctx.Platform != models.PLATFORM_APP {
-		return
+func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float64, bid *openrtb2.Bid, isWinningBid bool) {
+
+	if isWinningBid {
+		targeting[models.CreatePartnerKey(seat, models.PWT_SLOTID)] = bid.ID
+		targeting[models.CreatePartnerKey(seat, models.PWT_SZ)] = models.GetSize(bid.W, bid.H)
+		targeting[models.CreatePartnerKey(seat, models.PWT_PARTNERID)] = seat
+		targeting[models.CreatePartnerKey(seat, models.PWT_ECPM)] = fmt.Sprintf("%.2f", ecpm)
+		targeting[models.CreatePartnerKey(seat, models.PWT_PLATFORM)] = getPlatformName(models.PLATFORM_APP)
+		targeting[models.CreatePartnerKey(seat, models.PWT_BIDSTATUS)] = "1"
+		if len(bid.DealID) != 0 {
+			targeting[models.CreatePartnerKey(seat, models.PWT_DEALID)] = bid.DealID
+		}
 	}
 
+	targeting[models.PWT_SLOTID] = bid.ID
+	targeting[models.PWT_BIDSTATUS] = "1"
+	targeting[models.PWT_SZ] = models.GetSize(bid.W, bid.H)
+	targeting[models.PWT_PARTNERID] = seat
+	targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", ecpm)
+	targeting[models.PWT_PLATFORM] = getPlatformName(models.PLATFORM_APP)
+	if len(bid.DealID) != 0 {
+		targeting[models.PWT_DEALID] = bid.DealID
+	}
+}
+
+func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (droppedBids map[string][]openrtb2.Bid, warnings []string) {
 	if !rctx.SendAllBids {
 		droppedBids = make(map[string][]openrtb2.Bid)
 	}
@@ -38,13 +60,25 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 	//setTargeting needs a seperate loop as final winner would be decided after all the bids are processed by auction
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bidId := bid.ID
+
+			impCtx, ok := rctx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}
 
+			bidExt := &models.BidExt{}
+			if len(bid.Ext) > 0 {
+				_ = json.Unmarshal(bid.Ext, bidExt)
+
+				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
+					bidId = bidExt.Prebid.BidId
+				}
+			}
+
 			isWinningBid := false
-			if b, ok := rctx.WinningBids[bid.ImpID]; ok && b.ID == bid.ID {
+			if rctx.WinningBids.IsWinningBid(impId, bidId) {
 				isWinningBid = true
 			}
 
@@ -52,7 +86,7 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 				droppedBids[seatBid.Seat] = append(droppedBids[seatBid.Seat], bid)
 			}
 
-			bidCtx, ok := impCtx.BidCtx[bid.ID]
+			bidCtx, ok := impCtx.BidCtx[bidId]
 			if !ok {
 				continue
 			}
@@ -69,30 +103,14 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 				delete(bidCtx.Prebid.Targeting, key)
 			}
 
-			bidCtx.Prebid.Targeting = newTargeting
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_SLOTID)] = bid.ID
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_SZ)] = models.GetSize(bid.W, bid.H)
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_PARTNERID)] = seatBid.Seat
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_ECPM)] = fmt.Sprintf("%.2f", bidCtx.NetECPM)
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_PLATFORM)] = getPlatformName(rctx.Platform)
-			bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_BIDSTATUS)] = "1"
-			if len(bid.DealID) != 0 {
-				bidCtx.Prebid.Targeting[models.CreatePartnerKey(seatBid.Seat, models.PWT_DEALID)] = bid.DealID
+			if rctx.Platform == models.PLATFORM_APP {
+				addInAppTargettingKeys(newTargeting, seatBid.Seat, bidCtx.NetECPM, &bid, isWinningBid)
 			}
+			bidCtx.Prebid.Targeting = newTargeting
 
 			if isWinningBid {
 				if rctx.SendAllBids {
 					bidCtx.Winner = 1
-				}
-
-				bidCtx.Prebid.Targeting[models.PWT_SLOTID] = bid.ID
-				bidCtx.Prebid.Targeting[models.PWT_BIDSTATUS] = "1"
-				bidCtx.Prebid.Targeting[models.PWT_SZ] = models.GetSize(bid.W, bid.H)
-				bidCtx.Prebid.Targeting[models.PWT_PARTNERID] = seatBid.Seat
-				bidCtx.Prebid.Targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", bidCtx.NetECPM)
-				bidCtx.Prebid.Targeting[models.PWT_PLATFORM] = getPlatformName(rctx.Platform)
-				if len(bid.DealID) != 0 {
-					bidCtx.Prebid.Targeting[models.PWT_DEALID] = bid.DealID
 				}
 			} else if !rctx.SendAllBids {
 				warnings = append(warnings, "dropping bid "+bid.ID+" as sendAllBids is disabled")
@@ -102,8 +120,8 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			if impCtx.BidCtx == nil {
 				impCtx.BidCtx = make(map[string]models.BidCtx)
 			}
-			impCtx.BidCtx[bid.ID] = bidCtx
-			rctx.ImpBidCtx[bid.ImpID] = impCtx
+			impCtx.BidCtx[bidId] = bidCtx
+			rctx.ImpBidCtx[impId] = impCtx
 		}
 	}
 	return

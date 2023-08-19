@@ -12,9 +12,9 @@ const (
 	OpenWrapV25Video    = "/openrtb/2.5/video"
 	OpenWrapAmp         = "/openrtb/amp"
 	OpenWrapHealthcheck = "/healthcheck"
-	OpenWrapCTVOrtb     = "/video/openrtb"
-	OpenWrapCTVVast     = "/video/vast"
-	OpenWrapCTVJson     = "/video/json"
+	OpenWrapAdpodOrtb   = "/video/openrtb"
+	OpenWrapAdpodVast   = "/video/vast"
+	OpenWrapAdpodJson   = "/video/json"
 )
 
 // Support legacy APIs for a grace period.
@@ -35,13 +35,32 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 	// CTV/OTT
 	//GET
-	r.GET(OpenWrapCTVOrtb, openrtbEndpoint)
-	r.GET(OpenWrapCTVVast, openrtbEndpoint)
-	r.GET(OpenWrapCTVJson, openrtbEndpoint)
+	r.GET(OpenWrapAdpodOrtb, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodOpenRTBWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
+	r.GET(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodVastWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
+	r.GET(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodJSONWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
+
 	// POST
-	r.POST(OpenWrapCTVOrtb, openrtbEndpoint)
-	r.POST(OpenWrapCTVVast, openrtbEndpoint)
-	r.POST(OpenWrapCTVJson, openrtbEndpoint)
+	r.POST(OpenWrapAdpodOrtb, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodOpenRTBWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
+	r.POST(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodVastWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
+	r.POST(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		customWriter := AdpodJSONWriter{W: w}
+		openrtbEndpoint(customWriter, r, p)
+	})
 
 	// healthcheck used by k8s
 	r.GET(OpenWrapHealthcheck, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
