@@ -23,7 +23,6 @@ type VastUnwrapModule struct {
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
-	glog.Infof("Starting Init vast unwrap.")
 	return initVastUnwrap(rawCfg, deps)
 }
 
@@ -40,8 +39,6 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 	if err != nil {
 		return vastUnwrapModuleCfg, fmt.Errorf("Prometheus registry is nil")
 	}
-	glog.Infof("Init vast unwrap completed.")
-
 	return VastUnwrapModule{
 		Cfg:               vastUnwrapModuleCfg.Cfg,
 		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
@@ -56,8 +53,6 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	t := time.Now()
-	defer glog.Infof("Time taken by HandleRawBidderResponseHook---%v", time.Since(t).Milliseconds())
 	if m.Enabled {
 		return handleRawBidderResponseHook(m, miCtx, payload, UnwrapURL)
 	}
@@ -70,8 +65,6 @@ func (m VastUnwrapModule) HandleEntrypointHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	t := time.Now()
-	defer glog.Infof("Time taken by HandleEntrypointHook---%v", time.Since(t).Milliseconds())
 	if m.Enabled {
 		return handleEntrypointHook(ctx, miCtx, payload, m)
 	}
