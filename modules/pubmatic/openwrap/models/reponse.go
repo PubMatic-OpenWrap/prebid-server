@@ -4,28 +4,33 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/openrtb/v19/adcom1"
+	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 type BidExt struct {
 	openrtb_ext.ExtBid
 
-	ErrorCode       int    `json:"errorCode,omitempty"`
-	ErrorMsg        string `json:"errorMessage,omitempty"`
-	RefreshInterval int    `json:"refreshInterval,omitempty"`
-	CreativeType    string `json:"crtype,omitempty"`
-	// AdPod           ExtBidPrebidAdPod `json:"adpod,omitempty"`
-	Summary     []Summary       `json:"summary,omitempty"`
-	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
-	Video       *ExtBidVideo    `json:"video,omitempty"`
-	Banner      *ExtBidBanner   `json:"banner,omitempty"`
-	DspId       int             `json:"dspid,omitempty"`
-	Winner      int             `json:"winner,omitempty"`
-	NetECPM     float64         `json:"netecpm,omitempty"`
+	ErrorCode       int                `json:"errorCode,omitempty"`
+	ErrorMsg        string             `json:"errorMessage,omitempty"`
+	RefreshInterval int                `json:"refreshInterval,omitempty"`
+	CreativeType    string             `json:"crtype,omitempty"`
+	AdPod           *ExtBidPrebidAdPod `json:"adpod,omitempty"`
+	Summary         []Summary          `json:"summary,omitempty"`
+	SKAdnetwork     json.RawMessage    `json:"skadn,omitempty"`
+	Video           *ExtBidVideo       `json:"video,omitempty"`
+	Banner          *ExtBidBanner      `json:"banner,omitempty"`
+	DspId           int                `json:"dspid,omitempty"`
+	Winner          int                `json:"winner,omitempty"`
+	NetECPM         float64            `json:"netecpm,omitempty"`
+	Partner         string             `json:"partner,omitempty"`
 
 	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
 	OriginalBidCur    string  `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64 `json:"origbidcpmusd,omitempty"`
+
+	Nbr *openrtb3.NonBidStatusCode `json:"-"`
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video
@@ -82,4 +87,32 @@ type Summary struct {
 	Width        int     `json:"width,omitempty"`
 	Height       int     `json:"height,omitempty"`
 	Regex        string  `json:"regex,omitempty"`
+}
+
+type ExtBidPrebidAdPod struct {
+	ReasonCode *int     `json:"aprc,omitempty"`
+	RefBids    []string `json:"refbids,omitempty"`
+}
+
+// AdPodImpConfig example
+type AdPodImpConfig struct {
+	//AdPodGenerator
+	VideoExt        *ExtVideo               `json:"vidext,omitempty"`
+	Config          []*types.ImpAdPodConfig `json:"imp,omitempty"`
+	BlockedVASTTags map[string][]string     `json:"blockedtags,omitempty"`
+	Error           *ExtBidderMessage       `json:"ec,omitempty"`
+}
+
+type AdPodBid struct {
+	ID        *string     `json:"id,omitempty"`
+	Targeting []Targeting `json:"targeting,omitempty"`
+	Error     string      `json:"error,omitempty"`
+	Ext       interface{} `json:"ext,omitempty"`
+}
+
+// BidResponseVideo Adpod Bid Response
+type BidResponseVideo struct {
+	AdPodBids   []*AdPodBid `json:"adpods,omitempty"`
+	Ext         interface{} `json:"ext,omitempty"`
+	RedirectURL *string     `json:"redirect_url,omitempty"`
 }
