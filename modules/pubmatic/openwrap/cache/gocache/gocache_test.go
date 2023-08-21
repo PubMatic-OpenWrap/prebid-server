@@ -82,7 +82,7 @@ func TestNew(t *testing.T) {
 
 func Test_getSeconds(t *testing.T) {
 	type args struct {
-		duration int
+		duration int64
 	}
 	tests := []struct {
 		name string

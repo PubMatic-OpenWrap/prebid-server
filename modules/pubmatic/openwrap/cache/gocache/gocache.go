@@ -53,7 +53,7 @@ func New(goCache *gocache.Cache, database database.Database, cfg config.Cache, m
 	return c
 }
 
-func getSeconds(duration int) time.Duration {
+func getSeconds(duration int64) time.Duration {
 	return time.Duration(duration) * time.Second
 }
 
