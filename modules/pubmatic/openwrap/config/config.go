@@ -32,7 +32,7 @@ type Database struct {
 	User     string
 	Pass     string
 
-	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout int
+	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout int64
 
 	Queries Queries
 }
@@ -59,10 +59,10 @@ type Queries struct {
 }
 
 type Cache struct {
-	CacheConTimeout int // Connection timeout for cache
+	CacheConTimeout int64 // Connection timeout for cache
 
-	CacheDefaultExpiry int // in seconds
-	VASTTagCacheExpiry int // in seconds
+	CacheDefaultExpiry int64 // in seconds
+	VASTTagCacheExpiry int64 // in seconds
 }
 
 type Timeout struct {
