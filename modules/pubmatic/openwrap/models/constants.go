@@ -336,6 +336,10 @@ const (
 	PixelTypeJS   = "js"
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
+
+	DealIDNotApplicable   = "na"
+	DealTierNotApplicable = "na"
+	PwtDealTier           = "pwtdealtier"
 )
 
 const (

@@ -61,41 +61,48 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, er
 		return nil, errors.New("recieved invalid bidResponse")
 	}
 
-	bidArray := make([]*openrtb2.Bid, 0)
+	bidArrayMap := make(map[string][]*openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			bidArray = append(bidArray, &bid)
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bids, ok := bidArrayMap[impId]
+			if !ok {
+				bids = make([]*openrtb2.Bid, 0)
+			}
+			bids = append(bids, &bid)
+			bidArrayMap[impId] = bids
 		}
 	}
 
-	bidResponse.SeatBid = getPrebidCTVSeatBid(bidArray)
+	bidResponse.SeatBid = getPrebidCTVSeatBid(bidArrayMap)
 
 	return bidResponse, nil
 }
 
-func getPrebidCTVSeatBid(bids []*openrtb2.Bid) []openrtb2.SeatBid {
+func getPrebidCTVSeatBid(bidsMap map[string][]*openrtb2.Bid) []openrtb2.SeatBid {
 	seatBids := []openrtb2.SeatBid{}
 
-	bid := openrtb2.Bid{}
-	bidID, err := uuid.NewV4()
-	if err == nil {
-		bid.ID = bidID.String()
-	} else {
-		bid.ID = bids[0].ID
+	for impId, bids := range bidsMap {
+		bid := openrtb2.Bid{}
+		bidID, err := uuid.NewV4()
+		if err == nil {
+			bid.ID = bidID.String()
+		} else {
+			bid.ID = bids[0].ID
+		}
+		creative, price := getAdPodBidCreativeAndPrice(bids, true)
+		bid.AdM = creative
+		bid.Price = price
+		bid.Cat = bids[0].Cat
+		bid.ADomain = bids[0].ADomain
+		bid.ImpID = impId
+
+		seatBid := openrtb2.SeatBid{}
+		seatBid.Seat = "prebid_ctv"
+		seatBid.Bid = append(seatBid.Bid, bid)
+
+		seatBids = append(seatBids, seatBid)
 	}
-	creative, price := getAdPodBidCreativeAndPrice(bids, true)
-	bid.AdM = creative
-	bid.Price = price
-	bid.Cat = bids[0].Cat
-	bid.ADomain = bids[0].ADomain
-	impId, _ := models.GetImpressionID(bids[0].ImpID)
-	bid.ImpID = impId
-
-	seatBid := openrtb2.SeatBid{}
-	seatBid.Bid = append(seatBid.Bid, bid)
-	seatBid.Seat = "prebid_ctv"
-
-	seatBids = append(seatBids, seatBid)
 
 	return seatBids
 }
