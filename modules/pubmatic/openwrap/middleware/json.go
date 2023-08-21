@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,6 +17,10 @@ import (
 
 const (
 	slotKeyFormat = "s%d_%s"
+)
+
+var (
+	redirectTargetingKeys = []string{"pwtpb", "pwtdur", "pwtcid", "pwtpid", "pwtdealtier", "pwtdid"}
 )
 
 type jsonBid struct {
@@ -43,7 +48,7 @@ type CacheWrapperStruct struct {
 	Height int64   `json:"height,omitempty"`
 }
 
-func FormJSONResponse(cacheClient *pbc.Client, response []byte) []byte {
+func FormJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL string) []byte {
 	bidResponse := openrtb2.BidResponse{}
 
 	err := json.Unmarshal(response, &bidResponse)
@@ -51,7 +56,7 @@ func FormJSONResponse(cacheClient *pbc.Client, response []byte) []byte {
 		return response
 	}
 
-	jsonResponse, err := getJsonResponse(cacheClient, &bidResponse)
+	jsonResponse, err := getJsonResponse(cacheClient, &bidResponse, redirectURL)
 	if err != nil {
 		return response
 	}
@@ -59,7 +64,7 @@ func FormJSONResponse(cacheClient *pbc.Client, response []byte) []byte {
 	return jsonResponse
 }
 
-func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse) ([]byte, error) {
+func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL string) ([]byte, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
 		return nil, errors.New("recieved invalid bidResponse")
 	}
@@ -79,18 +84,56 @@ func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse) ([]b
 
 	adPodBids := formAdpodBids(client, bidArrayMap)
 
-	adPodResponse := bidResponseAdpod{
-		AdPodBids: adPodBids,
-		Ext:       bidResponse.Ext,
+	var response []byte
+	if len(redirectURL) > 0 {
+		response = getRedirectResponse(adPodBids, redirectURL)
+	} else {
+		var err error
+		adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
+		response, err = json.Marshal(adpodResponse)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	data, err := json.Marshal(adPodResponse)
+	return response, nil
+
+}
+
+func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
+	if len(adpodBids) == 0 {
+		return []byte(redirectURL)
+	}
+
+	if len(adpodBids[0].Targeting) == 0 {
+		return []byte(redirectURL)
+	}
+
+	parsedURL, err := url.ParseRequestURI(redirectURL)
 	if err != nil {
-		return nil, err
+		return []byte(redirectURL)
 	}
 
-	return data, nil
+	redirectQuery := parsedURL.Query()
+	custParams, err := url.ParseQuery(strings.TrimSpace(redirectQuery.Get(models.CustParams)))
+	if err != nil {
+		return []byte(redirectURL)
+	}
 
+	for i, target := range adpodBids[0].Targeting {
+		sNo := i + 1
+		for _, tk := range redirectTargetingKeys {
+			targetingKey := prepareSlotLevelKey(sNo, tk)
+			custParams.Set(targetingKey, target[targetingKey])
+		}
+	}
+
+	redirectQuery.Set(models.CustParams, custParams.Encode())
+	parsedURL.RawQuery = redirectQuery.Encode()
+
+	rURL := parsedURL.String()
+
+	return []byte(rURL)
 }
 
 func formAdpodBids(client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid {

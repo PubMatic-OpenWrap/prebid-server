@@ -42,9 +42,16 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 	r.GET(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		customWriter := AdpodVastWriter{W: w}
 		openrtbEndpoint(customWriter, r, p)
+		customWriter.Header().Set("Content-Type", "application/xml")
 	})
 	r.GET(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodJSONWriter{W: w}
+		redirectURL, err := GetAndValidateRedirectURL(r)
+		if err != nil {
+			writeErrorResponse(w, http.StatusBadRequest, err)
+			return
+		}
+
+		customWriter := AdpodJSONWriter{W: w, RedirectURL: redirectURL}
 		openrtbEndpoint(customWriter, r, p)
 	})
 
@@ -56,6 +63,7 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 	r.POST(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		customWriter := AdpodVastWriter{W: w}
 		openrtbEndpoint(customWriter, r, p)
+		customWriter.Header().Set("Content-Type", "application/xml")
 	})
 	r.POST(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		customWriter := AdpodJSONWriter{W: w}
