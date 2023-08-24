@@ -2030,7 +2030,6 @@ func getJsonSyntaxError(testJSON []byte) (bool, string) {
 		ary   []*JsonNode
 		which int
 	}
-
 	type jNode map[string]*JsonNode
 	docErrdoc := &jNode{}
 	docErr := json.Unmarshal(testJSON, docErrdoc)
