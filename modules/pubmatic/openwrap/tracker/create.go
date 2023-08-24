@@ -2,13 +2,16 @@ package tracker
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
@@ -19,19 +22,54 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 		PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
 	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
+	var responseExt *openrtb_ext.ExtBidResponse
+
+	err := json.Unmarshal(bidResponse.Ext, responseExt)
+	skipfloors, floorType, floorSource := 0, 0, 0
+	floorModelVersion := ""
+	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
+		floors := responseExt.Prebid.Floors
+		if floors.Skipped != nil {
+			skipfloors = 0
+			if *floors.Skipped {
+				skipfloors = 1
+			}
+		}
+
+		if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+			floorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+		}
+
+		if len(floors.PriceFloorLocation) > 0 {
+			if source, ok := models.FloorSourceMap[floors.PriceFloorLocation]; ok {
+				floorSource = source
+			}
+		}
+
+		if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+			floorType = models.HardFloor
+		}
+	}
 
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
-				PubID:     rctx.PubID,
-				ProfileID: fmt.Sprintf("%d", rctx.ProfileID),
-				VersionID: fmt.Sprintf("%d", rctx.DisplayID),
-				PageURL:   rctx.PageURL,
-				Timestamp: rctx.StartTime,
-				IID:       rctx.LoggerImpressionID,
-				Platform:  int(rctx.DevicePlatform),
-				SSAI:      rctx.SSAI,
-				ImpID:     bid.ImpID,
+				PubID:             rctx.PubID,
+				ProfileID:         fmt.Sprintf("%d", rctx.ProfileID),
+				VersionID:         fmt.Sprintf("%d", rctx.DisplayID),
+				PageURL:           rctx.PageURL,
+				Timestamp:         rctx.StartTime,
+				IID:               rctx.LoggerImpressionID,
+				Platform:          int(rctx.DevicePlatform),
+				SSAI:              rctx.SSAI,
+				ImpID:             bid.ImpID,
+				Origin:            rctx.Origin,
+				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
+				TestGroup:         rctx.ABTestConfigApplied,
+				FloorSkippedFlag:  &skipfloors,
+				FloorModelVersion: floorModelVersion,
+				FloorSource:       &floorSource,
+				FloorType:         floorType,
 			}
 
 			tagid := ""
@@ -41,6 +79,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			isRewardInventory := 0
 			partnerID := seatBid.Seat
 			bidType := "banner"
+			adduration := 0
+			floorValue, floorRuleValue := 0.0, 0.0
 			var dspId int
 
 			var isRegex bool
@@ -61,13 +101,44 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 					// TODO do most calculation in wt
 					// marketplace/alternatebiddercodes feature
 					bidExt := bidCtx.BidExt
-					if bidExt.Prebid != nil && bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
-						partnerID = bidExt.Prebid.Meta.AdapterCode
+					if bidExt.Prebid != nil {
+						if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
+							adduration = bidExt.Prebid.Video.Duration
+						}
+						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
+							partnerID = bidExt.Prebid.Meta.AdapterCode
 
-						if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
-							if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
-								matchedSlot = bidderMeta.MatchedSlot
+							if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
+								if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
+									matchedSlot = bidderMeta.MatchedSlot
+								}
 							}
+						}
+
+						var floorCurrency string
+						//Set Floor Details
+						if bidExt.Prebid.Floors != nil {
+							floorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
+							if bidExt.Prebid.Floors.FloorRuleValue > 0.0 {
+								floorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
+							} else {
+								floorRuleValue = floorValue
+							}
+							floorCurrency = bidExt.Prebid.Floors.FloorCurrency
+						} else if impCtx.BidFloor != 0.0 {
+							floorValue = roundToTwoDigit(impCtx.BidFloor)
+							floorRuleValue = floorValue
+							if len(impCtx.BidFloorCur) > 0 {
+								floorCurrency = impCtx.BidFloorCur
+							}
+						}
+
+						if floorCurrency != "" && floorCurrency != models.USD {
+							fv, _ := conversion(floorCurrency, models.USD, floorValue)
+							floorValue = roundToTwoDigit(fv)
+
+							frv, _ := conversion(floorCurrency, models.USD, floorRuleValue)
+							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
 					bidType = bidCtx.CreativeType
@@ -130,19 +201,29 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			tracker.SlotID = fmt.Sprintf("%s_%s", bid.ImpID, tagid)
 			tracker.RewardedInventory = isRewardInventory
 			tracker.PartnerInfo = models.Partner{
-				PartnerID:  partnerID,
-				BidderCode: seatBid.Seat,
-				BidID:      bid.ID,
-				OrigBidID:  bid.ID,
-				KGPV:       kgpv,
-				NetECPM:    float64(netECPM),
-				GrossECPM:  models.GetGrossEcpm(price),
+				PartnerID:      partnerID,
+				BidderCode:     seatBid.Seat,
+				BidID:          bid.ID,
+				OrigBidID:      bid.ID,
+				KGPV:           kgpv,
+				NetECPM:        float64(netECPM),
+				GrossECPM:      models.GetGrossEcpm(price),
+				AdSize:         getSizeForPlatform(int(bid.W), int(bid.H), rctx.Platform),
+				AdDuration:     adduration,
+				Adformat:       models.GetAdFormat(bid.AdM),
+				ServerSide:     1,
+				FloorValue:     floorValue,
+				FloorRuleValue: floorRuleValue,
+				DealID:         "-1",
 			}
 
 			if len(bid.ADomain) != 0 {
 				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
-					tracker.Advertiser = domain
+					tracker.PartnerInfo.Advertiser = domain
 				}
+			}
+			if len(bid.DealID) > 0 {
+				tracker.PartnerInfo.DealID = bid.DealID
 			}
 
 			var finalTrackerURL string
@@ -197,6 +278,25 @@ func getRewardedInventoryFlag(reward *int8) int {
 	return 0
 }
 
+func getSizeForPlatform(width int, height int, platform string) string {
+	s := fmt.Sprintf("%dx%d", width, height)
+	if platform == models.PLATFORM_VIDEO {
+		s = s + models.VideoSizeSuffix
+	}
+	return s
+}
+
+// Round value to 2 digit
+func roundToTwoDigit(value float64) float64 {
+	output := math.Pow(10, float64(2))
+	return float64(math.Round(value*output)) / output
+}
+
+// TODO : Add proper currency conversion
+func conversion(from, to string, value float64) (float64, error) {
+	return value, nil
+}
+
 // ConstructTrackerURL constructing tracker url for impression
 func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string {
 	trackerURL, err := url.Parse(rctx.TrackerEndpoint)
@@ -216,6 +316,10 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.RewardedInventory == 1 {
 		v.Set(models.TRKRewardedInventory, strconv.Itoa(tracker.RewardedInventory))
 	}
+	v.Set(models.TRKPlatform, strconv.Itoa(tracker.Platform))
+	v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	v.Set(models.TRKPubDomain, tracker.Origin)
+	v.Set(models.TRKAdPodExist, strconv.Itoa(tracker.AdPodSlot))
 	partner := tracker.PartnerInfo
 	v.Set(models.TRKPartnerID, partner.PartnerID)
 	v.Set(models.TRKBidderCode, partner.BidderCode)
@@ -227,6 +331,32 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKSSAI, tracker.SSAI)
 	}
 	v.Set(models.TRKOrigBidID, partner.OrigBidID)
+	v.Set(models.TRKAdSize, partner.AdSize)
+	if partner.AdDuration > 0 {
+		v.Set(models.TRKAdDuration, strconv.Itoa(partner.AdDuration))
+	}
+	v.Set(models.TRKAdformat, partner.Adformat)
+	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
+	v.Set(models.TRKAdvertiser, partner.Advertiser)
+
+	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
+	if tracker.FloorSkippedFlag != nil {
+		v.Set(models.TRKFloorSkippedFlag, strconv.Itoa(*tracker.FloorSkippedFlag))
+	}
+	if len(tracker.FloorModelVersion) > 0 {
+		v.Set(models.TRKFloorModelVersion, tracker.FloorModelVersion)
+	}
+	if tracker.FloorSource != nil {
+		v.Set(models.TRKFloorSource, strconv.Itoa(*tracker.FloorSource))
+	}
+	if partner.FloorValue > 0 {
+		v.Set(models.TRKFloorValue, fmt.Sprint(partner.FloorValue))
+	}
+	if partner.FloorRuleValue > 0 {
+		v.Set(models.TRKFloorRuleValue, fmt.Sprint(partner.FloorRuleValue))
+	}
+	v.Set(models.TRKServerLogger, "1")
+	v.Set(models.TRKDealID, partner.DealID)
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform
@@ -274,7 +404,7 @@ func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRAdunit, tracker.Adunit)                              //au
 	v.Set(models.ERRSUrl, tracker.SURL)                                  // sURL
 	v.Set(models.ERRPlatform, strconv.Itoa(tracker.Platform))            // pfi
-	v.Set(models.ERRAdvertiser, tracker.Advertiser)                      // adv
+	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
 
 	if tracker.SSAI != "" {
 		v.Set(models.ERRSSAI, tracker.SSAI) // ssai for video/json endpoint
