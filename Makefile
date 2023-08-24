@@ -30,7 +30,7 @@ build: test
 image:
 	docker build -t prebid-server .
 
-mockgen: mockgeninstall mockgendb mockgencache mockgenprometheus
+mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics
 
 # export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN   
 mockgeninstall:
