@@ -1983,7 +1983,7 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 
 	if referrerCandidate != "" {
-		setSitePageIfEmpty(r.Site, referrerCandidate)
+		setSitePageIfEmpty(r, referrerCandidate)
 		if parsedUrl, err := url.Parse(referrerCandidate); err == nil {
 			setSiteDomainIfEmpty(r.Site, parsedUrl.Host)
 			if publisherDomain, err := publicsuffix.EffectiveTLDPlusOne(parsedUrl.Host); err == nil {
@@ -1999,12 +1999,12 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 }
 
-func setSitePageIfEmpty(site *openrtb2.Site, sitePage string) {
-	if site == nil {
-		site = &openrtb2.Site{}
+func setSitePageIfEmpty(r *openrtb_ext.RequestWrapper, sitePage string) {
+	if r.Site == nil {
+		r.Site = &openrtb2.Site{}
 	}
-	if site.Page == "" {
-		site.Page = sitePage
+	if r.Site.Page == "" {
+		r.Site.Page = sitePage
 	}
 }
 
