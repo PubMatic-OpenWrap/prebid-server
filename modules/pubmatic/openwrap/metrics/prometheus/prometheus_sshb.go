@@ -74,7 +74,7 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		standardTimeBuckets)
 
 	metrics.owRequestTime = newHistogramVec(cfg, promRegistry,
-		"sshb_sshb_request_time",
+		"sshb_request_time",
 		"Time taken to serve the request in seconds", []string{apiTypeLabel},
 		[]float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1})
 
