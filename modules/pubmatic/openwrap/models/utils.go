@@ -78,7 +78,7 @@ func GetAdFormat(adm string) string {
 	} else {
 		var admJSON map[string]interface{}
 		err := json.Unmarshal([]byte(strings.Replace(adm, "/\\/g", "", -1)), &admJSON)
-		if err == nil && admJSON != nil && admJSON["native"] != nil {
+		if err == nil && admJSON != nil && admJSON["native"] != nil { // need this check admJSON["native"] != nil ?
 			adFormat = Native
 		}
 	}
