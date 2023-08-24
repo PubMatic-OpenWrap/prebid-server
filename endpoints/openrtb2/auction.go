@@ -1983,7 +1983,10 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 
 	if referrerCandidate != "" {
-		setSitePageIfEmpty(r, referrerCandidate)
+		if r.Site == nil {
+			r.Site = &openrtb2.Site{}
+		}
+		setSitePageIfEmpty(r.Site, referrerCandidate)
 		if parsedUrl, err := url.Parse(referrerCandidate); err == nil {
 			setSiteDomainIfEmpty(r.Site, parsedUrl.Host)
 			if publisherDomain, err := publicsuffix.EffectiveTLDPlusOne(parsedUrl.Host); err == nil {
@@ -1999,12 +2002,9 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 }
 
-func setSitePageIfEmpty(r *openrtb_ext.RequestWrapper, sitePage string) {
-	if r.Site == nil {
-		r.Site = &openrtb2.Site{}
-	}
-	if r.Site.Page == "" {
-		r.Site.Page = sitePage
+func setSitePageIfEmpty(site *openrtb2.Site, sitePage string) {
+	if site.Page == "" {
+		site.Page = sitePage
 	}
 }
 
@@ -2030,6 +2030,7 @@ func getJsonSyntaxError(testJSON []byte) (bool, string) {
 		ary   []*JsonNode
 		which int
 	}
+
 	type jNode map[string]*JsonNode
 	docErrdoc := &jNode{}
 	docErr := json.Unmarshal(testJSON, docErrdoc)
