@@ -100,6 +100,8 @@ type ImpCtx struct {
 	TagID             string
 	Div               string
 	Secure            int
+	BidFloor          float64
+	BidFloorCur       string
 	IsRewardInventory *int8
 	Banner            bool
 	Video             *openrtb2.Video

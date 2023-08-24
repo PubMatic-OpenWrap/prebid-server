@@ -1,5 +1,7 @@
 package models
 
+import "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+
 // impression tracker url parameters
 const (
 	// constants for query parameter names for tracker call
@@ -24,6 +26,24 @@ const (
 	TRKQMARK             = "?"
 	TRKAmpersand         = "&"
 	TRKSSAI              = "ssai"
+
+	TRKPlatform          = "plt"
+	TRKAdSize            = "psz"
+	TRKTestGroup         = "tgid"
+	TRKAdvertiser        = "adv"
+	TRKPubDomain         = "orig"
+	TRKServerSide        = "ss"
+	TRKAdformat          = "af"
+	TRKAdDuration        = "dur"
+	TRKAdPodExist        = "aps"
+	TRKFloorType         = "ft"
+	TRKFloorModelVersion = "fmv"
+	TRKFloorSkippedFlag  = "fskp"
+	TRKFloorSource       = "fsrc"
+	TRKFloorValue        = "fv"
+	TRKFloorRuleValue    = "frv"
+	TRKServerLogger      = "sl"
+	TRKDealID            = "di"
 )
 
 // video error tracker url parameters
@@ -64,3 +84,9 @@ const (
 const (
 	DspId_DV360 = 80
 )
+
+var FloorSourceMap = map[string]int{
+	openrtb_ext.NoDataLocation:  0,
+	openrtb_ext.RequestLocation: 1,
+	openrtb_ext.FetchLocation:   2,
+}

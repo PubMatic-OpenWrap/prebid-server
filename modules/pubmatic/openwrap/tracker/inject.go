@@ -13,6 +13,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
 			var errMsg string
+			var err error
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {
@@ -29,12 +30,12 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 				// }
 				trackers := []models.OWTracker{tracker}
 
-				var err error
 				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
 				if err != nil {
 					errMsg = fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error())
 				}
 			case models.Native:
+				bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(rctx.ImpBidCtx[bid.ImpID].Native, bidResponse.SeatBid[i].Bid[j].AdM, tracker)
 			default:
 				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
 			}
