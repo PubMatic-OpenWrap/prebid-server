@@ -153,15 +153,19 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 		account.PriceFloors.Fetch.URL = reqFloor.Location.URL
 	}
 	account.PriceFloors.Fetch.AccountID = account.ID
-	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
+	var fetchResult *openrtb_ext.PriceFloorRules
+	var fetchStatus = openrtb_ext.FetchNone
+	if shouldUseDynamicFetchedFloor(account) {
+		fetchResult, fetchStatus = priceFloorFetcher.Fetch(account.PriceFloors)
+	}
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
+	if fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
-		floorsJson, errlist = createFloorsFrom(reqFloor, account, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
+		floorsJson, errlist = createFloorsFrom(reqFloor, account, fetchStatus, openrtb_ext.RequestLocation)
 	} else {
-		floorsJson, errlist = createFloorsFrom(nil, account, openrtb_ext.FetchNone, openrtb_ext.NoDataLocation)
+		floorsJson, errlist = createFloorsFrom(nil, account, fetchStatus, openrtb_ext.NoDataLocation)
 	}
 	return floorsJson, errlist
 }

@@ -938,7 +938,7 @@ func TestResolveFloorsWithUseDataRate(t *testing.T) {
 			},
 			expFloors: &openrtb_ext.PriceFloorRules{
 				Enabled:            getTrue(),
-				FetchStatus:        openrtb_ext.FetchNone,
+				FetchStatus:        openrtb_ext.FetchSuccess,
 				PriceFloorLocation: openrtb_ext.RequestLocation,
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
 					EnforcePBS:  getTrue(),
