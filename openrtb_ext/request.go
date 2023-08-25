@@ -86,9 +86,9 @@ type ExtRequestPrebid struct {
 	BidAdjustments    *ExtRequestPrebidBidAdjustments `json:"bidadjustments,omitempty"`
 	// ReturnAllBidStatus if true populates bidresponse.ext.prebid.seatnonbid with all bids which was
 	// either rejected, nobid, input error
-	ReturnAllBidStatus bool              `json:"returnallbidstatus,omitempty"`
-	Transparency       *TransparencyExt  `json:"transparency,omitempty"`
-	KeyVal             map[string]string `json:"keyval,omitempty"`
+	ReturnAllBidStatus bool                   `json:"returnallbidstatus,omitempty"`
+	Transparency       *TransparencyExt       `json:"transparency,omitempty"`
+	KeyVal             map[string]interface{} `json:"keyval,omitempty"`
 }
 
 type AdServerTarget struct {
