@@ -195,7 +195,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
@@ -219,6 +219,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 			Tracker: tracker.GetTrackerInfo(rctx),
 		}
 	}
+
+	// prepare seat-non-bids and add them in the response-ext
+	prepareSeatNonBids(rctx)
+	addSeatNonBidsInResponseExt(rctx, &responseExt)
 
 	var err error
 	rctx.ResponseExt, err = json.Marshal(responseExt)
