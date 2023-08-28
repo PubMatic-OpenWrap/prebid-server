@@ -34,7 +34,7 @@ var initiateTBFReloader = func(c cache.Cache, expiryTime int) {
 		case <-tbfConfigs.serviceStop:
 			return
 		case t := <-ticker.C:
-			glog.Info("TBF Reloader loads cache @", t)
+			glog.Infof("TBF Reloader loads cache @%v", t)
 		}
 	}
 }
