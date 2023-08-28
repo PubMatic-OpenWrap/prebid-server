@@ -145,16 +145,19 @@ func shouldUseFetchedData(rate *int) bool {
 
 // resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
-	var errlist []error
-	var floorsJson *openrtb_ext.PriceFloorRules
+	var (
+		errlist     []error
+		floorsJson  *openrtb_ext.PriceFloorRules
+		fetchResult *openrtb_ext.PriceFloorRules
+		fetchStatus = openrtb_ext.FetchNone
+	)
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	if reqFloor != nil && reqFloor.Location != nil && len(reqFloor.Location.URL) > 0 {
 		account.PriceFloors.Fetch.URL = reqFloor.Location.URL
 	}
 	account.PriceFloors.Fetch.AccountID = account.ID
-	var fetchResult *openrtb_ext.PriceFloorRules
-	var fetchStatus = openrtb_ext.FetchNone
+
 	if shouldUseDynamicFetchedFloor(account) {
 		fetchResult, fetchStatus = priceFloorFetcher.Fetch(account.PriceFloors)
 	}
