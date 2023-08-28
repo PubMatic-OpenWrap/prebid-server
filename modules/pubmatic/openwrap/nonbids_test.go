@@ -9,39 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewProxyNonBid(t *testing.T) {
-
-	type args struct {
-		impId        string
-		nonBidReason int
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want openrtb_ext.NonBid
-	}{
-		{
-			name: "create_proxy_nonbid",
-			args: args{
-				impId:        "imp1",
-				nonBidReason: 1,
-			},
-			want: openrtb_ext.NonBid{
-				ImpId:      "imp1",
-				StatusCode: 1,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			nonbid := newProxyNonBid(tt.args.impId, tt.args.nonBidReason)
-			assert.Equal(t, tt.want, nonbid, tt.name)
-		})
-	}
-}
-
 func TestPrepareSeatNonBids(t *testing.T) {
 
 	type args struct {
@@ -212,14 +179,6 @@ func TestAddSeatNonBidsInResponseExt(t *testing.T) {
 		want *openrtb_ext.ExtBidResponse
 	}{
 		{
-			name: "responseExt_is_nil",
-			args: args{
-				rctx:        models.RequestCtx{},
-				responseExt: nil,
-			},
-			want: nil,
-		},
-		{
 			name: "empty_rtcx_seatnonbids",
 			args: args{
 				rctx: models.RequestCtx{},
@@ -229,39 +188,6 @@ func TestAddSeatNonBidsInResponseExt(t *testing.T) {
 			},
 			want: &openrtb_ext.ExtBidResponse{
 				Prebid: nil,
-			},
-		},
-		{
-			name: "prebid_is_nil",
-			args: args{
-				rctx: models.RequestCtx{
-					SeatNonBids: map[string][]openrtb_ext.NonBid{
-						"pubmatic": {
-							openrtb_ext.NonBid{
-								ImpId:      "imp1",
-								StatusCode: 1,
-							},
-						},
-					},
-				},
-				responseExt: &openrtb_ext.ExtBidResponse{
-					Prebid: nil,
-				},
-			},
-			want: &openrtb_ext.ExtBidResponse{
-				Prebid: &openrtb_ext.ExtResponsePrebid{
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: 1,
-								},
-							},
-							Seat: "pubmatic",
-						},
-					},
-				},
 			},
 		},
 		{

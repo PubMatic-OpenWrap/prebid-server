@@ -6,49 +6,33 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-// newProxyNonBid create and returns proxy nonbid for given impid and reason combination
-func newProxyNonBid(impId string, nonBidReason int) openrtb_ext.NonBid {
-	return openrtb_ext.NonBid{
-		ImpId:      impId,
-		StatusCode: nonBidReason,
-	}
-}
-
 // prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
 // currently, this function prepares nonbids for partner-throttle and slot-not-mapped errors
 func prepareSeatNonBids(rctx models.RequestCtx) {
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-
 		// seat-non-bid for partner-throttled error
 		for bidder := range rctx.AdapterThrottleMap {
-			if rctx.SeatNonBids[bidder] == nil {
-				rctx.SeatNonBids[bidder] = []openrtb_ext.NonBid{}
-			}
-			nonBid := newProxyNonBid(impID, int(exchange.RequestBlockedPartnerThrottle))
-			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], nonBid)
+			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], openrtb_ext.NonBid{
+				ImpId:      impID,
+				StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+			})
 		}
-
 		// seat-non-bid for slot-not-mapped error
 		// Note : Throttled partner will not be a part of impCtx.NonMapped
 		for bidder := range impCtx.NonMapped {
-			if rctx.SeatNonBids[bidder] == nil {
-				rctx.SeatNonBids[bidder] = []openrtb_ext.NonBid{}
-			}
-			nonBid := newProxyNonBid(impID, int(exchange.RequestBlockedSlotNotMapped))
-			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], nonBid)
+			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], openrtb_ext.NonBid{
+				ImpId:      impID,
+				StatusCode: int(exchange.RequestBlockedSlotNotMapped),
+			})
 		}
 	}
 }
 
 // addSeatNonBidsInResponseExt adds the rctx.SeatNonBids in the response-ext
 func addSeatNonBidsInResponseExt(rctx models.RequestCtx, responseExt *openrtb_ext.ExtBidResponse) {
-	if responseExt == nil || len(rctx.SeatNonBids) == 0 {
+	if len(rctx.SeatNonBids) == 0 {
 		return
-	}
-
-	if responseExt.Prebid == nil {
-		responseExt.Prebid = &openrtb_ext.ExtResponsePrebid{}
 	}
 
 	if responseExt.Prebid.SeatNonBid == nil {
