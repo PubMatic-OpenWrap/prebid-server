@@ -434,3 +434,10 @@ const (
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 )
+
+// constants to accept request-test value
+type testValue = int8
+
+const (
+	TestValueTwo testValue = 2
+)

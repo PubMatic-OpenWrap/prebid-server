@@ -7,13 +7,14 @@ import (
 )
 
 // prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
-// currently, this function prepares nonbids for partner-throttle and slot-not-mapped errors
-func prepareSeatNonBids(rctx models.RequestCtx) {
+// currently, this function prepares and returns nonbids for partner-throttle and slot-not-mapped errors
+func prepareSeatNonBids(rctx models.RequestCtx) map[string][]openrtb_ext.NonBid {
 
+	seatNonBids := make(map[string][]openrtb_ext.NonBid, 0)
 	for impID, impCtx := range rctx.ImpBidCtx {
 		// seat-non-bid for partner-throttled error
 		for bidder := range rctx.AdapterThrottleMap {
-			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], openrtb_ext.NonBid{
+			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
 				ImpId:      impID,
 				StatusCode: int(exchange.RequestBlockedPartnerThrottle),
 			})
@@ -21,12 +22,13 @@ func prepareSeatNonBids(rctx models.RequestCtx) {
 		// seat-non-bid for slot-not-mapped error
 		// Note : Throttled partner will not be a part of impCtx.NonMapped
 		for bidder := range impCtx.NonMapped {
-			rctx.SeatNonBids[bidder] = append(rctx.SeatNonBids[bidder], openrtb_ext.NonBid{
+			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
 				ImpId:      impID,
 				StatusCode: int(exchange.RequestBlockedSlotNotMapped),
 			})
 		}
 	}
+	return seatNonBids
 }
 
 // addSeatNonBidsInResponseExt adds the rctx.SeatNonBids in the response-ext

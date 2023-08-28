@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/exchange"
@@ -92,10 +93,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 			seatNonBids: map[string][]openrtb_ext.NonBid{
 				"pubmatic": {
 					{
-						ImpId:      "imp2",
-						StatusCode: 2,
-					},
-					{
 						ImpId:      "imp1",
 						StatusCode: int(exchange.RequestBlockedSlotNotMapped),
 					},
@@ -123,22 +120,10 @@ func TestPrepareSeatNonBids(t *testing.T) {
 					AdapterThrottleMap: map[string]struct{}{
 						"appnexus": {},
 					},
-					SeatNonBids: map[string][]openrtb_ext.NonBid{
-						"pubmatic": {
-							{
-								ImpId:      "imp2",
-								StatusCode: 2,
-							},
-						},
-					},
 				},
 			},
 			seatNonBids: map[string][]openrtb_ext.NonBid{
 				"pubmatic": {
-					{
-						ImpId:      "imp2",
-						StatusCode: 2,
-					},
 					{
 						ImpId:      "imp1",
 						StatusCode: int(exchange.RequestBlockedSlotNotMapped),
@@ -160,8 +145,10 @@ func TestPrepareSeatNonBids(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prepareSeatNonBids(tt.args.rctx)
-			assert.Equal(t, tt.seatNonBids, tt.args.rctx.SeatNonBids, tt.name)
+			seatNonBids := prepareSeatNonBids(tt.args.rctx)
+			if !reflect.DeepEqual(tt.seatNonBids, seatNonBids) {
+				t.Errorf("Mismatched seatNonBids, want-[%v], got-[%v], name-[%v]", tt.seatNonBids, seatNonBids, tt.name)
+			}
 		})
 	}
 }
