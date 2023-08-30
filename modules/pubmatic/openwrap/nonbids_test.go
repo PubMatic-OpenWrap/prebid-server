@@ -178,6 +178,39 @@ func TestAddSeatNonBidsInResponseExt(t *testing.T) {
 			},
 		},
 		{
+			name: "response_ext_prebid_is_nil",
+			args: args{
+				rctx: models.RequestCtx{
+					SeatNonBids: map[string][]openrtb_ext.NonBid{
+						"pubmatic": {
+							openrtb_ext.NonBid{
+								ImpId:      "imp1",
+								StatusCode: 1,
+							},
+						},
+					},
+				},
+				responseExt: &openrtb_ext.ExtBidResponse{
+					Prebid: nil,
+				},
+			},
+			want: &openrtb_ext.ExtBidResponse{
+				Prebid: &openrtb_ext.ExtResponsePrebid{
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: 1,
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "prebid_exist_but_seatnonbid_is_empty_in_ext",
 			args: args{
 				rctx: models.RequestCtx{

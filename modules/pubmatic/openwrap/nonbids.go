@@ -37,6 +37,10 @@ func addSeatNonBidsInResponseExt(rctx models.RequestCtx, responseExt *openrtb_ex
 		return
 	}
 
+	if responseExt.Prebid == nil {
+		responseExt.Prebid = new(openrtb_ext.ExtResponsePrebid)
+	}
+
 	if responseExt.Prebid.SeatNonBid == nil {
 		responseExt.Prebid.SeatNonBid = make([]openrtb_ext.SeatNonBid, 0)
 	}
