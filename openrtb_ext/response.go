@@ -156,7 +156,7 @@ type NonBidExt struct {
 type NonBid struct {
 	ImpId      string    `json:"impid"`
 	StatusCode int       `json:"statuscode"`
-	Ext        NonBidExt `json:"ext,omitempty"`
+	Ext        NonBidExt `json:"ext"`
 }
 
 // SeatNonBid is collection of NonBid objects with seat information
