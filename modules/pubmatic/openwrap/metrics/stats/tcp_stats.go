@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -284,8 +285,6 @@ func (st *StatsTCP) RecordCacheErrorRequests(endpoint, publisher, profileID stri
 
 func (st *StatsTCP) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {}
 
-func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
-
 func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
 
 // getStatsKeyIndexForResponseTime returns respective stats key for a given responsetime
@@ -327,3 +326,13 @@ func getStatsKeyIndexForResponseTime(responseTime int) int {
 func (st *StatsTCP) Shutdown() {
 	st.statsClient.ShutdownProcess()
 }
+
+func (st *StatsTCP) RecordRequest(labels metrics.Labels)                                            {}
+func (st *StatsTCP) RecordLurlSent(labels metrics.LurlStatusLabels)                                 {}
+func (st *StatsTCP) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels)                       {}
+func (st *StatsTCP) RecordBids(pubid, profileid, biddder, deal string)                              {}
+func (st *StatsTCP) RecordPartnerTimeoutRequests(pubid, profileid, bidder string)                   {}
+func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                                       {}
+func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
+func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
+func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}

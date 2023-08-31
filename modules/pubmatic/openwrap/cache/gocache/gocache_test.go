@@ -12,7 +12,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
-	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type args struct {
 		goCache       *gocache.Cache
