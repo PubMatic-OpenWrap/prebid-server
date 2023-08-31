@@ -10,7 +10,6 @@ import (
 )
 
 func TestPrepareSeatNonBids(t *testing.T) {
-
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -155,7 +154,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 }
 
 func TestAddSeatNonBidsInResponseExt(t *testing.T) {
-
 	type args struct {
 		rctx        models.RequestCtx
 		responseExt *openrtb_ext.ExtBidResponse
