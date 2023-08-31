@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/usersync"
@@ -14,7 +14,7 @@ import (
 func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
-	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	defer ctrl.Finish()
 
 	type args struct {
@@ -24,14 +24,14 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
-		setup func(*mock.MockMetricsEngine)
+		setup func(*mock_metrics.MockMetricsEngine)
 	}{
 		{
 			name: "Empty cookies and empty partner config map",
 			args: args{
 				rctx: models.RequestCtx{},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {},
+			setup: func(mme *mock_metrics.MockMetricsEngine) {},
 		},
 		{
 			name: "Non-empty cookie and empty partner config map",
@@ -44,7 +44,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 					PartnerConfigMap: map[int]map[string]string{},
 				},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
@@ -63,7 +63,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 					PubIDStr: "5890",
 				},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 				mme.EXPECT().RecordPublisherPartnerNoCookieStats("5890", "bidder1")
 			},
@@ -86,7 +86,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 					PubIDStr: "5890",
 				},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
@@ -108,7 +108,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 					PubIDStr: "5890",
 				},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
 		},
@@ -130,7 +130,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 					PubIDStr: "5890",
 				},
 			},
-			setup: func(mme *mock.MockMetricsEngine) {
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = map[string]usersync.Syncer{
 					"pubmatic": fakeSyncer{
 						key: "pubmatic",

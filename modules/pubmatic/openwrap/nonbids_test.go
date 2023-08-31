@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/exchange"
@@ -11,7 +10,6 @@ import (
 )
 
 func TestPrepareSeatNonBids(t *testing.T) {
-
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -146,15 +144,16 @@ func TestPrepareSeatNonBids(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seatNonBids := prepareSeatNonBids(tt.args.rctx)
-			if !reflect.DeepEqual(tt.seatNonBids, seatNonBids) {
-				t.Errorf("Mismatched seatNonBids, want-[%v], got-[%v], name-[%v]", tt.seatNonBids, seatNonBids, tt.name)
+			assert.Equal(t, len(seatNonBids), len(tt.seatNonBids))
+			for k, v := range seatNonBids {
+				// ignore order of elements in slice while comparing
+				assert.ElementsMatch(t, v, tt.seatNonBids[k], tt.name)
 			}
 		})
 	}
 }
 
 func TestAddSeatNonBidsInResponseExt(t *testing.T) {
-
 	type args struct {
 		rctx        models.RequestCtx
 		responseExt *openrtb_ext.ExtBidResponse
@@ -175,6 +174,39 @@ func TestAddSeatNonBidsInResponseExt(t *testing.T) {
 			},
 			want: &openrtb_ext.ExtBidResponse{
 				Prebid: nil,
+			},
+		},
+		{
+			name: "response_ext_prebid_is_nil",
+			args: args{
+				rctx: models.RequestCtx{
+					SeatNonBids: map[string][]openrtb_ext.NonBid{
+						"pubmatic": {
+							openrtb_ext.NonBid{
+								ImpId:      "imp1",
+								StatusCode: 1,
+							},
+						},
+					},
+				},
+				responseExt: &openrtb_ext.ExtBidResponse{
+					Prebid: nil,
+				},
+			},
+			want: &openrtb_ext.ExtBidResponse{
+				Prebid: &openrtb_ext.ExtResponsePrebid{
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: 1,
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
 			},
 		},
 		{

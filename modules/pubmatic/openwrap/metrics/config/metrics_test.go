@@ -9,6 +9,7 @@ import (
 	cfg "github.com/prebid/prebid-server/config"
 	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -133,7 +134,6 @@ func TestNewMetricsEngine(t *testing.T) {
 }
 
 func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
-
 	ctrl := gomock.NewController(t)
 	mockEngine := mock.NewMockMetricsEngine(ctrl)
 	defer ctrl.Finish()
@@ -208,6 +208,16 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
 	mockEngine.EXPECT().Shutdown()
 
+	mockEngine.EXPECT().RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
+	mockEngine.EXPECT().RecordLurlSent(metrics.LurlStatusLabels{PublisherID: "pubid", Partner: "p", Status: "success"})
+	mockEngine.EXPECT().RecordLurlBatchSent(metrics.LurlBatchStatusLabels{Status: "success"})
+	mockEngine.EXPECT().RecordBids("pubid", "profileid", "bidder", "deal")
+	mockEngine.EXPECT().RecordPartnerTimeoutRequests("pubid", "profileid", "bidder")
+	mockEngine.EXPECT().RecordCtvUaAccuracy("pubId", "status")
+	mockEngine.EXPECT().RecordSendLoggerDataTime("requestType", "profileid", time.Second)
+	mockEngine.EXPECT().RecordRequestTime("requestType", time.Second)
+	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
+
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
 	multiMetricEngine = append(multiMetricEngine, mockEngine)
@@ -259,4 +269,14 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordSendLoggerDataTime(endpoint, profile, sendTime)
 	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
 	multiMetricEngine.Shutdown()
+
+	multiMetricEngine.RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
+	multiMetricEngine.RecordLurlSent(metrics.LurlStatusLabels{PublisherID: "pubid", Partner: "p", Status: "success"})
+	multiMetricEngine.RecordLurlBatchSent(metrics.LurlBatchStatusLabels{Status: "success"})
+	multiMetricEngine.RecordBids("pubid", "profileid", "bidder", "deal")
+	multiMetricEngine.RecordPartnerTimeoutRequests("pubid", "profileid", "bidder")
+	multiMetricEngine.RecordCtvUaAccuracy("pubId", "status")
+	multiMetricEngine.RecordSendLoggerDataTime("requestType", "profileid", time.Second)
+	multiMetricEngine.RecordRequestTime("requestType", time.Second)
+	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 }
