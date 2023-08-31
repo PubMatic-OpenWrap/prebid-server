@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/exchange"
@@ -146,8 +145,10 @@ func TestPrepareSeatNonBids(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seatNonBids := prepareSeatNonBids(tt.args.rctx)
-			if !reflect.DeepEqual(tt.seatNonBids, seatNonBids) {
-				t.Errorf("Mismatched seatNonBids, want-[%v], got-[%v], name-[%v]", tt.seatNonBids, seatNonBids, tt.name)
+			assert.Equal(t, len(seatNonBids), len(tt.seatNonBids))
+			for k, v := range seatNonBids {
+				// ignore order of elements in slice while comparing
+				assert.ElementsMatch(t, v, tt.seatNonBids[k], tt.name)
 			}
 		})
 	}

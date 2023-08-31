@@ -51,6 +51,7 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 							AdapterThrottleMap: map[string]struct{}{
 								"pubmatic": {},
 							},
+							PubIDStr: "5890",
 						},
 					},
 				},
@@ -62,8 +63,8 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 			},
 			getMetricsEngine: func() (me *mock.MockMetricsEngine) {
 				mockEngine := mock.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
-				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(gomock.Any())
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				return mockEngine
 			},
 			want: want{
@@ -85,6 +86,7 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 							AdapterThrottleMap: map[string]struct{}{
 								"pubmatic": {},
 							},
+							PubIDStr: "5890",
 						},
 					},
 				},
@@ -96,8 +98,8 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 			},
 			getMetricsEngine: func() (me *mock.MockMetricsEngine) {
 				mockEngine := mock.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
-				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(gomock.Any())
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				return mockEngine
 			},
 			want: want{
