@@ -383,36 +383,42 @@ func (me *MultiMetricsEngine) Shutdown() {
 	}
 }
 
+// RecordRequest log openwrap request type
 func (me *MultiMetricsEngine) RecordRequest(labels metrics.Labels) {
 	for _, thisME := range *me {
 		thisME.RecordRequest(labels)
 	}
 }
 
+// RecordLurlSent log lurl status
 func (me *MultiMetricsEngine) RecordLurlSent(labels metrics.LurlStatusLabels) {
 	for _, thisME := range *me {
 		thisME.RecordLurlSent(labels)
 	}
 }
 
+// RecordLurlBatchSent log lurl batch status
 func (me *MultiMetricsEngine) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels) {
 	for _, thisME := range *me {
 		thisME.RecordLurlBatchSent(labels)
 	}
 }
 
+// RecordBids record ow bids
 func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 	for _, thisME := range *me {
 		thisME.RecordBids(pubid, profileid, biddder, deal)
 	}
 }
 
+// RecordPartnerTimeoutRequests log request partner request timeout
 func (me *MultiMetricsEngine) RecordPartnerTimeoutRequests(pubid, profileid, bidder string) {
 	for _, thisME := range *me {
 		thisME.RecordPartnerTimeoutRequests(pubid, profileid, bidder)
 	}
 }
 
+// RecordCtvUaAccuracy log ctv UA accuracy
 func (me *MultiMetricsEngine) RecordCtvUaAccuracy(pubId, status string) {
 	for _, thisME := range *me {
 		thisME.RecordCtvUaAccuracy(pubId, status)
@@ -426,12 +432,14 @@ func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string,
 	}
 }
 
+// RecordRequestTime record ow request time
 func (me *MultiMetricsEngine) RecordRequestTime(requestType string, requestTime time.Duration) {
 	for _, thisME := range *me {
 		thisME.RecordRequestTime(requestType, requestTime)
 	}
 }
 
+// RecordOWServerPanic record OW panics
 func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName, podName string) {
 	for _, thisME := range *me {
 		thisME.RecordOWServerPanic(endpoint, methodName, nodeName, podName)
