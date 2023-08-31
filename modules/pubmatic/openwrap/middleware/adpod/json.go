@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 
+	validator "github.com/asaskevich/govalidator"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
@@ -48,7 +50,35 @@ type CacheWrapperStruct struct {
 	Height int64   `json:"height,omitempty"`
 }
 
-func FormJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL string) []byte {
+func getAndValidateRedirectURL(r *http.Request) (string, CustomError) {
+	params := r.URL.Query()
+
+	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
+	if format != "" {
+		if format != models.ResponseFormatJSON && format != models.ResponseFormatRedirect {
+			return "", NewError(634, "Invalid response format, must be 'json' or 'redirect'")
+		}
+	}
+
+	owRedirectURL := params.Get(models.OWRedirectURLKey)
+	if len(owRedirectURL) > 0 {
+		owRedirectURL = strings.TrimSpace(owRedirectURL)
+		if format == models.ResponseFormatRedirect && !isValidURL(owRedirectURL) {
+			return "", NewError(633, "Invalid redirect URL")
+		}
+	}
+
+	return owRedirectURL, nil
+}
+
+func isValidURL(urlVal string) bool {
+	if !(strings.HasPrefix(urlVal, "http://") || strings.HasPrefix(urlVal, "https://")) {
+		return false
+	}
+	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
+}
+
+func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL string) []byte {
 	bidResponse := openrtb2.BidResponse{}
 
 	err := json.Unmarshal(response, &bidResponse)
@@ -281,4 +311,23 @@ func TrimRightByte(s string, b byte) string {
 		return s[:len(s)-1]
 	}
 	return s
+}
+
+func writeErrorResponse(w http.ResponseWriter, code int, err CustomError) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(code)
+	errResponse := GetErrorResponse(err)
+	fmt.Fprintln(w, errResponse)
+}
+
+func GetErrorResponse(err CustomError) []byte {
+	if err == nil {
+		return nil
+	}
+
+	response, _ := json.Marshal(map[string]interface{}{
+		"ErrorCode": err.Code(),
+		"Error":     err.Error(),
+	})
+	return response
 }

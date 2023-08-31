@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	middleware "github.com/prebid/prebid-server/modules/pubmatic/openwrap/middleware/adpod"
 )
 
 const (
@@ -21,6 +22,8 @@ const (
 // not implementing middleware to avoid duplicate processing like read, unmarshal, write, etc.
 // handling the temporary middleware stuff in EntryPoint hook.
 func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprouter.Handle) {
+	adpod := middleware.NewAdpodWrapperHandle(openrtbEndpoint, g_cacheClient)
+
 	//OpenWrap hybrid
 	r.POST(OpenWrapAuction, openrtbEndpoint)
 
@@ -35,40 +38,14 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 	// CTV/OTT
 	//GET
-	r.GET(OpenWrapAdpodOrtb, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodOpenRTBWriter{W: w}
-		openrtbEndpoint(customWriter, r, p)
-	})
-	r.GET(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodVastWriter{W: w}
-		openrtbEndpoint(customWriter, r, p)
-		customWriter.Header().Set("Content-Type", "application/xml")
-	})
-	r.GET(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		redirectURL, err := GetAndValidateRedirectURL(r)
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, err)
-			return
-		}
-
-		customWriter := AdpodJSONWriter{W: w, RedirectURL: redirectURL}
-		openrtbEndpoint(customWriter, r, p)
-	})
+	r.GET(OpenWrapAdpodOrtb, adpod.OpenrtbEndpoint)
+	r.GET(OpenWrapAdpodVast, adpod.VastEndpoint)
+	r.GET(OpenWrapAdpodJson, adpod.JsonGetEndpoint)
 
 	// POST
-	r.POST(OpenWrapAdpodOrtb, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodOpenRTBWriter{W: w}
-		openrtbEndpoint(customWriter, r, p)
-	})
-	r.POST(OpenWrapAdpodVast, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodVastWriter{W: w}
-		openrtbEndpoint(customWriter, r, p)
-		customWriter.Header().Set("Content-Type", "application/xml")
-	})
-	r.POST(OpenWrapAdpodJson, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		customWriter := AdpodJSONWriter{W: w}
-		openrtbEndpoint(customWriter, r, p)
-	})
+	r.POST(OpenWrapAdpodOrtb, adpod.OpenrtbEndpoint)
+	r.POST(OpenWrapAdpodVast, adpod.VastEndpoint)
+	r.POST(OpenWrapAdpodJson, adpod.JsonEndpoint)
 
 	// healthcheck used by k8s
 	r.GET(OpenWrapHealthcheck, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
