@@ -220,9 +220,11 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	// prepare seat-non-bids and add them in the response-ext
-	rctx.SeatNonBids = prepareSeatNonBids(rctx)
-	addSeatNonBidsInResponseExt(rctx, &responseExt)
+	if rctx.ReturnAllBidStatus {
+		// prepare seat-non-bids and add them in the response-ext
+		rctx.SeatNonBids = prepareSeatNonBids(rctx)
+		addSeatNonBidsInResponseExt(rctx, &responseExt)
+	}
 
 	var err error
 	rctx.ResponseExt, err = json.Marshal(responseExt)
