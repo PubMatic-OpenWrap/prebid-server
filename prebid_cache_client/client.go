@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 
@@ -92,12 +91,6 @@ func (c *clientImpl) PutJson(ctx context.Context, values []Cacheable) (uuids []s
 	}
 
 	uuidsToReturn := make([]string, len(values))
-
-	for i := 0; i < len(uuidsToReturn); i++ {
-		uid, _ := uuid.NewV4()
-		uuidsToReturn[i] = uid.String()
-	}
-	return
 
 	postBody, err := encodeValues(values)
 	if err != nil {
