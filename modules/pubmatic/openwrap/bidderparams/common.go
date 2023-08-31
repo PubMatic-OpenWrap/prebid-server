@@ -32,7 +32,7 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 	var slotMappingInfo models.SlotMappingInfo
 
 	//don't read mappings from cache in case of test=2
-	if rctx.IsTestRequest == 0 {
+	if !(rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic) {
 		slotMap = cache.GetMappingsFromCacheV25(rctx, partnerID)
 		if slotMap == nil {
 			return nil, nil, models.SlotMappingInfo{}, nil
