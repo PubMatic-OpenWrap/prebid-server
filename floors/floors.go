@@ -145,23 +145,30 @@ func shouldUseFetchedData(rate *int) bool {
 
 // resolveFloors does selection of floors fields from requet JSON and dynamic fetched floors JSON if dynamic fetch is enabled
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
-	var errlist []error
-	var floorsJson *openrtb_ext.PriceFloorRules
+	var (
+		errlist     []error
+		floorsJson  *openrtb_ext.PriceFloorRules
+		fetchResult *openrtb_ext.PriceFloorRules
+		fetchStatus = openrtb_ext.FetchNone
+	)
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	if reqFloor != nil && reqFloor.Location != nil && len(reqFloor.Location.URL) > 0 {
 		account.PriceFloors.Fetch.URL = reqFloor.Location.URL
 	}
 	account.PriceFloors.Fetch.AccountID = account.ID
-	fetchResult, fetchStatus := priceFloorFetcher.Fetch(account.PriceFloors)
 
-	if shouldUseDynamicFetchedFloor(account) && fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
+	if shouldUseDynamicFetchedFloor(account) {
+		fetchResult, fetchStatus = priceFloorFetcher.Fetch(account.PriceFloors)
+	}
+
+	if fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
 		mergedFloor := mergeFloors(reqFloor, *fetchResult, conversions)
 		floorsJson, errlist = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
-		floorsJson, errlist = createFloorsFrom(reqFloor, account, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
+		floorsJson, errlist = createFloorsFrom(reqFloor, account, fetchStatus, openrtb_ext.RequestLocation)
 	} else {
-		floorsJson, errlist = createFloorsFrom(nil, account, openrtb_ext.FetchNone, openrtb_ext.NoDataLocation)
+		floorsJson, errlist = createFloorsFrom(nil, account, fetchStatus, openrtb_ext.NoDataLocation)
 	}
 	return floorsJson, errlist
 }

@@ -12,6 +12,7 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,6 +117,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						ProfileIDStr:             "5890",
 						Endpoint:                 models.EndpointV25,
 						MetricsEngine:            mockEngine,
+						SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 					},
 				},
 			},
@@ -169,6 +171,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						ProfileIDStr:              "5890",
 						Endpoint:                  models.EndpointV25,
 						MetricsEngine:             mockEngine,
+						SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 					},
 				},
 			},

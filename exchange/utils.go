@@ -55,7 +55,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 	auctionReq AuctionRequest,
 	requestExt *openrtb_ext.ExtRequest,
 	gdprDefaultValue gdpr.Signal,
-) (allowedBidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, errs []error) {
+	bidAdjustmentFactors map[string]float64) (allowedBidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, errs []error) {
 
 	req := auctionReq.BidRequestWrapper
 	aliases, errs := parseAliases(req.BidRequest)
@@ -93,6 +93,9 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 		}
 	}
 	updateContentObjectForBidder(allBidderRequests, requestExt)
+
+	//Apply BidAdjustmentFactor to imp.BidFloor
+	applyBidAdjustmentToFloor(allBidderRequests, bidAdjustmentFactors)
 
 	gdprSignal, err := getGDPR(req)
 	if err != nil {
