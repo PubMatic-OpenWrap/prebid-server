@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,7 +33,7 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 		name             string
 		args             args
 		want             want
-		getMetricsEngine func() *mock.MockMetricsEngine
+		getMetricsEngine func() *mock_metrics.MockMetricsEngine
 	}{
 		{
 			name: "returnallbidstatus_true",
@@ -60,8 +60,8 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 					},
 				},
 			},
-			getMetricsEngine: func() (me *mock.MockMetricsEngine) {
-				mockEngine := mock.NewMockMetricsEngine(ctrl)
+			getMetricsEngine: func() (me *mock_metrics.MockMetricsEngine) {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
 				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				return mockEngine
@@ -95,8 +95,8 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 					},
 				},
 			},
-			getMetricsEngine: func() (me *mock.MockMetricsEngine) {
-				mockEngine := mock.NewMockMetricsEngine(ctrl)
+			getMetricsEngine: func() (me *mock_metrics.MockMetricsEngine) {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
 				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				return mockEngine
