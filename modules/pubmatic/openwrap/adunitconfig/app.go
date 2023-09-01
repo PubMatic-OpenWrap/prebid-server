@@ -13,11 +13,11 @@ func ReplaceAppObjectFromAdUnitConfig(rCtx models.RequestCtx, app *openrtb2.App)
 
 	var adUnitCfg *adunitconfig.AdConfig
 	for _, impCtx := range rCtx.ImpBidCtx {
-		if impCtx.BannerAdUnitCtx.AppliedSlotAdUnitConfig != nil {
+		if impCtx.Type == models.ImpTypeBanner {
 			adUnitCfg = impCtx.BannerAdUnitCtx.AppliedSlotAdUnitConfig
 			break
 		}
-		if impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig != nil {
+		if impCtx.Type == models.ImpTypeVideo {
 			adUnitCfg = impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
 			break
 		}
