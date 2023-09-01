@@ -18,8 +18,8 @@ import (
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	accountService "github.com/prebid/prebid-server/account"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
@@ -32,6 +32,9 @@ import (
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/exchange"
+	"github.com/prebid/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/hooks"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
@@ -40,7 +43,7 @@ import (
 	"github.com/prebid/prebid-server/util/uuidutil"
 )
 
-//CTV Specific Endpoint
+// CTV Specific Endpoint
 type ctvEndpointDeps struct {
 	endpointDeps
 	request                   *openrtb2.BidRequest
@@ -49,13 +52,13 @@ type ctvEndpointDeps struct {
 	videoSeats                []*openrtb2.SeatBid //stores pure video impression bids
 	impIndices                map[string]int
 	isAdPodRequest            bool
-	impsExt                   map[string]map[string]map[string]interface{}
+	impsExtPrebidBidder       map[string]map[string]map[string]interface{}
 	impPartnerBlockedTagIDMap map[string]map[string][]string
 
 	labels metrics.Labels
 }
 
-//NewCTVEndpoint new ctv endpoint object
+// NewCTVEndpoint new ctv endpoint object
 func NewCTVEndpoint(
 	ex exchange.Exchange,
 	validator openrtb_ext.BidderParamValidator,
@@ -100,6 +103,7 @@ func NewCTVEndpoint(
 			nil,
 			ipValidator,
 			nil,
+			&hooks.EmptyPlanBuilder{},
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -114,13 +118,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var errL []error
 
 	ao := analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Context:      r.Context(),
-			Status:       http.StatusOK,
-			Errors:       make([]error, 0),
-			RejectedBids: []analytics.RejectedBid{},
-		},
+		Status: http.StatusOK,
+		Errors: make([]error, 0),
 	}
+
+	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
+	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
 
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
@@ -139,14 +142,18 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(deps.labels)
-		recordRejectedBids(deps.labels.PubID, ao.LoggableAuctionObject.RejectedBids, deps.metricsEngine)
+		recordRejectedBids(deps.labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(deps.labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
 
+	hookExecuter := &hookexecution.EmptyHookExecutor{}
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, _, _, _, errL = deps.parseRequest(r)
+	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecuter)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
+		return
+	}
+	if reqWrapper.RebuildRequestExt() != nil {
 		return
 	}
 	request = reqWrapper.BidRequest
@@ -189,10 +196,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		}
 		deps.labels.PubID = getAccountID(request.Site.Publisher)
 	}
-	ctx := context.Background()
+	ctx := r.Context()
 
 	// Look up account now that we have resolved the pubID value
-	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID)
+	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, deps.labels.PubID, deps.metricsEngine)
 	if len(acctIDErrs) > 0 {
 		errL = append(errL, acctIDErrs...)
 		writeError(errL, w, &deps.labels)
@@ -207,6 +214,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		defer cancel()
 	}
 
+	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
+	reqWrapper.BidRequest = request
 	auctionRequest := exchange.AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           *account,
@@ -215,14 +224,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
-		LoggableObject:    &ao.LoggableAuctionObject,
+		HookExecutor:      hookExecuter,
+		TCF2Config:        tcf2Config,
 	}
 
-	response, err = deps.holdAuction(ctx, auctionRequest)
-
-	ao.Request = request
-	ao.Response = response
-	if err != nil || nil == response {
+	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)
+	ao.RequestWrapper = auctionRequest.BidRequestWrapper
+	if err != nil || auctionResponse == nil || auctionResponse.BidResponse == nil {
 		deps.labels.RequestStatus = metrics.RequestStatusErr
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Critical error while running the auction: %v", err)
@@ -231,6 +239,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
+	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
+	err = setSeatNonBidRaw(ao.RequestWrapper, auctionResponse)
+	if err != nil {
+		glog.Errorf("Error setting seat non-bid: %v", err)
+	}
+	response = auctionResponse.BidResponse
 	util.JLogf("BidResponse", response) //TODO: REMOVE LOG
 
 	if deps.isAdPodRequest {
@@ -248,13 +262,18 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		bids := deps.doAdPodExclusions()
 
 		//Create Bid Response
-		response = deps.createBidResponse(response, bids)
+		adPodBidResponse := deps.createAdPodBidResponse(response, bids)
 
-		// Log bids rejected due to advertiser/catergory exclusion or bids lossed to higher price
-		deps.updateAdpodAuctionRejectedBids(auctionRequest.LoggableObject)
+		//Set bid.Ext params - adpod.aprc, prebid.video.duration
+		deps.setBidExtParams()
+
+		deps.recordRejectedAdPodBids(deps.labels.PubID)
+		adPodBidResponse.Ext = deps.getBidResponseExt(response)
+		response = adPodBidResponse
 
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
+	ao.Response = response
 
 	// Response Generation
 	enc := json.NewEncoder(w)
@@ -272,16 +291,16 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*openrtb2.BidResponse, error) {
+func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exchange.AuctionRequest) (*exchange.AuctionResponse, error) {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v CTVHoldAuction", deps.request.ID))
 
 	//Hold OpenRTB Standard Auction
 	if len(deps.request.Imp) == 0 {
 		//Dummy Response Object
-		return &openrtb2.BidResponse{ID: deps.request.ID}, nil
+		return &exchange.AuctionResponse{BidResponse: &openrtb2.BidResponse{ID: deps.request.ID}}, nil
 	}
 
-	return deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	return deps.ex.HoldAuction(ctx, &auctionRequest, nil)
 }
 
 /********************* BidRequest Processing *********************/
@@ -386,7 +405,7 @@ func (deps *ctvEndpointDeps) setIsAdPodRequest() {
 	}
 }
 
-//setDefaultValues will set adpod and other default values
+// setDefaultValues will set adpod and other default values
 func (deps *ctvEndpointDeps) setDefaultValues() {
 	//read and set extension values
 	deps.readExtensions()
@@ -399,7 +418,7 @@ func (deps *ctvEndpointDeps) setDefaultValues() {
 	}
 }
 
-//validateBidRequest will validate AdPod specific mandatory Parameters and returns error
+// validateBidRequest will validate AdPod specific mandatory Parameters and returns error
 func (deps *ctvEndpointDeps) validateBidRequest() (err []error) {
 	//validating video extension adpod configurations
 	if nil != deps.reqExt {
@@ -424,21 +443,28 @@ func (deps *ctvEndpointDeps) validateBidRequest() (err []error) {
 	return
 }
 
-//readImpExtensionsAndTags will read the impression extensions
+// readImpExtensionsAndTags will read the impression extensions
 func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
-	deps.impsExt = make(map[string]map[string]map[string]interface{})
+	deps.impsExtPrebidBidder = make(map[string]map[string]map[string]interface{})
 	deps.impPartnerBlockedTagIDMap = make(map[string]map[string][]string) //Initially this will have all tags, eligible tags will be filtered in filterImpsVastTagsByDuration
 
 	for _, imp := range deps.request.Imp {
-		var impExt map[string]map[string]interface{}
-		if err := json.Unmarshal(imp.Ext, &impExt); err != nil {
+		bidderExtBytes, _, _, err := jsonparser.Get(imp.Ext, "prebid", "bidder")
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		impsExtPrebidBidder := make(map[string]map[string]interface{})
+
+		err = json.Unmarshal(bidderExtBytes, &impsExtPrebidBidder)
+		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
 		deps.impPartnerBlockedTagIDMap[imp.ID] = make(map[string][]string)
 
-		for partnerName, partnerExt := range impExt {
+		for partnerName, partnerExt := range impsExtPrebidBidder {
 			impVastTags, ok := partnerExt["tags"].([]interface{})
 			if !ok {
 				continue
@@ -454,7 +480,7 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 			}
 		}
 
-		deps.impsExt[imp.ID] = impExt
+		deps.impsExtPrebidBidder[imp.ID] = impsExtPrebidBidder
 	}
 
 	return errs
@@ -462,7 +488,7 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 
 /********************* Creating CTV BidRequest *********************/
 
-//createBidRequest will return new bid request with all things copy from bid request except impression objects
+// createBidRequest will return new bid request with all things copy from bid request except impression objects
 func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb2.BidRequest {
 	ctvRequest := *req
 
@@ -478,7 +504,7 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	return &ctvRequest
 }
 
-//filterImpsVastTagsByDuration checks if a Vast tag should be called for a generated impression based on the duration of tag and impression
+// filterImpsVastTagsByDuration checks if a Vast tag should be called for a generated impression based on the duration of tag and impression
 func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRequest) {
 
 	for impCount, imp := range bidReq.Imp {
@@ -489,13 +515,13 @@ func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRe
 
 		originalImpID := imp.ID[:index]
 
-		impExtMap := deps.impsExt[originalImpID]
-		newImpExtMap := make(map[string]map[string]interface{})
-		for k, v := range impExtMap {
-			newImpExtMap[k] = v
+		impExtBidder := deps.impsExtPrebidBidder[originalImpID]
+		impExtBidderCopy := make(map[string]map[string]interface{})
+		for partnerName, partnerExt := range impExtBidder {
+			impExtBidderCopy[partnerName] = partnerExt
 		}
 
-		for partnerName, partnerExt := range newImpExtMap {
+		for partnerName, partnerExt := range impExtBidderCopy {
 			if partnerExt["tags"] != nil {
 				impVastTags, ok := partnerExt["tags"].([]interface{})
 				if !ok {
@@ -521,20 +547,27 @@ func (deps *ctvEndpointDeps) filterImpsVastTagsByDuration(bidReq *openrtb2.BidRe
 				}
 
 				if len(compatibleVasts) < 1 {
-					delete(newImpExtMap, partnerName)
+					delete(impExtBidderCopy, partnerName)
 				} else {
-					newImpExtMap[partnerName] = map[string]interface{}{
+					impExtBidderCopy[partnerName] = map[string]interface{}{
 						"tags": compatibleVasts,
 					}
 				}
-
-				bExt, err := json.Marshal(newImpExtMap)
-				if err != nil {
-					continue
-				}
-				imp.Ext = bExt
 			}
 		}
+
+		bidderExtBytes, err := json.Marshal(impExtBidderCopy)
+		if err != nil {
+			continue
+		}
+
+		// if imp.ext exists then set prebid.bidder inside it
+		impExt, err := jsonparser.Set(imp.Ext, bidderExtBytes, "prebid", "bidder")
+		if err != nil {
+			continue
+		}
+
+		imp.Ext = impExt
 		bidReq.Imp[impCount] = imp
 	}
 
@@ -564,7 +597,7 @@ func remove(slice []string, item string) []string {
 	return append(slice[:index], slice[index+1:]...)
 }
 
-//getAllAdPodImpsConfigs will return all impression adpod configurations
+// getAllAdPodImpsConfigs will return all impression adpod configurations
 func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 	for index, imp := range deps.request.Imp {
 		if nil == imp.Video || nil == deps.impData[index].VideoExt || nil == deps.impData[index].VideoExt.AdPod {
@@ -581,7 +614,7 @@ func (deps *ctvEndpointDeps) getAllAdPodImpsConfigs() {
 	}
 }
 
-//getAdPodImpsConfigs will return number of impressions configurations within adpod
+// getAdPodImpsConfigs will return number of impressions configurations within adpod
 func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openrtb_ext.VideoAdPod) ([]*types.ImpAdPodConfig, error) {
 	// monitor
 	start := time.Now()
@@ -611,7 +644,7 @@ func (deps *ctvEndpointDeps) getAdPodImpsConfigs(imp *openrtb2.Imp, adpod *openr
 	return config[:], nil
 }
 
-//createImpressions will create multiple impressions based on adpod configurations
+// createImpressions will create multiple impressions based on adpod configurations
 func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	impCount := 0
 	for _, imp := range deps.impData {
@@ -645,7 +678,7 @@ func (deps *ctvEndpointDeps) createImpressions() []openrtb2.Imp {
 	return imps[:]
 }
 
-//newImpression will clone existing impression object and create video object with ImpAdPodConfig.
+// newImpression will clone existing impression object and create video object with ImpAdPodConfig.
 func newImpression(imp *openrtb2.Imp, config *types.ImpAdPodConfig) *openrtb2.Imp {
 	video := *imp.Video
 	video.MinDuration = config.MinDuration
@@ -663,14 +696,14 @@ func newImpression(imp *openrtb2.Imp, config *types.ImpAdPodConfig) *openrtb2.Im
 
 /********************* Prebid BidResponse Processing *********************/
 
-//validateBidResponse
+// validateBidResponse
 func (deps *ctvEndpointDeps) validateBidResponse(req *openrtb2.BidRequest, resp *openrtb2.BidResponse) error {
 	//remove bids withoug cat and adomain
 
 	return nil
 }
 
-//getBids reads bids from bidresponse object
+// getBids reads bids from bidresponse object
 func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 	var vseat *openrtb2.SeatBid
 	result := make(map[string]*types.AdPodBid)
@@ -773,7 +806,7 @@ func (deps *ctvEndpointDeps) getBids(resp *openrtb2.BidResponse) {
 	}
 }
 
-//getImpressionID will return impression id and sequence number
+// getImpressionID will return impression id and sequence number
 func (deps *ctvEndpointDeps) getImpressionID(id string) (string, int) {
 	//get original impression id and sequence number
 	originalImpID, sequenceNumber := util.DecodeImpressionID(id)
@@ -796,7 +829,7 @@ func (deps *ctvEndpointDeps) getImpressionID(id string) (string, int) {
 	return originalImpID, sequenceNumber
 }
 
-//doAdPodExclusions
+// doAdPodExclusions
 func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v doAdPodExclusions", deps.request.ID))
 
@@ -839,9 +872,9 @@ func (deps *ctvEndpointDeps) doAdPodExclusions() types.AdPodBids {
 
 /********************* Creating CTV BidResponse *********************/
 
-//createBidResponse
-func (deps *ctvEndpointDeps) createBidResponse(resp *openrtb2.BidResponse, adpods types.AdPodBids) *openrtb2.BidResponse {
-	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v createBidResponse", deps.request.ID))
+// createAdPodBidResponse
+func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse, adpods types.AdPodBids) *openrtb2.BidResponse {
+	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v createAdPodBidResponse", deps.request.ID))
 
 	bidResp := &openrtb2.BidResponse{
 		ID:         resp.ID,
@@ -849,9 +882,6 @@ func (deps *ctvEndpointDeps) createBidResponse(resp *openrtb2.BidResponse, adpod
 		CustomData: resp.CustomData,
 		SeatBid:    deps.getBidResponseSeatBids(adpods),
 	}
-
-	//NOTE: this should be called at last
-	bidResp.Ext = deps.getBidResponseExt(resp)
 	return bidResp
 }
 
@@ -885,71 +915,7 @@ func (deps *ctvEndpointDeps) getBidResponseSeatBids(adpods types.AdPodBids) []op
 	return seats[:]
 }
 
-//getBidResponseExt will return extension object
-func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data json.RawMessage) {
-	var err error
-
-	adpodExt := types.BidResponseAdPodExt{
-		Response: *resp,
-		Config:   make(map[string]*types.ImpData, len(deps.impData)),
-	}
-
-	for index, imp := range deps.impData {
-		if nil != imp.VideoExt && nil != imp.VideoExt.AdPod {
-			adpodExt.Config[deps.request.Imp[index].ID] = imp
-		}
-
-		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
-			for _, bid := range imp.Bid.Bids {
-				//update adm
-				//bid.AdM = constant.VASTDefaultTag
-
-				//add duration value
-				raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Itoa(int(bid.Duration))), "prebid", "video", "duration")
-				if nil == err {
-					bid.Ext = raw
-				}
-
-				//add bid filter reason value
-				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.Itoa(bid.Status)), "adpod", "aprc")
-				if nil == err {
-					bid.Ext = raw
-				}
-			}
-		}
-	}
-
-	//Remove extension parameter
-	adpodExt.Response.Ext = nil
-
-	if nil == resp.Ext {
-		bidResponseExt := &types.ExtCTVBidResponse{
-			AdPod: &adpodExt,
-		}
-
-		data, err = json.Marshal(bidResponseExt)
-		if err != nil {
-			glog.Errorf("JSON Marshal Error: %v", err.Error())
-			return nil
-		}
-	} else {
-		data, err = json.Marshal(adpodExt)
-		if err != nil {
-			glog.Errorf("JSON Marshal Error: %v", err.Error())
-			return nil
-		}
-
-		data, err = jsonparser.Set(resp.Ext, data, constant.CTVAdpod)
-		if err != nil {
-			glog.Errorf("JSONParser Set Error: %v", err.Error())
-			return nil
-		}
-	}
-
-	return data[:]
-}
-
-//getAdPodBid
+// getAdPodBid
 func (deps *ctvEndpointDeps) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	bid := types.Bid{
 		Bid: &openrtb2.Bid{},
@@ -972,7 +938,7 @@ func (deps *ctvEndpointDeps) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	return &bid
 }
 
-//getAdPodBidCreative get commulative adpod bid details
+// getAdPodBidCreative get commulative adpod bid details
 func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generatedBidID bool) *string {
 	doc := etree.NewDocument()
 	vast := doc.CreateElement(constant.VASTElement)
@@ -1037,7 +1003,7 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generated
 	return &bidAdM
 }
 
-//getAdPodBidExtension get commulative adpod bid details
+// getAdPodBidExtension get commulative adpod bid details
 func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	bidExt := &openrtb_ext.ExtOWBid{
 		ExtBid: openrtb_ext.ExtBid{
@@ -1071,17 +1037,17 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 	return rawExt
 }
 
-//getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoLengthMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
+// getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
 	switch policy {
-	case openrtb_ext.OWExactVideoLengthsMatching:
+	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp != duration {
 			return duration, constant.StatusDurationMismatch
 		}
 		//its and valid duration return it with StatusOK
 
-	case openrtb_ext.OWRoundupVideoLengthMatching:
+	case openrtb_ext.OWRoundupVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp == -1 {
 			return duration, constant.StatusDurationMismatch
@@ -1110,8 +1076,8 @@ func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, conf
 	}
 
 	// C2: Based on video lengths matching policy validate and return duration
-	if nil != reqExt && len(reqExt.VideoLengthMatching) > 0 {
-		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoLengthMatching, config)
+	if nil != reqExt && len(reqExt.VideoAdDurationMatching) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, reqExt.VideoAdDurationMatching, config)
 	}
 
 	//default return duration which is present in bid.ext.prebid.vide.duration field
@@ -1165,35 +1131,112 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 	}
 }
 
-func (deps *ctvEndpointDeps) updateAdpodAuctionRejectedBids(loggableObject *analytics.LoggableAuctionObject) {
+// ConvertAPRCToNBRC converts the aprc to NonBidStatusCode
+func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NonBidStatusCode {
+	var nbrCode openrtb3.NonBidStatusCode
+
+	switch bidStatus {
+	case constant.StatusOK:
+		nbrCode = openrtb3.LossBidLostToHigherBid
+	case constant.StatusCategoryExclusion:
+		nbrCode = openrtb3.LossBidCategoryExclusions
+	case constant.StatusDomainExclusion:
+		nbrCode = openrtb3.LossBidAdvertiserExclusions
+	case constant.StatusDurationMismatch:
+		nbrCode = openrtb3.LossBidInvalidCreative
+
+	default:
+		return nil
+	}
+	return &nbrCode
+}
+
+// recordRejectedAdPodBids records the bids lost in ad-pod auction using metricsEngine
+func (deps *ctvEndpointDeps) recordRejectedAdPodBids(pubID string) {
 
 	for _, imp := range deps.impData {
 		if nil != imp.Bid && len(imp.Bid.Bids) > 0 {
 			for _, bid := range imp.Bid.Bids {
 				if bid.Status != constant.StatusWinningBid {
-					loggableObject.RejectedBids = append(loggableObject.RejectedBids, analytics.RejectedBid{
-						RejectionReason: getRejectionReason(bid.Status),
-						Bid:             bid.Bid,
-						Seat:            bid.Seat,
-					})
+					reason := ConvertAPRCToNBRC(bid.Status)
+					if reason == nil {
+						continue
+					}
+					rejReason := strconv.FormatInt(int64(*reason), 10)
+					deps.metricsEngine.RecordRejectedBids(pubID, bid.Seat, rejReason)
 				}
 			}
 		}
 	}
 }
 
-func getRejectionReason(bidStatus int) openrtb3.LossReason {
-	reason := openrtb3.LossWon
+// getBidResponseExt prepare and return the bidresponse extension
+func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data json.RawMessage) {
 
-	switch bidStatus {
-	case constant.StatusOK:
-		reason = openrtb3.LossLostToHigherBid
-	case constant.StatusCategoryExclusion:
-		reason = openrtb3.LossCategoryExclusions
-	case constant.StatusDomainExclusion:
-		reason = openrtb3.LossAdvertiserExclusions
-	case constant.StatusDurationMismatch:
-		reason = openrtb3.LossCreativeFiltered
+	var err error
+
+	adpodExt := types.BidResponseAdPodExt{
+		Response: *resp,
+		Config:   make(map[string]*types.ImpData, len(deps.impData)),
 	}
-	return reason
+
+	for index, imp := range deps.impData {
+		if nil != imp.VideoExt && nil != imp.VideoExt.AdPod {
+			adpodExt.Config[deps.request.Imp[index].ID] = imp
+		}
+	}
+
+	//Remove extension parameter
+	adpodExt.Response.Ext = nil
+
+	if resp.Ext == nil {
+		bidResponseExt := &types.ExtCTVBidResponse{
+			AdPod: &adpodExt,
+		}
+
+		data, err = json.Marshal(bidResponseExt)
+		if err != nil {
+			glog.Errorf("JSON Marshal Error: %v", err.Error())
+			return nil
+		}
+	} else {
+		data, err = json.Marshal(adpodExt)
+		if err != nil {
+			glog.Errorf("JSON Marshal Error: %v", err.Error())
+			return nil
+		}
+
+		data, err = jsonparser.Set(resp.Ext, data, constant.CTVAdpod)
+		if err != nil {
+			glog.Errorf("JSONParser Set Error: %v", err.Error())
+			return nil
+		}
+	}
+	return data[:]
+}
+
+// setBidExtParams function sets the prebid.video.duration and adpod.aprc parameters
+func (deps *ctvEndpointDeps) setBidExtParams() {
+
+	for _, imp := range deps.impData {
+		if imp.Bid != nil {
+			for _, bid := range imp.Bid.Bids {
+
+				//update adm
+				//bid.AdM = constant.VASTDefaultTag
+
+				//add duration value
+				raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Itoa(int(bid.Duration))), "prebid", "video", "duration")
+				if nil == err {
+					bid.Ext = raw
+				}
+
+				//add bid filter reason value
+				raw, err = jsonparser.Set(bid.Ext, []byte(strconv.FormatInt(bid.Status, 10)), "adpod", "aprc")
+				if nil == err {
+					bid.Ext = raw
+				}
+			}
+		}
+	}
 }

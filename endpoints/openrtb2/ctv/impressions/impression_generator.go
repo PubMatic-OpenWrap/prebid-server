@@ -6,7 +6,8 @@ import (
 
 // generator contains Pod Minimum Duration, Pod Maximum Duration, Slot Minimum Duration and Slot Maximum Duration
 // It holds additional attributes required by this algorithm for  internal computation.
-// 	It contains Slots attribute. This  attribute holds the output of this algorithm
+//
+//	It contains Slots attribute. This  attribute holds the output of this algorithm
 type generator struct {
 	IImpressions
 	Slots             [][2]int64 // Holds Minimum and Maximum duration (in seconds) for each Ad Slot. Length indicates total number of Ad Slots/ Impressions for given Ad Pod
@@ -203,6 +204,7 @@ func computeTimeLeastValue(time int64, leastTimeRequiredByEachSlot int64) int64 
 //  2. Idenfies the Ad Slots / Impressions with either Min Duration or Max Duration or both
 //     having zero value and removes it from 2D slice
 //  3. Ensures  Minimum Pod duration <= TotalSlotTime <= Maximum Pod Duration
+//
 // if  any validation fails it removes all the alloated slots and  makes is of size 0
 // and sets the freeTime value as RequestedPodMaxDuration
 func (config *generator) validateSlots() {
@@ -277,6 +279,7 @@ func (config *generator) validateSlots() {
 // Checks following for each Ad Slot
 //  1. Can Ad Slot adjust the input time
 //  2. If addition of new time to any slot not exeeding Total Pod Max Duration
+//
 // Performs the following operations
 //  1. Populates Minimum duration slot[][0] - Either Slot Minimum Duration or Actual Slot Time computed
 //  2. Populates Maximum duration slot[][1] - Always actual Slot Time computed
@@ -284,6 +287,7 @@ func (config *generator) validateSlots() {
 //     are full of capacity it returns true as second return argument, indicating all slots are full with capacity
 //  4. Keeps track of TotalSlotDuration when each new time is added to the Ad Slot
 //  5. Keeps track of difference between computed PodMaxDuration and RequestedPodMaxDuration (TestCase #16) and used in step #2 above
+//
 // Returns argument 1 indicating total time adusted, argument 2 whether all slots are full of duration capacity
 func (config generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority bool) (int64, bool) {
 	time := int64(0)
@@ -337,7 +341,7 @@ func (config generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority b
 	return time, slotCountFullWithCapacity == len(config.Slots)
 }
 
-//shouldAdjustSlotWithZeroDuration - returns if slot with zero durations should be filled
+// shouldAdjustSlotWithZeroDuration - returns if slot with zero durations should be filled
 // Currently it will return true in following condition
 // cfg.minAds = cfg.maxads (i.e. Exact number of ads are required)
 func (config generator) shouldAdjustSlotWithZeroDuration() bool {

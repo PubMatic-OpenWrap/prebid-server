@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/adcom1"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/adcom1"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
-//TestMakeRequests verifies
+// TestMakeRequests verifies
 // 1. default and custom headers are set
 func TestMakeRequests(t *testing.T) {
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -19,12 +19,12 @@ func TestBuildXPrebidHeader(t *testing.T) {
 		{
 			description: "No Version",
 			version:     "",
-			result:      "pbs-go/unknown",
+			result:      "owpbs-go/unknown",
 		},
 		{
 			description: "Version",
 			version:     "0.100.0",
-			result:      "pbs-go/0.100.0",
+			result:      "owpbs-go/0.100.0",
 		},
 	}
 
@@ -45,12 +45,12 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 		{
 			description: "No versions",
 			version:     "",
-			result:      "pbs-go/unknown",
+			result:      "owpbs-go/unknown",
 		},
 		{
 			description: "pbs",
 			version:     "test-version",
-			result:      "pbs-go/test-version",
+			result:      "owpbs-go/test-version",
 		},
 		{
 			description: "prebid.js",
@@ -63,7 +63,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					},
 				},
 			},
-			result: "pbs-go/test-version,pbjs/test-pbjs-version",
+			result: "owpbs-go/test-version,pbjs/test-pbjs-version",
 		},
 		{
 			description: "unknown prebid.js",
@@ -75,7 +75,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					},
 				},
 			},
-			result: "pbs-go/test-version,pbjs/unknown",
+			result: "owpbs-go/test-version,pbjs/unknown",
 		},
 		{
 			description: "channel without a name",
@@ -87,7 +87,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					},
 				},
 			},
-			result: "pbs-go/test-version",
+			result: "owpbs-go/test-version",
 		},
 		{
 			description: "prebid-mobile",
@@ -98,7 +98,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					Version: "test-prebid-mobile-version",
 				},
 			},
-			result: "pbs-go/test-version,prebid-mobile/test-prebid-mobile-version",
+			result: "owpbs-go/test-version,prebid-mobile/test-prebid-mobile-version",
 		},
 		{
 			description: "app ext without a source",
@@ -108,7 +108,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					Version: "test-version",
 				},
 			},
-			result: "pbs-go/test-version",
+			result: "owpbs-go/test-version",
 		},
 		{
 			description: "Version found in both req.Ext and req.App.Ext",
@@ -127,7 +127,7 @@ func TestBuildXPrebidHeaderForRequest(t *testing.T) {
 					Version: "test-prebid-mobile-version",
 				},
 			},
-			result: "pbs-go/test-version,pbjs/test-pbjs-version,prebid-mobile/test-prebid-mobile-version",
+			result: "owpbs-go/test-version,pbjs/test-pbjs-version,prebid-mobile/test-prebid-mobile-version",
 		},
 	}
 

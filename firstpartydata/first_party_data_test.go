@@ -2,10 +2,10 @@ package firstpartydata
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -468,7 +468,7 @@ func TestExtractOpenRtbGlobalFPD(t *testing.T) {
 
 func TestExtractBidderConfigFPD(t *testing.T) {
 
-	if specFiles, err := ioutil.ReadDir("./tests/extractbidderconfigfpd"); err == nil {
+	if specFiles, err := os.ReadDir("./tests/extractbidderconfigfpd"); err == nil {
 		for _, specFile := range specFiles {
 			fileName := "./tests/extractbidderconfigfpd/" + specFile.Name()
 
@@ -533,7 +533,7 @@ func TestExtractBidderConfigFPD(t *testing.T) {
 
 func TestResolveFPD(t *testing.T) {
 
-	if specFiles, err := ioutil.ReadDir("./tests/resolvefpd"); err == nil {
+	if specFiles, err := os.ReadDir("./tests/resolvefpd"); err == nil {
 		for _, specFile := range specFiles {
 			fileName := "./tests/resolvefpd/" + specFile.Name()
 
@@ -645,7 +645,7 @@ func TestResolveFPD(t *testing.T) {
 
 func TestExtractFPDForBidders(t *testing.T) {
 
-	if specFiles, err := ioutil.ReadDir("./tests/extractfpdforbidders"); err == nil {
+	if specFiles, err := os.ReadDir("./tests/extractfpdforbidders"); err == nil {
 		for _, specFile := range specFiles {
 			fileName := "./tests/extractfpdforbidders/" + specFile.Name()
 
@@ -736,7 +736,7 @@ func TestExtractFPDForBidders(t *testing.T) {
 
 func loadFpdFile(filename string) (fpdFile, error) {
 	var fileData fpdFile
-	fileContents, err := ioutil.ReadFile(filename)
+	fileContents, err := os.ReadFile(filename)
 	if err != nil {
 		return fileData, err
 	}

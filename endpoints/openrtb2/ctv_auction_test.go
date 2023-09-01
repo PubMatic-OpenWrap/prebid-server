@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
-	"github.com/prebid/openrtb/v17/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAddTargetingKeys(t *testing.T) {
@@ -60,14 +60,14 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 35}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 35}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
 					},
 				},
 				impData: []*types.ImpData{},
@@ -75,9 +75,9 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 35}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid": {"bidder": {}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 35}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"}]}}}}`)},
 					},
 				},
 				blockedTags: []map[string][]string{},
@@ -88,14 +88,14 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder": {"tags": [{"dur": 35,"tagid": "openx_35"}, {"dur": 25,"tagid": "openx_25"}, {"dur": 20,"tagid": "openx_20"}]}}}}`)},
 					},
 				},
 				impData: []*types.ImpData{
@@ -105,9 +105,9 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid": {"bidder": {}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid": {"bidder": {"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}}}`)},
 					},
 				},
 				blockedTags: []map[string][]string{
@@ -120,14 +120,14 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
 					},
 				},
 				impData: []*types.ImpData{},
@@ -135,9 +135,9 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]},"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]},"spotx_vast_bidder":{"tags":[{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]},"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]},"spotx_vast_bidder":{"tags":[{"dur":25,"tagid":"spotx_25"},{"dur":30,"tagid":"spotx_30"}]}}}}`)},
 					},
 				},
 				blockedTags: []map[string][]string{},
@@ -148,14 +148,14 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":35,"tagid":"spotx_35"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":40,"tagid":"openx_40"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid": { "bidder": { "spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":35,"tagid":"spotx_35"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":40,"tagid":"openx_40"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":35,"tagid":"spotx_35"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":40,"tagid":"openx_40"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":35,"tagid":"spotx_35"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":40,"tagid":"openx_40"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"},{"dur":25,"tagid":"spotx_25"},{"dur":35,"tagid":"spotx_35"}]},"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":40,"tagid":"openx_40"}]}}}}`)},
 					},
 				},
 				impData: []*types.ImpData{
@@ -165,9 +165,9 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]},"spotx_vast_bidder":{"tags":[{"dur":25,"tagid":"spotx_25"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":15,"tagid":"spotx_15"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]},"spotx_vast_bidder":{"tags":[{"dur":25,"tagid":"spotx_25"}]}}}}`)},
 					},
 				},
 				blockedTags: []map[string][]string{
@@ -180,16 +180,16 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp2", Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp2", Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}},
-						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}}}`)},
 					},
 				},
 				impData: nil,
@@ -197,10 +197,10 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}`)},
-						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}}}`)},
+						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"}]}}}}`)},
 					},
 				},
 				blockedTags: nil,
@@ -211,16 +211,16 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			input: inputParams{
 				request: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1", Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp2", Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}`)},
+						{ID: "imp1", Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp2", Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}}}`)},
 					},
 				},
 				generatedRequest: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}},
-						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":35,"tagid":"openx_35"},{"dur":25,"tagid":"openx_25"},{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"},{"dur":40,"tagid":"spotx_40"}]}}}}`)},
 					},
 				},
 				impData: []*types.ImpData{
@@ -231,10 +231,10 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 			expectedOutput: output{
 				reqs: openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{
-						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{}`)},
-						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}`)},
-						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}`)},
-						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"}]}}`)},
+						{ID: "imp1_1", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 10}, Ext: []byte(`{"prebid":{"bidder":{}}}`)},
+						{ID: "imp1_2", Video: &openrtb2.Video{MinDuration: 10, MaxDuration: 20}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":20,"tagid":"openx_20"}]}}}}`)},
+						{ID: "imp1_3", Video: &openrtb2.Video{MinDuration: 25, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"openx_vast_bidder":{"tags":[{"dur":25,"tagid":"openx_25"}]}}}}`)},
+						{ID: "imp2_1", Video: &openrtb2.Video{MinDuration: 5, MaxDuration: 30}, Ext: []byte(`{"prebid":{"bidder":{"spotx_vast_bidder":{"tags":[{"dur":30,"tagid":"spotx_30"}]}}}}`)},
 					},
 				},
 				blockedTags: []map[string][]string{
@@ -377,7 +377,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: "",
+					VideoAdDurationMatching: "",
 				},
 				config:          nil,
 				defaultDuration: 100,
@@ -394,7 +394,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
 				},
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
@@ -416,7 +416,7 @@ func TestGetBidDuration(t *testing.T) {
 					Ext: json.RawMessage(`{"prebid":{"video":{"duration":35}}}`),
 				},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoLengthMatching: openrtb_ext.OWExactVideoLengthsMatching,
+					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
 				},
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
@@ -444,7 +444,7 @@ func TestGetBidDuration(t *testing.T) {
 func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	type args struct {
 		duration int64
-		policy   openrtb_ext.OWVideoLengthMatchingPolicy
+		policy   openrtb_ext.OWVideoAdDurationMatchingPolicy
 		config   []*types.ImpAdPodConfig
 	}
 	type want struct {
@@ -477,7 +477,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_exact",
 			args: args{
 				duration: 10,
-				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -494,7 +494,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_exact_didnot_match",
 			args: args{
 				duration: 15,
-				policy:   openrtb_ext.OWExactVideoLengthsMatching,
+				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -511,7 +511,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup_exact",
 			args: args{
 				duration: 20,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -528,7 +528,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup",
 			args: args{
 				duration: 25,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -545,7 +545,7 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			name: "policy_roundup_didnot_match",
 			args: args{
 				duration: 45,
-				policy:   openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
 				config: []*types.ImpAdPodConfig{
 					{MaxDuration: 10},
 					{MaxDuration: 20},
@@ -570,135 +570,96 @@ func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 }
 
-func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
-	type fields struct {
-		impData []*types.ImpData
-	}
+func TestCreateAdPodBidResponse(t *testing.T) {
 	type args struct {
-		loggableObject *analytics.LoggableAuctionObject
+		resp *openrtb2.BidResponse
+	}
+	type want struct {
+		resp *openrtb2.BidResponse
 	}
 	tests := []struct {
-		name                 string
-		fields               fields
-		args                 args
-		expectedRejectedBids []analytics.RejectedBid
+		name string
+		args args
+		want want
 	}{
 		{
-			name: "Empty impdata",
-			fields: fields{
-				impData: []*types.ImpData{},
-			},
+			name: "sample bidresponse",
 			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
 				},
 			},
-			expectedRejectedBids: []analytics.RejectedBid{},
+			want: want{
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
+					SeatBid:    make([]openrtb2.SeatBid, 0),
+				},
+			},
 		},
-		{
-			name: "Nil AdpodBid",
-			fields: fields{
-				impData: []*types.ImpData{
-					{
-						Bid: nil,
-					},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deps := ctvEndpointDeps{
+				request: &openrtb2.BidRequest{
+					ID: "1",
 				},
-			},
+			}
+			actual := deps.createAdPodBidResponse(tt.args.resp, nil)
+			assert.Equal(t, tt.want.resp, actual)
+		})
+
+	}
+}
+
+func TestSetBidExtParams(t *testing.T) {
+	type args struct {
+		impData []*types.ImpData
+	}
+	type want struct {
+		impData []*types.ImpData
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "sample",
 			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
-				},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{},
-		},
-		{
-			name: "No Bids",
-			fields: fields{
-				impData: []*types.ImpData{
-					{
-						Bid: &types.AdPodBid{
-							Bids: []*types.Bid{},
-						},
-					},
-				},
-			},
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{
-					RejectedBids: []analytics.RejectedBid{},
-				},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{},
-		},
-		{
-			name: "2 bids",
-			fields: fields{
 				impData: []*types.ImpData{
 					{
 						Bid: &types.AdPodBid{
 							Bids: []*types.Bid{
 								{
-									Seat: "pubmatic",
 									Bid: &openrtb2.Bid{
-										ID: "123",
+										Ext: json.RawMessage(`{"prebid": {"video": {} },"adpod": {}}`),
 									},
-									Status: constant.StatusCategoryExclusion,
-								},
-								{
-									Seat: "vast-bidder",
-									Bid: &openrtb2.Bid{
-										ID: "1234",
-									},
-									Status: constant.StatusDomainExclusion,
-								},
-								{
-									Seat: "appnexus",
-									Bid: &openrtb2.Bid{
-										ID: "12345",
-									},
-									Status: constant.StatusDurationMismatch,
-								},
-								{
-									Seat: "openx",
-									Bid: &openrtb2.Bid{
-										ID: "123456",
-									},
-									Status: constant.StatusOK,
+									Duration: 10,
+									Status:   1,
 								},
 							},
 						},
 					},
 				},
 			},
-			args: args{
-				loggableObject: &analytics.LoggableAuctionObject{},
-			},
-			expectedRejectedBids: []analytics.RejectedBid{
-				{
-					RejectionReason: openrtb3.LossCategoryExclusions,
-					Seat:            "pubmatic",
-					Bid: &openrtb2.Bid{
-						ID: "123",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossAdvertiserExclusions,
-					Seat:            "vast-bidder",
-					Bid: &openrtb2.Bid{
-						ID: "1234",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossCreativeFiltered,
-					Seat:            "appnexus",
-					Bid: &openrtb2.Bid{
-						ID: "12345",
-					},
-				},
-				{
-					RejectionReason: openrtb3.LossLostToHigherBid,
-					Seat:            "openx",
-					Bid: &openrtb2.Bid{
-						ID: "123456",
+			want: want{
+				impData: []*types.ImpData{
+					{
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{
+								{
+									Bid: &openrtb2.Bid{
+										Ext: json.RawMessage(`{"prebid": {"video": {"duration":10} },"adpod": {"aprc":1}}`),
+									},
+									Duration: 10,
+									Status:   1,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -706,12 +667,170 @@ func Test_ctvEndpointDeps_updateRejectedBids(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deps := &ctvEndpointDeps{
-				impData: tt.fields.impData,
-			}
-			deps.updateAdpodAuctionRejectedBids(tt.args.loggableObject)
-			assert.Equal(t, tt.expectedRejectedBids, tt.args.loggableObject.RejectedBids, "Rejected Bids not matching")
 
+			deps := ctvEndpointDeps{
+				impData: tt.args.impData,
+			}
+			deps.setBidExtParams()
+			assert.Equal(t, tt.want.impData[0].Bid.Bids[0].Ext, deps.impData[0].Bid.Bids[0].Ext)
 		})
+	}
+}
+
+func TestGetAdPodExt(t *testing.T) {
+	type args struct {
+		resp *openrtb2.BidResponse
+	}
+	type want struct {
+		data json.RawMessage
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "nil-ext",
+			args: args{
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "b1",
+								},
+								{
+									ID: "b2",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+			},
+		},
+		{
+			name: "non-nil-ext",
+			args: args{
+				resp: &openrtb2.BidResponse{
+					ID: "resp1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "b1",
+								},
+								{
+									ID: "b2",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Ext: json.RawMessage(`{"xyz":10}`),
+				},
+			},
+			want: want{
+				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			deps := ctvEndpointDeps{
+				impData: []*types.ImpData{
+					{
+						ImpID: "imp1",
+						VideoExt: &openrtb_ext.ExtVideoAdPod{
+							AdPod: &openrtb_ext.VideoAdPod{},
+						},
+						Bid: &types.AdPodBid{
+							Bids: []*types.Bid{},
+						},
+					},
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+			}
+			actual := deps.getBidResponseExt(tt.args.resp)
+			assert.Equal(t, string(tt.want.data), string(actual))
+		})
+	}
+}
+
+func TestRecordAdPodRejectedBids(t *testing.T) {
+
+	type args struct {
+		bids types.AdPodBid
+	}
+
+	type want struct {
+		expectedCalls int
+	}
+
+	tests := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "multiple rejected bids",
+			args: args{
+				bids: types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusCategoryExclusion,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusWinningBid,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: constant.StatusOK,
+							Seat:   "pubmatic",
+						},
+						{
+							Bid:    &openrtb2.Bid{},
+							Status: 100,
+							Seat:   "pubmatic",
+						},
+					},
+				},
+			},
+			want: want{
+				expectedCalls: 2,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		me := &metrics.MetricsEngineMock{}
+		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+
+		deps := ctvEndpointDeps{
+			endpointDeps: endpointDeps{
+				metricsEngine: me,
+			},
+			impData: []*types.ImpData{
+				{
+					Bid: &test.args.bids,
+				},
+			},
+		}
+
+		deps.recordRejectedAdPodBids("pub_001")
+		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }

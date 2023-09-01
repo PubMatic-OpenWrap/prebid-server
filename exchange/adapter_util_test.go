@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/appnexus"
 	"github.com/prebid/prebid-server/adapters/rubicon"
@@ -207,42 +207,58 @@ func TestGetDisabledBiddersErrorMessages(t *testing.T) {
 			description: "None",
 			bidderInfos: map[string]config.BidderInfo{},
 			expected: map[string]string{
-				"lifestreet":   `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
-				"adagio":       `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
-				"somoaudience": `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
-				"yssp":         `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahoossp" in your configuration.`,
+				"lifestreet":     `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
+				"adagio":         `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
+				"somoaudience":   `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
+				"yssp":           `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahooAdvertising" in your configuration.`,
+				"andbeyondmedia": `Bidder "andbeyondmedia" is no longer available in Prebid Server. If you're looking to use the AndBeyond.Media SSP adapter, please rename it to "beyondmedia" in your configuration.`,
+				"oftmedia":       `Bidder "oftmedia" is no longer available in Prebid Server. Please update your configuration.`,
+				"groupm":         `Bidder "groupm" is no longer available in Prebid Server. Please update your configuration.`,
+				"verizonmedia":   `Bidder "verizonmedia" is no longer available in Prebid Server. Please update your configuration.`,
 			},
 		},
 		{
 			description: "Enabled",
 			bidderInfos: map[string]config.BidderInfo{"appnexus": infoEnabled},
 			expected: map[string]string{
-				"lifestreet":   `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
-				"adagio":       `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
-				"somoaudience": `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
-				"yssp":         `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahoossp" in your configuration.`,
+				"lifestreet":     `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
+				"adagio":         `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
+				"somoaudience":   `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
+				"yssp":           `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahooAdvertising" in your configuration.`,
+				"andbeyondmedia": `Bidder "andbeyondmedia" is no longer available in Prebid Server. If you're looking to use the AndBeyond.Media SSP adapter, please rename it to "beyondmedia" in your configuration.`,
+				"oftmedia":       `Bidder "oftmedia" is no longer available in Prebid Server. Please update your configuration.`,
+				"groupm":         `Bidder "groupm" is no longer available in Prebid Server. Please update your configuration.`,
+				"verizonmedia":   `Bidder "verizonmedia" is no longer available in Prebid Server. Please update your configuration.`,
 			},
 		},
 		{
 			description: "Disabled",
 			bidderInfos: map[string]config.BidderInfo{"appnexus": infoDisabled},
 			expected: map[string]string{
-				"lifestreet":   `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
-				"adagio":       `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
-				"somoaudience": `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
-				"yssp":         `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahoossp" in your configuration.`,
-				"appnexus":     `Bidder "appnexus" has been disabled on this instance of Prebid Server. Please work with the PBS host to enable this bidder again.`,
+				"lifestreet":     `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
+				"adagio":         `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
+				"somoaudience":   `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
+				"yssp":           `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahooAdvertising" in your configuration.`,
+				"appnexus":       `Bidder "appnexus" has been disabled on this instance of Prebid Server. Please work with the PBS host to enable this bidder again.`,
+				"andbeyondmedia": `Bidder "andbeyondmedia" is no longer available in Prebid Server. If you're looking to use the AndBeyond.Media SSP adapter, please rename it to "beyondmedia" in your configuration.`,
+				"oftmedia":       `Bidder "oftmedia" is no longer available in Prebid Server. Please update your configuration.`,
+				"groupm":         `Bidder "groupm" is no longer available in Prebid Server. Please update your configuration.`,
+				"verizonmedia":   `Bidder "verizonmedia" is no longer available in Prebid Server. Please update your configuration.`,
 			},
 		},
 		{
 			description: "Mixed",
 			bidderInfos: map[string]config.BidderInfo{"appnexus": infoDisabled, "openx": infoEnabled},
 			expected: map[string]string{
-				"lifestreet":   `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
-				"adagio":       `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
-				"somoaudience": `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
-				"yssp":         `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahoossp" in your configuration.`,
-				"appnexus":     `Bidder "appnexus" has been disabled on this instance of Prebid Server. Please work with the PBS host to enable this bidder again.`,
+				"lifestreet":     `Bidder "lifestreet" is no longer available in Prebid Server. Please update your configuration.`,
+				"adagio":         `Bidder "adagio" is no longer available in Prebid Server. Please update your configuration.`,
+				"somoaudience":   `Bidder "somoaudience" is no longer available in Prebid Server. Please update your configuration.`,
+				"yssp":           `Bidder "yssp" is no longer available in Prebid Server. If you're looking to use the Yahoo SSP adapter, please rename it to "yahooAdvertising" in your configuration.`,
+				"appnexus":       `Bidder "appnexus" has been disabled on this instance of Prebid Server. Please work with the PBS host to enable this bidder again.`,
+				"andbeyondmedia": `Bidder "andbeyondmedia" is no longer available in Prebid Server. If you're looking to use the AndBeyond.Media SSP adapter, please rename it to "beyondmedia" in your configuration.`,
+				"oftmedia":       `Bidder "oftmedia" is no longer available in Prebid Server. Please update your configuration.`,
+				"groupm":         `Bidder "groupm" is no longer available in Prebid Server. Please update your configuration.`,
+				"verizonmedia":   `Bidder "verizonmedia" is no longer available in Prebid Server. Please update your configuration.`,
 			},
 		},
 	}

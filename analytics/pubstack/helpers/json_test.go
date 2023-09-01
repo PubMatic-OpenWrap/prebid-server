@@ -4,16 +4,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJsonifyAuctionObject(t *testing.T) {
 	ao := &analytics.AuctionObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status: http.StatusOK,
-		},
+		Status: http.StatusOK,
 	}
 
 	_, err := JsonifyAuctionObject(ao, "scopeId")
@@ -22,9 +20,7 @@ func TestJsonifyAuctionObject(t *testing.T) {
 
 func TestJsonifyVideoObject(t *testing.T) {
 	vo := &analytics.VideoObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status: http.StatusOK,
-		},
+		Status: http.StatusOK,
 	}
 
 	_, err := JsonifyVideoObject(vo, "scopeId")
@@ -54,11 +50,9 @@ func TestJsonifySetUIDObject(t *testing.T) {
 
 func TestJsonifyAmpObject(t *testing.T) {
 	ao := &analytics.AmpObject{
-		LoggableAuctionObject: analytics.LoggableAuctionObject{
-			Status:   http.StatusOK,
-			Errors:   make([]error, 0),
-			Response: &openrtb2.BidResponse{},
-		},
+		Status:             http.StatusOK,
+		Errors:             make([]error, 0),
+		AuctionResponse:    &openrtb2.BidResponse{},
 		AmpTargetingValues: map[string]string{},
 	}
 

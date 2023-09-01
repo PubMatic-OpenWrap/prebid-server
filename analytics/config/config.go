@@ -6,11 +6,12 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/analytics/clients"
 	"github.com/prebid/prebid-server/analytics/filesystem"
+	"github.com/prebid/prebid-server/analytics/pubmatic"
 	"github.com/prebid/prebid-server/analytics/pubstack"
 	"github.com/prebid/prebid-server/config"
 )
 
-//Modules that need to be logged to need to be initialized here
+// Modules that need to be logged to need to be initialized here
 func NewPBSAnalytics(analytics *config.Analytics) analytics.PBSAnalyticsModule {
 	modules := make(enabledAnalytics, 0)
 	if len(analytics.File.Filename) > 0 {
@@ -37,10 +38,15 @@ func NewPBSAnalytics(analytics *config.Analytics) analytics.PBSAnalyticsModule {
 			glog.Errorf("Could not initialize PubstackModule: %v", err)
 		}
 	}
+
+	if analytics.PubMatic.Enabled {
+		modules = append(modules, pubmatic.NewHTTPLogger(analytics.PubMatic))
+	}
+
 	return modules
 }
 
-//Collection of all the correctly configured analytics modules - implements the PBSAnalyticsModule interface
+// Collection of all the correctly configured analytics modules - implements the PBSAnalyticsModule interface
 type enabledAnalytics []analytics.PBSAnalyticsModule
 
 func (ea enabledAnalytics) LogAuctionObject(ao *analytics.AuctionObject) {

@@ -9,7 +9,7 @@ import (
 
 func TestGetImpressionsByDurationRanges(t *testing.T) {
 	type args struct {
-		policy        openrtb_ext.OWVideoLengthMatchingPolicy
+		policy        openrtb_ext.OWVideoAdDurationMatchingPolicy
 		durations     []int
 		maxAds        int
 		adMinDuration int
@@ -55,7 +55,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "zero_valid_durations_under_boundary",
 			args: args{
-				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				policy:        openrtb_ext.OWExactVideoAdDurationMatching,
 				durations:     []int{5, 10, 15},
 				maxAds:        5,
 				adMinDuration: 2,
@@ -68,7 +68,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "zero_valid_durations_out_of_bound",
 			args: args{
-				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				policy:        openrtb_ext.OWExactVideoAdDurationMatching,
 				durations:     []int{5, 10, 15},
 				maxAds:        5,
 				adMinDuration: 20,
@@ -81,7 +81,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "valid_durations_less_than_maxAds",
 			args: args{
-				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				policy:        openrtb_ext.OWExactVideoAdDurationMatching,
 				durations:     []int{5, 10, 15, 20, 25},
 				maxAds:        5,
 				adMinDuration: 10,
@@ -101,7 +101,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "valid_durations_greater_than_maxAds",
 			args: args{
-				policy:        openrtb_ext.OWExactVideoLengthsMatching,
+				policy:        openrtb_ext.OWExactVideoAdDurationMatching,
 				durations:     []int{5, 10, 15, 20, 25},
 				maxAds:        2,
 				adMinDuration: 10,
@@ -118,7 +118,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "roundup_policy_valid_durations",
 			args: args{
-				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:        openrtb_ext.OWRoundupVideoAdDurationMatching,
 				durations:     []int{5, 10, 15, 20, 25},
 				maxAds:        5,
 				adMinDuration: 10,
@@ -137,7 +137,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "roundup_policy_zero_valid_durations",
 			args: args{
-				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:        openrtb_ext.OWRoundupVideoAdDurationMatching,
 				durations:     []int{5, 10, 15, 20, 25},
 				maxAds:        5,
 				adMinDuration: 30,
@@ -150,7 +150,7 @@ func TestGetImpressionsByDurationRanges(t *testing.T) {
 		{
 			name: "roundup_policy_valid_max_ads_more_than_max_ads",
 			args: args{
-				policy:        openrtb_ext.OWRoundupVideoLengthMatching,
+				policy:        openrtb_ext.OWRoundupVideoAdDurationMatching,
 				durations:     []int{5, 10, 15, 20, 25},
 				maxAds:        2,
 				adMinDuration: 10,

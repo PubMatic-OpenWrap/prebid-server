@@ -26,8 +26,8 @@ var (
 	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 )
 
-//BidStatus contains bids filtering reason
-type BidStatus = int
+// BidStatus contains bids filtering reason
+type BidStatus = int64
 
 const (
 	//StatusOK ...

@@ -1,20 +1,20 @@
 package vastbidder
 
 import (
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//TagBidder is default implementation of ITagBidder
+// TagBidder is default implementation of ITagBidder
 type TagBidder struct {
 	adapters.Bidder
 	bidderName    openrtb_ext.BidderName
 	adapterConfig *config.Adapter
 }
 
-//MakeRequests will contains default definition for processing queries
+// MakeRequests will contains default definition for processing queries
 func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	bidderMacro := GetNewBidderMacro(a.bidderName)
 	bidderMapper := GetDefaultMapper()
@@ -61,7 +61,7 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 	return requestData, nil
 }
 
-//MakeBids makes bids
+// MakeBids makes bids
 func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	//response validation can be done here independently
 	//handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
@@ -72,7 +72,7 @@ func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalReque
 	return handler.MakeBids(internalRequest, externalRequest, response)
 }
 
-//NewTagBidder is an constructor for TagBidder
+// NewTagBidder is an constructor for TagBidder
 func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *TagBidder {
 	obj := &TagBidder{
 		bidderName:    bidderName,

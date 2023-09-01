@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prebid/openrtb/v17/adcom1"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/adcom1"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//BidderMacro default implementation
+// BidderMacro default implementation
 type BidderMacro struct {
 	IBidderMacro
 
@@ -41,7 +41,7 @@ type BidderMacro struct {
 	ImpReqHeaders http.Header
 }
 
-//NewBidderMacro contains definition for all openrtb macro's
+// NewBidderMacro contains definition for all openrtb macro's
 func NewBidderMacro() IBidderMacro {
 	obj := &BidderMacro{}
 	obj.IBidderMacro = obj
@@ -87,13 +87,13 @@ func (tag *BidderMacro) init() {
 	}
 }
 
-//InitBidRequest will initialise BidRequest
+// InitBidRequest will initialise BidRequest
 func (tag *BidderMacro) InitBidRequest(request *openrtb2.BidRequest) {
 	tag.Request = request
 	tag.init()
 }
 
-//LoadImpression will set current imp
+// LoadImpression will set current imp
 func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error) {
 	tag.Imp = imp
 
@@ -109,12 +109,12 @@ func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVA
 	return &tag.ImpBidderExt, nil
 }
 
-//LoadVASTTag will set current VAST Tag details in bidder keys
+// LoadVASTTag will set current VAST Tag details in bidder keys
 func (tag *BidderMacro) LoadVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 	tag.VASTTag = vastTag
 }
 
-//GetBidderKeys will set bidder level keys
+// GetBidderKeys will set bidder level keys
 func (tag *BidderMacro) GetBidderKeys() map[string]string {
 	//Adding VAST Tag Bidder Parameters
 	keys := NormalizeJSON(tag.VASTTag.Params)
@@ -135,12 +135,12 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 	return keys
 }
 
-//SetAdapterConfig will set Adapter config
+// SetAdapterConfig will set Adapter config
 func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) {
 	tag.Conf = conf
 }
 
-//GetURI get URL
+// GetURI get URL
 func (tag *BidderMacro) GetURI() string {
 
 	//check for URI at impression level
@@ -152,15 +152,15 @@ func (tag *BidderMacro) GetURI() string {
 	return tag.Conf.Endpoint
 }
 
-//GetHeaders returns list of custom request headers
-//Override this method if your Vast bidder needs custom  request headers
+// GetHeaders returns list of custom request headers
+// Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
 /********************* Request *********************/
 
-//MacroTest contains definition for Test Parameter
+// MacroTest contains definition for Test Parameter
 func (tag *BidderMacro) MacroTest(key string) string {
 	if tag.Request.Test > 0 {
 		return strconv.Itoa(int(tag.Request.Test))
@@ -168,7 +168,7 @@ func (tag *BidderMacro) MacroTest(key string) string {
 	return ""
 }
 
-//MacroTimeout contains definition for Timeout Parameter
+// MacroTimeout contains definition for Timeout Parameter
 func (tag *BidderMacro) MacroTimeout(key string) string {
 	if tag.Request.TMax > 0 {
 		return strconv.FormatInt(tag.Request.TMax, intBase)
@@ -176,44 +176,44 @@ func (tag *BidderMacro) MacroTimeout(key string) string {
 	return ""
 }
 
-//MacroWhitelistSeat contains definition for WhitelistSeat Parameter
+// MacroWhitelistSeat contains definition for WhitelistSeat Parameter
 func (tag *BidderMacro) MacroWhitelistSeat(key string) string {
 	return strings.Join(tag.Request.WSeat, comma)
 }
 
-//MacroWhitelistLang contains definition for WhitelistLang Parameter
+// MacroWhitelistLang contains definition for WhitelistLang Parameter
 func (tag *BidderMacro) MacroWhitelistLang(key string) string {
 	return strings.Join(tag.Request.WLang, comma)
 }
 
-//MacroBlockedSeat contains definition for Blockedseat Parameter
+// MacroBlockedSeat contains definition for Blockedseat Parameter
 func (tag *BidderMacro) MacroBlockedSeat(key string) string {
 	return strings.Join(tag.Request.BSeat, comma)
 }
 
-//MacroCurrency contains definition for Currency Parameter
+// MacroCurrency contains definition for Currency Parameter
 func (tag *BidderMacro) MacroCurrency(key string) string {
 	return strings.Join(tag.Request.Cur, comma)
 }
 
-//MacroBlockedCategory contains definition for BlockedCategory Parameter
+// MacroBlockedCategory contains definition for BlockedCategory Parameter
 func (tag *BidderMacro) MacroBlockedCategory(key string) string {
 	return strings.Join(tag.Request.BCat, comma)
 }
 
-//MacroBlockedAdvertiser contains definition for BlockedAdvertiser Parameter
+// MacroBlockedAdvertiser contains definition for BlockedAdvertiser Parameter
 func (tag *BidderMacro) MacroBlockedAdvertiser(key string) string {
 	return strings.Join(tag.Request.BAdv, comma)
 }
 
-//MacroBlockedApp contains definition for BlockedApp Parameter
+// MacroBlockedApp contains definition for BlockedApp Parameter
 func (tag *BidderMacro) MacroBlockedApp(key string) string {
 	return strings.Join(tag.Request.BApp, comma)
 }
 
 /********************* Source *********************/
 
-//MacroFD contains definition for FD Parameter
+// MacroFD contains definition for FD Parameter
 func (tag *BidderMacro) MacroFD(key string) string {
 	if nil != tag.Request.Source {
 		return strconv.Itoa(int(tag.Request.Source.FD))
@@ -221,7 +221,7 @@ func (tag *BidderMacro) MacroFD(key string) string {
 	return ""
 }
 
-//MacroTransactionID contains definition for TransactionID Parameter
+// MacroTransactionID contains definition for TransactionID Parameter
 func (tag *BidderMacro) MacroTransactionID(key string) string {
 	if nil != tag.Request.Source {
 		return tag.Request.Source.TID
@@ -229,7 +229,7 @@ func (tag *BidderMacro) MacroTransactionID(key string) string {
 	return ""
 }
 
-//MacroPaymentIDChain contains definition for PaymentIDChain Parameter
+// MacroPaymentIDChain contains definition for PaymentIDChain Parameter
 func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 	if nil != tag.Request.Source {
 		return tag.Request.Source.PChain
@@ -239,7 +239,7 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 
 /********************* Regs *********************/
 
-//MacroCoppa contains definition for Coppa Parameter
+// MacroCoppa contains definition for Coppa Parameter
 func (tag *BidderMacro) MacroCoppa(key string) string {
 	if nil != tag.Request.Regs {
 		return strconv.Itoa(int(tag.Request.Regs.COPPA))
@@ -249,17 +249,17 @@ func (tag *BidderMacro) MacroCoppa(key string) string {
 
 /********************* Impression *********************/
 
-//MacroDisplayManager contains definition for DisplayManager Parameter
+// MacroDisplayManager contains definition for DisplayManager Parameter
 func (tag *BidderMacro) MacroDisplayManager(key string) string {
 	return tag.Imp.DisplayManager
 }
 
-//MacroDisplayManagerVersion contains definition for DisplayManagerVersion Parameter
+// MacroDisplayManagerVersion contains definition for DisplayManagerVersion Parameter
 func (tag *BidderMacro) MacroDisplayManagerVersion(key string) string {
 	return tag.Imp.DisplayManagerVer
 }
 
-//MacroInterstitial contains definition for Interstitial Parameter
+// MacroInterstitial contains definition for Interstitial Parameter
 func (tag *BidderMacro) MacroInterstitial(key string) string {
 	if tag.Imp.Instl > 0 {
 		return strconv.Itoa(int(tag.Imp.Instl))
@@ -267,12 +267,12 @@ func (tag *BidderMacro) MacroInterstitial(key string) string {
 	return ""
 }
 
-//MacroTagID contains definition for TagID Parameter
+// MacroTagID contains definition for TagID Parameter
 func (tag *BidderMacro) MacroTagID(key string) string {
 	return tag.Imp.TagID
 }
 
-//MacroBidFloor contains definition for BidFloor Parameter
+// MacroBidFloor contains definition for BidFloor Parameter
 func (tag *BidderMacro) MacroBidFloor(key string) string {
 	if tag.Imp.BidFloor > 0 {
 		return fmt.Sprintf("%g", tag.Imp.BidFloor)
@@ -280,12 +280,12 @@ func (tag *BidderMacro) MacroBidFloor(key string) string {
 	return ""
 }
 
-//MacroBidFloorCurrency contains definition for BidFloorCurrency Parameter
+// MacroBidFloorCurrency contains definition for BidFloorCurrency Parameter
 func (tag *BidderMacro) MacroBidFloorCurrency(key string) string {
 	return tag.Imp.BidFloorCur
 }
 
-//MacroSecure contains definition for Secure Parameter
+// MacroSecure contains definition for Secure Parameter
 func (tag *BidderMacro) MacroSecure(key string) string {
 	if nil != tag.Imp.Secure {
 		return strconv.Itoa(int(*tag.Imp.Secure))
@@ -293,7 +293,7 @@ func (tag *BidderMacro) MacroSecure(key string) string {
 	return ""
 }
 
-//MacroPMP contains definition for PMP Parameter
+// MacroPMP contains definition for PMP Parameter
 func (tag *BidderMacro) MacroPMP(key string) string {
 	if nil != tag.Imp.PMP {
 		data, _ := json.Marshal(tag.Imp.PMP)
@@ -304,7 +304,7 @@ func (tag *BidderMacro) MacroPMP(key string) string {
 
 /********************* Video *********************/
 
-//MacroVideoMIMES contains definition for VideoMIMES Parameter
+// MacroVideoMIMES contains definition for VideoMIMES Parameter
 func (tag *BidderMacro) MacroVideoMIMES(key string) string {
 	if nil != tag.Imp.Video {
 		return strings.Join(tag.Imp.Video.MIMEs, comma)
@@ -312,7 +312,7 @@ func (tag *BidderMacro) MacroVideoMIMES(key string) string {
 	return ""
 }
 
-//MacroVideoMinimumDuration contains definition for VideoMinimumDuration Parameter
+// MacroVideoMinimumDuration contains definition for VideoMinimumDuration Parameter
 func (tag *BidderMacro) MacroVideoMinimumDuration(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.MinDuration > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MinDuration, intBase)
@@ -320,7 +320,7 @@ func (tag *BidderMacro) MacroVideoMinimumDuration(key string) string {
 	return ""
 }
 
-//MacroVideoMaximumDuration contains definition for VideoMaximumDuration Parameter
+// MacroVideoMaximumDuration contains definition for VideoMaximumDuration Parameter
 func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.MaxDuration > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MaxDuration, intBase)
@@ -328,7 +328,7 @@ func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
 	return ""
 }
 
-//MacroVideoProtocols contains definition for VideoProtocols Parameter
+// MacroVideoProtocols contains definition for VideoProtocols Parameter
 func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Protocols
@@ -339,7 +339,7 @@ func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 	return ""
 }
 
-//MacroVideoPlayerWidth contains definition for VideoPlayerWidth Parameter
+// MacroVideoPlayerWidth contains definition for VideoPlayerWidth Parameter
 func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.W > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.W), intBase)
@@ -347,7 +347,7 @@ func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string {
 	return ""
 }
 
-//MacroVideoPlayerHeight contains definition for VideoPlayerHeight Parameter
+// MacroVideoPlayerHeight contains definition for VideoPlayerHeight Parameter
 func (tag *BidderMacro) MacroVideoPlayerHeight(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.H > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.H), intBase)
@@ -355,7 +355,7 @@ func (tag *BidderMacro) MacroVideoPlayerHeight(key string) string {
 	return ""
 }
 
-//MacroVideoStartDelay contains definition for VideoStartDelay Parameter
+// MacroVideoStartDelay contains definition for VideoStartDelay Parameter
 func (tag *BidderMacro) MacroVideoStartDelay(key string) string {
 	if nil != tag.Imp.Video && nil != tag.Imp.Video.StartDelay {
 		return strconv.FormatInt(int64(*tag.Imp.Video.StartDelay), intBase)
@@ -363,7 +363,7 @@ func (tag *BidderMacro) MacroVideoStartDelay(key string) string {
 	return ""
 }
 
-//MacroVideoPlacement contains definition for VideoPlacement Parameter
+// MacroVideoPlacement contains definition for VideoPlacement Parameter
 func (tag *BidderMacro) MacroVideoPlacement(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.Placement > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Placement), intBase)
@@ -371,7 +371,7 @@ func (tag *BidderMacro) MacroVideoPlacement(key string) string {
 	return ""
 }
 
-//MacroVideoLinearity contains definition for VideoLinearity Parameter
+// MacroVideoLinearity contains definition for VideoLinearity Parameter
 func (tag *BidderMacro) MacroVideoLinearity(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.Linearity > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Linearity), intBase)
@@ -379,7 +379,7 @@ func (tag *BidderMacro) MacroVideoLinearity(key string) string {
 	return ""
 }
 
-//MacroVideoSkip contains definition for VideoSkip Parameter
+// MacroVideoSkip contains definition for VideoSkip Parameter
 func (tag *BidderMacro) MacroVideoSkip(key string) string {
 	if nil != tag.Imp.Video && nil != tag.Imp.Video.Skip {
 		return strconv.FormatInt(int64(*tag.Imp.Video.Skip), intBase)
@@ -387,7 +387,7 @@ func (tag *BidderMacro) MacroVideoSkip(key string) string {
 	return ""
 }
 
-//MacroVideoSkipMinimum contains definition for VideoSkipMinimum Parameter
+// MacroVideoSkipMinimum contains definition for VideoSkipMinimum Parameter
 func (tag *BidderMacro) MacroVideoSkipMinimum(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.SkipMin > 0 {
 		return strconv.FormatInt(tag.Imp.Video.SkipMin, intBase)
@@ -395,7 +395,7 @@ func (tag *BidderMacro) MacroVideoSkipMinimum(key string) string {
 	return ""
 }
 
-//MacroVideoSkipAfter contains definition for VideoSkipAfter Parameter
+// MacroVideoSkipAfter contains definition for VideoSkipAfter Parameter
 func (tag *BidderMacro) MacroVideoSkipAfter(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.SkipAfter > 0 {
 		return strconv.FormatInt(tag.Imp.Video.SkipAfter, intBase)
@@ -403,7 +403,7 @@ func (tag *BidderMacro) MacroVideoSkipAfter(key string) string {
 	return ""
 }
 
-//MacroVideoSequence contains definition for VideoSequence Parameter
+// MacroVideoSequence contains definition for VideoSequence Parameter
 func (tag *BidderMacro) MacroVideoSequence(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.Sequence > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.Sequence), intBase)
@@ -411,7 +411,7 @@ func (tag *BidderMacro) MacroVideoSequence(key string) string {
 	return ""
 }
 
-//MacroVideoBlockedAttribute contains definition for VideoBlockedAttribute Parameter
+// MacroVideoBlockedAttribute contains definition for VideoBlockedAttribute Parameter
 func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.BAttr
@@ -422,7 +422,7 @@ func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 	return ""
 }
 
-//MacroVideoMaximumExtended contains definition for VideoMaximumExtended Parameter
+// MacroVideoMaximumExtended contains definition for VideoMaximumExtended Parameter
 func (tag *BidderMacro) MacroVideoMaximumExtended(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.MaxExtended > 0 {
 		return strconv.FormatInt(tag.Imp.Video.MaxExtended, intBase)
@@ -430,7 +430,7 @@ func (tag *BidderMacro) MacroVideoMaximumExtended(key string) string {
 	return ""
 }
 
-//MacroVideoMinimumBitRate contains definition for VideoMinimumBitRate Parameter
+// MacroVideoMinimumBitRate contains definition for VideoMinimumBitRate Parameter
 func (tag *BidderMacro) MacroVideoMinimumBitRate(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.MinBitRate > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.MinBitRate), intBase)
@@ -438,7 +438,7 @@ func (tag *BidderMacro) MacroVideoMinimumBitRate(key string) string {
 	return ""
 }
 
-//MacroVideoMaximumBitRate contains definition for VideoMaximumBitRate Parameter
+// MacroVideoMaximumBitRate contains definition for VideoMaximumBitRate Parameter
 func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.MaxBitRate > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.MaxBitRate), intBase)
@@ -446,7 +446,7 @@ func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
 	return ""
 }
 
-//MacroVideoBoxing contains definition for VideoBoxing Parameter
+// MacroVideoBoxing contains definition for VideoBoxing Parameter
 func (tag *BidderMacro) MacroVideoBoxing(key string) string {
 	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed > 0 {
 		return strconv.FormatInt(int64(tag.Imp.Video.BoxingAllowed), intBase)
@@ -454,7 +454,7 @@ func (tag *BidderMacro) MacroVideoBoxing(key string) string {
 	return ""
 }
 
-//MacroVideoPlaybackMethod contains definition for VideoPlaybackMethod Parameter
+// MacroVideoPlaybackMethod contains definition for VideoPlaybackMethod Parameter
 func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.PlaybackMethod
@@ -465,7 +465,7 @@ func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 	return ""
 }
 
-//MacroVideoDelivery contains definition for VideoDelivery Parameter
+// MacroVideoDelivery contains definition for VideoDelivery Parameter
 func (tag *BidderMacro) MacroVideoDelivery(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Delivery
@@ -476,7 +476,7 @@ func (tag *BidderMacro) MacroVideoDelivery(key string) string {
 	return ""
 }
 
-//MacroVideoPosition contains definition for VideoPosition Parameter
+// MacroVideoPosition contains definition for VideoPosition Parameter
 func (tag *BidderMacro) MacroVideoPosition(key string) string {
 	if nil != tag.Imp.Video && nil != tag.Imp.Video.Pos {
 		return strconv.FormatInt(int64(*tag.Imp.Video.Pos), intBase)
@@ -484,7 +484,7 @@ func (tag *BidderMacro) MacroVideoPosition(key string) string {
 	return ""
 }
 
-//MacroVideoAPI contains definition for VideoAPI Parameter
+// MacroVideoAPI contains definition for VideoAPI Parameter
 func (tag *BidderMacro) MacroVideoAPI(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.API
@@ -497,7 +497,7 @@ func (tag *BidderMacro) MacroVideoAPI(key string) string {
 
 /********************* Site *********************/
 
-//MacroSiteID contains definition for SiteID Parameter
+// MacroSiteID contains definition for SiteID Parameter
 func (tag *BidderMacro) MacroSiteID(key string) string {
 	if !tag.IsApp {
 		return tag.Request.Site.ID
@@ -505,7 +505,7 @@ func (tag *BidderMacro) MacroSiteID(key string) string {
 	return ""
 }
 
-//MacroSiteName contains definition for SiteName Parameter
+// MacroSiteName contains definition for SiteName Parameter
 func (tag *BidderMacro) MacroSiteName(key string) string {
 	if !tag.IsApp {
 		return tag.Request.Site.Name
@@ -513,7 +513,7 @@ func (tag *BidderMacro) MacroSiteName(key string) string {
 	return ""
 }
 
-//MacroSitePage contains definition for SitePage Parameter
+// MacroSitePage contains definition for SitePage Parameter
 func (tag *BidderMacro) MacroSitePage(key string) string {
 	if !tag.IsApp && nil != tag.Request && nil != tag.Request.Site {
 		return tag.Request.Site.Page
@@ -521,7 +521,7 @@ func (tag *BidderMacro) MacroSitePage(key string) string {
 	return ""
 }
 
-//MacroSiteReferrer contains definition for SiteReferrer Parameter
+// MacroSiteReferrer contains definition for SiteReferrer Parameter
 func (tag *BidderMacro) MacroSiteReferrer(key string) string {
 	if !tag.IsApp {
 		return tag.Request.Site.Ref
@@ -529,7 +529,7 @@ func (tag *BidderMacro) MacroSiteReferrer(key string) string {
 	return ""
 }
 
-//MacroSiteSearch contains definition for SiteSearch Parameter
+// MacroSiteSearch contains definition for SiteSearch Parameter
 func (tag *BidderMacro) MacroSiteSearch(key string) string {
 	if !tag.IsApp {
 		return tag.Request.Site.Search
@@ -537,7 +537,7 @@ func (tag *BidderMacro) MacroSiteSearch(key string) string {
 	return ""
 }
 
-//MacroSiteMobile contains definition for SiteMobile Parameter
+// MacroSiteMobile contains definition for SiteMobile Parameter
 func (tag *BidderMacro) MacroSiteMobile(key string) string {
 	if !tag.IsApp && tag.Request.Site.Mobile > 0 {
 		return strconv.FormatInt(int64(tag.Request.Site.Mobile), intBase)
@@ -547,7 +547,7 @@ func (tag *BidderMacro) MacroSiteMobile(key string) string {
 
 /********************* App *********************/
 
-//MacroAppID contains definition for AppID Parameter
+// MacroAppID contains definition for AppID Parameter
 func (tag *BidderMacro) MacroAppID(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.ID
@@ -555,7 +555,7 @@ func (tag *BidderMacro) MacroAppID(key string) string {
 	return ""
 }
 
-//MacroAppName contains definition for AppName Parameter
+// MacroAppName contains definition for AppName Parameter
 func (tag *BidderMacro) MacroAppName(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.Name
@@ -563,7 +563,7 @@ func (tag *BidderMacro) MacroAppName(key string) string {
 	return ""
 }
 
-//MacroAppBundle contains definition for AppBundle Parameter
+// MacroAppBundle contains definition for AppBundle Parameter
 func (tag *BidderMacro) MacroAppBundle(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.Bundle
@@ -571,7 +571,7 @@ func (tag *BidderMacro) MacroAppBundle(key string) string {
 	return ""
 }
 
-//MacroAppStoreURL contains definition for AppStoreURL Parameter
+// MacroAppStoreURL contains definition for AppStoreURL Parameter
 func (tag *BidderMacro) MacroAppStoreURL(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.StoreURL
@@ -579,7 +579,7 @@ func (tag *BidderMacro) MacroAppStoreURL(key string) string {
 	return ""
 }
 
-//MacroAppVersion contains definition for AppVersion Parameter
+// MacroAppVersion contains definition for AppVersion Parameter
 func (tag *BidderMacro) MacroAppVersion(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.Ver
@@ -587,7 +587,7 @@ func (tag *BidderMacro) MacroAppVersion(key string) string {
 	return ""
 }
 
-//MacroAppPaid contains definition for AppPaid Parameter
+// MacroAppPaid contains definition for AppPaid Parameter
 func (tag *BidderMacro) MacroAppPaid(key string) string {
 	if tag.IsApp && tag.Request.App.Paid != 0 {
 		return strconv.FormatInt(int64(tag.Request.App.Paid), intBase)
@@ -597,7 +597,7 @@ func (tag *BidderMacro) MacroAppPaid(key string) string {
 
 /********************* Site/App Common *********************/
 
-//MacroCategory contains definition for Category Parameter
+// MacroCategory contains definition for Category Parameter
 func (tag *BidderMacro) MacroCategory(key string) string {
 	if tag.IsApp {
 		return strings.Join(tag.Request.App.Cat, comma)
@@ -605,7 +605,7 @@ func (tag *BidderMacro) MacroCategory(key string) string {
 	return strings.Join(tag.Request.Site.Cat, comma)
 }
 
-//MacroDomain contains definition for Domain Parameter
+// MacroDomain contains definition for Domain Parameter
 func (tag *BidderMacro) MacroDomain(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.Domain
@@ -613,7 +613,7 @@ func (tag *BidderMacro) MacroDomain(key string) string {
 	return tag.Request.Site.Domain
 }
 
-//MacroSectionCategory contains definition for SectionCategory Parameter
+// MacroSectionCategory contains definition for SectionCategory Parameter
 func (tag *BidderMacro) MacroSectionCategory(key string) string {
 	if tag.IsApp {
 		return strings.Join(tag.Request.App.SectionCat, comma)
@@ -621,7 +621,7 @@ func (tag *BidderMacro) MacroSectionCategory(key string) string {
 	return strings.Join(tag.Request.Site.SectionCat, comma)
 }
 
-//MacroPageCategory contains definition for PageCategory Parameter
+// MacroPageCategory contains definition for PageCategory Parameter
 func (tag *BidderMacro) MacroPageCategory(key string) string {
 	if tag.IsApp {
 		return strings.Join(tag.Request.App.PageCat, comma)
@@ -629,7 +629,7 @@ func (tag *BidderMacro) MacroPageCategory(key string) string {
 	return strings.Join(tag.Request.Site.PageCat, comma)
 }
 
-//MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
+// MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
 func (tag *BidderMacro) MacroPrivacyPolicy(key string) string {
 	var value int8 = 0
 	if tag.IsApp {
@@ -643,7 +643,7 @@ func (tag *BidderMacro) MacroPrivacyPolicy(key string) string {
 	return ""
 }
 
-//MacroKeywords contains definition for Keywords Parameter
+// MacroKeywords contains definition for Keywords Parameter
 func (tag *BidderMacro) MacroKeywords(key string) string {
 	if tag.IsApp {
 		return tag.Request.App.Keywords
@@ -653,7 +653,7 @@ func (tag *BidderMacro) MacroKeywords(key string) string {
 
 /********************* Publisher *********************/
 
-//MacroPubID contains definition for PubID Parameter
+// MacroPubID contains definition for PubID Parameter
 func (tag *BidderMacro) MacroPubID(key string) string {
 	if nil != tag.Publisher {
 		return tag.Publisher.ID
@@ -661,7 +661,7 @@ func (tag *BidderMacro) MacroPubID(key string) string {
 	return ""
 }
 
-//MacroPubName contains definition for PubName Parameter
+// MacroPubName contains definition for PubName Parameter
 func (tag *BidderMacro) MacroPubName(key string) string {
 	if nil != tag.Publisher {
 		return tag.Publisher.Name
@@ -669,7 +669,7 @@ func (tag *BidderMacro) MacroPubName(key string) string {
 	return ""
 }
 
-//MacroPubDomain contains definition for PubDomain Parameter
+// MacroPubDomain contains definition for PubDomain Parameter
 func (tag *BidderMacro) MacroPubDomain(key string) string {
 	if nil != tag.Publisher {
 		return tag.Publisher.Domain
@@ -679,7 +679,7 @@ func (tag *BidderMacro) MacroPubDomain(key string) string {
 
 /********************* Content *********************/
 
-//MacroContentID contains definition for ContentID Parameter
+// MacroContentID contains definition for ContentID Parameter
 func (tag *BidderMacro) MacroContentID(key string) string {
 	if nil != tag.Content {
 		return tag.Content.ID
@@ -687,7 +687,7 @@ func (tag *BidderMacro) MacroContentID(key string) string {
 	return ""
 }
 
-//MacroContentEpisode contains definition for ContentEpisode Parameter
+// MacroContentEpisode contains definition for ContentEpisode Parameter
 func (tag *BidderMacro) MacroContentEpisode(key string) string {
 	if nil != tag.Content {
 		return strconv.FormatInt(int64(tag.Content.Episode), intBase)
@@ -695,7 +695,7 @@ func (tag *BidderMacro) MacroContentEpisode(key string) string {
 	return ""
 }
 
-//MacroContentTitle contains definition for ContentTitle Parameter
+// MacroContentTitle contains definition for ContentTitle Parameter
 func (tag *BidderMacro) MacroContentTitle(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Title
@@ -703,7 +703,7 @@ func (tag *BidderMacro) MacroContentTitle(key string) string {
 	return ""
 }
 
-//MacroContentSeries contains definition for ContentSeries Parameter
+// MacroContentSeries contains definition for ContentSeries Parameter
 func (tag *BidderMacro) MacroContentSeries(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Series
@@ -711,7 +711,7 @@ func (tag *BidderMacro) MacroContentSeries(key string) string {
 	return ""
 }
 
-//MacroContentSeason contains definition for ContentSeason Parameter
+// MacroContentSeason contains definition for ContentSeason Parameter
 func (tag *BidderMacro) MacroContentSeason(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Season
@@ -719,7 +719,7 @@ func (tag *BidderMacro) MacroContentSeason(key string) string {
 	return ""
 }
 
-//MacroContentArtist contains definition for ContentArtist Parameter
+// MacroContentArtist contains definition for ContentArtist Parameter
 func (tag *BidderMacro) MacroContentArtist(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Artist
@@ -727,7 +727,7 @@ func (tag *BidderMacro) MacroContentArtist(key string) string {
 	return ""
 }
 
-//MacroContentGenre contains definition for ContentGenre Parameter
+// MacroContentGenre contains definition for ContentGenre Parameter
 func (tag *BidderMacro) MacroContentGenre(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Genre
@@ -735,7 +735,7 @@ func (tag *BidderMacro) MacroContentGenre(key string) string {
 	return ""
 }
 
-//MacroContentAlbum contains definition for ContentAlbum Parameter
+// MacroContentAlbum contains definition for ContentAlbum Parameter
 func (tag *BidderMacro) MacroContentAlbum(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Album
@@ -743,7 +743,7 @@ func (tag *BidderMacro) MacroContentAlbum(key string) string {
 	return ""
 }
 
-//MacroContentISrc contains definition for ContentISrc Parameter
+// MacroContentISrc contains definition for ContentISrc Parameter
 func (tag *BidderMacro) MacroContentISrc(key string) string {
 	if nil != tag.Content {
 		return tag.Content.ISRC
@@ -751,7 +751,7 @@ func (tag *BidderMacro) MacroContentISrc(key string) string {
 	return ""
 }
 
-//MacroContentURL contains definition for ContentURL Parameter
+// MacroContentURL contains definition for ContentURL Parameter
 func (tag *BidderMacro) MacroContentURL(key string) string {
 	if nil != tag.Content {
 		return tag.Content.URL
@@ -759,7 +759,7 @@ func (tag *BidderMacro) MacroContentURL(key string) string {
 	return ""
 }
 
-//MacroContentCategory contains definition for ContentCategory Parameter
+// MacroContentCategory contains definition for ContentCategory Parameter
 func (tag *BidderMacro) MacroContentCategory(key string) string {
 	if nil != tag.Content {
 		return strings.Join(tag.Content.Cat, comma)
@@ -767,7 +767,7 @@ func (tag *BidderMacro) MacroContentCategory(key string) string {
 	return ""
 }
 
-//MacroContentProductionQuality contains definition for ContentProductionQuality Parameter
+// MacroContentProductionQuality contains definition for ContentProductionQuality Parameter
 func (tag *BidderMacro) MacroContentProductionQuality(key string) string {
 	if nil != tag.Content && nil != tag.Content.ProdQ {
 		return strconv.FormatInt(int64(*tag.Content.ProdQ), intBase)
@@ -775,7 +775,7 @@ func (tag *BidderMacro) MacroContentProductionQuality(key string) string {
 	return ""
 }
 
-//MacroContentVideoQuality contains definition for ContentVideoQuality Parameter
+// MacroContentVideoQuality contains definition for ContentVideoQuality Parameter
 func (tag *BidderMacro) MacroContentVideoQuality(key string) string {
 	if nil != tag.Content && nil != tag.Content.VideoQuality {
 		return strconv.FormatInt(int64(*tag.Content.VideoQuality), intBase)
@@ -783,7 +783,7 @@ func (tag *BidderMacro) MacroContentVideoQuality(key string) string {
 	return ""
 }
 
-//MacroContentContext contains definition for ContentContext Parameter
+// MacroContentContext contains definition for ContentContext Parameter
 func (tag *BidderMacro) MacroContentContext(key string) string {
 	if nil != tag.Content && tag.Content.Context > 0 {
 		return strconv.FormatInt(int64(tag.Content.Context), intBase)
@@ -791,7 +791,7 @@ func (tag *BidderMacro) MacroContentContext(key string) string {
 	return ""
 }
 
-//MacroContentContentRating contains definition for ContentContentRating Parameter
+// MacroContentContentRating contains definition for ContentContentRating Parameter
 func (tag *BidderMacro) MacroContentContentRating(key string) string {
 	if nil != tag.Content {
 		return tag.Content.ContentRating
@@ -799,7 +799,7 @@ func (tag *BidderMacro) MacroContentContentRating(key string) string {
 	return ""
 }
 
-//MacroContentUserRating contains definition for ContentUserRating Parameter
+// MacroContentUserRating contains definition for ContentUserRating Parameter
 func (tag *BidderMacro) MacroContentUserRating(key string) string {
 	if nil != tag.Content {
 		return tag.Content.UserRating
@@ -807,7 +807,7 @@ func (tag *BidderMacro) MacroContentUserRating(key string) string {
 	return ""
 }
 
-//MacroContentQAGMediaRating contains definition for ContentQAGMediaRating Parameter
+// MacroContentQAGMediaRating contains definition for ContentQAGMediaRating Parameter
 func (tag *BidderMacro) MacroContentQAGMediaRating(key string) string {
 	if nil != tag.Content && tag.Content.QAGMediaRating > 0 {
 		return strconv.FormatInt(int64(tag.Content.QAGMediaRating), intBase)
@@ -815,7 +815,7 @@ func (tag *BidderMacro) MacroContentQAGMediaRating(key string) string {
 	return ""
 }
 
-//MacroContentKeywords contains definition for ContentKeywords Parameter
+// MacroContentKeywords contains definition for ContentKeywords Parameter
 func (tag *BidderMacro) MacroContentKeywords(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Keywords
@@ -823,7 +823,7 @@ func (tag *BidderMacro) MacroContentKeywords(key string) string {
 	return ""
 }
 
-//MacroContentLiveStream contains definition for ContentLiveStream Parameter
+// MacroContentLiveStream contains definition for ContentLiveStream Parameter
 func (tag *BidderMacro) MacroContentLiveStream(key string) string {
 	if nil != tag.Content {
 		return strconv.FormatInt(int64(tag.Content.LiveStream), intBase)
@@ -831,7 +831,7 @@ func (tag *BidderMacro) MacroContentLiveStream(key string) string {
 	return ""
 }
 
-//MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
+// MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
 func (tag *BidderMacro) MacroContentSourceRelationship(key string) string {
 	if nil != tag.Content {
 		return strconv.FormatInt(int64(tag.Content.SourceRelationship), intBase)
@@ -839,7 +839,7 @@ func (tag *BidderMacro) MacroContentSourceRelationship(key string) string {
 	return ""
 }
 
-//MacroContentLength contains definition for ContentLength Parameter
+// MacroContentLength contains definition for ContentLength Parameter
 func (tag *BidderMacro) MacroContentLength(key string) string {
 	if nil != tag.Content {
 		return strconv.FormatInt(int64(tag.Content.Len), intBase)
@@ -847,7 +847,7 @@ func (tag *BidderMacro) MacroContentLength(key string) string {
 	return ""
 }
 
-//MacroContentLanguage contains definition for ContentLanguage Parameter
+// MacroContentLanguage contains definition for ContentLanguage Parameter
 func (tag *BidderMacro) MacroContentLanguage(key string) string {
 	if nil != tag.Content {
 		return tag.Content.Language
@@ -855,7 +855,7 @@ func (tag *BidderMacro) MacroContentLanguage(key string) string {
 	return ""
 }
 
-//MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
+// MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
 func (tag *BidderMacro) MacroContentEmbeddable(key string) string {
 	if nil != tag.Content {
 		return strconv.FormatInt(int64(tag.Content.Embeddable), intBase)
@@ -865,7 +865,7 @@ func (tag *BidderMacro) MacroContentEmbeddable(key string) string {
 
 /********************* Producer *********************/
 
-//MacroProducerID contains definition for ProducerID Parameter
+// MacroProducerID contains definition for ProducerID Parameter
 func (tag *BidderMacro) MacroProducerID(key string) string {
 	if nil != tag.Content && nil != tag.Content.Producer {
 		return tag.Content.Producer.ID
@@ -873,7 +873,7 @@ func (tag *BidderMacro) MacroProducerID(key string) string {
 	return ""
 }
 
-//MacroProducerName contains definition for ProducerName Parameter
+// MacroProducerName contains definition for ProducerName Parameter
 func (tag *BidderMacro) MacroProducerName(key string) string {
 	if nil != tag.Content && nil != tag.Content.Producer {
 		return tag.Content.Producer.Name
@@ -883,7 +883,7 @@ func (tag *BidderMacro) MacroProducerName(key string) string {
 
 /********************* Device *********************/
 
-//MacroUserAgent contains definition for UserAgent Parameter
+// MacroUserAgent contains definition for UserAgent Parameter
 func (tag *BidderMacro) MacroUserAgent(key string) string {
 	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.UA
@@ -891,7 +891,7 @@ func (tag *BidderMacro) MacroUserAgent(key string) string {
 	return ""
 }
 
-//MacroDNT contains definition for DNT Parameter
+// MacroDNT contains definition for DNT Parameter
 func (tag *BidderMacro) MacroDNT(key string) string {
 	if nil != tag.Request.Device && nil != tag.Request.Device.DNT {
 		return strconv.FormatInt(int64(*tag.Request.Device.DNT), intBase)
@@ -899,7 +899,7 @@ func (tag *BidderMacro) MacroDNT(key string) string {
 	return ""
 }
 
-//MacroLMT contains definition for LMT Parameter
+// MacroLMT contains definition for LMT Parameter
 func (tag *BidderMacro) MacroLMT(key string) string {
 	if nil != tag.Request.Device && nil != tag.Request.Device.Lmt {
 		return strconv.FormatInt(int64(*tag.Request.Device.Lmt), intBase)
@@ -907,7 +907,7 @@ func (tag *BidderMacro) MacroLMT(key string) string {
 	return ""
 }
 
-//MacroIP contains definition for IP Parameter
+// MacroIP contains definition for IP Parameter
 func (tag *BidderMacro) MacroIP(key string) string {
 	if nil != tag.Request && nil != tag.Request.Device {
 		if len(tag.Request.Device.IP) > 0 {
@@ -919,7 +919,7 @@ func (tag *BidderMacro) MacroIP(key string) string {
 	return ""
 }
 
-//MacroDeviceType contains definition for DeviceType Parameter
+// MacroDeviceType contains definition for DeviceType Parameter
 func (tag *BidderMacro) MacroDeviceType(key string) string {
 	if nil != tag.Request.Device && tag.Request.Device.DeviceType > 0 {
 		return strconv.FormatInt(int64(tag.Request.Device.DeviceType), intBase)
@@ -927,7 +927,7 @@ func (tag *BidderMacro) MacroDeviceType(key string) string {
 	return ""
 }
 
-//MacroMake contains definition for Make Parameter
+// MacroMake contains definition for Make Parameter
 func (tag *BidderMacro) MacroMake(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.Make
@@ -935,7 +935,7 @@ func (tag *BidderMacro) MacroMake(key string) string {
 	return ""
 }
 
-//MacroModel contains definition for Model Parameter
+// MacroModel contains definition for Model Parameter
 func (tag *BidderMacro) MacroModel(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.Model
@@ -943,7 +943,7 @@ func (tag *BidderMacro) MacroModel(key string) string {
 	return ""
 }
 
-//MacroDeviceOS contains definition for DeviceOS Parameter
+// MacroDeviceOS contains definition for DeviceOS Parameter
 func (tag *BidderMacro) MacroDeviceOS(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.OS
@@ -951,7 +951,7 @@ func (tag *BidderMacro) MacroDeviceOS(key string) string {
 	return ""
 }
 
-//MacroDeviceOSVersion contains definition for DeviceOSVersion Parameter
+// MacroDeviceOSVersion contains definition for DeviceOSVersion Parameter
 func (tag *BidderMacro) MacroDeviceOSVersion(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.OSV
@@ -959,7 +959,7 @@ func (tag *BidderMacro) MacroDeviceOSVersion(key string) string {
 	return ""
 }
 
-//MacroDeviceWidth contains definition for DeviceWidth Parameter
+// MacroDeviceWidth contains definition for DeviceWidth Parameter
 func (tag *BidderMacro) MacroDeviceWidth(key string) string {
 	if nil != tag.Request.Device {
 		return strconv.FormatInt(int64(tag.Request.Device.W), intBase)
@@ -967,7 +967,7 @@ func (tag *BidderMacro) MacroDeviceWidth(key string) string {
 	return ""
 }
 
-//MacroDeviceHeight contains definition for DeviceHeight Parameter
+// MacroDeviceHeight contains definition for DeviceHeight Parameter
 func (tag *BidderMacro) MacroDeviceHeight(key string) string {
 	if nil != tag.Request.Device {
 		return strconv.FormatInt(int64(tag.Request.Device.H), intBase)
@@ -975,7 +975,7 @@ func (tag *BidderMacro) MacroDeviceHeight(key string) string {
 	return ""
 }
 
-//MacroDeviceJS contains definition for DeviceJS Parameter
+// MacroDeviceJS contains definition for DeviceJS Parameter
 func (tag *BidderMacro) MacroDeviceJS(key string) string {
 	if nil != tag.Request.Device {
 		return strconv.FormatInt(int64(tag.Request.Device.JS), intBase)
@@ -983,7 +983,7 @@ func (tag *BidderMacro) MacroDeviceJS(key string) string {
 	return ""
 }
 
-//MacroDeviceLanguage contains definition for DeviceLanguage Parameter
+// MacroDeviceLanguage contains definition for DeviceLanguage Parameter
 func (tag *BidderMacro) MacroDeviceLanguage(key string) string {
 	if nil != tag.Request && nil != tag.Request.Device {
 		return tag.Request.Device.Language
@@ -991,7 +991,7 @@ func (tag *BidderMacro) MacroDeviceLanguage(key string) string {
 	return ""
 }
 
-//MacroDeviceIFA contains definition for DeviceIFA Parameter
+// MacroDeviceIFA contains definition for DeviceIFA Parameter
 func (tag *BidderMacro) MacroDeviceIFA(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.IFA
@@ -999,7 +999,7 @@ func (tag *BidderMacro) MacroDeviceIFA(key string) string {
 	return ""
 }
 
-//MacroDeviceIFAType contains definition for DeviceIFAType
+// MacroDeviceIFAType contains definition for DeviceIFAType
 func (tag *BidderMacro) MacroDeviceIFAType(key string) string {
 	if nil != tag.DeviceExt {
 		return tag.DeviceExt.IFAType
@@ -1007,7 +1007,7 @@ func (tag *BidderMacro) MacroDeviceIFAType(key string) string {
 	return ""
 }
 
-//MacroDeviceDIDSHA1 contains definition for DeviceDIDSHA1 Parameter
+// MacroDeviceDIDSHA1 contains definition for DeviceDIDSHA1 Parameter
 func (tag *BidderMacro) MacroDeviceDIDSHA1(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.DIDSHA1
@@ -1015,7 +1015,7 @@ func (tag *BidderMacro) MacroDeviceDIDSHA1(key string) string {
 	return ""
 }
 
-//MacroDeviceDIDMD5 contains definition for DeviceDIDMD5 Parameter
+// MacroDeviceDIDMD5 contains definition for DeviceDIDMD5 Parameter
 func (tag *BidderMacro) MacroDeviceDIDMD5(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.DIDMD5
@@ -1023,7 +1023,7 @@ func (tag *BidderMacro) MacroDeviceDIDMD5(key string) string {
 	return ""
 }
 
-//MacroDeviceDPIDSHA1 contains definition for DeviceDPIDSHA1 Parameter
+// MacroDeviceDPIDSHA1 contains definition for DeviceDPIDSHA1 Parameter
 func (tag *BidderMacro) MacroDeviceDPIDSHA1(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.DPIDSHA1
@@ -1031,7 +1031,7 @@ func (tag *BidderMacro) MacroDeviceDPIDSHA1(key string) string {
 	return ""
 }
 
-//MacroDeviceDPIDMD5 contains definition for DeviceDPIDMD5 Parameter
+// MacroDeviceDPIDMD5 contains definition for DeviceDPIDMD5 Parameter
 func (tag *BidderMacro) MacroDeviceDPIDMD5(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.DPIDMD5
@@ -1039,7 +1039,7 @@ func (tag *BidderMacro) MacroDeviceDPIDMD5(key string) string {
 	return ""
 }
 
-//MacroDeviceMACSHA1 contains definition for DeviceMACSHA1 Parameter
+// MacroDeviceMACSHA1 contains definition for DeviceMACSHA1 Parameter
 func (tag *BidderMacro) MacroDeviceMACSHA1(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.MACSHA1
@@ -1047,7 +1047,7 @@ func (tag *BidderMacro) MacroDeviceMACSHA1(key string) string {
 	return ""
 }
 
-//MacroDeviceMACMD5 contains definition for DeviceMACMD5 Parameter
+// MacroDeviceMACMD5 contains definition for DeviceMACMD5 Parameter
 func (tag *BidderMacro) MacroDeviceMACMD5(key string) string {
 	if nil != tag.Request.Device {
 		return tag.Request.Device.MACMD5
@@ -1057,7 +1057,7 @@ func (tag *BidderMacro) MacroDeviceMACMD5(key string) string {
 
 /********************* Geo *********************/
 
-//MacroLatitude contains definition for Latitude Parameter
+// MacroLatitude contains definition for Latitude Parameter
 func (tag *BidderMacro) MacroLatitude(key string) string {
 	if tag.HasGeo {
 		return fmt.Sprintf("%g", tag.Request.Device.Geo.Lat)
@@ -1065,7 +1065,7 @@ func (tag *BidderMacro) MacroLatitude(key string) string {
 	return ""
 }
 
-//MacroLongitude contains definition for Longitude Parameter
+// MacroLongitude contains definition for Longitude Parameter
 func (tag *BidderMacro) MacroLongitude(key string) string {
 	if tag.HasGeo {
 		return fmt.Sprintf("%g", tag.Request.Device.Geo.Lon)
@@ -1073,7 +1073,7 @@ func (tag *BidderMacro) MacroLongitude(key string) string {
 	return ""
 }
 
-//MacroCountry contains definition for Country Parameter
+// MacroCountry contains definition for Country Parameter
 func (tag *BidderMacro) MacroCountry(key string) string {
 	if tag.HasGeo {
 		return tag.Request.Device.Geo.Country
@@ -1081,7 +1081,7 @@ func (tag *BidderMacro) MacroCountry(key string) string {
 	return ""
 }
 
-//MacroRegion contains definition for Region Parameter
+// MacroRegion contains definition for Region Parameter
 func (tag *BidderMacro) MacroRegion(key string) string {
 	if tag.HasGeo {
 		return tag.Request.Device.Geo.Region
@@ -1089,7 +1089,7 @@ func (tag *BidderMacro) MacroRegion(key string) string {
 	return ""
 }
 
-//MacroCity contains definition for City Parameter
+// MacroCity contains definition for City Parameter
 func (tag *BidderMacro) MacroCity(key string) string {
 	if tag.HasGeo {
 		return tag.Request.Device.Geo.City
@@ -1097,7 +1097,7 @@ func (tag *BidderMacro) MacroCity(key string) string {
 	return ""
 }
 
-//MacroZip contains definition for Zip Parameter
+// MacroZip contains definition for Zip Parameter
 func (tag *BidderMacro) MacroZip(key string) string {
 	if tag.HasGeo {
 		return tag.Request.Device.Geo.ZIP
@@ -1105,7 +1105,7 @@ func (tag *BidderMacro) MacroZip(key string) string {
 	return ""
 }
 
-//MacroUTCOffset contains definition for UTCOffset Parameter
+// MacroUTCOffset contains definition for UTCOffset Parameter
 func (tag *BidderMacro) MacroUTCOffset(key string) string {
 	if tag.HasGeo {
 		return strconv.FormatInt(tag.Request.Device.Geo.UTCOffset, intBase)
@@ -1115,7 +1115,7 @@ func (tag *BidderMacro) MacroUTCOffset(key string) string {
 
 /********************* User *********************/
 
-//MacroUserID contains definition for UserID Parameter
+// MacroUserID contains definition for UserID Parameter
 func (tag *BidderMacro) MacroUserID(key string) string {
 	if nil != tag.Request.User {
 		return tag.Request.User.ID
@@ -1123,7 +1123,7 @@ func (tag *BidderMacro) MacroUserID(key string) string {
 	return ""
 }
 
-//MacroYearOfBirth contains definition for YearOfBirth Parameter
+// MacroYearOfBirth contains definition for YearOfBirth Parameter
 func (tag *BidderMacro) MacroYearOfBirth(key string) string {
 	if nil != tag.Request.User && tag.Request.User.Yob > 0 {
 		return strconv.FormatInt(tag.Request.User.Yob, intBase)
@@ -1131,7 +1131,7 @@ func (tag *BidderMacro) MacroYearOfBirth(key string) string {
 	return ""
 }
 
-//MacroGender contains definition for Gender Parameter
+// MacroGender contains definition for Gender Parameter
 func (tag *BidderMacro) MacroGender(key string) string {
 	if nil != tag.Request.User {
 		return tag.Request.User.Gender
@@ -1141,7 +1141,7 @@ func (tag *BidderMacro) MacroGender(key string) string {
 
 /********************* Extension *********************/
 
-//MacroGDPRConsent contains definition for GDPRConsent Parameter
+// MacroGDPRConsent contains definition for GDPRConsent Parameter
 func (tag *BidderMacro) MacroGDPRConsent(key string) string {
 	if nil != tag.UserExt {
 		return tag.UserExt.Consent
@@ -1149,7 +1149,7 @@ func (tag *BidderMacro) MacroGDPRConsent(key string) string {
 	return ""
 }
 
-//MacroGDPR contains definition for GDPR Parameter
+// MacroGDPR contains definition for GDPR Parameter
 func (tag *BidderMacro) MacroGDPR(key string) string {
 	if nil != tag.RegsExt && nil != tag.RegsExt.GDPR {
 		return strconv.FormatInt(int64(*tag.RegsExt.GDPR), intBase)
@@ -1157,7 +1157,7 @@ func (tag *BidderMacro) MacroGDPR(key string) string {
 	return ""
 }
 
-//MacroUSPrivacy contains definition for USPrivacy Parameter
+// MacroUSPrivacy contains definition for USPrivacy Parameter
 func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 	if nil != tag.RegsExt {
 		return tag.RegsExt.USPrivacy
@@ -1167,7 +1167,7 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 
 /********************* Additional *********************/
 
-//MacroCacheBuster contains definition for CacheBuster Parameter
+// MacroCacheBuster contains definition for CacheBuster Parameter
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
@@ -1176,12 +1176,13 @@ func (tag *BidderMacro) MacroCacheBuster(key string) string {
 /********************* Request Headers *********************/
 
 // setDefaultHeaders sets following default headers based on VAST protocol version
-//  X-device-IP; end users IP address, per VAST 4.x
-//  X-Forwarded-For; end users IP address, prior VAST versions
-//  X-Device-User-Agent; End users user agent, per VAST 4.x
-//  User-Agent; End users user agent, prior VAST versions
-//  X-Device-Referer; Referer value from the original request, per VAST 4.x
-//  X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
+//
+//	X-device-IP; end users IP address, per VAST 4.x
+//	X-Forwarded-For; end users IP address, prior VAST versions
+//	X-Device-User-Agent; End users user agent, per VAST 4.x
+//	User-Agent; End users user agent, prior VAST versions
+//	X-Device-Referer; Referer value from the original request, per VAST 4.x
+//	X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
 func setDefaultHeaders(tag *BidderMacro) {
 	// openrtb2. auction.go setDeviceImplicitly
 	// already populates OpenRTB bid request based on http request headers
@@ -1230,8 +1231,8 @@ func setHeaders(headers http.Header, key, value string) {
 	}
 }
 
-//getAllHeaders combines default and custom headers and returns common list
-//It internally calls GetHeaders() method for obtaining list of custom headers
+// getAllHeaders combines default and custom headers and returns common list
+// It internally calls GetHeaders() method for obtaining list of custom headers
 func (tag *BidderMacro) getAllHeaders() http.Header {
 	setDefaultHeaders(tag)
 	customHeaders := tag.IBidderMacro.GetHeaders()

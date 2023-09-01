@@ -19,7 +19,7 @@ const (
 
 //Flags to customize macro processing wrappers
 
-//MacroProcessor struct to hold openrtb request and cache values
+// MacroProcessor struct to hold openrtb request and cache values
 type MacroProcessor struct {
 	bidderMacro IBidderMacro
 	mapper      Mapper
@@ -27,7 +27,7 @@ type MacroProcessor struct {
 	bidderKeys  map[string]string
 }
 
-//NewMacroProcessor will process macro's of openrtb bid request
+// NewMacroProcessor will process macro's of openrtb bid request
 func NewMacroProcessor(bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor {
 	return &MacroProcessor{
 		bidderMacro: bidderMacro,
@@ -36,17 +36,17 @@ func NewMacroProcessor(bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor 
 	}
 }
 
-//SetMacro Adding Custom Macro Manually
+// SetMacro Adding Custom Macro Manually
 func (mp *MacroProcessor) SetMacro(key, value string) {
 	mp.macroCache[key] = value
 }
 
-//SetBidderKeys will flush and set bidder specific keys
+// SetBidderKeys will flush and set bidder specific keys
 func (mp *MacroProcessor) SetBidderKeys(keys map[string]string) {
 	mp.bidderKeys = keys
 }
 
-//processKey : returns value of key macro and status found or not
+// processKey : returns value of key macro and status found or not
 func (mp *MacroProcessor) processKey(key string) (string, bool) {
 	var valueCallback *macroCallBack
 	var value string
@@ -109,7 +109,7 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 	return value, found
 }
 
-//Process : Substitute macros in input string
+// Process : Substitute macros in input string
 func (mp *MacroProcessor) Process(in string) (response string) {
 	var out bytes.Buffer
 	pos, start, end, size := 0, 0, 0, len(in)
@@ -163,7 +163,7 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 	return
 }
 
-//GetMacroKey will return macro formatted key
+// GetMacroKey will return macro formatted key
 func GetMacroKey(key string) string {
 	return macroPrefix + key + macroSuffix
 }

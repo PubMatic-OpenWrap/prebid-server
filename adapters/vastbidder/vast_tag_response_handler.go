@@ -11,7 +11,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -19,28 +19,28 @@ import (
 
 var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)
 
-//IVASTTagResponseHandler to parse VAST Tag
+// IVASTTagResponseHandler to parse VAST Tag
 type IVASTTagResponseHandler interface {
 	ITagResponseHandler
 	ParseExtension(version string, tag *etree.Element, bid *adapters.TypedBid) []error
 	GetStaticPrice(ext json.RawMessage) float64
 }
 
-//VASTTagResponseHandler to parse VAST Tag
+// VASTTagResponseHandler to parse VAST Tag
 type VASTTagResponseHandler struct {
 	IVASTTagResponseHandler
 	ImpBidderExt *openrtb_ext.ExtImpVASTBidder
 	VASTTag      *openrtb_ext.ExtImpVASTBidderTag
 }
 
-//NewVASTTagResponseHandler returns new object
+// NewVASTTagResponseHandler returns new object
 func NewVASTTagResponseHandler() *VASTTagResponseHandler {
 	obj := &VASTTagResponseHandler{}
 	obj.IVASTTagResponseHandler = obj
 	return obj
 }
 
-//Validate will return bids
+// Validate will return bids
 func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error {
 	if response.StatusCode != http.StatusOK {
 		return []error{errors.New(`validation failed`)}
@@ -65,7 +65,7 @@ func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidReq
 	return nil
 }
 
-//MakeBids will return bids
+// MakeBids will return bids
 func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if err := handler.IVASTTagResponseHandler.Validate(internalRequest, externalRequest, response); len(err) > 0 {
 		return nil, err[:]
@@ -75,7 +75,7 @@ func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidReq
 	return bidResponses, err
 }
 
-//ParseExtension will parse VAST XML extension object
+// ParseExtension will parse VAST XML extension object
 func (handler *VASTTagResponseHandler) ParseExtension(version string, ad *etree.Element, bid *adapters.TypedBid) []error {
 	return nil
 }
@@ -182,6 +182,19 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 		typedBid.Bid.CrID = "cr_" + GetRandomID()
 	}
 
+	// set vastTagId in bid.Ext
+	bidExt := openrtb_ext.ExtBid{
+		Prebid: &openrtb_ext.ExtBidPrebid{
+			Video: typedBid.BidVideo,
+			Type:  typedBid.BidType,
+		},
+	}
+
+	bidExtBytes, err := json.Marshal(bidExt)
+	if err == nil {
+		typedBid.Bid.Ext = bidExtBytes
+	}
+
 	return bidResponse, nil
 }
 
@@ -279,7 +292,7 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
 // For Linear Creative it will lookup for Duration attribute.Duration value will be in hh:mm:ss.mmm format as per VAST specifications
 // If Duration attribute not present this will return error
 //
-// After extracing the duration it will convert it into seconds
+// # After extracing the duration it will convert it into seconds
 //
 // The ad server uses the <Duration> element to denote
 // the intended playback duration for the video or audio component of the ad.
@@ -325,7 +338,7 @@ func getStaticDuration(vastTag *openrtb_ext.ExtImpVASTBidderTag) int {
 	return vastTag.Duration
 }
 
-//getCreativeID looks for ID inside input creative tag
+// getCreativeID looks for ID inside input creative tag
 func getCreativeID(creative *etree.Element) string {
 	if nil == creative {
 		return ""

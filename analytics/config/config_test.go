@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prebid/prebid-server/analytics"
@@ -17,12 +17,10 @@ const TEST_DIR string = "testFiles"
 func TestSampleModule(t *testing.T) {
 	var count int
 	am := initAnalytics(&count)
-	am.LogAuctionObject(&analytics.AuctionObject{LoggableAuctionObject: analytics.LoggableAuctionObject{
+	am.LogAuctionObject(&analytics.AuctionObject{
 		Status:   http.StatusOK,
 		Errors:   nil,
-		Request:  &openrtb2.BidRequest{},
 		Response: &openrtb2.BidResponse{},
-	},
 	})
 	if count != 1 {
 		t.Errorf("PBSAnalyticsModule failed at LogAuctionObject")

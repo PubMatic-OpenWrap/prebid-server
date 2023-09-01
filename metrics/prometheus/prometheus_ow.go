@@ -4,15 +4,27 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
-	pubIDLabel  = "pubid"
-	bidderLabel = "bidder"
-	codeLabel   = "code"
+	pubIDLabel   = "pubid"
+	bidderLabel  = "bidder"
+	codeLabel    = "code"
+	profileLabel = "profileid"
+	dealLabel    = "deal"
 )
+
+func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
+	httpCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of http requests.",
+	})
+	registry.MustRegister(httpCounter)
+	return httpCounter
+}
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 // gives the bid response with multiple bids containing  same bid.ID
@@ -71,18 +83,40 @@ func (m *Metrics) RecordPodCompititveExclusionTime(labels metrics.PodLabels, ela
 	recordAlgoTime(m.podCompExclTimer, labels, elapsedTime)
 }
 
-//RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
+// RecordAdapterVideoBidDuration records actual ad duration (>0) returned by the bidder
 func (m *Metrics) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
 	if videoBidDuration > 0 {
 		m.adapterVideoBidDuration.With(prometheus.Labels{adapterLabel: string(labels.Adapter)}).Observe(float64(videoBidDuration))
 	}
 }
 
-//RecordRejectedBids records rejected bids labeled by pubid, bidder and reason code
+// RecordRejectedBids records rejected bids labeled by pubid, bidder and reason code
 func (m *Metrics) RecordRejectedBids(pubid, biddder, code string) {
 	m.rejectedBids.With(prometheus.Labels{
 		pubIDLabel:  pubid,
 		bidderLabel: biddder,
 		codeLabel:   code,
 	}).Inc()
+}
+
+// RecordBids records bids labeled by pubid, profileid, bidder and deal
+func (m *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
+	m.bids.With(prometheus.Labels{
+		pubIDLabel:   pubid,
+		profileLabel: profileid,
+		bidderLabel:  biddder,
+		dealLabel:    deal,
+	}).Inc()
+}
+
+// RecordVastVersion record the count of vast version labelled by bidder and vast version
+func (m *Metrics) RecordVastVersion(coreBiddder, vastVersion string) {
+	m.vastVersion.With(prometheus.Labels{
+		adapterLabel: coreBiddder,
+		versionLabel: vastVersion,
+	}).Inc()
+}
+
+func (m *Metrics) RecordHttpCounter() {
+	m.httpCounter.Inc()
 }

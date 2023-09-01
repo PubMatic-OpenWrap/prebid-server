@@ -1,13 +1,14 @@
 package vastbidder
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
 
 	"github.com/beevik/etree"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 								Price: 0.05,
 								AdM:   `<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`,
 								CrID:  "cr_1234",
+								Ext:   json.RawMessage(`{"prebid":{"type":"video","video":{"duration":15,"primary_category":"","vasttagid":"101"}}}`),
 							},
 							BidType: openrtb_ext.BidTypeVideo,
 							BidVideo: &openrtb_ext.ExtBidPrebidVideo{
@@ -92,7 +94,7 @@ func TestVASTTagResponseHandler_vastTagToBidderResponse(t *testing.T) {
 	}
 }
 
-//TestGetDurationInSeconds ...
+// TestGetDurationInSeconds ...
 // hh:mm:ss.mmm => 3:40:43.5 => 3 hours, 40 minutes, 43 seconds and 5 milliseconds
 // => 3*60*60 + 40*60 + 43 + 5*0.001 => 10800 + 2400 + 43 + 0.005 => 13243.005
 func TestGetDurationInSeconds(t *testing.T) {

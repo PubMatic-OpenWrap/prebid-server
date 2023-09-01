@@ -5,7 +5,7 @@ const (
 	comma   = `,`
 )
 
-//List of Tag Bidder Macros
+// List of Tag Bidder Macros
 const (
 	//Request
 	MacroTest              = `test`

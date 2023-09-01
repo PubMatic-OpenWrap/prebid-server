@@ -22,7 +22,7 @@ type vendorListScheduler struct {
 	timeout    time.Duration
 }
 
-//Only single instance must be created
+// Only single instance must be created
 var _instance *vendorListScheduler
 var once sync.Once
 

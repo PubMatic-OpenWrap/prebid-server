@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -273,7 +274,7 @@ func validateAdSlot(adslot string, imp *openrtb2.Imp) error {
 		}
 
 		//In case of video, size could be derived from the player size
-		if imp.Banner != nil && width != 0 && height != 0 {
+		if imp.Banner != nil && width != 0 && height != 0 && !(imp.Native != nil && width == 1 && height == 1) {
 			imp.Banner = assignBannerWidthAndHeight(imp.Banner, int64(width), int64(height))
 		}
 	} else {
@@ -353,8 +354,8 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	if pubmaticExt.Kadfloor != "" {
 		bidfloor, err := strconv.ParseFloat(strings.TrimSpace(pubmaticExt.Kadfloor), 64)
 		if err == nil {
-			//do not overwrite existing value if kadfloor is invalid
-			imp.BidFloor = bidfloor
+			// In case of valid kadfloor, select maximum of original imp.bidfloor and kadfloor
+			imp.BidFloor = math.Max(bidfloor, imp.BidFloor)
 		}
 	}
 
@@ -383,7 +384,7 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	// If bidViewabilityScore param is populated, pass it to imp[i].ext
 	if pubmaticExt.BidViewabilityScore != nil {
-		extMap[bidViewability] = *pubmaticExt.BidViewabilityScore
+		extMap[bidViewability] = pubmaticExt.BidViewabilityScore
 	}
 
 	imp.Ext = nil
@@ -395,6 +396,11 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 
 	return wrapExt, pubID, nil
+}
+
+// roundToFourDecimals retuns given value to 4 decimal points
+func roundToFourDecimals(in float64) float64 {
+	return math.Round(in*10000) / 10000
 }
 
 // extractPubmaticExtFromRequest parse the req.ext to fetch wrapper and acat params
@@ -602,7 +608,7 @@ func getNativeAdm(adm string) (string, error) {
 	return adm, nil
 }
 
-//getMapFromJSON converts JSON to map
+// getMapFromJSON converts JSON to map
 func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	if source != nil {
 		dataMap := make(map[string]interface{})
@@ -614,7 +620,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	return nil
 }
 
-//populateFirstPartyDataImpAttributes will parse imp.ext.data and populate imp extMap
+// populateFirstPartyDataImpAttributes will parse imp.ext.data and populate imp extMap
 func populateFirstPartyDataImpAttributes(data json.RawMessage, extMap map[string]interface{}) {
 
 	dataMap := getMapFromJSON(data)
@@ -627,7 +633,7 @@ func populateFirstPartyDataImpAttributes(data json.RawMessage, extMap map[string
 	populateDctrKey(dataMap, extMap)
 }
 
-//populateAdUnitKey parses data object to read and populate DFP adunit key
+// populateAdUnitKey parses data object to read and populate DFP adunit key
 func populateAdUnitKey(data json.RawMessage, dataMap, extMap map[string]interface{}) {
 
 	if name, err := jsonparser.GetString(data, "adserver", "name"); err == nil && name == AdServerGAM {
@@ -642,7 +648,7 @@ func populateAdUnitKey(data json.RawMessage, dataMap, extMap map[string]interfac
 	}
 }
 
-//populateDctrKey reads key-val pairs from imp.ext.data and add it in imp.ext.key_val
+// populateDctrKey reads key-val pairs from imp.ext.data and add it in imp.ext.key_val
 func populateDctrKey(dataMap, extMap map[string]interface{}) {
 	var dctr strings.Builder
 
@@ -659,7 +665,7 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 		}
 
 		//separate key-val pairs in dctr string by pipe(|)
-		if dctr.String() != "" {
+		if dctr.Len() > 0 {
 			dctr.WriteString("|")
 		}
 
@@ -668,16 +674,20 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 
 		switch typedValue := val.(type) {
 		case string:
-			fmt.Fprintf(&dctr, "%s=%s", key, strings.TrimSpace(typedValue))
+			if _, err := fmt.Fprintf(&dctr, "%s=%s", key, strings.TrimSpace(typedValue)); err != nil {
+				continue
+			}
 
 		case float64, bool:
-			fmt.Fprintf(&dctr, "%s=%v", key, typedValue)
+			if _, err := fmt.Fprintf(&dctr, "%s=%v", key, typedValue); err != nil {
+				continue
+			}
 
 		case []interface{}:
-			if isStringArray(typedValue) {
-				if valStrArr := getStringArray(typedValue); valStrArr != nil && len(valStrArr) > 0 {
-					valStr := strings.Join(valStrArr[:], ",")
-					fmt.Fprintf(&dctr, "%s=%s", key, valStr)
+			if valStrArr := getStringArray(typedValue); len(valStrArr) > 0 {
+				valStr := strings.Join(valStrArr[:], ",")
+				if _, err := fmt.Fprintf(&dctr, "%s=%s", key, valStr); err != nil {
+					continue
 				}
 			}
 		}
@@ -688,29 +698,16 @@ func populateDctrKey(dataMap, extMap map[string]interface{}) {
 	}
 }
 
-//isStringArray check if []interface is a valid string array
-func isStringArray(array []interface{}) bool {
-	for _, val := range array {
-		if _, ok := val.(string); !ok {
-			return false
-		}
-	}
-	return true
-}
-
-//getStringArray converts interface of type string array to string array
-func getStringArray(val interface{}) []string {
-	aInterface, ok := val.([]interface{})
-	if !ok {
-		return nil
-	}
-	aString := make([]string, len(aInterface))
-	for i, v := range aInterface {
+// getStringArray converts interface of type string array to string array
+func getStringArray(array []interface{}) []string {
+	aString := make([]string, len(array))
+	for i, v := range array {
 		if str, ok := v.(string); ok {
 			aString[i] = strings.TrimSpace(str)
+		} else {
+			return nil
 		}
 	}
-
 	return aString
 }
 

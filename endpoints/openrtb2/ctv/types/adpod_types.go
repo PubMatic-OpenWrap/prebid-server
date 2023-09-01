@@ -1,12 +1,12 @@
 package types
 
 import (
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//Bid openrtb bid object with extra parameters
+// Bid openrtb bid object with extra parameters
 type Bid struct {
 	*openrtb2.Bid
 	openrtb_ext.ExtBid
@@ -16,19 +16,19 @@ type Bid struct {
 	Seat              string
 }
 
-//ExtCTVBidResponse object for ctv bid resposne object
+// ExtCTVBidResponse object for ctv bid resposne object
 type ExtCTVBidResponse struct {
 	openrtb_ext.ExtBidResponse
 	AdPod *BidResponseAdPodExt `json:"adpod,omitempty"`
 }
 
-//BidResponseAdPodExt object for ctv bidresponse adpod object
+// BidResponseAdPodExt object for ctv bidresponse adpod object
 type BidResponseAdPodExt struct {
 	Response openrtb2.BidResponse `json:"bidresponse,omitempty"`
 	Config   map[string]*ImpData  `json:"config,omitempty"`
 }
 
-//AdPodBid combination contains ImpBid
+// AdPodBid combination contains ImpBid
 type AdPodBid struct {
 	Bids          []*Bid
 	Price         float64
@@ -38,13 +38,13 @@ type AdPodBid struct {
 	SeatName      string
 }
 
-//AdPodBids combination contains ImpBid
+// AdPodBids combination contains ImpBid
 type AdPodBids []*AdPodBid
 
-//BidsBuckets bids bucket
+// BidsBuckets bids bucket
 type BidsBuckets map[int][]*Bid
 
-//ImpAdPodConfig configuration for creating ads in adpod
+// ImpAdPodConfig configuration for creating ads in adpod
 type ImpAdPodConfig struct {
 	ImpID          string `json:"id,omitempty"`
 	SequenceNumber int8   `json:"seq,omitempty"`
@@ -52,7 +52,7 @@ type ImpAdPodConfig struct {
 	MaxDuration    int64  `json:"maxduration,omitempty"`
 }
 
-//ImpData example
+// ImpData example
 type ImpData struct {
 	//AdPodGenerator
 	ImpID           string                        `json:"-"`

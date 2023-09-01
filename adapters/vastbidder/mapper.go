@@ -6,7 +6,7 @@ type macroCallBack struct {
 	callback func(IBidderMacro, string) string
 }
 
-//Mapper will map macro with its respective call back function
+// Mapper will map macro with its respective call back function
 type Mapper map[string]*macroCallBack
 
 func (obj Mapper) clone() Mapper {
@@ -176,7 +176,7 @@ var _defaultMapper = Mapper{
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
 }
 
-//GetDefaultMapper will return clone of default Mapper function
+// GetDefaultMapper will return clone of default Mapper function
 func GetDefaultMapper() Mapper {
 	return _defaultMapper.clone()
 }

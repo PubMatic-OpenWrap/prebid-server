@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -858,8 +858,10 @@ func BenchmarkGetVideoEventTracking(b *testing.B) {
 // goos: linux
 // goarch: arm64
 // pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
-//                            │   old1.txt   │          new1.txt           │
-//                            │    sec/op    │   sec/op     vs base        │
+//
+//	│   old1.txt   │          new1.txt           │
+//	│    sec/op    │   sec/op     vs base        │
+//
 // InjectVideoEventTrackers-8   107.83µ ± 1%   97.62µ ± 1%  -9.47% (n=200)
 func BenchmarkInjectVideoEventTrackers(b *testing.B) {
 	trackerURL := "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]"

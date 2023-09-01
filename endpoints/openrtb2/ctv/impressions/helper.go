@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//  newConfig initializes the generator instance
+// newConfig initializes the generator instance
 func newConfig(podMinDuration, podMaxDuration int64, vPod openrtb_ext.VideoAdPod) generator {
 	config := generator{}
 	config.totalSlotTime = new(int64)
@@ -73,7 +73,8 @@ func isMultipleOf(num, multipleOf int64) bool {
 }
 
 // Returns closest factor for num, with  respect  input multipleOf
-//  Example: Closest Factor of 9, in multiples of 5 is '10'
+//
+//	Example: Closest Factor of 9, in multiples of 5 is '10'
 func getClosestFactor(num, multipleOf int64) int64 {
 	return int64(math.Round(float64(num)/float64(multipleOf)) * float64(multipleOf))
 }

@@ -136,11 +136,12 @@ func BenchmarkPodDurationCombinationGenerator(b *testing.B) {
 
 // TestMaxToMinCombinationGenerator tests the genreration of
 // combinations from min to max combinations
-//  e.g.
-//  1
-//  1 2
-//  1 2 3
-//  1 2 3 4
+//
+//	e.g.
+//	1
+//	1 2
+//	1 2 3
+//	1 2 3 4
 func TestMinToMaxCombinationGenerator(t *testing.T) {
 	for _, test := range testBidResponseMaxDurations {
 		// if test.scenario != "TC1-Single_Value" {
@@ -161,11 +162,12 @@ func TestMinToMaxCombinationGenerator(t *testing.T) {
 
 // TestMaxToMinCombinationGenerator tests the genreration of
 // combinations from max to min combinations
-//  e.g.
-//  1 2 3 4
-//  1 2 3
-//  1 2
-//  1
+//
+//	e.g.
+//	1 2 3 4
+//	1 2 3
+//	1 2
+//	1
 func TestMaxToMinCombinationGenerator(t *testing.T) {
 	for _, test := range testBidResponseMaxDurations {
 		t.Run(test.scenario, func(t *testing.T) {

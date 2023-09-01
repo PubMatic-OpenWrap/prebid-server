@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/adapterstest"
 	"github.com/prebid/prebid-server/config"
@@ -126,7 +126,7 @@ func TestParseImpressionObject(t *testing.T) {
 			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
-			name: "imp.bidfloor set and kadfloor set, preference to kadfloor",
+			name: "imp.bidfloor set and kadfloor set, higher imp.bidfloor",
 			args: args{
 				imp: &openrtb2.Imp{
 					BidFloor: 0.12,
@@ -134,7 +134,18 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.11"}}`),
 				},
 			},
-			expectedBidfloor: 0.11,
+			expectedBidfloor: 0.12,
+		},
+		{
+			name: "imp.bidfloor set and kadfloor set, higher kadfloor",
+			args: args{
+				imp: &openrtb2.Imp{
+					BidFloor: 0.12,
+					Video:    &openrtb2.Video{},
+					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.13"}}`),
+				},
+			},
+			expectedBidfloor: 0.13,
 			expectedImpExt:   json.RawMessage(nil),
 		},
 		{
@@ -154,10 +165,10 @@ func TestParseImpressionObject(t *testing.T) {
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}}`),
+					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}}`),
 				},
 			},
-			expectedImpExt: json.RawMessage(`{"bidViewability":{"rendered":131,"viewed":80,"createdAt":1666155076240,"updatedAt":1666296333802,"lastViewed":3171.100000023842,"totalViewTime":15468}}`),
+			expectedImpExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
 		},
 	}
 	for _, tt := range tests {
@@ -392,6 +403,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							AgencyID:     958,
 							NetworkID:    6,
 							DemandSource: "6",
+							MediaType:    "banner",
 						},
 					},
 				},
@@ -432,6 +444,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							AgencyID:     958,
 							NetworkID:    6,
 							DemandSource: "6",
+							MediaType:    "banner",
 						},
 					},
 				},
@@ -726,7 +739,7 @@ func TestPopulateFirstPartyDataImpAttributesForMultipleAttributes(t *testing.T) 
 func TestGetStringArray(t *testing.T) {
 	tests := []struct {
 		name   string
-		input  interface{}
+		input  []interface{}
 		output []string
 	}{
 		{
@@ -736,38 +749,13 @@ func TestGetStringArray(t *testing.T) {
 		},
 		{
 			name:   "Invalid String Array",
-			input:  "hello",
+			input:  append(make([]interface{}, 0), 1, 2),
 			output: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getStringArray(tt.input)
-			assert.Equal(t, tt.output, got)
-		})
-	}
-}
-
-func TestIsStringArray(t *testing.T) {
-	tests := []struct {
-		name   string
-		input  []interface{}
-		output bool
-	}{
-		{
-			name:   "Valid String Array",
-			input:  append(make([]interface{}, 0), "hello", "world"),
-			output: true,
-		},
-		{
-			name:   "Invalid String Array",
-			input:  append(make([]interface{}, 0), 1, 2),
-			output: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isStringArray(tt.input)
 			assert.Equal(t, tt.output, got)
 		})
 	}
@@ -781,14 +769,14 @@ func TestGetMapFromJSON(t *testing.T) {
 	}{
 		{
 			name:  "Valid JSON",
-			input: json.RawMessage("{\"buyid\":\"testBuyId\"}"),
+			input: json.RawMessage(`{"buyid":"testBuyId"}`),
 			output: map[string]interface{}{
 				"buyid": "testBuyId",
 			},
 		},
 		{
 			name:   "Invalid JSON",
-			input:  json.RawMessage("{\"buyid\":}"),
+			input:  json.RawMessage(`{"buyid":}`),
 			output: nil,
 		},
 	}

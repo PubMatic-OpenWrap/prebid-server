@@ -1,8 +1,8 @@
 # Makefile
 
-all: deps test build
+all: deps test build-modules build
 
-.PHONY: deps test build image
+.PHONY: deps test build-modules build image
 
 # deps will clean out the vendor directory and use go mod for a fresh install
 deps:
@@ -18,6 +18,10 @@ else
 	go test github.com/prebid/prebid-server/adapters/$(adapter) -bench=.
 endif
 
+# build-modules generates modules/builder.go file which provides a list of all available modules
+build-modules:
+	go generate modules/modules.go
+
 # build will ensure all of our tests pass and then build the go binary
 build: test
 	go build -mod=vendor ./...
@@ -25,3 +29,22 @@ build: test
 # image will build a docker image
 image:
 	docker build -t prebid-server .
+
+mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics
+
+# export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN   
+mockgeninstall:
+	go install github.com/golang/mock/mockgen@v1.6.0
+
+mockgendb:
+	mkdir -p modules/pubmatic/openwrap/database/mock modules/pubmatic/openwrap/database/mock_driver
+	mockgen database/sql/driver Driver,Connector,Conn,DriverContext > modules/pubmatic/openwrap/database/mock_driver/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/database Database > modules/pubmatic/openwrap/database/mock/mock.go
+
+mockgencache:
+	mkdir -p modules/pubmatic/openwrap/cache/mock
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache Cache > modules/pubmatic/openwrap/cache/mock/mock.go
+
+mockgenmetrics:
+	mkdir -p modules/pubmatic/openwrap/metrics/mock
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go

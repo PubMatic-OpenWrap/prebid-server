@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
@@ -16,7 +16,7 @@ import (
 
 /********************* AdPodGenerator Functions *********************/
 
-//IAdPodGenerator interface for generating AdPod from Ads
+// IAdPodGenerator interface for generating AdPod from Ads
 type IAdPodGenerator interface {
 	GetAdPodBids() *types.AdPodBid
 }
@@ -37,7 +37,7 @@ type highestCombination struct {
 	nDealBids         int
 }
 
-//AdPodGenerator AdPodGenerator
+// AdPodGenerator AdPodGenerator
 type AdPodGenerator struct {
 	IAdPodGenerator
 	request  *openrtb2.BidRequest
@@ -48,7 +48,7 @@ type AdPodGenerator struct {
 	met      metrics.MetricsEngine
 }
 
-//NewAdPodGenerator will generate adpod based on configuration
+// NewAdPodGenerator will generate adpod based on configuration
 func NewAdPodGenerator(request *openrtb2.BidRequest, impIndex int, buckets types.BidsBuckets, comb combination.ICombination, adpod *openrtb_ext.VideoAdPod, met metrics.MetricsEngine) *AdPodGenerator {
 	return &AdPodGenerator{
 		request:  request,
@@ -60,7 +60,7 @@ func NewAdPodGenerator(request *openrtb2.BidRequest, impIndex int, buckets types
 	}
 }
 
-//GetAdPodBids will return Adpod based on configurations
+// GetAdPodBids will return Adpod based on configurations
 func (o *AdPodGenerator) GetAdPodBids() *types.AdPodBid {
 	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v ImpId:%v adpodgenerator", o.request.ID, o.request.Imp[o.impIndex].ID))
 

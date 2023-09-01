@@ -4,6 +4,24 @@ import (
 	"encoding/json"
 )
 
+// AuctionEnvironmentType is a Google Privacy Sandbox flag indicating where the auction may take place
+type AuctionEnvironmentType int8
+
+const (
+	// 0 Standard server-side auction
+	ServerSideAuction AuctionEnvironmentType = 0
+	// 1 On-device interest group auction (FLEDGE)
+	OnDeviceIGAuctionFledge AuctionEnvironmentType = 1
+	// 2 Server-side with interest group simulation
+	ServerSideWithIGSimulation AuctionEnvironmentType = 2
+)
+
+// IsRewardedInventoryKey is the json key for ExtImpPrebid.IsRewardedInventory
+const IsRewardedInventoryKey = "is_rewarded_inventory"
+
+// OptionsKey is the json key for ExtImpPrebid.Options
+const OptionsKey = "options"
+
 // ExtImpPrebid defines the contract for bidrequest.imp[i].ext.prebid
 type ExtImpPrebid struct {
 	// StoredRequest specifies which stored impression to use, if any.
@@ -28,9 +46,22 @@ type ExtImpPrebid struct {
 	Floors *ExtImpPrebidFloors `json:"floors,omitempty"`
 }
 
+type ExtImpDataAdServer struct {
+	Name   string `json:"name"`
+	AdSlot string `json:"adslot"`
+}
+
+type ExtImpData struct {
+	PbAdslot string              `json:"pbadslot,omitempty"`
+	AdServer *ExtImpDataAdServer `json:"adserver,omitempty"`
+}
+
 type ExtImpPrebidFloors struct {
-	FloorRule      string  `json:"floorRule,omitempty"`
-	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
+	FloorRule      string  `json:"floorrule,omitempty"`
+	FloorRuleValue float64 `json:"floorrulevalue,omitempty"`
+	FloorValue     float64 `json:"floorvalue,omitempty"`
+	FloorMin       float64 `json:"floormin,omitempty"`
+	FloorMinCur    string  `json:"floorminCur,omitempty"`
 }
 
 // ExtStoredRequest defines the contract for bidrequest.imp[i].ext.prebid.storedrequest

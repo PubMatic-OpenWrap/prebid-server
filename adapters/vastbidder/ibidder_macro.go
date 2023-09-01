@@ -3,12 +3,12 @@ package vastbidder
 import (
 	"net/http"
 
-	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-//IBidderMacro interface will capture all macro definition
+// IBidderMacro interface will capture all macro definition
 type IBidderMacro interface {
 	//Helper Function
 	InitBidRequest(request *openrtb2.BidRequest)
@@ -180,12 +180,12 @@ type IBidderMacro interface {
 
 var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}
 
-//RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
+// RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
 func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro func() IBidderMacro) {
 	bidderMacroMap[bidder] = macro
 }
 
-//GetNewBidderMacro will return IBidderMacro of specific bidder
+// GetNewBidderMacro will return IBidderMacro of specific bidder
 func GetNewBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro {
 	callback, ok := bidderMacroMap[bidder]
 	if ok {
