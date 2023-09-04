@@ -88,8 +88,12 @@ func GetDevicePlatform(httpReqUAHeader string, bidRequest *openrtb2.BidRequest, 
 		}
 
 		if bidRequest.Site != nil {
+			var deviceType int
+			if bidRequest.Device != nil {
+				deviceType = int(bidRequest.Device.DeviceType)
+			}
 			//Its web; now determine mobile or desktop
-			if isMobile(int(bidRequest.Device.DeviceType), userAgentString) {
+			if isMobile(deviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop
