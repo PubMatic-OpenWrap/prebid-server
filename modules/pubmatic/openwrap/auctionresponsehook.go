@@ -177,8 +177,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 
-			if rctx.IsCTVRequest && CheckWinningBidId(bidId, winningAdpodBidIds[impId]) {
-				winningBids.AppendBid(impId, owbid)
+			if rctx.IsCTVRequest {
+				if CheckWinningBidId(bidId, winningAdpodBidIds[impId]) {
+					winningBids.AppendBid(impId, owbid)
+				}
 			} else {
 				winningBids.AddBid(impId, owbid, rctx.SupportDeals)
 			}

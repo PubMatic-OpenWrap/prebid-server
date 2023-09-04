@@ -43,7 +43,9 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, er
 			if !ok {
 				bids = make([]*openrtb2.Bid, 0)
 			}
-			bids = append(bids, &bid)
+			if bid.Price > 0 {
+				bids = append(bids, &bid)
+			}
 			bidArrayMap[impId] = bids
 		}
 	}

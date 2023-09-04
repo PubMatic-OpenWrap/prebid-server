@@ -30,7 +30,8 @@ const (
 )
 
 var (
-	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
+	VASTVersionsStr   = []string{"0", "1.0", "2.0", "3.0", "4.0"}
+	EmptyVASTResponse = []byte(`<VAST version="2.0"/>`)
 )
 
 func formVastResponse(response []byte) []byte {
@@ -38,12 +39,12 @@ func formVastResponse(response []byte) []byte {
 
 	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		return response
+		return EmptyVASTResponse
 	}
 
 	vast, err := getVast(&bidResponse)
 	if err != nil {
-		return response
+		return EmptyVASTResponse
 	}
 
 	return []byte(vast)
@@ -57,7 +58,9 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 	bidArray := make([]*openrtb2.Bid, 0)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			bidArray = append(bidArray, &bid)
+			if bid.Price > 0 {
+				bidArray = append(bidArray, &bid)
+			}
 		}
 	}
 
@@ -71,6 +74,10 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 
 // getAdPodBidCreative get commulative adpod bid details
 func getAdPodBidCreativeAndPrice(bids []*openrtb2.Bid, generatedBidID bool) (string, float64) {
+	if len(bids) == 0 {
+		return "", 0
+	}
+
 	var price float64
 	doc := etree.NewDocument()
 	vast := doc.CreateElement(VASTElement)

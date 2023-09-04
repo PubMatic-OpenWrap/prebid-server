@@ -107,7 +107,9 @@ func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redi
 			if !ok {
 				bids = make([]jsonBid, 0)
 			}
-			bids = append(bids, jsonBid{Bid: &bid, Seat: seatBid.Seat})
+			if bid.Price > 0 {
+				bids = append(bids, jsonBid{Bid: &bid, Seat: seatBid.Seat})
+			}
 			bidArrayMap[impId] = bids
 		}
 	}
