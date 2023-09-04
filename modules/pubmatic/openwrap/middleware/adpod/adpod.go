@@ -57,8 +57,11 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	finalResponse := formOperRTBResponse(adpodResponseWriter.Response)
 	w.Header().Set(ContentType, ApplicationJSON)
-	w.Write(finalResponse)
+	if adpodResponseWriter.Code == 0 {
+		adpodResponseWriter.Code = http.StatusOK
+	}
 	w.WriteHeader(adpodResponseWriter.Code)
+	w.Write(finalResponse)
 
 }
 
@@ -68,8 +71,11 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 	finalResponse := formVastResponse(adpodResponseWriter.Response)
 	w.Header().Set(ContentType, ApplicationXML)
-	w.Write(finalResponse)
+	if adpodResponseWriter.Code == 0 {
+		adpodResponseWriter.Code = http.StatusOK
+	}
 	w.WriteHeader(adpodResponseWriter.Code)
+	w.Write(finalResponse)
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -78,8 +84,11 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 	finalResponse := formJSONResponse(a.cacheClient, adpodResponseWriter.Response, "")
 	w.Header().Set(ContentType, ApplicationJSON)
-	w.Write(finalResponse)
+	if adpodResponseWriter.Code == 0 {
+		adpodResponseWriter.Code = http.StatusOK
+	}
 	w.WriteHeader(adpodResponseWriter.Code)
+	w.Write(finalResponse)
 }
 
 // JsonGetEndpoint
@@ -99,7 +108,10 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 		http.Redirect(w, r, string(finalResponse), http.StatusFound)
 	} else {
 		w.Header().Set(ContentType, ApplicationJSON)
-		w.Write(finalResponse)
+		if adpodResponseWriter.Code == 0 {
+			adpodResponseWriter.Code = http.StatusOK
+		}
 		w.WriteHeader(adpodResponseWriter.Code)
+		w.Write(finalResponse)
 	}
 }

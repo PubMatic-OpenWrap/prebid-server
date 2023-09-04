@@ -177,6 +177,7 @@ func formAdpodBids(client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid
 		cacheIds, err := cacheAllBids(client, bids)
 		if err != nil {
 			adpodBid.Error = err.Error()
+			adpodBids = append(adpodBids, &adpodBid)
 			continue
 		}
 
