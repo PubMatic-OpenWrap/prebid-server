@@ -57,7 +57,7 @@ func (a *AdmanAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 		errs = append(errs, errors...)
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *AdmanAdapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 

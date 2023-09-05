@@ -56,7 +56,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 		return nil, append(errors, fmt.Errorf("adapterRequest is empty"))
 	}
 	return adapterRequests, errors
-}
+} //per-imp-req
 
 func (a *adapter) makeRequest(request *openrtb2.BidRequest, campaignRequestBody CampaignRequestBody) (*adapters.RequestData, error) {
 	campaignRequestBodyJSON, err := json.Marshal(campaignRequestBody)

@@ -102,7 +102,7 @@ func (a *SilverMobAdapter) MakeRequests(
 	}
 
 	return requestData, errs
-}
+} //per-imp-req
 
 func (a *SilverMobAdapter) getImpressionExt(imp *openrtb2.Imp) (*openrtb_ext.ExtSilverMob, error) {
 	var bidderExt adapters.ExtImpBidder

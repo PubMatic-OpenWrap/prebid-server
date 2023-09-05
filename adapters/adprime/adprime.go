@@ -94,7 +94,7 @@ func (a *AdprimeAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ada
 		errs = append(errs, errors...)
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *AdprimeAdapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 

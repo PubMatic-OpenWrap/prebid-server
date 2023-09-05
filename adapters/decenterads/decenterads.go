@@ -56,7 +56,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.ExtraRe
 
 	request.Imp = impressions
 	return result, errs
-}
+} //per-imp-req
 
 func (a *adapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error

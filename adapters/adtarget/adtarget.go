@@ -78,7 +78,7 @@ func (a *AdtargetAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	return reqs, errors
-}
+} //per-imp-req
 
 func (a *AdtargetAdapter) MakeBids(bidReq *openrtb2.BidRequest, unused *adapters.RequestData, httpRes *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 

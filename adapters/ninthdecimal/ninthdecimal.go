@@ -46,7 +46,7 @@ func (adapter *NinthDecimalAdapter) MakeRequests(request *openrtb2.BidRequest, r
 		}
 	}
 	return result, errs
-}
+} //per-imp-req
 
 // getImpressionsInfo checks each impression for validity and returns impressions copy with corresponding exts
 func getImpressionsInfo(imps []openrtb2.Imp) (map[openrtb_ext.ExtImpNinthDecimal][]openrtb2.Imp, []openrtb2.Imp, []error) {

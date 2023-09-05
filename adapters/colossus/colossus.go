@@ -52,7 +52,7 @@ func (a *ColossusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		errs = append(errs, errors...)
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *ColossusAdapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 

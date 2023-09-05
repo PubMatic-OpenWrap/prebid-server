@@ -38,7 +38,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 		}
 	}
 	return extRequests, errs
-}
+} //per-imp-req
 
 func (a *adapter) makeRequest(ortbRequest openrtb2.BidRequest, ortbImp openrtb2.Imp) (*adapters.RequestData, error) {
 	if ortbImp.Banner == nil && ortbImp.Video == nil {

@@ -95,7 +95,7 @@ func (a *TtxAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapter
 		}
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *TtxAdapter) makeRequest(request openrtb2.BidRequest, impList []openrtb2.Imp) (*adapters.RequestData, error) {
 	request.Imp = impList

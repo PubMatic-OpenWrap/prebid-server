@@ -97,7 +97,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	}
 
 	return requests, errs
-}
+} //per-imp-req
 
 func (a *adapter) MakeBids(openRTBRequest *openrtb2.BidRequest, requestToBidder *adapters.RequestData, bidderRawResponse *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if adapters.IsResponseStatusCodeNoContent(bidderRawResponse) {

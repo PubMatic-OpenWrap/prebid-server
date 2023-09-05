@@ -115,7 +115,7 @@ func (a *AdOceanAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ada
 	}
 
 	return httpRequests, errors
-}
+} //per-imp-req
 
 func (a *AdOceanAdapter) addNewBid(
 	requestsData []*requestData,

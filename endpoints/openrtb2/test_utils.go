@@ -1035,7 +1035,7 @@ func (a mockAdapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *ada
 		requests = append(requests, requestData)
 	}
 	return requests, errors
-}
+} //per-imp-req
 
 func (a mockAdapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if responseData.StatusCode != http.StatusOK {

@@ -52,7 +52,7 @@ func (a *AJAAdapter) MakeRequests(bidReq *openrtb2.BidRequest, extraInfo *adapte
 	}
 
 	return
-}
+} //per-imp-req
 
 func parseExtAJA(imp openrtb2.Imp) (openrtb_ext.ExtImpAJA, error) {
 	var (

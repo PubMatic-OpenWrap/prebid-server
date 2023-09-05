@@ -90,7 +90,7 @@ func (adapter *EngageBDRAdapter) MakeRequests(request *openrtb2.BidRequest, reqI
 	}
 
 	return adapterRequests, errors
-}
+} //per-imp-req
 
 func (adapter *EngageBDRAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {

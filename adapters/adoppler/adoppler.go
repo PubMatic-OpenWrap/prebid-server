@@ -96,7 +96,7 @@ func (ads *AdopplerAdapter) MakeRequests(
 	}
 
 	return datas, errs
-}
+} //per-imp-req
 
 func (ads *AdopplerAdapter) MakeBids(
 	intReq *openrtb2.BidRequest,

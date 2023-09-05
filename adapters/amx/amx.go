@@ -108,7 +108,7 @@ func (adapter *AMXAdapter) MakeRequests(request *openrtb2.BidRequest, req *adapt
 	}
 	reqsBidder = append(reqsBidder, reqBidder)
 	return
-}
+} //per-imp-req
 
 type amxBidExt struct {
 	StartDelay   *int `json:"startdelay,omitempty"`

@@ -92,7 +92,7 @@ func (adapter *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	} else {
 		return adapter.makeIndividualRequests(request)
 	}
-}
+} //per-imp-req
 
 // MakeBids unpacks the server's response into Bids.
 func (adapter *adapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {

@@ -75,7 +75,7 @@ func (a *PubnativeAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		requestData = append(requestData, reqData)
 	}
 	return requestData, errs
-}
+} //per-imp-req
 
 func checkRequest(request *openrtb2.BidRequest) error {
 	if request.Device == nil || len(request.Device.OS) == 0 {

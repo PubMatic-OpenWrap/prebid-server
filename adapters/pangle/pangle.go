@@ -136,7 +136,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	}
 
 	return requests, errs
-}
+} //per-imp-req
 
 /* MakeBids */
 

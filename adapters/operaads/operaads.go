@@ -102,7 +102,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 		}
 	}
 	return requestData, errs
-}
+} //per-imp-req
 
 func flatImp(requestCopy openrtb2.BidRequest, impCopy openrtb2.Imp, headers http.Header, endpoint string, format interface{}) (*adapters.RequestData, error) {
 	switch format.(type) {

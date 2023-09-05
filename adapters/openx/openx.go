@@ -67,7 +67,7 @@ func (a *OpenxAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 	}
 
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *OpenxAdapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 	var errs []error

@@ -199,7 +199,7 @@ func (a *BeachfrontAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *
 	}
 
 	return reqs, errs
-}
+} //per-imp-req
 
 func preprocess(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) (beachfrontReqs beachfrontRequests, errs []error) {
 	var videoImps = make([]openrtb2.Imp, 0)

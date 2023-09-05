@@ -49,7 +49,7 @@ func (adapter *adkernelAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		}
 	}
 	return result, errs
-}
+} //per-imp-req
 
 // getImpressionsInfo checks each impression for validity and returns impressions copy with corresponding exts
 func getImpressionsInfo(imps []openrtb2.Imp) ([]openrtb2.Imp, []openrtb_ext.ExtImpAdkernel, []error) {

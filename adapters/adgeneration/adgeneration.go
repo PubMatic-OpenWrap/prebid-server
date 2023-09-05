@@ -82,7 +82,7 @@ func (adg *AdgenerationAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	return bidRequestArray, errs
-}
+} //per-imp-req
 
 func (adg *AdgenerationAdapter) getRequestUri(request *openrtb2.BidRequest, index int) (string, error) {
 	imp := request.Imp[index]

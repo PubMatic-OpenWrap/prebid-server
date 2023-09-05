@@ -100,7 +100,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.ExtraRe
 	request.Imp = impressions
 
 	return result, errs
-}
+} //per-imp-req
 
 func hasRewardedBattr(attr []adcom1.CreativeAttribute) bool {
 	for i := 0; i < len(attr); i++ {

@@ -90,7 +90,7 @@ func (a *ApplogyAdapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.
 		return nil, errs
 	}
 	return result, errs
-}
+} //per-imp-req
 
 func (a *ApplogyAdapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error

@@ -115,7 +115,7 @@ func (a *SmartAdserverAdapter) MakeRequests(request *openrtb2.BidRequest, reqInf
 		})
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 // MakeBids unpacks the server's response into Bids.
 func (a *SmartAdserverAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {

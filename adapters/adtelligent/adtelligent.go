@@ -83,7 +83,7 @@ func (a *AdtelligentAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo 
 
 	return reqs, errors
 
-}
+} //per-imp-req
 
 func (a *AdtelligentAdapter) MakeBids(bidReq *openrtb2.BidRequest, unused *adapters.RequestData, httpRes *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 

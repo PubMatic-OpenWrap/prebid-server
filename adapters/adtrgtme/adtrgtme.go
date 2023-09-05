@@ -62,7 +62,7 @@ func (v *adapter) MakeRequests(
 		requests = append(requests, requestData)
 	}
 	return requests, errors
-}
+} //per-imp-req
 
 func getSiteIDFromImp(imp *openrtb2.Imp) (uint64, error) {
 	var bidderExt adapters.ExtImpBidder

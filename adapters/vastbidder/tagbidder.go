@@ -59,7 +59,7 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 	}
 
 	return requestData, nil
-}
+} //per-imp-req
 
 // MakeBids makes bids
 func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {

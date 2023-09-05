@@ -62,7 +62,7 @@ func (a *SonobiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 
 	return adapterRequests, errs
 
-}
+} //per-imp-req
 
 // makeRequest helper method to crete the http request data
 func (a *SonobiAdapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {

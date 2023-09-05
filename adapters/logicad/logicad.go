@@ -36,7 +36,7 @@ func (adapter *LogicadAdapter) MakeRequests(request *openrtb2.BidRequest, reqInf
 		}
 	}
 	return result, errs
-}
+} //per-imp-req
 
 func getImpressionsInfo(imps []openrtb2.Imp) (map[openrtb_ext.ExtImpLogicad][]openrtb2.Imp, []openrtb2.Imp, []error) {
 	errors := make([]error, 0, len(imps))

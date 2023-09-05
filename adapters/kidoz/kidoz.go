@@ -100,7 +100,7 @@ func (a *KidozAdapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.Ex
 		return nil, errs
 	}
 	return result, errs
-}
+} // per-imp-req
 
 func (a *KidozAdapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errs []error

@@ -43,7 +43,7 @@ func (adapter *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	}
 
 	return result, nil
-}
+} //per-imp-req
 
 func getImpressionsInfo(imps []openrtb2.Imp) (resImps []*openrtb_ext.ImpExtNextMillennium, errors []error) {
 	for _, imp := range imps {

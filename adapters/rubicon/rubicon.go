@@ -582,7 +582,7 @@ func (a *RubiconAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ada
 	}
 
 	return requestData, errs
-}
+} //per-imp-req
 
 func createImpsToExtMap(imps []openrtb2.Imp) (map[*openrtb2.Imp]rubiconExtImpBidder, []error) {
 	impsToExtMap := make(map[*openrtb2.Imp]rubiconExtImpBidder)

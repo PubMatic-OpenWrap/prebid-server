@@ -70,7 +70,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 	}
 	request.Imp = originalImpSlice
 	return adapterRequests, nil
-}
+} //per-imp-req
 
 func (a *adapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
 	reqJSON, err := json.Marshal(request)

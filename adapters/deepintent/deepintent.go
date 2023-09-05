@@ -69,7 +69,7 @@ func (d *DeepintentAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *
 
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 // MakeBids makes the bids
 func (d *DeepintentAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {

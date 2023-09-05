@@ -50,7 +50,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 	}
 
 	return reqs, errors
-}
+} //per-imp-req
 
 func getHeaders(request *openrtb2.BidRequest) http.Header {
 	headers := http.Header{}

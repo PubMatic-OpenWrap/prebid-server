@@ -72,7 +72,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 	}
 	request.Imp = originalImpSlice
 	return adapterRequests, nil
-}
+} //per-imp-req
 
 func (a *adapter) buildEndpointURL(bidderExt *reqBodyExt) (string, error) {
 	endpointParams := macros.EndpointTemplateParams{

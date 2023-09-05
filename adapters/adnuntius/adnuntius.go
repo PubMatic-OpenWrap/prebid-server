@@ -87,7 +87,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 
 func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	return a.generateRequests(*request)
-}
+} //per-imp-req
 
 func setHeaders(ortbRequest openrtb2.BidRequest) http.Header {
 

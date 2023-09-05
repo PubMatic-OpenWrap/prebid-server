@@ -159,7 +159,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 
 	requests, errors := splitRequests(request.Imp, request, reqExt, requestURI.String())
 	return requests, append(errs, errors...)
-}
+} //per-imp-req
 
 func (a *adapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if adapters.IsResponseStatusCodeNoContent(response) {

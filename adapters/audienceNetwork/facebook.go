@@ -61,7 +61,7 @@ func (this *FacebookAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo 
 	}
 
 	return this.buildRequests(request)
-}
+} //per-imp-req
 
 func (this *FacebookAdapter) buildRequests(request *openrtb2.BidRequest) ([]*adapters.RequestData, []error) {
 	// Documentation suggests bid request splitting by impression so that each

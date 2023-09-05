@@ -63,7 +63,7 @@ func (a *ZeroClickFraudAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	return requests, errs
-}
+} //per-imp-req
 
 /*
 internal original request in OpenRTB, external = result of us having converted it (what comes out of MakeRequests)

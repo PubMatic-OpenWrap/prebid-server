@@ -68,7 +68,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 		errs = append(errs, errors...)
 	}
 	return adapterRequests, errs
-}
+} //per-imp-req
 
 func (a *adapter) makeRequest(request *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 	var errs []error

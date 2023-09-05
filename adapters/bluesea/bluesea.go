@@ -75,7 +75,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		errs = append(errs, fmt.Errorf("Empty RequestData"))
 	}
 	return requestDatas, errs
-}
+} //per-imp-req
 
 func extraImpExt(imp *openrtb2.Imp) (*openrtb_ext.ExtImpBluesea, error) {
 	var impExt adapters.ExtImpBidder

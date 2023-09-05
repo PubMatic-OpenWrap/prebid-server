@@ -98,7 +98,7 @@ func (a *IxAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 	request.Imp = imps
 
 	return append(requests, multiSizeRequests...), errs
-}
+} //per-imp-req
 
 func setSitePublisherId(request *openrtb2.BidRequest, iImp int) error {
 	if iImp == 0 {
