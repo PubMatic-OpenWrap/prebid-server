@@ -38,15 +38,16 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, er
 	bidArrayMap := make(map[string][]*openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId, _ := models.GetImpressionID(bid.ImpID)
-			bids, ok := bidArrayMap[impId]
-			if !ok {
-				bids = make([]*openrtb2.Bid, 0)
-			}
 			if bid.Price > 0 {
+				impId, _ := models.GetImpressionID(bid.ImpID)
+				bids, ok := bidArrayMap[impId]
+				if !ok {
+					bids = make([]*openrtb2.Bid, 0)
+				}
+
 				bids = append(bids, &bid)
+				bidArrayMap[impId] = bids
 			}
-			bidArrayMap[impId] = bids
 		}
 	}
 
@@ -69,8 +70,10 @@ func getPrebidCTVSeatBid(bidsMap map[string][]*openrtb2.Bid) []openrtb2.SeatBid 
 		creative, price := getAdPodBidCreativeAndPrice(bids, true)
 		bid.AdM = creative
 		bid.Price = price
-		bid.Cat = bids[0].Cat
-		bid.ADomain = bids[0].ADomain
+		if len(bids) > 0 {
+			bid.Cat = bids[0].Cat
+			bid.ADomain = bids[0].ADomain
+		}
 		bid.ImpID = impId
 
 		seatBid := openrtb2.SeatBid{}

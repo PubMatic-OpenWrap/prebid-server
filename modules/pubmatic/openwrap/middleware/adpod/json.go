@@ -102,15 +102,16 @@ func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redi
 	bidArrayMap := make(map[string][]jsonBid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId, _ := models.GetImpressionID(bid.ImpID)
-			bids, ok := bidArrayMap[impId]
-			if !ok {
-				bids = make([]jsonBid, 0)
-			}
 			if bid.Price > 0 {
+				impId, _ := models.GetImpressionID(bid.ImpID)
+				bids, ok := bidArrayMap[impId]
+				if !ok {
+					bids = make([]jsonBid, 0)
+				}
+
 				bids = append(bids, jsonBid{Bid: &bid, Seat: seatBid.Seat})
+				bidArrayMap[impId] = bids
 			}
-			bidArrayMap[impId] = bids
 		}
 	}
 
@@ -212,7 +213,6 @@ func createTargetting(bid jsonBid, slotNo int, cacheId string) map[string]string
 	}
 
 	if len(bid.Ext) > 0 {
-		fmt.Println(string(bid.Ext))
 		bidExt := models.BidExt{}
 		err := json.Unmarshal(bid.Ext, &bidExt)
 		if err != nil {

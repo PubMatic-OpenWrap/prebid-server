@@ -90,7 +90,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 	// }
 
 	// Check in adunit config
-	if adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
 		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, "adpod")
 		if len(adpodBytes) > 0 && err == nil {
 			err := json.Unmarshal(adpodBytes, &adpodConfig)

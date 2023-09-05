@@ -127,7 +127,7 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 			// }
 
 			//get duration of creative
-			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, eachImpCtx.ImpAdPodCfg[sequence-1].MaxDuration)
+			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, sequence)
 
 			eachImpBid := Bid{
 				Bid:               bid,
@@ -175,11 +175,17 @@ it will try to get the actual ad duration returned by the bidder using prebid.vi
 if prebid.video.duration not present then uses defaultDuration passed as an argument
 if video lengths matching policy is present for request then it will validate and update duration based on policy
 */
-func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, config []*models.ImpAdPodConfig, defaultDuration int64) (int64, int64) {
+func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, config []*models.ImpAdPodConfig, sequence int) (int64, int64) {
 
 	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
 	if nil != err || duration <= 0 {
+		var defaultDuration int64
+		for i := range config {
+			if sequence == int(config[i].SequenceNumber) {
+				defaultDuration = config[i].MaxDuration
+			}
+		}
 		// incase if duration is not present use impression duration directly as it is
 		return defaultDuration, models.StatusOK
 	}
