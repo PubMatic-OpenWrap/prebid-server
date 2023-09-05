@@ -39,5 +39,10 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 		//Default configPattern value is "_AU_" if not present in db config
 		adunitConfig.ConfigPattern = models.MACRO_AD_UNIT_ID
 	}
+
+	if _, ok := adunitConfig.Config["default"]; !ok {
+		adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
+	}
+
 	return adunitConfig, err
 }
