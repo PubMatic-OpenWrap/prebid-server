@@ -155,6 +155,37 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				return db
 			},
 		},
+		{
+			name: "default adunit not present",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
+					},
+				},
+			},
+			args: args{
+				profileID:      5890,
+				displayVersion: 1,
+			},
+			want: &adunitconfig.AdUnitConfig{
+				ConfigPattern: "_DIV_",
+				Config: map[string]*adunitconfig.AdConfig{
+					"default": {},
+					"abc":     {BidFloor: ptrutil.ToPtr(3.1)},
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern": "_DIV_", "config":{"abc":{"bidfloor":3.1}}}`)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

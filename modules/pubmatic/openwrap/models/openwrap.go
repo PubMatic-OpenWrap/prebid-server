@@ -7,6 +7,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 type RequestCtx struct {
@@ -67,13 +68,15 @@ type RequestCtx struct {
 	SendAllBids bool
 	WinningBids WinningBids
 	DroppedBids map[string][]openrtb2.Bid
-	NoSeatBids  map[string]map[string][]openrtb2.Bid
+	DefaultBids map[string]map[string][]openrtb2.Bid
+	SeatNonBids map[string][]openrtb_ext.NonBid // map of bidder to list of nonbids
 
 	BidderResponseTimeMillis map[string]int
 
 	Endpoint               string
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
+	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 }
 
 type OwBid struct {
