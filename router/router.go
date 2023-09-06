@@ -183,14 +183,15 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		syncerKeys = append(syncerKeys, k)
 	}
 
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient}
+	metricsRegistry := metricsConf.NewMetricsRegistry()
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry}
 	repo, moduleStageNames, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)
 	}
 
 	// Metrics engine
-	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
+	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 	// todo(zachbadgett): better shutdown
 	r.Shutdown = shutdown

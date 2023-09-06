@@ -55,6 +55,7 @@ type Queries struct {
 	GetPublisherVASTTagsQuery         string
 	GetAllFscDisabledPublishersQuery  string
 	GetAllDspFscPcntQuery             string
+	GetTBFRateQuery                   string
 }
 
 type Cache struct {
@@ -67,6 +68,7 @@ type Cache struct {
 type Timeout struct {
 	MaxTimeout int64
 	MinTimeout int64
+	HBTimeout  int64
 }
 
 type Tracker struct {

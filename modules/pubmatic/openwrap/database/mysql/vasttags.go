@@ -20,7 +20,6 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 
 	rows, err := db.conn.Query(getActiveVASTTagsQuery)
 	if err != nil {
-		err = fmt.Errorf("[QUERY_FAILED] Name:[%v] Error:[%v]", "GetPublisherVASTTags", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -28,10 +27,9 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 	vasttags := models.PublisherVASTTags{}
 	for rows.Next() {
 		var vastTag models.VASTTag
-		if err := rows.Scan(&vastTag.ID, &vastTag.PartnerID, &vastTag.URL, &vastTag.Duration, &vastTag.Price); err != nil {
-			continue
+		if err := rows.Scan(&vastTag.ID, &vastTag.PartnerID, &vastTag.URL, &vastTag.Duration, &vastTag.Price); err == nil {
+			vasttags[vastTag.ID] = &vastTag
 		}
-		vasttags[vastTag.ID] = &vastTag
 	}
 	return vasttags, nil
 }

@@ -58,6 +58,7 @@ const (
 	WrapperLoggerDebug         = "owLoggerDebug"
 	KEY_OW_SLOT_NAME           = "owSlotName"
 	VENDORID                   = "vendorId"
+	BidderPubMatic             = "pubmatic"
 	//ADSERVER_URL used by S2S to redirect the OW bids if owredirect parameter is not found in video/json
 	ADSERVER_URL = "adServerUrl"
 
@@ -330,6 +331,12 @@ const (
 
 	Device     = "device"
 	DeviceType = "deviceType"
+
+	//constants for Universal Pixel
+	PixelTypeUrl  = "url"
+	PixelTypeJS   = "js"
+	PixelPosAbove = "above"
+	PixelPosBelow = "below"
 )
 
 const (
@@ -385,15 +392,52 @@ const (
 )
 
 const Pipe = "|"
+const (
+	EndpointV25     = "v25"
+	EndpointAMP     = "amp"
+	EndpointVideo   = "video"
+	EndpointJson    = "json"
+	EndpointORTB    = "ortb"
+	EndpointVAST    = "vast"
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
+)
 
 const (
-	EndpointV25   = "v25"
-	EndpointAMP   = "amp"
-	EndpointVideo = "video"
-	EndpointJson  = "json"
-	EndpointORTB  = "ortb"
-	EndpointVAST  = "vast"
-	Openwrap      = "openwrap"
-	ImpTypeBanner = "banner"
-	ImpTypeVideo  = "video"
+	PartnerErrNoBid              = "no_bid"
+	PartnerErrTimeout            = "timeout"
+	PartnerErrUnknownPrebidError = "unknown"
+)
+
+// enum to report the error at partner-config level
+const (
+	PartnerErrSlotNotMapped = iota // 0
+	PartnerErrMisConfig            //1
+)
+
+// constants for query_type label in stats
+const (
+	PartnerConfigQuery             = "GetParterConfig"
+	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery              = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                   = "GetSlotNameHash"
+	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
+	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
+	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
+	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
+	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	//PMSlotToMappings               = "GetPMSlotToMappings"
+)
+
+// constants to accept request-test value
+type testValue = int8
+
+const (
+	TestValueTwo testValue = 2
 )

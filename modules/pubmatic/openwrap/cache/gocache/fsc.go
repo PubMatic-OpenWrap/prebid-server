@@ -1,23 +1,21 @@
 package gocache
 
+import "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+
 // Populates Cache with Fsc-Disabled Publishers
-func (dbcache *cache) GetFSCDisabledPublishers() (map[int]struct{}, error) {
-	disabledPublishersMap, err := dbcache.db.GetFSCDisabledPublishers()
+func (c *cache) GetFSCDisabledPublishers() (map[int]struct{}, error) {
+	fscDisabledPublishers, err := c.db.GetFSCDisabledPublishers()
 	if err != nil {
-		return disabledPublishersMap, err
+		c.metricEngine.RecordDBQueryFailure(models.AllFscDisabledPublishersQuery, "", "")
 	}
-	// Not setting into cache as fsc maintains it own map
-	// mcache.Set(constant.FscPublisher, disabledPublishersMap)
-	return disabledPublishersMap, nil
+	return fscDisabledPublishers, err
 }
 
 // Populates cache with Fsc-Dsp Threshold Percentages
-func (dbcache *cache) GetFSCThresholdPerDSP() (map[int]int, error) {
-	dspThresholdsMap, err := dbcache.db.GetFSCThresholdPerDSP()
+func (c *cache) GetFSCThresholdPerDSP() (map[int]int, error) {
+	fscThreshold, err := c.db.GetFSCThresholdPerDSP()
 	if err != nil {
-		return dspThresholdsMap, err
+		c.metricEngine.RecordDBQueryFailure(models.AllDspFscPcntQuery, "", "")
 	}
-	// Not setting into cache as fsc maintains it own map
-	// mcache.Set(constant.FscPublisher, dspThresholdsMap)
-	return dspThresholdsMap, nil
+	return fscThreshold, err
 }

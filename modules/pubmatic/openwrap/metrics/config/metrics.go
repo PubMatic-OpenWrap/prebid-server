@@ -2,17 +2,22 @@ package config
 
 import (
 	"fmt"
+	"time"
 
+	cfg "github.com/prebid/prebid-server/config"
+	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	ow_prometheus "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // NewMetricsEngine initialises the stats-client and prometheus and return them as MultiMetricsEngine
-func NewMetricsEngine(cfg config.Config) (MultiMetricsEngine, error) {
+func NewMetricsEngine(cfg *config.Config, metricsCfg *cfg.Metrics, metricsRegistry metrics_cfg.MetricsRegistry) (MultiMetricsEngine, error) {
 
 	// Create a list of metrics engines to use.
-	engineList := make(MultiMetricsEngine, 0, 1)
+	engineList := make(MultiMetricsEngine, 0, 2)
 
 	if cfg.Stats.Endpoint != "" {
 		hostName := cfg.Stats.DefaultHostName // Dummy hostname N:P
@@ -44,21 +49,29 @@ func NewMetricsEngine(cfg config.Config) (MultiMetricsEngine, error) {
 		engineList = append(engineList, sc)
 	}
 
-	// TODO: Set up the Prometheus metrics engine.
+	// Set up the Prometheus metrics engine.
+	if metricsCfg != nil && metricsRegistry != nil && metricsRegistry[metrics_cfg.PrometheusRegistry] != nil {
+		prometheusRegistry, ok := metricsRegistry[metrics_cfg.PrometheusRegistry].(*prometheus.Registry)
+		if ok && prometheusRegistry != nil {
+			prometheusEngine := ow_prometheus.NewMetrics(&metricsCfg.Prometheus, prometheusRegistry)
+			engineList = append(engineList, prometheusEngine)
+		}
+	}
+
 	if len(engineList) > 0 {
 		return engineList, nil
 	}
 	return nil, fmt.Errorf("metric-engine is not configured")
 }
 
-// MultiMetricsEngine logs metrics to multiple metrics databases The can be useful in transitioning
+// MultiMetricsEngine logs metrics to multiple metrics databases These can be useful in transitioning
 // an instance from one engine to another, you can run both in parallel to verify stats match up.
 type MultiMetricsEngine []metrics.MetricsEngine
 
 // RecordOpenWrapServerPanicStats across all engines
-func (me *MultiMetricsEngine) RecordOpenWrapServerPanicStats() {
+func (me *MultiMetricsEngine) RecordOpenWrapServerPanicStats(host, method string) {
 	for _, thisME := range *me {
-		thisME.RecordOpenWrapServerPanicStats()
+		thisME.RecordOpenWrapServerPanicStats(host, method)
 	}
 }
 
@@ -70,37 +83,16 @@ func (me *MultiMetricsEngine) RecordPublisherPartnerNoCookieStats(publisher, par
 }
 
 // RecordPartnerTimeoutErrorStats across all engines
-func (me *MultiMetricsEngine) RecordPartnerTimeoutErrorStats(publisher, partner string) {
+func (me *MultiMetricsEngine) RecordPartnerResponseErrors(publisher, partner, err string) {
 	for _, thisME := range *me {
-		thisME.RecordPartnerTimeoutErrorStats(publisher, partner)
-	}
-}
-
-// RecordNobidErrorStats across all engines
-func (me *MultiMetricsEngine) RecordNobidErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordNobidErrorStats(publisher, partner)
-	}
-}
-
-// RecordUnkownPrebidErrorStats across all engines
-func (me *MultiMetricsEngine) RecordUnkownPrebidErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordUnkownPrebidErrorStats(publisher, partner)
-	}
-}
-
-// RecordSlotNotMappedErrorStats across all engines
-func (me *MultiMetricsEngine) RecordSlotNotMappedErrorStats(publisher, partner string) {
-	for _, thisME := range *me {
-		thisME.RecordSlotNotMappedErrorStats(publisher, partner)
+		thisME.RecordPartnerResponseErrors(publisher, partner, err)
 	}
 }
 
 // RecordMisConfigurationErrorStats across all engines
-func (me *MultiMetricsEngine) RecordMisConfigurationErrorStats(publisher, partner string) {
+func (me *MultiMetricsEngine) RecordPartnerConfigErrors(publisher, profile, partner string, errcode int) {
 	for _, thisME := range *me {
-		thisME.RecordMisConfigurationErrorStats(publisher, partner)
+		thisME.RecordPartnerConfigErrors(publisher, profile, partner, errcode)
 	}
 }
 
@@ -119,9 +111,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher
 }
 
 // RecordNobidErrPrebidServerRequests across all engines
-func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string) {
+func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	for _, thisME := range *me {
-		thisME.RecordNobidErrPrebidServerRequests(publisher)
+		thisME.RecordNobidErrPrebidServerRequests(publisher, nbr)
 	}
 }
 
@@ -321,17 +313,10 @@ func (me *MultiMetricsEngine) RecordCTVReqCountWithAdPod(publisher, profile stri
 	}
 }
 
-// RecordReqImpsWithAppContentCount across all engines
-func (me *MultiMetricsEngine) RecordReqImpsWithAppContentCount(publisher string) {
+// RecordReqImpsWithContentCount across all engines
+func (me *MultiMetricsEngine) RecordReqImpsWithContentCount(publisher, contentType string) {
 	for _, thisME := range *me {
-		thisME.RecordReqImpsWithAppContentCount(publisher)
-	}
-}
-
-// RecordReqImpsWithSiteContentCount across all engines
-func (me *MultiMetricsEngine) RecordReqImpsWithSiteContentCount(publisher string) {
-	for _, thisME := range *me {
-		thisME.RecordReqImpsWithSiteContentCount(publisher)
+		thisME.RecordReqImpsWithContentCount(publisher, contentType)
 	}
 }
 
@@ -377,9 +362,86 @@ func (me *MultiMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(publisher, 
 	}
 }
 
+// RecordGetProfileDataTime across all engines
+func (me *MultiMetricsEngine) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordGetProfileDataTime(requestType, profileid, getTime)
+	}
+}
+
+// RecordDBQueryFailure across all engines
+func (me *MultiMetricsEngine) RecordDBQueryFailure(queryType, publisher, profile string) {
+	for _, thisME := range *me {
+		thisME.RecordDBQueryFailure(queryType, publisher, profile)
+	}
+}
+
 // Shutdown across all engines
 func (me *MultiMetricsEngine) Shutdown() {
 	for _, thisME := range *me {
 		thisME.Shutdown()
+	}
+}
+
+// RecordRequest log openwrap request type
+func (me *MultiMetricsEngine) RecordRequest(labels metrics.Labels) {
+	for _, thisME := range *me {
+		thisME.RecordRequest(labels)
+	}
+}
+
+// RecordLurlSent log lurl status
+func (me *MultiMetricsEngine) RecordLurlSent(labels metrics.LurlStatusLabels) {
+	for _, thisME := range *me {
+		thisME.RecordLurlSent(labels)
+	}
+}
+
+// RecordLurlBatchSent log lurl batch status
+func (me *MultiMetricsEngine) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels) {
+	for _, thisME := range *me {
+		thisME.RecordLurlBatchSent(labels)
+	}
+}
+
+// RecordBids record ow bids
+func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
+	for _, thisME := range *me {
+		thisME.RecordBids(pubid, profileid, biddder, deal)
+	}
+}
+
+// RecordPartnerTimeoutRequests log request partner request timeout
+func (me *MultiMetricsEngine) RecordPartnerTimeoutRequests(pubid, profileid, bidder string) {
+	for _, thisME := range *me {
+		thisME.RecordPartnerTimeoutRequests(pubid, profileid, bidder)
+	}
+}
+
+// RecordCtvUaAccuracy log ctv UA accuracy
+func (me *MultiMetricsEngine) RecordCtvUaAccuracy(pubId, status string) {
+	for _, thisME := range *me {
+		thisME.RecordCtvUaAccuracy(pubId, status)
+	}
+}
+
+// RecordSendLoggerDataTime across all engines
+func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	}
+}
+
+// RecordRequestTime record ow request time
+func (me *MultiMetricsEngine) RecordRequestTime(requestType string, requestTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordRequestTime(requestType, requestTime)
+	}
+}
+
+// RecordOWServerPanic record OW panics
+func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName, podName string) {
+	for _, thisME := range *me {
+		thisME.RecordOWServerPanic(endpoint, methodName, nodeName, podName)
 	}
 }
