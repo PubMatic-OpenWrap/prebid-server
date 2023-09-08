@@ -391,7 +391,7 @@ func TestRegisterLabelPermutations(t *testing.T) {
 func TestMetricsRecordCountry(t *testing.T) {
 	m := createMetricsForTesting()
 	type args struct {
-		pubId string
+		pubID string
 	}
 	tests := []struct {
 		name string
@@ -401,16 +401,16 @@ func TestMetricsRecordCountry(t *testing.T) {
 		{
 			name: "call_record_country",
 			args: args{
-				pubId: "1010",
+				pubID: "1010",
 			},
 			want: 1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m.RecordCountry(tt.args.pubId)
+			m.RecordCountry(tt.args.pubID)
 			assertCounterVecValue(t, "", "country", m.country, tt.want, prometheus.Labels{
-				pubIDLabel: tt.args.pubId,
+				pubIDLabel: tt.args.pubID,
 			})
 		})
 	}

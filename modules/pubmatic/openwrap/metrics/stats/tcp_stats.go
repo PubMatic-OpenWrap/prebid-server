@@ -336,4 +336,4 @@ func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                   
 func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
 func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
 func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
-func (st *StatsTCP) RecordCountry(pubId string)                                                     {}
+func (st *StatsTCP) RecordCountry(pubID string)                                                     {}

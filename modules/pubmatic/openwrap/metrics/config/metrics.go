@@ -447,8 +447,8 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 }
 
 // RecordCountry records count of requests received with req.device.geo.country
-func (me *MultiMetricsEngine) RecordCountry(pubId string) {
+func (me *MultiMetricsEngine) RecordCountry(pubID string) {
 	for _, thisME := range *me {
-		thisME.RecordCountry(pubId)
+		thisME.RecordCountry(pubID)
 	}
 }

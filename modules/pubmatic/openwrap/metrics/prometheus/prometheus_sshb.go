@@ -200,9 +200,9 @@ func (m *Metrics) RecordOWServerPanic(endpoint, methodName, nodeName, podName st
 }
 
 // RecordCountry records count of requests received with req.device.geo.country
-func (m *Metrics) RecordCountry(pubId string) {
+func (m *Metrics) RecordCountry(pubID string) {
 	m.country.With(prometheus.Labels{
-		pubIDLabel: pubId,
+		pubIDLabel: pubID,
 	}).Inc()
 }
 
