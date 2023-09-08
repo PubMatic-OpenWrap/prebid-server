@@ -107,6 +107,11 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Counts the header-bidding server panic.",
 		[]string{nodeNameLabel, podNameLabel, methodNameLabel, endpointLabel})
 
+	metrics.country = newCounter(cfg, promRegistry,
+		"sshb_country",
+		"Count of requests received with publishers Country by publisher id.",
+		[]string{pubIDLabel})
+
 	preloadLabelValues(metrics)
 }
 
@@ -191,6 +196,13 @@ func (m *Metrics) RecordOWServerPanic(endpoint, methodName, nodeName, podName st
 		methodNameLabel: methodName,
 		nodeNameLabel:   nodeName,
 		podNameLabel:    podName,
+	}).Inc()
+}
+
+// RecordCountry records count of requests received with req.device.geo.country
+func (m *Metrics) RecordCountry(pubId string) {
+	m.country.With(prometheus.Labels{
+		pubIDLabel: pubId,
 	}).Inc()
 }
 

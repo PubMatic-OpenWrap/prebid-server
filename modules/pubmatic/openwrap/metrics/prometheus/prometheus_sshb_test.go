@@ -387,3 +387,31 @@ func TestRegisterLabelPermutations(t *testing.T) {
 		assert.ElementsMatch(t, test.expectedLabels, resultLabels)
 	}
 }
+
+func TestMetricsRecordCountry(t *testing.T) {
+	m := createMetricsForTesting()
+	type args struct {
+		pubId string
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "call_record_country",
+			args: args{
+				pubId: "1010",
+			},
+			want: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m.RecordCountry(tt.args.pubId)
+			assertCounterVecValue(t, "", "country", m.country, tt.want, prometheus.Labels{
+				pubIDLabel: tt.args.pubId,
+			})
+		})
+	}
+}
