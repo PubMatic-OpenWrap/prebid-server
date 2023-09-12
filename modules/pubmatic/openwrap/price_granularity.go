@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -8,21 +9,23 @@ import (
 func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranularity, error) {
 	//Get the value of priceGranularity from config
 	priceGranularity := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityKey)
+
+	if priceGranularity == "" || (priceGranularity == models.PriceGranularityCustom && !rctx.IsCTVRequest) {
+		// If it is empty then use default value as 'auto'
+		// If it is custom but not CTV request then use default value as 'a
+		priceGranularity = "auto"
+	}
+	if rctx.IsTestRequest > 0 && rctx.IsCTVRequest {
+		//OTT-603: Adding test flag check
+		priceGranularity = "testpg"
+	}
+
 	//  OTT-769: determine custom pg object based on customPriceGranularityValue config
 	//  Expected that this check with be true iff platform is video / isCTVAPIRequest
 	if priceGranularity == models.PriceGranularityCustom {
 		customPriceGranularityValue := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityCustomConfig)
 		pgObject, err := newCustomPriceGranuality(customPriceGranularityValue)
 		return pgObject, err
-	}
-
-	if priceGranularity == "" || (priceGranularity == models.PriceGranularityCustom && !rctx.IsCTVRequest) {
-		// If it is empty then use default value as 'auto'
-		// If it is custom but not CTV request then use default value as 'a
-		priceGranularity = "auto"
-	} else if rctx.IsTestRequest > 0 && rctx.IsCTVRequest {
-		//OTT-603: Adding test flag check
-		priceGranularity = "testpg"
 	}
 
 	// OTT-769: (Backword compatibilty) compute based on legacy string (auto, med)
@@ -48,6 +51,6 @@ func newCustomPriceGranuality(customPGValue string) (openrtb_ext.PriceGranularit
 		return pg, err
 	}
 	// Overwrite always to 2
-	pg.Precision = getIntPtr(2)
+	pg.Precision = ptrutil.ToPtr[int](2)
 	return pg, nil
 }

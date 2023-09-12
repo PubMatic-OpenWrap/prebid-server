@@ -49,3 +49,31 @@ func BenchmarkRegexpCachePackageCompile(b *testing.B) {
 		re.MatchString("cat")
 	}
 }
+
+func TestMatchString(t *testing.T) {
+	testCases := []struct {
+		pattern  string
+		input    string
+		expected bool
+	}{
+		{`^[a-zA-Z]+$`, "abcdef", true},
+		{`^[0-9]+$`, "12345", true},
+		{`^[a-zA-Z]+$`, "12345", false},
+		{`^[0-9]+$`, "abcdef", false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.pattern, func(t *testing.T) {
+			matched, err := MatchString(tc.pattern, tc.input)
+
+			if err != nil {
+				t.Fatalf("Error while matching: %v", err)
+			}
+
+			if matched != tc.expected {
+				t.Errorf("Expected match %v for input '%s' with pattern '%s', but got %v",
+					tc.expected, tc.input, tc.pattern, matched)
+			}
+		})
+	}
+}

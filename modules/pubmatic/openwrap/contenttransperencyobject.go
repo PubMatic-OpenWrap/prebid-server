@@ -8,7 +8,7 @@ import (
 
 // setContentObjectTransparencyObject from request or AdUnit Object
 // setContentObjectTransparencyObject from request or AdUnit Object
-func setContentTransparencyObject(rctx models.RequestCtx, reqExt models.RequestExt) (prebidTransparency *openrtb_ext.TransparencyExt) {
+func setContentTransparencyObject(rctx models.RequestCtx, reqExt *models.RequestExt) (prebidTransparency *openrtb_ext.TransparencyExt) {
 	if reqExt.Prebid.Transparency != nil {
 		return
 	}

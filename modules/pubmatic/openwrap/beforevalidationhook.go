@@ -68,7 +68,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
-	// TODO: verify preference of request.test vs queryParam test
+	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
 	if payload.BidRequest.Test != 0 {
 		rCtx.IsTestRequest = payload.BidRequest.Test
 	}
@@ -89,7 +89,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
-	rCtx.Platform, _ = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+	rCtx.Platform = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if rCtx.Platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
 		err = errors.New("failed to get platform data")
@@ -100,7 +100,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	rCtx.PageURL = getPageURL(payload.BidRequest)
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform)
+	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
@@ -363,8 +363,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		requestExt.Prebid.Transparency = cto
 	}
 
-	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, &requestExt)
-	setPriceFloorFetchURL(&requestExt, rCtx.PartnerConfigMap)
+	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
+	setPriceFloorFetchURL(requestExt, rCtx.PartnerConfigMap)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -418,7 +418,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = []string{cur}
 	}
-
 	if bidRequest.TMax == 0 {
 		bidRequest.TMax = rctx.TMax
 	}
@@ -758,10 +757,9 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx) int64 {
 			auctionTimeout = m.cfg.Timeout.MaxTimeout
 			break
 		}
-		if int64(partnerTO) >= m.cfg.Timeout.MinTimeout {
-			if auctionTimeout < int64(partnerTO) {
-				auctionTimeout = int64(partnerTO)
-			}
+		if int64(partnerTO) >= m.cfg.Timeout.MinTimeout && auctionTimeout < int64(partnerTO) {
+			auctionTimeout = int64(partnerTO)
+
 		}
 	}
 	return auctionTimeout
@@ -811,15 +809,11 @@ func isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
 	return videoEnabled || bannerEnabled
 }
 
-func getPubID(bidRequest openrtb2.BidRequest) (int, error) {
-	var pubID int
-	var err error
-
+func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil {
 		pubID, err = strconv.Atoi(bidRequest.Site.Publisher.ID)
 	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
-
 	return pubID, err
 }
