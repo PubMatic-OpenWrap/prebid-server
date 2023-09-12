@@ -5,9 +5,9 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func setPriceFloorFetchURL(requestExt *models.RequestExt, configMap map[int]map[string]string) {
+func setPriceFloorFetchURL(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
 
-	if configMap == nil || configMap[models.VersionLevelConfigID] == nil {
+	if _, ok := partnerConfigMap[models.VersionLevelConfigID]; !ok {
 		return
 	}
 
@@ -15,7 +15,7 @@ func setPriceFloorFetchURL(requestExt *models.RequestExt, configMap map[int]map[
 		return
 	}
 
-	url, urlExists := configMap[models.VersionLevelConfigID][models.PriceFloorURL]
+	url, urlExists := partnerConfigMap[models.VersionLevelConfigID][models.PriceFloorURL]
 	if urlExists {
 		if requestExt.Prebid.Floors == nil {
 			requestExt.Prebid.Floors = &openrtb_ext.PriceFloorRules{}
@@ -25,7 +25,7 @@ func setPriceFloorFetchURL(requestExt *models.RequestExt, configMap map[int]map[
 		}
 		*requestExt.Prebid.Floors.Enabled = true
 
-		enable, enabledExists := configMap[models.VersionLevelConfigID][models.FloorModuleEnabled]
+		enable, enabledExists := partnerConfigMap[models.VersionLevelConfigID][models.FloorModuleEnabled]
 		if enabledExists && enable != "1" {
 			*requestExt.Prebid.Floors.Enabled = false
 			return
