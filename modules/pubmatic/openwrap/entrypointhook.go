@@ -1,7 +1,9 @@
 package openwrap
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"strconv"
 	"time"
 
@@ -127,5 +129,11 @@ func (m OpenWrap) handleEntrypointHook(
 	result.ModuleContext["rctx"] = rCtx
 
 	result.Reject = false
+
+	result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+		ep.Request.Body = io.NopCloser(bytes.NewBuffer(ep.Body))
+		return ep, nil
+	}, hookstage.MutationUpdate, "update-request-body")
+
 	return result, nil
 }

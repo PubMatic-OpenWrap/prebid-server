@@ -1,8 +1,11 @@
 package middleware
 
 import (
+	"io"
 	"net/http"
+	"runtime/debug"
 
+	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
@@ -52,6 +55,17 @@ func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, pbsCacheClient *pbc.C
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	defer func() {
+		if recover := recover(); recover != nil {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				return
+			}
+			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
@@ -66,6 +80,17 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	defer func() {
+		if recover := recover(); recover != nil {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				return
+			}
+			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
@@ -93,6 +118,17 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 // JsonGetEndpoint
 func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	defer func() {
+		if recover := recover(); recover != nil {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				return
+			}
+			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
 	redirectURL, err := getAndValidateRedirectURL(r)
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, err)
