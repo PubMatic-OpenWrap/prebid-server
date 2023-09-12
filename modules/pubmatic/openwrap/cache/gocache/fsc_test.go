@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -20,7 +20,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
-	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
@@ -101,7 +101,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
-	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache

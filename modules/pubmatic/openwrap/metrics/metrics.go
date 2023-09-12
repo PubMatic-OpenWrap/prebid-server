@@ -36,7 +36,6 @@ type MetricsEngine interface {
 	RecordVideoImpDisabledViaConnTypeStats(publisher, profileID string)
 
 	// not applicable for openwrap module
-	RecordPrebidTimeoutRequests(publisher, profileID string)
 	RecordSSTimeoutRequests(publisher, profileID string)
 	RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder string)
 	RecordPreProcessingTimeStats(publisher string, processingTime int)
@@ -58,8 +57,20 @@ type MetricsEngine interface {
 	RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string)
 
 	RecordGetProfileDataTime(endpoint, profile string, getTime time.Duration)
-	RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration)
 	RecordDBQueryFailure(queryType, publisher, profile string)
 
 	Shutdown()
+
+	// temporary sshb metrics
+	RecordRequest(labels Labels) // ignores adapter. only statusOk and statusErr fom status
+	RecordLurlSent(labels LurlStatusLabels)
+	RecordLurlBatchSent(labels LurlBatchStatusLabels)
+	RecordBids(pubid, profileid, biddder, deal string)
+	RecordPrebidTimeoutRequests(pubid, profileid string)
+	RecordPartnerTimeoutRequests(pubid, profileid, bidder string)
+	RecordCtvUaAccuracy(pubId, status string)
+	RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration)
+	RecordRequestTime(requestType string, requestTime time.Duration)
+	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
+	RecordCountry(pubID string)
 }
