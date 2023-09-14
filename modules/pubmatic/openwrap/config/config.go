@@ -8,6 +8,7 @@ import (
 
 // Config contains the values read from the config file at boot time
 type Config struct {
+	Enabled   bool
 	Server    Server
 	Database  Database
 	Cache     Cache
