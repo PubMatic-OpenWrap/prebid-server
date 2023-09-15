@@ -90,6 +90,31 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Empty content return",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
+					},
+				},
+			},
+			args: args{
+				profileID:      5890,
+				displayVersion: 0,
+			},
+			want:    nil,
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(``)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
 			name: "query with display version id 0",
 			fields: fields{
 				cfg: config.Database{
