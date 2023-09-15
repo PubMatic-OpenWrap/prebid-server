@@ -176,7 +176,6 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			wantErr: true,
 			want:    nil,
 		},
-
 		{
 			name: "db_queries_failed_getting_adunitconfig_and_wrapper_slotmappings",
 			fields: fields{
@@ -215,8 +214,9 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			defer ctrl.Finish()
 
 			c := &cache{
-				cache: tt.fields.cache,
-				cfg:   tt.fields.cfg,
+				cache:               tt.fields.cache,
+				cfg:                 tt.fields.cfg,
+				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
 			}
 			c.db, c.metricEngine = tt.setup(ctrl)
 
@@ -294,8 +294,9 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 			defer ctrl.Finish()
 
 			c := &cache{
-				cache: tt.fields.cache,
-				cfg:   tt.fields.cfg,
+				cache:               tt.fields.cache,
+				cfg:                 tt.fields.cfg,
+				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
 			}
 			c.db, c.metricEngine = tt.setup(ctrl)
 
@@ -500,6 +501,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				}, nil)
 			},
 		},
+
 		{
 			name: "empty_partnerConfigMap_from_DB",
 			fields: fields{
@@ -530,10 +532,11 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				cache:        tt.fields.cache,
-				cfg:          tt.fields.cfg,
-				db:           tt.fields.db,
-				metricEngine: mockEngine,
+				cache:               tt.fields.cache,
+				cfg:                 tt.fields.cfg,
+				db:                  tt.fields.db,
+				metricEngine:        mockEngine,
+				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 

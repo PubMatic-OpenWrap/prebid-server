@@ -97,7 +97,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		err = errorWrap(err, errAdunitConfig)
 	}
 	if errWrapperSlotMapping == nil && errAdunitConfig == nil {
-		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry-60))
+		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.partnerConfigExpiry))
 	}
 	return
 }
