@@ -1,7 +1,9 @@
 package mysql
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -20,7 +22,7 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 
 	var adunitConfigJSON string
 	err := db.conn.QueryRow(adunitConfigQuery).Scan(&adunitConfigJSON)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 
