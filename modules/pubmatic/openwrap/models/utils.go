@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/pkg/errors"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
 )
@@ -207,4 +208,13 @@ func IsPubmaticCorePartner(partnerName string) bool {
 		return true
 	}
 	return false
+}
+
+// wraps error with error msg
+func ErrorWrap(cErr, nErr error) error {
+	if cErr == nil {
+		return nErr
+	}
+
+	return errors.Wrap(cErr, nErr.Error())
 }

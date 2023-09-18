@@ -153,11 +153,10 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 	}
 }
 
-func Test_updateFscConfigMapsFromCache(t *testing.T) {
+func TestUpdateFscConfigMapsFromCache(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_dbcache.NewMockCache(ctrl)
-	defer SetAndResetFscWithMockCache(mockCache, nil)()
 	type args struct {
 		cache cache.Cache
 	}
@@ -213,6 +212,7 @@ func Test_updateFscConfigMapsFromCache(t *testing.T) {
 			if !reflect.DeepEqual(fscConfigs.thresholdsPerDsp, tt.want.fscDsp) {
 				t.Errorf("updateFscConfigMapsFromCache() for FscDspThresholds= %v, %v", fscConfigs.disabledPublishers, tt.want.fscDsp)
 			}
+			SetAndResetFscWithMockCache(mockCache, nil)()
 		})
 	}
 }

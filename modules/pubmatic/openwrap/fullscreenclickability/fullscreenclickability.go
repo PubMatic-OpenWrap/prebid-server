@@ -66,13 +66,18 @@ func predictFscValue(threshold int) bool {
 
 // fetch and update fsc config maps from DB
 func updateFscConfigMapsFromCache(c cache.Cache) {
-	disabledPublishers, err := c.GetFSCDisabledPublishers()
-	if err != nil {
-		glog.Error("ErrUpdateFscCache:", err.Error())
+	var err error
+	disabledPublishers, errPubFsc := c.GetFSCDisabledPublishers()
+	if errPubFsc != nil {
+		err = models.ErrorWrap(err, errPubFsc)
 	}
-	thresholdsPerDsp, err := c.GetFSCThresholdPerDSP()
+	thresholdsPerDsp, errDspFsc := c.GetFSCThresholdPerDSP()
+	if errDspFsc != nil {
+		err = models.ErrorWrap(err, errDspFsc)
+	}
 	if err != nil {
-		glog.Error("ErrUpdateFscCache:", err.Error())
+		glog.Error(err.Error())
+		return
 	}
 	fscConfigs.Lock()
 	fscConfigs.disabledPublishers = disabledPublishers
@@ -96,5 +101,6 @@ func SetAndResetFscWithMockCache(mockDb cache.Cache, dspThresholdMap map[int]int
 	return func() {
 		fscConfigs.cache = nil
 		fscConfigs.thresholdsPerDsp = make(map[int]int)
+		fscConfigs.disabledPublishers = make(map[int]struct{})
 	}
 }
