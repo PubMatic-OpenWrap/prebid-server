@@ -51,6 +51,6 @@ func newCustomPriceGranuality(customPGValue string) (openrtb_ext.PriceGranularit
 		return pg, err
 	}
 	// Overwrite always to 2
-	pg.Precision = ptrutil.ToPtr[int](2)
+	pg.Precision = ptrutil.ToPtr(2)
 	return pg, nil
 }

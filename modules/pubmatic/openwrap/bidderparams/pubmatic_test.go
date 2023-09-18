@@ -235,7 +235,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 		want  want
 	}{
 		{
-			name: "test_request_1",
+			name: "request_with_test_value_1",
 			args: args{
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
@@ -293,6 +293,66 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				wantErr:        false,
 			},
 		},
+		// {
+		// 	name: "exact_matched_slot_found",
+		// 	args: args{
+		// 		rctx: models.RequestCtx{
+		// 			IsTestRequest: 0,
+		// 			PubID:         5890,
+		// 			ProfileID:     123,
+		// 			DisplayID:     1,
+		// 			PartnerConfigMap: map[int]map[string]string{
+		// 				1: {
+		// 					models.PREBID_PARTNER_NAME: "pubmatic",
+		// 					models.BidderCode:          "pubmatic",
+		// 					models.TIMEOUT:             "200",
+		// 					models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
+		// 					models.SERVER_SIDE_FLAG:    "1",
+		// 				},
+		// 			},
+		// 		},
+		// 		cache: mockCache,
+		// 		impExt: models.ImpExtension{
+		// 			Bidder: map[string]*models.BidderExtension{
+		// 				"pubmatic": {
+		// 					KeyWords: []models.KeyVal{
+		// 						{
+		// 							Key:    "test_key1",
+		// 							Values: []string{"test_value1", "test_value2"},
+		// 						},
+		// 						{
+		// 							Key:    "test_key2",
+		// 							Values: []string{"test_value1", "test_value2"},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Wrapper: &models.ExtImpWrapper{
+		// 				Div: "Div1",
+		// 			},
+		// 		},
+		// 		imp:       getTestImp("/Test_Adunit1234"),
+		// 		partnerID: 1,
+		// 	},
+		// 	setup: func() {
+		// 		mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+		// 			"test": {
+		// 				PartnerId: 1,
+		// 			},
+		// 		})
+		// 		mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+		// 			OrderedSlotList: []string{"test", "test1"},
+		// 		})
+		// 		mockCache.EXPECT().Get("psregex_5890_123_1_1_/Test_Adunit1234").Return(interface{}(regexSlotEntry{SlotName: "/Test_Adunit1234", RegexPattern: "2aa34b52a9e941c1594af7565e599c8d"}), true)
+		// 	},
+		// 	want: want{
+		// 		matchedSlot:    "/Test_Adunit1234@Div1@200x300",
+		// 		matchedPattern: "",
+		// 		isRegexSlot:    false,
+		// 		params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@Div1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+		// 		wantErr:        false,
+		// 	},
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

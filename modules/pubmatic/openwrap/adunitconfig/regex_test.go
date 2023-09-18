@@ -28,7 +28,7 @@ func Test_getRegexMatch(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"^/15671365/MG_VideoAdUnit[0-9]*$": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.VideoConfig{
 										Video: openrtb2.Video{
 											SkipAfter:   16,
@@ -62,7 +62,7 @@ func Test_getRegexMatch(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"^/15671365/MG_VideoAdUnit[0-9]*$": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.VideoConfig{
 										Video: openrtb2.Video{
 											SkipAfter:   16,

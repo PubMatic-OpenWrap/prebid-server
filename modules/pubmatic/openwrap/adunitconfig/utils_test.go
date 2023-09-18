@@ -62,7 +62,7 @@ var testDefaultconfig = &adunitconfig.AdConfig{
 	Floors: &openrtb_ext.PriceFloorRules{
 		FloorMin:    10,
 		FloorMinCur: "USD",
-		Enabled:     ptrutil.ToPtr[bool](true),
+		Enabled:     ptrutil.ToPtr(true),
 	},
 }
 
@@ -182,7 +182,7 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 					Floors: &openrtb_ext.PriceFloorRules{
 						FloorMin:    10,
 						FloorMinCur: "USD",
-						Enabled:     ptrutil.ToPtr[bool](true),
+						Enabled:     ptrutil.ToPtr(true),
 					},
 				},
 				defaultConfig: testDefaultconfig,
@@ -201,7 +201,7 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](4),
-				BidFloorCur: ptrutil.ToPtr[string](models.USD),
+				BidFloorCur: ptrutil.ToPtr(models.USD),
 			},
 		},
 		{
@@ -212,12 +212,12 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 				},
 				defaultConfig: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr[float64](4),
-					BidFloorCur: ptrutil.ToPtr[string]("INR"),
+					BidFloorCur: ptrutil.ToPtr("INR"),
 				},
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](4),
-				BidFloorCur: ptrutil.ToPtr[string]("INR"),
+				BidFloorCur: ptrutil.ToPtr("INR"),
 			},
 		},
 		{
@@ -225,32 +225,32 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 			args: args{
 				slotConfig: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr[float64](0.0),
-					BidFloorCur: ptrutil.ToPtr[string]("INR"),
+					BidFloorCur: ptrutil.ToPtr("INR"),
 				},
 				defaultConfig: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr[float64](4.0),
-					BidFloorCur: ptrutil.ToPtr[string]("EUR"),
+					BidFloorCur: ptrutil.ToPtr("EUR"),
 				},
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](4.0),
-				BidFloorCur: ptrutil.ToPtr[string]("EUR"),
+				BidFloorCur: ptrutil.ToPtr("EUR"),
 			},
 		},
 		{
 			name: "Bid_Floor_from_slot_config_having_only_currency._default_gets_selected",
 			args: args{
 				slotConfig: &adunitconfig.AdConfig{
-					BidFloorCur: ptrutil.ToPtr[string]("INR"),
+					BidFloorCur: ptrutil.ToPtr("INR"),
 				},
 				defaultConfig: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr[float64](10.0),
-					BidFloorCur: ptrutil.ToPtr[string]("EUR"),
+					BidFloorCur: ptrutil.ToPtr("EUR"),
 				},
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](10.0),
-				BidFloorCur: ptrutil.ToPtr[string]("EUR"),
+				BidFloorCur: ptrutil.ToPtr("EUR"),
 			},
 		},
 		{
@@ -263,7 +263,7 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](10.0),
-				BidFloorCur: ptrutil.ToPtr[string]("USD"),
+				BidFloorCur: ptrutil.ToPtr("USD"),
 			},
 		},
 		{
@@ -274,12 +274,12 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 				},
 				defaultConfig: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr[float64](5.0),
-					BidFloorCur: ptrutil.ToPtr[string]("EUR"),
+					BidFloorCur: ptrutil.ToPtr("EUR"),
 				},
 			},
 			want: &adunitconfig.AdConfig{
 				BidFloor:    ptrutil.ToPtr[float64](4.0),
-				BidFloorCur: ptrutil.ToPtr[string]("USD"),
+				BidFloorCur: ptrutil.ToPtr("USD"),
 			},
 		},
 	}

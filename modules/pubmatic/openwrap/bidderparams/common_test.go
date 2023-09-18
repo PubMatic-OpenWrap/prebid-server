@@ -401,7 +401,79 @@ func Test_getDefaultMappingKGP(t *testing.T) {
 	}
 }
 
+func Test_getSlotMappings(t *testing.T) {
+	type args struct {
+		matchedSlot    string
+		matchedPattern string
+		slotMap        map[string]models.SlotMapping
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]interface{}
+	}{
+		{
+			name: "found_matched_slot",
+			args: args{
+				matchedSlot:    "/Test_Adunit1234",
+				matchedPattern: "",
+				slotMap: map[string]models.SlotMapping{
+					"/test_adunit1234": {
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				models.SITE_CACHE_KEY: "12313",
+				models.TAG_CACHE_KEY:  "45343",
+			},
+		},
+		{
+			name: "found_matched_pattern",
+			args: args{
+				matchedSlot:    "au123@div1@728x90",
+				matchedPattern: "au1.*@div.*@.*",
+				slotMap: map[string]models.SlotMapping{
+					"au1.*@div.*@.*": {
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				models.SITE_CACHE_KEY: "12313",
+				models.TAG_CACHE_KEY:  "45343",
+			},
+		},
+		{
+			name: "not_found_matched_slot_as_well_as_matched_pattern",
+			args: args{
+				matchedSlot:    "",
+				matchedPattern: "",
+				slotMap:        map[string]models.SlotMapping{},
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSlotMappings(tt.args.matchedSlot, tt.args.matchedPattern, tt.args.slotMap); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getSlotMappings() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetMatchingSlot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+
 	type args struct {
 		rctx            models.RequestCtx
 		cache           cache.Cache
@@ -416,9 +488,10 @@ func TestGetMatchingSlot(t *testing.T) {
 		matchedPattern string
 	}
 	tests := []struct {
-		name string
-		args args
-		want want
+		name  string
+		args  args
+		setup func()
+		want  want
 	}{
 		{
 			name: "Found_exact_match_slot",
@@ -438,10 +511,59 @@ func TestGetMatchingSlot(t *testing.T) {
 				matchedPattern: "",
 			},
 		},
-		{},
+		{
+			name: "Not_found_exact_match_and_not_regex_as_well",
+			args: args{
+				slotMap:    map[string]models.SlotMapping{},
+				isRegexKGP: false,
+			},
+			want: want{
+				matchedSlot:    "",
+				matchedPattern: "",
+			},
+		},
+		{
+			name: "found_matced_regex_slot",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "AU123@Div1@728x90",
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"*", ".*@.*@.*"},
+					HashValueMap: map[string]string{
+						".*@.*@.*": "2aa34b52a9e941c1594af7565e599c8d", // Code should match the given slot name with this regex
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"AU123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+				cache:      mockCache,
+				isRegexKGP: true,
+			},
+			setup: func() {
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_AU123@Div1@728x90").Return(nil, false)
+				mockCache.EXPECT().Set("psregex_5890_123_1_1_AU123@Div1@728x90", regexSlotEntry{SlotName: "AU123@Div1@728x90", RegexPattern: ".*@.*@.*"}).Times(1)
+			},
+			want: want{
+				matchedSlot:    "AU123@Div1@728x90",
+				matchedPattern: ".*@.*@.*",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
 			got, got1 := GetMatchingSlot(tt.args.rctx, tt.args.cache, tt.args.slot, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.isRegexKGP, tt.args.partnerID)
 			if got != tt.want.matchedSlot {
 				t.Errorf("GetMatchingSlot() got = %v, want %v", got, tt.want.matchedSlot)
@@ -453,68 +575,205 @@ func TestGetMatchingSlot(t *testing.T) {
 	}
 }
 
-// func TestGetRegexMatchingSlot(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
-// 	mockCache := mock_cache.NewMockCache(ctrl)
+func TestGetRegexMatchingSlot(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-// 	type args struct {
-// 		rctx            models.RequestCtx
-// 		cache           cache.Cache
-// 		slot            string
-// 		slotMap         map[string]models.SlotMapping
-// 		slotMappingInfo models.SlotMappingInfo
-// 		partnerID       int
-// 	}
-// 	type want struct {
-// 		matchedSlot  string
-// 		regexPattern string
-// 	}
-// 	tests := []struct {
-// 		name  string
-// 		args  args
-// 		setup func()
-// 		want  want
-// 	}{
-// 		{
-// 			name: "happy_path_found_matched_regex",
-// 			args: args{
-// 				rctx: models.RequestCtx{
-// 					PubID:     5890,
-// 					ProfileID: 123,
-// 					DisplayID: 1,
-// 				},
-// 				cache:     mockCache,
-// 				partnerID: 1,
-// 				slot:      "/Test_Adunit1234",
-// 			},
-// 			//ubSlotRegex, rctx.PubID, rctx.ProfileID, rctx.DisplayID, partnerID, slot
-// 			setup: func() {
-// 				mockCache.EXPECT().Get("psregex_5890_123_1_1_/Test_Adunit1234").Return(
-// 					interface{}{
-// 						 "/Test_Adunit1234",
-// 						"2aa34b52a9e941c1594af7565e599c8d",
-// 					}, true,
-// 				)
-// 			},
-// 			want: want{
-// 				matchedSlot:  "/Test_Adunit1234",
-// 				regexPattern: "2aa34b52a9e941c1594af7565e599c8d",
-// 			},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			if tt.setup != nil {
-// 				tt.setup()
-// 			}
-// 			got, got1 := GetRegexMatchingSlot(tt.args.rctx, tt.args.cache, tt.args.slot, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.partnerID)
-// 			if got != tt.want.matchedSlot {
-// 				t.Errorf("GetRegexMatchingSlot() got = %v, want %v", got, tt.want.matchedSlot)
-// 			}
-// 			if got1 != tt.want.regexPattern {
-// 				t.Errorf("GetRegexMatchingSlot() got1 = %v, want %v", got1, tt.want.regexPattern)
-// 			}
-// 		})
-// 	}
-// }
+	type args struct {
+		rctx            models.RequestCtx
+		slot            string
+		slotMap         map[string]models.SlotMapping
+		slotMappingInfo models.SlotMappingInfo
+		partnerID       int
+	}
+	type want struct {
+		matchedSlot  string
+		regexPattern string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		setup func() cache.Cache
+		want  want
+	}{
+		{
+			name: "happy_path_found_matched_regex_slot_entry_in_cahe",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "/Test_Adunit1234",
+			},
+			setup: func() cache.Cache {
+				mockCache := mock_cache.NewMockCache(ctrl)
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_/Test_Adunit1234").Return(interface{}(regexSlotEntry{SlotName: "/Test_Adunit1234", RegexPattern: "2aa34b52a9e941c1594af7565e599c8d"}), true)
+				return mockCache
+			},
+			want: want{
+				matchedSlot:  "/Test_Adunit1234",
+				regexPattern: "2aa34b52a9e941c1594af7565e599c8d",
+			},
+		},
+		{
+			name: "not_found_matched_regex_slot_entry_in_cache",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "AU123@Div1@728x90",
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"AU1.*@Div.*@.*", ".*@.*@.*"},
+					HashValueMap: map[string]string{
+						"AU1.*@Div.*@.*": "2aa34b52a9e941c1594af7565e599c8d",
+						".*@.*@.*":       "2aa34b52a9e941c1594af7565e599c8d",
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"AU123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+			},
+			setup: func() cache.Cache {
+				mockCache := mock_cache.NewMockCache(ctrl)
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_AU123@Div1@728x90").Return(nil, false)
+				mockCache.EXPECT().Set("psregex_5890_123_1_1_AU123@Div1@728x90", regexSlotEntry{SlotName: "AU123@Div1@728x90", RegexPattern: "AU1.*@Div.*@.*"}).Times(1)
+				return mockCache
+			},
+			want: want{
+				matchedSlot:  "AU123@Div1@728x90",
+				regexPattern: "AU1.*@Div.*@.*",
+			},
+		},
+		{
+			name: "not_found_matched_regex_slot_entry_in_cache_case_Insensitive_Adslot",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "au123@Div1@728x90",
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"AU1.*@Div.*@.*", ".*@.*@.*"},
+					HashValueMap: map[string]string{
+						"AU1.*@Div.*@.*": "2aa34b52a9e941c1594af7565e599c8d",
+						".*@.*@.*":       "2aa34b52a9e941c1594af7565e599c8d",
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"au123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+			},
+			setup: func() cache.Cache {
+				mockCache := mock_cache.NewMockCache(ctrl)
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_au123@Div1@728x90").Return(nil, false)
+				mockCache.EXPECT().Set("psregex_5890_123_1_1_au123@Div1@728x90", regexSlotEntry{SlotName: "au123@Div1@728x90", RegexPattern: "AU1.*@Div.*@.*"}).Times(1)
+				return mockCache
+			},
+			want: want{
+				matchedSlot:  "au123@Div1@728x90",
+				regexPattern: "AU1.*@Div.*@.*",
+			},
+		},
+		{
+			name: "not_found_matched_regex_slot_entry_in_cache_cache_Incorrecct_regex",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "au123@Div1@728x90",
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"*@Div.*@*"},
+					HashValueMap: map[string]string{
+						"*@Div.*@*": "2aa34b52a9e941c1594af7565e599c8d",
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"au123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+			},
+			setup: func() cache.Cache {
+				mockCache := mock_cache.NewMockCache(ctrl)
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_au123@Div1@728x90").Return(nil, false)
+				return mockCache
+			},
+			want: want{
+				matchedSlot:  "",
+				regexPattern: "",
+			},
+		},
+		{
+			name: "not_found_matched_regex_slot_entry_in_cache_cache_Invalid_regex_pattern",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slot:      "AU123@Div1@728x90",
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"*", ".*@.*@.*"},
+					HashValueMap: map[string]string{
+						"*":        "2aa34b52a9e941c1594af7565e599c8d", // Invalid regex pattern
+						".*@.*@.*": "2aa34b52a9e941c1594af7565e599c8d", // Code should match the given slot name with this regex
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"AU123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+			},
+			setup: func() cache.Cache {
+				mockCache := mock_cache.NewMockCache(ctrl)
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_AU123@Div1@728x90").Return(nil, false)
+				mockCache.EXPECT().Set("psregex_5890_123_1_1_AU123@Div1@728x90", regexSlotEntry{SlotName: "AU123@Div1@728x90", RegexPattern: ".*@.*@.*"}).Times(1)
+				return mockCache
+			},
+			want: want{
+				matchedSlot:  "AU123@Div1@728x90",
+				regexPattern: ".*@.*@.*",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cache := tt.setup()
+			got, got1 := GetRegexMatchingSlot(tt.args.rctx, cache, tt.args.slot, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.partnerID)
+			if got != tt.want.matchedSlot {
+				t.Errorf("GetRegexMatchingSlot() got = %v, want %v", got, tt.want.matchedSlot)
+			}
+			if got1 != tt.want.regexPattern {
+				t.Errorf("GetRegexMatchingSlot() got1 = %v, want %v", got1, tt.want.regexPattern)
+			}
+		})
+	}
+}

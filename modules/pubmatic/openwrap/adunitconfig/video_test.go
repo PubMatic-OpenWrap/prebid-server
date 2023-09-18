@@ -77,7 +77,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"default": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](false),
+									Enabled: ptrutil.ToPtr(false),
 								},
 							},
 						},
@@ -100,7 +100,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				UsingDefaultConfig: true,
 				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](false),
+						Enabled: ptrutil.ToPtr(false),
 					},
 				},
 			},
@@ -115,12 +115,12 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"default": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 								},
 							},
 							"/12344/test_adunit": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](false),
+									Enabled: ptrutil.ToPtr(false),
 								},
 							},
 						},
@@ -144,7 +144,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				UsingDefaultConfig: false,
 				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](false),
+						Enabled: ptrutil.ToPtr(false),
 					},
 				},
 				MatchedSlot:  "/12344/Test_AdUnit",
@@ -152,7 +152,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				MatchedRegex: "",
 				SelectedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](false),
+						Enabled: ptrutil.ToPtr(false),
 					},
 				},
 			},
@@ -167,7 +167,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"default": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.VideoConfig{
 										Video: openrtb2.Video{
 											Plcmt:       2,
@@ -179,7 +179,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 							},
 							"/12344/test_adunit": {
 								Banner: &adunitconfig.Banner{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.BannerConfig{
 										Banner: openrtb2.Banner{
 											ID: "123",
@@ -209,7 +209,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				MatchedRegex: "",
 				SelectedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Banner: &adunitconfig.Banner{
-						Enabled: ptrutil.ToPtr[bool](true),
+						Enabled: ptrutil.ToPtr(true),
 						Config: &adunitconfig.BannerConfig{
 							Banner: openrtb2.Banner{
 								ID: "123",
@@ -219,7 +219,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						},
 					},
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](true),
+						Enabled: ptrutil.ToPtr(true),
 						Config: &adunitconfig.VideoConfig{
 							Video: openrtb2.Video{
 								Plcmt:       2,
@@ -231,7 +231,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				},
 				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Banner: &adunitconfig.Banner{
-						Enabled: ptrutil.ToPtr[bool](true),
+						Enabled: ptrutil.ToPtr(true),
 						Config: &adunitconfig.BannerConfig{
 							Banner: openrtb2.Banner{
 								ID: "123",
@@ -241,7 +241,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						},
 					},
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](true),
+						Enabled: ptrutil.ToPtr(true),
 						Config: &adunitconfig.VideoConfig{
 							Video: openrtb2.Video{
 								Plcmt:       2,
@@ -297,7 +297,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 						Config: map[string]*adunitconfig.AdConfig{
 							"default": {
 								Video: &adunitconfig.Video{
-									Enabled: ptrutil.ToPtr[bool](true),
+									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.VideoConfig{
 										Video: openrtb2.Video{
 											CompanionType: []adcom1.CompanionType{1, 2, 3},
@@ -327,7 +327,7 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				SelectedSlotAdUnitConfig: nil,
 				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr[bool](true),
+						Enabled: ptrutil.ToPtr(true),
 						Config: &adunitconfig.VideoConfig{
 							Video: openrtb2.Video{
 								CompanionType: []adcom1.CompanionType{1, 2, 3},

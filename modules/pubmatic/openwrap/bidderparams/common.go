@@ -163,13 +163,13 @@ func GetMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string, slo
 
 const pubSlotRegex = "psregex_%d_%d_%d_%d_%s" // slot and its matching regex info at publisher, profile, display version and adapter level
 
+type regexSlotEntry struct {
+	SlotName     string
+	RegexPattern string
+}
+
 // TODO: handle this db injection correctly
 func GetRegexMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string, slotMap map[string]models.SlotMapping, slotMappingInfo models.SlotMappingInfo, partnerID int) (string, string) {
-	type regexSlotEntry struct {
-		SlotName     string
-		RegexPattern string
-	}
-
 	// Ex. "psregex_5890_56777_1_8_/43743431/DMDemo1@@728x90"
 	cacheKey := fmt.Sprintf(pubSlotRegex, rctx.PubID, rctx.ProfileID, rctx.DisplayID, partnerID, slot)
 	if v, ok := cache.Get(cacheKey); ok {

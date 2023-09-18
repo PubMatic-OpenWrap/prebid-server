@@ -77,7 +77,7 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 	if (slotConfig.BidFloor == nil || *slotConfig.BidFloor == 0.0) && defaultConfig.BidFloor != nil {
 		slotConfig.BidFloor = defaultConfig.BidFloor
 
-		slotConfig.BidFloorCur = ptrutil.ToPtr[string](models.USD)
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 		if defaultConfig.BidFloorCur != nil {
 			slotConfig.BidFloorCur = defaultConfig.BidFloorCur
 		}
@@ -85,7 +85,7 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 
 	//slotConfig has bidfloor and not have BidFloorCur set by default USD
 	if slotConfig.BidFloor != nil && *slotConfig.BidFloor > float64(0) && slotConfig.BidFloorCur == nil {
-		slotConfig.BidFloorCur = ptrutil.ToPtr[string](models.USD)
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 	}
 
 	if slotConfig.Banner == nil {

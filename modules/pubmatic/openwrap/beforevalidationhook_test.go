@@ -520,7 +520,7 @@ func Test_isSlotEnabled(t *testing.T) {
 				videoAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Video: &adunitconfig.Video{
-							Enabled: ptrutil.ToPtr[bool](true),
+							Enabled: ptrutil.ToPtr(true),
 						},
 					},
 				},
@@ -533,7 +533,7 @@ func Test_isSlotEnabled(t *testing.T) {
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Banner: &adunitconfig.Banner{
-							Enabled: ptrutil.ToPtr[bool](true),
+							Enabled: ptrutil.ToPtr(true),
 						},
 					},
 				},
@@ -546,14 +546,14 @@ func Test_isSlotEnabled(t *testing.T) {
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Banner: &adunitconfig.Banner{
-							Enabled: ptrutil.ToPtr[bool](true),
+							Enabled: ptrutil.ToPtr(true),
 						},
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Video: &adunitconfig.Video{
-							Enabled: ptrutil.ToPtr[bool](true),
+							Enabled: ptrutil.ToPtr(true),
 						},
 					},
 				},
@@ -566,14 +566,14 @@ func Test_isSlotEnabled(t *testing.T) {
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Banner: &adunitconfig.Banner{
-							Enabled: ptrutil.ToPtr[bool](false),
+							Enabled: ptrutil.ToPtr(false),
 						},
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Video: &adunitconfig.Video{
-							Enabled: ptrutil.ToPtr[bool](false),
+							Enabled: ptrutil.ToPtr(false),
 						},
 					},
 				},

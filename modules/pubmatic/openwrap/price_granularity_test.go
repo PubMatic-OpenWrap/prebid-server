@@ -11,7 +11,7 @@ import (
 )
 
 var priceGranularityMed = openrtb_ext.PriceGranularity{
-	Precision: ptrutil.ToPtr[int](2),
+	Precision: ptrutil.ToPtr(2),
 	Ranges: []openrtb_ext.GranularityRange{{
 		Min:       0,
 		Max:       20,
@@ -19,7 +19,7 @@ var priceGranularityMed = openrtb_ext.PriceGranularity{
 }
 
 var priceGranularityAuto = openrtb_ext.PriceGranularity{
-	Precision: ptrutil.ToPtr[int](2),
+	Precision: ptrutil.ToPtr(2),
 	Ranges: []openrtb_ext.GranularityRange{
 		{
 			Min:       0,
@@ -41,7 +41,7 @@ var priceGranularityAuto = openrtb_ext.PriceGranularity{
 
 var priceGranularityTestPG = openrtb_ext.PriceGranularity{
 	Test:      true,
-	Precision: ptrutil.ToPtr[int](2),
+	Precision: ptrutil.ToPtr(2),
 	Ranges: []openrtb_ext.GranularityRange{{
 		Min:       0,
 		Max:       50,
@@ -49,7 +49,7 @@ var priceGranularityTestPG = openrtb_ext.PriceGranularity{
 }
 
 var priceGranularityDense = openrtb_ext.PriceGranularity{
-	Precision: ptrutil.ToPtr[int](2),
+	Precision: ptrutil.ToPtr(2),
 	Ranges: []openrtb_ext.GranularityRange{
 		{
 			Min:       0,
@@ -141,7 +141,7 @@ func Test_computePriceGranularity(t *testing.T) {
 			},
 			want: openrtb_ext.PriceGranularity{
 				Test:      false,
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 				Ranges: []openrtb_ext.GranularityRange{
 					{
 						Min: 0, Max: 2, Increment: 1,
@@ -185,7 +185,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 			name: "always_have_precision_2",
 			args: args{customPGValue: `{ "precision": 3, "ranges":[{ "min" : 0.01, "max" : 0.99, "increment" : 0.10}] }`},
 			want: openrtb_ext.PriceGranularity{
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 				Ranges: []openrtb_ext.GranularityRange{{
 					Min:       0.01,
 					Max:       0.99,
@@ -199,7 +199,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 			name: "no_ranges_defaults_to_medium_pg",
 			args: args{customPGValue: `{}`},
 			want: openrtb_ext.PriceGranularity{
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 			},
 			wantErr: false,
 		},
@@ -207,7 +207,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 			name: "0_precision_overwrite_with_2",
 			args: args{customPGValue: `{ "precision": 0, "ranges":[{ "min" : 0.01, "max" : 0.99, "increment" : 0.10}] }`},
 			want: openrtb_ext.PriceGranularity{
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 				Ranges: []openrtb_ext.GranularityRange{{
 					Min:       0.01,
 					Max:       0.99,
@@ -221,7 +221,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 			name: "precision_greater_than_max_decimal_figures_expect_2",
 			args: args{customPGValue: fmt.Sprintf(`{ "precision": %v, "ranges":[{ "min" : 0.01, "max" : 0.99, "increment" : 0.10}] }`, openrtb_ext.MaxDecimalFigures)},
 			want: openrtb_ext.PriceGranularity{
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 				Ranges: []openrtb_ext.GranularityRange{{
 					Min:       0.01,
 					Max:       0.99,
@@ -235,7 +235,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 			name: "increment_less_than_0_error",
 			args: args{customPGValue: `{ "ranges":[{ "min" : 0.01, "max" : 0.99, "increment" : -1.0}] }`},
 			want: openrtb_ext.PriceGranularity{
-				Precision: ptrutil.ToPtr[int](2),
+				Precision: ptrutil.ToPtr(2),
 				Ranges: []openrtb_ext.GranularityRange{{
 					Min:       0.01,
 					Max:       0.99,
