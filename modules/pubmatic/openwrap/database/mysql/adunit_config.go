@@ -1,7 +1,9 @@
 package mysql
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -20,29 +22,32 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 
 	var adunitConfigJSON string
 	err := db.conn.QueryRow(adunitConfigQuery).Scan(&adunitConfigJSON)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 
-	adunitConfig := &adunitconfig.AdUnitConfig{}
-	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
-	if err != nil {
-		return nil, adunitconfig.ErrAdUnitUnmarshal
-	}
+	if len(adunitConfigJSON) > 0 {
+		adunitConfig := &adunitconfig.AdUnitConfig{}
+		err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
+		if err != nil {
+			return nil, adunitconfig.ErrAdUnitUnmarshal
+		}
 
-	for k, v := range adunitConfig.Config {
-		adunitConfig.Config[strings.ToLower(k)] = v
-		// shall we delete the orignal key-val?
-	}
+		for k, v := range adunitConfig.Config {
+			adunitConfig.Config[strings.ToLower(k)] = v
+			// shall we delete the orignal key-val?
+		}
 
-	if adunitConfig.ConfigPattern == "" {
-		//Default configPattern value is "_AU_" if not present in db config
-		adunitConfig.ConfigPattern = models.MACRO_AD_UNIT_ID
-	}
+		if adunitConfig.ConfigPattern == "" {
+			//Default configPattern value is "_AU_" if not present in db config
+			adunitConfig.ConfigPattern = models.MACRO_AD_UNIT_ID
+		}
 
-	if _, ok := adunitConfig.Config["default"]; !ok {
-		adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
-	}
+		if _, ok := adunitConfig.Config["default"]; !ok {
+			adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
+		}
 
-	return adunitConfig, err
+		return adunitConfig, nil
+	}
+	return nil, nil
 }
