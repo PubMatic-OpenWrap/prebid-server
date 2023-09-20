@@ -19,7 +19,7 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderDmx)
 	case models.BidderPubMaticSecondaryAlias:
 		coreBidderName = string(openrtb_ext.BidderPubmatic)
-	case models.BidderDistrictmAlias:
+	case models.BidderDistrictmAlias, models.BidderMediaFuseAlias:
 		coreBidderName = string(openrtb_ext.BidderAppnexus)
 	case models.BidderAndBeyondAlias:
 		coreBidderName = string(openrtb_ext.BidderAdkernel)

@@ -11,6 +11,7 @@ var alias = map[string]string{
 	models.BidderPubMaticSecondaryAlias: string(openrtb_ext.BidderPubmatic),
 	models.BidderDistrictmAlias:         string(openrtb_ext.BidderAppnexus),
 	models.BidderAndBeyondAlias:         string(openrtb_ext.BidderAdkernel),
+	models.BidderMediaFuseAlias:         string(openrtb_ext.BidderAppnexus),
 }
 
 // IsAlias will return copy of exisiting alias

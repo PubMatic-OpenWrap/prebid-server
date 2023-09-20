@@ -293,14 +293,146 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				wantErr:        false,
 			},
 		},
+		{
+			name: "exact_matched_slot_found_adslot_updated_from_slotName",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					ProfileID:     123,
+					DisplayID:     1,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234"),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@div1@200x300": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@Div1@200x300",
+						SlotMappings: map[string]interface{}{
+							"site":     "12313",
+							"adtag":    "45343",
+							"slotName": "/Test_Adunit1234@DIV1@200x300",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				wantErr:        false,
+			},
+		},
+		{
+			name: "exact_matched_slot_found_adSlot_upadted_from_owSlotName",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					ProfileID:     123,
+					DisplayID:     1,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234"),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@div1@200x300": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@Div1@200x300",
+						SlotMappings: map[string]interface{}{
+							"site":                  "12313",
+							"adtag":                 "45343",
+							models.KEY_OW_SLOT_NAME: "/Test_Adunit1234@DIV1@200x300",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				wantErr:        false,
+			},
+		},
 		// {
-		// 	name: "exact_matched_slot_found",
+		// 	name: "custom_profileid_publisherid",
 		// 	args: args{
 		// 		rctx: models.RequestCtx{
 		// 			IsTestRequest: 0,
-		// 			PubID:         5890,
-		// 			ProfileID:     123,
-		// 			DisplayID:     1,
+		// 			PubID:         101,
+		// 			ProfileID:     201,
+		// 			DisplayID:     0,
 		// 			PartnerConfigMap: map[int]map[string]string{
 		// 				1: {
 		// 					models.PREBID_PARTNER_NAME: "pubmatic",
@@ -308,6 +440,8 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 		// 					models.TIMEOUT:             "200",
 		// 					models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
 		// 					models.SERVER_SIDE_FLAG:    "1",
+		// 					models.KEY_PUBLISHER_ID:    "101",
+		// 					models.KEY_PROFILE_ID:      "201",
 		// 				},
 		// 			},
 		// 		},
@@ -317,12 +451,8 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 		// 				"pubmatic": {
 		// 					KeyWords: []models.KeyVal{
 		// 						{
-		// 							Key:    "test_key1",
-		// 							Values: []string{"test_value1", "test_value2"},
-		// 						},
-		// 						{
-		// 							Key:    "test_key2",
-		// 							Values: []string{"test_value1", "test_value2"},
+		// 							Key:    "pmzoneid",
+		// 							Values: []string{"val1", "val2"},
 		// 						},
 		// 					},
 		// 				},
@@ -336,20 +466,30 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 		// 	},
 		// 	setup: func() {
 		// 		mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
-		// 			"test": {
-		// 				PartnerId: 1,
-		// 			},
+		// 			".*@.*@.*": createSlotMapping(".*@.*@.*", map[string]interface{}{
+		// 				models.SITE_CACHE_KEY: "12313",
+		// 				models.TAG_CACHE_KEY:  "45343",
+		// 				models.KEY_SLOT_NAME:  "NewSlotName",
+		// 			}),
 		// 		})
 		// 		mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
-		// 			OrderedSlotList: []string{"test", "test1"},
+		// 			OrderedSlotList: []string{".*@.*@.*"},
+		// 			HashValueMap: map[string]string{
+		// 				".*@.*@.*": "2aa34b52a9e941c1594af7565e599c8d",
+		// 			},
 		// 		})
-		// 		mockCache.EXPECT().Get("psregex_5890_123_1_1_/Test_Adunit1234").Return(interface{}(regexSlotEntry{SlotName: "/Test_Adunit1234", RegexPattern: "2aa34b52a9e941c1594af7565e599c8d"}), true)
+		// 		mockCache.EXPECT().Get("psregex_101_201_0_1_/Test_Adunit1234@Div1@200x300").Return(
+		// 			regexSlotEntry{
+		// 				SlotName:     "Test_Adunit1234@Div1@200x300",
+		// 				RegexPattern: "2aa34b52a9e941c1594af7565e599c8d",
+		// 			},
+		// 		)
 		// 	},
 		// 	want: want{
 		// 		matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 		// 		matchedPattern: "",
 		// 		isRegexSlot:    false,
-		// 		params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@Div1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+		// 		params:         []byte(`{"publisherId":"101","adSlot":"NewSlotName","wrapper":{"version":0,"profile":201},"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}`),
 		// 		wantErr:        false,
 		// 	},
 		// },
@@ -378,5 +518,17 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				t.Errorf("PreparePubMaticParamsV25() got3 = %v, want %v", got3, tt.want.params)
 			}
 		})
+	}
+}
+
+func createSlotMapping(slotName string, mappings map[string]interface{}) models.SlotMapping {
+	return models.SlotMapping{
+		PartnerId:    0,
+		AdapterId:    0,
+		VersionId:    0,
+		SlotName:     slotName,
+		SlotMappings: mappings,
+		Hash:         "",
+		OrderID:      0,
 	}
 }
