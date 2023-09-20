@@ -191,9 +191,6 @@
                         "message": "Error generating bid.ext.prebid.bidid"
                     }
                 ]
-            },
-            "warnings": {
-                "prebid": []
             }
         }
     }
