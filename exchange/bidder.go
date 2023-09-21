@@ -249,6 +249,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 
 		if httpInfo.err == nil {
 			extraRespInfo.respProcessingStartTime = time.Now()
+			httpInfo.request.BidderName = bidderRequest.BidderName
 			bidResponse, moreErrs := bidder.Bidder.MakeBids(bidderRequest.BidRequest, httpInfo.request, httpInfo.response)
 			errs = append(errs, moreErrs...)
 
@@ -266,6 +267,13 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 					bidderRequest.BidRequest.Cur = []string{defaultCurrency}
 				}
 
+				// WL and WTK only accepts USD so we would need to convert prices to USD before sending data to them. But,
+				// PBS-Core's getAuctionCurrencyRates() is not exposed and would be too much work to do so. Also, would be a repeated work for SSHB to convert each bid's price
+				// Hence, we would send a USD conversion rate to SSHB for each bid beside prebid's origbidcpm and origbidcur
+				// Ex. req.cur=INR and resp.cur=JYP. Hence, we cannot use origbidcpm and origbidcur and would need a dedicated field for USD conversion rates
+				var conversionRateUSD float64
+				selectedCur := "USD"
+
 				// Try to get a conversion rate
 				// Try to get the first currency from request.cur having a match in the rate converter,
 				// and use it as currency
@@ -274,7 +282,18 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 				for _, bidReqCur := range bidderRequest.BidRequest.Cur {
 					if conversionRate, err = conversions.GetRate(bidResponse.Currency, bidReqCur); err == nil {
 						seatBidMap[bidderRequest.BidderName].Currency = bidReqCur
+						selectedCur = bidReqCur
 						break
+					}
+				}
+
+				// no need of conversionRateUSD if
+				// - bids with conversionRate = 0 would be a dropped
+				// - response would be in USD
+				if conversionRate != float64(0) && selectedCur != "USD" {
+					conversionRateUSD, err = conversions.GetRate(bidResponse.Currency, "USD")
+					if err != nil {
+						errs = append(errs, fmt.Errorf("failed to get USD conversion rate for WL and WTK %v", err))
 					}
 				}
 
@@ -355,10 +374,12 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 
 						originalBidCpm := 0.0
 						currencyAfterAdjustments := ""
+						originalBidCPMUSD := 0.0
 						if bidResponse.Bids[i].Bid != nil {
 							originalBidCpm = bidResponse.Bids[i].Bid.Price
 							bidResponse.Bids[i].Bid.Price = bidResponse.Bids[i].Bid.Price * adjustmentFactor * conversionRate
 
+							originalBidCPMUSD = originalBidCpm * adjustmentFactor * conversionRateUSD
 							bidType := getBidTypeForAdjustments(bidResponse.Bids[i].BidType, bidResponse.Bids[i].Bid.ImpID, bidderRequest.BidRequest.Imp)
 							bidResponse.Bids[i].Bid.Price, currencyAfterAdjustments = bidadjustment.Apply(ruleToAdjustments, bidResponse.Bids[i], bidderRequest.BidderName, seatBidMap[bidderRequest.BidderName].Currency, reqInfo, bidType)
 						}
@@ -382,6 +403,9 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							DealPriority:   bidResponse.Bids[i].DealPriority,
 							OriginalBidCPM: originalBidCpm,
 							OriginalBidCur: bidResponse.Currency,
+							BidTargets:     bidResponse.Bids[i].BidTargets,
+
+							OriginalBidCPMUSD: originalBidCPMUSD,
 						})
 						seatBidMap[bidderName].Currency = currencyAfterAdjustments
 					}
@@ -392,6 +416,9 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 			}
 		} else {
 			errs = append(errs, httpInfo.err)
+			if errortypes.ReadCode(httpInfo.err) == errortypes.TimeoutErrorCode {
+				recordPartnerTimeout(ctx, bidderRequest.BidderLabels.PubID, bidder.BidderName.String())
+			}
 		}
 	}
 	seatBids := make([]*entities.PbsOrtbSeatBid, 0, len(seatBidMap))
@@ -506,6 +533,12 @@ func makeExt(httpInfo *httpCallInfo) *openrtb_ext.ExtHttpCall {
 			ext.ResponseBody = string(httpInfo.response.Body)
 			ext.Status = httpInfo.response.StatusCode
 		}
+
+		if nil != httpInfo.request.Params {
+			ext.Params = make(map[string]int)
+			ext.Params["ImpIndex"] = httpInfo.request.Params.ImpIndex
+			ext.Params["VASTTagIndex"] = httpInfo.request.Params.VASTTagIndex
+		}
 	}
 
 	return ext
@@ -560,7 +593,6 @@ func (bidder *bidderAdapter) doRequestImpl(ctx context.Context, req *adapters.Re
 				// a loop of trying to report timeouts to the timeout notifications.
 				go bidder.doTimeoutNotification(tb, req, logger)
 			}
-
 		}
 		return &httpCallInfo{
 			request: req,
@@ -677,7 +709,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
 			tlsHandshakeTime := time.Now().Sub(tlsStart)
 
-			bidder.me.RecordTLSHandshakeTime(tlsHandshakeTime)
+			bidder.me.RecordTLSHandshakeTime(bidder.BidderName, tlsHandshakeTime)
 		},
 	}
 	return httptrace.WithClientTrace(ctx, trace)
