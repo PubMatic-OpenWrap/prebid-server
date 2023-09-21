@@ -63,13 +63,16 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}
-	ow := OpenWrap{
+
+	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
+
+	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
+
+	return OpenWrap{
 		cfg:          cfg,
-		cache:        ow_gocache.New(cache, db, cfg.Cache, &metricEngine),
+		cache:        owCache,
 		metricEngine: &metricEngine,
-	}
-	fullscreenclickability.Init(ow.cache, cfg.Cache.CacheDefaultExpiry)
-	return ow, nil
+	}, nil
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {

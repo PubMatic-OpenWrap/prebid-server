@@ -87,10 +87,7 @@ func updateFscConfigMapsFromCache(c cache.Cache) {
 
 // IsFscApplicable returns true if fsc can be applied (fsc=1)
 func IsFscApplicable(pubId int, seat string, dspId int) bool {
-	if models.IsPubmaticCorePartner(seat) && (fscConfigs.IsUnderFSCThreshold(pubId, dspId) != 0) {
-		return true
-	}
-	return false
+	return models.IsPubmaticCorePartner(seat) && (fscConfigs.IsUnderFSCThreshold(pubId, dspId) != 0)
 }
 
 // Exposed for test cases
