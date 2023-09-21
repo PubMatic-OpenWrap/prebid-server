@@ -144,6 +144,7 @@ func (cookie *Cookie) GetUIDs() map[string]string {
 func (cookie *Cookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCookie bool, cfg *config.HostCookie, ttl time.Duration) {
 	httpCookie := cookie.ToHTTPCookie(ttl)
 	var domain string = cfg.Domain
+	httpCookie.Secure = true
 
 	if domain != "" {
 		httpCookie.Domain = domain
@@ -169,7 +170,7 @@ func (cookie *Cookie) SetCookieOnResponse(w http.ResponseWriter, setSiteCookie b
 	}
 
 	if setSiteCookie {
-		httpCookie.Secure = true
+		// httpCookie.Secure = true
 		httpCookie.SameSite = http.SameSiteNoneMode
 	}
 	w.Header().Add("Set-Cookie", httpCookie.String())

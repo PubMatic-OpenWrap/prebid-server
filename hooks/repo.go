@@ -16,6 +16,7 @@ import (
 type HookRepository interface {
 	GetEntrypointHook(id string) (hookstage.Entrypoint, bool)
 	GetRawAuctionHook(id string) (hookstage.RawAuctionRequest, bool)
+	GetBeforeValidationHook(id string) (hookstage.BeforeValidationRequest, bool)
 	GetProcessedAuctionHook(id string) (hookstage.ProcessedAuctionRequest, bool)
 	GetBidderRequestHook(id string) (hookstage.BidderRequest, bool)
 	GetRawBidderResponseHook(id string) (hookstage.RawBidderResponse, bool)
@@ -44,6 +45,7 @@ func NewHookRepository(hooks map[string]interface{}) (HookRepository, error) {
 type hookRepository struct {
 	entrypointHooks              map[string]hookstage.Entrypoint
 	rawAuctionHooks              map[string]hookstage.RawAuctionRequest
+	beforeValidationHooks        map[string]hookstage.BeforeValidationRequest
 	processedAuctionHooks        map[string]hookstage.ProcessedAuctionRequest
 	bidderRequestHooks           map[string]hookstage.BidderRequest
 	rawBidderResponseHooks       map[string]hookstage.RawBidderResponse
@@ -57,6 +59,10 @@ func (r *hookRepository) GetEntrypointHook(id string) (hookstage.Entrypoint, boo
 
 func (r *hookRepository) GetRawAuctionHook(id string) (hookstage.RawAuctionRequest, bool) {
 	return getHook(r.rawAuctionHooks, id)
+}
+
+func (r *hookRepository) GetBeforeValidationHook(id string) (hookstage.BeforeValidationRequest, bool) {
+	return getHook(r.beforeValidationHooks, id)
 }
 
 func (r *hookRepository) GetProcessedAuctionHook(id string) (hookstage.ProcessedAuctionRequest, bool) {
@@ -93,6 +99,13 @@ func (r *hookRepository) add(id string, hook interface{}) error {
 	if h, ok := hook.(hookstage.RawAuctionRequest); ok {
 		hasAnyHooks = true
 		if r.rawAuctionHooks, err = addHook(r.rawAuctionHooks, h, id); err != nil {
+			return err
+		}
+	}
+
+	if h, ok := hook.(hookstage.BeforeValidationRequest); ok {
+		hasAnyHooks = true
+		if r.beforeValidationHooks, err = addHook(r.beforeValidationHooks, h, id); err != nil {
 			return err
 		}
 	}
