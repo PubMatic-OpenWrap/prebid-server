@@ -214,11 +214,19 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
 			expected:     []byte(`{"prebid":{"floors":{"floorrule":"banner|www.test.com|*","floorrulevalue":5.5,"floorvalue":15.5}}}`),
 		},
+		{
+			name:         "non matching rule",
+			matchedRule:  "",
+			floorRuleVal: 5.5,
+			floorVal:     15.5,
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			expected:     []byte(`{"prebid":{"floors":{"floorvalue":15.5}}}`),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			updateImpExtWithFloorDetails(tc.imp, tc.matchedRule, tc.floorRuleVal, tc.floorVal)
-			_ = tc.imp.RebuildImp()
+			_ = tc.imp.RebuildImpressionExt()
 			if tc.imp.Ext != nil {
 				assert.Equal(t, tc.imp.Ext, tc.expected, tc.name)
 			}
