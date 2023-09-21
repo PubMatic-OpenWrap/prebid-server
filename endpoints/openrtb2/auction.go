@@ -29,6 +29,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/bidadjustment"
+	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/ortb"
 	"golang.org/x/net/publicsuffix"
@@ -61,6 +62,14 @@ import (
 const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
+const (
+	VastUnwrapperEnableKey = "enableVastUnwrapper"
+)
+
+func GetContextValueForField(ctx context.Context, field string) string {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper
+}
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")
@@ -148,6 +157,8 @@ type endpointDeps struct {
 }
 
 func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	deps.metricsEngine.RecordHttpCounter()
+
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
 	//
@@ -164,6 +175,9 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		StartTime: start,
 	}
 
+	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
+	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
+
 	labels := metrics.Labels{
 		Source:        metrics.DemandUnknown,
 		RType:         metrics.ReqTypeORTB2Web,
@@ -173,6 +187,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
+		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao)
 	}()
@@ -201,7 +216,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		}
 	}
 
-	ctx := context.Background()
+	ctx := r.Context()
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
 	if timeout > 0 {
@@ -326,6 +341,11 @@ func rejectAuctionRequest(
 		response.ID = request.ID
 	}
 
+	// TODO merge this with success case
+	stageOutcomes := hookExecutor.GetOutcomes()
+	ao.HookExecutionOutcome = stageOutcomes
+	UpdateResponseExtOW(response, ao)
+
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
@@ -346,6 +366,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
+		UpdateResponseExtOW(response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -449,7 +470,6 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	if len(errs) > 0 {
 		return nil, nil, nil, nil, nil, nil, errs
 	}
-
 	storedBidRequestId, hasStoredBidRequest, storedRequests, storedImps, errs := deps.getStoredRequests(ctx, requestJson, impInfo)
 	if len(errs) > 0 {
 		return
@@ -510,6 +530,12 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 
 	if err := json.Unmarshal(requestJson, req.BidRequest); err != nil {
 		errs = []error{err}
+		return
+	}
+
+	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(req.BidRequest)
+	if rejectErr != nil {
+		errs = append(errs, rejectErr)
 		return
 	}
 
@@ -940,7 +966,7 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 				return errors.New("imp.ext.tid missing in the imp and error creating a random UID")
 			}
 			ie.SetTid(rawUUID.String())
-			impWrapper.RebuildImp()
+			impWrapper.RebuildImpressionExt()
 		}
 	}
 
@@ -1515,7 +1541,11 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 
 		if coreBidderNormalized, isValid := deps.bidderMap[coreBidder]; isValid {
 			if err := deps.paramsValidator.Validate(coreBidderNormalized, ext); err != nil {
-				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
+				msg := fmt.Sprintf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)
+
+				delete(prebid.Bidder, bidder)
+				glog.Errorf("BidderSchemaValidationError: %s", msg)
+				errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 			}
 		} else {
 			if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {
@@ -1964,6 +1994,9 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 
 	if referrerCandidate != "" {
+		if r.Site == nil {
+			r.Site = &openrtb2.Site{}
+		}
 		setSitePageIfEmpty(r.Site, referrerCandidate)
 		if parsedUrl, err := url.Parse(referrerCandidate); err == nil {
 			setSiteDomainIfEmpty(r.Site, parsedUrl.Host)
@@ -1981,9 +2014,6 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 }
 
 func setSitePageIfEmpty(site *openrtb2.Site, sitePage string) {
-	if site == nil {
-		site = &openrtb2.Site{}
-	}
 	if site.Page == "" {
 		site.Page = sitePage
 	}
