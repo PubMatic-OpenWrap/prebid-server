@@ -89,6 +89,8 @@ type ExtRequestPrebid struct {
 	// - basic: excludes debugmessages and analytic_tags from output
 	// any other value or an empty string disables trace output at all.
 	Trace string `json:"trace,omitempty"`
+
+	Transparency *TransparencyExt `json:"transparency,omitempty"`
 }
 
 type AdServerTarget struct {

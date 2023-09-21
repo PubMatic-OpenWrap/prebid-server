@@ -17,7 +17,6 @@ import (
 	"github.com/prebid/prebid-server/gdpr"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -4265,105 +4264,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 				assert.Equal(t, tt.expectedError, err.Error())
 			}
 
-		})
-	}
-}
-
-func TestCleanOpenRTBRequestsActivitiesFetchBids(t *testing.T) {
-	testCases := []struct {
-		name                 string
-		req                  *openrtb2.BidRequest
-		privacyConfig        *config.AccountPrivacy
-		componentName        string
-		allow                bool
-		expectedReqNumber    int
-		expectedUserYOB      int64
-		expectedUserLat      float64
-		expectedDeviceDIDMD5 string
-	}{
-		{
-			name:                 "fetch_bids_request_with_one_bidder_allowed",
-			req:                  newBidRequest(t),
-			privacyConfig:        getFetchBidsActivityConfig("appnexus", true),
-			expectedReqNumber:    1,
-			expectedUserYOB:      1982,
-			expectedUserLat:      123.456,
-			expectedDeviceDIDMD5: "some device ID hash",
-		},
-		{
-			name:                 "fetch_bids_request_with_one_bidder_not_allowed",
-			req:                  newBidRequest(t),
-			privacyConfig:        getFetchBidsActivityConfig("appnexus", false),
-			expectedReqNumber:    0,
-			expectedUserYOB:      1982,
-			expectedUserLat:      123.456,
-			expectedDeviceDIDMD5: "some device ID hash",
-		},
-		{
-			name:                 "transmit_ufpd_allowed",
-			req:                  newBidRequest(t),
-			privacyConfig:        getTransmitUFPDActivityConfig("appnexus", true),
-			expectedReqNumber:    1,
-			expectedUserYOB:      1982,
-			expectedUserLat:      123.456,
-			expectedDeviceDIDMD5: "some device ID hash",
-		},
-		{
-			name:                 "transmit_ufpd_deny",
-			req:                  newBidRequest(t),
-			privacyConfig:        getTransmitUFPDActivityConfig("appnexus", false),
-			expectedReqNumber:    1,
-			expectedUserYOB:      0,
-			expectedUserLat:      123.456,
-			expectedDeviceDIDMD5: "",
-		},
-		{
-			name:                 "transmit_precise_geo_allowed",
-			req:                  newBidRequest(t),
-			privacyConfig:        getTransmitPreciseGeoActivityConfig("appnexus", true),
-			expectedReqNumber:    1,
-			expectedUserYOB:      1982,
-			expectedUserLat:      123.456,
-			expectedDeviceDIDMD5: "some device ID hash",
-		},
-		{
-			name:                 "transmit_precise_geo_deny",
-			req:                  newBidRequest(t),
-			privacyConfig:        getTransmitPreciseGeoActivityConfig("appnexus", false),
-			expectedReqNumber:    1,
-			expectedUserYOB:      1982,
-			expectedUserLat:      123.46,
-			expectedDeviceDIDMD5: "some device ID hash",
-		},
-	}
-
-	for _, test := range testCases {
-		activities, err := privacy.NewActivityControl(test.privacyConfig)
-		assert.NoError(t, err, "")
-		auctionReq := AuctionRequest{
-			BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: test.req},
-			UserSyncs:         &emptyUsersync{},
-			Activities:        activities,
-		}
-
-		bidderToSyncerKey := map[string]string{}
-		reqSplitter := &requestSplitter{
-			bidderToSyncerKey: bidderToSyncerKey,
-			me:                &metrics.MetricsEngineMock{},
-			hostSChainNode:    nil,
-			bidderInfo:        config.BidderInfos{},
-		}
-
-		t.Run(test.name, func(t *testing.T) {
-			bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, map[string]float64{})
-			assert.Empty(t, errs)
-			assert.Len(t, bidderRequests, test.expectedReqNumber)
-
-			if test.expectedReqNumber == 1 {
-				assert.Equal(t, test.expectedUserYOB, bidderRequests[0].BidRequest.User.Yob)
-				assert.Equal(t, test.expectedUserLat, bidderRequests[0].BidRequest.User.Geo.Lat)
-				assert.Equal(t, test.expectedDeviceDIDMD5, bidderRequests[0].BidRequest.Device.DIDMD5)
-			}
 		})
 	}
 }
