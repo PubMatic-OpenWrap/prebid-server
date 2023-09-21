@@ -6,6 +6,7 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/analytics/clients"
 	"github.com/prebid/prebid-server/analytics/filesystem"
+	"github.com/prebid/prebid-server/analytics/pubmatic"
 	"github.com/prebid/prebid-server/analytics/pubstack"
 	"github.com/prebid/prebid-server/config"
 )
@@ -37,6 +38,11 @@ func NewPBSAnalytics(analytics *config.Analytics) analytics.PBSAnalyticsModule {
 			glog.Errorf("Could not initialize PubstackModule: %v", err)
 		}
 	}
+
+	if analytics.PubMatic.Enabled {
+		modules = append(modules, pubmatic.NewHTTPLogger(analytics.PubMatic))
+	}
+
 	return modules
 }
 

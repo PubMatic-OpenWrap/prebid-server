@@ -344,7 +344,7 @@ func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/test-version"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/test-version"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -399,7 +399,7 @@ func TestSetGPCHeader(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -452,7 +452,7 @@ func TestSetGPCHeaderNil(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -1090,7 +1090,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"EUR", "USD", "JPY"},
 			bidResponsesCurrency:   "EUR",
 			expectedPickedCurrency: "EUR",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -1110,7 +1110,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"JPY"},
 			bidResponsesCurrency:   "JPY",
 			expectedPickedCurrency: "JPY",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -2116,7 +2116,7 @@ func TestCallRecordDNSTime(t *testing.T) {
 func TestCallRecordTLSHandshakeTime(t *testing.T) {
 	// setup a mock metrics engine and its expectation
 	metricsMock := &metrics.MetricsEngineMock{}
-	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything).Return()
+	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything, mock.Anything).Return()
 	metricsMock.On("RecordOverheadTime", metrics.PreBidder, mock.Anything).Once()
 	metricsMock.On("RecordBidderServerResponseTime", mock.Anything).Once()
 
@@ -2916,11 +2916,12 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "groupmImp1",
 					Price: 571.5994430039375,
 				},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCPM: 7,
-				OriginalBidCur: "USD",
-				BidMeta:        &openrtb_ext.ExtBidPrebidMeta{AdapterCode: string(openrtb_ext.BidderPubmatic)},
+				DealPriority:      5,
+				BidType:           openrtb_ext.BidTypeVideo,
+				OriginalBidCPM:    7,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 7,
+				BidMeta:           &openrtb_ext.ExtBidPrebidMeta{AdapterCode: string(openrtb_ext.BidderPubmatic)},
 			}},
 			Seat:     "groupm",
 			Currency: "INR",
@@ -2932,11 +2933,12 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "pubmaticImp1",
 					Price: 244.97118985883034,
 				},
-				DealPriority:   4,
-				BidType:        openrtb_ext.BidTypeBanner,
-				OriginalBidCPM: 3,
-				OriginalBidCur: "USD",
-				BidMeta:        &openrtb_ext.ExtBidPrebidMeta{AdapterCode: string(openrtb_ext.BidderPubmatic)},
+				DealPriority:      4,
+				BidType:           openrtb_ext.BidTypeBanner,
+				OriginalBidCPM:    3,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 3,
+				BidMeta:           &openrtb_ext.ExtBidPrebidMeta{AdapterCode: string(openrtb_ext.BidderPubmatic)},
 			}},
 			Seat:     string(openrtb_ext.BidderPubmatic),
 			Currency: "INR",

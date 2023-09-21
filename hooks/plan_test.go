@@ -821,6 +821,16 @@ func (f fakeRawAuctionHook) HandleRawAuctionHook(
 	return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{}, nil
 }
 
+type fakeBeforeValidationHooks struct{}
+
+func (f fakeBeforeValidationHooks) HandleBeforeValidationHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.BeforeValidationRequestPayload,
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}, nil
+}
+
 type fakeProcessedAuctionHook struct{}
 
 func (f fakeProcessedAuctionHook) HandleProcessedAuctionHook(

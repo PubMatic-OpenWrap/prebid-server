@@ -96,6 +96,7 @@ func (targData *targetData) setTargeting(auc *auction, isApp bool, categoryMappi
 				if len(categoryMapping) > 0 {
 					targData.addKeys(targets, openrtb_ext.HbCategoryDurationKey, categoryMapping[topBid.Bid.ID], targetingBidderCode, isOverallWinner, truncateTargetAttr)
 				}
+				targData.addBidderKeys(targets, topBid.BidTargets)
 				topBid.BidTargets = targets
 			}
 		}
@@ -135,4 +136,12 @@ func getMultiBidMeta(multiBidMap map[string]openrtb_ext.ExtMultiBid, bidder stri
 	}
 
 	return "", openrtb_ext.DefaultBidLimit
+}
+
+func (targData *targetData) addBidderKeys(keys map[string]string, bidderKeys map[string]string) {
+	if targData.includeBidderKeys {
+		for index, element := range bidderKeys {
+			keys[index] = element
+		}
+	}
 }

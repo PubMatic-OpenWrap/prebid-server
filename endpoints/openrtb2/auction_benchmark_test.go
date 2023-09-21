@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prebid/prebid-server/floors"
+
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -95,6 +97,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		empty_fetcher.EmptyFetcher{},
 		&adscert.NilSigner{},
 		macros.NewStringIndexBasedReplacer(),
+		&floors.PriceFloorFetcher{},
 	)
 
 	endpoint, _ := NewEndpoint(
