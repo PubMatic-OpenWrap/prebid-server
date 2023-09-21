@@ -295,6 +295,9 @@ const (
 
 	PriceFloorURL      = "jsonUrl"
 	FloorModuleEnabled = "floorPriceModuleEnabled"
+	FloorType          = "floorType"
+	SoftFloorType      = "soft"
+	HardFloorType      = "hard"
 
 	//include brand categories values
 	IncludeNoCategory            = 0

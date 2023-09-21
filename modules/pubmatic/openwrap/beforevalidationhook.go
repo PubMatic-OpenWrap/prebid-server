@@ -364,7 +364,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setPriceFloorFetchURL(requestExt, rCtx.PartnerConfigMap)
+	setFloorsExt(requestExt, rCtx.PartnerConfigMap)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -558,6 +558,10 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 
 	if imp.Video.Placement == 0 {
 		imp.Video.Placement = configObjInVideoConfig.Placement
+	}
+
+	if imp.Video.Plcmt == 0 {
+		imp.Video.Plcmt = configObjInVideoConfig.Plcmt
 	}
 
 	if imp.Video.Linearity == 0 {
