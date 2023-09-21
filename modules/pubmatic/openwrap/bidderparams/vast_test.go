@@ -6,9 +6,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 

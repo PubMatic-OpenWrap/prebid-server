@@ -1,11 +1,11 @@
 package adunitconfig
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 // TODO use this
