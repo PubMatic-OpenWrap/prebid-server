@@ -188,6 +188,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderSonobi,
 	BidderSovrn,
 	BidderSspBC,
+	BidderSpotX,
 	BidderStreamkey,
 	BidderStroeerCore,
 	BidderSuntContent,
@@ -205,6 +206,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderUnicorn,
 	BidderUnruly,
 	BidderValueImpression,
+	BidderVASTBidder,
 	BidderVideoByte,
 	BidderVideoHeroes,
 	BidderVidoomy,
@@ -481,6 +483,7 @@ const (
 	BidderSonobi            BidderName = "sonobi"
 	BidderSovrn             BidderName = "sovrn"
 	BidderSspBC             BidderName = "sspBC"
+	BidderSpotX             BidderName = "spotx"
 	BidderStreamkey         BidderName = "streamkey"
 	BidderStroeerCore       BidderName = "stroeerCore"
 	BidderSuntContent       BidderName = "suntContent"
@@ -498,6 +501,7 @@ const (
 	BidderUnicorn           BidderName = "unicorn"
 	BidderUnruly            BidderName = "unruly"
 	BidderValueImpression   BidderName = "valueimpression"
+	BidderVASTBidder        BidderName = "vastbidder"
 	BidderVideoByte         BidderName = "videobyte"
 	BidderVideoHeroes       BidderName = "videoheroes"
 	BidderVidoomy           BidderName = "vidoomy"

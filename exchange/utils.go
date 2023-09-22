@@ -56,6 +56,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 	requestExt *openrtb_ext.ExtRequest,
 	gdprDefaultValue gdpr.Signal, bidAdjustmentFactors map[string]float64,
 ) (allowedBidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, errs []error) {
+
 	req := auctionReq.BidRequestWrapper
 	aliases, errs := parseAliases(req.BidRequest)
 	if len(errs) > 0 {
@@ -91,6 +92,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 			errs = append(errs, err)
 		}
 	}
+	updateContentObjectForBidder(allBidderRequests, requestExt)
 
 	if auctionReq.Account.PriceFloors.IsAdjustForBidAdjustmentEnabled() {
 		//Apply BidAdjustmentFactor to imp.BidFloor
@@ -613,6 +615,11 @@ func createSanitizedImpExt(impExt, impExtPrebid map[string]json.RawMessage) (map
 		}
 	}
 
+	// Dont send this to adapters
+	// if v, exists := impExtPrebid["floors"]; exists {
+	// 	sanitizedImpPrebidExt["floors"] = v
+	// }
+
 	// marshal sanitized imp[].ext.prebid
 	if len(sanitizedImpPrebidExt) > 0 {
 		if impExtPrebidJSON, err := json.Marshal(sanitizedImpPrebidExt); err == nil {
@@ -1073,27 +1080,5 @@ func getPrebidMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
 
 	return bidType, &errortypes.BadServerResponse{
 		Message: errMsg,
-	}
-}
-
-func applyBidAdjustmentToFloor(allBidderRequests []BidderRequest, bidAdjustmentFactors map[string]float64) {
-
-	if len(bidAdjustmentFactors) == 0 {
-		return
-	}
-
-	for _, bidderRequest := range allBidderRequests {
-		bidAdjustment := 1.0
-
-		if bidAdjustemntValue, ok := bidAdjustmentFactors[string(bidderRequest.BidderName)]; ok {
-			bidAdjustment = bidAdjustemntValue
-		}
-
-		if bidAdjustment != 1.0 {
-			for index, imp := range bidderRequest.BidRequest.Imp {
-				imp.BidFloor = imp.BidFloor / bidAdjustment
-				bidderRequest.BidRequest.Imp[index] = imp
-			}
-		}
 	}
 }
