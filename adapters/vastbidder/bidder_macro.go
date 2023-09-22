@@ -39,6 +39,9 @@ type BidderMacro struct {
 
 	//Impression level Request Headers
 	ImpReqHeaders http.Header
+
+	//custom keyval map
+	KV map[string]interface{}
 }
 
 // NewBidderMacro contains definition for all openrtb macro's
@@ -83,6 +86,21 @@ func (tag *BidderMacro) init() {
 		err := json.Unmarshal(tag.Request.Device.Ext, &ext)
 		if nil == err {
 			tag.DeviceExt = &ext
+		}
+	}
+
+	if nil != tag.Request && nil != tag.Request.Ext {
+
+		var cust_ext map[string]interface{}
+		err := json.Unmarshal(tag.Request.Ext, &cust_ext)
+		if err == nil {
+			cust_prebid := cust_ext[Prebid]
+			cust_data, ok := cust_prebid.(map[string]interface{})
+
+			if ok {
+				cust_keyval := cust_data[Keyval]
+				tag.KV = cust_keyval.(map[string]interface{})
+			}
 		}
 	}
 }
@@ -156,6 +174,23 @@ func (tag *BidderMacro) GetURI() string {
 // Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
+}
+
+// func (tag *BidderMacro) IsKeyPresent(key string) bool {
+// 	_, found := tag.KV[key]
+// 	return found
+
+// }
+
+func (tag *BidderMacro) GetValue(key string) (string, bool) {
+	if tag.KV == nil {
+		return "", false
+	}
+	value, found := tag.KV[key]
+	if !found {
+		return "", false
+	}
+	return fmt.Sprintf("%v", value), true
 }
 
 /********************* Request *********************/
@@ -1171,6 +1206,40 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}
+
+// MacroKV replace the kv macro
+func (tag *BidderMacro) MacroKV(key string) string {
+	if tag.KV == nil {
+		return ""
+	}
+
+	len := len(tag.KV)
+
+	str := ""
+	for key, val := range tag.KV {
+		if len == 1 {
+			str += fmt.Sprintf("%s=%v", key, val)
+
+			return str
+		}
+		str += fmt.Sprintf("%s=%v", key, val) + "&"
+		len--
+	}
+	return str
+
+}
+
+// MacroKVM replace the kvm macro
+func (tag *BidderMacro) MacroKVM(key string) string {
+	if tag.KV == nil {
+		return ""
+	}
+	jsonBytes, err := json.Marshal(tag.KV)
+	if err != nil {
+		return ""
+	}
+	return string(jsonBytes)
 }
 
 /********************* Request Headers *********************/

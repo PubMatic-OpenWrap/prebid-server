@@ -162,6 +162,15 @@ const (
 
 	//Additional
 	MacroCacheBuster = `cachebuster`
+
+	//KeyVal
+	MacroKV  = `kv`
+	MacroKVM = `kvm`
+)
+
+const (
+	Prebid = "prebid"
+	Keyval = "keyval"
 )
 
 var ParamKeys = []string{"param1", "param2", "param3", "param4", "param5"}

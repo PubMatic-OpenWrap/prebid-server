@@ -18,6 +18,8 @@ type IBidderMacro interface {
 	SetAdapterConfig(*config.Adapter)
 	GetURI() string
 	GetHeaders() http.Header
+	//IsKeyPresent(string) bool
+	GetValue(string) (string, bool)
 	//getAllHeaders returns default and custom heades
 	getAllHeaders() http.Header
 
@@ -176,6 +178,10 @@ type IBidderMacro interface {
 
 	//Additional
 	MacroCacheBuster(string) string
+
+	//Keyval
+	MacroKV(string) string
+	MacroKVM(string) string
 }
 
 var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}

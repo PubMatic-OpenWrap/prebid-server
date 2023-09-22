@@ -1263,3 +1263,147 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 		})
 	}
 }
+
+func TestBidderMacro_GetValue(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+		found  bool
+	}{
+		{
+			name: "Valid_Key",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:  args{key: "name"},
+			want:  "test",
+			found: true,
+		},
+		{
+			name: "Invalid_Key",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:  args{key: "anykey"},
+			want:  "",
+			found: false,
+		},
+		{
+			name:   "Empty_KV_Map",
+			fields: fields{KV: nil},
+			args:   args{key: "anykey"},
+			want:   "",
+			found:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			value, found := tag.GetValue(tt.args.key)
+			assert.Equal(t, tt.want, value, tt.name)
+			assert.Equal(t, tt.found, found, tt.name)
+
+		})
+	}
+}
+
+func TestBidderMacro_MacroKV(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "Valid_test",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  "22",
+			}},
+			args: args{key: "kv"},
+			want: "name=test&age=22",
+		},
+		{
+			name:   "Empty_KV_map",
+			fields: fields{KV: nil},
+			args:   args{key: "kv"},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			got := tag.MacroKV(tt.args.key)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestBidderMacro_MacroKVM(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "Valid_test",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  "22",
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":\"22\",\"name\":\"test\"}",
+		},
+		{
+			name:   "Empty_KV_map",
+			fields: fields{KV: nil},
+			args:   args{key: "kvm"},
+			want:   "",
+		},
+		{
+			name: "value_as_int_data_type",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":22,\"name\":\"test\"}",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			got := tag.MacroKVM(tt.args.key)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
