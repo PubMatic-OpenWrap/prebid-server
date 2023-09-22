@@ -72,8 +72,8 @@ func (me *MetricsEngineMock) RecordDNSTime(dnsLookupTime time.Duration) {
 	me.Called(dnsLookupTime)
 }
 
-func (me *MetricsEngineMock) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
-	me.Called(tlsHandshakeTime)
+func (me *MetricsEngineMock) RecordTLSHandshakeTime(bidderName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
+	me.Called(bidderName, tlsHandshakeTime)
 }
 
 // RecordBidderServerResponseTime mock
@@ -119,6 +119,10 @@ func (me *MetricsEngineMock) RecordSetUid(status SetUidStatus) {
 // RecordSyncerSet mock
 func (me *MetricsEngineMock) RecordSyncerSet(key string, status SyncerSetUidStatus) {
 	me.Called(key, status)
+}
+
+func (me *MetricsEngineMock) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+	me.Called(bidder)
 }
 
 // RecordStoredReqCacheResult mock
@@ -167,6 +171,14 @@ func (me *MetricsEngineMock) RecordDebugRequest(debugEnabled bool, pubId string)
 }
 
 func (me *MetricsEngineMock) RecordStoredResponse(pubId string) {
+	me.Called(pubId)
+}
+
+func (me *MetricsEngineMock) RecordRejectedBidsForAccount(pubId string) {
+	me.Called(pubId)
+}
+
+func (me *MetricsEngineMock) RecordFloorsRequestForAccount(pubId string) {
 	me.Called(pubId)
 }
 
@@ -236,4 +248,15 @@ func (me *MetricsEngineMock) RecordAccountCCPAChannelEnabledWarning(account stri
 
 func (me *MetricsEngineMock) RecordAccountUpgradeStatus(account string) {
 	me.Called(account)
+}
+
+func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
+	me.Called(pubid, bidder, code)
+}
+
+func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId, code string) {
+	me.Called(pubId, code)
+}
+
+func (me *MetricsEngineMock) RecordHttpCounter() {
 }
