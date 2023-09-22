@@ -14,6 +14,7 @@ type Stage string
 const (
 	StageEntrypoint               Stage = "entrypoint"
 	StageRawAuctionRequest        Stage = "raw_auction_request"
+	StageBeforeValidationRequest  Stage = "before_validation_request"
 	StageProcessedAuctionRequest  Stage = "processed_auction_request"
 	StageBidderRequest            Stage = "bidder_request"
 	StageRawBidderResponse        Stage = "raw_bidder_response"
@@ -36,6 +37,7 @@ func (s Stage) IsRejectable() bool {
 type ExecutionPlanBuilder interface {
 	PlanForEntrypointStage(endpoint string) Plan[hookstage.Entrypoint]
 	PlanForRawAuctionStage(endpoint string, account *config.Account) Plan[hookstage.RawAuctionRequest]
+	PlanForValidationStage(endpoint string, account *config.Account) Plan[hookstage.BeforeValidationRequest]
 	PlanForProcessedAuctionStage(endpoint string, account *config.Account) Plan[hookstage.ProcessedAuctionRequest]
 	PlanForBidderRequestStage(endpoint string, account *config.Account) Plan[hookstage.BidderRequest]
 	PlanForRawBidderResponseStage(endpoint string, account *config.Account) Plan[hookstage.RawBidderResponse]
@@ -103,6 +105,16 @@ func (p PlanBuilder) PlanForRawAuctionStage(endpoint string, account *config.Acc
 		endpoint,
 		StageRawAuctionRequest,
 		p.repo.GetRawAuctionHook,
+	)
+}
+
+func (p PlanBuilder) PlanForValidationStage(endpoint string, account *config.Account) Plan[hookstage.BeforeValidationRequest] {
+	return getMergedPlan(
+		p.hooks,
+		account,
+		endpoint,
+		StageBeforeValidationRequest,
+		p.repo.GetBeforeValidationHook,
 	)
 }
 
