@@ -125,7 +125,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 
 	// Set this as an AMP request in Metrics.
-
 	labels := metrics.Labels{
 		Source:        metrics.DemandWeb,
 		RType:         metrics.ReqTypeAMP,
@@ -176,7 +175,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 
 	ao.RequestWrapper = reqWrapper
 
-	ctx := context.Background()
+	ctx := r.Context()
 	var cancel context.CancelFunc
 	if reqWrapper.TMax > 0 {
 		ctx, cancel = context.WithDeadline(ctx, start.Add(time.Duration(reqWrapper.TMax)*time.Millisecond))

@@ -184,7 +184,7 @@ func TestDefaults(t *testing.T) {
 	cmpBools(t, "compression.request.enable_gzip", false, cfg.Compression.Request.GZIP)
 	cmpBools(t, "compression.response.enable_gzip", false, cfg.Compression.Response.GZIP)
 
-	cmpBools(t, "account_defaults.price_floors.enabled", false, cfg.AccountDefaults.PriceFloors.Enabled)
+	cmpBools(t, "account_defaults.price_floors.enabled", true, cfg.AccountDefaults.PriceFloors.Enabled)
 	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorsRate)
 	cmpBools(t, "account_defaults.price_floors.adjust_for_bid_adjustment", true, cfg.AccountDefaults.PriceFloors.AdjustForBidAdjustment)
 	cmpBools(t, "account_defaults.price_floors.enforce_deal_floors", false, cfg.AccountDefaults.PriceFloors.EnforceDealFloors)
@@ -193,6 +193,14 @@ func TestDefaults(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.max_schema_dims", 3, cfg.AccountDefaults.PriceFloors.MaxSchemaDims)
 	cmpBools(t, "account_defaults.events_enabled", *cfg.AccountDefaults.EventsEnabled, false)
 	cmpNils(t, "account_defaults.events.enabled", cfg.AccountDefaults.Events.Enabled)
+	cmpBools(t, "account_defaults.price_floors.fetch.enabled", false, cfg.AccountDefaults.PriceFloors.Fetch.Enabled)
+	cmpInts(t, "account_defaults.price_floors.fetch.timeout_ms", 3000, cfg.AccountDefaults.PriceFloors.Fetch.Timeout)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_file_size_kb", 100, cfg.AccountDefaults.PriceFloors.Fetch.MaxFileSize)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", 1000, cfg.AccountDefaults.PriceFloors.Fetch.MaxRules)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", 86400, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
+	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 3600, cfg.AccountDefaults.PriceFloors.Fetch.Period)
+	cmpInts(t, "price_floor_fetcher.worker", 20, cfg.PriceFloorFetcher.Worker)
+	cmpInts(t, "price_floor_fetcher.capacity", 20000, cfg.PriceFloorFetcher.Capacity)
 
 	cmpBools(t, "hooks.enabled", false, cfg.Hooks.Enabled)
 	cmpStrings(t, "validations.banner_creative_max_size", "skip", cfg.Validations.BannerCreativeMaxSize)
@@ -477,6 +485,16 @@ account_defaults:
         use_dynamic_data: true
         max_rules: 120
         max_schema_dims: 5
+        fetch:
+            enabled: true
+            timeout_ms: 1000
+            max_file_size_kb: 100
+            max_rules: 1000
+            max_age_sec: 36000
+            period_sec: 7200
+price_floor_fetcher:
+  worker: 10
+  capacity: 20
 tmax_adjustments:
   enabled: true
   bidder_response_duration_min_ms: 700
@@ -582,6 +600,14 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.max_schema_dims", 5, cfg.AccountDefaults.PriceFloors.MaxSchemaDims)
 	cmpBools(t, "account_defaults.events_enabled", *cfg.AccountDefaults.EventsEnabled, true)
 	cmpNils(t, "account_defaults.events.enabled", cfg.AccountDefaults.Events.Enabled)
+	cmpBools(t, "account_defaults.price_floors.fetch.enabled", true, cfg.AccountDefaults.PriceFloors.Fetch.Enabled)
+	cmpInts(t, "account_defaults.price_floors.fetch.timeout_ms", 1000, cfg.AccountDefaults.PriceFloors.Fetch.Timeout)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_file_size_kb", 100, cfg.AccountDefaults.PriceFloors.Fetch.MaxFileSize)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_rules", 1000, cfg.AccountDefaults.PriceFloors.Fetch.MaxRules)
+	cmpInts(t, "account_defaults.price_floors.fetch.max_age_sec", 36000, cfg.AccountDefaults.PriceFloors.Fetch.MaxAge)
+	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 7200, cfg.AccountDefaults.PriceFloors.Fetch.Period)
+	cmpInts(t, "price_floor_fetcher.worker", 10, cfg.PriceFloorFetcher.Worker)
+	cmpInts(t, "price_floor_fetcher.capacity", 20, cfg.PriceFloorFetcher.Capacity)
 
 	// Assert compression related defaults
 	cmpBools(t, "enable_gzip", false, cfg.EnableGzip)
@@ -796,6 +822,15 @@ func TestValidateConfig(t *testing.T) {
 		Accounts: StoredRequests{
 			Files:         FileFetcherConfig{Enabled: true},
 			InMemoryCache: InMemoryCache{Type: "none"},
+		},
+		AccountDefaults: Account{
+			PriceFloors: AccountPriceFloors{
+				Fetch: AccountFloorFetch{
+					Period:  400,
+					Timeout: 20,
+					MaxAge:  700,
+				},
+			},
 		},
 	}
 

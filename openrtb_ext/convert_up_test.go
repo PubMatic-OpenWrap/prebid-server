@@ -444,7 +444,7 @@ func TestMoveRewardedFromPrebidExtTo26(t *testing.T) {
 	for _, test := range testCases {
 		w := &ImpWrapper{Imp: &test.givenImp}
 		moveRewardedFromPrebidExtTo26(w)
-		assert.NoError(t, w.RebuildImp(), test.description)
+		assert.NoError(t, w.RebuildImpressionExt(), test.description)
 		assert.Equal(t, test.expectedImp, *w.Imp, test.description)
 	}
 }

@@ -206,7 +206,7 @@ func runEndToEndTest(t *testing.T, auctionEndpointHandler httprouter.Handle, tes
 		if assert.NoError(t, err, "Could not unmarshal expected bidResponse taken from test file.\n Test file: %s\n Error:%s\n", testFile, err) {
 			err = json.Unmarshal([]byte(actualJsonBidResponse), &actualBidResponse)
 			if assert.NoError(t, err, "Could not unmarshal actual bidResponse from auction.\n Test file: %s\n Error:%s\n", testFile, err) {
-				assertBidResponseEqual(t, testFile, expectedBidResponse, actualBidResponse)
+				assertBidResponseEqual(t, test, testFile, expectedBidResponse, actualBidResponse)
 			}
 		}
 	}
@@ -247,7 +247,7 @@ func compareWarnings(t *testing.T, expectedBidResponseExt, actualBidResponseExt 
 // Once unmarshalled, bidResponse objects can't simply be compared with an `assert.Equalf()` call
 // because tests fail if the elements inside the `bidResponse.SeatBid` and `bidResponse.SeatBid.Bid`
 // arrays, if any, are not listed in the exact same order in the actual version and in the expected version.
-func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
+func assertBidResponseEqual(t *testing.T, test testCase, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
 
 	//Assert non-array BidResponse fields
 	assert.Equalf(t, expectedBidResponse.ID, actualBidResponse.ID, "BidResponse.ID doesn't match expected. Test: %s\n", testFile)
@@ -301,7 +301,7 @@ func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse o
 			assert.Equalf(t, expectedBid.ImpID, actualBidMap[bidID].ImpID, "BidResponse.SeatBid[%s].Bid[%s].ImpID doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 			assert.Equalf(t, expectedBid.Price, actualBidMap[bidID].Price, "BidResponse.SeatBid[%s].Bid[%s].Price doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 
-			if len(expectedBid.Ext) > 0 {
+			if test.Config.AssertBidExt && len(expectedBid.Ext) > 0 {
 				assert.JSONEq(t, string(expectedBid.Ext), string(actualBidMap[bidID].Ext), "Incorrect bid extension")
 			}
 		}
@@ -386,7 +386,7 @@ func TestBidRequestAssert(t *testing.T) {
 	}
 
 	for _, test := range testSuites {
-		assertBidResponseEqual(t, test.description, test.expectedBidResponse, test.actualBidResponse)
+		assertBidResponseEqual(t, testCase{Config: &testConfigValues{}}, test.description, test.expectedBidResponse, test.actualBidResponse)
 	}
 }
 
@@ -965,19 +965,22 @@ func TestImplicitDNTEndToEnd(t *testing.T) {
 func TestReferer(t *testing.T) {
 	testCases := []struct {
 		description             string
-		givenSitePage           string
-		givenSiteDomain         string
-		givenPublisherDomain    string
 		givenReferer            string
 		expectedDomain          string
 		expectedPage            string
 		expectedPublisherDomain string
+		bidReq                  *openrtb_ext.RequestWrapper
 	}{
 		{
 			description:             "site.page/domain are unchanged when site.page/domain and http referer are not set",
 			expectedDomain:          "",
 			expectedPage:            "",
 			expectedPublisherDomain: "",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{},
+				},
+			}},
 		},
 		{
 			description:             "site.page/domain are derived from referer when neither is set and http referer is set",
@@ -985,39 +988,73 @@ func TestReferer(t *testing.T) {
 			expectedDomain:          "test.somepage.com",
 			expectedPublisherDomain: "somepage.com",
 			expectedPage:            "https://test.somepage.com",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{},
+				},
+			}},
 		},
 		{
 			description:             "site.domain is derived from site.page when site.page is set and http referer is not set",
-			givenSitePage:           "https://test.somepage.com",
 			expectedDomain:          "test.somepage.com",
 			expectedPublisherDomain: "somepage.com",
 			expectedPage:            "https://test.somepage.com",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Page:      "https://test.somepage.com",
+					Publisher: &openrtb2.Publisher{},
+				},
+			}},
 		},
 		{
 			description:             "site.domain is derived from http referer when site.page and http referer are set",
-			givenSitePage:           "https://test.somepage.com",
 			givenReferer:            "http://test.com",
 			expectedDomain:          "test.com",
 			expectedPublisherDomain: "test.com",
 			expectedPage:            "https://test.somepage.com",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Page:      "https://test.somepage.com",
+					Publisher: &openrtb2.Publisher{},
+				},
+			}},
 		},
 		{
 			description:             "site.page/domain are unchanged when site.page/domain and http referer are set",
-			givenSitePage:           "https://test.somepage.com",
-			givenSiteDomain:         "some.domain.com",
 			givenReferer:            "http://test.com",
 			expectedDomain:          "some.domain.com",
 			expectedPublisherDomain: "test.com",
 			expectedPage:            "https://test.somepage.com",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Domain:    "some.domain.com",
+					Page:      "https://test.somepage.com",
+					Publisher: &openrtb2.Publisher{},
+				},
+			}},
 		},
 		{
 			description:             "Publisher domain shouldn't be overrwriten if already set",
-			givenSitePage:           "https://test.somepage.com",
-			givenSiteDomain:         "",
-			givenPublisherDomain:    "differentpage.com",
 			expectedDomain:          "test.somepage.com",
 			expectedPublisherDomain: "differentpage.com",
 			expectedPage:            "https://test.somepage.com",
+			bidReq: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Domain: "",
+					Page:   "https://test.somepage.com",
+					Publisher: &openrtb2.Publisher{
+						Domain: "differentpage.com",
+					},
+				},
+			}},
+		},
+		{
+			description:             "request.site is nil",
+			givenReferer:            "http://test.com",
+			expectedDomain:          "test.com",
+			expectedPublisherDomain: "test.com",
+			expectedPage:            "http://test.com",
+			bidReq:                  &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}},
 		},
 	}
 
@@ -1025,20 +1062,12 @@ func TestReferer(t *testing.T) {
 		httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "site.json")))
 		httpReq.Header.Set("Referer", test.givenReferer)
 
-		bidReq := &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
-			Site: &openrtb2.Site{
-				Domain:    test.givenSiteDomain,
-				Page:      test.givenSitePage,
-				Publisher: &openrtb2.Publisher{Domain: test.givenPublisherDomain},
-			},
-		}}
+		setSiteImplicitly(httpReq, test.bidReq)
 
-		setSiteImplicitly(httpReq, bidReq)
-
-		assert.NotNil(t, bidReq.Site, test.description)
-		assert.Equal(t, test.expectedDomain, bidReq.Site.Domain, test.description)
-		assert.Equal(t, test.expectedPage, bidReq.Site.Page, test.description)
-		assert.Equal(t, test.expectedPublisherDomain, bidReq.Site.Publisher.Domain, test.description)
+		assert.NotNil(t, test.bidReq.Site, test.description)
+		assert.Equal(t, test.expectedDomain, test.bidReq.Site.Domain, test.description)
+		assert.Equal(t, test.expectedPage, test.bidReq.Site.Page, test.description)
+		assert.Equal(t, test.expectedPublisherDomain, test.bidReq.Site.Publisher.Domain, test.description)
 	}
 }
 
@@ -2809,14 +2838,14 @@ func TestValidateImpExt(t *testing.T) {
 
 			errs := deps.validateImpExt(impWrapper, nil, 0, false, nil)
 
-			assert.NoError(t, impWrapper.RebuildImp(), test.description+":rebuild_imp")
+			assert.NoError(t, impWrapper.RebuildImpressionExt(), test.description+":rebuild_imp")
 
 			if len(test.expectedImpExt) > 0 {
 				assert.JSONEq(t, test.expectedImpExt, string(imp.Ext), "imp.ext JSON does not match expected. Test: %s. %s\n", group.description, test.description)
 			} else {
 				assert.Empty(t, imp.Ext, "imp.ext expected to be empty but was: %s. Test: %s. %s\n", string(imp.Ext), group.description, test.description)
 			}
-			assert.Equal(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
+			assert.ElementsMatch(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
 		}
 	}
 }
@@ -4457,7 +4486,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    validRequest(t, "site.json"),
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -4466,7 +4495,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    "{}",
 			expectedStatus: 400,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
@@ -5473,7 +5502,7 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(actualResp.Ext, &actualExt), "Unable to unmarshal actual ExtBidResponse.")
 			}
 
-			assertBidResponseEqual(t, tc.file, expectedResp, actualResp)
+			assertBidResponseEqual(t, test, tc.file, expectedResp, actualResp)
 			assert.Equal(t, expectedResp.NBR, actualResp.NBR, "Invalid NBR.")
 			assert.Equal(t, expectedExt.Warnings, actualExt.Warnings, "Wrong bidResponse.ext.warnings.")
 

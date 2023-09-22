@@ -322,7 +322,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		LegacyLabels:               labels,
 		GlobalPrivacyControlHeader: secGPC,
 		PubID:                      labels.PubID,
-		HookExecutor:               hookexecution.EmptyHookExecutor{},
+		HookExecutor:               &hookexecution.EmptyHookExecutor{},
 		TmaxAdjustments:            deps.tmaxAdjustments,
 		Activities:                 activities,
 	}
