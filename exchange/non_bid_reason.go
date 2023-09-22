@@ -8,6 +8,10 @@ type NonBidReason int
 const (
 	NoBidUnknownError                      NonBidReason = 0   // No Bid - General
 	ResponseRejectedCategoryMappingInvalid NonBidReason = 303 // Response Rejected - Category Mapping Invalid
+
+	// vendor specific NonBidReasons (500+)
+	RequestBlockedSlotNotMapped   NonBidReason = 503
+	RequestBlockedPartnerThrottle NonBidReason = 504
 )
 
 // Ptr returns pointer to own value.

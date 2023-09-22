@@ -299,6 +299,23 @@ func (h mockFailedMutationHook) HandleAllProcessedBidResponsesHook(_ context.Con
 	return hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{ChangeSet: changeSet}, nil
 }
 
+func (e mockUpdateBidRequestHook) HandleBeforeValidationHook(_ context.Context, _ hookstage.ModuleInvocationContext, _ hookstage.BeforeValidationRequestPayload) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	c := hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{}
+	// c.AddMutation(
+	// 	func(payload hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
+	// 		payload.BidRequest.User.Yob = 2000
+	// 		return payload, nil
+	// 	}, hookstage.MutationUpdate, "bidRequest", "user.yob",
+	// ).AddMutation(
+	// 	func(payload hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
+	// 		payload.BidRequest.User.Consent = "true"
+	// 		return payload, nil
+	// 	}, hookstage.MutationUpdate, "bidRequest", "user.consent",
+	// )
+
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{ChangeSet: c}, nil
+}
+
 type mockUpdateBidRequestHook struct{}
 
 func (e mockUpdateBidRequestHook) HandleProcessedAuctionHook(_ context.Context, _ hookstage.ModuleInvocationContext, _ hookstage.ProcessedAuctionRequestPayload) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {

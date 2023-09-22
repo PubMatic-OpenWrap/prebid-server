@@ -3,17 +3,19 @@ package config
 import (
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	prometheusmetrics "github.com/prebid/prebid-server/metrics/prometheus"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
 
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
 // for this instance.
-func NewMetricsEngine(cfg *config.Configuration, adapterList []openrtb_ext.BidderName, syncerKeys []string, moduleStageNames map[string][]string) *DetailedMetricsEngine {
+func NewMetricsEngine(cfg *config.Configuration, metricsRegistry MetricsRegistry, adapterList []openrtb_ext.BidderName, syncerKeys []string, moduleStageNames map[string][]string) *DetailedMetricsEngine {
 	// Create a list of metrics engines to use.
 	// Capacity of 2, as unlikely to have more than 2 metrics backends, and in the case
 	// of 1 we won't use the list so it will be garbage collected.
@@ -25,22 +27,36 @@ func NewMetricsEngine(cfg *config.Configuration, adapterList []openrtb_ext.Bidde
 		returnEngine.GoMetrics = metrics.NewMetrics(gometrics.NewPrefixedRegistry("prebidserver."), adapterList, cfg.Metrics.Disabled, syncerKeys, moduleStageNames)
 		engineList = append(engineList, returnEngine.GoMetrics)
 
+		// Get the registry for influxdb
+		influxRegistry, ok := metricsRegistry[InfluxRegistry].(gometrics.Registry)
+		if !ok || influxRegistry == nil {
+			glog.Info("Failed to get the influxRegistry from MetricsRegistry, creating new instance of influx registry.")
+			influxRegistry = gometrics.NewPrefixedRegistry("prebidserver.")
+		}
+
 		// Set up the Influx logger
 		go influxdb.InfluxDB(
-			returnEngine.GoMetrics.MetricsRegistry,                             // metrics registry
+			influxRegistry, // metrics registry
 			time.Second*time.Duration(cfg.Metrics.Influxdb.MetricSendInterval), // Configurable interval
-			cfg.Metrics.Influxdb.Host,                                          // the InfluxDB url
-			cfg.Metrics.Influxdb.Database,                                      // your InfluxDB database
-			cfg.Metrics.Influxdb.Measurement,                                   // your measurement
-			cfg.Metrics.Influxdb.Username,                                      // your InfluxDB user
-			cfg.Metrics.Influxdb.Password,                                      // your InfluxDB password,
-			cfg.Metrics.Influxdb.AlignTimestamps,                               // align timestamps
+			cfg.Metrics.Influxdb.Host,            // the InfluxDB url
+			cfg.Metrics.Influxdb.Database,        // your InfluxDB database
+			cfg.Metrics.Influxdb.Measurement,     // your measurement
+			cfg.Metrics.Influxdb.Username,        // your InfluxDB user
+			cfg.Metrics.Influxdb.Password,        // your InfluxDB password,
+			cfg.Metrics.Influxdb.AlignTimestamps, // align timestamps
 		)
 		// Influx is not added to the engine list as goMetrics takes care of it already.
 	}
 	if cfg.Metrics.Prometheus.Port != 0 {
+		// Get the prometheus registry
+		prometheusRegistry, ok := metricsRegistry[PrometheusRegistry].(*prometheus.Registry)
+		if !ok || prometheusRegistry == nil {
+			glog.Info("Failed to get the prometheusRegistry from MetricsRegistry, creating new instance of prometheus registry.")
+			prometheusRegistry = prometheus.NewRegistry()
+		}
+
 		// Set up the Prometheus metrics.
-		returnEngine.PrometheusMetrics = prometheusmetrics.NewMetrics(cfg.Metrics.Prometheus, cfg.Metrics.Disabled, syncerKeys, moduleStageNames)
+		returnEngine.PrometheusMetrics = prometheusmetrics.NewMetrics(cfg.Metrics.Prometheus, prometheusRegistry, cfg.Metrics.Disabled, syncerKeys, moduleStageNames)
 		engineList = append(engineList, returnEngine.PrometheusMetrics)
 	}
 
@@ -134,6 +150,20 @@ func (me *MultiMetricsEngine) RecordAdapterRequest(labels metrics.AdapterLabels)
 	}
 }
 
+// RecordRejectedBidsForBidder across all engines
+func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+	for _, thisME := range *me {
+		thisME.RecordRejectedBidsForBidder(bidder)
+	}
+}
+
+// RecordDynamicFetchFailure across all engines
+func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+	for _, thisME := range *me {
+		thisME.RecordDynamicFetchFailure(pubId, code)
+	}
+}
+
 // Keeps track of created and reused connections to adapter bidders and the time from the
 // connection request, to the connection creation, or reuse from the pool across all engines
 func (me *MultiMetricsEngine) RecordAdapterConnections(bidderName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration) {
@@ -149,9 +179,9 @@ func (me *MultiMetricsEngine) RecordDNSTime(dnsLookupTime time.Duration) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
+func (me *MultiMetricsEngine) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordTLSHandshakeTime(tlsHandshakeTime)
+		thisME.RecordTLSHandshakeTime(adapterName, tlsHandshakeTime)
 	}
 }
 
@@ -266,6 +296,52 @@ func (me *MultiMetricsEngine) RecordRequestPrivacy(privacy metrics.PrivacyLabels
 	}
 }
 
+// RecordAdapterDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterDuplicateBidID(adaptor, collisions)
+	}
+}
+
+// RecordRequestHavingDuplicateBidID across all engines
+func (me *MultiMetricsEngine) RecordRequestHavingDuplicateBidID() {
+	for _, thisME := range *me {
+		thisME.RecordRequestHavingDuplicateBidID()
+	}
+}
+
+// RecordPodImpGenTime across all engines
+func (me *MultiMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
+	for _, thisME := range *me {
+		thisME.RecordPodImpGenTime(labels, startTime)
+	}
+}
+
+// RecordRejectedBidsForBidder as a noop
+func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+}
+
+// RecordPodCombGenTime as a noop
+func (me *MultiMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCombGenTime(labels, elapsedTime)
+	}
+}
+
+// RecordPodCompititveExclusionTime as a noop
+func (me *MultiMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPodCompititveExclusionTime(labels, elapsedTime)
+	}
+}
+
+// RecordAdapterVideoBidDuration as a noop
+func (me *MultiMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterVideoBidDuration(labels, videoBidDuration)
+	}
+}
+
 // RecordAdapterGDPRRequestBlocked across all engines
 func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
 	for _, thisME := range *me {
@@ -283,6 +359,18 @@ func (me *MultiMetricsEngine) RecordDebugRequest(debugEnabled bool, pubId string
 func (me *MultiMetricsEngine) RecordStoredResponse(pubId string) {
 	for _, thisME := range *me {
 		thisME.RecordStoredResponse(pubId)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordRejectedBidsForAccount(pubId string) {
+	for _, thisME := range *me {
+		thisME.RecordRejectedBidsForAccount(pubId)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordFloorsRequestForAccount(pubId string) {
+	for _, thisME := range *me {
+		thisME.RecordFloorsRequestForAccount(pubId)
 	}
 }
 
@@ -384,10 +472,47 @@ func (me *MultiMetricsEngine) RecordModuleTimeout(labels metrics.ModuleLabels) {
 		thisME.RecordModuleTimeout(labels)
 	}
 }
+func (me *MultiMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
+	for _, thisME := range *me {
+		thisME.RecordRejectedBids(pubid, bidder, code)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
+	for _, thisME := range *me {
+		thisME.RecordBids(pubid, profileid, biddder, deal)
+	}
+}
+func (me *MultiMetricsEngine) RecordHttpCounter() {
+}
+
+func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
+	for _, thisME := range *me {
+		thisME.RecordVastVersion(biddder, vastVersion)
+	}
+}
 
 // NilMetricsEngine implements the MetricsEngine interface where no metrics are actually captured. This is
 // used if no metric backend is configured and also for tests.
 type NilMetricsEngine struct{}
+
+func (me *NilMetricsEngine) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
+}
+
+func (me *NilMetricsEngine) RecordRequestHavingDuplicateBidID() {
+}
+
+func (me *NilMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, startTime time.Time) {
+}
+
+func (me *NilMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+}
+
+func (me *NilMetricsEngine) RecordPodCompititveExclusionTime(labels metrics.PodLabels, elapsedTime time.Duration) {
+}
+
+func (me *NilMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.AdapterLabels, videoBidDuration int) {
+}
 
 // RecordRequest as a noop
 func (me *NilMetricsEngine) RecordRequest(labels metrics.Labels) {
@@ -438,7 +563,7 @@ func (me *NilMetricsEngine) RecordDNSTime(dnsLookupTime time.Duration) {
 }
 
 // RecordTLSHandshakeTime as a noop
-func (me *NilMetricsEngine) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
+func (me *NilMetricsEngine) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
 }
 
 // RecordBidderServerResponseTime as a noop
@@ -516,6 +641,12 @@ func (me *NilMetricsEngine) RecordDebugRequest(debugEnabled bool, pubId string) 
 func (me *NilMetricsEngine) RecordStoredResponse(pubId string) {
 }
 
+func (me *NilMetricsEngine) RecordRejectedBidsForAccount(pubId string) {
+}
+
+func (me *NilMetricsEngine) RecordFloorsRequestForAccount(pubId string) {
+}
+
 func (me *NilMetricsEngine) RecordAdsCertReq(success bool) {
 
 }
@@ -567,4 +698,23 @@ func (me *NilMetricsEngine) RecordModuleExecutionError(labels metrics.ModuleLabe
 }
 
 func (me *NilMetricsEngine) RecordModuleTimeout(labels metrics.ModuleLabels) {
+}
+
+// RecordDynamicFetchFailure as a noop
+func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+}
+
+// RecordRejectedBids as a noop
+func (me *NilMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
+}
+
+// RecordBids as a noop
+func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
+}
+
+// RecordVastVersion as a noop
+func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
+}
+
+func (m *NilMetricsEngine) RecordHttpCounter() {
 }
