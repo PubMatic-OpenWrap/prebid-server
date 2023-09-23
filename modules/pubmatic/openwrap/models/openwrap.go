@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 type RequestCtx struct {
@@ -36,6 +37,7 @@ type RequestCtx struct {
 	Cookies       string
 	UidCookie     *http.Cookie
 	KADUSERCookie *http.Cookie
+	ParsedCookie  *usersync.Cookie
 	OriginCookie  string
 
 	Debug bool

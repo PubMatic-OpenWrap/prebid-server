@@ -147,15 +147,15 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 
 			tt.fields.scheduler.timeout = 2 * time.Minute
 
-			mockCacheSave := func(uint16, api.VendorList) {}
-			latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(0), mockCacheSave)
+			mockCacheSave := func(uint16, uint16, api.VendorList) {}
+			latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(2, 0), mockCacheSave)
 
 			cacheSave, cacheLoad = newVendorListCache()
 			tt.fields.scheduler.runLoadCache()
 
 			firstVersionToLoad := uint16(2)
 			for i := latestVersion; i >= firstVersionToLoad; i-- {
-				list := cacheLoad(i)
+				list := cacheLoad(2, i)
 				assert.NotNil(t, list, "vendor-list file should be present in cache")
 			}
 		})
@@ -179,9 +179,11 @@ func Benchmark_vendorListScheduler_runLoadCache(b *testing.B) {
 func Test_vendorListScheduler_cacheFuncs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(mockServer(serverSettings{
 		vendorListLatestVersion: 1,
-		vendorLists: map[int]string{
-			1: vendorList1,
-			2: vendorList2,
+		vendorLists: map[int]map[int]string{
+			2: {
+				1: vendorList1,
+				2: vendorList2,
+			},
 		},
 	})))
 	defer server.Close()

@@ -235,6 +235,6 @@ func readExpectedOutput() map[string][][]int {
 	var bytes []byte
 	file.Read(bytes)
 	eOut := make(map[string][][]int, 0)
-	json.Unmarshal(bytes, eOut)
+	json.Unmarshal(bytes, &eOut)
 	return eOut
 }

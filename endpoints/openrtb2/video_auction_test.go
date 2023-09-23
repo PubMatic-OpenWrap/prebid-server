@@ -1225,6 +1225,7 @@ func mockDepsWithMetrics(t *testing.T, ex *mockExchangeVideo) (*endpointDeps, *m
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 	return deps, metrics, mockModule
 }
@@ -1270,6 +1271,41 @@ func mockDeps(t *testing.T, ex *mockExchangeVideo) *endpointDeps {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
+	}
+}
+
+func mockDepsInvalidPrivacy(t *testing.T, ex *mockExchangeVideo) *endpointDeps {
+	return &endpointDeps{
+		fakeUUIDGenerator{},
+		ex,
+		mockBidderParamValidator{},
+		&mockVideoStoredReqFetcher{},
+		&mockVideoStoredReqFetcher{},
+		&mockAccountFetcher{data: mockVideoAccountData},
+		&config.Configuration{MaxRequestSize: maxSize,
+			AccountDefaults: config.Account{
+				Privacy: config.AccountPrivacy{
+					AllowActivities: &config.AllowActivities{
+						TransmitPreciseGeo: config.Activity{Rules: []config.ActivityRule{
+							{Condition: config.ActivityCondition{ComponentName: []string{"bidderA.BidderB.bidderC"}}},
+						}},
+					},
+				},
+			},
+		},
+		&metricsConfig.NilMetricsEngine{},
+		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		map[string]string{},
+		false,
+		[]byte{},
+		openrtb_ext.BuildBidderMap(),
+		ex.cache,
+		regexp.MustCompile(`[<>]`),
+		hardcodedResponseIPValidator{response: true},
+		empty_fetcher.EmptyFetcher{},
+		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 }
 
@@ -1293,6 +1329,7 @@ func mockDepsAppendBidderNames(t *testing.T, ex *mockExchangeAppendBidderNames) 
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	return deps
@@ -1318,6 +1355,7 @@ func mockDepsNoBids(t *testing.T, ex *mockExchangeVideoNoBids) *endpointDeps {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	return edep

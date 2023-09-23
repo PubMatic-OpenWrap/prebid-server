@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -490,7 +489,6 @@ func getAlternateBidderCodesFromRequestExt(reqExt *openrtb_ext.ExtRequest) []str
 func addKeywordsToExt(keywords []*openrtb_ext.ExtImpPubmaticKeyVal, extMap map[string]interface{}) {
 	for _, keyVal := range keywords {
 		if len(keyVal.Values) == 0 {
-			logf("No values present for key = %s", keyVal.Key)
 			continue
 		} else {
 			key := keyVal.Key
@@ -729,12 +727,6 @@ func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
 		}
 	}
 	return bidType
-}
-
-func logf(msg string, args ...interface{}) {
-	if glog.V(2) {
-		glog.Infof(msg, args...)
-	}
 }
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.

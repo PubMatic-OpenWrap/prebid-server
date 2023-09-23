@@ -104,17 +104,17 @@ func (scheduler *vendorListScheduler) runLoadCache() {
 	preloadContext, cancel := context.WithTimeout(context.Background(), scheduler.timeout)
 	defer cancel()
 
-	latestVersion := saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(0), cacheSave)
+	latestVersion := saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(2, 0), cacheSave)
 
 	// The GVL for TCF2 has no vendors defined in its first version. It's very unlikely to be used, so don't preload it.
 	firstVersionToLoad := uint16(2)
 
 	for i := latestVersion; i >= firstVersionToLoad; i-- {
 		// Check if version is present in the cache
-		if list := cacheLoad(i); list != nil {
+		if list := cacheLoad(2, i); list != nil {
 			continue
 		}
-		glog.Infof("Downloading: " + VendorListURLMaker(i))
-		saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(i), cacheSave)
+		glog.Infof("Downloading: " + VendorListURLMaker(2, i))
+		saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(2, i), cacheSave)
 	}
 }

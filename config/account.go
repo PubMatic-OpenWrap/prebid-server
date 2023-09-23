@@ -8,6 +8,7 @@ import (
 
 	"github.com/prebid/go-gdpr/consentconstants"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/iputil"
 )
 
 // ChannelType enumerates the values of integrations Prebid Server can configure for an account
@@ -119,6 +120,10 @@ func (pf *AccountPriceFloors) validate(errs []error) []error {
 	return errs
 }
 
+func (pf *AccountPriceFloors) IsAdjustForBidAdjustmentEnabled() bool {
+	return pf.AdjustForBidAdjustment
+}
+
 // EnabledForChannelType indicates whether CCPA is turned on at the account level for the specified channel type
 // by using the channel type setting if defined or the general CCPA setting if defined; otherwise it returns nil
 func (a *AccountCCPA) EnabledForChannelType(channelType ChannelType) *bool {
@@ -200,7 +205,8 @@ func (a *AccountGDPR) PurposeEnforced(purpose consentconstants.Purpose) (value, 
 // PurposeEnforcementAlgo checks the purpose enforcement algo for a given purpose by first
 // looking at the account settings, and if not set there, defaulting to the host configuration.
 func (a *AccountGDPR) PurposeEnforcementAlgo(purpose consentconstants.Purpose) (value TCF2EnforcementAlgo, exists bool) {
-	c, exists := a.PurposeConfigs[purpose]
+	var c *AccountGDPRPurpose
+	c, exists = a.PurposeConfigs[purpose]
 
 	if exists && (c.EnforceAlgoID == TCF2BasicEnforcement || c.EnforceAlgoID == TCF2FullEnforcement) {
 		return c.EnforceAlgoID, true
@@ -329,5 +335,31 @@ func (a *AccountChannel) IsSet() bool {
 }
 
 type AccountPrivacy struct {
-	AllowActivities AllowActivities `mapstructure:"allowactivities" json:"allowactivities"`
+	AllowActivities *AllowActivities `mapstructure:"allowactivities" json:"allowactivities"`
+	IPv6Config      IPv6             `mapstructure:"ipv6" json:"ipv6"`
+	IPv4Config      IPv4             `mapstructure:"ipv4" json:"ipv4"`
+}
+
+type IPv6 struct {
+	AnonKeepBits int `mapstructure:"anon_keep_bits" json:"anon_keep_bits"`
+}
+
+type IPv4 struct {
+	AnonKeepBits int `mapstructure:"anon_keep_bits" json:"anon_keep_bits"`
+}
+
+func (ip *IPv6) Validate(errs []error) []error {
+	if ip.AnonKeepBits > iputil.IPv6BitSize || ip.AnonKeepBits < 0 {
+		err := fmt.Errorf("bits cannot exceed %d in ipv6 address, or be less than 0", iputil.IPv6BitSize)
+		errs = append(errs, err)
+	}
+	return errs
+}
+
+func (ip *IPv4) Validate(errs []error) []error {
+	if ip.AnonKeepBits > iputil.IPv4BitSize || ip.AnonKeepBits < 0 {
+		err := fmt.Errorf("bits cannot exceed %d in ipv4 address, or be less than 0", iputil.IPv4BitSize)
+		errs = append(errs, err)
+	}
+	return errs
 }

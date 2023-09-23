@@ -71,7 +71,8 @@ func NewCTVEndpoint(
 	pbsAnalytics analytics.PBSAnalyticsModule,
 	disabledBidders map[string]string,
 	defReqJSON []byte,
-	bidderMap map[string]openrtb_ext.BidderName) (httprouter.Handle, error) {
+	bidderMap map[string]openrtb_ext.BidderName,
+	tmaxAdjustments *exchange.TmaxAdjustmentsPreprocessed) (httprouter.Handle, error) {
 
 	if ex == nil || validator == nil || requestsByID == nil || accounts == nil || cfg == nil || met == nil {
 		return nil, errors.New("NewCTVEndpoint requires non-nil arguments")
@@ -104,6 +105,7 @@ func NewCTVEndpoint(
 			ipValidator,
 			nil,
 			&hooks.EmptyPlanBuilder{},
+			tmaxAdjustments,
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -182,7 +184,9 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	//Parsing Cookies and Set Stats
-	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
+	usersyncs := usersync.ReadCookie(r, usersync.Base64Decoder{}, &deps.cfg.HostCookie)
+	usersync.SyncHostCookie(r, usersyncs, &deps.cfg.HostCookie)
+
 	if request.App != nil {
 		deps.labels.Source = metrics.DemandApp
 		deps.labels.RType = metrics.ReqTypeVideo
@@ -226,6 +230,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		PubID:             deps.labels.PubID,
 		HookExecutor:      hookExecuter,
 		TCF2Config:        tcf2Config,
+		TmaxAdjustments:   deps.tmaxAdjustments,
 	}
 
 	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)
