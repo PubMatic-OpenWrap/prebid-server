@@ -59,10 +59,10 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 		if recover := recover(); recover != nil {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 				return
 			}
-			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 		}
 	}()
 
@@ -84,10 +84,10 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 		if recover := recover(); recover != nil {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 				return
 			}
-			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 		}
 	}()
 
@@ -122,10 +122,10 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 		if recover := recover(); recover != nil {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 				return
 			}
-			glog.Error("path:" + r.URL.RequestURI() + "body:" + string(body) + ". stacktrace:" + string(debug.Stack()))
+			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 		}
 	}()
 
