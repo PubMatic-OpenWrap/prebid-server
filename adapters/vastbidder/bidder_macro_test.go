@@ -1264,7 +1264,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 	}
 }
 
-func TestBidderMacro_GetValue(t *testing.T) {
+func TestBidderGetValue(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1284,9 +1284,8 @@ func TestBidderMacro_GetValue(t *testing.T) {
 				"name": "test",
 				"age":  22,
 			}},
-			args:  args{key: "name"},
-			want:  "test",
-			found: true,
+			args: args{key: "kv.name"},
+			want: "test",
 		},
 		{
 			name: "Invalid_Key",
@@ -1294,16 +1293,20 @@ func TestBidderMacro_GetValue(t *testing.T) {
 				"name": "test",
 				"age":  22,
 			}},
-			args:  args{key: "anykey"},
-			want:  "",
-			found: false,
+			args: args{key: "kv.anykey"},
+			want: "",
 		},
 		{
 			name:   "Empty_KV_Map",
 			fields: fields{KV: nil},
-			args:   args{key: "anykey"},
+			args:   args{key: "kv.anykey"},
 			want:   "",
-			found:  false,
+		},
+		{
+			name:   "KV_map_with_no_key_val_pair",
+			fields: fields{KV: map[string]interface{}{}},
+			args:   args{key: "kv.anykey"},
+			want:   "",
 		},
 	}
 	for _, tt := range tests {
@@ -1311,15 +1314,13 @@ func TestBidderMacro_GetValue(t *testing.T) {
 			tag := &BidderMacro{
 				KV: tt.fields.KV,
 			}
-			value, found := tag.GetValue(tt.args.key)
+			value := tag.GetValue(tt.args.key)
 			assert.Equal(t, tt.want, value, tt.name)
-			assert.Equal(t, tt.found, found, tt.name)
-
 		})
 	}
 }
 
-func TestBidderMacro_MacroKV(t *testing.T) {
+func TestBidderMacroKV(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1347,6 +1348,12 @@ func TestBidderMacro_MacroKV(t *testing.T) {
 			args:   args{key: "kv"},
 			want:   "",
 		},
+		{
+			name:   "KV_map_with_no_key_val_pair",
+			fields: fields{KV: map[string]interface{}{}},
+			args:   args{key: "kv"},
+			want:   "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1359,7 +1366,7 @@ func TestBidderMacro_MacroKV(t *testing.T) {
 	}
 }
 
-func TestBidderMacro_MacroKVM(t *testing.T) {
+func TestBidderMacroKVM(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1388,13 +1395,28 @@ func TestBidderMacro_MacroKVM(t *testing.T) {
 			want:   "",
 		},
 		{
-			name: "value_as_int_data_type",
+			name: "Value_as_int_data_type",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  22,
 			}},
 			args: args{key: "kvm"},
 			want: "{\"age\":22,\"name\":\"test\"}",
+		},
+		{
+			name:   "KV_map_with_no_key_val_pair",
+			fields: fields{KV: map[string]interface{}{}},
+			args:   args{key: "kvm"},
+			want:   "{}",
+		},
+		{
+			name: "Marshal_error",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  make(chan int),
+			}},
+			args: args{key: "kvm"},
+			want: "",
 		},
 	}
 	for _, tt := range tests {

@@ -74,14 +74,6 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 
 		valueCallback, found = mp.mapper[tmpKey]
 
-		if !found && !strings.HasSuffix(tmpKey, macroEscapeSuffix) {
-			// valueCallback, found = mp.mapper["kv"]
-			value, found = mp.bidderMacro.GetValue(tmpKey)
-			if found {
-				break
-			}
-		}
-
 		if found {
 			//found callback function
 			value = valueCallback.callback(mp.bidderMacro, tmpKey)
@@ -96,6 +88,10 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
 			nEscaping++
 			continue
+		} else if strings.HasPrefix(tmpKey, KVPrefix) {
+			value = mp.bidderMacro.GetValue(tmpKey)
+			found = true
+			break
 		}
 		break
 	}

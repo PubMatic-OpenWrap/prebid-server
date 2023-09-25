@@ -18,8 +18,7 @@ type IBidderMacro interface {
 	SetAdapterConfig(*config.Adapter)
 	GetURI() string
 	GetHeaders() http.Header
-	//IsKeyPresent(string) bool
-	GetValue(string) (string, bool)
+	GetValue(string) string
 	//getAllHeaders returns default and custom heades
 	getAllHeaders() http.Header
 

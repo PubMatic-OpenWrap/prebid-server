@@ -169,8 +169,9 @@ const (
 )
 
 const (
-	Prebid = "prebid"
-	Keyval = "keyval"
+	Prebid   = "prebid"
+	Keyval   = "keyval"
+	KVPrefix = "kv."
 )
 
 var ParamKeys = []string{"param1", "param2", "param3", "param4", "param5"}

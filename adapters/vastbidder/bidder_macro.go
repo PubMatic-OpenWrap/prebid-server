@@ -89,17 +89,16 @@ func (tag *BidderMacro) init() {
 		}
 	}
 
-	if nil != tag.Request && nil != tag.Request.Ext {
-
+	if tag.Request != nil && tag.Request.Ext != nil {
 		var cust_ext map[string]interface{}
 		err := json.Unmarshal(tag.Request.Ext, &cust_ext)
-		if err == nil {
+		if err == nil && cust_ext[Prebid] != nil {
 			cust_prebid := cust_ext[Prebid]
-			cust_data, ok := cust_prebid.(map[string]interface{})
-
-			if ok {
-				cust_keyval := cust_data[Keyval]
-				tag.KV = cust_keyval.(map[string]interface{})
+			if cust_data, ok := cust_prebid.(map[string]interface{}); ok {
+				if cust_data[Keyval] != nil {
+					cust_keyval := cust_data[Keyval]
+					tag.KV = cust_keyval.(map[string]interface{})
+				}
 			}
 		}
 	}
@@ -176,21 +175,17 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// func (tag *BidderMacro) IsKeyPresent(key string) bool {
-// 	_, found := tag.KV[key]
-// 	return found
-
-// }
-
-func (tag *BidderMacro) GetValue(key string) (string, bool) {
+// GetValue returns the value from KV map wrt key
+func (tag *BidderMacro) GetValue(key string) string {
 	if tag.KV == nil {
-		return "", false
+		return ""
 	}
+	key = strings.TrimPrefix(key, KVPrefix)
 	value, found := tag.KV[key]
 	if !found {
-		return "", false
+		return ""
 	}
-	return fmt.Sprintf("%v", value), true
+	return fmt.Sprintf("%v", value)
 }
 
 /********************* Request *********************/
@@ -1213,20 +1208,18 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-
 	len := len(tag.KV)
-
-	str := ""
+	kvString := ""
 	for key, val := range tag.KV {
 		if len == 1 {
-			str += fmt.Sprintf("%s=%v", key, val)
+			kvString += fmt.Sprintf("%s=%v", key, val)
 
-			return str
+			return kvString
 		}
-		str += fmt.Sprintf("%s=%v", key, val) + "&"
+		kvString += fmt.Sprintf("%s=%v&", key, val)
 		len--
 	}
-	return str
+	return kvString
 
 }
 
