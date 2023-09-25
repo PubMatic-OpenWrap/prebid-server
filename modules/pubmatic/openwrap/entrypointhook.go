@@ -114,6 +114,11 @@ func (m OpenWrap) handleEntrypointHook(
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 	}
 
+	// SSAuction will be always 1 for CTV request
+	if rCtx.IsCTVRequest {
+		rCtx.SSAuction = 1
+	}
+
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)

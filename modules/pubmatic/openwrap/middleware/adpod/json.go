@@ -79,14 +79,14 @@ func isValidURL(urlVal string) bool {
 }
 
 func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL string) []byte {
-	bidResponse := openrtb2.BidResponse{}
+	var bidResponse *openrtb2.BidResponse
 
-	err := json.Unmarshal(response, &bidResponse)
+	err := json.Unmarshal(response, bidResponse)
 	if err != nil {
 		return response
 	}
 
-	jsonResponse, err := getJsonResponse(cacheClient, &bidResponse, redirectURL)
+	jsonResponse, err := getJsonResponse(cacheClient, bidResponse, redirectURL)
 	if err != nil {
 		return response
 	}

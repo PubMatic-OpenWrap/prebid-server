@@ -35,14 +35,14 @@ var (
 )
 
 func formVastResponse(response []byte) []byte {
-	bidResponse := openrtb2.BidResponse{}
+	var bidResponse *openrtb2.BidResponse
 
-	err := json.Unmarshal(response, &bidResponse)
+	err := json.Unmarshal(response, bidResponse)
 	if err != nil {
 		return EmptyVASTResponse
 	}
 
-	vast, err := getVast(&bidResponse)
+	vast, err := getVast(bidResponse)
 	if err != nil {
 		return EmptyVASTResponse
 	}
@@ -55,11 +55,11 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 		return "", errors.New("recieved invalid bidResponse")
 	}
 
-	bidArray := make([]*openrtb2.Bid, 0)
+	bidArray := make([]openrtb2.Bid, 0)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			if bid.Price > 0 {
-				bidArray = append(bidArray, &bid)
+				bidArray = append(bidArray, bid)
 			}
 		}
 	}
@@ -73,7 +73,7 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 }
 
 // getAdPodBidCreative get commulative adpod bid details
-func getAdPodBidCreativeAndPrice(bids []*openrtb2.Bid, generatedBidID bool) (string, float64) {
+func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid, generatedBidID bool) (string, float64) {
 	if len(bids) == 0 {
 		return "", 0
 	}
@@ -101,7 +101,7 @@ func getAdPodBidCreativeAndPrice(bids []*openrtb2.Bid, generatedBidID bool) (str
 
 			if generatedBidID == false {
 				// adjust bidid in video event trackers and update
-				adjustBidIDInVideoEventTrackers(adDoc, bid)
+				adjustBidIDInVideoEventTrackers(adDoc, &bid)
 				adm, err := adDoc.WriteToString()
 				if err == nil {
 					bid.AdM = adm

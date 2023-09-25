@@ -444,6 +444,7 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 
 	requestJson, rejectErr := hookExecutor.ExecuteEntrypointStage(httpRequest, requestJson)
 	if rejectErr != nil {
+		glog.Errorf("Error in ExecuteEntrypointStage: %s", rejectErr.Error())
 		errs = []error{rejectErr}
 		if err = json.Unmarshal(requestJson, req.BidRequest); err != nil {
 			glog.Errorf("Failed to unmarshal BidRequest during entrypoint rejection: %s", err)

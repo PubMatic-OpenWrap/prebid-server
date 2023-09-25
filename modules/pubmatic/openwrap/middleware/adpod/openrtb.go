@@ -10,14 +10,14 @@ import (
 )
 
 func formOperRTBResponse(response []byte) []byte {
-	bidResponse := openrtb2.BidResponse{}
+	var bidResponse *openrtb2.BidResponse
 
-	err := json.Unmarshal(response, &bidResponse)
+	err := json.Unmarshal(response, bidResponse)
 	if err != nil {
 		return response
 	}
 
-	mergedBidResponse, err := mergeSeatBids(&bidResponse)
+	mergedBidResponse, err := mergeSeatBids(bidResponse)
 	if err != nil {
 		return response
 	}
@@ -35,17 +35,17 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, er
 		return nil, errors.New("recieved invalid bidResponse")
 	}
 
-	bidArrayMap := make(map[string][]*openrtb2.Bid)
+	bidArrayMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			if bid.Price > 0 {
 				impId, _ := models.GetImpressionID(bid.ImpID)
 				bids, ok := bidArrayMap[impId]
 				if !ok {
-					bids = make([]*openrtb2.Bid, 0)
+					bids = make([]openrtb2.Bid, 0)
 				}
 
-				bids = append(bids, &bid)
+				bids = append(bids, bid)
 				bidArrayMap[impId] = bids
 			}
 		}
@@ -56,7 +56,7 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, er
 	return bidResponse, nil
 }
 
-func getPrebidCTVSeatBid(bidsMap map[string][]*openrtb2.Bid) []openrtb2.SeatBid {
+func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 	seatBids := []openrtb2.SeatBid{}
 
 	for impId, bids := range bidsMap {
