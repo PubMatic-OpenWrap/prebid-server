@@ -88,8 +88,8 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
 			nEscaping++
 			continue
-		} else if strings.HasPrefix(tmpKey, KVPrefix) {
-			value = mp.bidderMacro.GetValue(tmpKey)
+		} else if strings.HasPrefix(tmpKey, kvPrefix) {
+			value = mp.bidderMacro.GetValueFromKV(tmpKey)
 			found = true
 			break
 		}

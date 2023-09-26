@@ -1314,7 +1314,7 @@ func TestBidderGetValue(t *testing.T) {
 			tag := &BidderMacro{
 				KV: tt.fields.KV,
 			}
-			value := tag.GetValue(tt.args.key)
+			value := tag.GetValueFromKV(tt.args.key)
 			assert.Equal(t, tt.want, value, tt.name)
 		})
 	}

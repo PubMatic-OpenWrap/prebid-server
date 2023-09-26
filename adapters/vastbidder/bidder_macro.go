@@ -40,7 +40,7 @@ type BidderMacro struct {
 	//Impression level Request Headers
 	ImpReqHeaders http.Header
 
-	//custom keyval map
+	//Key-Values Map
 	KV map[string]interface{}
 }
 
@@ -92,13 +92,16 @@ func (tag *BidderMacro) init() {
 	if tag.Request != nil && tag.Request.Ext != nil {
 		var cust_ext map[string]interface{}
 		err := json.Unmarshal(tag.Request.Ext, &cust_ext)
-		if err == nil && cust_ext[Prebid] != nil {
-			cust_prebid := cust_ext[Prebid]
-			if cust_data, ok := cust_prebid.(map[string]interface{}); ok {
-				if cust_data[Keyval] != nil {
-					cust_keyval := cust_data[Keyval]
-					tag.KV = cust_keyval.(map[string]interface{})
-				}
+		if err != nil || cust_ext[prebid] == nil {
+			return
+		}
+
+		cust_prebid := cust_ext[prebid]
+
+		if cust_data, ok := cust_prebid.(map[string]interface{}); ok && cust_data[keyval] != nil {
+			cust_keyval := cust_data[keyval]
+			if cust_keyval, ok := cust_keyval.(map[string]interface{}); ok {
+				tag.KV = cust_keyval
 			}
 		}
 	}
@@ -175,12 +178,12 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// GetValue returns the value from KV map wrt key
-func (tag *BidderMacro) GetValue(key string) string {
+// GetValueFromKV returns the value from KV map wrt key
+func (tag *BidderMacro) GetValueFromKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	key = strings.TrimPrefix(key, KVPrefix)
+	key = strings.TrimPrefix(key, kvPrefix)
 	value, found := tag.KV[key]
 	if !found {
 		return ""
@@ -1209,17 +1212,16 @@ func (tag *BidderMacro) MacroKV(key string) string {
 		return ""
 	}
 	len := len(tag.KV)
-	kvString := ""
+	keyval := ""
 	for key, val := range tag.KV {
 		if len == 1 {
-			kvString += fmt.Sprintf("%s=%v", key, val)
-
-			return kvString
+			keyval += fmt.Sprintf("%s=%v", key, val)
+			return keyval
 		}
-		kvString += fmt.Sprintf("%s=%v&", key, val)
+		keyval += fmt.Sprintf("%s=%v&", key, val)
 		len--
 	}
-	return kvString
+	return keyval
 
 }
 
