@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
@@ -75,6 +76,7 @@ func (m OpenWrap) handleEntrypointHook(
 	result.Reject = true
 
 	if err != nil {
+		glog.Errorf("Error in Request Parsing: %s", err.Error())
 		result.NbrCode = nbr.InvalidRequest
 		result.Errors = append(result.Errors, "InvalidRequest")
 		return result, err

@@ -50,13 +50,14 @@ type CacheWrapperStruct struct {
 	Height int64   `json:"height,omitempty"`
 }
 
-func getAndValidateRedirectURL(r *http.Request) (string, CustomError) {
+func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
 	params := r.URL.Query()
+	debug := params.Get(models.Debug)
 
 	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
 	if format != "" {
 		if format != models.ResponseFormatJSON && format != models.ResponseFormatRedirect {
-			return "", NewError(634, "Invalid response format, must be 'json' or 'redirect'")
+			return "", debug, NewError(634, "Invalid response format, must be 'json' or 'redirect'")
 		}
 	}
 
@@ -64,11 +65,11 @@ func getAndValidateRedirectURL(r *http.Request) (string, CustomError) {
 	if len(owRedirectURL) > 0 {
 		owRedirectURL = strings.TrimSpace(owRedirectURL)
 		if format == models.ResponseFormatRedirect && !isValidURL(owRedirectURL) {
-			return "", NewError(633, "Invalid redirect URL")
+			return "", debug, NewError(633, "Invalid redirect URL")
 		}
 	}
 
-	return owRedirectURL, nil
+	return owRedirectURL, debug, nil
 }
 
 func isValidURL(urlVal string) bool {
@@ -78,15 +79,15 @@ func isValidURL(urlVal string) bool {
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }
 
-func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL string) []byte {
+func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL, debug string) []byte {
 	var bidResponse *openrtb2.BidResponse
 
-	err := json.Unmarshal(response, bidResponse)
+	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		return response
 	}
 
-	jsonResponse, err := getJsonResponse(cacheClient, bidResponse, redirectURL)
+	jsonResponse, err := getJsonResponse(cacheClient, bidResponse, redirectURL, debug)
 	if err != nil {
 		return response
 	}
@@ -94,7 +95,7 @@ func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL stri
 	return jsonResponse
 }
 
-func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL string) ([]byte, error) {
+func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
 		return nil, errors.New("recieved invalid bidResponse")
 	}
@@ -118,7 +119,7 @@ func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redi
 	adPodBids := formAdpodBids(client, bidArrayMap)
 
 	var response []byte
-	if len(redirectURL) > 0 {
+	if len(redirectURL) > 0 && debug != "1" {
 		response = getRedirectResponse(adPodBids, redirectURL)
 	} else {
 		var err error

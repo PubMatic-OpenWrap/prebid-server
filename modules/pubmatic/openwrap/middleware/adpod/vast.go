@@ -37,7 +37,7 @@ var (
 func formVastResponse(response []byte) []byte {
 	var bidResponse *openrtb2.BidResponse
 
-	err := json.Unmarshal(response, bidResponse)
+	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		return EmptyVASTResponse
 	}
