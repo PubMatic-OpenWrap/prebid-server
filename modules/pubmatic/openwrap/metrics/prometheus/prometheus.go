@@ -98,7 +98,6 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	return metric
 }
 
-// NewMetricsInner initalize prometheus singeltone
 func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
 
