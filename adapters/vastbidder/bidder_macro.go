@@ -90,18 +90,14 @@ func (tag *BidderMacro) init() {
 	}
 
 	if tag.Request != nil && tag.Request.Ext != nil {
-		var cust_ext map[string]interface{}
-		err := json.Unmarshal(tag.Request.Ext, &cust_ext)
-		if err != nil || cust_ext[prebid] == nil {
+		var ext map[string]interface{}
+		err := json.Unmarshal(tag.Request.Ext, &ext)
+		if err != nil || ext[prebid] == nil {
 			return
 		}
-
-		cust_prebid := cust_ext[prebid]
-
-		if cust_data, ok := cust_prebid.(map[string]interface{}); ok && cust_data[keyval] != nil {
-			cust_keyval := cust_data[keyval]
-			if cust_keyval, ok := cust_keyval.(map[string]interface{}); ok {
-				tag.KV = cust_keyval
+		if prebid, ok := ext[prebid].(map[string]interface{}); ok && prebid[keyval] != nil {
+			if keyval, ok := prebid[keyval].(map[string]interface{}); ok {
+				tag.KV = keyval
 			}
 		}
 	}
@@ -184,11 +180,10 @@ func (tag *BidderMacro) GetValueFromKV(key string) string {
 		return ""
 	}
 	key = strings.TrimPrefix(key, kvPrefix)
-	value, found := tag.KV[key]
-	if !found {
-		return ""
+	if value, found := tag.KV[key]; found {
+		return fmt.Sprintf("%v", value)
 	}
-	return fmt.Sprintf("%v", value)
+	return ""
 }
 
 /********************* Request *********************/
@@ -1211,17 +1206,11 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	len := len(tag.KV)
 	keyval := ""
 	for key, val := range tag.KV {
-		if len == 1 {
-			keyval += fmt.Sprintf("%s=%v", key, val)
-			return keyval
-		}
 		keyval += fmt.Sprintf("%s=%v&", key, val)
-		len--
 	}
-	return keyval
+	return strings.TrimSuffix(keyval, "&")
 
 }
 

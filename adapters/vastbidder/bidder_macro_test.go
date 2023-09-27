@@ -1264,7 +1264,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 	}
 }
 
-func TestBidderGetValue(t *testing.T) {
+func TestBidderGetValueFromKV(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1341,6 +1341,16 @@ func TestBidderMacroKV(t *testing.T) {
 			}},
 			args: args{key: "kv"},
 			want: "name=test&age=22",
+		},
+		{
+			name: "Valid_test_with_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  "22",
+				"url":  "http://example.com?k1=v1&k2=v2",
+			}},
+			args: args{key: "kv"},
+			want: "name=test&age=22&url=http://example.com?k1=v1&k2=v2",
 		},
 		{
 			name:   "Empty_KV_map",
