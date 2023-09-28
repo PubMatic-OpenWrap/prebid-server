@@ -260,6 +260,10 @@ func createNewContentObject(contentObject *openrtb2.Content, include bool, keys 
 
 func applyBidAdjustmentToFloor(allBidderRequests []BidderRequest, bidAdjustmentFactors map[string]float64) {
 
+	if len(bidAdjustmentFactors) == 0 {
+		return
+	}
+
 	for _, bidderRequest := range allBidderRequests {
 		bidAdjustment := 1.0
 
