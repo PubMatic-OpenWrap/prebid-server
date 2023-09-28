@@ -106,7 +106,7 @@ func (m OpenWrap) handleEntrypointHook(
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
-		ParsedCookie:              usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

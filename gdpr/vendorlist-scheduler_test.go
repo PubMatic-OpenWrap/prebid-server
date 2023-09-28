@@ -146,17 +146,33 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 			assert.False(t, tt.fields.scheduler.isStarted, "VendorListScheduler should not be already running")
 
 			tt.fields.scheduler.timeout = 2 * time.Minute
-
 			mockCacheSave := func(uint16, uint16, api.VendorList) {}
-			latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(2, 0), mockCacheSave)
+			cacheSave, cacheLoad = newVendorListCache() // initialise global func variables
 
-			cacheSave, cacheLoad = newVendorListCache()
 			tt.fields.scheduler.runLoadCache()
 
-			firstVersionToLoad := uint16(2)
-			for i := latestVersion; i >= firstVersionToLoad; i-- {
-				list := cacheLoad(2, i)
-				assert.NotNil(t, list, "vendor-list file should be present in cache")
+			versions := [2]struct {
+				specVersion      uint16
+				firstListVersion uint16
+			}{
+				{
+					specVersion:      2,
+					firstListVersion: 2,
+				},
+				{
+					specVersion:      3,
+					firstListVersion: 1,
+				},
+			}
+			for _, v := range versions {
+				// saveOne uses mockCacheSave hence it will not save data into actual-cache
+				latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(v.specVersion, 0), mockCacheSave)
+				assert.NotEqual(t, latestVersion, 0, "saveOne function returned 0 for version-[%+v]", v)
+				for i := latestVersion; i >= v.firstListVersion; i-- {
+					// Check if version is present in the cache
+					list := cacheLoad(v.specVersion, i)
+					assert.NotNilf(t, list, "vendor-list file should be present in cache for versions-[%+v]", v)
+				}
 			}
 		})
 	}

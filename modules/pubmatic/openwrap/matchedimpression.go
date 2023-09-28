@@ -20,7 +20,7 @@ func getMatchedImpression(rctx models.RequestCtx) json.RawMessage {
 		syncerCode := adapters.ResolveOWBidder(partnerName)
 
 		status := 0
-		if uid, _, _ := rctx.ParsedCookie.GetUID(syncerCode); uid != "" {
+		if uid, _, _ := rctx.ParsedUidCookie.GetUID(syncerCode); uid != "" {
 			status = 1
 		}
 		cookieFlagMap[partnerConfig[models.BidderCode]] = status

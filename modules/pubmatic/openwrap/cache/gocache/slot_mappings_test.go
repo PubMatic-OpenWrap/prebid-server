@@ -469,7 +469,7 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 	newCache := gocache.New(10, 10)
 
 	type fields struct {
-		Map   *sync.Map
+		Map   sync.Map
 		cache *gocache.Cache
 		cfg   config.Cache
 		db    database.Database

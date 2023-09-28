@@ -90,7 +90,8 @@ type ExtRequestPrebid struct {
 	// any other value or an empty string disables trace output at all.
 	Trace string `json:"trace,omitempty"`
 
-	Transparency *TransparencyExt `json:"transparency,omitempty"`
+	Transparency *TransparencyExt       `json:"transparency,omitempty"`
+	KeyVal       map[string]interface{} `json:"keyval,omitempty"`
 }
 
 type AdServerTarget struct {

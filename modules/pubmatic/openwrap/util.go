@@ -227,7 +227,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
 		syncer := models.SyncerMap[adapters.ResolveOWBidder(partnerName)]
 		if syncer != nil {
-			uid, _, _ := rctx.ParsedCookie.GetUID(syncer.Key())
+			uid, _, _ := rctx.ParsedUidCookie.GetUID(syncer.Key())
 			if uid != "" {
 				continue
 			}

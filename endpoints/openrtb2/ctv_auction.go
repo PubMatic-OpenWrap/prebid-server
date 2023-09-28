@@ -234,6 +234,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)
+	defer func() {
+		if !auctionRequest.BidderResponseStartTime.IsZero() {
+			deps.metricsEngine.RecordOverheadTime(metrics.MakeAuctionResponse, time.Since(auctionRequest.BidderResponseStartTime))
+		}
+	}()
+
 	ao.RequestWrapper = auctionRequest.BidRequestWrapper
 	if err != nil || auctionResponse == nil || auctionResponse.BidResponse == nil {
 		deps.labels.RequestStatus = metrics.RequestStatusErr

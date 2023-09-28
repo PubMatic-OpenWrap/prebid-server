@@ -115,10 +115,6 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 			name: "GetUID returns non empty uid",
 			args: args{
 				rctx: models.RequestCtx{
-					UidCookie: &http.Cookie{
-						Name:  "uid",
-						Value: "ewoJInRlbXBVSURzIjogewoJCSJwdWJtYXRpYyI6IHsKCQkJInVpZCI6ICI3RDc1RDI1Ri1GQUM5LTQ0M0QtQjJEMS1CMTdGRUUxMUUwMjciLAoJCQkiZXhwaXJlcyI6ICIyMDIyLTEwLTMxVDA5OjE0OjI1LjczNzI1Njg5OVoiCgkJfQoJfSwKCSJiZGF5IjogIjIwMjItMDUtMTdUMDY6NDg6MzguMDE3OTg4MjA2WiIKfQ==",
-					},
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
 							models.SERVER_SIDE_FLAG:    "1",
@@ -153,7 +149,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setup(mockEngine)
 			tc.args.rctx.MetricsEngine = mockEngine
-			tc.args.rctx.ParsedCookie = usersync.ReadCookie(tc.getHttpRequest(), usersync.Base64Decoder{}, &config.HostCookie{})
+			tc.args.rctx.ParsedUidCookie = usersync.ReadCookie(tc.getHttpRequest(), usersync.Base64Decoder{}, &config.HostCookie{})
 			RecordPublisherPartnerNoCookieStats(tc.args.rctx)
 		})
 	}

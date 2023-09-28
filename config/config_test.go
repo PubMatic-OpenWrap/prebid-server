@@ -339,62 +339,46 @@ func TestDefaults(t *testing.T) {
 var fullConfig = []byte(`
 gdpr:
   host_vendor_id: 15
-  default_value: '1'
-  non_standard_publishers:
-    - pub1
-    - pub2
-  eea_countries:
-    - eea1
-    - eea2
+  default_value: "1"
+  non_standard_publishers: ["pub1", "pub2"]
+  eea_countries: ["eea1", "eea2"]
   tcf2:
     purpose1:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo1a
-        - foo1b
+      vendor_exceptions: ["foo1a", "foo1b"]
     purpose2:
       enabled: false
-      enforce_algo: full
+      enforce_algo: "full"
       enforce_purpose: false
       enforce_vendors: false
-      vendor_exceptions:
-        - foo2
+      vendor_exceptions: ["foo2"]
     purpose3:
-      enforce_algo: basic
+      enforce_algo: "basic"
       enforce_vendors: false
-      vendor_exceptions:
-        - foo3
+      vendor_exceptions: ["foo3"]
     purpose4:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo4
+      vendor_exceptions: ["foo4"]
     purpose5:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo5
+      vendor_exceptions: ["foo5"]
     purpose6:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo6
+      vendor_exceptions: ["foo6"]
     purpose7:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo7
+      vendor_exceptions: ["foo7"]
     purpose8:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo8
+      vendor_exceptions: ["foo8"]
     purpose9:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo9
+      vendor_exceptions: ["foo9"]
     purpose10:
       enforce_vendors: false
-      vendor_exceptions:
-        - foo10
+      vendor_exceptions: ["foo10"]
     special_feature1:
-      vendor_exceptions:
-        - fooSP1
+      vendor_exceptions: ["fooSP1"]
 ccpa:
   enforce: true
 lmt:
@@ -403,21 +387,21 @@ host_cookie:
   cookie_name: userid
   family: prebid
   domain: cookies.prebid.org
-  opt_out_url: 'http://prebid.org/optout'
-  opt_in_url: 'http://prebid.org/optin'
+  opt_out_url: http://prebid.org/optout
+  opt_in_url: http://prebid.org/optin
   max_cookie_size_bytes: 32768
-external_url: 'http://prebid-server.prebid.org/'
+external_url: http://prebid-server.prebid.org/
 host: prebid-server.prebid.org
 port: 1234
 admin_port: 5678
 enable_gzip: false
 compression:
-  request:
-    enable_gzip: true
-  response:
-    enable_gzip: false
+    request:
+        enable_gzip: true
+    response:
+        enable_gzip: false
 garbage_collector_threshold: 1
-datacenter: '1'
+datacenter: "1"
 auction_timeouts_ms:
   max: 123
   default: 50
@@ -440,12 +424,12 @@ http_client_cache:
   max_idle_connections_per_host: 2
   idle_connection_timeout_seconds: 3
 currency_converter:
-  fetch_url: 'https://currency.prebid.org'
+  fetch_url: https://currency.prebid.org
   fetch_interval_seconds: 1800
 recaptcha_secret: asdfasdfasdfasdf
 metrics:
   influxdb:
-    host: 'upstream:8232'
+    host: upstream:8232
     database: metricsdb
     measurement: anyMeasurement
     username: admin
@@ -459,68 +443,63 @@ metrics:
     adapter_connections_metrics: true
     adapter_gdpr_request_blocked: true
     account_modules_metrics: true
-blacklisted_apps:
-  - spamAppID
-  - sketchy-app-id
+blacklisted_apps: ["spamAppID","sketchy-app-id"]
 account_required: true
 auto_gen_source_tid: false
 certificates_file: /etc/ssl/cert.pem
 request_validation:
-  ipv4_private_networks:
-    - 1.1.1.0/24
-  ipv6_private_networks:
-    - '1111::/16'
-    - '2222::/16'
+    ipv4_private_networks: ["1.1.1.0/24"]
+    ipv6_private_networks: ["1111::/16", "2222::/16"]
 generate_bid_id: true
 host_schain_node:
-  asi: pbshostcompany.com
-  sid: '00001'
-  rid: BidRequest
-  hp: 1
+    asi: "pbshostcompany.com"
+    sid: "00001"
+    rid: "BidRequest"
+    hp: 1
 validations:
-  banner_creative_max_size: skip
-  secure_markup: skip
-  max_creative_width: 0
-  max_creative_height: 0
+    banner_creative_max_size: "skip"
+    secure_markup: "skip"
+    max_creative_width: 0
+    max_creative_height: 0
 experiment:
-  adscert:
-    mode: inprocess
-    inprocess:
-      origin: 'http://test.com'
-      key: ABC123
-      domain_check_interval_seconds: 40
-      domain_renewal_interval_seconds: 60
-    remote:
-      url: ''
-      signing_timeout_ms: 10
+    adscert:
+        mode: inprocess
+        inprocess:
+            origin: "http://test.com"
+            key: "ABC123"
+            domain_check_interval_seconds: 40
+            domain_renewal_interval_seconds : 60
+        remote:
+            url: ""
+            signing_timeout_ms: 10
 hooks:
-  enabled: true
+    enabled: true
 price_floors:
-  enabled: true
+    enabled: true
 account_defaults:
-  events_enabled: false
-  events:
-    enabled: true
-  privacy:
-    ipv6:
-      anon_keep_bits: 50
-    ipv4:
-      anon_keep_bits: 20
-  price_floors:
-    enabled: true
-    enforce_floors_rate: 50
-    adjust_for_bid_adjustment: false
-    enforce_deal_floors: true
-    use_dynamic_data: true
-    max_rules: 120
-    max_schema_dims: 5
-    fetch:
-      enabled: true
-      timeout_ms: 1000
-      max_file_size_kb: 100
-      max_rules: 1000
-      max_age_sec: 36000
-      period_sec: 7200
+    events_enabled: false
+    events:
+        enabled: true
+    price_floors:
+        enabled: true
+        enforce_floors_rate: 50
+        adjust_for_bid_adjustment: false
+        enforce_deal_floors: true
+        use_dynamic_data: true
+        max_rules: 120
+        max_schema_dims: 5
+        fetch:
+          enabled: true
+          timeout_ms: 1000
+          max_file_size_kb: 100
+          max_rules: 1000
+          max_age_sec: 36000
+          period_sec: 7200
+    privacy:
+        ipv6:
+            anon_keep_bits: 50
+        ipv4:
+            anon_keep_bits: 20
 price_floor_fetcher:
   worker: 10
   capacity: 20

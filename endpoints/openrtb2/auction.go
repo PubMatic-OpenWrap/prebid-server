@@ -2000,9 +2000,6 @@ func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
 	}
 
 	if referrerCandidate != "" {
-		if r.Site == nil {
-			r.Site = &openrtb2.Site{}
-		}
 		setSitePageIfEmpty(r.Site, referrerCandidate)
 		if parsedUrl, err := url.Parse(referrerCandidate); err == nil {
 			setSiteDomainIfEmpty(r.Site, parsedUrl.Host)

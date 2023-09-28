@@ -33,12 +33,12 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	UA            string
-	Cookies       string
-	UidCookie     *http.Cookie
-	KADUSERCookie *http.Cookie
-	ParsedCookie  *usersync.Cookie
-	OriginCookie  string
+	UA              string
+	Cookies         string
+	UidCookie       *http.Cookie
+	KADUSERCookie   *http.Cookie
+	ParsedUidCookie *usersync.Cookie
+	OriginCookie    string
 
 	Debug bool
 	Trace bool
