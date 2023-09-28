@@ -11,7 +11,7 @@ import (
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string) string {
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
-	if trackerWithOM(tracker, bid, rctx.Platform, seat) {
+	if trackerWithOM(tracker, rctx.Platform, seat) {
 		trackerFormat = models.TrackerCallWrapOMActive
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
@@ -19,7 +19,7 @@ func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid o
 }
 
 // TrackerWithOM checks for OM active condition for DV360
-func trackerWithOM(tracker models.OWTracker, bid openrtb2.Bid, platform, bidderCode string) bool {
+func trackerWithOM(tracker models.OWTracker, platform, bidderCode string) bool {
 	if platform == models.PLATFORM_APP && bidderCode == string(openrtb_ext.BidderPubmatic) {
 		if tracker.DspId == models.DspId_DV360 {
 			return true
