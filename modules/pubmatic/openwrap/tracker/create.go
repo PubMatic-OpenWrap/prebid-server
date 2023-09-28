@@ -24,9 +24,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 	var responseExt *openrtb_ext.ExtBidResponse
 
+	skipfloors, floorType, floorSource, floorModelVersion := 0, 0, 0, ""
 	err := json.Unmarshal(bidResponse.Ext, responseExt)
-	skipfloors, floorType, floorSource := 0, 0, 0
-	floorModelVersion := ""
 	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
 		floors := responseExt.Prebid.Floors
 		if floors.Skipped != nil {
