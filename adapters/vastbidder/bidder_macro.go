@@ -151,10 +151,6 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 		}
 	}
 
-	for key, val := range tag.KV {
-		keys[kvPrefix+key] = fmt.Sprintf("%v", val)
-	}
-
 	return keys
 }
 
