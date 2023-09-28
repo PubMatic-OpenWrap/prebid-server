@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -41,7 +43,7 @@ type BidderMacro struct {
 	ImpReqHeaders http.Header
 
 	//Key-Values Map
-	KV map[string]interface{}
+	KV map[string]any
 }
 
 // NewBidderMacro contains definition for all openrtb macro's
@@ -88,19 +90,19 @@ func (tag *BidderMacro) init() {
 			tag.DeviceExt = &ext
 		}
 	}
-
 	if tag.Request != nil && tag.Request.Ext != nil {
-		var ext map[string]interface{}
-		err := json.Unmarshal(tag.Request.Ext, &ext)
-		if err != nil || ext[prebid] == nil {
+		keyval, _, _, err := jsonparser.Get(tag.Request.Ext, prebid, keyval)
+		if err != nil {
 			return
 		}
-		if prebid, ok := ext[prebid].(map[string]interface{}); ok && prebid[keyval] != nil {
-			if keyval, ok := prebid[keyval].(map[string]interface{}); ok {
-				tag.KV = keyval
-			}
+		var kv map[string]any
+		err = json.Unmarshal(keyval, &kv)
+		if err != nil {
+			return
 		}
+		tag.KV = kv
 	}
+
 }
 
 // InitBidRequest will initialise BidRequest
@@ -148,6 +150,11 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 			keys[ParamKeys[i]] = ""
 		}
 	}
+
+	for key, val := range tag.KV {
+		keys[kvPrefix+key] = fmt.Sprintf("%v", val)
+	}
+
 	return keys
 }
 
@@ -1206,11 +1213,12 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	keyval := ""
+
+	values := url.Values{}
 	for key, val := range tag.KV {
-		keyval += fmt.Sprintf("%s=%v&", key, val)
+		values.Add(key, fmt.Sprintf("%v", val))
 	}
-	return strings.TrimSuffix(keyval, "&")
+	return values.Encode()
 
 }
 
