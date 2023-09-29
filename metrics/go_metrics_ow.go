@@ -41,3 +41,11 @@ func (me *Metrics) RecordVastVersion(biddder, vastVersion string) {
 // RecordVASTTagType as a noop
 func (me *Metrics) RecordVASTTagType(biddder, vastTag string) {
 }
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+}
+
+// RecordXMLParserResponseMismatch as a noop
+func (me *Metrics) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+}

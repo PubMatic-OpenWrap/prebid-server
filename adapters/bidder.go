@@ -63,6 +63,7 @@ type BidderResponse struct {
 	Currency             string
 	Bids                 []*TypedBid
 	FledgeAuctionConfigs []*openrtb_ext.FledgeAuctionConfig
+	FastXMLMetrics       *openrtb_ext.FastXMLMetrics
 }
 
 // NewBidderResponseWithBidsCapacity create a new BidderResponse initialising the bids array capacity and the default currency value
