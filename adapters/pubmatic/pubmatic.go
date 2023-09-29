@@ -32,6 +32,7 @@ const (
 	AdServerKey         = "adserver"
 	PBAdslotKey         = "pbadslot"
 	bidViewability      = "bidViewability"
+	ae                  = "ae"
 )
 
 type PubmaticAdapter struct {
@@ -62,6 +63,7 @@ type ExtImpBidderPubmatic struct {
 	adapters.ExtImpBidder
 	Data        json.RawMessage `json:"data,omitempty"`
 	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
+	AE          int             `json:"ae,omitempty"`
 }
 
 type ExtAdServer struct {
@@ -78,6 +80,10 @@ type extRequestAdServer struct {
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
 	openrtb_ext.ExtRequest
+}
+
+type respExt struct {
+	FledgeAuctionConfigs map[string]json.RawMessage `json:"fledge_auction_configs,omitempty"`
 }
 
 const (
@@ -387,6 +393,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[bidViewability] = pubmaticExt.BidViewabilityScore
 	}
 
+	if bidderExt.AE != 0 {
+		extMap[ae] = bidderExt.AE
+	}
+
 	imp.Ext = nil
 	if len(extMap) > 0 {
 		ext, err := json.Marshal(extMap)
@@ -583,6 +593,21 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 	}
 	if bidResp.Cur != "" {
 		bidResponse.Currency = bidResp.Cur
+	}
+
+	if bidResp.Ext != nil {
+		var bidRespExt respExt
+		if err := json.Unmarshal(bidResp.Ext, &bidRespExt); err == nil && bidRespExt.FledgeAuctionConfigs != nil {
+			bidResponse.FledgeAuctionConfigs = make([]*openrtb_ext.FledgeAuctionConfig, 0, len(bidRespExt.FledgeAuctionConfigs))
+			for impId, config := range bidRespExt.FledgeAuctionConfigs {
+				fledgeAuctionConfig := &openrtb_ext.FledgeAuctionConfig{
+					ImpId:  impId,
+					Bidder: string(externalRequest.BidderName),
+					Config: config,
+				}
+				bidResponse.FledgeAuctionConfigs = append(bidResponse.FledgeAuctionConfigs, fledgeAuctionConfig)
+			}
+		}
 	}
 	return bidResponse, errs
 }
