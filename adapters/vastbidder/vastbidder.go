@@ -7,15 +7,15 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-// TagBidder is default implementation of ITagBidder
-type TagBidder struct {
+// VASTBidder is default implementation of ITagBidder
+type VASTBidder struct {
 	adapters.Bidder
 	bidderName    openrtb_ext.BidderName
 	adapterConfig *config.Adapter
 }
 
 // MakeRequests will contains default definition for processing queries
-func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *VASTBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	bidderMacro := GetNewBidderMacro(a.bidderName)
 	bidderMapper := GetDefaultMapper()
 	macroProcessor := NewMacroProcessor(bidderMacro, bidderMapper)
@@ -62,19 +62,20 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 }
 
 // MakeBids makes bids
-func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	//response validation can be done here independently
-	//handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
-	handler, err := GetResponseHandler(VASTTagHandlerType)
-	if nil != err {
-		return nil, []error{err}
+func (a *VASTBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	parser := getXMLParser(etreeXMLParserType)
+	handler := newResponseHandler(internalRequest, externalRequest, response, parser)
+
+	if err := handler.Validate(); len(err) > 0 {
+		return nil, err[:]
 	}
-	return handler.MakeBids(internalRequest, externalRequest, response)
+
+	return handler.MakeBids()
 }
 
 // NewTagBidder is an constructor for TagBidder
-func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *TagBidder {
-	obj := &TagBidder{
+func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *VASTBidder {
+	obj := &VASTBidder{
 		bidderName:    bidderName,
 		adapterConfig: &config,
 	}
