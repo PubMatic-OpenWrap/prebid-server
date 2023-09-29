@@ -1428,6 +1428,15 @@ func TestBidderMacroKVM(t *testing.T) {
 			args: args{key: "kvm"},
 			want: "",
 		},
+		{
+			name: "test_with_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"url":  "http://example.com?k1=v1&k2=v2",
+			}},
+			args: args{key: "kvm"},
+			want: "{\"name\":\"test\",\"url\":\"http://example.com?k1=v1&k2=v2\"}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

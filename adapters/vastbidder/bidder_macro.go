@@ -1,6 +1,7 @@
 package vastbidder
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -1223,11 +1224,18 @@ func (tag *BidderMacro) MacroKVM(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	jsonBytes, err := json.Marshal(tag.KV)
-	if err != nil {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+
+	// Disable HTML escaping for special characters
+	encoder.SetEscapeHTML(false)
+
+	if err := encoder.Encode(tag.KV); err != nil {
 		return ""
 	}
-	return string(jsonBytes)
+	jsonString := strings.TrimRight(buf.String(), "\n")
+
+	return jsonString
 }
 
 /********************* Request Headers *********************/
