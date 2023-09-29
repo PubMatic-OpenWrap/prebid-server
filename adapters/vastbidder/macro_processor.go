@@ -87,6 +87,7 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 			//escaping macro found
 			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
 			nEscaping++
+
 			continue
 		} else {
 			value, found = mp.bidderMacro.GetValue(tmpKey)

@@ -22,7 +22,6 @@ var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)
 // IVASTTagResponseHandler to parse VAST Tag
 type IVASTTagResponseHandler interface {
 	ITagResponseHandler
-	ParseExtension(version string, tag *etree.Element, bid *adapters.TypedBid) []error
 	GetStaticPrice(ext json.RawMessage) float64
 }
 
@@ -73,11 +72,6 @@ func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidReq
 
 	bidResponses, err := handler.vastTagToBidderResponse(internalRequest, externalRequest, response)
 	return bidResponses, err
-}
-
-// ParseExtension will parse VAST XML extension object
-func (handler *VASTTagResponseHandler) ParseExtension(version string, ad *etree.Element, bid *adapters.TypedBid) []error {
-	return nil
 }
 
 func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
@@ -138,11 +132,6 @@ func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *
 
 	//GetVersion
 	version := vast.SelectAttrValue(`version`, `2.0`)
-
-	if err := handler.IVASTTagResponseHandler.ParseExtension(version, adElement, typedBid); len(err) > 0 {
-		errs = append(errs, err...)
-		return nil, errs[:]
-	}
 
 	//if bid.price is not set in ParseExtension
 	if typedBid.Bid.Price <= 0 {
