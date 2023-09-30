@@ -1340,7 +1340,7 @@ func TestBidderMacroKV(t *testing.T) {
 				"age":  "22",
 			}},
 			args: args{key: "kv"},
-			want: "age=22&name=test",
+			want: "name=test&age=22",
 		},
 		{
 			name: "Valid_test_with_url",
@@ -1350,7 +1350,7 @@ func TestBidderMacroKV(t *testing.T) {
 				"url":  "http://example.com?k1=v1&k2=v2",
 			}},
 			args: args{key: "kv"},
-			want: "age=22&name=test&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			want: "name=test&age=22&url=http://example.com?k1=v1&k2=v2",
 		},
 		{
 			name:   "Empty_KV_map",

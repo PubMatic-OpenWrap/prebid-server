@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -1211,11 +1210,11 @@ func (tag *BidderMacro) MacroKV(key string) string {
 		return ""
 	}
 
-	values := url.Values{}
+	keyval := ""
 	for key, val := range tag.KV {
-		values.Add(key, fmt.Sprintf("%v", val))
+		keyval += fmt.Sprintf("%s=%v&", key, val)
 	}
-	return values.Encode()
+	return strings.TrimSuffix(keyval, "&")
 
 }
 
