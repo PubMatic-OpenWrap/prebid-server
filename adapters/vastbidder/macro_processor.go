@@ -73,22 +73,25 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 		}
 
 		valueCallback, found = mp.mapper[tmpKey]
+
 		if found {
 			//found callback function
 			value = valueCallback.callback(mp.bidderMacro, tmpKey)
-
 			//checking if default escaping needed or not
 			if len(value) > 0 && valueCallback.escape && nEscaping == 0 {
 				//escape parameter only if defaultescaping is true and _ESC is not present
 				value = url.QueryEscape(value)
 			}
-
 			break
 		} else if strings.HasSuffix(tmpKey, macroEscapeSuffix) {
 			//escaping macro found
 			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
 			nEscaping++
 			continue
+		} else if strings.HasPrefix(tmpKey, kvPrefix) {
+			value = mp.bidderMacro.GetValueFromKV(tmpKey)
+			found = true
+			break
 		}
 		break
 	}
