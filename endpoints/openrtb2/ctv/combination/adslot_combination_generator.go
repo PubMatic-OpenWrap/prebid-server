@@ -1,11 +1,8 @@
 package combination
 
 import (
-	"math/big"
-	"time"
-
-	"github.com/PubMatic-OpenWrap/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"math/big"
 )
 
 // generator holds all the combinations based
@@ -105,7 +102,6 @@ func (c *generator) Init(podMinDuration, podMaxDuration uint64, config *openrtb_
 // Next - Get next ad slot combination
 // returns empty array if next combination is not present
 func (c *generator) Next() []uint64 {
-	defer util.TimeTrack(time.Now(), "NEXT-Get next ad slot combination")
 	var comb []uint64
 	if len(c.slotDurations) <= 0 {
 		return comb
@@ -124,8 +120,6 @@ func (c *generator) Next() []uint64 {
 }
 
 func isValidCombination(c *generator, combination []uint64) bool {
-	defer util.TimeTrack(time.Now(), "isValidCombination()")
-
 	// check if repeatations are allowed
 	repeationMap := make(map[uint64]uint64, len(c.slotDurations))
 	totalAdDuration := uint64(0)
@@ -262,7 +256,6 @@ func reset(c *generator) {
 // 2. Each duration within combination honours number of ads value given in the request
 // 3. Number of durations in combination are within range of min and max ads
 func (c *generator) lazyNext() []uint64 {
-	defer util.TimeTrack(time.Now(), "lazyNext()")
 	start := c.state.start
 	index := c.state.index
 	r := c.state.r
@@ -336,8 +329,6 @@ func (c *generator) search(data []uint64, start, index, r uint64, lazyLoad bool,
 // other wise next elemt will be returned when first matching value of val found
 // returns nextValue and its index
 func getNextElement(arr []uint64, val uint64) (uint64, uint64) {
-	defer util.TimeTrack(time.Now(), "getNextElement()")
-
 	for i, e := range arr {
 		if e == val && i+1 < len(arr) {
 			return uint64(i) + 1, arr[i+1]
@@ -350,8 +341,6 @@ func getNextElement(arr []uint64, val uint64) (uint64, uint64) {
 // updateState - is used in case of lazy loading
 // It maintains the state of iterator by updating the required flags
 func updateState(c *generator, lazyLoad bool, r uint64, reursionCount int, end uint64, i uint64, index uint64, valueAtEnd uint64) {
-	defer util.TimeTrack(time.Now(), "updateState()")
-
 	if lazyLoad {
 		c.state.start = i
 		// set c.state.index = 0 when
@@ -405,8 +394,6 @@ func updateState(c *generator, lazyLoad bool, r uint64, reursionCount int, end u
 // shouldUpdateAndReturn checks if states should be updated in case of lazy loading
 // If required it updates the state
 func shouldUpdateAndReturn(c *generator, start, index, r uint64, lazyLoad bool, reursionCount int, i, end uint64) bool {
-	defer util.TimeTrack(time.Now(), "shouldUpdateAndReturn()")
-
 	if lazyLoad && c.state.valueUpdated {
 		if uint64(reursionCount) <= r && !c.state.stateUpdated {
 			updateState(c, lazyLoad, r, reursionCount, end, i, index, c.slotDurations[end])
@@ -418,7 +405,6 @@ func shouldUpdateAndReturn(c *generator, start, index, r uint64, lazyLoad bool, 
 
 // getOccurance checks how many time given number is occured in c.state.lastCombination
 func getOccurance(c *generator, valToCheck uint64) uint64 {
-	defer util.TimeTrack(time.Now(), "getOccurance()")
 	occurance := uint64(0)
 	for i := len(c.state.lastCombination) - 1; i >= 0; i-- {
 		if c.state.lastCombination[i] == valToCheck {
