@@ -298,6 +298,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
+			// if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
+			// 	var bidderParamsMap map[string]interface{}
+			// 	err := json.Unmarshal(bidderParams, &bidderParamsMap)
+			// 	if err == nil {
+			// 		if bidderExt, ok := impExt.Bidder[bidderCode]; ok && bidderExt != nil && bidderExt.DealTier != nil {
+			// 			bidderParamsMap["dealtier"] = bidderExt.DealTier
+			// 		}
+			// 		newBidderParams, err := json.Marshal(bidderParamsMap)
+			// 		if err == nil {
+			// 			bidderParams = newBidderParams
+			// 		}
+			// 	}
+			// }
+
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
 				PrebidBidderCode: prebidBidderCode,

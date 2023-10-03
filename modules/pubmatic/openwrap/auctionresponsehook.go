@@ -3,9 +3,12 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -77,14 +80,17 @@ func (m OpenWrap) handleAuctionResponseHook(
 		for _, bid := range seatBid.Bid {
 			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
 
-			impId, _ := models.GetImpressionID(bid.ImpID)
-			bidId := bid.ID
+			impId := bid.ImpID
+			if rctx.IsCTVRequest {
+				impId, _ = models.GetImpressionID(bid.ImpID)
+			}
 
 			impCtx, ok := rctx.ImpBidCtx[impId]
 			if !ok {
 				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+impId)
 				continue
 			}
+
 			partnerID := 0
 			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 				partnerID = bidderMeta.PartnerID
@@ -93,6 +99,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
 			price := bid.Price
 
+			bidId := bid.ID
 			bidExt := &models.BidExt{}
 			if len(bid.Ext) != 0 { //NYC_TODO: most of the fields should be filled even if unmarshal fails
 				err := json.Unmarshal(bid.Ext, bidExt)
@@ -177,12 +184,17 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 
-			if rctx.IsCTVRequest {
+			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
 				if CheckWinningBidId(bidId, winningAdpodBidIds[impId]) {
 					winningBids.AppendBid(impId, owbid)
 				}
 			} else {
 				winningBids.AddBid(impId, owbid, rctx.SupportDeals)
+			}
+
+			if rctx.IsCTVRequest {
+				bidExt.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidExt, seatBid.Seat)
+				bidExt.AdPod.Debug.Targeting = GetTargettingForDebug(bid.ID, rctx.PubIDStr, rctx.ProfileIDStr, fmt.Sprint(rctx.DisplayID), impCtx.TagID, bidExt.NetECPM)
 			}
 
 			// cache for bid details for logger and tracker
@@ -388,4 +400,82 @@ func CheckWinningBidId(bidId string, wbidIds []string) bool {
 	}
 
 	return false
+}
+
+func GetTargettingForDebug(bidId, pubID, profileID, versionID, tagID string, ecpm float64) map[string]string {
+	targeting := make(map[string]string)
+
+	targeting[models.PwtBidID] = bidId
+	targeting[models.PWT_CACHE_PATH] = models.AMP_CACHE_PATH
+	targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", ecpm)
+	targeting[models.PWT_PUBID] = pubID
+	targeting[models.PWT_SLOTID] = tagID
+	targeting[models.PWT_PROFILEID] = profileID
+
+	if targeting[models.PWT_ECPM] == "" {
+		targeting[models.PWT_ECPM] = "0"
+	}
+
+	if versionID != "0" {
+		targeting[models.PWT_VERSIONID] = versionID
+	}
+
+	return targeting
+}
+
+func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, impCtx models.ImpCtx, bidExt *models.BidExt, seat string) map[string]string {
+	targetingKeyValMap := make(map[string]string)
+	targetingKeyValMap[models.PWT_PARTNERID] = seat
+
+	if bidExt != nil {
+		if bidExt.Prebid != nil {
+			if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
+				targetingKeyValMap[models.PWT_DURATION] = strconv.Itoa(bidExt.Prebid.Video.Duration)
+			}
+
+			prefix, _, _, err := jsonparser.Get(impCtx.NewExt, "prebid", "bidder", seat, "dealtier", "prefix")
+			if bidExt.Prebid.DealTierSatisfied && partnerConfig[models.DealTierLineItemSetup] == "1" && err == nil && len(prefix) > 0 {
+				targetingKeyValMap[models.PwtDealTier] = fmt.Sprintf("%s%d", string(prefix), bidExt.Prebid.DealPriority)
+			} else if len(bid.DealID) > 0 && partnerConfig[models.DealIDLineItemSetup] == "1" {
+				targetingKeyValMap[models.PWT_DEALID] = bid.DealID
+			} else {
+				priceBucket, ok := bidExt.Prebid.Targeting[string(openrtb_ext.HbpbConstantKey)]
+				if ok {
+					targetingKeyValMap[models.PwtPb] = priceBucket
+				}
+			}
+
+			catDur, ok := bidExt.Prebid.Targeting[models.PwtPbCatDur]
+			if ok {
+				cat, dur := getCatAndDurFromPwtCatDur(catDur)
+				if len(cat) > 0 {
+					targetingKeyValMap[models.PwtCat] = cat
+				}
+
+				if len(dur) > 0 && targetingKeyValMap[models.PWT_DURATION] == "" {
+					targetingKeyValMap[models.PWT_DURATION] = dur
+				}
+			}
+		}
+	}
+
+	return targetingKeyValMap
+}
+
+func getCatAndDurFromPwtCatDur(pwtCatDur string) (string, string) {
+	arr := strings.Split(pwtCatDur, "_")
+	if len(arr) == 2 {
+		return "", TrimRightByte(arr[1], 's')
+	}
+	if len(arr) == 3 {
+		return arr[1], TrimRightByte(arr[2], 's')
+	}
+	return "", ""
+}
+
+func TrimRightByte(s string, b byte) string {
+	if s[len(s)-1] == b {
+		return s[:len(s)-1]
+	}
+	return s
 }

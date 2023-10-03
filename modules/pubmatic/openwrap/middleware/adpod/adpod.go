@@ -48,11 +48,12 @@ func (aw *AdpodWriter) WriteHeader(statusCode int) {
 
 type adpod struct {
 	handle      httprouter.Handle
+	cacheURL    string
 	cacheClient *pbc.Client
 }
 
-func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, pbsCacheClient *pbc.Client) *adpod {
-	return &adpod{handle: handleToWrap, cacheClient: pbsCacheClient}
+func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, cacheURL string, pbsCacheClient *pbc.Client) *adpod {
+	return &adpod{handle: handleToWrap, cacheURL: cacheURL, cacheClient: pbsCacheClient}
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -108,7 +109,7 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formJSONResponse(a.cacheClient, adpodResponseWriter.Response, "", r.URL.Query().Get(models.Debug))
+	finalResponse := formJSONResponse(a.cacheURL, a.cacheClient, adpodResponseWriter.Response, "", r.URL.Query().Get(models.Debug))
 	w.Header().Set(ContentType, ApplicationJSON)
 	if adpodResponseWriter.Code == 0 {
 		adpodResponseWriter.Code = http.StatusOK
@@ -139,7 +140,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formJSONResponse(a.cacheClient, adpodResponseWriter.Response, redirectURL, debug)
+	finalResponse := formJSONResponse(a.cacheURL, a.cacheClient, adpodResponseWriter.Response, redirectURL, debug)
 
 	if len(redirectURL) > 0 && debug != "1" {
 		http.Redirect(w, r, string(finalResponse), http.StatusFound)

@@ -10,22 +10,30 @@ import (
 type BidExt struct {
 	openrtb_ext.ExtBid
 
-	ErrorCode       int    `json:"errorCode,omitempty"`
-	ErrorMsg        string `json:"errorMessage,omitempty"`
-	RefreshInterval int    `json:"refreshInterval,omitempty"`
-	CreativeType    string `json:"crtype,omitempty"`
-	// AdPod           ExtBidPrebidAdPod `json:"adpod,omitempty"`
-	Summary     []Summary       `json:"summary,omitempty"`
-	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
-	Video       *ExtBidVideo    `json:"video,omitempty"`
-	Banner      *ExtBidBanner   `json:"banner,omitempty"`
-	DspId       int             `json:"dspid,omitempty"`
-	Winner      int             `json:"winner,omitempty"`
-	NetECPM     float64         `json:"netecpm,omitempty"`
+	ErrorCode         int             `json:"errorCode,omitempty"`
+	ErrorMsg          string          `json:"errorMessage,omitempty"`
+	RefreshInterval   int             `json:"refreshInterval,omitempty"`
+	CreativeType      string          `json:"crtype,omitempty"`
+	Summary           []Summary       `json:"summary,omitempty"`
+	SKAdnetwork       json.RawMessage `json:"skadn,omitempty"`
+	Video             *ExtBidVideo    `json:"video,omitempty"`
+	Banner            *ExtBidBanner   `json:"banner,omitempty"`
+	DspId             int             `json:"dspid,omitempty"`
+	Winner            int             `json:"winner,omitempty"`
+	NetECPM           float64         `json:"netecpm,omitempty"`
+	OriginalBidCPM    float64         `json:"origbidcpm,omitempty"`
+	OriginalBidCur    string          `json:"origbidcur,omitempty"`
+	OriginalBidCPMUSD float64         `json:"origbidcpmusd,omitempty"`
+	AdPod             AdpodBidExt     `json:"adpod,omitempty"`
+}
 
-	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
-	OriginalBidCur    string  `json:"origbidcur,omitempty"`
-	OriginalBidCPMUSD float64 `json:"origbidcpmusd,omitempty"`
+type AdpodBidExt struct {
+	Targeting map[string]string
+	Debug     AdpodDebug
+}
+
+type AdpodDebug struct {
+	Targeting map[string]string
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video

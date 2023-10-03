@@ -341,6 +341,8 @@ const (
 	DealIDNotApplicable   = "na"
 	DealTierNotApplicable = "na"
 	PwtDealTier           = "pwtdealtier"
+	DealTierLineItemSetup = "dealTierLineItemSetup"
+	DealIDLineItemSetup   = "dealIdLineItemSetup"
 )
 
 const (

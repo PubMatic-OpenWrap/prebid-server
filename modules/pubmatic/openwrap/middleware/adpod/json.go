@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 
 	validator "github.com/asaskevich/govalidator"
@@ -79,7 +78,7 @@ func isValidURL(urlVal string) bool {
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }
 
-func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL, debug string) []byte {
+func formJSONResponse(cacheURL string, cacheClient *pbc.Client, response []byte, redirectURL, debug string) []byte {
 	var bidResponse *openrtb2.BidResponse
 
 	err := json.Unmarshal(response, &bidResponse)
@@ -87,7 +86,7 @@ func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL, deb
 		return response
 	}
 
-	jsonResponse, err := getJsonResponse(cacheClient, bidResponse, redirectURL, debug)
+	jsonResponse, err := getJsonResponse(cacheURL, cacheClient, bidResponse, redirectURL, debug)
 	if err != nil {
 		return response
 	}
@@ -95,7 +94,7 @@ func formJSONResponse(cacheClient *pbc.Client, response []byte, redirectURL, deb
 	return jsonResponse
 }
 
-func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
+func getJsonResponse(cacheURL string, client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
 		return nil, errors.New("recieved invalid bidResponse")
 	}
@@ -116,7 +115,7 @@ func getJsonResponse(client *pbc.Client, bidResponse *openrtb2.BidResponse, redi
 		}
 	}
 
-	adPodBids := formAdpodBids(client, bidArrayMap)
+	adPodBids := formAdpodBids(cacheURL, client, bidArrayMap)
 
 	var response []byte
 	if len(redirectURL) > 0 && debug != "1" {
@@ -170,7 +169,7 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 	return []byte(rURL)
 }
 
-func formAdpodBids(client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid {
+func formAdpodBids(cacheURL string, client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
 		adpodBid := adPodBid{
@@ -188,7 +187,7 @@ func formAdpodBids(client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid
 		targetings := []map[string]string{}
 		for i := 0; i < len(bids); i++ {
 			slotNo := i + 1
-			targeting := createTargetting(bids[i], slotNo, cacheIds[i])
+			targeting := createTargetting(bids[i], slotNo, cacheIds[i], cacheURL)
 			targetings = append(targetings, targeting)
 		}
 		adpodBid.Targeting = targetings
@@ -202,17 +201,10 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 	return fmt.Sprintf(slotKeyFormat, slotNo, key)
 }
 
-func createTargetting(bid jsonBid, slotNo int, cacheId string) map[string]string {
+func createTargetting(bid jsonBid, slotNo int, cacheId, cacheURL string) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 
-	targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_PARTNERID)] = bid.Seat
 	targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_CACHEID)] = cacheId
-	if len(bid.DealID) > 0 {
-		targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_DEALID)] = bid.DealID
-	} else {
-		targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_DEALID)] = models.DealIDNotApplicable
-	}
-
 	if len(bid.Ext) > 0 {
 		bidExt := models.BidExt{}
 		err := json.Unmarshal(bid.Ext, &bidExt)
@@ -220,33 +212,20 @@ func createTargetting(bid jsonBid, slotNo int, cacheId string) map[string]string
 			return targetingKeyValMap
 		}
 
-		dealTier := models.DealTierNotApplicable
-		// add deal tier from ext
-		// if bidExt.Prebid != nil && bidExt.Prebid.DealTierSatisfied {
-
-		// }
-		targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PwtDealTier)] = dealTier
-
-		priceBucket, ok := bidExt.Prebid.Targeting[models.PwtPb]
-		if ok {
-			targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PwtPb)] = priceBucket
+		for k, v := range bidExt.AdPod.Targeting {
+			targetingKeyValMap[prepareSlotLevelKey(slotNo, k)] = v
 		}
 
-		if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
-			targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_DURATION)] = strconv.Itoa(bidExt.Prebid.Video.Duration)
-		}
-
-		catDur, ok := bidExt.Prebid.Targeting[models.PwtPbCatDur]
-		if ok {
-			cat, dur := getCatAndDurFromPwtCatDur(catDur)
-			if len(cat) > 0 {
-				targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PwtCat)] = cat
+		if bidExt.AdPod.Debug.Targeting != nil {
+			for k, v := range bidExt.AdPod.Debug.Targeting {
+				targetingKeyValMap[k] = v
 			}
-
-			if len(dur) > 0 {
-				targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_DURATION)] = dur
+			for k, v := range bidExt.Prebid.Targeting {
+				targetingKeyValMap[k] = v
 			}
+			targetingKeyValMap[models.PWT_CACHEURL] = cacheURL
 		}
+
 	}
 
 	return targetingKeyValMap
@@ -297,24 +276,6 @@ func portPrebidCacheable(bid jsonBid, platform string) (pbc.Cacheable, error) {
 		Type: cacheType,
 		Data: cacheBytes,
 	}, err
-}
-
-func getCatAndDurFromPwtCatDur(pwtCatDur string) (string, string) {
-	arr := strings.Split(pwtCatDur, "_")
-	if len(arr) == 2 {
-		return "", TrimRightByte(arr[1], 's')
-	}
-	if len(arr) == 3 {
-		return arr[1], TrimRightByte(arr[2], 's')
-	}
-	return "", ""
-}
-
-func TrimRightByte(s string, b byte) string {
-	if s[len(s)-1] == b {
-		return s[:len(s)-1]
-	}
-	return s
 }
 
 func writeErrorResponse(w http.ResponseWriter, code int, err CustomError) {
