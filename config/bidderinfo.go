@@ -592,6 +592,9 @@ func applyBidderInfoConfigOverrides(configBidderInfos BidderInfos, fsBidderInfos
 			if bidderInfo.EndpointCompression == "" && fsBidderCfg.EndpointCompression != "" {
 				bidderInfo.EndpointCompression = fsBidderCfg.EndpointCompression
 			}
+			if bidderInfo.OpenRTB == nil && fsBidderCfg.OpenRTB != nil {
+				bidderInfo.OpenRTB = fsBidderCfg.OpenRTB
+			}
 
 			// validate and try to apply the legacy usersync_url configuration in attempt to provide
 			// an easier upgrade path. be warned, this will break if the bidder adds a second syncer
