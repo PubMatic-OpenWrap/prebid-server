@@ -1,7 +1,6 @@
 package adunitconfig
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -10,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateBannerObjectWithAdunitConfig(t *testing.T) {
@@ -292,9 +292,8 @@ func TestUpdateBannerObjectWithAdunitConfig(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			if gotAdUnitCtx := UpdateBannerObjectWithAdunitConfig(tt.args.rCtx, tt.args.imp, tt.args.div); !reflect.DeepEqual(gotAdUnitCtx, tt.wantAdUnitCtx) {
-				t.Errorf("UpdateBannerObjectWithAdunitConfig() = %v, want %v", gotAdUnitCtx, tt.wantAdUnitCtx)
-			}
+			gotAdUnitCtx := UpdateBannerObjectWithAdunitConfig(tt.args.rCtx, tt.args.imp, tt.args.div)
+			assert.Equal(t, tt.wantAdUnitCtx, gotAdUnitCtx)
 		})
 	}
 }

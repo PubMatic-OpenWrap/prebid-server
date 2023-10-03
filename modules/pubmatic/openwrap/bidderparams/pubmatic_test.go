@@ -2,7 +2,6 @@ package bidderparams
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -12,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func getTestImp(tagID string) openrtb2.Imp {
@@ -135,9 +135,8 @@ func Test_getImpExtPubMaticKeyWords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getImpExtPubMaticKeyWords(tt.args.impExt, tt.args.bidderCode); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getImpExtPubMaticKeyWords() = %v, want %v", got, tt.want)
-			}
+			got := getImpExtPubMaticKeyWords(tt.args.impExt, tt.args.bidderCode)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -201,9 +200,8 @@ func Test_getDealTier(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getDealTier(tt.args.impExt, tt.args.bidderCode); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getDealTier() = %v, want %v", got, tt.want)
-			}
+			got := getDealTier(tt.args.impExt, tt.args.bidderCode)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -425,74 +423,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				wantErr:        false,
 			},
 		},
-		// {
-		// 	name: "custom_profileid_publisherid",
-		// 	args: args{
-		// 		rctx: models.RequestCtx{
-		// 			IsTestRequest: 0,
-		// 			PubID:         101,
-		// 			ProfileID:     201,
-		// 			DisplayID:     0,
-		// 			PartnerConfigMap: map[int]map[string]string{
-		// 				1: {
-		// 					models.PREBID_PARTNER_NAME: "pubmatic",
-		// 					models.BidderCode:          "pubmatic",
-		// 					models.TIMEOUT:             "200",
-		// 					models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
-		// 					models.SERVER_SIDE_FLAG:    "1",
-		// 					models.KEY_PUBLISHER_ID:    "101",
-		// 					models.KEY_PROFILE_ID:      "201",
-		// 				},
-		// 			},
-		// 		},
-		// 		cache: mockCache,
-		// 		impExt: models.ImpExtension{
-		// 			Bidder: map[string]*models.BidderExtension{
-		// 				"pubmatic": {
-		// 					KeyWords: []models.KeyVal{
-		// 						{
-		// 							Key:    "pmzoneid",
-		// 							Values: []string{"val1", "val2"},
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 			Wrapper: &models.ExtImpWrapper{
-		// 				Div: "Div1",
-		// 			},
-		// 		},
-		// 		imp:       getTestImp("/Test_Adunit1234"),
-		// 		partnerID: 1,
-		// 	},
-		// 	setup: func() {
-		// 		mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
-		// 			".*@.*@.*": createSlotMapping(".*@.*@.*", map[string]interface{}{
-		// 				models.SITE_CACHE_KEY: "12313",
-		// 				models.TAG_CACHE_KEY:  "45343",
-		// 				models.KEY_SLOT_NAME:  "NewSlotName",
-		// 			}),
-		// 		})
-		// 		mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
-		// 			OrderedSlotList: []string{".*@.*@.*"},
-		// 			HashValueMap: map[string]string{
-		// 				".*@.*@.*": "2aa34b52a9e941c1594af7565e599c8d",
-		// 			},
-		// 		})
-		// 		mockCache.EXPECT().Get("psregex_101_201_0_1_/Test_Adunit1234@Div1@200x300").Return(
-		// 			regexSlotEntry{
-		// 				SlotName:     "Test_Adunit1234@Div1@200x300",
-		// 				RegexPattern: "2aa34b52a9e941c1594af7565e599c8d",
-		// 			},
-		// 		)
-		// 	},
-		// 	want: want{
-		// 		matchedSlot:    "/Test_Adunit1234@Div1@200x300",
-		// 		matchedPattern: "",
-		// 		isRegexSlot:    false,
-		// 		params:         []byte(`{"publisherId":"101","adSlot":"NewSlotName","wrapper":{"version":0,"profile":201},"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}`),
-		// 		wantErr:        false,
-		// 	},
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -514,9 +444,8 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 			if got2 != tt.want.isRegexSlot {
 				t.Errorf("PreparePubMaticParamsV25() got2 = %v, want %v", got2, tt.want.isRegexSlot)
 			}
-			if !reflect.DeepEqual(got3, tt.want.params) {
-				t.Errorf("PreparePubMaticParamsV25() got3 = %v, want %v", got3, tt.want.params)
-			}
+			assert.Equal(t, tt.want.params, got3)
+
 		})
 	}
 }

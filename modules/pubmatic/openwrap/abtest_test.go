@@ -1,10 +1,10 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckABTestEnabled(t *testing.T) {
@@ -140,9 +140,7 @@ func TestABTestProcessing(t *testing.T) {
 				return tt.args.val
 			}
 			got, got1 := ABTestProcessing(tt.args.rctx)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ABTestProcessing() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 			if got1 != tt.want1 {
 				t.Errorf("ABTestProcessing() got1 = %v, want %v", got1, tt.want1)
 			}
@@ -426,9 +424,8 @@ func TestUpdateTestConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := UpdateTestConfig(tt.args.rctx); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UpdateTestConfig() = %v, want %v", got, tt.want)
-			}
+			got := UpdateTestConfig(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -472,9 +469,8 @@ func Test_copyPartnerConfigMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := copyPartnerConfigMap(tt.args.m); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("copyPartnerConfigMap() = %v, want %v", got, tt.want)
-			}
+			got := copyPartnerConfigMap(tt.args.m)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -534,9 +530,7 @@ func Test_replaceControlConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			replaceControlConfig(tt.args.partnerConfig, tt.args.partnerID, tt.args.key)
-			if !reflect.DeepEqual(tt.args.partnerConfig, tt.want) {
-				t.Errorf("replaceControlConfig() = %v, want %v", tt.args.partnerConfig, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.args.partnerConfig)
 		})
 	}
 }
@@ -591,9 +585,7 @@ func Test_copyTestConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			copyTestConfig(tt.args.partnerConfig, tt.args.partnerID, tt.args.key)
-			if !reflect.DeepEqual(tt.args.partnerConfig, tt.want) {
-				t.Errorf("copyTestConfig() = %v, want %v", tt.args.partnerConfig, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.args.partnerConfig)
 		})
 	}
 }

@@ -2,7 +2,6 @@ package openwrap
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -13,6 +12,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOpenWrap_getProfileData(t *testing.T) {
@@ -207,9 +207,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 				t.Errorf("OpenWrap.getProfileData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OpenWrap.getProfileData() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -250,9 +248,8 @@ func Test_getTestModePartnerConfigMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getTestModePartnerConfigMap(tt.args.platform, tt.args.timeout, tt.args.displayVersion); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Expected= %v, but got= %v", tt.want, got)
-			}
+			got := getTestModePartnerConfigMap(tt.args.platform, tt.args.timeout, tt.args.displayVersion)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

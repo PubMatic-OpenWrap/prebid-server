@@ -2,12 +2,12 @@ package openwrap
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 var priceGranularityMed = openrtb_ext.PriceGranularity{
@@ -158,9 +158,7 @@ func Test_computePriceGranularity(t *testing.T) {
 				t.Errorf("computePriceGranularity() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("computePriceGranularity() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -252,9 +250,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 				t.Errorf("newCustomPriceGranuality() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newCustomPriceGranuality() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

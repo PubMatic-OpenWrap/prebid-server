@@ -2,11 +2,11 @@ package gocache
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_validUPixels(t *testing.T) {
@@ -170,9 +170,8 @@ func Test_validUPixels(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validUPixels(tt.args.pixel); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("validateUPixel() = %v, want %v", got, tt.want)
-			}
+			got := validUPixels(tt.args.pixel)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

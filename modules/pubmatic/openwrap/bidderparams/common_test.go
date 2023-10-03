@@ -1,7 +1,6 @@
 package bidderparams
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -9,6 +8,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateSlotName(t *testing.T) {
@@ -345,18 +345,10 @@ func Test_getSlotMeta(t *testing.T) {
 				tt.setup()
 			}
 			got, got1, got2, got3 := getSlotMeta(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
-			if !reflect.DeepEqual(got, tt.want.slots) {
-				t.Errorf("getSlotMeta() got = %v, want %v", got, tt.want.slots)
-			}
-			if !reflect.DeepEqual(got1, tt.want.slotMap) {
-				t.Errorf("getSlotMeta() got1 = %v, want %v", got1, tt.want.slotMap)
-			}
-			if !reflect.DeepEqual(got2, tt.want.slotMappingInfo) {
-				t.Errorf("getSlotMeta() got2 = %v, want %v", got2, tt.want.slotMappingInfo)
-			}
-			if !reflect.DeepEqual(got3, tt.want.hw) {
-				t.Errorf("getSlotMeta() got3 = %v, want %v", got3, tt.want.hw)
-			}
+			assert.Equal(t, tt.want.slots, got)
+			assert.Equal(t, tt.want.slotMap, got1)
+			assert.Equal(t, tt.want.slotMappingInfo, got2)
+			assert.Equal(t, tt.want.hw, got3)
 		})
 	}
 }
@@ -462,9 +454,8 @@ func Test_getSlotMappings(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getSlotMappings(tt.args.matchedSlot, tt.args.matchedPattern, tt.args.slotMap); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getSlotMappings() = %v, want %v", got, tt.want)
-			}
+			got := getSlotMappings(tt.args.matchedSlot, tt.args.matchedPattern, tt.args.slotMap)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

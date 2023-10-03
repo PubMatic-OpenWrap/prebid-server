@@ -1,10 +1,10 @@
 package models
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRequestExt(t *testing.T) {
@@ -76,9 +76,7 @@ func TestGetRequestExt(t *testing.T) {
 				t.Errorf("GetRequestExt() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetRequestExt() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

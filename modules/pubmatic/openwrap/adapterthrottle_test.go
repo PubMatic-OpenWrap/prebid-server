@@ -1,10 +1,10 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAdapterThrottleMap(t *testing.T) {
@@ -95,9 +95,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			adapterThrottleMap, allPartnersThrottledFlag := GetAdapterThrottleMap(tt.args.partnerConfigMap)
-			if !reflect.DeepEqual(adapterThrottleMap, tt.want.adapterThrottleMap) {
-				t.Errorf("GetAdapterThrottleMap() got = %v, want %v", adapterThrottleMap, tt.want.adapterThrottleMap)
-			}
+			assert.Equal(t, tt.want.adapterThrottleMap, adapterThrottleMap)
 			if allPartnersThrottledFlag != tt.want.allPartnersThrottledFlag {
 				t.Errorf("GetAdapterThrottleMap() got1 = %v, want %v", allPartnersThrottledFlag, tt.want.allPartnersThrottledFlag)
 			}

@@ -1,13 +1,13 @@
 package adunitconfig
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func getAdunitConfigWithRx() *adunitconfig.AdUnitConfig {
@@ -161,9 +161,7 @@ func Test_selectSlot(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotSlotAdUnitConfig, gotSlotName, gotIsRegex, gotMatchedRegex := selectSlot(tt.args.rCtx, tt.args.h, tt.args.w, tt.args.tagid, tt.args.div, tt.args.source)
-			if !reflect.DeepEqual(gotSlotAdUnitConfig, tt.want.slotAdUnitConfig) {
-				t.Errorf("selectSlot() gotSlotAdUnitConfig = %v, want %v", gotSlotAdUnitConfig, tt.want.slotAdUnitConfig)
-			}
+			assert.Equal(t, tt.want.slotAdUnitConfig, gotSlotAdUnitConfig)
 			if gotSlotName != tt.want.slotName {
 				t.Errorf("selectSlot() gotSlotName = %v, want %v", gotSlotName, tt.want.slotName)
 			}

@@ -3,7 +3,6 @@ package openwrap
 import (
 	"net/http"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -14,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/usersync"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
@@ -242,7 +242,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "in-app",
 				},
-				bidRequest: getORTBV25Request("android", "", 0, false, true),
+				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppAndroid,
 		},
@@ -253,7 +253,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
 					Platform: "in-app",
 				},
-				bidRequest: getORTBV25Request("ios", "", 0, false, true),
+				bidRequest: getORTBRequest("ios", "", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppIos,
 		},
@@ -264,7 +264,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "in-app",
 				},
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppIos,
 		},
@@ -275,7 +275,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "display",
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DeviceMobile, false, true),
+				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
 			want: models.DevicePlatformMobileWeb,
 		},
@@ -286,7 +286,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "display",
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DeviceMobile, false, true),
+				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
 			want: models.DevicePlatformMobileWeb,
 		},
@@ -297,7 +297,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "display",
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DevicePC, true, false),
+				bidRequest: getORTBRequest("", "", adcom1.DevicePC, true, false),
 			},
 			want: models.DevicePlatformDesktop,
 		},
@@ -308,7 +308,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "display",
 				},
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
 			},
 			want: models.DevicePlatformMobileWeb,
 		},
@@ -319,7 +319,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "display",
 				},
-				bidRequest: getORTBV25Request("", "", 0, false, true),
+				bidRequest: getORTBRequest("", "", 0, false, true),
 			},
 			want: models.DevicePlatformDesktop,
 		},
@@ -332,7 +332,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					PubIDStr:      "5890",
 					MetricsEngine: mockEngine,
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DeviceTV, true, false),
+				bidRequest: getORTBRequest("", "", adcom1.DeviceTV, true, false),
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
@@ -348,7 +348,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					PubIDStr:      "5890",
 					MetricsEngine: mockEngine,
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DeviceConnected, true, false),
+				bidRequest: getORTBRequest("", "", adcom1.DeviceConnected, true, false),
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
@@ -364,7 +364,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					PubIDStr:      "5890",
 					MetricsEngine: mockEngine,
 				},
-				bidRequest: getORTBV25Request("", "", adcom1.DeviceSetTopBox, false, true),
+				bidRequest: getORTBRequest("", "", adcom1.DeviceSetTopBox, false, true),
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
@@ -378,7 +378,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("", "", 0, true, false),
+				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
 			want: models.DevicePlatformDesktop,
 		},
@@ -389,7 +389,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("", "", 0, true, false),
+				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
 			want: models.DevicePlatformDesktop,
 		},
@@ -400,7 +400,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
 			},
 			want: models.DevicePlatformMobileWeb,
 		},
@@ -411,7 +411,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppIos,
 		},
@@ -423,7 +423,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					Platform: "video",
 				},
 
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36", 0, false, true),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppAndroid,
 		},
@@ -434,7 +434,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("android", "", 0, false, true),
+				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppAndroid,
 		},
@@ -445,7 +445,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("ios", "", 0, false, true),
+				bidRequest: getORTBRequest("ios", "", 0, false, true),
 			},
 			want: models.DevicePlatformMobileAppIos,
 		},
@@ -458,7 +458,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					PubIDStr:      "5890",
 					MetricsEngine: mockEngine,
 				},
-				bidRequest: getORTBV25Request("", "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1", 3, false, true),
+				bidRequest: getORTBRequest("", "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1", 3, false, true),
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Success).Times(1)
@@ -472,7 +472,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					UA:       "",
 					Platform: "video",
 				},
-				bidRequest: getORTBV25Request("", "AppleCoreMedia/1.0.0.20L498 (Apple TV; U; CPU OS 16_4_1 like Mac OS X; en_us)", 0, true, false),
+				bidRequest: getORTBRequest("", "AppleCoreMedia/1.0.0.20L498 (Apple TV; U; CPU OS 16_4_1 like Mac OS X; en_us)", 0, true, false),
 			},
 			want: models.DevicePlatformConnectedTv,
 		},
@@ -485,7 +485,7 @@ func TestGetDevicePlatform(t *testing.T) {
 					PubIDStr:      "5890",
 					MetricsEngine: mockEngine,
 				},
-				bidRequest: getORTBV25Request("", "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)", 7, false, true),
+				bidRequest: getORTBRequest("", "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)", 7, false, true),
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
@@ -498,9 +498,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			if got := GetDevicePlatform(tt.args.rCtx, tt.args.bidRequest); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetDevicePlatform() = %v, want %v", got, tt.want)
-			}
+			got := GetDevicePlatform(tt.args.rCtx, tt.args.bidRequest)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -717,7 +716,7 @@ func Test_isAndroid(t *testing.T) {
 	}
 }
 
-func getORTBV25Request(os, ua string, deviceType adcom1.DeviceType, withSite, withApp bool) *openrtb2.BidRequest {
+func getORTBRequest(os, ua string, deviceType adcom1.DeviceType, withSite, withApp bool) *openrtb2.BidRequest {
 	request := new(openrtb2.BidRequest)
 
 	if withSite {

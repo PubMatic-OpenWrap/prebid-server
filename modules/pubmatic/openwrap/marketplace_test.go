@@ -1,11 +1,11 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_getMarketplaceBidders(t *testing.T) {
@@ -136,12 +136,8 @@ func Test_getMarketplaceBidders(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			alternateBidderCodes, marketPlaceBidders := getMarketplaceBidders(tt.args.reqABC, tt.args.partnerConfigMap)
-			if !reflect.DeepEqual(alternateBidderCodes, tt.want.alternateBidderCodes) {
-				t.Errorf("getMarketplaceBidders() got = %v, want %v", alternateBidderCodes, tt.want.alternateBidderCodes)
-			}
-			if !reflect.DeepEqual(marketPlaceBidders, tt.want.marketPlaceBidders) {
-				t.Errorf("getMarketplaceBidders() got = %v, want %v", marketPlaceBidders, tt.want.marketPlaceBidders)
-			}
+			assert.Equal(t, tt.want.alternateBidderCodes, alternateBidderCodes)
+			assert.Equal(t, tt.want.marketPlaceBidders, marketPlaceBidders)
 		})
 	}
 }

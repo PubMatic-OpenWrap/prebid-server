@@ -1,7 +1,6 @@
 package adunitconfig
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +10,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
@@ -346,9 +346,8 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			if gotAdUnitCtx := UpdateVideoObjectWithAdunitConfig(tt.args.rCtx, tt.args.imp, tt.args.div, tt.args.connectionType); !reflect.DeepEqual(gotAdUnitCtx, tt.wantAdUnitCtx) {
-				t.Errorf("UpdateVideoObjectWithAdunitConfig() = %v, want %v", gotAdUnitCtx, tt.wantAdUnitCtx)
-			}
+			gotAdUnitCtx := UpdateVideoObjectWithAdunitConfig(tt.args.rCtx, tt.args.imp, tt.args.div, tt.args.connectionType)
+			assert.Equal(t, tt.wantAdUnitCtx, gotAdUnitCtx)
 		})
 	}
 }

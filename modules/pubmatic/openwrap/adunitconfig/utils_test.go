@@ -1,7 +1,6 @@
 package adunitconfig
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/adcom1"
@@ -10,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 var testSlotConfig = &adunitconfig.AdConfig{
@@ -122,9 +122,8 @@ func Test_getDefaultAllowedConnectionTypes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getDefaultAllowedConnectionTypes(tt.args.adUnitConfigMap); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getDefaultAllowedConnectionTypes() = %v, want %v", got, tt.want)
-			}
+			got := getDefaultAllowedConnectionTypes(tt.args.adUnitConfigMap)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -285,9 +284,8 @@ func Test_getFinalSlotAdUnitConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getFinalSlotAdUnitConfig(tt.args.slotConfig, tt.args.defaultConfig); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getFinalSlotAdUnitConfig() = %v, want %v", got, tt.want)
-			}
+			got := getFinalSlotAdUnitConfig(tt.args.slotConfig, tt.args.defaultConfig)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -2,7 +2,6 @@ package bidderparams
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 
@@ -309,9 +308,7 @@ func Test_getVASTBidderSlotKeys(t *testing.T) {
 			}
 			sort.Strings(got)
 			sort.Strings(tt.want)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getVASTBidderSlotKeys() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
