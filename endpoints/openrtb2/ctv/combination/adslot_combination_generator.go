@@ -285,7 +285,6 @@ func (c *generator) lazyNext() []uint64 {
 // search generates the combinations based on min and max number of ads
 func (c *generator) search(data []uint64, start, index, r uint64, lazyLoad bool, reursionCount int) []uint64 {
 
-	defer util.TimeTrack(time.Now(), "search()")
 	end := uint64(len(c.slotDurations) - 1)
 
 	// Current combination is ready to be printed, print it
@@ -341,6 +340,7 @@ func getNextElement(arr []uint64, val uint64) (uint64, uint64) {
 // updateState - is used in case of lazy loading
 // It maintains the state of iterator by updating the required flags
 func updateState(c *generator, lazyLoad bool, r uint64, reursionCount int, end uint64, i uint64, index uint64, valueAtEnd uint64) {
+
 	if lazyLoad {
 		c.state.start = i
 		// set c.state.index = 0 when
