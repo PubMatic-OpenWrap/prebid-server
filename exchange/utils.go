@@ -364,6 +364,8 @@ func buildRequestExtForBidder(bidder string, requestExt json.RawMessage, request
 		prebid.Debug = requestExtParsed.Prebid.Debug
 		prebid.Server = requestExtParsed.Prebid.Server
 		prebid.MultiBid = buildRequestExtMultiBid(bidder, requestExtParsed.Prebid.MultiBid, alternateBidderCodes)
+		prebid.KeyVal = requestExtParsed.Prebid.KeyVal
+
 	}
 
 	// Marshal New Prebid Object
