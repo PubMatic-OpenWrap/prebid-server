@@ -1083,3 +1083,25 @@ func getPrebidMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
 		Message: errMsg,
 	}
 }
+
+func applyBidAdjustmentToFloor(allBidderRequests []BidderRequest, bidAdjustmentFactors map[string]float64) {
+
+	if len(bidAdjustmentFactors) == 0 {
+		return
+	}
+
+	for _, bidderRequest := range allBidderRequests {
+		bidAdjustment := 1.0
+
+		if bidAdjustemntValue, ok := bidAdjustmentFactors[string(bidderRequest.BidderName)]; ok {
+			bidAdjustment = bidAdjustemntValue
+		}
+
+		if bidAdjustment != 1.0 {
+			for index, imp := range bidderRequest.BidRequest.Imp {
+				imp.BidFloor = imp.BidFloor / bidAdjustment
+				bidderRequest.BidRequest.Imp[index] = imp
+			}
+		}
+	}
+}
