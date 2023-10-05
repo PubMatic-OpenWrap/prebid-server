@@ -270,6 +270,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 	if e.floor.Enabled {
 		floorErrs = floors.EnrichWithPriceFloors(r.BidRequestWrapper, r.Account, conversions, e.priceFloorFetcher)
+		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
+			// Record request count with non-zero imp.bidfloor value
+			e.me.RecordFloorsRequestForAccount(r.PubID)
+		}
 	}
 
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequestWrapper.Test, requestExtPrebid, r.Account.DebugAllow, debugLog)
@@ -382,12 +386,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		bidResponseExt *openrtb_ext.ExtBidResponse
 		seatNonBids    = nonBids{}
 	)
-	if e.floor.Enabled {
-		if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
-			// Record request count with non-zero imp.bidfloor value
-			e.me.RecordFloorsRequestForAccount(r.PubID)
-		}
-	}
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
