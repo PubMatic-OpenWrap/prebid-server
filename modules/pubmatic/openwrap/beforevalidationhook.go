@@ -66,6 +66,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
+	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
 	// TODO: verify preference of request.test vs queryParam test
 	if payload.BidRequest.Test != 0 {

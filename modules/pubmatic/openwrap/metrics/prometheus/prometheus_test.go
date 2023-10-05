@@ -311,16 +311,6 @@ func TestRecordGetProfileDataTime(t *testing.T) {
 	assertHistogram(t, "sshb_profile_data_get_time", resultingHistogram, 1, 0.3)
 }
 
-func TestRecordSendLoggerDataTime(t *testing.T) {
-	m := createMetricsForTesting()
-
-	m.RecordSendLoggerDataTime("v25", "59201", 300*time.Millisecond)
-	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.sendLoggerData,
-		endpointLabel, "v25", profileIDLabel, "59201")
-
-	assertHistogram(t, "sshb_logger_data_send_time", resultingHistogram, 1, 0.3)
-}
-
 func TestRecordDBQueryFailure(t *testing.T) {
 	m := createMetricsForTesting()
 

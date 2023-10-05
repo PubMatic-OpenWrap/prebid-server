@@ -195,7 +195,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.NoSeatBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
@@ -218,6 +218,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
 			Tracker: tracker.GetTrackerInfo(rctx),
 		}
+	}
+
+	if rctx.ReturnAllBidStatus {
+		// prepare seat-non-bids and add them in the response-ext
+		rctx.SeatNonBids = prepareSeatNonBids(rctx)
+		addSeatNonBidsInResponseExt(rctx, &responseExt)
 	}
 
 	var err error

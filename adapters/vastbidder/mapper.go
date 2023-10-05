@@ -174,6 +174,10 @@ var _defaultMapper = Mapper{
 
 	//Additional
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
+
+	//KeyVal
+	MacroKV:  &macroCallBack{cached: false, callback: IBidderMacro.MacroKV},
+	MacroKVM: &macroCallBack{cached: false, callback: IBidderMacro.MacroKVM},
 }
 
 // GetDefaultMapper will return clone of default Mapper function
