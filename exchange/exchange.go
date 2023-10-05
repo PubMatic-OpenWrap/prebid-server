@@ -402,12 +402,9 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 					WarningCode: errortypes.FloorBidRejectionWarningCode})
 			}
 
-			if floors.RequestHasFloors(r.BidRequestWrapper.BidRequest) {
-				// Record request count with non-zero imp.bidfloor value
-				if len(rejectedBids) > 0 {
-					// Record rejected bid count at account level
-					e.me.RecordRejectedBidsForAccount(r.PubID)
-				}
+			if len(rejectedBids) > 0 {
+				// Record rejected bid count at account level
+				e.me.RecordRejectedBidsForAccount(r.PubID)
 				updateSeatNonBidsFloors(&seatNonBids, rejectedBids)
 			}
 
