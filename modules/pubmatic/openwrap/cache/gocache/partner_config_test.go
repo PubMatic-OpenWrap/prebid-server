@@ -423,7 +423,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			},
 			want: want{
 				cacheEntry:       false,
-				err:              errorWrap(fmt.Errorf("Incorrect Slot Mappings from the DB"), fmt.Errorf("Incorrect AdUnit Config from the DB")), //  errors.New("Incorrect AdUnit Config from the DB: Incorrect Slot Mappings from the DB"),
+				err:              models.ErrorWrap(fmt.Errorf("Incorrect Slot Mappings from the DB"), fmt.Errorf("Incorrect AdUnit Config from the DB")), //  errors.New("Incorrect AdUnit Config from the DB: Incorrect Slot Mappings from the DB"),
 				partnerConfigMap: nil,
 			},
 			setup: func() {

@@ -24,7 +24,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 		})
 		if errPubSlotNameHash != nil {
 			c.metricEngine.RecordDBQueryFailure(models.SlotNameHash, strconv.Itoa(pubID), strconv.Itoa(profileID))
-			err = errorWrap(err, errPubSlotNameHash)
+			err = models.ErrorWrap(err, errPubSlotNameHash)
 		}
 	}
 
@@ -35,7 +35,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 		})
 		if errPublisherVASTTag != nil {
 			c.metricEngine.RecordDBQueryFailure(models.PublisherVASTTagsQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
-			err = errorWrap(err, errPublisherVASTTag)
+			err = models.ErrorWrap(err, errPublisherVASTTag)
 		}
 	}
 
@@ -49,7 +49,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 		dbAccessed = true
 		return c.getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion)
 	}); errGetPartnerConfig != nil {
-		err = errorWrap(err, errGetPartnerConfig)
+		err = models.ErrorWrap(err, errGetPartnerConfig)
 	}
 
 	var partnerConfigMap map[int]map[string]string
@@ -78,7 +78,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	if errWrapperSlotMapping = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
-		err = errorWrap(err, errWrapperSlotMapping)
+		err = models.ErrorWrap(err, errWrapperSlotMapping)
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
 			queryType = models.WrapperLiveVersionSlotMappings
@@ -94,7 +94,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		err = errorWrap(err, errAdunitConfig)
+		err = models.ErrorWrap(err, errAdunitConfig)
 	}
 	if errWrapperSlotMapping == nil && errAdunitConfig == nil {
 		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.partnerConfigExpiry))

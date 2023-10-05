@@ -26,6 +26,7 @@ type BidExt struct {
 	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
 	OriginalBidCur    string  `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64 `json:"origbidcpmusd,omitempty"`
+	Fsc               int     `json:"fsc,omitempty"`
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video
