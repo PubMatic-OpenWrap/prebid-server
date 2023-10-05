@@ -105,7 +105,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
 
-	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
+	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticPlatform(rCtx.Platform))
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
 		rCtx.ABTestConfigApplied = 1

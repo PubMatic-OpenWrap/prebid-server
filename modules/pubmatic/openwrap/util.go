@@ -279,3 +279,14 @@ func getPubmaticErrorCode(standardNBR int) int {
 
 	return -1
 }
+
+// TODO -Remove this function once we remove stats-server dependency from header-bidding repository.
+// Currently we have a dashboard using "hb:2.5:app:pbrq:%s:" stat-server metric.
+// This is added to have same metric-label that is used by header-bidding repository
+func getPubmaticPlatform(platform string) (hbplatform string) {
+	switch platform {
+	case models.PLATFORM_APP:
+		return models.HB_PLATFORM_APP
+	}
+	return
+}

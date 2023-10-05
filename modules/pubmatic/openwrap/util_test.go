@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/usersync"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
@@ -169,4 +170,29 @@ func (s fakeSyncer) SupportsType(syncTypes []usersync.SyncType) bool {
 
 func (fakeSyncer) GetSync(syncTypes []usersync.SyncType, privacyPolicies privacy.Policies) (usersync.Sync, error) {
 	return usersync.Sync{}, nil
+}
+
+// TODO -Remove this function once we remove stats-server dependency from header-bidding repository.
+func TestGetPubmaticPlatform(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  string
+		want string
+	}{
+		{
+			name: "empty string",
+			arg:  "",
+			want: "",
+		},
+		{
+			name: "in-app",
+			arg:  models.PLATFORM_APP,
+			want: models.HB_PLATFORM_APP,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, getPubmaticPlatform(tc.arg))
+		})
+	}
 }
