@@ -2374,3 +2374,38 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 			})
 	}
 }
+func TestRecordFloorsRequestForAccount(t *testing.T) {
+	type testIn struct {
+		pubid string
+	}
+	type testOut struct {
+		expCount int
+	}
+	testCases := []struct {
+		description string
+		in          testIn
+		out         testOut
+	}{
+		{
+			description: "record floors request",
+			in: testIn{
+				pubid: "1010",
+			},
+			out: testOut{
+				expCount: 1,
+			},
+		},
+	}
+	for _, test := range testCases {
+		pm := createMetricsForTesting()
+		pm.RecordFloorsRequestForAccount(test.in.pubid)
+		assertCounterVecValue(t,
+			"",
+			"floors_account_requests",
+			pm.accountFloorsRequest,
+			float64(test.out.expCount),
+			prometheus.Labels{
+				accountLabel: test.in.pubid,
+			})
+	}
+}
