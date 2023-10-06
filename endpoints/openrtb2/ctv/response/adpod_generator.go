@@ -86,14 +86,25 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 	start := time.Now()
 	defer util.TimeTrack(start, fmt.Sprintf("Tid:%v ImpId:%v getAdPodBids", o.request.ID, o.request.Imp[o.impIndex].ID))
 
-	maxRoutines := 3
+	maxRoutines := 2
 	isTimedOutORReceivedAllResponses := false
 	results := []*highestCombination{}
 	responseCh := make(chan *highestCombination, maxRoutines)
 	wg := new(sync.WaitGroup) // ensures each step generating impressions is finished
 	lock := sync.Mutex{}
 	ticker := time.NewTicker(timeout)
+	combGenStartTime := time.Now()
+	lock.Lock()
+	durations := o.comb.Get()
+	lock.Unlock()
+	combGenElapsedTime := time.Since(combGenStartTime)
 
+	if len(durations) != 0 {
+		hbc := o.getUniqueBids(durations)
+		hbc.timeTakenCombGen = combGenElapsedTime
+		responseCh <- hbc
+		util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v combGenElapsedTime:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:], combGenElapsedTime)
+	}
 	combinationCount := 0
 	for i := 0; i < maxRoutines; i++ {
 		wg.Add(1)
@@ -111,7 +122,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 				hbc := o.getUniqueBids(durations)
 				hbc.timeTakenCombGen = combGenElapsedTime
 				responseCh <- hbc
-				util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:])
+				util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v combGenElapsedTime:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:], combGenElapsedTime)
 			}
 			wg.Done()
 		}()
