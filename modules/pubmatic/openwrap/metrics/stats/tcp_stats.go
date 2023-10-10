@@ -262,6 +262,9 @@ func (st *StatsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder st
 
 func (st *StatsTCP) RecordPublisherRequests(endpoint, publisher, platform string) {
 
+	if platform == models.PLATFORM_APP {
+		platform = models.HB_PLATFORM_APP
+	}
 	switch endpoint {
 	case "amp":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], publisher), 1)
@@ -336,3 +339,4 @@ func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                   
 func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
 func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
 func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
+func (st *StatsTCP) RecordCountry(pubID string)                                                     {}

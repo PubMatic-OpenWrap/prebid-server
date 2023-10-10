@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -39,6 +41,9 @@ type BidderMacro struct {
 
 	//Impression level Request Headers
 	ImpReqHeaders http.Header
+
+	//Key-Values Map
+	KV map[string]any
 }
 
 // NewBidderMacro contains definition for all openrtb macro's
@@ -85,6 +90,19 @@ func (tag *BidderMacro) init() {
 			tag.DeviceExt = &ext
 		}
 	}
+	if tag.Request != nil && tag.Request.Ext != nil {
+		keyval, _, _, err := jsonparser.Get(tag.Request.Ext, prebid, keyval)
+		if err != nil {
+			return
+		}
+		var kv map[string]any
+		err = json.Unmarshal(keyval, &kv)
+		if err != nil {
+			return
+		}
+		tag.KV = kv
+	}
+
 }
 
 // InitBidRequest will initialise BidRequest
@@ -132,6 +150,7 @@ func (tag *BidderMacro) GetBidderKeys() map[string]string {
 			keys[ParamKeys[i]] = ""
 		}
 	}
+
 	return keys
 }
 
@@ -156,6 +175,18 @@ func (tag *BidderMacro) GetURI() string {
 // Override this method if your Vast bidder needs custom  request headers
 func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
+}
+
+// GetValueFromKV returns the value from KV map wrt key
+func (tag *BidderMacro) GetValueFromKV(key string) string {
+	if tag.KV == nil {
+		return ""
+	}
+	key = strings.TrimPrefix(key, kvPrefix)
+	if value, found := tag.KV[key]; found {
+		return fmt.Sprintf("%v", value)
+	}
+	return ""
 }
 
 /********************* Request *********************/
@@ -1171,6 +1202,32 @@ func (tag *BidderMacro) MacroUSPrivacy(key string) string {
 func (tag *BidderMacro) MacroCacheBuster(key string) string {
 	//change implementation
 	return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}
+
+// MacroKV replace the kv macro
+func (tag *BidderMacro) MacroKV(key string) string {
+	if tag.KV == nil {
+		return ""
+	}
+
+	values := url.Values{}
+	for key, val := range tag.KV {
+		values.Add(key, fmt.Sprintf("%v", val))
+	}
+	return values.Encode()
+
+}
+
+// MacroKVM replace the kvm macro
+func (tag *BidderMacro) MacroKVM(key string) string {
+	if tag.KV == nil {
+		return ""
+	}
+	jsonBytes, err := json.Marshal(tag.KV)
+	if err != nil {
+		return ""
+	}
+	return string(jsonBytes)
 }
 
 /********************* Request Headers *********************/
