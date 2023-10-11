@@ -40,6 +40,12 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 		adunitConfig.ConfigPattern = models.MACRO_AD_UNIT_ID
 	}
 
+	// safe check for old legacy profiles
+	// new profiles cannot be created as UI-API has config object validation
+	if adunitConfig.Config == nil {
+		adunitConfig.Config = make(map[string]*adunitconfig.AdConfig)
+	}
+
 	if _, ok := adunitConfig.Config["default"]; !ok {
 		adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
 	}
