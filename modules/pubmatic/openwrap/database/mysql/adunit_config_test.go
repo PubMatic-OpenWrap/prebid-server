@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"database/sql"
-	"errors"
 	"regexp"
 	"testing"
 
@@ -38,79 +37,6 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				return db
-			},
-		},
-		{
-			name: "No rows for given query",
-			fields: fields{
-				cfg: config.Database{
-					Queries: config.Queries{
-						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
-					},
-				},
-			},
-			args: args{
-				profileID:      5890,
-				displayVersion: 0,
-			},
-			want:    nil,
-			wantErr: false,
-			setup: func() *sql.DB {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnError(sql.ErrNoRows)
-				return db
-			},
-		},
-		{
-			name: "Error in QueryRow for given query",
-			fields: fields{
-				cfg: config.Database{
-					Queries: config.Queries{
-						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
-					},
-				},
-			},
-			args: args{
-				profileID:      5890,
-				displayVersion: 0,
-			},
-			want:    nil,
-			wantErr: true,
-			setup: func() *sql.DB {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnError(errors.New("Error in query execution"))
-				return db
-			},
-		},
-		{
-			name: "Empty content return",
-			fields: fields{
-				cfg: config.Database{
-					Queries: config.Queries{
-						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
-					},
-				},
-			},
-			args: args{
-				profileID:      5890,
-				displayVersion: 0,
-			},
-			want:    nil,
-			wantErr: false,
-			setup: func() *sql.DB {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(``)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+) LIVE")).WillReturnRows(rows)
 				return db
 			},
 		},

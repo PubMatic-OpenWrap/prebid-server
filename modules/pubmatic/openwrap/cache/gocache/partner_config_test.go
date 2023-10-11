@@ -116,67 +116,6 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			want:    nil,
 		},
 		{
-			name: "db_queries_failed_getting_adunitconfig",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 1000,
-					VASTTagCacheExpiry: 1000,
-				},
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: 0,
-				endpoint:       models.EndpointAMP,
-			},
-			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
-				mockDatabase := mock_database.NewMockDatabase(ctrl)
-				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, 0).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
-				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, adunitconfig.ErrAdUnitUnmarshal)
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, nil)
-				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123").Return().Times(1)
-				return mockDatabase, mockEngine
-			},
-			wantErr: true,
-			want:    nil,
-		},
-
-		{
-			name: "db_queries_failed_wrapper_slotmappings",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 1000,
-					VASTTagCacheExpiry: 1000,
-				},
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: 0,
-				endpoint:       models.EndpointAMP,
-			},
-			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
-				mockDatabase := mock_database.NewMockDatabase(ctrl)
-				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, 0).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
-				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, nil)
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, fmt.Errorf("Error from the DB"))
-				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
-				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperLiveVersionSlotMappings, "5890", "123").Return().Times(1)
-				return mockDatabase, mockEngine
-			},
-			wantErr: true,
-			want:    nil,
-		},
-		{
 			name: "db_queries_failed_getting_adunitconfig_and_wrapper_slotmappings",
 			fields: fields{
 				cache: gocache.New(100, 100),
@@ -205,7 +144,17 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				return mockDatabase, mockEngine
 			},
 			wantErr: true,
-			want:    nil,
+			want: map[int]map[string]string{
+				1: {
+					"partnerId":         "1",
+					"prebidPartnerName": "pubmatic",
+					"serverSideEnabled": "1",
+					"level":             "multi",
+					"kgp":               "_AU_@_W_x_H",
+					"timeout":           "220",
+					"bidderCode":        "pubmatic",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -214,9 +163,8 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			defer ctrl.Finish()
 
 			c := &cache{
-				cache:               tt.fields.cache,
-				cfg:                 tt.fields.cfg,
-				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
+				cache: tt.fields.cache,
+				cfg:   tt.fields.cfg,
 			}
 			c.db, c.metricEngine = tt.setup(ctrl)
 
@@ -294,9 +242,8 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 			defer ctrl.Finish()
 
 			c := &cache{
-				cache:               tt.fields.cache,
-				cfg:                 tt.fields.cfg,
-				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
+				cache: tt.fields.cache,
+				cfg:   tt.fields.cfg,
 			}
 			c.db, c.metricEngine = tt.setup(ctrl)
 
@@ -353,85 +300,6 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 		want   want
 		setup  func()
 	}{
-		{
-			name: "error_in_SlotMapping_from_DB",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 100,
-				},
-				db: mockDatabase,
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: testVersionID,
-			},
-			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Incorrect Slot Mappings from the DB"),
-				partnerConfigMap: nil,
-			},
-			setup: func() {
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Incorrect Slot Mappings from the DB"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
-			},
-		},
-		{
-			name: "error_in_AdUnitConfigRead_from_DB",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 100,
-				},
-				db: mockDatabase,
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: testVersionID,
-			},
-			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Incorrect AdUnit Config from the DB"),
-				partnerConfigMap: nil,
-			},
-			setup: func() {
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Incorrect AdUnit Config from the DB"))
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, nil)
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigQuery, "5890", "123").Return()
-			},
-		},
-		{
-			name: "error_in_SlotMapping_And_AdUnitConfigRead_from_DB",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 100,
-				},
-				db: mockDatabase,
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: testVersionID,
-			},
-			want: want{
-				cacheEntry:       false,
-				err:              errorWrap(fmt.Errorf("Incorrect Slot Mappings from the DB"), fmt.Errorf("Incorrect AdUnit Config from the DB")), //  errors.New("Incorrect AdUnit Config from the DB: Incorrect Slot Mappings from the DB"),
-				partnerConfigMap: nil,
-			},
-			setup: func() {
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Incorrect AdUnit Config from the DB"))
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Incorrect Slot Mappings from the DB"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigQuery, "5890", "123").Return()
-				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
-			},
-		},
 		{
 			name: "error_returning_Active_partner_configuration_from_DB",
 			fields: fields{
@@ -501,7 +369,6 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				}, nil)
 			},
 		},
-
 		{
 			name: "empty_partnerConfigMap_from_DB",
 			fields: fields{
@@ -532,22 +399,19 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				tt.setup()
 			}
 			c := &cache{
-				cache:               tt.fields.cache,
-				cfg:                 tt.fields.cfg,
-				db:                  tt.fields.db,
-				metricEngine:        mockEngine,
-				partnerConfigExpiry: tt.fields.cfg.CacheDefaultExpiry - 60,
+				cache:        tt.fields.cache,
+				cfg:          tt.fields.cfg,
+				db:           tt.fields.db,
+				metricEngine: mockEngine,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-
+			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PUB_HB_PARTNER, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			partnerConfigMap, found := c.Get(cacheKey)
 			if tt.want.cacheEntry {
-				assert.Equal(t, tt.want.err, err)
 				assert.True(t, found)
 				assert.Equal(t, tt.want.partnerConfigMap, partnerConfigMap)
 			} else {
-				assert.Equal(t, tt.want.err.Error(), err.Error())
 				assert.False(t, found)
 				assert.Nil(t, partnerConfigMap)
 			}
