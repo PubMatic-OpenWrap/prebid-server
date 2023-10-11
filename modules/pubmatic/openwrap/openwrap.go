@@ -20,6 +20,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 const (
@@ -66,7 +67,11 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
+	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
+
+	// Init TBF (tracking-beacon-first) feature related services
+	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
 
 	return OpenWrap{
 		cfg:          cfg,
