@@ -87,17 +87,17 @@ const (
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
 var once sync.Once
-var met *Metrics
-
-func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
-	once.Do(func() {
-		met = NewMetricsInner(cfg, promRegistry)
-	})
-	return met
-}
+var metric *Metrics
 
 // NewMetrics initializes a new Prometheus metrics instance.
-func NewMetricsInner(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
+func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
+	once.Do(func() {
+		metric = newMetrics(cfg, promRegistry)
+	})
+	return metric
+}
+
+func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
 
 	// general metrics

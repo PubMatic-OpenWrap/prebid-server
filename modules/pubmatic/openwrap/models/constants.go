@@ -221,6 +221,7 @@ const (
 	PLATFORM_APP            = "in-app"
 	PLATFORM_VIDEO          = "video"
 	PlatformAppTargetingKey = "inapp"
+	HB_PLATFORM_APP         = "app"
 
 	//constants for headers
 	ORIGIN             = "origin"

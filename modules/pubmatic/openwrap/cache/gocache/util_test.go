@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -172,42 +171,6 @@ func Test_validUPixels(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := validUPixels(tt.args.pixel)
 			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func Test_errorWrap(t *testing.T) {
-	type args struct {
-		cErr error
-		nErr error
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "current error as nil",
-			args: args{
-				cErr: nil,
-				nErr: fmt.Errorf("error found for %d", 1234),
-			},
-			wantErr: true,
-		},
-		{
-			name: "wrap error",
-			args: args{
-				cErr: fmt.Errorf("current error found for %d", 1234),
-				nErr: fmt.Errorf("new error found for %d", 1234),
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := errorWrap(tt.args.cErr, tt.args.nErr); (err != nil) != tt.wantErr {
-				t.Errorf("errorWrap() error = %v, wantErr %v", err, tt.wantErr)
-			}
 		})
 	}
 }
