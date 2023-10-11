@@ -178,6 +178,9 @@ func (st *StatsTCP) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publi
 }
 
 func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
+	if platform == models.PLATFORM_APP {
+		platform = models.HB_PLATFORM_APP
+	}
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVRequests], endpoint, platform), 1)
 }
 
@@ -261,7 +264,6 @@ func (st *StatsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder st
 }
 
 func (st *StatsTCP) RecordPublisherRequests(endpoint, publisher, platform string) {
-
 	if platform == models.PLATFORM_APP {
 		platform = models.HB_PLATFORM_APP
 	}
