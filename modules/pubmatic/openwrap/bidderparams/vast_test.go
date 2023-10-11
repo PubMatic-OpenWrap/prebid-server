@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getVASTBidderSlotKeys(t *testing.T) {
+func TestGetVASTBidderSlotKeys(t *testing.T) {
 	type args struct {
 		imp         *openrtb2.Imp
 		slotKey     string
@@ -303,7 +303,7 @@ func Test_getVASTBidderSlotKeys(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := getVASTBidderSlotKeys(tt.args.imp, tt.args.slotKey, tt.args.slotMap, tt.args.pubVASTTags, tt.args.adpodExt)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getVASTBidderSlotKeys() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			sort.Strings(got)
@@ -313,7 +313,7 @@ func Test_getVASTBidderSlotKeys(t *testing.T) {
 	}
 }
 
-func Test_validateVASTTag(t *testing.T) {
+func TestValidateVASTTag(t *testing.T) {
 	type args struct {
 		vastTag          *models.VASTTag
 		videoMinDuration int64

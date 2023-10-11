@@ -148,14 +148,13 @@ func TestGenerateSlotName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GenerateSlotName(tt.args.h, tt.args.w, tt.args.kgp, tt.args.tagid, tt.args.div, tt.args.src); got != tt.want {
-				t.Errorf("GenerateSlotName() = %v, want %v", got, tt.want)
-			}
+			got := GenerateSlotName(tt.args.h, tt.args.w, tt.args.kgp, tt.args.tagid, tt.args.div, tt.args.src)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_getSlotMeta(t *testing.T) {
+func TestGetSlotMeta(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
@@ -289,7 +288,7 @@ func Test_getSlotMeta(t *testing.T) {
 				},
 				cache:     mockCache,
 				partnerID: 1,
-				imp:       getTestImp("/Test_Adunti1234"),
+				imp:       getTestImp("/Test_Adunti1234", true, false),
 				impExt: models.ImpExtension{
 					Wrapper: &models.ExtImpWrapper{
 						Div: "Div1",
@@ -321,7 +320,7 @@ func Test_getSlotMeta(t *testing.T) {
 				})
 			},
 			want: want{
-				slots: []string{"/Test_Adunti1234", "/Test_Adunti1234", "/Test_Adunti1234", "/Test_Adunti1234"},
+				slots: []string{"/Test_Adunti1234", "/Test_Adunti1234"},
 				slotMap: map[string]models.SlotMapping{
 					"test": {
 						PartnerId: 1,
@@ -333,8 +332,6 @@ func Test_getSlotMeta(t *testing.T) {
 				hw: [][2]int64{
 					{300, 200},
 					{500, 400},
-					{0, 0},
-					{1, 1},
 				},
 			},
 		},
@@ -353,7 +350,7 @@ func Test_getSlotMeta(t *testing.T) {
 	}
 }
 
-func Test_getDefaultMappingKGP(t *testing.T) {
+func TestGetDefaultMappingKGP(t *testing.T) {
 	type args struct {
 		keyGenPattern string
 	}
@@ -386,14 +383,13 @@ func Test_getDefaultMappingKGP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getDefaultMappingKGP(tt.args.keyGenPattern); got != tt.want {
-				t.Errorf("getDefaultMappingKGP() = %v, want %v", got, tt.want)
-			}
+			got := getDefaultMappingKGP(tt.args.keyGenPattern)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_getSlotMappings(t *testing.T) {
+func TestGetSlotMappings(t *testing.T) {
 	type args struct {
 		matchedSlot    string
 		matchedPattern string
@@ -556,12 +552,8 @@ func TestGetMatchingSlot(t *testing.T) {
 				tt.setup()
 			}
 			got, got1 := GetMatchingSlot(tt.args.rctx, tt.args.cache, tt.args.slot, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.isRegexKGP, tt.args.partnerID)
-			if got != tt.want.matchedSlot {
-				t.Errorf("GetMatchingSlot() got = %v, want %v", got, tt.want.matchedSlot)
-			}
-			if got1 != tt.want.matchedPattern {
-				t.Errorf("GetMatchingSlot() got1 = %v, want %v", got1, tt.want.matchedPattern)
-			}
+			assert.Equal(t, tt.want.matchedSlot, got)
+			assert.Equal(t, tt.want.matchedPattern, got1)
 		})
 	}
 }
@@ -759,12 +751,8 @@ func TestGetRegexMatchingSlot(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cache := tt.setup()
 			got, got1 := GetRegexMatchingSlot(tt.args.rctx, cache, tt.args.slot, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.partnerID)
-			if got != tt.want.matchedSlot {
-				t.Errorf("GetRegexMatchingSlot() got = %v, want %v", got, tt.want.matchedSlot)
-			}
-			if got1 != tt.want.regexPattern {
-				t.Errorf("GetRegexMatchingSlot() got1 = %v, want %v", got1, tt.want.regexPattern)
-			}
+			assert.Equal(t, tt.want.matchedSlot, got)
+			assert.Equal(t, tt.want.regexPattern, got1)
 		})
 	}
 }

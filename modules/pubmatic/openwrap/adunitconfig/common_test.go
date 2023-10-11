@@ -55,7 +55,7 @@ func getAdunitConfigWithRx() *adunitconfig.AdUnitConfig {
 	}
 }
 
-func Test_selectSlot(t *testing.T) {
+func TestSelectSlot(t *testing.T) {
 	type args struct {
 		rCtx   models.RequestCtx
 		h      int64

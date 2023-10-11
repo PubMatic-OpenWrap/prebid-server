@@ -286,6 +286,80 @@ func TestUpdateBannerObjectWithAdunitConfig(t *testing.T) {
 				AllowedConnectionTypes:   nil,
 			},
 		},
+		{
+			name: "Banner_config_is_prsent_in_both_default_and_slot_preferance_is_given_to_slot_level",
+			args: args{
+				rCtx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						ConfigPattern: "_AU_",
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								Banner: &adunitconfig.Banner{
+									Enabled: ptrutil.ToPtr(true),
+									Config: &adunitconfig.BannerConfig{
+										Banner: openrtb2.Banner{
+											W:  ptrutil.ToPtr[int64](100),
+											H:  ptrutil.ToPtr[int64](200),
+											ID: "123",
+										},
+									},
+								},
+							},
+							"/12344/test_adunit": {
+								Banner: &adunitconfig.Banner{
+									Enabled: ptrutil.ToPtr(true),
+									Config: &adunitconfig.BannerConfig{
+										Banner: openrtb2.Banner{
+											W:  ptrutil.ToPtr[int64](300),
+											H:  ptrutil.ToPtr[int64](400),
+											ID: "123456",
+										},
+									},
+								},
+							},
+						},
+					},
+					PubIDStr:     "5890",
+					ProfileIDStr: "123",
+				},
+				imp: openrtb2.Imp{
+					TagID:  "/12344/Test_AdUnit",
+					Banner: &openrtb2.Banner{},
+				},
+			},
+			wantAdUnitCtx: models.AdUnitCtx{
+				MatchedSlot:  "/12344/Test_AdUnit",
+				IsRegex:      false,
+				MatchedRegex: "",
+				SelectedSlotAdUnitConfig: &adunitconfig.AdConfig{
+					Banner: &adunitconfig.Banner{
+						Enabled: ptrutil.ToPtr(true),
+						Config: &adunitconfig.BannerConfig{
+							Banner: openrtb2.Banner{
+								W:  ptrutil.ToPtr[int64](300),
+								H:  ptrutil.ToPtr[int64](400),
+								ID: "123456",
+							},
+						},
+					},
+				},
+				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+					Banner: &adunitconfig.Banner{
+						Enabled: ptrutil.ToPtr(true),
+						Config: &adunitconfig.BannerConfig{
+							Banner: openrtb2.Banner{
+								W:  ptrutil.ToPtr[int64](300),
+								H:  ptrutil.ToPtr[int64](400),
+								ID: "123456",
+							},
+						},
+					},
+				},
+				UsingDefaultConfig:     false,
+				AllowedConnectionTypes: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

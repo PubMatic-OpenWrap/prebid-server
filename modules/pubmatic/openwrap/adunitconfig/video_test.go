@@ -340,6 +340,87 @@ func TestUpdateVideoObjectWithAdunitConfig(t *testing.T) {
 				AllowedConnectionTypes: []int{10, 20, 30},
 			},
 		},
+		{
+			name: "Video_config_is_prsent_in_both_default_and_slot_preferance_is_given_to_slot_level",
+			args: args{
+				rCtx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						ConfigPattern: "_AU_",
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								Video: &adunitconfig.Video{
+									Enabled: ptrutil.ToPtr(true),
+									Config: &adunitconfig.VideoConfig{
+										Video: openrtb2.Video{
+											Plcmt:       2,
+											MinDuration: 2,
+											MaxDuration: 10,
+										},
+									},
+								},
+							},
+							"/12344/test_adunit": {
+								Video: &adunitconfig.Video{
+									Enabled: ptrutil.ToPtr(true),
+									Config: &adunitconfig.VideoConfig{
+										Video: openrtb2.Video{
+											MIMEs:       []string{"test"},
+											Plcmt:       4,
+											MinDuration: 4,
+											MaxDuration: 20,
+										},
+									},
+								},
+							},
+						},
+					},
+					PubIDStr:     "5890",
+					ProfileIDStr: "123",
+				},
+				imp: openrtb2.Imp{
+					TagID: "/12344/Test_AdUnit",
+					Video: &openrtb2.Video{
+						Plcmt:       2,
+						MinDuration: 2,
+						MaxDuration: 10,
+					},
+				},
+			},
+			wantAdUnitCtx: models.AdUnitCtx{
+				MatchedSlot:  "/12344/Test_AdUnit",
+				IsRegex:      false,
+				MatchedRegex: "",
+				SelectedSlotAdUnitConfig: &adunitconfig.AdConfig{
+					Video: &adunitconfig.Video{
+						Enabled: ptrutil.ToPtr(true),
+						Config: &adunitconfig.VideoConfig{
+							Video: openrtb2.Video{
+								MIMEs:       []string{"test"},
+								Plcmt:       4,
+								MinDuration: 4,
+								MaxDuration: 20,
+							},
+						},
+					},
+				},
+				AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+					Video: &adunitconfig.Video{
+						Enabled: ptrutil.ToPtr(true),
+						Config: &adunitconfig.VideoConfig{
+							Video: openrtb2.Video{
+								MIMEs:       []string{"test"},
+								Plcmt:       4,
+								MinDuration: 4,
+								MaxDuration: 20,
+							},
+						},
+					},
+				},
+				UsingDefaultConfig:     false,
+				AllowedConnectionTypes: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

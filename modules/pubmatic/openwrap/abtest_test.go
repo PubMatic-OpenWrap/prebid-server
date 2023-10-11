@@ -58,17 +58,17 @@ func TestCheckABTestEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CheckABTestEnabled(tt.args.rctx); got != tt.want {
-				t.Errorf("CheckABTestEnabled() = %v, want %v", got, tt.want)
-			}
+			got := CheckABTestEnabled(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
+
 		})
 	}
 }
 
 func TestABTestProcessing(t *testing.T) {
 	type args struct {
-		rctx models.RequestCtx
-		val  int
+		rctx         models.RequestCtx
+		randomNumber int
 	}
 	tests := []struct {
 		name  string
@@ -120,7 +120,7 @@ func TestABTestProcessing(t *testing.T) {
 						},
 					},
 				},
-				val: 50,
+				randomNumber: 50,
 			},
 			want: map[int]map[string]string{
 				-1: {
@@ -133,17 +133,34 @@ func TestABTestProcessing(t *testing.T) {
 			},
 			want1: true,
 		},
+		{
+			name: "AbTest_is_enabled_and_random_no_return_apply_AbTest2",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AbTestEnabled:           "1",
+							models.TestType + "_test":      models.TestTypeAuctionTimeout,
+							models.SSTimeoutKey + "_test":  "350",
+							models.TestGroupSize + "_test": "90",
+							models.SSTimeoutKey:            "100",
+						},
+					},
+				},
+				randomNumber: 95,
+			},
+			want:  nil,
+			want1: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			GetRandomNumberIn1To100 = func() int {
-				return tt.args.val
+				return tt.args.randomNumber
 			}
-			got, got1 := ABTestProcessing(tt.args.rctx)
-			assert.Equal(t, tt.want, got)
-			if got1 != tt.want1 {
-				t.Errorf("ABTestProcessing() got1 = %v, want %v", got1, tt.want1)
-			}
+			config, found := ABTestProcessing(tt.args.rctx)
+			assert.Equal(t, tt.want, config)
+			assert.Equal(t, tt.want1, found)
 		})
 	}
 }
@@ -219,9 +236,8 @@ func TestApplyTestConfig(t *testing.T) {
 			GetRandomNumberIn1To100 = func() int {
 				return tt.args.val
 			}
-			if got := ApplyTestConfig(tt.args.rctx); got != tt.want {
-				t.Errorf("ApplyTestConfig() = %v, want %v", got, tt.want)
-			}
+			got := ApplyTestConfig(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -245,9 +261,8 @@ func TestAppendTest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := AppendTest(tt.args.key); got != tt.want {
-				t.Errorf("AppendTest() = %v, want %v", got, tt.want)
-			}
+			got := AppendTest(tt.args.key)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -430,9 +445,9 @@ func TestUpdateTestConfig(t *testing.T) {
 	}
 }
 
-func Test_copyPartnerConfigMap(t *testing.T) {
+func TestCopyPartnerConfigMap(t *testing.T) {
 	type args struct {
-		m map[int]map[string]string
+		config map[int]map[string]string
 	}
 	tests := []struct {
 		name string
@@ -442,7 +457,7 @@ func Test_copyPartnerConfigMap(t *testing.T) {
 		{
 			name: "test",
 			args: args{
-				m: map[int]map[string]string{
+				config: map[int]map[string]string{
 					123: {
 						"adapterId":         "201",
 						"adapterName":       "testAdapter",
@@ -469,13 +484,13 @@ func Test_copyPartnerConfigMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := copyPartnerConfigMap(tt.args.m)
+			got := copyPartnerConfigMap(tt.args.config)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_replaceControlConfig(t *testing.T) {
+func TestReplaceControlConfig(t *testing.T) {
 	type args struct {
 		partnerConfig map[int]map[string]string
 		partnerID     int
@@ -535,7 +550,7 @@ func Test_replaceControlConfig(t *testing.T) {
 	}
 }
 
-func Test_copyTestConfig(t *testing.T) {
+func TestCopyTestConfig(t *testing.T) {
 	type args struct {
 		partnerConfig map[int]map[string]string
 		partnerID     int

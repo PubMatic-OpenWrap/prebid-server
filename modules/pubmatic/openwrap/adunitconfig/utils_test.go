@@ -66,7 +66,7 @@ var testDefaultconfig = &adunitconfig.AdConfig{
 	},
 }
 
-func Test_getDefaultAllowedConnectionTypes(t *testing.T) {
+func TestGetDefaultAllowedConnectionTypes(t *testing.T) {
 	type args struct {
 		adUnitConfigMap *adunitconfig.AdUnitConfig
 	}
@@ -128,7 +128,7 @@ func Test_getDefaultAllowedConnectionTypes(t *testing.T) {
 	}
 }
 
-func Test_getFinalSlotAdUnitConfig(t *testing.T) {
+func TestGetFinalSlotAdUnitConfig(t *testing.T) {
 	type args struct {
 		slotConfig    *adunitconfig.AdConfig
 		defaultConfig *adunitconfig.AdConfig

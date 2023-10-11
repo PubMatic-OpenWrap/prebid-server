@@ -108,7 +108,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "get_profile_data_for_other_than_test_mode",
+			name: "get_profile_data_for_the_non_test_request",
 			fields: fields{
 				cfg: config.Config{
 					Timeout: config.Timeout{
@@ -119,7 +119,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 			},
 			args: args{
 				rCtx: models.RequestCtx{
-					IsTestRequest: 1,
+					IsTestRequest: 0,
 					PubID:         5890,
 					ProfileID:     123,
 					DisplayID:     1,
@@ -163,7 +163,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "get_profile_data_for_other_than_test_mode_and_cache_returned_error",
+			name: "get_profile_data_for_non_test_request_but_cache_returned_error",
 			fields: fields{
 				cfg: config.Config{
 					Timeout: config.Timeout{
@@ -174,7 +174,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 			},
 			args: args{
 				rCtx: models.RequestCtx{
-					IsTestRequest: 1,
+					IsTestRequest: 0,
 					PubID:         5890,
 					ProfileID:     123,
 					DisplayID:     1,
@@ -204,7 +204,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 			}
 			got, err := m.getProfileData(tt.args.rCtx, tt.args.bidRequest)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OpenWrap.getProfileData() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
@@ -212,7 +212,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 	}
 }
 
-func Test_getTestModePartnerConfigMap(t *testing.T) {
+func TestGetTestModePartnerConfigMap(t *testing.T) {
 	type args struct {
 		platform       string
 		timeout        int64

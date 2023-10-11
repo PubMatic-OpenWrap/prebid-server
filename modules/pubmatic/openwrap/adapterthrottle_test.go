@@ -21,7 +21,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 		want want
 	}{
 		{
-			name: "All_prtners_throttled",
+			name: "All_partner_are_client_side_throttled",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
 					0: {
@@ -34,7 +34,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 						models.THROTTLE:            "0",
 						models.PREBID_PARTNER_NAME: "appnexus",
 						models.BidderCode:          "appnexus",
-						models.SERVER_SIDE_FLAG:    "",
+						models.SERVER_SIDE_FLAG:    "0",
 					},
 				},
 			},
@@ -44,7 +44,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 			},
 		},
 		{
-			name: "one_prtner_throttled_out_of_two",
+			name: "one_partner_throttled_out_of_two",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
 					0: {
@@ -69,7 +69,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 			},
 		},
 		{
-			name: "no_prtner_throttled_out_of_two",
+			name: "no_partner_throttled_out_of_two",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
 					0: {
@@ -91,14 +91,38 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 				allPartnersThrottledFlag: false,
 			},
 		},
+		{
+			name: "All_server_side_partner_throttled",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+			},
+			want: want{
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+					"appnexus": {},
+				},
+				allPartnersThrottledFlag: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			adapterThrottleMap, allPartnersThrottledFlag := GetAdapterThrottleMap(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want.adapterThrottleMap, adapterThrottleMap)
-			if allPartnersThrottledFlag != tt.want.allPartnersThrottledFlag {
-				t.Errorf("GetAdapterThrottleMap() got1 = %v, want %v", allPartnersThrottledFlag, tt.want.allPartnersThrottledFlag)
-			}
+			assert.Equal(t, tt.want.allPartnersThrottledFlag, allPartnersThrottledFlag)
 		})
 	}
 }
@@ -176,9 +200,8 @@ func TestThrottleAdapter(t *testing.T) {
 			GetRandomNumberBelow100 = func() int {
 				return tt.args.val
 			}
-			if got := ThrottleAdapter(tt.args.partnerConfig); got != tt.want {
-				t.Errorf("ThrottleAdapter() = %v, want %v", got, tt.want)
-			}
+			got := ThrottleAdapter(tt.args.partnerConfig)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -504,7 +504,7 @@ func TestGetDevicePlatform(t *testing.T) {
 	}
 }
 
-func Test_isMobile(t *testing.T) {
+func TestIsMobile(t *testing.T) {
 	type args struct {
 		deviceType      adcom1.DeviceType
 		userAgentString string
@@ -589,14 +589,13 @@ func Test_isMobile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isMobile(tt.args.deviceType, tt.args.userAgentString); got != tt.want {
-				t.Errorf("isMobile() = %v, want %v", got, tt.want)
-			}
+			got := isMobile(tt.args.deviceType, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_isIos(t *testing.T) {
+func TestIsIos(t *testing.T) {
 	type args struct {
 		os              string
 		userAgentString string
@@ -657,14 +656,13 @@ func Test_isIos(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isIos(tt.args.os, tt.args.userAgentString); got != tt.want {
-				t.Errorf("isIos() = %v, want %v", got, tt.want)
-			}
+			got := isIos(tt.args.os, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_isAndroid(t *testing.T) {
+func TestIsAndroid(t *testing.T) {
 	type args struct {
 		os              string
 		userAgentString string
@@ -709,9 +707,8 @@ func Test_isAndroid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isAndroid(tt.args.os, tt.args.userAgentString); got != tt.want {
-				t.Errorf("isAndroid() = %v, want %v", got, tt.want)
-			}
+			got := isAndroid(tt.args.os, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -745,7 +742,7 @@ func getORTBRequest(os, ua string, deviceType adcom1.DeviceType, withSite, withA
 	return request
 }
 
-func Test_getSourceAndOrigin(t *testing.T) {
+func TestGetSourceAndOrigin(t *testing.T) {
 	type args struct {
 		bidRequest *openrtb2.BidRequest
 	}
@@ -805,17 +802,13 @@ func Test_getSourceAndOrigin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			source, origin := getSourceAndOrigin(tt.args.bidRequest)
-			if source != tt.want.source {
-				t.Errorf("getSourceAndOrigin() got = %v, want %v", source, tt.want.source)
-			}
-			if origin != tt.want.origin {
-				t.Errorf("getSourceAndOrigin() got1 = %v, want %v", origin, tt.want.origin)
-			}
+			assert.Equal(t, tt.want.source, source)
+			assert.Equal(t, tt.want.origin, origin)
 		})
 	}
 }
 
-func Test_getHostName(t *testing.T) {
+func TestGetHostName(t *testing.T) {
 	var (
 		node string
 		pod  string
@@ -873,16 +866,15 @@ func Test_getHostName(t *testing.T) {
 				os.Setenv(models.ENV_VAR_POD_NAME, tt.args.podName)
 			}
 
-			if got := getHostName(); got != tt.want {
-				t.Errorf("getHostName() = %v, want %v", got, tt.want)
-			}
+			got := getHostName()
+			assert.Equal(t, tt.want, got)
 
 			resetEnvVarsForServerName()
 		})
 	}
 }
 
-func Test_getPubmaticErrorCode(t *testing.T) {
+func TestGetPubmaticErrorCode(t *testing.T) {
 	type args struct {
 		standardNBR int
 	}
@@ -971,14 +963,13 @@ func Test_getPubmaticErrorCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getPubmaticErrorCode(tt.args.standardNBR); got != tt.want {
-				t.Errorf("getPubmaticErrorCode() = %v, want %v", got, tt.want)
-			}
+			got := getPubmaticErrorCode(tt.args.standardNBR)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_isCTV(t *testing.T) {
+func TestIsCTV(t *testing.T) {
 	type args struct {
 		userAgent string
 	}
@@ -1004,9 +995,8 @@ func Test_isCTV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isCTV(tt.args.userAgent); got != tt.want {
-				t.Errorf("isCTV() = %v, want %v", got, tt.want)
-			}
+			got := isCTV(tt.args.userAgent)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

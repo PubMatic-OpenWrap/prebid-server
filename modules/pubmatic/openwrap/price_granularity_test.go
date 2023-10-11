@@ -69,7 +69,7 @@ var priceGranularityDense = openrtb_ext.PriceGranularity{
 	},
 }
 
-func Test_computePriceGranularity(t *testing.T) {
+func TestComputePriceGranularity(t *testing.T) {
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -155,7 +155,7 @@ func Test_computePriceGranularity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := computePriceGranularity(tt.args.rctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("computePriceGranularity() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
@@ -163,7 +163,7 @@ func Test_computePriceGranularity(t *testing.T) {
 	}
 }
 
-func Test_newCustomPriceGranuality(t *testing.T) {
+func TestNewCustomPriceGranuality(t *testing.T) {
 	type args struct {
 		customPGValue string
 	}
@@ -247,7 +247,7 @@ func Test_newCustomPriceGranuality(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := newCustomPriceGranuality(tt.args.customPGValue)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newCustomPriceGranuality() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)

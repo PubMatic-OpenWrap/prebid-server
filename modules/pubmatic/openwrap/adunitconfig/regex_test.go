@@ -3,13 +3,14 @@ package adunitconfig
 import (
 	"testing"
 
+	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
-func Test_getRegexMatch(t *testing.T) {
+func TestGetRegexMatch(t *testing.T) {
 	type args struct {
 		rctx     models.RequestCtx
 		slotName string
@@ -101,9 +102,8 @@ func Test_getRegexMatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getRegexMatch(tt.args.rctx, tt.args.slotName); got != tt.want {
-				t.Errorf("getRegexMatch() = %v, want %v", got, tt.want)
-			}
+			got := getRegexMatch(tt.args.rctx, tt.args.slotName)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

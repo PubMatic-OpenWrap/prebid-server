@@ -139,11 +139,7 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 func isMobile(deviceType adcom1.DeviceType, userAgentString string) bool {
 	if deviceType != 0 {
-		if deviceType == adcom1.DeviceMobile || deviceType == adcom1.DeviceTablet ||
-			deviceType == adcom1.DevicePhone {
-			return true
-		}
-		return false
+		return deviceType == adcom1.DeviceMobile || deviceType == adcom1.DeviceTablet || deviceType == adcom1.DevicePhone
 	}
 
 	if mobileDeviceUARegex.Match([]byte(strings.ToLower(userAgentString))) {
@@ -304,8 +300,5 @@ func getPubmaticErrorCode(standardNBR int) int {
 }
 
 func isCTV(userAgent string) bool {
-	if ctvRegex.Match([]byte(userAgent)) {
-		return true
-	}
-	return false
+	return ctvRegex.Match([]byte(userAgent))
 }

@@ -1,7 +1,6 @@
 package bidderparams
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -14,27 +13,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestImp(tagID string) openrtb2.Imp {
-	imp := openrtb2.Imp{
-		ID: "111",
-		Banner: &openrtb2.Banner{
-			W: ptrutil.ToPtr[int64](200),
-			H: ptrutil.ToPtr[int64](300),
-			Format: []openrtb2.Format{
-				{
-					W: 400,
-					H: 500,
+func getTestImp(tagID string, banner bool, video bool) openrtb2.Imp {
+	if banner {
+		return openrtb2.Imp{
+			ID: "111",
+			Banner: &openrtb2.Banner{
+				W: ptrutil.ToPtr[int64](200),
+				H: ptrutil.ToPtr[int64](300),
+				Format: []openrtb2.Format{
+					{
+						W: 400,
+						H: 500,
+					},
 				},
 			},
-		},
-		Video:  &openrtb2.Video{},
-		Native: &openrtb2.Native{},
-		TagID:  tagID,
+			TagID: tagID,
+		}
+	} else if video {
+		return openrtb2.Imp{
+			ID: "111",
+			Video: &openrtb2.Video{
+				W: 200,
+				H: 300,
+			},
+			TagID: tagID,
+		}
 	}
-	return imp
+
+	return openrtb2.Imp{
+		ID: "111",
+		Native: &openrtb2.Native{
+			Request: "test",
+			Ver:     "testVer",
+		},
+		TagID: tagID,
+	}
 }
 
-func Test_getImpExtPubMaticKeyWords(t *testing.T) {
+func TestGetImpExtPubMaticKeyWords(t *testing.T) {
 	type args struct {
 		impExt     models.ImpExtension
 		bidderCode string
@@ -141,7 +157,7 @@ func Test_getImpExtPubMaticKeyWords(t *testing.T) {
 	}
 }
 
-func Test_getDealTier(t *testing.T) {
+func TestGetDealTier(t *testing.T) {
 	type args struct {
 		impExt     models.ImpExtension
 		bidderCode string
@@ -270,7 +286,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						Div: "Div1",
 					},
 				},
-				imp:       getTestImp("/Test_Adunit1234"),
+				imp:       getTestImp("/Test_Adunit1234", true, false),
 				partnerID: 1,
 			},
 			setup: func() {
@@ -329,7 +345,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						Div: "Div1",
 					},
 				},
-				imp:       getTestImp("/Test_Adunit1234"),
+				imp:       getTestImp("/Test_Adunit1234", true, false),
 				partnerID: 1,
 			},
 			setup: func() {
@@ -395,7 +411,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						Div: "Div1",
 					},
 				},
-				imp:       getTestImp("/Test_Adunit1234"),
+				imp:       getTestImp("/Test_Adunit1234", true, false),
 				partnerID: 1,
 			},
 			setup: func() {
@@ -423,29 +439,153 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				wantErr:        false,
 			},
 		},
+		{
+			name: "valid_pubmatic_native_params",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					ProfileID:     123,
+					DisplayID:     1,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234", false, false),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@1x1": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@1x1",
+						SlotMappings: map[string]interface{}{
+							"site":                  "12313",
+							"adtag":                 "45343",
+							models.KEY_OW_SLOT_NAME: "/Test_Adunit1234@1x1",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@1x1",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@1x1","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				wantErr:        false,
+			},
+		},
+		{
+			name: "valid_pubmatic_video_params",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					ProfileID:     123,
+					DisplayID:     1,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234", false, true),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@0x0": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@0x0",
+						SlotMappings: map[string]interface{}{
+							"site":                  "12313",
+							"adtag":                 "45343",
+							models.KEY_OW_SLOT_NAME: "/Test_Adunit1234@0x0",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@0x0",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@0x0","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				wantErr:        false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			got, got1, got2, got3, err := PreparePubMaticParamsV25(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
-			fmt.Println(string(got3))
+			matchedSlot, matchedPattern, isRegexSlot, params, err := PreparePubMaticParamsV25(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
 			if (err != nil) != tt.want.wantErr {
-				t.Errorf("PreparePubMaticParamsV25() error = %v, wantErr %v", err, tt.want.wantErr)
+				assert.Equal(t, tt.want.wantErr, err != nil)
 				return
 			}
-			if got != tt.want.matchedSlot {
-				t.Errorf("PreparePubMaticParamsV25() got = %v, want %v", got, tt.want.matchedSlot)
-			}
-			if got1 != tt.want.matchedPattern {
-				t.Errorf("PreparePubMaticParamsV25() got1 = %v, want %v", got1, tt.want.matchedPattern)
-			}
-			if got2 != tt.want.isRegexSlot {
-				t.Errorf("PreparePubMaticParamsV25() got2 = %v, want %v", got2, tt.want.isRegexSlot)
-			}
-			assert.Equal(t, tt.want.params, got3)
-
+			assert.Equal(t, tt.want.matchedSlot, matchedSlot)
+			assert.Equal(t, tt.want.matchedPattern, matchedPattern)
+			assert.Equal(t, tt.want.isRegexSlot, isRegexSlot)
+			assert.Equal(t, tt.want.params, params)
 		})
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getMarketplaceBidders(t *testing.T) {
+func TestGetMarketplaceBidders(t *testing.T) {
 	type args struct {
 		reqABC           *openrtb_ext.ExtAlternateBidderCodes
 		partnerConfigMap map[int]map[string]string

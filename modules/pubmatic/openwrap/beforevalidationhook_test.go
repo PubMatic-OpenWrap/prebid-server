@@ -3,364 +3,60 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
+	"net/http"
 	"testing"
-	"time"
 
-	"git.pubmatic.com/PubMatic/go-common/util"
 	mock_cache "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
-func formVideoObject() *openrtb2.Video {
-	video := new(openrtb2.Video)
-	video.MIMEs = []string{"video/mp4", "video/mpeg"}
-	video.W = 640
-	video.H = 480
-	return video
+var rctx = models.RequestCtx{
+	ProfileID:                 1234,
+	DisplayID:                 1,
+	SSAuction:                 -1,
+	Platform:                  "in-app",
+	Debug:                     true,
+	UA:                        "go-test",
+	IP:                        "127.0.0.1",
+	IsCTVRequest:              false,
+	TrackerEndpoint:           "t.pubmatic.com",
+	VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+	UidCookie: &http.Cookie{
+		Name:  "uids",
+		Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+	},
+	KADUSERCookie: &http.Cookie{
+		Name:  "KADUSERCOOKIE",
+		Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+	},
+	OriginCookie:             "go-test",
+	Aliases:                  make(map[string]string),
+	ImpBidCtx:                make(map[string]models.ImpCtx),
+	PrebidBidderCode:         make(map[string]string),
+	BidderResponseTimeMillis: make(map[string]int),
+	ProfileIDStr:             "1234",
+	Endpoint:                 models.EndpointV25,
+	SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 }
 
-func formORtbV25Request(formatFlag bool, videoFlag bool) *openrtb2.BidRequest {
-	request := new(openrtb2.BidRequest)
-	banner := new(openrtb2.Banner)
-	if formatFlag == true {
-		formatObj1 := openrtb2.Format{
-			W: 728,
-			H: 90,
-		}
-
-		formatObj2 := openrtb2.Format{
-			W: 300,
-			H: 250,
-		} // openrtb2.Format{728, 90, nil}
-
-		formatArray := []openrtb2.Format{formatObj1, formatObj2}
-		banner.Format = formatArray
-
-		banner.W = new(int64)
-		*banner.W = 700
-		banner.H = new(int64)
-		*banner.H = 900
-
-	} else {
-		banner.W = new(int64)
-		*banner.W = 728
-		banner.H = new(int64)
-		*banner.H = 90
-	}
-
-	var imp openrtb2.Imp
-	if videoFlag == true {
-		video := formVideoObject()
-		imp.Video = video
-	}
-
-	imp.ID = "123"
-	imp.Banner = banner
-	imp.TagID = "adunit"
-
-	impWrapExt := new(models.ExtImpWrapper)
-	impWrapExt.Div = "div"
-
-	inImpExt := new(models.ImpExtension)
-	inImpExt.Wrapper = impWrapExt
-
-	bidderExt := map[string]*models.BidderExtension{
-		models.BidderPubMatic: &models.BidderExtension{
-			KeyWords: []models.KeyVal{
-				{
-					Key:    "pmzoneid",
-					Values: []string{"val1", "val2"},
-				},
-			},
-		},
-	}
-	inImpExt.Bidder = bidderExt
-	impExt, _ := json.Marshal(inImpExt)
-	imp.Ext = impExt
-	impArr := make([]openrtb2.Imp, 0)
-	impArr = append(impArr, imp)
-	request.ID = "123-456-789"
-	request.Imp = impArr
-
-	len := 2
-	request.WSeat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.WSeat[i] = fmt.Sprintf("Wseat_%d", i)
-	}
-
-	request.Cur = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.Cur[i] = fmt.Sprintf("cur_%d", i)
-	}
-
-	request.BAdv = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BAdv[i] = fmt.Sprintf("badv_%d", i)
-	}
-
-	request.BApp = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BApp[i] = fmt.Sprintf("bapp_%d", i)
-	}
-
-	request.BCat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BCat[i] = fmt.Sprintf("bcat_%d", i)
-	}
-
-	request.WLang = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.WLang[i] = fmt.Sprintf("Wlang_%d", i)
-	}
-
-	request.BSeat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BSeat[i] = fmt.Sprintf("Bseat_%d", i)
-	}
-
-	site := new(openrtb2.Site)
-	publisher := new(openrtb2.Publisher)
-	publisher.ID = "5890"
-	site.Publisher = publisher
-	site.Page = "www.test.com"
-
-	site.Domain = "test.com"
-
-	request.Site = site
-
-	request.Device = new(openrtb2.Device)
-	request.Device.IP = "123.145.167.10"
-	request.Device.UA = "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36"
-
-	request.User = new(openrtb2.User)
-	request.User.ID = "119208432"
-
-	request.User.BuyerUID = "1rwe432"
-
-	request.User.Yob = 1980
-
-	request.User.Gender = "F"
-
-	request.User.Geo = new(openrtb2.Geo)
-	request.User.Geo.Country = "US"
-
-	request.User.Geo.Region = "CA"
-
-	request.User.Geo.Metro = "90001"
-
-	request.User.Geo.City = "Alamo"
-
-	request.Source = new(openrtb2.Source)
-	request.Source.Ext = json.RawMessage(`{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}`)
-
-	wExt := new(models.RequestExt)
-	dmExt := new(models.RequestExtWrapper)
-	dmExt.ProfileId = 123
-	dmExt.VersionId = 1
-	dmExt.LoggerImpressionID = "test_display_wiid"
-	wExt.Wrapper = dmExt
-
-	reqExt, _ := json.Marshal(wExt)
-	request.Ext = reqExt
-
-	request.Test = 0
-	return request
-
-}
-
-func getExpectedORTBV25Request(test bool, owAPIBidReq openrtb2.BidRequest, prebidPlatform string) *openrtb2.BidRequest {
-	request := new(openrtb2.BidRequest)
-
-	request.TMax = 300
-
-	formatObj1 := openrtb2.Format{
-		W: 728,
-		H: 90,
-	}
-
-	formatObj2 := openrtb2.Format{
-		W: 300,
-		H: 250,
-	} // openrtb2.Format{728, 90, nil}
-
-	formatArray := []openrtb2.Format{formatObj1, formatObj2}
-
-	banner := new(openrtb2.Banner)
-	banner.Format = formatArray
-
-	var imp openrtb2.Imp
-	imp.ID = "123"
-	imp.Banner = banner
-	imp.TagID = "adunit"
-
-	imp.Banner.W = new(int64)
-	*imp.Banner.W = 700
-	imp.Banner.H = new(int64)
-	*imp.Banner.H = 900
-
-	// OTT-18 - adding deal tiers
-	impExt := `{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890","adSlot":"adunit@728x90","wrapper":{"version":1,"profile":123},"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}}}}`
-	imp.Ext = json.RawMessage(impExt)
-	impArr := make([]openrtb2.Imp, 0)
-	impArr = append(impArr, imp)
-	request.ID = "123-456-789"
-	request.Imp = impArr
-
-	len := 2
-	request.WSeat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.WSeat[i] = fmt.Sprintf("Wseat_%d", i)
-	}
-
-	/*
-		request.Cur = make([]string, len)
-		for i := 0; i < len; i++ {
-			request.Cur[i] = fmt.Sprintf("cur_%d", i)
-		}
-	*/
-	request.Cur = []string{"USD"}
-
-	request.BAdv = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BAdv[i] = fmt.Sprintf("badv_%d", i)
-	}
-
-	request.BApp = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BApp[i] = fmt.Sprintf("bapp_%d", i)
-	}
-
-	request.BCat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BCat[i] = fmt.Sprintf("bcat_%d", i)
-	}
-
-	request.WLang = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.WLang[i] = fmt.Sprintf("Wlang_%d", i)
-	}
-
-	request.BSeat = make([]string, len)
-	for i := 0; i < len; i++ {
-		request.BSeat[i] = fmt.Sprintf("Bseat_%d", i)
-	}
-
-	site := new(openrtb2.Site)
-	publisher := new(openrtb2.Publisher)
-	publisher.ID = "5890"
-	site.Publisher = publisher
-	site.Page = "www.test.com"
-
-	site.Domain = "test.com"
-
-	request.Site = site
-
-	request.Device = new(openrtb2.Device)
-	request.Device.IP = "123.145.167.10"
-	request.Device.UA = "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36"
-
-	request.User = new(openrtb2.User)
-	request.User.ID = "119208432"
-
-	request.User.BuyerUID = "1rwe432"
-
-	request.User.Yob = 1980
-
-	request.User.Gender = "F"
-
-	request.User.Geo = new(openrtb2.Geo)
-	request.User.Geo.Country = "US"
-
-	request.User.Geo.Region = "CA"
-
-	request.User.Geo.Metro = "90001"
-
-	request.User.Geo.City = "Alamo"
-
-	src := new(openrtb2.Source)
-	if request.ID != "" {
-		src.TID = request.ID
-	}
-
-	src.Ext = json.RawMessage(`{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}`)
-
-	request.Source = src
-
-	var prebidExt openrtb_ext.ExtRequestPrebid
-
-	alias := map[string]string{
-		models.BidderAdGenerationAlias:      string(openrtb_ext.BidderAdgeneration),
-		models.BidderDistrictmDMXAlias:      string(openrtb_ext.BidderDmx),
-		models.BidderPubMaticSecondaryAlias: string(openrtb_ext.BidderPubmatic),
-		models.BidderDistrictmAlias:         string(openrtb_ext.BidderAppnexus),
-		models.BidderAndBeyondAlias:         string(openrtb_ext.BidderAdkernel),
-		models.BidderMediaFuseAlias:         string(openrtb_ext.BidderAppnexus),
-	}
-
-	prebidExt.Aliases = alias
-	priceGranularity, _ := openrtb_ext.NewPriceGranularityFromLegacyID("auto")
-	prebidExt.Targeting = &openrtb_ext.ExtRequestTargeting{
-		PriceGranularity:  &priceGranularity,
-		IncludeWinners:    util.GetBoolPtr(true),
-		IncludeBidderKeys: util.GetBoolPtr(true),
-	}
-	prebidExt.BidderParams, _ = json.Marshal(map[string]map[string]interface{}{
-		"pubmatic": {
-			"wiid": "test_wiid",
-		},
-	})
-
-	prebidExt.Floors = &openrtb_ext.PriceFloorRules{}
-	prebidExt.Floors.Enabled = new(bool)
-	*prebidExt.Floors.Enabled = true
-	prebidExt.Floors.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
-	prebidExt.Floors.Enforcement.EnforcePBS = new(bool)
-	*prebidExt.Floors.Enforcement.EnforcePBS = true
-
-	prebidExt.ReturnAllBidStatus = true
-
-	//set expected custom macros for video tracking events
-	if nil != owAPIBidReq.Imp[0].Video {
-
-		reqExt := models.RequestExt{}
-		json.Unmarshal(owAPIBidReq.Ext, reqExt)
-		macros := map[string]string{
-			"[PROFILE_ID]":            strconv.Itoa(reqExt.Wrapper.ProfileId),
-			"[PROFILE_VERSION]":       strconv.Itoa(reqExt.Wrapper.VersionId),
-			"[UNIX_TIMESTAMP]":        strconv.Itoa(int(time.Now().Unix())),
-			"[PLATFORM]":              fmt.Sprintf("%v", GetDevicePlatform("", &owAPIBidReq, prebidPlatform, nil)),
-			"[WRAPPER_IMPRESSION_ID]": "test_wiid",
-		}
-		prebidExt.Macros = macros
-	}
-
-	var pbExt openrtb_ext.ExtOWRequest
-	pbExt.Prebid = prebidExt
-	request.Ext = pbExt
-
-	if test {
-		request.Test = new(int)
-		*request.Test = 1
-	}
-
-	return request
-}
-
-func getTestBidRequest() *openrtb2.BidRequest {
+func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 
 	testReq := &openrtb2.BidRequest{}
 
@@ -380,17 +76,27 @@ func getTestBidRequest() *openrtb2.BidRequest {
 			},
 		},
 	}
-
-	testReq.App = &openrtb2.App{
-		Publisher: &openrtb2.Publisher{
-			ID: "1010",
-		},
-		Content: &openrtb2.Content{
-			Language: "english",
-		},
+	if !isSite {
+		testReq.App = &openrtb2.App{
+			Publisher: &openrtb2.Publisher{
+				ID: "1010",
+			},
+			Content: &openrtb2.Content{
+				Language: "english",
+			},
+		}
+	} else {
+		testReq.Site = &openrtb2.Site{
+			Publisher: &openrtb2.Publisher{
+				ID: "1010",
+			},
+			Content: &openrtb2.Content{
+				Language: "english",
+			},
+		}
 	}
 	testReq.Cur = []string{}
-
+	testReq.WLang = []string{"english", "hindi"}
 	testReq.Device = &openrtb2.Device{
 		DeviceType: 1,
 		Language:   "english",
@@ -398,7 +104,7 @@ func getTestBidRequest() *openrtb2.BidRequest {
 	return testReq
 }
 
-func Test_getPageURL(t *testing.T) {
+func TestGetPageURL(t *testing.T) {
 	type args struct {
 		bidRequest *openrtb2.BidRequest
 	}
@@ -439,14 +145,13 @@ func Test_getPageURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getPageURL(tt.args.bidRequest); got != tt.want {
-				t.Errorf("getPageURL() = %v, want %v", got, tt.want)
-			}
+			got := getPageURL(tt.args.bidRequest)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_getVASTEventMacros(t *testing.T) {
+func TestGetVASTEventMacros(t *testing.T) {
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -506,7 +211,7 @@ func Test_getVASTEventMacros(t *testing.T) {
 	}
 }
 
-func Test_updateAliasGVLIds(t *testing.T) {
+func TestUpdateAliasGVLIds(t *testing.T) {
 	type args struct {
 		aliasgvlids   map[string]uint16
 		bidderCode    string
@@ -775,14 +480,13 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 				cache:        tt.fields.cache,
 				metricEngine: tt.fields.metricEngine,
 			}
-			if got := m.setTimeout(tt.args.rCtx); got != tt.want {
-				t.Errorf("OpenWrap.setTimeout() = %v, want %v", got, tt.want)
-			}
+			got := m.setTimeout(tt.args.rCtx)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_isSendAllBids(t *testing.T) {
+func TestIsSendAllBids(t *testing.T) {
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -842,14 +546,13 @@ func Test_isSendAllBids(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isSendAllBids(tt.args.rctx); got != tt.want {
-				t.Errorf("isSendAllBids() = %v, want %v", got, tt.want)
-			}
+			got := isSendAllBids(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_getValidLanguage(t *testing.T) {
+func TestGetValidLanguage(t *testing.T) {
 	type args struct {
 		language string
 	}
@@ -882,14 +585,13 @@ func Test_getValidLanguage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getValidLanguage(tt.args.language); got != tt.want {
-				t.Errorf("getValidLanguage() = %v, want %v", got, tt.want)
-			}
+			got := getValidLanguage(tt.args.language)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_isSlotEnabled(t *testing.T) {
+func TestIsSlotEnabled(t *testing.T) {
 	type args struct {
 		videoAdUnitCtx  models.AdUnitCtx
 		bannerAdUnitCtx models.AdUnitCtx
@@ -968,14 +670,13 @@ func Test_isSlotEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isSlotEnabled(tt.args.videoAdUnitCtx, tt.args.bannerAdUnitCtx); got != tt.want {
-				t.Errorf("isSlotEnabled() = %v, want %v", got, tt.want)
-			}
+			got := isSlotEnabled(tt.args.videoAdUnitCtx, tt.args.bannerAdUnitCtx)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_getPubID(t *testing.T) {
+func TestGetPubID(t *testing.T) {
 	type args struct {
 		bidRequest openrtb2.BidRequest
 	}
@@ -1058,7 +759,7 @@ func Test_getPubID(t *testing.T) {
 				bidRequest: openrtb2.BidRequest{
 					Site: &openrtb2.Site{
 						Publisher: &openrtb2.Publisher{
-							ID: "5800",
+							ID: "1234",
 						},
 					},
 					App: &openrtb2.App{
@@ -1070,7 +771,7 @@ func Test_getPubID(t *testing.T) {
 			},
 			want: want{
 				wantErr: false,
-				pubID:   5800,
+				pubID:   1234,
 			},
 		},
 	}
@@ -1078,11 +779,11 @@ func Test_getPubID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := getPubID(tt.args.bidRequest)
 			if (err != nil) != tt.want.wantErr {
-				t.Errorf("getPubID() error = %v, wantErr %v", err, tt.want.wantErr)
+				assert.Equal(t, tt.want.wantErr, err != nil)
 				return
 			}
 			if got != tt.want.pubID {
-				t.Errorf("getPubID() = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want.pubID, got)
 			}
 		})
 	}
@@ -1106,20 +807,25 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test",
+			name: "Request_with_App_object",
 			args: args{
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
 							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
 						},
 					},
 					TMax:     500,
 					IP:       "127.0.0.1",
 					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
 				},
-				bidRequest: getTestBidRequest(),
+				bidRequest: getTestBidRequest(false),
 			},
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
@@ -1148,8 +854,74 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 					Language:   "en",
 					DeviceType: 1,
 				},
-				User: &openrtb2.User{},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+				},
 				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Request_with_Site_object",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: getTestBidRequest(true),
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](200),
+							H: ptrutil.ToPtr[int64](300),
+						},
+						Video: &openrtb2.Video{
+							W:     200,
+							H:     300,
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+				},
+				Site: &openrtb2.Site{
 					Publisher: &openrtb2.Publisher{
 						ID: "1010",
 					},
@@ -1170,7 +942,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			}
 			got, err := m.applyProfileChanges(tt.args.rctx, tt.args.bidRequest)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OpenWrap.applyProfileChanges() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
@@ -1592,7 +1364,7 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "imp_has_banner_object_but_adunitConfig_banner_is_nil._imp_video_will_not_be_updated",
+			name: "imp_has_banner_object_but_adunitConfig_banner_is_nil._imp_banner_will_not_be_updated",
 			args: args{
 				rCtx: models.RequestCtx{
 					ImpBidCtx: map[string]models.ImpCtx{
@@ -1664,7 +1436,7 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 	}
 }
 
-func Test_getDomainFromUrl(t *testing.T) {
+func TestGetDomainFromUrl(t *testing.T) {
 	type args struct {
 		pageUrl string
 	}
@@ -1719,13 +1491,13 @@ func Test_getDomainFromUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getDomainFromUrl(tt.args.pageUrl); got != tt.want {
-				t.Errorf("getDomainFromUrl() = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
 }
 
-func Test_updateRequestExtBidderParamsPubmatic(t *testing.T) {
+func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	type args struct {
 		bidderParams json.RawMessage
 		cookie       string
@@ -1782,7 +1554,7 @@ func Test_updateRequestExtBidderParamsPubmatic(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("updateRequestExtBidderParamsPubmatic() error = %v, wantErr %v", err, tt.wantErr)
+				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
@@ -1795,6 +1567,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type fields struct {
 		cfg          config.Config
@@ -1802,69 +1575,635 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		metricEngine metrics.MetricsEngine
 	}
 	type args struct {
-		ctx       context.Context
-		moduleCtx hookstage.ModuleInvocationContext
-		payload   hookstage.BeforeValidationRequestPayload
+		ctx        context.Context
+		moduleCtx  hookstage.ModuleInvocationContext
+		payload    hookstage.BeforeValidationRequestPayload
+		bidrequest json.RawMessage
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    hookstage.HookResult[hookstage.BeforeValidationRequestPayload]
-		setup   func()
-		wantErr bool
+		name                 string
+		fields               fields
+		args                 args
+		want                 hookstage.HookResult[hookstage.BeforeValidationRequestPayload]
+		setup                func()
+		isRequestNotRejected bool
+		wantErr              bool
 	}{
 		{
-			name: "Pubmatic_AdUnit",
+			name: "empty_module_context",
+			args: args{
+				ctx:       context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{},
+			},
 			fields: fields{
-				cfg:   config.Config{},
-				cache: mockCache,
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        true,
+				DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "rctx_is_not_present",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"test_rctx": "test",
+					},
+				},
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        true,
+				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid_PubID_in_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"test"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPublisherID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("", nbr.InvalidPublisherID)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidPublisherID,
+				Errors:  []string{"ErrInvalidPublisherID"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid_request_ext",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequest))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequest)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidRequest,
+				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error_in_getting_profile_data",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+						models.DisplayVersionID: "1",
+					},
+				}, errors.New("test"))
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidProfileConfiguration)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidProfileConfiguration,
+				Errors:  []string{"failed to get profile data: test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "got_empty_profileData_from_DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidProfileConfiguration)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidProfileConfiguration,
+				Errors:  []string{"failed to get profile data: received empty data"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "platform_is_not_present_in_request_then_reject_the_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidPlatform)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidPlatform,
+				Errors:  []string{"failed to get platform data"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "All_partners_throttled",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+						models.THROTTLE:            "0",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnerThrottled)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.AllPartnerThrottled,
+				Errors:  []string{"All adapters throttled"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "TagID_not_prsent_in_imp",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidImpressionTagID,
+				Errors:  []string{"tagid missing for imp: 123"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid_impExt",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":"1"}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InternalError)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InternalError,
+				Errors:  []string{"failed to parse imp.ext: 123"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "allSotsDisabled",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							ProfileID:                 1234,
+							DisplayID:                 1,
+							SSAuction:                 -1,
+							Platform:                  "in-app",
+							Debug:                     true,
+							UA:                        "go-test",
+							IP:                        "127.0.0.1",
+							IsCTVRequest:              false,
+							TrackerEndpoint:           "t.pubmatic.com",
+							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							ProfileIDStr:             "1234",
+							Endpoint:                 models.EndpointV25,
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
+					ConfigPattern: "_AU_@_W_x_H_",
+					Config: map[string]*adunitconfig.AdConfig{
+						"adunit@700x900": {
+							Banner: &adunitconfig.Banner{
+								Enabled: ptrutil.ToPtr(false),
+							},
+						},
+						"adunit@640x480": {
+							Video: &adunitconfig.Video{
+								Enabled: ptrutil.ToPtr(false),
+							},
+						},
+					},
+				})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllSlotsDisabled))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllSlotsDisabled)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
+				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.AllSlotsDisabled,
+				Errors:  []string{"All slots disabled"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no_serviceSideBidderPresent",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							ProfileID:                 1234,
+							DisplayID:                 1,
+							SSAuction:                 -1,
+							Platform:                  "in-app",
+							Debug:                     true,
+							UA:                        "go-test",
+							IP:                        "127.0.0.1",
+							IsCTVRequest:              false,
+							TrackerEndpoint:           "t.pubmatic.com",
+							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							ProfileIDStr:             "1234",
+							Endpoint:                 models.EndpointV25,
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.ServerSidePartnerNotConfigured)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.ServerSidePartnerNotConfigured,
+				Errors:  []string{"server side partner not found"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "happy_path_request_not_rejected_and_successfully_updted_from_DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							ProfileID:                 1234,
+							DisplayID:                 1,
+							SSAuction:                 -1,
+							Platform:                  "in-app",
+							Debug:                     true,
+							UA:                        "go-test",
+							IP:                        "127.0.0.1",
+							IsCTVRequest:              false,
+							TrackerEndpoint:           "t.pubmatic.com",
+							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							ProfileIDStr:             "1234",
+							Endpoint:                 models.EndpointV25,
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
 			},
 			setup: func() {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
-					"div@728x90": {
-						SlotName: "div@728x90",
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
 						SlotMappings: map[string]interface{}{
 							models.SITE_CACHE_KEY: "12313",
 							models.TAG_CACHE_KEY:  "45343",
 						},
 					},
 				})
-
 				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
-					OrderedSlotList: []string{"div@728x90", "div@300x25"},
+					OrderedSlotList: []string{"adunit@700x900"},
 					HashValueMap: map[string]string{
-						"div@728x90": "2aa34b52a9e941c1594af7565e599c8d",
-						"div@300x25": "2aa34b52a9e941c1594af7565e599c8d",
+						"adunit@700x900": "1232433543534543",
 					},
 				})
-
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 			},
-			args: args{
-				ctx:       context.Background(),
-				moduleCtx: hookstage.ModuleInvocationContext{},
-				payload: hookstage.BeforeValidationRequestPayload{
-					BidRequest: formORtbV25Request(true, false),
-				},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        false,
+				NbrCode:       0,
+				ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
+				DebugMessages: []string{"new imp: {\"123\":{\"ImpID\":\"\",\"TagID\":\"adunit\",\"Div\":\"\",\"Secure\":0,\"IsRewardInventory\":null,\"Banner\":true,\"Video\":{\"mimes\":[\"video/mp4\",\"video/mpeg\"],\"w\":640,\"h\":480},\"IncomingSlots\":[\"700x900\",\"728x90\",\"300x250\",\"640x480v\"],\"Type\":\"video\",\"Bidders\":{\"appnexus\":{\"PartnerID\":2,\"PrebidBidderCode\":\"appnexus\",\"MatchedSlot\":\"adunit@700x900\",\"KGP\":\"_AU_@_W_x_H_\",\"KGPV\":\"\",\"IsRegex\":false,\"Params\":{\"placementId\":0,\"site\":\"12313\",\"adtag\":\"45343\"}}},\"NonMapped\":{},\"NewExt\":{\"prebid\":{\"bidder\":{\"appnexus\":{\"placementId\":0,\"site\":\"12313\",\"adtag\":\"45343\"}}}},\"BidCtx\":{},\"BannerAdUnitCtx\":{\"MatchedSlot\":\"\",\"IsRegex\":false,\"MatchedRegex\":\"\",\"SelectedSlotAdUnitConfig\":null,\"AppliedSlotAdUnitConfig\":null,\"UsingDefaultConfig\":false,\"AllowedConnectionTypes\":null},\"VideoAdUnitCtx\":{\"MatchedSlot\":\"\",\"IsRegex\":false,\"MatchedRegex\":\"\",\"SelectedSlotAdUnitConfig\":null,\"AppliedSlotAdUnitConfig\":null,\"UsingDefaultConfig\":false,\"AllowedConnectionTypes\":null}}}", "new request.ext: {\"prebid\":{\"bidderparams\":{\"pubmatic\":{\"wiid\":\"\"}},\"debug\":true,\"targeting\":{\"pricegranularity\":{\"precision\":2,\"ranges\":[{\"min\":0,\"max\":5,\"increment\":0.05},{\"min\":5,\"max\":10,\"increment\":0.1},{\"min\":10,\"max\":20,\"increment\":0.5}]},\"mediatypepricegranularity\":{},\"includewinners\":true,\"includebidderkeys\":true},\"floors\":{\"enforcement\":{\"enforcepbs\":true},\"enabled\":true},\"macros\":{\"[PLATFORM]\":\"3\",\"[PROFILE_ID]\":\"1234\",\"[PROFILE_VERSION]\":\"1\",\"[UNIX_TIMESTAMP]\":\"0\",\"[WRAPPER_IMPRESSION_ID]\":\"\"}}}"},
+				AnalyticsTags: hookanalytics.Analytics{},
 			},
+			wantErr:              false,
+			isRequestNotRejected: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			ow_adapters.InitBidders(tt.fields.cfg)
 			m := OpenWrap{
 				cfg:          tt.fields.cfg,
 				cache:        tt.fields.cache,
 				metricEngine: tt.fields.metricEngine,
 			}
+			bidrequest := &openrtb2.BidRequest{}
+			json.Unmarshal(tt.args.bidrequest, bidrequest)
+			tt.args.payload.BidRequest = bidrequest
 			got, err := m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("OpenWrap.handleBeforeValidationHook() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.isRequestNotRejected {
+				assert.Equal(t, tt.want.Reject, got.Reject)
+				assert.Equal(t, tt.want.NbrCode, got.NbrCode)
+				assert.NotEmpty(t, tt.want.DebugMessages)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OpenWrap.handleBeforeValidationHook() = %v, want %v", got, tt.want)
+			fmt.Println(got.DebugMessages)
+			if (err != nil) != tt.wantErr {
+				assert.Equal(t, tt.wantErr, err != nil)
+				return
 			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
