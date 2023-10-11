@@ -1,9 +1,9 @@
 package tracker
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -43,7 +43,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
-				errs = errors.Wrap(errs, errMsg)
+				errs = models.ErrorWrap(errs, errors.New(errMsg))
 			}
 
 		}

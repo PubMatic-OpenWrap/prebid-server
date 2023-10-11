@@ -1,6 +1,6 @@
 package models
 
-import "github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+import "github.com/prebid/prebid-server/openrtb_ext"
 
 // impression tracker url parameters
 const (
