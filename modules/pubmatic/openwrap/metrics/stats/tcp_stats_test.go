@@ -722,12 +722,16 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyCTVRequests], "5890", "web"): 1,
+					fmt.Sprintf(statKeys[statsKeyCTVRequests], "5890", "app"):     1,
+					fmt.Sprintf(statKeys[statsKeyCTVRequests], "5890", "app"):     1,
+					fmt.Sprintf(statKeys[statsKeyCTVRequests], "5890", "display"): 1,
 				},
-				channelSize: 1,
+				channelSize: 3,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordCTVRequests("5890", "web")
+				st.RecordCTVRequests("5890", "app")
+				st.RecordCTVRequests("5890", "in-app")
+				st.RecordCTVRequests("5890", "display")
 			},
 		},
 		{
