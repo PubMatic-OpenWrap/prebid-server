@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/hooks/hookexecution"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -168,6 +169,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 			if impExt.Gpid != "" {
 				imp.TagID = impExt.Gpid
+				if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
+					imp.TagID = impExt.Gpid[:idx]
+				}
 			}
 		}
 		if imp.TagID == "" {
