@@ -230,6 +230,9 @@ func (data *ExternalCache) validate(errs []error) []error {
 // LimitAuctionTimeout returns the min of requested or cfg.MaxAuctionTimeout.
 // Both values treat "0" as "infinite".
 func (cfg *AuctionTimeouts) LimitAuctionTimeout(requested time.Duration) time.Duration {
+	glog.Infof("Requested :: %d", requested.Milliseconds())
+
+	requested = time.Duration(1500) * time.Millisecond
 	if requested == 0 && cfg.Default != 0 {
 		return time.Duration(cfg.Default) * time.Millisecond
 	}
