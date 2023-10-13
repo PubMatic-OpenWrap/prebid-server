@@ -21,7 +21,7 @@ func doUnwrapandUpdateBid(m VastUnwrapModule, bid *adapters.TypedBid, userAgent 
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			glog.Error("AdM:" + bid.Bid.AdM + ". stacktrace:" + string(debug.Stack()))
+			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))
 		}
 		respTime := time.Since(startTime)
 		m.MetricsEngine.RecordRequestTime(bidder, respTime)

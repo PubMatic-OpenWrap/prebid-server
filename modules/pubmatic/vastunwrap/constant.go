@@ -1,10 +1,6 @@
 package vastunwrap
 
 const (
-	OpenWrapAuction     = "/pbs/openrtb2/auction"
-	OpenWrapV25         = "/openrtb/2.5"
-	OpenWrapVideo       = "/openrtb/video"
-	OpenWrapAmp         = "/openrtb/amp"
 	VastUnwrapEnabled   = "enableVastUnwrapper"
 	RequestContext      = "rctx"
 	UserAgent           = "User-Agent"

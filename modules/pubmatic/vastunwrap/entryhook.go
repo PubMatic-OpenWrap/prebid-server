@@ -26,7 +26,7 @@ func handleEntrypointHook(
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
-			glog.Error("body:" + string(payload.Body) + ". stacktrace:" + string(debug.Stack()))
+			glog.Errorf("body:[%s] Error:[%v] stacktrace:[%s]", string(payload.Body), r, string(debug.Stack()))
 		}
 	}()
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
