@@ -94,6 +94,11 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 		len(adButlerResp.Bids) > 0) {
 		impID := internalRequest.Imp[0].ID
 		responseF := a.GetBidderResponse(internalRequest, &adButlerResp, impID)
+		if len(responseF.Bids) <= 0 {
+			return nil, []error{&errortypes.NoValidBid{
+				Message: "No Valid Bid For the given Request",
+			}}
+		}
 		return responseF, errors
 	}
 
@@ -104,7 +109,7 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 
 }
 
-func EncodeURl(url string) string{
+func EncodeURl(url string) string {
 	str := base64.StdEncoding.EncodeToString([]byte(url))
 	return str
 }
@@ -113,27 +118,27 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(adButlerResp.Bids))
 	var commerceExt *openrtb_ext.ExtImpCommerce
-    var adbutlerID, zoneID, adbUID string
+	var adbutlerID, zoneID, adbUID string
 	var configValueMap = make(map[string]string)
 
 	if len(request.Imp) > 0 {
-		commerceExt, _ = a.getImpressionExt(&(request.Imp[0]))	
-		for _,obj := range commerceExt.Bidder.CustomConfig {
+		commerceExt, _ = a.getImpressionExt(&(request.Imp[0]))
+		for _, obj := range commerceExt.Bidder.CustomConfig {
 			configValueMap[obj.Key] = obj.Value
-		}	
-	
-		val, ok := configValueMap[BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
+		}
+
+		val, ok := configValueMap[BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
 		if ok {
 			adbutlerID = val
 		}
-	
-		val, ok = configValueMap[BIDDERDETAILS_PREFIX + BD_ZONE_ID]
+
+		val, ok = configValueMap[BIDDERDETAILS_PREFIX+BD_ZONE_ID]
 		if ok {
 			zoneID = val
-		} 
+		}
 		adbUID = request.User.ID
-	
-    } 
+
+	}
 
 	for index, adButlerBid := range adButlerResp.Bids {
 
@@ -145,7 +150,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 
 		var productid string
 		//Retailer Specific ProductID is present from Product Feed Template
-		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_PRODUCTID]
+		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
 		if ok {
 			productid = adButlerBid.ProductData[val]
 		}
@@ -157,9 +162,13 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		for _, beacon := range adButlerBid.Beacons {
 			switch beacon.Type {
 			case BEACONTYPE_IMP:
-				impressionUrl = IMP_KEY + EncodeURl(beacon.TrackingUrl)
+				if beacon.TrackingUrl != "" {
+					impressionUrl = IMP_KEY + EncodeURl(beacon.TrackingUrl)
+				}
 			case BEACONTYPE_CLICK:
-				clickUrl = CLICK_KEY + EncodeURl(beacon.TrackingUrl)
+				if beacon.TrackingUrl != "" {
+					clickUrl = CLICK_KEY + EncodeURl(beacon.TrackingUrl)
+				}
 			}
 		}
 
@@ -180,6 +189,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			IURL:  impressionUrl,
 		}
 
+		if !areMandatoryFieldsPresent(bidExt, bid) {
+			continue
+		}
+
 		AddDefaultFields(bid)
 
 		bidExtJSON, err1 := json.Marshal(bidExt)
@@ -191,19 +204,32 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			Bid:  bid,
 			Seat: openrtb_ext.BidderName(SEAT_ADBUTLER),
 		}
+
 		bidResponse.Bids = append(bidResponse.Bids, typedbid)
 	}
 	return bidResponse
 }
 
-func GenerateConversionUrl(adbutlerID, zoneID,adbUID, productID string) string {
-	/*var hostname string
-	url, err := url.Parse(clickurl)
-    if err == nil {
-		hostname = url.Hostname()
-	 }
+func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2.Bid) bool {
 
-	conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)*/
+	if bid.Price == 0 || bid.IURL == "" {
+		return false
+	}
+	if bidExt.ProductId == "" || bidExt.ClickUrl == "" {
+		return false
+	}
+
+	return true
+}
+
+func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string {
+	/*var hostname string
+		url, err := url.Parse(clickurl)
+	    if err == nil {
+			hostname = url.Hostname()
+		 }
+
+		conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)*/
 	conversionUrl := strings.Replace(CONVERSION_URL, CONV_ADBUTLERID, adbutlerID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ZONEID, zoneID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ADBUID, adbUID, 1)
