@@ -38,6 +38,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
+	if rctx.Endpoint == models.EndpointOWS2S {
+		return result, nil
+	}
+
 	RecordPublisherPartnerNoCookieStats(rctx)
 
 	// cache rctx for analytics

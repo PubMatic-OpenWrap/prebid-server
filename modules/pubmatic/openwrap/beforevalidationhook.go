@@ -772,6 +772,9 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx) int64 {
 // if ssauction flag is not set and platform is dislay, then by default send all bids
 // if ssauction flag is not set and platform is in-app, then check if profile setting sendAllBids is set to 1
 func isSendAllBids(rctx models.RequestCtx) bool {
+	if rctx.SSAuction == -1 && rctx.Platform == models.PLATFORM_DISPLAY { //Need to check ssAuction is always=-1
+		return true
+	}
 
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {

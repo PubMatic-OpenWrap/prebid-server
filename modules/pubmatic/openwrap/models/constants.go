@@ -400,6 +400,7 @@ const (
 	EndpointJson    = "json"
 	EndpointORTB    = "ortb"
 	EndpointVAST    = "vast"
+	EndpointOWS2S   = "ows2s"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"
