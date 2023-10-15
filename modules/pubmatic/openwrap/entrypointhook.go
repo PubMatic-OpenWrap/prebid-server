@@ -38,10 +38,11 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	switch payload.Request.URL.Path {
 	case hookexecution.EndpointAuction:
-		if models.IsHybrid(payload.Body) { // new hybrid api should not execute module
+		if models.IsHybrid(payload.Body) && source != "pbjs" { // new hybrid api should not execute module
 			return result, nil
 		}
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+		//Flow for the OWS2S endpoint
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 		endpoint = models.EndpointOWS2S
 	case OpenWrapAuction: // legacy hybrid api should not execute module
 		m.metricEngine.RecordPBSAuctionRequestsStats()

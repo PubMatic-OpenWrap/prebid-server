@@ -24,14 +24,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		Reject: true,
-	}
+	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+	result.Reject = true
 	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
@@ -416,7 +415,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
-		bidRequest.Cur = []string{cur}
+		bidRequest.Cur = append(bidRequest.Cur, cur)
 	}
 
 	if bidRequest.TMax == 0 {
