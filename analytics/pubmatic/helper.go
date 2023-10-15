@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -56,20 +55,6 @@ func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) st
 	return finalLoggerURL
 }
 
-func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
-	if nil == content {
-		return
-	}
-
-	wlog.Content = &Content{
-		ID:      content.ID,
-		Episode: int(content.Episode),
-		Title:   content.Title,
-		Series:  content.Series,
-		Season:  content.Season,
-		Cat:     content.Cat,
-	}
-}
 func getSizeForPlatform(width, height int64, platform string) string {
 	s := models.GetSize(width, height)
 	if platform == models.PLATFORM_VIDEO {

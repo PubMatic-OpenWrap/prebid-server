@@ -74,6 +74,8 @@ type RequestCtx struct {
 	Endpoint               string
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
+
+	DCName string
 }
 
 type OwBid struct {

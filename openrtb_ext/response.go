@@ -126,8 +126,9 @@ type NonBidObject struct {
 	Dur     int64                   `json:"dur,omitempty"`
 	MType   openrtb2.MarkupType     `json:"mtype,omitempty"`
 
-	OriginalBidCPM float64 `json:"origbidcpm,omitempty"`
-	OriginalBidCur string  `json:"origbidcur,omitempty"`
+	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
+	OriginalBidCur    string  `json:"origbidcur,omitempty"`
+	OriginalBidCPMUSD float64 `json:"-,omitempty"`
 
 	//OW specific fields
 	ID                string              `json:"id"`

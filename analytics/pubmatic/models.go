@@ -61,6 +61,15 @@ func GetRevenueShare(partnerConfig map[string]string) float64 {
 	return revShare
 }
 
+// GetGdprEnabledFlag returns gdpr flag set in the partner config
+func GetGdprEnabledFlag(partnerConfigMap map[int]map[string]string) int {
+	gdpr := 0
+	if val := partnerConfigMap[models.VersionLevelConfigID][models.GDPR_ENABLED]; val != "" {
+		gdpr, _ = strconv.Atoi(val)
+	}
+	return gdpr
+}
+
 func GetNetEcpm(price float64, revShare float64) float64 {
 	if revShare == 0 {
 		return toFixed(price, BID_PRECISION)
@@ -82,6 +91,12 @@ func round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }
 
+// Round value to 2 digit
+func roundToTwoDigit(value float64) float64 {
+	output := math.Pow(10, float64(2))
+	return float64(math.Round(value*output)) / output
+}
+
 func ExtractDomain(rawURL string) (string, error) {
 	if !strings.HasPrefix(rawURL, "http") {
 		rawURL = "http://" + rawURL
@@ -99,6 +114,7 @@ func getSlotName(impID string, tagID string) string {
 	return fmt.Sprintf("%s_%s", impID, tagID)
 }
 
+// TODO : we need this ?
 func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
 	//get unique sizes from banner.format and banner.w and banner.h
 	sizes := make(map[string]bool)

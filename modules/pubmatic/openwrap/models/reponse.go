@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/openrtb/v19/adcom1"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -23,9 +24,11 @@ type BidExt struct {
 	Winner      int             `json:"winner,omitempty"`
 	NetECPM     float64         `json:"netecpm,omitempty"`
 
-	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
-	OriginalBidCur    string  `json:"origbidcur,omitempty"`
-	OriginalBidCPMUSD float64 `json:"origbidcpmusd,omitempty"`
+	OriginalBidCPM    float64                    `json:"origbidcpm,omitempty"`
+	OriginalBidCur    string                     `json:"origbidcur,omitempty"`
+	OriginalBidCPMUSD float64                    `json:"origbidcpmusd,omitempty"`
+	Nbr               *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // Reason for not bidding
+
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video

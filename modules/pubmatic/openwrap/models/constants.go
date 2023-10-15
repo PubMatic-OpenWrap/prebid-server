@@ -447,3 +447,12 @@ const (
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 )
+
+// constants for owlogger Integration Type
+const (
+	TypeTag    = "tag"
+	TypeInline = "inline"
+	TypeAmp    = "amp"
+	TypeSDK    = "sdk"
+	TypeS2S    = "s2s"
+)

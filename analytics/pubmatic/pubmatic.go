@@ -2,13 +2,11 @@ package pubmatic
 
 import (
 	"runtime/debug"
-	"strconv"
 	"sync"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 type RequestType string
@@ -89,13 +87,4 @@ func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
 	})
 
 	return ow
-}
-
-// GetGdprEnabledFlag returns gdpr flag set in the partner config
-func GetGdprEnabledFlag(partnerConfigMap map[int]map[string]string) int {
-	gdpr := 0
-	if val := partnerConfigMap[models.VersionLevelConfigID][models.GDPR_ENABLED]; val != "" {
-		gdpr, _ = strconv.Atoi(val)
-	}
-	return gdpr
 }

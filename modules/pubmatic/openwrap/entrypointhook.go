@@ -102,6 +102,7 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
+		DCName:                    m.cfg.Server.DCName,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
