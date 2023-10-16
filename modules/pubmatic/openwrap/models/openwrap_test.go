@@ -56,7 +56,7 @@ func TestRequestCtx_GetVersionLevelKey(t *testing.T) {
 		Source                    string
 		Origin                    string
 		SendAllBids               bool
-		WinningBids               map[string]OwBid
+		WinningBids               map[string][]OwBid
 		DroppedBids               map[string][]openrtb2.Bid
 		DefaultBids               map[string]map[string][]openrtb2.Bid
 		SeatNonBids               map[string][]openrtb_ext.NonBid
