@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -162,17 +161,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == hookexecution.EndpointAuction { // TODO: check with exact endpoint name
-			//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
-			if imp.TagID == "" {
-				imp.TagID = impExt.Data.PbAdslot
-			}
-			if impExt.Gpid != "" {
-				imp.TagID = impExt.Gpid
-				if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
-					imp.TagID = impExt.Gpid[:idx]
-				}
-			}
+		if rCtx.Endpoint == models.EndpointOWS2S {
+			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
 			result.NbrCode = nbr.InvalidImpressionTagID
@@ -833,4 +823,19 @@ func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
 	return pubID, err
+}
+
+func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
+	//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
+	tagId := imp.TagID
+	if imp.TagID == "" {
+		tagId = impExt.Data.PbAdslot
+	}
+	if impExt.Gpid != "" {
+		tagId = impExt.Gpid
+		if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
+			tagId = impExt.Gpid[:idx]
+		}
+	}
+	return tagId
 }
