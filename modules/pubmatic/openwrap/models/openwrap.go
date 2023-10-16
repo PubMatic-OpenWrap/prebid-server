@@ -101,6 +101,7 @@ type ImpCtx struct {
 	IsRewardInventory *int8
 	Banner            bool
 	Video             *openrtb2.Video
+	Native            *openrtb2.Native
 	IncomingSlots     []string
 	Type              string // banner, video, native, etc
 	Bidders           map[string]PartnerData
@@ -111,6 +112,10 @@ type ImpCtx struct {
 
 	BannerAdUnitCtx AdUnitCtx
 	VideoAdUnitCtx  AdUnitCtx
+
+	//temp
+	BidderError    string
+	IsAdPodRequest bool
 }
 
 type PartnerData struct {
@@ -121,6 +126,8 @@ type PartnerData struct {
 	KGPV             string
 	IsRegex          bool
 	Params           json.RawMessage
+	VASTTagFlag      bool
+	VASTTagFlags     map[string]bool
 }
 
 type BidCtx struct {
