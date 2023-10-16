@@ -189,6 +189,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)
 	}
+
 	// Metrics engine
 	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)

@@ -44,6 +44,7 @@ func (mr *MockMetricsEngineMockRecorder) RecordRequestStatus(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestStatus), arg0, arg1)
 }
+
 // RecordWrapperCount mocks base method
 func (m *MockMetricsEngine) RecordWrapperCount(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -55,6 +56,7 @@ func (mr *MockMetricsEngineMockRecorder) RecordWrapperCount(arg0, arg1 interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordWrapperCount), arg0, arg1)
 }
+
 // RecordRequestTime mocks base method
 func (m *MockMetricsEngine) RecordRequestTime(arg0 string, arg1 time.Duration) {
 	m.ctrl.T.Helper()
