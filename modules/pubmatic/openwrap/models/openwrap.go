@@ -87,12 +87,12 @@ type OwBid struct {
 	BidDealTierSatisfied bool
 }
 
-func (r RequestCtx) GetVersionLevelKey(key string) (string, bool) {
+func (r RequestCtx) GetVersionLevelKey(key string) string {
 	if len(r.PartnerConfigMap) == 0 || len(r.PartnerConfigMap[VersionLevelConfigID]) == 0 {
-		return "", false
+		return ""
 	}
-	v, ok := r.PartnerConfigMap[VersionLevelConfigID][key]
-	return v, ok
+	v := r.PartnerConfigMap[VersionLevelConfigID][key]
+	return v
 }
 
 type ImpCtx struct {

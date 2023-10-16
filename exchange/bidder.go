@@ -81,6 +81,10 @@ type extraAuctionResponseInfo struct {
 	bidderResponseStartTime time.Time
 }
 
+const (
+	bidderGroupM = "groupm"
+)
+
 const ImpIdReqBody = "Stored bid response for impression id: "
 
 // Possible values of compression types Prebid Server can support for bidder compression
@@ -369,12 +373,14 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 						}
 
 						adjustmentFactor := 1.0
-						if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
-							adjustmentFactor = givenAdjustment
-						} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderRequest.BidderName.String()]; ok {
-							adjustmentFactor = givenAdjustment
-						}
 
+						if bidderName != bidderGroupM {
+							if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
+								adjustmentFactor = givenAdjustment
+							} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderRequest.BidderName.String()]; ok {
+								adjustmentFactor = givenAdjustment
+							}
+						}
 						originalBidCpm := 0.0
 						currencyAfterAdjustments := ""
 						originalBidCPMUSD := 0.0

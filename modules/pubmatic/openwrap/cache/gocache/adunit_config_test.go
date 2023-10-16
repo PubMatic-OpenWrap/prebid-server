@@ -42,21 +42,21 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 								"*|728x90|www.website.com":       13,
 							},
 							Currency:     "USD",
-							ModelWeight:  ptrutil.ToPtr[int](40),
+							ModelWeight:  ptrutil.ToPtr(40),
 							ModelVersion: "model 1 from adunit config slot level",
 						},
 					},
 					Currency: "USD",
 				},
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  ptrutil.ToPtr[bool](true),
+					EnforcePBS:  ptrutil.ToPtr(true),
 					EnforceRate: 100,
-					EnforceJS:   ptrutil.ToPtr[bool](true),
+					EnforceJS:   ptrutil.ToPtr(true),
 				},
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 			},
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{2},
 					Video: openrtb2.Video{
@@ -88,7 +88,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 		},
 		"Div1": {
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{0, 1, 2, 4},
 					Video: openrtb2.Video{
@@ -105,7 +105,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 				},
 			},
 			Banner: &adunitconfig.Banner{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.BannerConfig{
 					Banner: openrtb2.Banner{
 						Format: []openrtb2.Format{
@@ -124,7 +124,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 		},
 		"Div2": {
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{0, 1, 2, 4},
 					Video: openrtb2.Video{

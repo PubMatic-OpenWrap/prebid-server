@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ const (
 	testVersionID = 1
 	testProfileID = 123
 	testAdapterID = 1
-	testPartnerID = 10
+	testPartnerID = 1
 	testSlotName  = "adunit@300x250"
 	testTimeout   = 200
 	testHashValue = "2aa34b52a9e941c1594af7565e599c8d"
@@ -330,7 +329,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			err := c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
 			assert.Equal(t, tt.want.err, err)
 
-			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testAdapterID)
+			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testPartnerID)
 			partnerSlotMapping, found := c.cache.Get(cacheKey)
 			assert.True(t, found)
 			assert.Equal(t, tt.want.partnerSlotMapping, partnerSlotMapping)
@@ -454,9 +453,8 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if got := c.GetMappingsFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappings) {
-				t.Errorf("cache.GetMappingsFromCacheV25() = %v, want %v", got, tt.want)
-			}
+			got := c.GetMappingsFromCacheV25(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want.mappings, got)
 		})
 	}
 }
@@ -557,9 +555,8 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if got := c.GetSlotToHashValueMapFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappinInfo) {
-				t.Errorf("cache.GetSlotToHashValueMapFromCacheV25() = %v, want %v", got, tt.want.mappinInfo)
-			}
+			got := c.GetSlotToHashValueMapFromCacheV25(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want.mappinInfo, got)
 		})
 	}
 }
