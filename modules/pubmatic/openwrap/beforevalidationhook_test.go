@@ -2346,7 +2346,7 @@ func TestGetTagID(t *testing.T) {
 			want: "/7578294/adunit123",
 		},
 		{
-			name: "tagId_present_in_imp.TagId_and_pbadslot",
+			name: "tagId_present_in_imp.TagId_and_pbadslot_and_gpid",
 			args: args{
 				imp: openrtb2.Imp{
 					TagID: "/7578294/adunit",
