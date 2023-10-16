@@ -9,6 +9,9 @@ import (
 
 func getIncomingSlots(imp openrtb2.Imp) []string {
 	sizes := map[string]struct{}{}
+	if imp.Banner == nil && imp.Video == nil && imp.Native != nil {
+		return []string{"1x1"}
+	}
 	if imp.Banner != nil {
 		if imp.Banner.W != nil && imp.Banner.H != nil {
 			sizes[fmt.Sprintf("%dx%d", *imp.Banner.W, *imp.Banner.H)] = struct{}{}

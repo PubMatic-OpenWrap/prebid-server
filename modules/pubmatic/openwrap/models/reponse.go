@@ -24,6 +24,7 @@ type BidExt struct {
 	OriginalBidCPM    float64         `json:"origbidcpm,omitempty"`
 	OriginalBidCur    string          `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64         `json:"origbidcpmusd,omitempty"`
+	Fsc               int             `json:"fsc,omitempty"`
 	AdPod             AdpodBidExt     `json:"adpod,omitempty"`
 }
 

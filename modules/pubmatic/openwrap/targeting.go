@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -111,6 +112,9 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			if isWinningBid {
 				if rctx.SendAllBids {
 					bidCtx.Winner = 1
+				}
+				if fullscreenclickability.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
+					bidCtx.Fsc = 1
 				}
 			} else if !rctx.SendAllBids {
 				warnings = append(warnings, "dropping bid "+bid.ID+" as sendAllBids is disabled")

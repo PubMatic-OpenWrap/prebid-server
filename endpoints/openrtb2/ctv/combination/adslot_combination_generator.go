@@ -1,9 +1,8 @@
 package combination
 
 import (
-	"math/big"
-
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"math/big"
 )
 
 // generator holds all the combinations based

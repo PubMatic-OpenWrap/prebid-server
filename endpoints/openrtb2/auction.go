@@ -28,7 +28,6 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/bidadjustment"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/ortb"
 	"golang.org/x/net/publicsuffix"
@@ -61,14 +60,6 @@ import (
 const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
-const (
-	VastUnwrapperEnableKey = "enableVastUnwrapper"
-)
-
-func GetContextValueForField(ctx context.Context, field string) string {
-	vastEnableUnwrapper, _ := ctx.Value(field).(string)
-	return vastEnableUnwrapper
-}
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")
@@ -173,9 +164,6 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		Errors:    make([]error, 0),
 		StartTime: start,
 	}
-
-	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
-	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
 
 	labels := metrics.Labels{
 		Source:        metrics.DemandUnknown,

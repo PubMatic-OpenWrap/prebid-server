@@ -18,6 +18,7 @@ import (
 const (
 	EndpointAuction = "/openrtb2/auction"
 	EndpointAmp     = "/openrtb2/amp"
+	EndpointCtv     = "/openrtb/video"
 )
 
 // An entity specifies the type of object that was processed during the execution of the stage.
