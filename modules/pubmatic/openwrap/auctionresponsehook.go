@@ -349,7 +349,3 @@ func getPlatformName(platform string) string {
 	}
 	return platform
 }
-
-func getIntPtr(i int) *int {
-	return &i
-}

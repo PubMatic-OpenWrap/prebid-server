@@ -52,6 +52,9 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderSonobi):         builderSonobi,
 		string(openrtb_ext.BidderSovrn):          builderSovrn,
 		string(openrtb_ext.BidderApacdex):        builderApacdex,
+		string(openrtb_ext.BidderUnruly):         builderUnruly,
+		string(openrtb_ext.BidderMediafuse):      builderAppNexus,
+		string(openrtb_ext.BidderBoldwin):        builderBoldwin,
 	}
 }
 

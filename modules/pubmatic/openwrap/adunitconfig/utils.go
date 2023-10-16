@@ -5,6 +5,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 // TODO use this
@@ -76,10 +77,15 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 	if (slotConfig.BidFloor == nil || *slotConfig.BidFloor == 0.0) && defaultConfig.BidFloor != nil {
 		slotConfig.BidFloor = defaultConfig.BidFloor
 
-		slotConfig.BidFloorCur = func() *string { s := "USD"; return &s }()
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 		if defaultConfig.BidFloorCur != nil {
 			slotConfig.BidFloorCur = defaultConfig.BidFloorCur
 		}
+	}
+
+	//slotConfig has bidfloor and not have BidFloorCur set by default USD
+	if slotConfig.BidFloor != nil && *slotConfig.BidFloor > float64(0) && slotConfig.BidFloorCur == nil {
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 	}
 
 	if slotConfig.Banner == nil {
