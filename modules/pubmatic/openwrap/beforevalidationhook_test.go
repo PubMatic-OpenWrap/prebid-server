@@ -95,7 +95,7 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 			},
 		}
 	}
-	testReq.Cur = []string{}
+	testReq.Cur = []string{"EUR"}
 	testReq.WLang = []string{"english", "hindi"}
 	testReq.Device = &openrtb2.Device{
 		DeviceType: 1,
@@ -830,7 +830,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -893,7 +893,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -1600,7 +1600,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject:        true,
+				Reject:        false,
 				DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
 			},
 			wantErr: false,
