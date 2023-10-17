@@ -10,6 +10,7 @@ import (
 	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -103,6 +104,7 @@ func (m OpenWrap) handleEntrypointHook(
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
 		DCName:                    m.cfg.Server.DCName,
+		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

@@ -58,6 +58,7 @@ const (
 	WrapperLoggerDebug         = "owLoggerDebug"
 	KEY_OW_SLOT_NAME           = "owSlotName"
 	VENDORID                   = "vendorId"
+	BidderPubMatic             = "pubmatic"
 	//ADSERVER_URL used by S2S to redirect the OW bids if owredirect parameter is not found in video/json
 	ADSERVER_URL = "adServerUrl"
 
@@ -220,6 +221,7 @@ const (
 	PLATFORM_APP            = "in-app"
 	PLATFORM_VIDEO          = "video"
 	PlatformAppTargetingKey = "inapp"
+	HB_PLATFORM_APP         = "app"
 
 	//constants for headers
 	ORIGIN             = "origin"
@@ -281,6 +283,7 @@ const (
 	IosUARegexPattern                  string = `(iphone|ipad|darwin).*`
 	AndroidUARegexPattern              string = `android.*`
 	MobileDeviceUARegexPattern         string = `(mobi|tablet|ios).*`
+	ConnectedDeviceUARegexPattern      string = `Roku|SMART-TV|SmartTV|AndroidTV|Android TV|AppleTV|Apple TV|VIZIO|PHILIPS|BRAVIA|PlayStation|Chromecast|ExoPlayerLib|MIBOX3|Xbox|ComcastAppPlatform|AFT|HiSmart|BeyondTV|D.*ATV|PlexTV|Xstream|MiTV|AI PONT`
 
 	HbBuyIdPrefix               = "hb_buyid_"
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"
@@ -293,6 +296,9 @@ const (
 
 	PriceFloorURL      = "jsonUrl"
 	FloorModuleEnabled = "floorPriceModuleEnabled"
+	FloorType          = "floorType"
+	SoftFloorType      = "soft"
+	HardFloorType      = "hard"
 
 	//include brand categories values
 	IncludeNoCategory            = 0
@@ -455,4 +461,16 @@ const (
 	TypeAmp    = "amp"
 	TypeSDK    = "sdk"
 	TypeS2S    = "s2s"
+)
+
+// constants to accept request-test value
+type testValue = int8
+
+const (
+	TestValueTwo testValue = 2
+)
+
+const (
+	Success = "success"
+	Failure = "failure"
 )

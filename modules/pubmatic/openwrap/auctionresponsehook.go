@@ -220,6 +220,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	if rctx.ReturnAllBidStatus {
+		// prepare seat-non-bids and add them in the response-ext
+		rctx.SeatNonBids = prepareSeatNonBids(rctx)
+		addSeatNonBidsInResponseExt(rctx, &responseExt)
+	}
+
 	var err error
 	rctx.ResponseExt, err = json.Marshal(responseExt)
 	if err != nil {
@@ -338,8 +344,4 @@ func getPlatformName(platform string) string {
 		return models.PlatformAppTargetingKey
 	}
 	return platform
-}
-
-func getIntPtr(i int) *int {
-	return &i
 }

@@ -34,7 +34,7 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	}
 
 	// bids per bidders per impression that did not respond
-	noSeatBids := make(map[string]map[string][]openrtb2.Bid, 0)
+	defaultBids := make(map[string]map[string][]openrtb2.Bid, 0)
 	for impID, impCtx := range rctx.ImpBidCtx {
 		for bidder := range impCtx.Bidders {
 			noBid := false
@@ -47,11 +47,11 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 			}
 
 			if noBid {
-				if noSeatBids[impID] == nil {
-					noSeatBids[impID] = make(map[string][]openrtb2.Bid)
+				if defaultBids[impID] == nil {
+					defaultBids[impID] = make(map[string][]openrtb2.Bid)
 				}
 
-				noSeatBids[impID][bidder] = append(noSeatBids[impID][bidder], openrtb2.Bid{
+				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
 					ID:    impID,
 					ImpID: impID,
 					Ext:   newNoBidExt(rctx, impID),
@@ -66,11 +66,11 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	// add nobids for throttled adapter to all the impressions (how do we set profile with custom list of bidders at impression level?)
 	for bidder := range rctx.AdapterThrottleMap {
 		for impID := range rctx.ImpBidCtx { // ImpBidCtx is used only for list of impID, it does not have data of throttled adapters
-			if noSeatBids[impID] == nil {
-				noSeatBids[impID] = make(map[string][]openrtb2.Bid)
+			if defaultBids[impID] == nil {
+				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			noSeatBids[impID][bidder] = []openrtb2.Bid{
+			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
 					ID:    impID,
 					ImpID: impID,
@@ -83,11 +83,11 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	// add nobids for non-mapped bidders
 	for impID, impCtx := range rctx.ImpBidCtx {
 		for bidder := range impCtx.NonMapped {
-			if noSeatBids[impID] == nil {
-				noSeatBids[impID] = make(map[string][]openrtb2.Bid)
+			if defaultBids[impID] == nil {
+				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			noSeatBids[impID][bidder] = []openrtb2.Bid{
+			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
 					ID:    impID,
 					ImpID: impID,
@@ -97,7 +97,7 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 		}
 	}
 
-	return noSeatBids
+	return defaultBids
 }
 
 func newNoBidExt(rctx models.RequestCtx, impID string) json.RawMessage {

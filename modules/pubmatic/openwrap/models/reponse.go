@@ -28,7 +28,7 @@ type BidExt struct {
 	OriginalBidCur    string                     `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64                    `json:"origbidcpmusd,omitempty"`
 	Nbr               *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // Reason for not bidding
-
+	Fsc               int                        `json:"fsc,omitempty"`
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video

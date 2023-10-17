@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prebid/prebid-server/config"
@@ -49,13 +50,22 @@ type Metrics struct {
 
 	getProfileData *prometheus.HistogramVec
 
-	sendLoggerData *prometheus.HistogramVec
-
-	requestTime *prometheus.HistogramVec
-
 	dbQueryError *prometheus.CounterVec
 
 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
+
+	// sshb temporary
+	owRequests            *prometheus.CounterVec
+	lurlSent              *prometheus.CounterVec
+	lurlBatchSent         *prometheus.CounterVec
+	ctvUaAccuracy         *prometheus.CounterVec
+	bids                  *prometheus.CounterVec
+	prebidTimeoutRequests *prometheus.CounterVec
+	partnerTimeoutRequest *prometheus.CounterVec
+	panicCounts           *prometheus.CounterVec
+	sendLoggerData        *prometheus.HistogramVec
+	owRequestTime         *prometheus.HistogramVec
+	country               *prometheus.CounterVec
 }
 
 const (
@@ -75,11 +85,19 @@ const (
 	queryTypeLabel = "query_type"
 )
 
+var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
+var once sync.Once
+var metric *Metrics
+
 // NewMetrics initializes a new Prometheus metrics instance.
 func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
+	once.Do(func() {
+		metric = newMetrics(cfg, promRegistry)
+	})
+	return metric
+}
 
-	standardTimeBuckets := []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
-
+func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
 
 	// general metrics
@@ -218,16 +236,13 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Time taken to get the profile data in seconds", []string{endpointLabel, profileIDLabel},
 		standardTimeBuckets)
 
-	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
-		"logger_data_send_time",
-		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
-		standardTimeBuckets)
-
 	metrics.dbQueryError = newCounter(cfg, promRegistry,
 		"db_query_failed",
 		"Count failed db calls at profile, version level",
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
+
+	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics
 }
@@ -412,14 +427,6 @@ func (m *Metrics) RecordGetProfileDataTime(endpoint, profileID string, getTime t
 	}).Observe(float64(getTime.Seconds()))
 }
 
-// RecordSendLoggerDataTime as a noop
-func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime time.Duration) {
-	m.sendLoggerData.With(prometheus.Labels{
-		endpointLabel:  endpoint,
-		profileIDLabel: profileID,
-	}).Observe(float64(sendTime.Seconds()))
-}
-
 // RecordDBQueryFailure as a noop
 func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 	m.dbQueryError.With(prometheus.Labels{
@@ -442,7 +449,6 @@ func (m *Metrics) RecordBidResponseByDealCountInHB(publisherID, profile, aliasBi
 }
 
 // TODO - remove this functions once we are completely migrated from Header-bidding to module
-func (m *Metrics) RecordPrebidTimeoutRequests(publisherID, profileID string)           {}
 func (m *Metrics) RecordSSTimeoutRequests(publisherID, profileID string)               {}
 func (m *Metrics) RecordPartnerTimeoutInPBS(publisherID, profile, aliasBidder string)  {}
 func (m *Metrics) RecordPreProcessingTimeStats(publisherID string, processingTime int) {}

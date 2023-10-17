@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +47,7 @@ func TestNew(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
-	mockEngine := mock.NewMockMetricsEngine(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type args struct {
 		goCache       *gocache.Cache
@@ -210,9 +209,7 @@ func Test_cache_Get(t *testing.T) {
 			}
 			c.Set(tt.args.key, "test_value")
 			got, got1 := c.Get(tt.args.key)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("cache.Get() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 			if got1 != tt.want1 {
 				t.Errorf("cache.Get() got1 = %v, want %v", got1, tt.want1)
 			}
