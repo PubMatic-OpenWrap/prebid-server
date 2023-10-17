@@ -51,7 +51,7 @@ func init() {
 // GetDevicePlatform determines the device from which request has been generated
 func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
-	if userAgentString == "" && bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
 		userAgentString = bidRequest.Device.UA
 	}
 
@@ -88,18 +88,18 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			deviceType = bidRequest.Device.DeviceType
 		}
 		isCtv := isCTV(userAgentString)
-		regexStatus := models.Failure
+		// regexStatus := models.Failure
 
 		if deviceType != 0 {
 			if deviceType == adcom1.DeviceTV || deviceType == adcom1.DeviceConnected || deviceType == adcom1.DeviceSetTopBox {
 				if isCtv {
-					regexStatus = models.Success
+					// regexStatus = models.Success
 				}
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 				return models.DevicePlatformConnectedTv
 			}
 			if isCtv {
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 			}
 		}
 

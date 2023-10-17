@@ -10,6 +10,8 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+type currencyConversion = func(from, to string, value float64) (float64, error)
+
 type RequestCtx struct {
 	PubID, ProfileID, DisplayID, VersionID int
 	SSAuction                              int
