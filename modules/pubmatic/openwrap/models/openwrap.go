@@ -115,8 +115,8 @@ type ImpCtx struct {
 
 	BannerAdUnitCtx AdUnitCtx
 	VideoAdUnitCtx  AdUnitCtx
-	BidFloor        float64
-	BidFloorCur     string
+	BidFloor        *float64
+	BidFloorCur     *string
 }
 
 type PartnerData struct {
