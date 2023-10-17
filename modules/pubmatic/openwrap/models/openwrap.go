@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 )
 
 type RequestCtx struct {
@@ -32,11 +33,12 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	UA            string
-	Cookies       string
-	UidCookie     *http.Cookie
-	KADUSERCookie *http.Cookie
-	OriginCookie  string
+	UA              string
+	Cookies         string
+	UidCookie       *http.Cookie
+	KADUSERCookie   *http.Cookie
+	ParsedUidCookie *usersync.Cookie
+	OriginCookie    string
 
 	Debug bool
 	Trace bool
