@@ -125,13 +125,14 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 								floorRuleValue = floorValue
 							}
 							floorCurrency = bidExt.Prebid.Floors.FloorCurrency
-						} else if impCtx.BidFloor != 0.0 {
-							floorValue = roundToTwoDigit(impCtx.BidFloor)
-							floorRuleValue = floorValue
-							if len(impCtx.BidFloorCur) > 0 {
-								floorCurrency = impCtx.BidFloorCur
-							}
 						}
+						// else if impCtx.BidFloor != 0.0 {
+						// 	floorValue = roundToTwoDigit(impCtx.BidFloor)
+						// 	floorRuleValue = floorValue
+						// 	if len(impCtx.BidFloorCur) > 0 {
+						// 		floorCurrency = impCtx.BidFloorCur
+						// 	}
+						// }
 
 						if floorCurrency != "" && floorCurrency != models.USD {
 							fv, _ := conversion(floorCurrency, models.USD, floorValue)

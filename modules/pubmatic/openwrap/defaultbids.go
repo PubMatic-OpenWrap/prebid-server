@@ -136,19 +136,19 @@ func newNoBidExt(rctx models.RequestCtx, impID string) json.RawMessage {
 func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
 	// update nobids in final response
 	for i, seatBid := range bidResponse.SeatBid {
-		for impID, noSeatBid := range rctx.NoSeatBids {
+		for impID, noSeatBid := range rctx.DefaultBids {
 			for seat, bids := range noSeatBid {
 				if seatBid.Seat == seat {
 					bidResponse.SeatBid[i].Bid = append(bidResponse.SeatBid[i].Bid, bids...)
 					delete(noSeatBid, seat)
-					rctx.NoSeatBids[impID] = noSeatBid
+					rctx.DefaultBids[impID] = noSeatBid
 				}
 			}
 		}
 	}
 
 	// no-seat case
-	for _, noSeatBid := range rctx.NoSeatBids {
+	for _, noSeatBid := range rctx.DefaultBids {
 		for seat, bids := range noSeatBid {
 			bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
 				Bid:  bids,
@@ -159,7 +159,6 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 
 	return bidResponse, nil
 }
-
 func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt *openrtb_ext.ExtBidResponse, bidder string) {
 
 	responseError := models.PartnerErrNoBid

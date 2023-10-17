@@ -15,6 +15,17 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+// SetIntegrationType sets the integration type in WloggerRecord
+func (wlog *WloggerRecord) setIntegrationType(endpoint string) {
+	switch endpoint {
+	case models.EndpointAMP:
+		wlog.IntegrationType = models.TypeAmp
+	case models.EndpointV25:
+		wlog.IntegrationType = models.TypeSDK
+	}
+	// add CTV specific cases here
+}
+
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
 
 	wlog := WloggerRecord{
@@ -30,6 +41,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			TestConfigApplied: rCtx.ABTestConfigApplied,
 			Timeout:           int(rCtx.TMax),
 			PDC:               rCtx.DCName, //TODO: confirm this
+			CachePutMiss:      rCtx.CachePutMiss,
 		},
 	}
 
@@ -39,7 +51,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.logFloorType(&requestExt.Prebid)
 	}
 
-	wlog.logIntegrationType(rCtx.Endpoint)
+	wlog.setIntegrationType(rCtx.Endpoint)
 
 	if ao.RequestWrapper.User != nil {
 		extUser := openrtb_ext.ExtUser{}
@@ -125,7 +137,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	err = json.Unmarshal(ao.Response.Ext, &responseExt)
 	if err == nil {
 		if responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
-			wlog.setFloorDetails(responseExt.Prebid.Floors)
+			wlog.SetFloorDetails(responseExt.Prebid.Floors)
 		}
 	}
 
@@ -137,6 +149,43 @@ func ConvertBoolToInt(val bool) int {
 		return 1
 	}
 	return 0
+}
+
+func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) {
+
+	if floors == nil {
+		return
+	}
+
+	if floors.Skipped != nil {
+		skipped := ConvertBoolToInt(*floors.Skipped)
+		for i := range wlog.Slots {
+			wlog.Slots[i].FloorSkippedFlag = &skipped
+		}
+	}
+
+	if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+		wlog.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+	}
+
+	if len(floors.PriceFloorLocation) > 0 {
+		if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
+			wlog.FloorSource = &source
+		}
+	}
+
+	if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
+		wlog.FloorFetchStatus = &status
+	}
+
+	wlog.FloorProvider = floors.FloorProvider
+	if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
+		wlog.FloorProvider = floors.Data.FloorProvider
+	}
+
+	if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+		wlog.record.FloorType = models.HardFloor
+	}
 }
 
 // TODO filter by name. (*stageOutcomes[8].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(data))
@@ -317,7 +366,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			price := bid.Price
-			if ao.Response.Cur != "" && ao.Response.Cur != "USD" {
+			// if ao.Response.Cur != "" && ao.Response.Cur != "USD" {
+			// 	price = bidExt.OriginalBidCPMUSD
+			// }
+
+			if bidExt.OriginalBidCPMUSD != bid.Price {
 				price = bidExt.OriginalBidCPMUSD
 			}
 
@@ -370,6 +423,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.DealID = "-1"
 			}
 
+			var floorCurrency string
 			if bidExt.Prebid != nil {
 				// don't want default banner for nobid in wl
 				if bidExt.Prebid.Type != "" {
@@ -390,12 +444,9 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 				if bidExt.Prebid.Floors != nil {
 					pr.FloorRule = bidExt.Prebid.Floors.FloorRule
+					floorCurrency = bidExt.Prebid.Floors.FloorCurrency
+					pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
 					pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
-					if bidExt.Prebid.Floors.FloorCurrency == "USD" {
-						pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
-					} else {
-						// pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValueUSD)
-					}
 				}
 
 				if len(bidExt.Prebid.BidId) > 0 {
@@ -403,20 +454,20 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
-			if pr.FloorRuleValue == 0 {
-				pr.FloorValue = roundToTwoDigit(impCtx.BidFloor)
+			if pr.FloorRuleValue == 0 && impCtx.BidFloor != nil {
+				pr.FloorValue = roundToTwoDigit(*impCtx.BidFloor)
 				pr.FloorRuleValue = pr.FloorValue
-				// if impCtx.BidFloorCur != nil {
-				// 	floorCurrency = *imp.BidFloorCur
-				// }
+				if impCtx.BidFloorCur != nil {
+					floorCurrency = *impCtx.BidFloorCur
+				}
 			}
 
-			// if floorCurrency != "" && floorCurrency != constant.USD {
-			// 	value, _ := wlog.CurrencyConversion(floorCurrency, constant.USD, partnerRecord.FloorValue)
-			// 	partnerRecord.FloorValue = roundToTwoDigit(value)
-			// 	value, _ = wlog.CurrencyConversion(floorCurrency, constant.USD, partnerRecord.FloorRuleValue)
-			// 	partnerRecord.FloorRuleValue = roundToTwoDigit(value)
-			// }
+			if floorCurrency != "" && floorCurrency != models.USD {
+				value, _ := rCtx.GetPBSCurrencyConversion(floorCurrency, models.USD, pr.FloorValue)
+				pr.FloorValue = roundToTwoDigit(value)
+				value, _ = rCtx.GetPBSCurrencyConversion(floorCurrency, models.USD, pr.FloorRuleValue)
+				pr.FloorRuleValue = roundToTwoDigit(value)
+			}
 
 			if pr.Adformat == "" && bid.AdM != "" {
 				pr.Adformat = models.GetAdFormat(bid.AdM)
