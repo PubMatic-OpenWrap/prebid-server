@@ -27,6 +27,15 @@ const (
 	vastVersionUndefined  = "undefined"
 )
 
+const (
+	WrapperElement = "<Wrapper>"
+	InlineElement  = "<InLine>"
+	Wrapper        = "Wrapper"
+	Inline         = "InLine"
+	URL            = "URL"
+	Unknown        = "Unknown"
+)
+
 var (
 	vastVersionRegex = regexp.MustCompile(`<VAST.+version\s*=[\s\\"']*([\s0-9.]+?)[\\\s"']*>`)
 )
@@ -172,6 +181,27 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
 		}
 	}
+}
+
+func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	vastTag := Unknown
+	for _, adapterBid := range adapterBids {
+		for _, bid := range adapterBid.Bids {
+			if strings.Contains(bid.Bid.AdM, WrapperElement) {
+				vastTag = Wrapper
+			} else if strings.Contains(bid.Bid.AdM, InlineElement) {
+				vastTag = Inline
+			} else if IsUrl(bid.Bid.AdM) {
+				vastTag = URL
+			}
+			metricsEngine.RecordVastTag(string(adapterBid.BidderCoreName), vastTag)
+		}
+	}
+}
+
+func IsUrl(adm string) bool {
+	url, err := url.Parse(adm)
+	return err == nil && url.Scheme != "" && url.Host != ""
 }
 
 // recordPartnerTimeout captures the partnertimeout if any at publisher profile level
