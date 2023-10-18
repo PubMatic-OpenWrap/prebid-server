@@ -150,6 +150,11 @@ func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 
 		if err == nil && code == http.StatusOK {
 			glog.Infof("[stats_success] retry:[%d] nstats:[%d] time:[%v]", retry, len(statMap), elapsedTime)
+			if glog.V(3) {
+				if statJson, err := json.Marshal(statMap); err == nil && len(statJson) > 0 {
+					glog.Infof("[stats_success] stats to be sent to stats-server :%+v", string(statJson))
+				}
+			}
 			return statusPublishSuccess
 		}
 
