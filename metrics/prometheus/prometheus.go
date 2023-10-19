@@ -576,8 +576,8 @@ func NewMetrics(cfg config.PrometheusMetrics, reg *prometheus.Registry, disabled
 		[]string{adapterLabel, versionLabel})
 
 	metrics.vastTag = newCounter(cfg, reg,
-		"vast_tag",
-		"Count of vast tag by bidder and vast tag",
+		"vast_tag_type",
+		"Count of vast tag by bidder and vast tag type (Wrapper, InLine, URL, Unknown)",
 		[]string{bidderLabel, vastTagLabel})
 
 	metrics.dynamicFetchFailure = newCounter(cfg, reg,
