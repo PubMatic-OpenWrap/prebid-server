@@ -129,7 +129,7 @@ func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 		return statusSetupFail
 	}
 
-	glog.V(3).Infof("stats to be sent to stats-server :%+v", string(statJson))
+	glog.V(3).Infof("[stats] nstats:[%d] data:[%s]", len(statMap), statJson)
 	req, err := http.NewRequest(http.MethodPost, sc.endpoint, bytes.NewBuffer(statJson))
 	if err != nil {
 		glog.Errorf("[stats_fail] Failed to form request to sent stats to server: %v", err)
