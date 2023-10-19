@@ -528,5 +528,8 @@ type MetricsEngine interface {
 	//RecordVastVersion record the count of vast version labelled by bidder and vast version
 	RecordVastVersion(coreBidder, vastVersion string)
 
+	//RecordVastTag record the count of vast tag type labeled by bidder and vast tag
+	RecordVastTag(bidder, vastTag string)
+
 	RecordHttpCounter()
 }

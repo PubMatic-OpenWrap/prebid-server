@@ -492,6 +492,12 @@ func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 	}
 }
 
+func (me *MultiMetricsEngine) RecordVastTag(biddder, vastTag string) {
+	for _, thisME := range *me {
+		thisME.RecordVastTag(biddder, vastTag)
+	}
+}
+
 // NilMetricsEngine implements the MetricsEngine interface where no metrics are actually captured. This is
 // used if no metric backend is configured and also for tests.
 type NilMetricsEngine struct{}
@@ -717,4 +723,8 @@ func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 }
 
 func (m *NilMetricsEngine) RecordHttpCounter() {
+}
+
+// RecordVastTag as a noop
+func (me *NilMetricsEngine) RecordVastTag(biddder, vastTag string) {
 }
