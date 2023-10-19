@@ -38,7 +38,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Empty Request Context",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 			wantErr:    false,
@@ -46,7 +46,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to false in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -124,7 +124,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -168,7 +168,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -236,7 +236,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
