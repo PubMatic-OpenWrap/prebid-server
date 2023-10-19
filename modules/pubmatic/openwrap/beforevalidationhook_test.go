@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	mock_cache "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -16,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"

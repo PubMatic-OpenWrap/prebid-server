@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"testing"
 
-	vastunwrap "git.pubmatic.com/vastunwrap"
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 
 	"github.com/golang/mock/gomock"
@@ -51,7 +50,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
 				StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-				LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 			},
 				TrafficPercentage: 2}},
 			args: args{
@@ -73,7 +71,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 					APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
 					StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 					ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-					LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 				},
 					TrafficPercentage: 2}},
 			args: args{
@@ -140,7 +137,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 1000, Debug: 1},
 				StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-				LogConfig:         unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 			},
 				TrafficPercentage: 2}},
 			args: args{
@@ -187,7 +183,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
 				StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-				LogConfig:    unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 			},
 				TrafficPercentage: 2}},
 			args: args{
@@ -232,7 +227,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				Enabled:       tt.fields.cfg.Enabled,
 				MetricsEngine: mockMetricsEngine,
 			}
-			vastunwrap.InitUnWrapperConfig(tt.fields.cfg.Cfg)
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
@@ -256,7 +250,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "Valid vast unwrap config",
 			args: args{
-				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/tmp/debug.log","error_log_file":"/tmp/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
 				deps: moduledeps.ModuleDeps{
 					MetricsRegistry: metrics_cfg.MetricsRegistry{
 						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
@@ -279,7 +273,6 @@ func TestBuilder(t *testing.T) {
 					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
 					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-					LogConfig:         unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 				},
 			},
 			wantErr: false,
@@ -287,7 +280,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "Invalid vast unwrap config",
 			args: args{
-				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/tmp/debug.log","error_log_file":"/tmp/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
 				deps: moduledeps.ModuleDeps{
 					MetricsRegistry: metrics_cfg.MetricsRegistry{
 						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
@@ -309,7 +302,6 @@ func TestBuilder(t *testing.T) {
 					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
 					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
 					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
-					LogConfig:         unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"},
 				},
 			},
 			wantErr: true,

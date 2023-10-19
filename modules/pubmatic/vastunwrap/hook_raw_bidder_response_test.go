@@ -5,7 +5,6 @@ import (
 
 	"testing"
 
-	vastunwrap "git.pubmatic.com/vastunwrap"
 	"git.pubmatic.com/vastunwrap/config"
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/golang/mock/gomock"
@@ -39,7 +38,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Empty Request Context",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 			wantErr:    false,
@@ -47,7 +46,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to false in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -82,7 +81,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context with invalid vast xml",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -125,7 +124,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -169,7 +168,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -237,7 +236,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}, LogConfig: unWrapCfg.LogConfig{ErrorLogFile: "/home/test/PBSlogs/unwrap/error.log", DebugLogFile: "/home/test/PBSlogs/unwrap/debug.log"}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -308,7 +307,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			vastunwrap.InitUnWrapperConfig(tt.args.module.Cfg)
 			_, err := handleRawBidderResponseHook(tt.args.module, tt.args.moduleInvocationCtx, tt.args.payload, "test")
 			if !assert.NoError(t, err, tt.wantErr) {
 				return

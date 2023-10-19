@@ -8,10 +8,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/macros"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/usersync"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,9 +28,10 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
-		args  args
-		setup func(*mock_metrics.MockMetricsEngine)
+		name           string
+		args           args
+		getHttpRequest func() *http.Request
+		setup          func(*mock_metrics.MockMetricsEngine)
 	}{
 		{
 			name: "Empty cookies and empty partner config map",
@@ -37,27 +39,15 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 				rctx: models.RequestCtx{},
 			},
 			setup: func(mme *mock_metrics.MockMetricsEngine) {},
-		},
-		{
-			name: "Non-empty cookie and empty partner config map",
-			args: args{
-				rctx: models.RequestCtx{
-					UidCookie: &http.Cookie{
-						Name:  "uid",
-						Value: "abc123",
-					},
-					PartnerConfigMap: map[int]map[string]string{},
-				},
-			},
-			setup: func(mme *mock_metrics.MockMetricsEngine) {
-				models.SyncerMap = make(map[string]usersync.Syncer)
+			getHttpRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "http://anyurl.com", nil)
+				return req
 			},
 		},
 		{
 			name: "Empty cookie and non-empty partner config map",
 			args: args{
 				rctx: models.RequestCtx{
-					UidCookie: nil,
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
 							models.SERVER_SIDE_FLAG:    "1",
@@ -72,15 +62,15 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 				mme.EXPECT().RecordPublisherPartnerNoCookieStats("5890", "bidder1")
 			},
+			getHttpRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "http://anyurl.com", nil)
+				return req
+			},
 		},
 		{
-			name: "Non-empty cookie and client side partner in config map",
+			name: "only client side partner in config map",
 			args: args{
 				rctx: models.RequestCtx{
-					UidCookie: &http.Cookie{
-						Name:  "uid",
-						Value: "abc123",
-					},
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
 							models.SERVER_SIDE_FLAG:    "0",
@@ -94,37 +84,15 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 			setup: func(mme *mock_metrics.MockMetricsEngine) {
 				models.SyncerMap = make(map[string]usersync.Syncer)
 			},
-		},
-		{
-			name: "Non-empty cookie and client side partner in config map",
-			args: args{
-				rctx: models.RequestCtx{
-					UidCookie: &http.Cookie{
-						Name:  "uid",
-						Value: "abc123",
-					},
-					PartnerConfigMap: map[int]map[string]string{
-						1: {
-							models.SERVER_SIDE_FLAG:    "0",
-							models.PREBID_PARTNER_NAME: "partner1",
-							models.BidderCode:          "bidder1",
-						},
-					},
-					PubIDStr: "5890",
-				},
-			},
-			setup: func(mme *mock_metrics.MockMetricsEngine) {
-				models.SyncerMap = make(map[string]usersync.Syncer)
+			getHttpRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "http://anyurl.com", nil)
+				return req
 			},
 		},
 		{
 			name: "GetUID returns empty uid",
 			args: args{
 				rctx: models.RequestCtx{
-					UidCookie: &http.Cookie{
-						Name:  "uid",
-						Value: "ewoJInRlbXBVSURzIjogewoJCSJwdWJtYXRpYyI6IHsKCQkJInVpZCI6ICI3RDc1RDI1Ri1GQUM5LTQ0M0QtQjJEMS1CMTdGRUUxMUUwMjciLAoJCQkiZXhwaXJlcyI6ICIyMDIyLTEwLTMxVDA5OjE0OjI1LjczNzI1Njg5OVoiCgkJfQoJfSwKCSJiZGF5IjogIjIwMjItMDUtMTdUMDY6NDg6MzguMDE3OTg4MjA2WiIKfQ==",
-					},
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
 							models.SERVER_SIDE_FLAG:    "1",
@@ -141,7 +109,43 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 						key: "pubmatic",
 					},
 				}
+				mme.EXPECT().RecordPublisherPartnerNoCookieStats("5890", "pubmatic")
+			},
+			getHttpRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "http://anyurl.com", nil)
+				return req
+			},
+		},
+		{
+			name: "GetUID returns non empty uid",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.SERVER_SIDE_FLAG:    "1",
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+						},
+					},
+					PubIDStr: "5890",
+				},
+			},
+			setup: func(mme *mock_metrics.MockMetricsEngine) {
+				models.SyncerMap = map[string]usersync.Syncer{
+					"pubmatic": fakeSyncer{
+						key: "pubmatic",
+					},
+				}
+			},
+			getHttpRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "http://anyurl.com", nil)
 
+				cookie := &http.Cookie{
+					Name:  "uids",
+					Value: "ewoJInRlbXBVSURzIjogewoJCSJwdWJtYXRpYyI6IHsKCQkJInVpZCI6ICI3RDc1RDI1Ri1GQUM5LTQ0M0QtQjJEMS1CMTdGRUUxMUUwMjciLAoJCQkiZXhwaXJlcyI6ICIyMDIyLTEwLTMxVDA5OjE0OjI1LjczNzI1Njg5OVoiCgkJfQoJfSwKCSJiZGF5IjogIjIwMjItMDUtMTdUMDY6NDg6MzguMDE3OTg4MjA2WiIKfQ==",
+				}
+				req.AddCookie(cookie)
+				return req
 			},
 		},
 	}
@@ -150,6 +154,7 @@ func TestRecordPublisherPartnerNoCookieStats(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setup(mockEngine)
 			tc.args.rctx.MetricsEngine = mockEngine
+			tc.args.rctx.ParsedUidCookie = usersync.ReadCookie(tc.getHttpRequest(), usersync.Base64Decoder{}, &config.HostCookie{})
 			RecordPublisherPartnerNoCookieStats(tc.args.rctx)
 		})
 	}
@@ -172,7 +177,7 @@ func (s fakeSyncer) SupportsType(syncTypes []usersync.SyncType) bool {
 	return false
 }
 
-func (fakeSyncer) GetSync(syncTypes []usersync.SyncType, privacyPolicies privacy.Policies) (usersync.Sync, error) {
+func (fakeSyncer) GetSync([]usersync.SyncType, macros.UserSyncPrivacy) (usersync.Sync, error) {
 	return usersync.Sync{}, nil
 }
 
