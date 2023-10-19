@@ -2,6 +2,8 @@ package vastunwrap
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"git.pubmatic.com/vastunwrap/config"
@@ -24,6 +26,7 @@ func TestDoUnwrap(t *testing.T) {
 		userAgent            string
 		unwrapDefaultTimeout int
 		url                  string
+		status               string
 	}
 	tests := []struct {
 		name        string
@@ -91,6 +94,7 @@ func TestDoUnwrap(t *testing.T) {
 				},
 				userAgent: "testUA",
 				url:       "testURL",
+				status:    "2",
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "2")
@@ -127,6 +131,7 @@ func TestDoUnwrap(t *testing.T) {
 				},
 				userAgent: "testUA",
 				url:       UnwrapURL,
+				status:    "0",
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
@@ -164,6 +169,7 @@ func TestDoUnwrap(t *testing.T) {
 				},
 				userAgent: "testUA",
 				url:       UnwrapURL,
+				status:    "1",
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1")
@@ -188,6 +194,11 @@ func TestDoUnwrap(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Header().Add("unwrap-status", tt.args.status)
+			}))
+			defer server.Close()
 			doUnwrapandUpdateBid(tt.args.module, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
 			if tt.args.bid.Bid.AdM != "" {
 				assert.Equal(t, tt.expectedBid.Bid.AdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
