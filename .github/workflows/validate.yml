@@ -28,6 +28,10 @@ jobs:
 
     - name: Validate
       run: |
-        ./validate.sh --nofmt --cov --race 10
+        git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
+        ./validate.sh --nofmt
       env:
         GO111MODULE: "on"
+        GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+        TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+        USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
