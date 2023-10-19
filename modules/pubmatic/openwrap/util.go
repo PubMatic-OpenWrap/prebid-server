@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/usersync"
 )
 
 var (
@@ -237,19 +235,9 @@ func getHostName() string {
 	return serverName
 }
 
-// parseUIDCookies returns the parsed-cookie if uidCookie is nil else returns new cookie object
-func parseUIDCookies(uidCookie *http.Cookie) *usersync.Cookie {
-
-	if uidCookie != nil {
-		return usersync.ParseCookie(uidCookie)
-	}
-	return usersync.NewCookie()
-}
-
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
 func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 
-	cookie := parseUIDCookies(rctx.UidCookie)
 	for _, partnerConfig := range rctx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
 			continue
@@ -258,7 +246,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
 		syncer := models.SyncerMap[adapters.ResolveOWBidder(partnerName)]
 		if syncer != nil {
-			uid, _, _ := cookie.GetUID(syncer.Key())
+			uid, _, _ := rctx.ParsedUidCookie.GetUID(syncer.Key())
 			if uid != "" {
 				continue
 			}

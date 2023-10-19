@@ -116,7 +116,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -314,7 +315,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -440,7 +442,8 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -541,13 +544,13 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			setup: func() {},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
 			c := &cache{
-				Map:   tt.fields.Map,
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
