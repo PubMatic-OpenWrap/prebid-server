@@ -123,13 +123,14 @@ func (sc *Client) prepareStatsForPublishing() {
 // in case of failure, it retries to send for Client.config.Retries number of times.
 func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 
-	sb, err := json.Marshal(statMap)
+	statJson, err := json.Marshal(statMap)
 	if err != nil {
 		glog.Errorf("[stats_fail] Json unmarshal fail: %v", err)
 		return statusSetupFail
 	}
 
-	req, err := http.NewRequest(http.MethodPost, sc.endpoint, bytes.NewBuffer(sb))
+	glog.V(3).Infof("stats to be sent to stats-server :%+v", string(statJson))
+	req, err := http.NewRequest(http.MethodPost, sc.endpoint, bytes.NewBuffer(statJson))
 	if err != nil {
 		glog.Errorf("[stats_fail] Failed to form request to sent stats to server: %v", err)
 		return statusSetupFail
@@ -150,11 +151,6 @@ func (sc *Client) publishStatsToServer(statMap map[string]int) int {
 
 		if err == nil && code == http.StatusOK {
 			glog.Infof("[stats_success] retry:[%d] nstats:[%d] time:[%v]", retry, len(statMap), elapsedTime)
-			if glog.V(3) {
-				if statJson, err := json.Marshal(statMap); err == nil && len(statJson) > 0 {
-					glog.Infof("[stats_success] stats to be sent to stats-server :%+v", string(statJson))
-				}
-			}
 			return statusPublishSuccess
 		}
 
