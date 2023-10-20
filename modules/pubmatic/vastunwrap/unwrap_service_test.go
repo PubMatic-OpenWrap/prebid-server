@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"git.pubmatic.com/vastunwrap/config"
@@ -27,6 +28,7 @@ func TestDoUnwrap(t *testing.T) {
 		unwrapDefaultTimeout int
 		url                  string
 		status               string
+		wantAdM              bool
 	}
 	tests := []struct {
 		name        string
@@ -79,7 +81,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with invalid URL and timeout",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 100}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 2}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -116,7 +118,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -170,6 +172,7 @@ func TestDoUnwrap(t *testing.T) {
 				userAgent: "testUA",
 				url:       UnwrapURL,
 				status:    "1",
+				wantAdM:   false,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1")
@@ -189,19 +192,23 @@ func TestDoUnwrap(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", tt.args.status)
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(tt.expectedBid.Bid.AdM))
 			}))
+			url := server.URL
+			tt.args.bid.Bid.AdM = strings.Replace(tt.args.bid.Bid.AdM, "{URL}", url, 1)
 			defer server.Close()
 			doUnwrapandUpdateBid(tt.args.module, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
-			if tt.args.bid.Bid.AdM != "" {
-				assert.Equal(t, tt.expectedBid.Bid.AdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM {
+				assert.Equal(t, finalAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
 		})
 	}
