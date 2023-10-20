@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strconv"
 	"time"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
@@ -20,6 +22,7 @@ type VastUnwrapModule struct {
 	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
 	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine     metrics.MetricsEngine
+	StatsEndPoint     string `mapstructure:"ow_stats_endpoint"`
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -34,6 +37,17 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 	if err != nil {
 		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
+	// assumption vastUnwrapModuleCfg.StatsEndPoint is getting value via "OpenWrap.Stats.Endpoint"
+	sUrl, err := url.Parse(vastUnwrapModuleCfg.StatsEndPoint)
+	if err != nil {
+		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
+	}
+	vastUnwrapModuleCfg.Cfg.StatConfig.Host = sUrl.Host
+	port, err := strconv.Atoi(sUrl.Port())
+	if err != nil {
+		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
+	}
+	vastUnwrapModuleCfg.Cfg.StatConfig.Port = port
 	vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	metricEngine, err := metrics.NewMetricsEngine(deps)
 	if err != nil {
