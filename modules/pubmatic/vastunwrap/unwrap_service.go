@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	unwrapper "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func doUnwrapandUpdateBid(m VastUnwrapModule, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
+func (m VastUnwrapModule) doUnwrapandUpdateBid(bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -40,7 +39,7 @@ func doUnwrapandUpdateBid(m VastUnwrapModule, bid *adapters.TypedBid, userAgent 
 	}
 	httpReq.Header = headers
 	httpResp := NewCustomRecorder()
-	unwrapper.UnwrapRequest(httpResp, httpReq)
+	m.unwraprequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(UnwrapCount), 10, 0)
 	respBody := httpResp.Body.Bytes()
