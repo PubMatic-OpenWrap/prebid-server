@@ -2,7 +2,7 @@ name: Validate Merge
 
 on:
   pull_request:
-    branches: [ci]
+    branches: [master]
 
 jobs:
   validate-merge:
