@@ -122,17 +122,16 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 		in0     context.Context
 		miCtx   hookstage.ModuleInvocationContext
 		payload hookstage.RawBidderResponsePayload
-		status  string
 		wantAdM bool
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		expectedBids []*adapters.TypedBid
-		want         hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		wantErr      bool
-		setup        func()
+		name          string
+		fields        fields
+		args          args
+		want          hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		wantErr       bool
+		setup         func()
+		unwrapRequest func(w http.ResponseWriter, req *http.Request)
 	}{
 		{
 			name: "Vast unwrap is enabled in the config",
@@ -162,7 +161,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				status:  "0",
 				wantAdM: true,
 			},
 			setup: func() {
@@ -170,18 +168,13 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
 			},
-			expectedBids: []*adapters.TypedBid{{
-				Bid: &openrtb2.Bid{
-					ID:    "Bid-123",
-					ImpID: fmt.Sprintf("div-adunit-%d", 123),
-					Price: 2.1,
-					AdM:   inlineXMLAdM,
-					CrID:  "Cr-234",
-					W:     100,
-					H:     50,
-				},
-				BidType: "video",
-			}},
+			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "1")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(inlineXMLAdM))
+			},
+
 			want: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
 		},
 		{
@@ -211,18 +204,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 						}},
 				}},
 			want: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
-			expectedBids: []*adapters.TypedBid{{
-				Bid: &openrtb2.Bid{
-					ID:    "Bid-123",
-					ImpID: fmt.Sprintf("div-adunit-%d", 123),
-					Price: 2.1,
-					AdM:   "<div>This is an Ad</div>",
-					CrID:  "Cr-234",
-					W:     100,
-					H:     50,
-				},
-				BidType: "video",
-			}},
 		},
 	}
 	for _, tt := range tests {
@@ -234,6 +215,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				Cfg:           tt.fields.cfg.Cfg,
 				Enabled:       tt.fields.cfg.Enabled,
 				MetricsEngine: mockMetricsEngine,
+				unwrapRequest: tt.unwrapRequest,
 			}
 			if tt.args.wantAdM {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -250,7 +232,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				return
 			}
 			if tt.args.wantAdM {
-				assert.Equal(t, finalAdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
+				assert.Equal(t, inlineXMLAdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
 			}
 		})
 	}
