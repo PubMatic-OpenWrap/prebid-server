@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 
@@ -116,7 +115,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -206,7 +206,8 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -218,9 +219,8 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			}
 			c.populatePublisherVASTTags(tt.args.pubID)
 			cacheKey := key(PubVASTTags, tt.args)
-			if got := c.GetPublisherVASTTagsFromCache(tt.args.pubID); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Vast tags for cacheKey= %v \n Expected= %v, but got= %v", cacheKey, got, tt.want)
-			}
+			got := c.GetPublisherVASTTagsFromCache(tt.args.pubID)
+			assert.Equal(t, tt.want, got, "Vast tags for cacheKey= %v \n Expected= %v, but got= %v", cacheKey, got, tt.want)
 		})
 	}
 }

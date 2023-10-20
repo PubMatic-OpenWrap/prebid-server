@@ -24,7 +24,7 @@ func setSchainInSourceObject(source *openrtb2.Source, schain []byte) {
 	}
 
 	sourceExt, err := jsonparser.Set(source.Ext, schain, models.SChainKey)
-	if err != nil {
+	if err == nil {
 		source.Ext = sourceExt
 	}
 }

@@ -28,8 +28,8 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	ip := rctx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		if parp.BidRequest.Device != nil && (parp.BidRequest.Device.IP == "" && parp.BidRequest.Device.IPv6 == "") {
-			parp.BidRequest.Device.IP = ip
+		if parp.RequestWrapper != nil && parp.RequestWrapper.BidRequest.Device != nil && (parp.RequestWrapper.BidRequest.Device.IP == "" && parp.RequestWrapper.BidRequest.Device.IPv6 == "") {
+			parp.RequestWrapper.BidRequest.Device.IP = ip
 		}
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-device-ip")

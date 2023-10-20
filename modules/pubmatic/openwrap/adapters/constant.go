@@ -27,4 +27,6 @@ const (
 	BidderParamApacdex_placementId = "placementId"
 	BidderParamApacdex_geo         = "geo"
 	BidderParamApacdex_floorPrice  = "floorPrice"
+	BidderParamBoldwinPlacementID  = "placementId"
+	BidderParamBoldwinEndpointID   = "endpointId"
 )
