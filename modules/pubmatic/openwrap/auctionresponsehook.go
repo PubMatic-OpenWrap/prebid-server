@@ -198,7 +198,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
 
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse, m.currencyConversion)
 
 	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs
