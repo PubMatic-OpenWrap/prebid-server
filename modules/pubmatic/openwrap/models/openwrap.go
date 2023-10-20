@@ -92,7 +92,7 @@ type OwBid struct {
 	ID                   string
 	NetEcpm              float64
 	BidDealTierSatisfied bool
-	Nbr                  openrtb3.NonBidStatusCode
+	Nbr                  *openrtb3.NonBidStatusCode
 }
 
 func (r RequestCtx) GetVersionLevelKey(key string) string {

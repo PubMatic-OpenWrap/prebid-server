@@ -170,14 +170,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			// update NonBr codes for current bid
-			if owbid.Nbr != 0 {
-				bidExt.Nbr = &owbid.Nbr
+			if owbid.Nbr != nil {
+				bidExt.Nbr = owbid.Nbr
 			}
 
 			// if current bid is winner then update NonBr code for earlier winning bid
 			if wbid.ID == owbid.ID && ok {
 				winBidCtx := rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID]
-				winBidCtx.BidExt.Nbr = &owbid.Nbr
+				winBidCtx.BidExt.Nbr = wbid.Nbr
 				rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
 			}
 
@@ -190,6 +190,11 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 			rctx.ImpBidCtx[bid.ImpID] = impCtx
 		}
+	}
+
+	rctx.WinningBids = winningBids
+	if len(winningBids) == 0 {
+		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
 	}
 
 	/*
@@ -207,11 +212,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	*/
 	if rctx.SupportDeals && anyDealTierSatisfyingBid {
 		addLostToDealBidNonBRCode(&rctx)
-	}
-
-	rctx.WinningBids = winningBids
-	if len(winningBids) == 0 {
-		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
 	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
@@ -363,21 +363,21 @@ func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
-			bid.Nbr = openrtb3.LossBidLostToDealBid
+			bid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
-			wbid.Nbr = openrtb3.LossBidLostToDealBid
+			wbid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return true
 		}
 	}
 	//both have deal or both do not have deal
 	if bid.NetEcpm > wbid.NetEcpm {
-		wbid.Nbr = openrtb3.LossBidLostToHigherBid
+		wbid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
 		return true
 	}
-	bid.Nbr = openrtb3.LossBidLostToHigherBid
+	bid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
 	return false
 }
 
