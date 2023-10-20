@@ -15,7 +15,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
+func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, currencyConversion currency.Conversions) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
 	// pubmatic's KGP details per impression
@@ -134,10 +134,10 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 						}
 
 						if floorCurrency != "" && floorCurrency != models.USD {
-							fv, _ := currencyConversion(floorCurrency, models.USD, floorValue)
+							fv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorValue)
 							floorValue = roundToTwoDigit(fv)
 
-							frv, _ := currencyConversion(floorCurrency, models.USD, floorRuleValue)
+							frv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorRuleValue)
 							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
@@ -292,12 +292,9 @@ func roundToTwoDigit(value float64) float64 {
 	return float64(math.Round(value*output)) / output
 }
 
-// TODO : Add proper currency conversion
-var g_currencyConversions currency.Conversions
-
 // method for currency conversion
-func currencyConversion(from, to string, value float64) (float64, error) {
-	rate, err := g_currencyConversions.GetRate(from, to)
+func currencyConverter(currencyConversion currency.Conversions, from, to string, value float64) (float64, error) {
+	rate, err := currencyConversion.GetRate(from, to)
 	if err == nil {
 		return value * rate, nil
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
@@ -27,9 +28,10 @@ const (
 )
 
 type OpenWrap struct {
-	cfg          config.Config
-	cache        cache.Cache
-	metricEngine metrics.MetricsEngine
+	cfg                config.Config
+	cache              cache.Cache
+	metricEngine       metrics.MetricsEngine
+	currencyConversion currency.Conversions
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -69,9 +71,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
 	return OpenWrap{
-		cfg:          cfg,
-		cache:        owCache,
-		metricEngine: &metricEngine,
+		cfg:                cfg,
+		cache:              owCache,
+		metricEngine:       &metricEngine,
+		currencyConversion: moduleDeps.CurrencyConversion,
 	}, nil
 }
 
