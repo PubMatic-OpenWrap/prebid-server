@@ -3,7 +3,6 @@ package vastunwrap
 import (
 	"fmt"
 	"net/http"
-
 	"testing"
 
 	"git.pubmatic.com/vastunwrap/config"
@@ -93,6 +92,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "1",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -129,6 +129,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "0",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -228,6 +229,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "0",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			expectedBids: []*adapters.TypedBid{{
