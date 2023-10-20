@@ -3,6 +3,9 @@ package vastbidder
 import (
 	"fmt"
 	"net/http"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/adcom1"
@@ -1264,7 +1267,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 	}
 }
 
-func TestBidderGetValueFromKV(t *testing.T) {
+func TestBidderGetValue(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1308,13 +1311,74 @@ func TestBidderGetValueFromKV(t *testing.T) {
 			args:   args{key: "kv.anykey"},
 			want:   "",
 		},
+
+		{
+			name: "key_with_value_as_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+				},
+			}},
+			args: args{key: "kvm.country"},
+			want: "{\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+				},
+			}},
+			args: args{key: "kvm.country"},
+			want: "{\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kvm.country"},
+			want: "{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_nested_map_",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "someprefix.country"},
+			want: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tag := &BidderMacro{
 				KV: tt.fields.KV,
 			}
-			value := tag.GetValueFromKV(tt.args.key)
+			value, _ := tag.GetValue(tt.args.key)
 			assert.Equal(t, tt.want, value, tt.name)
 		})
 	}
@@ -1328,10 +1392,11 @@ func TestBidderMacroKV(t *testing.T) {
 		key string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
+		name      string
+		fields    fields
+		args      args
+		want      string
+		isMatched bool
 	}{
 		{
 			name: "Valid_test",
@@ -1339,30 +1404,73 @@ func TestBidderMacroKV(t *testing.T) {
 				"name": "test",
 				"age":  "22",
 			}},
-			args: args{key: "kv"},
-			want: "name=test&age=22",
+			args:      args{key: "kv"},
+			want:      "name=test&age=22",
+			isMatched: true,
 		},
 		{
 			name: "Valid_test_with_url",
 			fields: fields{KV: map[string]interface{}{
+				"age": "22",
+				"url": "http://example.com?k1=v1&k2=v2",
+			}},
+			args:      args{key: "kv"},
+			want:      "age=22&url=http://example.com?k1=v1&k2=v2",
+			isMatched: true,
+		},
+		{
+			name:      "Empty_KV_map",
+			fields:    fields{KV: nil},
+			args:      args{key: "kv"},
+			want:      "",
+			isMatched: true,
+		},
+		{
+			name:      "KV_map_with_no_key_val_pair",
+			fields:    fields{KV: map[string]interface{}{}},
+			args:      args{key: "kv"},
+			want:      "",
+			isMatched: true,
+		},
+		{
+			name: "key_with_value_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+				},
+			}},
+			args:      args{key: "kv"},
+			want:      "age=22&country={\"pincode\":411041,\"state\":\"MH\"}",
+			isMatched: true,
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:      args{key: "kv"},
+			want:      "age=22&country={\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"}",
+			isMatched: true,
+		},
+		{
+			name: "string_not_matched",
+			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  "22",
-				"url":  "http://example.com?k1=v1&k2=v2",
 			}},
-			args: args{key: "kv"},
-			want: "name=test&age=22&url=http://example.com?k1=v1&k2=v2",
-		},
-		{
-			name:   "Empty_KV_map",
-			fields: fields{KV: nil},
-			args:   args{key: "kv"},
-			want:   "",
-		},
-		{
-			name:   "KV_map_with_no_key_val_pair",
-			fields: fields{KV: map[string]interface{}{}},
-			args:   args{key: "kv"},
-			want:   "",
+			args:      args{key: "kv"},
+			want:      "name=test1&age=22",
+			isMatched: false,
 		},
 	}
 	for _, tt := range tests {
@@ -1371,9 +1479,24 @@ func TestBidderMacroKV(t *testing.T) {
 				KV: tt.fields.KV,
 			}
 			got := tag.MacroKV(tt.args.key)
-			assert.Equal(t, tt.want, got, tt.name)
+
+			isEqual := isEqual(tt.want, got)
+			assert.Equal(t, tt.isMatched, isEqual)
 		})
 	}
+}
+
+// isEqual compare two shuffled strings containing key-value pairs and determine if they have the same key-value pairs regardless of their order within the string.
+func isEqual(want, got string) bool {
+
+	w := strings.Split(want, "&")
+	g := strings.Split(got, "&")
+
+	sort.Strings(w)
+	sort.Strings(g)
+
+	return reflect.DeepEqual(w, g)
+
 }
 
 func TestBidderMacroKVM(t *testing.T) {
@@ -1436,6 +1559,23 @@ func TestBidderMacroKVM(t *testing.T) {
 			}},
 			args: args{key: "kvm"},
 			want: "{\"name\":\"test\",\"url\":\"http://example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":22,\"country\":{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"},\"name\":\"test\"}",
 		},
 	}
 	for _, tt := range tests {

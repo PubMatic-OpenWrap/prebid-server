@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -67,4 +68,24 @@ func NormalizeJSON(obj map[string]interface{}) map[string]string {
 
 var GetRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
+}
+
+func getJsonString(kvmap any) string {
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+
+	// Disable HTML escaping for special characters
+	encoder.SetEscapeHTML(false)
+
+	if err := encoder.Encode(kvmap); err != nil {
+		return ""
+	}
+	return strings.TrimRight(buf.String(), "\n")
+
+}
+
+func isMap(data any) bool {
+	t := fmt.Sprintf("%T", data)
+	return strings.HasPrefix(t, "map[")
 }

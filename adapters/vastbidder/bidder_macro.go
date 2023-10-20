@@ -1,7 +1,6 @@
 package vastbidder
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -177,16 +176,23 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// GetValueFromKV returns the value from KV map wrt key
-func (tag *BidderMacro) GetValueFromKV(key string) string {
-	if tag.KV == nil {
-		return ""
+// GetValue returns the value from KV map wrt key
+func (tag *BidderMacro) GetValue(key string) (string, bool) {
+	tempKeys := strings.Split(key, ".")
+
+	if tempKeys[0] == prefixkv || tempKeys[0] == prefixkvm {
+		if tag.KV != nil {
+			if value, found := tag.KV[tempKeys[1]]; found {
+				if isMap(value) {
+					return getJsonString(value), true
+				}
+				return fmt.Sprintf("%v", value), true
+			}
+			return "", true
+		}
+		return "", true
 	}
-	key = strings.TrimPrefix(key, kvPrefix)
-	if value, found := tag.KV[key]; found {
-		return fmt.Sprintf("%v", value)
-	}
-	return ""
+	return "", false
 }
 
 /********************* Request *********************/
@@ -1212,10 +1218,14 @@ func (tag *BidderMacro) MacroKV(key string) string {
 
 	keyval := ""
 	for key, val := range tag.KV {
+		if isMap(val) {
+			jsonString := getJsonString(val)
+			keyval += fmt.Sprintf("%s=%v&", key, jsonString)
+			continue
+		}
 		keyval += fmt.Sprintf("%s=%v&", key, val)
 	}
 	return strings.TrimSuffix(keyval, "&")
-
 }
 
 // MacroKVM replace the kvm macro
@@ -1223,18 +1233,7 @@ func (tag *BidderMacro) MacroKVM(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-
-	// Disable HTML escaping for special characters
-	encoder.SetEscapeHTML(false)
-
-	if err := encoder.Encode(tag.KV); err != nil {
-		return ""
-	}
-	jsonString := strings.TrimRight(buf.String(), "\n")
-
-	return jsonString
+	return getJsonString(tag.KV)
 }
 
 /********************* Request Headers *********************/
