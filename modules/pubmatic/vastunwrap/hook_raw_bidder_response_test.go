@@ -2,6 +2,9 @@ package vastunwrap
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 
 	"testing"
 
@@ -27,6 +30,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		moduleInvocationCtx hookstage.ModuleInvocationContext
 		unwrapTimeout       int
 		url                 string
+		status              string
+		wantAdM             bool
 	}
 	tests := []struct {
 		name         string
@@ -102,6 +107,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "1",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			expectedBids: []*adapters.TypedBid{{
@@ -145,6 +151,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "0",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			expectedBids: []*adapters.TypedBid{{
@@ -200,6 +207,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "0",
+				wantAdM:             true,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			expectedBids: []*adapters.TypedBid{{
@@ -268,6 +277,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
 				url:                 UnwrapURL,
+				status:              "0",
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			expectedBids: []*adapters.TypedBid{{
@@ -308,12 +318,24 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+			if tt.args.moduleInvocationCtx.ModuleContext != nil {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+					w.Header().Add("unwrap-status", tt.args.status)
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte(tt.expectedBids[0].Bid.AdM))
+				}))
+				url := server.URL
+				for _, bid := range tt.args.payload.Bids {
+					bid.Bid.AdM = strings.Replace(bid.Bid.AdM, "{URL}", url, 1)
+				}
+				defer server.Close()
+			}
 			_, err := handleRawBidderResponseHook(tt.args.module, tt.args.moduleInvocationCtx, tt.args.payload, "test")
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-			if tt.args.moduleInvocationCtx.ModuleContext != nil {
-				assert.Equal(t, tt.expectedBids[0].Bid.AdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+			if tt.args.moduleInvocationCtx.ModuleContext != nil && tt.args.wantAdM {
+				assert.Equal(t, finalAdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
 		})
 	}
