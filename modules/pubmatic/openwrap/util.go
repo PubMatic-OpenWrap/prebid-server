@@ -7,6 +7,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
@@ -289,4 +290,19 @@ func getPubmaticErrorCode(standardNBR int) int {
 
 func isCTV(userAgent string) bool {
 	return ctvRegex.Match([]byte(userAgent))
+}
+
+func getPlatformFromRequest(request *openrtb2.BidRequest) string {
+	var platform string
+	if request.Site != nil {
+		return models.PLATFORM_DISPLAY
+	}
+	if request.App != nil {
+		return models.PLATFORM_APP
+	}
+	return platform
+}
+
+func getNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
+	return &nbr
 }

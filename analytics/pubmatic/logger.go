@@ -366,13 +366,13 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			price := bid.Price
-			// if ao.Response.Cur != "" && ao.Response.Cur != "USD" {
-			// 	price = bidExt.OriginalBidCPMUSD
-			// }
-
-			if bidExt.OriginalBidCPMUSD != bid.Price {
+			if ao.Response.Cur != "" && ao.Response.Cur != "USD" {
 				price = bidExt.OriginalBidCPMUSD
 			}
+
+			// if bidExt.OriginalBidCPMUSD != bid.Price {
+			// 	price = bidExt.OriginalBidCPMUSD
+			// }
 
 			if seat == "pubmatic" {
 				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
@@ -394,12 +394,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DefaultBidStatus: 0,
 				ServerSide:       1,
 				// MatchedImpression: matchedImpression,
-				NetECPM: func() float64 {
-					if revShare != 0.0 {
-						return GetNetEcpm(price, revShare)
-					}
-					return price
-				}(),
+				NetECPM:     GetNetEcpm(price, revShare),
 				GrossECPM:   GetGrossEcpm(price),
 				OriginalCPM: GetGrossEcpm(bidExt.OriginalBidCPM),
 				OriginalCur: bidExt.OriginalBidCur,

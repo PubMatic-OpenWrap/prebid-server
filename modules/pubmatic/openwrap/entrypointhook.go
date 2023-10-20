@@ -86,6 +86,7 @@ func (m OpenWrap) handleEntrypointHook(
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
+		VersionID:                 requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
@@ -108,6 +109,7 @@ func (m OpenWrap) handleEntrypointHook(
 		DCName:                    m.cfg.Server.DCName,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		TMax:                      m.cfg.Timeout.MaxTimeout,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

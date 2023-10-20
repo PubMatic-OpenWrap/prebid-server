@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -60,6 +61,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// 	return result, nil
 	// }
 
+	anyDealTierSatisfyingBid := false
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -151,6 +153,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 			bidDealTierSatisfied := false
 			if bidExt.Prebid != nil {
 				bidDealTierSatisfied = bidExt.Prebid.DealTierSatisfied
+				if bidDealTierSatisfied {
+					anyDealTierSatisfyingBid = true
+					// found at least one bid which satisfies dealTier
+				}
 			}
 
 			owbid := models.OwBid{
@@ -159,8 +165,20 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(owbid, wbid, rctx.SupportDeals) {
+			if !ok || isNewWinningBid(&owbid, &wbid, rctx.SupportDeals) {
 				winningBids[bid.ImpID] = owbid
+			}
+
+			// update NonBr codes for current bid
+			if owbid.Nbr != 0 {
+				bidExt.Nbr = &owbid.Nbr
+			}
+
+			// if current bid is winner then update NonBr code for earlier winning bid
+			if wbid.ID == owbid.ID && ok {
+				winBidCtx := rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID]
+				winBidCtx.BidExt.Nbr = &owbid.Nbr
+				rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
 			}
 
 			// cache for bid details for logger and tracker
@@ -172,6 +190,23 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 			rctx.ImpBidCtx[bid.ImpID] = impCtx
 		}
+	}
+
+	/*
+		At this point of time,
+		1. For price-based auction (request with supportDeals = false),
+			    all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
+		2. For request with supportDeals = true :
+		    2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
+		    	 then NonBR code for them will be LossLostToHigherBid which is expected.
+		    2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
+		  		expectation:
+			    	all rejected non-deal bids should have NonBR code as LossLostToDealBid
+			    	all rejected deal-bids should have NonBR code as LossLostToHigherBid
+				addLostToDealBidNonBRCode function will make sure that above expectation are met.
+	*/
+	if rctx.SupportDeals && anyDealTierSatisfyingBid {
+		addLostToDealBidNonBRCode(&rctx)
 	}
 
 	rctx.WinningBids = winningBids
@@ -324,19 +359,26 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 }
 
 // isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
-func isNewWinningBid(bid, wbid models.OwBid, preferDeals bool) bool {
+func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			bid.Nbr = openrtb3.LossBidLostToDealBid
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			wbid.Nbr = openrtb3.LossBidLostToDealBid
 			return true
 		}
 	}
 	//both have deal or both do not have deal
-	return bid.NetEcpm > wbid.NetEcpm
+	if bid.NetEcpm > wbid.NetEcpm {
+		wbid.Nbr = openrtb3.LossBidLostToHigherBid
+		return true
+	}
+	bid.Nbr = openrtb3.LossBidLostToHigherBid
+	return false
 }
 
 func getPlatformName(platform string) string {

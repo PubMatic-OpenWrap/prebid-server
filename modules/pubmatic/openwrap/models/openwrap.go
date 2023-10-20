@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -91,6 +92,7 @@ type OwBid struct {
 	ID                   string
 	NetEcpm              float64
 	BidDealTierSatisfied bool
+	Nbr                  openrtb3.NonBidStatusCode
 }
 
 func (r RequestCtx) GetVersionLevelKey(key string) string {

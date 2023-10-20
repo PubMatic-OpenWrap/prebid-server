@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -103,6 +104,7 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 func newNoBidExt(rctx models.RequestCtx, impID string) json.RawMessage {
 	bidExt := models.BidExt{
 		NetECPM: 0,
+		Nbr:     getNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
 	}
 	if rctx.ClientConfigFlag == 1 {
 		if cc := adunitconfig.GetClientConfigForMediaType(rctx, impID, "banner"); cc != nil {

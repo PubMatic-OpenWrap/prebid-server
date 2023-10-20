@@ -53,6 +53,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
+	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
+	rCtx.PageURL = getPageURL(payload.BidRequest)
+	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -85,10 +88,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+		rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 		return result, err
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
+	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
+		rCtx.VersionID = ver
+	}
+
 	rCtx.Platform = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if rCtx.Platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
@@ -96,13 +104,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+		rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 		return result, err
 	}
 
-	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
-	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.TMax = m.setTimeout(rCtx)
 
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
