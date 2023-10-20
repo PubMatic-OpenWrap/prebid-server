@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -134,10 +135,10 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 						}
 
 						if floorCurrency != "" && floorCurrency != models.USD {
-							fv, _ := conversion(floorCurrency, models.USD, floorValue)
+							fv, _ := currencyConversion(floorCurrency, models.USD, floorValue)
 							floorValue = roundToTwoDigit(fv)
 
-							frv, _ := conversion(floorCurrency, models.USD, floorRuleValue)
+							frv, _ := currencyConversion(floorCurrency, models.USD, floorRuleValue)
 							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
@@ -293,8 +294,15 @@ func roundToTwoDigit(value float64) float64 {
 }
 
 // TODO : Add proper currency conversion
-func conversion(from, to string, value float64) (float64, error) {
-	return value, nil
+var g_currencyConversions currency.Conversions
+
+// method for currency conversion
+func currencyConversion(from, to string, value float64) (float64, error) {
+	rate, err := g_currencyConversions.GetRate(from, to)
+	if err == nil {
+		return value * rate, nil
+	}
+	return 0, err
 }
 
 // ConstructTrackerURL constructing tracker url for impression
