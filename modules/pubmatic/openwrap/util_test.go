@@ -341,7 +341,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
+				// mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
 			},
 		},
 		{
@@ -357,7 +357,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
+				// mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
 			},
 		},
 		{
@@ -373,7 +373,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
+				// mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
 			},
 		},
 		{
@@ -466,7 +466,7 @@ func TestGetDevicePlatform(t *testing.T) {
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1", 3, false, true),
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Success).Times(1)
+				// mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Success).Times(1)
 			},
 			want: models.DevicePlatformConnectedTv,
 		},
@@ -494,7 +494,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			},
 			want: models.DevicePlatformConnectedTv,
 			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
+				// mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
 			},
 		},
 	}

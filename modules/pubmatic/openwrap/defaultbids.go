@@ -52,10 +52,16 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 					defaultBids[impID] = make(map[string][]openrtb2.Bid)
 				}
 
+				var errcode int
+				errs, ok := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
+				if ok && len(errs) > 0 {
+					errcode = errs[0].Code
+				}
+
 				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
 					ID:    impID,
 					ImpID: impID,
-					Ext:   newNoBidExt(rctx, impID),
+					Ext:   newNoBidExt(rctx, impID, errcode),
 				})
 
 				// record error stats for each bidder
@@ -75,7 +81,7 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 				{
 					ID:    impID,
 					ImpID: impID,
-					Ext:   newNoBidExt(rctx, impID),
+					Ext:   newNoBidExt(rctx, impID, errortypes.UnknownErrorCode),
 				},
 			}
 		}
@@ -92,7 +98,7 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 				{
 					ID:    impID,
 					ImpID: impID,
-					Ext:   newNoBidExt(rctx, impID),
+					Ext:   newNoBidExt(rctx, impID, errortypes.UnknownErrorCode),
 				},
 			}
 		}
@@ -101,10 +107,18 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	return defaultBids
 }
 
-func newNoBidExt(rctx models.RequestCtx, impID string) json.RawMessage {
+func getNonBRCodeFromPartnerErrCode(errcode int) *openrtb3.NonBidStatusCode {
+	switch errcode {
+	case errortypes.TimeoutErrorCode:
+		return GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError)
+	}
+	return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
+}
+
+func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) json.RawMessage {
 	bidExt := models.BidExt{
 		NetECPM: 0,
-		Nbr:     getNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+		Nbr:     getNonBRCodeFromPartnerErrCode(errcode),
 	}
 	if rctx.ClientConfigFlag == 1 {
 		if cc := adunitconfig.GetClientConfigForMediaType(rctx, impID, "banner"); cc != nil {

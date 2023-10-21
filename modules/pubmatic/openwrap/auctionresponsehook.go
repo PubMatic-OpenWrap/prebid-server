@@ -40,6 +40,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}()
 
 	RecordPublisherPartnerNoCookieStats(rctx)
+	rctx.MatchedImpression = getMatchedImpressionWithParsedCookie(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -154,8 +155,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if bidExt.Prebid != nil {
 				bidDealTierSatisfied = bidExt.Prebid.DealTierSatisfied
 				if bidDealTierSatisfied {
-					anyDealTierSatisfyingBid = true
-					// found at least one bid which satisfies dealTier
+					anyDealTierSatisfyingBid = true // found at least one bid which satisfies dealTier
 				}
 			}
 
@@ -363,21 +363,21 @@ func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
-			bid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
-			wbid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return true
 		}
 	}
 	//both have deal or both do not have deal
 	if bid.NetEcpm > wbid.NetEcpm {
-		wbid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
 		return true
 	}
-	bid.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
 	return false
 }
 

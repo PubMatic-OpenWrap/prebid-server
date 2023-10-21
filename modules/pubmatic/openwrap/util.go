@@ -303,6 +303,6 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	return platform
 }
 
-func getNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
+func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
 	return &nbr
 }

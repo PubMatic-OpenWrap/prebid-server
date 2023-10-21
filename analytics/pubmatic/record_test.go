@@ -792,3 +792,93 @@ func TestLogContentObject(t *testing.T) {
 		})
 	}
 }
+
+func TestSetMetaDataObject(t *testing.T) {
+	type args struct {
+		meta          *openrtb_ext.ExtBidPrebidMeta
+		partnerRecord *PartnerRecord
+	}
+	tests := []struct {
+		name          string
+		args          args
+		partnerRecord *PartnerRecord
+	}{
+		{
+			name: "NetworkID 0, AdvertiserID 0, SecondaryCategoryIDs size 0",
+			args: args{
+				meta: &openrtb_ext.ExtBidPrebidMeta{
+					NetworkID:            0,
+					AdvertiserID:         0,
+					SecondaryCategoryIDs: []string{},
+				},
+				partnerRecord: &PartnerRecord{
+					PartnerID: "pubmatic",
+				},
+			},
+			partnerRecord: &PartnerRecord{
+				PartnerID: "pubmatic",
+			},
+		},
+		{
+			name: "NetworkID other than 0",
+			args: args{
+				meta: &openrtb_ext.ExtBidPrebidMeta{
+					NetworkID:    10,
+					AdvertiserID: 0,
+				},
+				partnerRecord: &PartnerRecord{
+					PartnerID: "pubmatic",
+				},
+			},
+			partnerRecord: &PartnerRecord{
+				PartnerID: "pubmatic",
+				MetaData: &MetaData{
+					NetworkID: 10,
+				},
+			},
+		},
+		{
+			name: "AdvertiserID other than 0",
+			args: args{
+				meta: &openrtb_ext.ExtBidPrebidMeta{
+					NetworkID:    0,
+					AdvertiserID: 10,
+				},
+				partnerRecord: &PartnerRecord{
+					PartnerID: "pubmatic",
+				},
+			},
+			partnerRecord: &PartnerRecord{
+				PartnerID: "pubmatic",
+				MetaData: &MetaData{
+					AdvertiserID: 10,
+				},
+			},
+		},
+		{
+			name: "SecondaryCategoryIDs size other than 0",
+			args: args{
+				meta: &openrtb_ext.ExtBidPrebidMeta{
+					NetworkID:            0,
+					AdvertiserID:         0,
+					SecondaryCategoryIDs: []string{"cat1"},
+				},
+				partnerRecord: &PartnerRecord{
+					PartnerID: "pubmatic",
+				},
+			},
+			partnerRecord: &PartnerRecord{
+				PartnerID: "pubmatic",
+				MetaData: &MetaData{
+					SecondaryCategoryIDs: []string{"cat1"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.partnerRecord.setMetaDataObject(tt.args.meta)
+			assert.Equal(t, tt.partnerRecord, tt.args.partnerRecord, tt.name)
+		})
+	}
+}

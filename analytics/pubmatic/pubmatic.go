@@ -28,7 +28,7 @@ type HTTPLogger struct {
 	cfg config.PubMaticWL
 }
 
-// Writes AuctionObject to file
+// LogAuctionObject prepares the owlogger url and send it to logger endpoint
 func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	defer func() {
 		if r := recover(); r != nil {

@@ -89,7 +89,7 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 				continue
 			}
 			// lost-bid does not satisfies dealTier
-			bidCtx.BidExt.Nbr = getNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bidCtx.BidExt.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
 		}
 	}

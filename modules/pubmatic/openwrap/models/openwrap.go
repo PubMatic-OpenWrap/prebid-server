@@ -84,8 +84,9 @@ type RequestCtx struct {
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 
 	DCName                   string
-	CachePutMiss             int
+	CachePutMiss             int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
 	GetPBSCurrencyConversion func(from string, to string, value float64) (float64, error)
+	MatchedImpression        map[string]int
 }
 
 type OwBid struct {

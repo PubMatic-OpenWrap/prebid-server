@@ -21,7 +21,7 @@ func TestNewHTTPLogger(t *testing.T) {
 		want want
 	}{
 		{
-			name: "test global values",
+			name: "test global variable values",
 			cfg: config.PubMaticWL{
 				MaxClients:     1,
 				MaxConnections: 10,
@@ -34,14 +34,26 @@ func TestNewHTTPLogger(t *testing.T) {
 				MaxCalls:       1,
 			},
 		},
+		{
+			name: "test singleton instance",
+			cfg: config.PubMaticWL{
+				MaxClients:     5,
+				MaxConnections: 50,
+				MaxCalls:       5,
+				RespTimeout:    50,
+			},
+			want: want{
+				MaxClients:     1,
+				MaxConnections: 10,
+				MaxCalls:       1,
+			},
+		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			module := NewHTTPLogger(tt.cfg)
-			assert.NotNil(t, module, tt.name)
-			assert.Equal(t, maxHttpClients, tt.want.MaxClients, tt.name)
-			assert.Equal(t, maxHttpConnections, tt.want.MaxConnections, tt.name)
-			assert.Equal(t, maxHttpCalls, tt.want.MaxCalls, tt.name)
-		})
+		module := NewHTTPLogger(tt.cfg)
+		assert.NotNil(t, module, tt.name)
+		assert.Equal(t, maxHttpClients, tt.want.MaxClients, tt.name)
+		assert.Equal(t, maxHttpConnections, tt.want.MaxConnections, tt.name)
+		assert.Equal(t, maxHttpCalls, tt.want.MaxCalls, tt.name)
 	}
 }

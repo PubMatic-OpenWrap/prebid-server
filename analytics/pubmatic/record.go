@@ -29,8 +29,8 @@ type record struct {
 	GDPR              int8             `json:"gdpr,omitempty"`
 	ConsentString     string           `json:"cns,omitempty"`
 	PubmaticConsent   int              `json:"pmc,omitempty"`
-	UserID            string           `json:"uid,omitempty"`
-	PageValue         float64          `json:"pv,omitempty"` //sum of all winning bids
+	UserID            string           `json:"uid,omitempty"` // Not logged currently
+	PageValue         float64          `json:"pv,omitempty"`  //sum of all winning bids // Not logged currently
 	ServerLogger      int              `json:"sl,omitempty"`
 	Slots             []SlotRecord     `json:"s,omitempty"`
 	CachePutMiss      int              `json:"cm,omitempty"`
@@ -142,11 +142,11 @@ type PartnerRecord struct {
 	MetaData *MetaData `json:"md,omitempty"`
 
 	FloorValue     float64 `json:"fv,omitempty"`
-	FloorRule      string  `json:"fr,omitempty"`
+	FloorRule      string  `json:"-,omitempty"` //TODO : this has been removed
 	FloorRuleValue float64 `json:"frv,omitempty"`
 
 	// owlogger migration
-	Nbr *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // Reason for not bidding
+	Nbr *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
 
 }
 
@@ -281,5 +281,65 @@ func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
 		Series:  content.Series,
 		Season:  content.Season,
 		Cat:     content.Cat,
+	}
+}
+
+// set partnerRecord MetaData
+func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
+
+	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
+		partnerRecord.MetaData = &MetaData{
+			NetworkID:            meta.NetworkID,
+			AdvertiserID:         meta.AdvertiserID,
+			PrimaryCategoryID:    meta.PrimaryCategoryID,
+			AgencyID:             meta.AgencyID,
+			DemandSource:         meta.DemandSource,
+			SecondaryCategoryIDs: meta.SecondaryCategoryIDs,
+		}
+	}
+	//NOTE : We Don't get following Data points in Response, whenever got from translator,
+	//they can be populated.
+	//partnerRecord.MetaData.NetworkName = meta.NetworkName
+	//partnerRecord.MetaData.AdvertiserName = meta.AdvertiserName
+	//partnerRecord.MetaData.AgencyName = meta.AgencyName
+	//partnerRecord.MetaData.BrandName = meta.BrandName
+	//partnerRecord.MetaData.BrandID = meta.BrandID
+	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
+}
+
+func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) {
+
+	if floors == nil {
+		return
+	}
+
+	if floors.Skipped != nil {
+		skipped := ConvertBoolToInt(*floors.Skipped)
+		for i := range wlog.Slots {
+			wlog.Slots[i].FloorSkippedFlag = &skipped
+		}
+	}
+
+	if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+		wlog.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+	}
+
+	if len(floors.PriceFloorLocation) > 0 {
+		if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
+			wlog.FloorSource = &source
+		}
+	}
+
+	if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
+		wlog.FloorFetchStatus = &status
+	}
+
+	wlog.FloorProvider = floors.FloorProvider
+	if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
+		wlog.FloorProvider = floors.Data.FloorProvider
+	}
+
+	if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+		wlog.record.FloorType = models.HardFloor
 	}
 }
