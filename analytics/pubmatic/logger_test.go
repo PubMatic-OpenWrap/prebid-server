@@ -3,6 +3,8 @@ package pubmatic
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -1987,6 +1989,509 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
 			assert.Equal(t, tt.partners, partners, tt.name)
+		})
+	}
+}
+
+func TestGetLogAuctionObjectAsURL(t *testing.T) {
+
+	cfg := ow.cfg
+	defer func() {
+		ow.cfg = cfg
+	}()
+
+	ow.cfg.Endpoint = "http://10.172.141.11/wl"
+	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
+
+	type args struct {
+		ao                  analytics.AuctionObject
+		rCtx                *models.RequestCtx
+		logInfo, forRespExt bool
+	}
+	type want struct {
+		logger string
+		header http.Header
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "log integration type",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log consent string",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							User: &openrtb2.User{
+								Ext: json.RawMessage(`{"consent": "any-random-consent-string"}`),
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","cns":"any-random-consent-string","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log gdpr flag",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Regs: &openrtb2.Regs{
+								Ext: json.RawMessage(`{"gdpr":1}`),
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","gdpr":1,"sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log device platform",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					DevicePlatform: models.DevicePlatformMobileAppAndroid,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log device IFA Type",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Device: &openrtb2.Device{
+								Ext: json.RawMessage(`{"ifa_type":"sspid"}`),
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					DevicePlatform: models.DevicePlatformMobileAppAndroid,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log content from site object",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Site: &openrtb2.Site{
+								Content: &openrtb2.Content{
+									ID:    "1",
+									Title: "Game of thrones",
+									Cat:   []string{"IAB-1"},
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones","cat":["IAB-1"]},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log content from app object",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							App: &openrtb2.App{
+								Content: &openrtb2.Content{
+									ID:    "1",
+									Title: "Game of thrones",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones"},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log UA and IP in header",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					UA:            "mozilla",
+					IP:            "10.10.10.10",
+					KADUSERCookie: &http.Cookie{Name: "uids", Value: "eidsabcd"},
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{"mozilla"},
+					models.IP_HEADER:         []string{"10.10.10.10"},
+				},
+			},
+		},
+		{
+			name: "loginfo is false",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "responseExt.Prebid is nil so floor details not set",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{
+						Ext: json.RawMessage("{}"),
+					},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.PublicEndpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "set floor details",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{
+						Ext: json.RawMessage(`{"prebid":{"floors":{"floorprovider":"provider-1"}}}`),
+					},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.PublicEndpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"fp":"provider-1"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, header := GetLogAuctionObjectAsURL(tt.args.ao, tt.args.rCtx, tt.args.logInfo, tt.args.forRespExt)
+			logger, _ = url.QueryUnescape(logger)
+			assert.Equal(t, tt.want.logger, logger, tt.name)
+			assert.Equal(t, tt.want.header, header, tt.name)
+		})
+	}
+}
+
+func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
+
+	cfg := ow.cfg
+	defer func() {
+		ow.cfg = cfg
+	}()
+
+	ow.cfg.Endpoint = "http://10.172.141.11/wl"
+	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
+
+	type args struct {
+		ao                  analytics.AuctionObject
+		rCtx                *models.RequestCtx
+		logInfo, forRespExt bool
+	}
+	type want struct {
+		logger string
+		header http.Header
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "unmarshal error for BidRequest.Ext",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{invalid-json}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be soft when prebid is nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be soft when prebid.floors is nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{"prebid":{}}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be soft when prebid.floors is disabled",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": false}}}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be soft when prebid.floors.enforcement is nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true}}}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be soft when prebid.floors.enforcement.enforcepbs is false",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true, "enforcement": {"enforcepbs": false}}}}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "Floor type should be hard when prebid.floors.enforcement.enforcepbs is true",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true, "enforcement": {"enforcepbs": true}}}}`),
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx:       &models.RequestCtx{},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":1}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, header := GetLogAuctionObjectAsURL(tt.args.ao, tt.args.rCtx, tt.args.logInfo, tt.args.forRespExt)
+			logger, _ = url.PathUnescape(logger)
+			assert.Equal(t, tt.want.logger, logger, tt.name)
+			assert.Equal(t, tt.want.header, header, tt.name)
 		})
 	}
 }

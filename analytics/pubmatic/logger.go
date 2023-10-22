@@ -49,11 +49,6 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.ConsentString = extUser.Consent
 	}
 
-	if ao.RequestWrapper.Device != nil {
-		wlog.IP = ao.RequestWrapper.Device.IP
-		wlog.UserAgent = ao.RequestWrapper.Device.UA
-	}
-
 	if ao.RequestWrapper.Regs != nil {
 		extReg := openrtb_ext.ExtRegs{}
 		_ = json.Unmarshal(ao.RequestWrapper.Regs.Ext, &extReg)
@@ -114,19 +109,21 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		models.USER_AGENT_HEADER: []string{rCtx.UA},
 		models.IP_HEADER:         []string{rCtx.IP},
 	}
-	if rCtx.KADUSERCookie != nil {
-		headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
-	}
+
+	// TODO : confirm this header is not sent in HB ? do we need it here
+	// if rCtx.KADUSERCookie != nil {
+	// 	headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
+	// }
 
 	url := ow.cfg.Endpoint
-	if logInfo || forRespExt {
+	if logInfo {
 		url = ow.cfg.PublicEndpoint
 	}
 
 	var responseExt openrtb_ext.ExtBidResponse
 	err = json.Unmarshal(ao.Response.Ext, &responseExt)
 	if err == nil {
-		if responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
+		if responseExt.Prebid != nil {
 			wlog.SetFloorDetails(responseExt.Prebid.Floors)
 		}
 	}

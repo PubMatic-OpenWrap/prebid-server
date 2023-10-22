@@ -105,8 +105,6 @@ func TestPrepareLoggerURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			owlogger := PrepareLoggerURL(tt.args.wlog, tt.args.loggerURL, tt.args.gdprEnabled)
-			// assert.Equal(t, url.QueryEscape(owlogger), tt.owlogger, tt.name)
-			// assert.Equal(t, owlogger, url.QueryEscape(tt.owlogger), tt.name)
 			decodedOwlogger, _ := url.QueryUnescape(owlogger)
 			assert.Equal(t, decodedOwlogger, tt.owlogger, tt.name)
 		})

@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 type RequestType string
@@ -46,7 +47,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	var err error
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url != "" {
-		err = Send(url, headers)
+		cookies := make(map[string]string)
+		if rCtx.KADUSERCookie != nil {
+			cookies[models.KADUSERCOOKIE] = rCtx.KADUSERCookie.Value
+		}
+		err = Send(url, headers, cookies)
 	}
 
 	// record the logger failure

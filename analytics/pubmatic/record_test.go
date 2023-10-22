@@ -207,6 +207,26 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeAmp,
 		},
 		{
+			name:            "ctv-vast",
+			endpoint:        models.EndpointCTVVAST,
+			integrationType: models.TypeTag,
+		},
+		{
+			name:            "ctv-ortb",
+			endpoint:        models.EndpointCTVORTB,
+			integrationType: models.TypeS2S,
+		},
+		{
+			name:            "ctv-json",
+			endpoint:        models.EndpointCTVJson,
+			integrationType: models.TypeInline,
+		},
+		{
+			name:            "openrtb-video",
+			endpoint:        models.EndpointVideo,
+			integrationType: models.TypeInline,
+		},
+		{
 			name:            "invalid",
 			endpoint:        "invalid",
 			integrationType: "",
@@ -675,7 +695,7 @@ func TestLogFloorDetails(t *testing.T) {
 			wlog := &WloggerRecord{
 				record: tt.fields.record,
 			}
-			wlog.setFloorDetails(tt.args.floors)
+			wlog.SetFloorDetails(tt.args.floors)
 			assert.Equal(t, tt.want, wlog.record)
 
 		})

@@ -12,7 +12,7 @@ import (
 )
 
 // Send method
-func Send(url string, headers http.Header) error {
+func Send(url string, headers http.Header, cookies map[string]string) error {
 	mhc := NewMultiHttpContext()
 	hc, err := NewHttpCall(url, "")
 	if err != nil { //TODO : err will always nil
@@ -23,6 +23,11 @@ func Send(url string, headers http.Header) error {
 		if len(v) != 0 {
 			hc.AddHeader(k, v[0])
 		}
+	}
+
+	// TODO : confirm this
+	for k, v := range cookies {
+		hc.AddCookie(k, v)
 	}
 
 	mhc.AddHttpCall(hc)

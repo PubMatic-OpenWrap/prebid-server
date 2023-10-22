@@ -217,8 +217,13 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 		wlog.IntegrationType = models.TypeAmp
 	case models.EndpointV25:
 		wlog.IntegrationType = models.TypeSDK
+	case models.EndpointCTVVAST:
+		wlog.IntegrationType = models.TypeTag
+	case models.EndpointCTVJson, models.EndpointVideo:
+		wlog.IntegrationType = models.TypeInline
+	case models.EndpointCTVORTB:
+		wlog.IntegrationType = models.TypeS2S
 	}
-	// add CTV specific cases here
 }
 
 // logFloorType will be used to log floor type
@@ -227,43 +232,6 @@ func (wlog *WloggerRecord) logFloorType(prebid *openrtb_ext.ExtRequestPrebid) {
 	if prebid != nil && prebid.Floors != nil &&
 		prebid.Floors.Enabled != nil && *prebid.Floors.Enabled &&
 		prebid.Floors.Enforcement != nil && prebid.Floors.Enforcement.EnforcePBS != nil && *prebid.Floors.Enforcement.EnforcePBS {
-		wlog.record.FloorType = models.HardFloor
-	}
-}
-
-// setFloorDetails will set the floor details in logger record
-func (wlog *WloggerRecord) setFloorDetails(floors *openrtb_ext.PriceFloorRules) {
-	if floors == nil {
-		return
-	}
-
-	if floors.Skipped != nil {
-		skipped := ConvertBoolToInt(*floors.Skipped)
-		for i := range wlog.Slots {
-			wlog.Slots[i].FloorSkippedFlag = &skipped
-		}
-	}
-
-	if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
-		wlog.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
-	}
-
-	if len(floors.PriceFloorLocation) > 0 {
-		if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
-			wlog.FloorSource = &source
-		}
-	}
-
-	if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
-		wlog.FloorFetchStatus = &status
-	}
-
-	wlog.FloorProvider = floors.FloorProvider
-	if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
-		wlog.FloorProvider = floors.Data.FloorProvider
-	}
-
-	if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
 		wlog.record.FloorType = models.HardFloor
 	}
 }
