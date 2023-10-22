@@ -1,9 +1,9 @@
 package tracker
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -31,18 +31,19 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 				trackers := []models.OWTracker{tracker}
 
 				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
-				if err != nil {
-					errMsg = fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error())
-				}
 			case models.Native:
-				// bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(rctx.ImpBidCtx[bid.ImpID].Native, bidResponse.SeatBid[i].Bid[j].AdM, tracker)
+				bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(rctx.ImpBidCtx[bid.ImpID].Native, bidResponse.SeatBid[i].Bid[j].AdM, tracker)
 			default:
 				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
 			}
 
+			if err != nil {
+				errMsg = fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error())
+			}
+
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
-				errs = errors.Wrap(errs, errMsg)
+				errs = models.ErrorWrap(errs, errors.New(errMsg))
 			}
 
 		}

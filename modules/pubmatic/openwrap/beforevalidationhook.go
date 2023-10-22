@@ -326,16 +326,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 				TagID:             imp.TagID,
 				Div:               div,
 				IsRewardInventory: reward,
-				BidFloor:          &imp.BidFloor,
-				BidFloorCur:       &imp.BidFloorCur,
+				BidFloor:          imp.BidFloor,
+				BidFloorCur:       imp.BidFloorCur,
 				Type:              slotType,
 				Banner:            imp.Banner != nil,
 				Video:             imp.Video,
-				// Native:            imp.Native,
-				IncomingSlots: incomingSlots,
-				Bidders:       make(map[string]models.PartnerData),
-				BidCtx:        make(map[string]models.BidCtx),
-				NewExt:        json.RawMessage(newImpExt),
+				Native:            imp.Native,
+				IncomingSlots:     incomingSlots,
+				Bidders:           make(map[string]models.PartnerData),
+				BidCtx:            make(map[string]models.BidCtx),
+				NewExt:            json.RawMessage(newImpExt),
 			}
 		}
 

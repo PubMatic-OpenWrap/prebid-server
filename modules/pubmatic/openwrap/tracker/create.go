@@ -9,12 +9,13 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
+func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, currencyConversion currency.Conversions) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
 	// pubmatic's KGP details per impression
@@ -22,11 +23,10 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 		PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
 	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
-	var responseExt *openrtb_ext.ExtBidResponse
+	var responseExt openrtb_ext.ExtBidResponse
 
-	err := json.Unmarshal(bidResponse.Ext, responseExt)
-	skipfloors, floorType, floorSource := 0, 0, 0
-	floorModelVersion := ""
+	skipfloors, floorType, floorSource, floorModelVersion := 0, 0, 0, ""
+	err := json.Unmarshal(bidResponse.Ext, &responseExt)
 	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
 		floors := responseExt.Prebid.Floors
 		if floors.Skipped != nil {
@@ -125,20 +125,19 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 								floorRuleValue = floorValue
 							}
 							floorCurrency = bidExt.Prebid.Floors.FloorCurrency
+						} else if impCtx.BidFloor != 0.0 {
+							floorValue = roundToTwoDigit(impCtx.BidFloor)
+							floorRuleValue = floorValue
+							if len(impCtx.BidFloorCur) > 0 {
+								floorCurrency = impCtx.BidFloorCur
+							}
 						}
-						// else if impCtx.BidFloor != 0.0 {
-						// 	floorValue = roundToTwoDigit(impCtx.BidFloor)
-						// 	floorRuleValue = floorValue
-						// 	if len(impCtx.BidFloorCur) > 0 {
-						// 		floorCurrency = impCtx.BidFloorCur
-						// 	}
-						// }
 
 						if floorCurrency != "" && floorCurrency != models.USD {
-							fv, _ := conversion(floorCurrency, models.USD, floorValue)
+							fv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorValue)
 							floorValue = roundToTwoDigit(fv)
 
-							frv, _ := conversion(floorCurrency, models.USD, floorRuleValue)
+							frv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorRuleValue)
 							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
@@ -293,9 +292,13 @@ func roundToTwoDigit(value float64) float64 {
 	return float64(math.Round(value*output)) / output
 }
 
-// TODO : Add proper currency conversion
-func conversion(from, to string, value float64) (float64, error) {
-	return value, nil
+// method for currency conversion
+func currencyConverter(currencyConversion currency.Conversions, from, to string, value float64) (float64, error) {
+	rate, err := currencyConversion.GetRate(from, to)
+	if err == nil {
+		return value * rate, nil
+	}
+	return 0, err
 }
 
 // ConstructTrackerURL constructing tracker url for impression

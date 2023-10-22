@@ -439,7 +439,7 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetParterConfig"
+	PartnerConfigQuery             = "GetPartnerConfig"
 	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
 	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
 	AdunitConfigQuery              = "GetAdunitConfigQuery"
