@@ -12,8 +12,6 @@ import (
 	"github.com/prebid/prebid-server/usersync"
 )
 
-type currencyConversion = func(from, to string, value float64) (float64, error)
-
 type RequestCtx struct {
 	PubID, ProfileID, DisplayID, VersionID int
 	SSAuction                              int
@@ -83,10 +81,10 @@ type RequestCtx struct {
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 
-	DCName                   string
-	CachePutMiss             int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	GetPBSCurrencyConversion func(from string, to string, value float64) (float64, error)
-	MatchedImpression        map[string]int
+	DCName             string
+	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion func(from string, to string, value float64) (float64, error)
+	MatchedImpression  map[string]int
 }
 
 type OwBid struct {
@@ -125,8 +123,6 @@ type ImpCtx struct {
 
 	BannerAdUnitCtx AdUnitCtx
 	VideoAdUnitCtx  AdUnitCtx
-	BidFloor        *float64
-	BidFloorCur     *string
 }
 
 type PartnerData struct {

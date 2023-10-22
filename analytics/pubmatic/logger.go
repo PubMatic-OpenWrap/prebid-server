@@ -407,7 +407,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 
 				if bidExt.Prebid.Floors != nil {
-					pr.FloorRule = bidExt.Prebid.Floors.FloorRule
 					floorCurrency = bidExt.Prebid.Floors.FloorCurrency
 					pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
 					pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
@@ -419,18 +418,16 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// if floor values are not set from bid.ext then fall back to imp.bidfloor
-			if pr.FloorRuleValue == -1 && impCtx.BidFloor != nil {
-				pr.FloorValue = roundToTwoDigit(*impCtx.BidFloor)
+			if pr.FloorRuleValue == -1 && impCtx.BidFloor != 0 {
+				pr.FloorValue = roundToTwoDigit(impCtx.BidFloor)
 				pr.FloorRuleValue = pr.FloorValue
-				if impCtx.BidFloorCur != nil {
-					floorCurrency = *impCtx.BidFloorCur
-				}
+				floorCurrency = impCtx.BidFloorCur
 			}
 
 			if floorCurrency != "" && floorCurrency != models.USD {
-				value, _ := rCtx.GetPBSCurrencyConversion(floorCurrency, models.USD, pr.FloorValue)
+				value, _ := rCtx.CurrencyConversion(floorCurrency, models.USD, pr.FloorValue)
 				pr.FloorValue = roundToTwoDigit(value)
-				value, _ = rCtx.GetPBSCurrencyConversion(floorCurrency, models.USD, pr.FloorRuleValue)
+				value, _ = rCtx.CurrencyConversion(floorCurrency, models.USD, pr.FloorRuleValue)
 				pr.FloorRuleValue = roundToTwoDigit(value)
 			}
 

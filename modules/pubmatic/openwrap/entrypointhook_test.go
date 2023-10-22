@@ -234,7 +234,8 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					assert.Len(t, gotRctx.LoggerImpressionID, 36)
 					gotRctx.LoggerImpressionID = ""
 				}
-				gotRctx.ParsedUidCookie = nil // ignore parsed cookies
+				gotRctx.ParsedUidCookie = nil    // ignore parsed cookies
+				gotRctx.CurrencyConversion = nil // ignore currency-conversion
 				got.ModuleContext["rctx"] = gotRctx
 			}
 

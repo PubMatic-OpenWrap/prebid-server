@@ -747,8 +747,8 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.5),
-							BidFloorCur: ptrutil.ToPtr("USD"),
+							BidFloor:    10.5,
+							BidFloorCur: "USD",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -846,8 +846,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.5),
-							BidFloorCur: ptrutil.ToPtr("USD"),
+							BidFloor:    10.5,
+							BidFloorCur: "USD",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -873,7 +873,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     1,
 						FloorRuleValue: 1,
-						FloorRule:      "*|*|ebay.com",
 						Nbr:            openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 				},
@@ -923,8 +922,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.5),
-							BidFloorCur: ptrutil.ToPtr("USD"),
+							BidFloor:    10.5,
+							BidFloorCur: "USD",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -950,7 +949,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     0,
 						FloorRuleValue: 0,
-						FloorRule:      "*|*|ebay.com",
 						Nbr:            openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 				},
@@ -993,8 +991,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.567),
-							BidFloorCur: ptrutil.ToPtr("USD"),
+							BidFloor:    10.567,
+							BidFloorCur: "USD",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -1050,7 +1048,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
-					GetPBSCurrencyConversion: func(from, to string, value float64) (float64, error) {
+					CurrencyConversion: func(from, to string, value float64) (float64, error) {
 						return 1000, nil
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
@@ -1065,8 +1063,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.567),
-							BidFloorCur: ptrutil.ToPtr("JPY"),
+							BidFloor:    10.567,
+							BidFloorCur: "JPY",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -1122,7 +1120,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
-					GetPBSCurrencyConversion: func(from, to string, value float64) (float64, error) {
+					CurrencyConversion: func(from, to string, value float64) (float64, error) {
 						return 0.12, nil
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
@@ -1144,8 +1142,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									},
 								},
 							},
-							BidFloor:    ptrutil.ToPtr(10.567),
-							BidFloorCur: ptrutil.ToPtr("JPY"),
+							BidFloor:    10.567,
+							BidFloorCur: "JPY",
 						},
 					},
 					PartnerConfigMap: map[int]map[string]string{
@@ -1171,7 +1169,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     0.12,
 						FloorRuleValue: 0.12,
-						FloorRule:      "*|*|ebay.com",
 						Nbr:            openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 				},
