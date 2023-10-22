@@ -53,8 +53,8 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 				}
 
 				var errcode int
-				errs, ok := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
-				if ok && len(errs) > 0 {
+				errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
+				if len(errs) > 0 {
 					errcode = errs[0].Code
 				}
 

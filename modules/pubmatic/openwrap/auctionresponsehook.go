@@ -164,8 +164,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 				NetEcpm:              bidExt.NetECPM,
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
-			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(&owbid, &wbid, rctx.SupportDeals) {
+			wbid, oldWinBidFound := winningBids[bid.ImpID]
+			if !oldWinBidFound || isNewWinningBid(&owbid, &wbid, rctx.SupportDeals) {
 				winningBids[bid.ImpID] = owbid
 			}
 
@@ -175,7 +175,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			// if current bid is winner then update NonBr code for earlier winning bid
-			if wbid.ID == owbid.ID && ok {
+			if winningBids[bid.ImpID].ID == owbid.ID && oldWinBidFound {
 				winBidCtx := rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID]
 				winBidCtx.BidExt.Nbr = wbid.Nbr
 				rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
@@ -210,7 +210,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			    	all rejected deal-bids should have NonBR code as LossLostToHigherBid
 				addLostToDealBidNonBRCode function will make sure that above expectation are met.
 	*/
-	if rctx.SupportDeals && anyDealTierSatisfyingBid {
+	if anyDealTierSatisfyingBid {
 		addLostToDealBidNonBRCode(&rctx)
 	}
 

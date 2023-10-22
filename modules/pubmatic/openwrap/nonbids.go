@@ -67,6 +67,10 @@ func addSeatNonBidsInResponseExt(rctx models.RequestCtx, responseExt *openrtb_ex
 
 // addLostToDealBidNonBRCode function sets the NonBR code of all lost-bids not satisfying dealTier to LossBidLostToDealBid
 func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
+	if !rctx.SupportDeals {
+		return
+	}
+
 	for impID := range rctx.ImpBidCtx {
 		winBid, ok := rctx.WinningBids[impID]
 		if !ok {
@@ -88,7 +92,6 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 			if bidDealTierSatisfied {
 				continue
 			}
-			// lost-bid does not satisfies dealTier
 			bidCtx.BidExt.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
 		}

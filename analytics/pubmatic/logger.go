@@ -35,10 +35,9 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		},
 	}
 
-	requestExt := openrtb_ext.ExtRequest{}
-	err := json.Unmarshal(ao.RequestWrapper.BidRequest.Ext, &requestExt)
-	if err == nil {
-		wlog.logFloorType(&requestExt.Prebid)
+	requestExt, err := ao.RequestWrapper.GetRequestExt()
+	if err == nil && requestExt != nil {
+		wlog.logFloorType(requestExt.GetPrebid())
 	}
 
 	wlog.logIntegrationType(rCtx.Endpoint)
