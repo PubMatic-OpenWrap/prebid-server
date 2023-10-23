@@ -2,6 +2,7 @@
 
 set -e
 
+
 RACE=0
 AUTOFMT=true
 COVERAGE=false
