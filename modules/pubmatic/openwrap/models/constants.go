@@ -221,6 +221,7 @@ const (
 	PLATFORM_APP            = "in-app"
 	PLATFORM_VIDEO          = "video"
 	PlatformAppTargetingKey = "inapp"
+	HB_PLATFORM_APP         = "app"
 
 	//constants for headers
 	ORIGIN             = "origin"
@@ -282,6 +283,7 @@ const (
 	IosUARegexPattern                  string = `(iphone|ipad|darwin).*`
 	AndroidUARegexPattern              string = `android.*`
 	MobileDeviceUARegexPattern         string = `(mobi|tablet|ios).*`
+	ConnectedDeviceUARegexPattern      string = `Roku|SMART-TV|SmartTV|AndroidTV|Android TV|AppleTV|Apple TV|VIZIO|PHILIPS|BRAVIA|PlayStation|Chromecast|ExoPlayerLib|MIBOX3|Xbox|ComcastAppPlatform|AFT|HiSmart|BeyondTV|D.*ATV|PlexTV|Xstream|MiTV|AI PONT`
 
 	HbBuyIdPrefix               = "hb_buyid_"
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"
@@ -294,6 +296,9 @@ const (
 
 	PriceFloorURL      = "jsonUrl"
 	FloorModuleEnabled = "floorPriceModuleEnabled"
+	FloorType          = "floorType"
+	SoftFloorType      = "soft"
+	HardFloorType      = "hard"
 
 	//include brand categories values
 	IncludeNoCategory            = 0
@@ -440,4 +445,9 @@ type testValue = int8
 
 const (
 	TestValueTwo testValue = 2
+)
+
+const (
+	Success = "success"
+	Failure = "failure"
 )

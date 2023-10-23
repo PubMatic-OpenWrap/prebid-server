@@ -77,28 +77,28 @@ func getVASTBidderSlotKeys(imp *openrtb2.Imp,
 		isDefaultMappingSelected := false
 
 		index := strings.Index(key, "@@")
-		if -1 != index {
+		if index != -1 {
 			//prefix check only for `/15671365/MG_VideoAdUnit@`
-			if false == strings.HasPrefix(tempSlotKey, key[:index+1]) {
+			if !strings.HasPrefix(tempSlotKey, key[:index+1]) {
 				continue
 			}
 
 			//getting slot key `/15671365/MG_VideoAdUnit@@`
 			tempSlotKey = key[:index+2]
 			isDefaultMappingSelected = true
-		} else if false == strings.HasPrefix(key, tempSlotKey) {
+		} else if !strings.HasPrefix(key, tempSlotKey) {
 			continue
 		}
 
 		//get vast tag id and slotkey
 		vastTagID, _ := strconv.Atoi(key[len(tempSlotKey):])
-		if 0 == vastTagID {
+		if vastTagID == 0 {
 			continue
 		}
 
 		//check pubvasttag details
 		vastTag, ok := pubVASTTags[vastTagID]
-		if false == ok {
+		if !ok {
 			continue
 		}
 
@@ -144,7 +144,7 @@ func validateVASTTag(
 	videoMinDuration, videoMaxDuration int64,
 	adpod *models.AdPod) error {
 
-	if nil == vastTag {
+	if vastTag == nil {
 		return fmt.Errorf("Empty vast tag")
 	}
 
@@ -157,13 +157,13 @@ func validateVASTTag(
 		return fmt.Errorf("VAST tag mandatory parameter 'duration' missing: %v", vastTag.ID)
 	}
 
-	if vastTag.Duration > int(videoMaxDuration) {
+	if videoMaxDuration != 0 && vastTag.Duration > int(videoMaxDuration) {
 		return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > video.maxduration' vastTagID:%v, tag.duration:%v, video.maxduration:%v", vastTag.ID, vastTag.Duration, videoMaxDuration)
 	}
 
 	if nil == adpod {
 		//non-adpod request
-		if vastTag.Duration < int(videoMinDuration) {
+		if videoMinDuration != 0 && vastTag.Duration < int(videoMinDuration) {
 			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < video.minduration' vastTagID:%v, tag.duration:%v, video.minduration:%v", vastTag.ID, vastTag.Duration, videoMinDuration)
 		}
 

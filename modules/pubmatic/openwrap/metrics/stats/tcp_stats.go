@@ -262,6 +262,9 @@ func (st *StatsTCP) RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder st
 
 func (st *StatsTCP) RecordPublisherRequests(endpoint, publisher, platform string) {
 
+	if platform == models.PLATFORM_APP {
+		platform = models.HB_PLATFORM_APP
+	}
 	switch endpoint {
 	case "amp":
 		st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], publisher), 1)

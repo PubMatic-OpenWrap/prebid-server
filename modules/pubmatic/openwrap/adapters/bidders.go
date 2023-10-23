@@ -559,3 +559,46 @@ func builderApacdex(params BidderParameters) (json.RawMessage, error) {
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
+
+func builderUnruly(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	anyOf := []string{"siteId", "siteid"}
+	for _, param := range anyOf {
+		if key, ok := getInt(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":%d`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, anyOf)
+	}
+
+	if value, ok := params.FieldMap["featureOverrides"]; ok {
+		if featureOverridesJson, err := json.Marshal(value); err == nil {
+			fmt.Fprintf(&jsonStr, `,"%s":%s`, "featureOverrides", string(featureOverridesJson))
+		}
+	}
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderBoldwin(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderParamBoldwinPlacementID, BidderParamBoldwinEndpointID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}

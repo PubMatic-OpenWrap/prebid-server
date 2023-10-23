@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prebid/prebid-server/config"
@@ -85,9 +86,18 @@ const (
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
+var once sync.Once
+var metric *Metrics
 
 // NewMetrics initializes a new Prometheus metrics instance.
 func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
+	once.Do(func() {
+		metric = newMetrics(cfg, promRegistry)
+	})
+	return metric
+}
+
+func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
 
 	// general metrics

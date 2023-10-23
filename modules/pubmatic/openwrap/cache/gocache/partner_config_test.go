@@ -157,7 +157,8 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -236,7 +237,8 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -393,7 +395,8 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
