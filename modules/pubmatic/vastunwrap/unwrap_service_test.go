@@ -110,7 +110,7 @@ func TestDoUnwrap(t *testing.T) {
 				},
 				userAgent: "testUA",
 				url:       UnwrapURL,
-				wantAdM: true,
+				wantAdM:   true,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
