@@ -176,23 +176,23 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// GetValue returns the value from KV map wrt key
+// GetValue return the value from KV map corresponding to key
 func (tag *BidderMacro) GetValue(key string) (string, bool) {
-	tempKeys := strings.Split(key, ".")
+	macroKeys := strings.Split(key, ".")
+	isKeyFound := false
 
-	if tempKeys[0] == prefixkv || tempKeys[0] == prefixkvm {
+	if macroKeys[0] == prefixkv || macroKeys[0] == prefixkvm {
+		isKeyFound = true
 		if tag.KV != nil {
-			if value, found := tag.KV[tempKeys[1]]; found {
+			if value, found := tag.KV[macroKeys[1]]; found {
 				if isMap(value) {
-					return getJsonString(value), true
+					return getJsonString(value), isKeyFound
 				}
-				return fmt.Sprintf("%v", value), true
+				return fmt.Sprintf("%v", value), isKeyFound
 			}
-			return "", true
 		}
-		return "", true
 	}
-	return "", false
+	return "", isKeyFound
 }
 
 /********************* Request *********************/
@@ -1220,7 +1220,8 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	for key, val := range tag.KV {
 		if isMap(val) {
 			jsonString := getJsonString(val)
-			keyval += fmt.Sprintf("%s=%v&", key, jsonString)
+			// keyval += fmt.Sprintf("%s=%v&", key, jsonString)
+			keyval += key + "=" + jsonString + "&"
 			continue
 		}
 		keyval += fmt.Sprintf("%s=%v&", key, val)

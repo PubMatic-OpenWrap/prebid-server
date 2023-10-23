@@ -1453,13 +1453,13 @@ func TestBidderMacroKV(t *testing.T) {
 					"state":   "MH",
 					"pincode": 411041,
 					"metadata": map[string]interface{}{
-						"k1": "v1",
+						"k1": 223,
 						"k2": "v2",
 					},
 				},
 			}},
 			args:      args{key: "kv"},
-			want:      "age=22&country={\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"}",
+			want:      "age=22&country={\"metadata\":{\"k1\":223,\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"}",
 			isMatched: true,
 		},
 		{

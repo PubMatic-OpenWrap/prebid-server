@@ -71,7 +71,6 @@ var GetRandomID = func() string {
 }
 
 func getJsonString(kvmap any) string {
-
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
 
