@@ -1777,7 +1777,7 @@ func TestRecordVastTag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockMetricEngine := tt.args.getMetricsEngine()
-			recordVastTag(mockMetricEngine, tt.args.adapterBids)
+			recordVastTag(mockMetricEngine, tt.args.adapterBids, "pubmatic")
 			mockMetricEngine.AssertExpectations(t)
 		})
 	}

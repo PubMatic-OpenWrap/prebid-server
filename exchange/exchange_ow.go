@@ -184,7 +184,7 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
-func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse) {
+func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
 	vastTag := Unknown
 	for _, adapterBid := range adapterBids.Bids {
 		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
@@ -195,7 +195,7 @@ func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids *adapters.Bi
 			} else if IsUrl(adapterBid.Bid.AdM) {
 				vastTag = URL
 			}
-			metricsEngine.RecordVastTag(string(adapterBid.Seat), vastTag)
+			metricsEngine.RecordVastTag(string(bidder), vastTag)
 		}
 	}
 }
