@@ -64,8 +64,6 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 }
 
 func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion int) (err error) {
-	var errWrapperSlotMapping error
-	var errAdunitConfig error
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
 	if err != nil {
@@ -77,7 +75,8 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
 	}
 
-	if errWrapperSlotMapping = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
+	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
+	if errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
 		err = models.ErrorWrap(err, errWrapperSlotMapping)
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
@@ -85,7 +84,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 	}
-	if errAdunitConfig = c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion); errAdunitConfig != nil {
+	if errAdunitConfig := c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion); errAdunitConfig != nil {
 		queryType := models.AdunitConfigQuery
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
@@ -95,9 +94,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		err = models.ErrorWrap(err, errAdunitConfig)
-	}
-	if errWrapperSlotMapping == nil && errAdunitConfig == nil {
-		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.partnerConfigExpiry))
 	}
 	return
 }
