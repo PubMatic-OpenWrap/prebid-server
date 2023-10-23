@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
@@ -20,6 +21,7 @@ type VastUnwrapModule struct {
 	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
 	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine     metrics.MetricsEngine
+	unwrapRequest     func(w http.ResponseWriter, r *http.Request)
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -44,6 +46,7 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
 		Enabled:           vastUnwrapModuleCfg.Enabled,
 		MetricsEngine:     metricEngine,
+		unwrapRequest:     vastunwrap.UnwrapRequest,
 	}, nil
 }
 
@@ -54,7 +57,7 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 	if m.Enabled {
-		return handleRawBidderResponseHook(m, miCtx, payload, UnwrapURL)
+		return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
 }
