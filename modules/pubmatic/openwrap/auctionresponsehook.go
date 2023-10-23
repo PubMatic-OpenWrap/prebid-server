@@ -107,7 +107,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 					bidExt.CreativeType = string(bidExt.Prebid.Type)
 				}
 				if bidExt.CreativeType == "" {
-					bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+					bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
 				}
 
 				if payload.BidResponse.Cur != "USD" {

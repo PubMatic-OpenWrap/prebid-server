@@ -182,7 +182,8 @@ var FetchStatusMap = map[string]int{
 
 // TODO: do we need to pass this uaFromHTTPReq ?
 // logDeviceObject will be used to log device specific parameters like platform and ifa_type
-func (wlog *WloggerRecord) logDeviceObject(rctx models.RequestCtx, uaFromHTTPReq string, ortbBidRequest *openrtb2.BidRequest, platform string) {
+func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidRequest *openrtb2.BidRequest) {
+
 	dvc := Device{
 		Platform: rctx.DevicePlatform,
 	}

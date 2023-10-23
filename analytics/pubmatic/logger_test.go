@@ -202,7 +202,7 @@ func TestGetDefaultPartnerRecordsByImp(t *testing.T) {
 			partners := getDefaultPartnerRecordsByImp(tt.rCtx)
 			assert.Equal(t, len(tt.partners), len(partners), tt.name)
 			for ind := range partners {
-				// ignore order of elements in slice while comparing
+				// ignore order of elements in slice while comparison
 				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
 			}
 		})
@@ -355,7 +355,7 @@ func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
 			assert.Equal(t, len(tt.partners), len(partners), tt.name)
 			for ind := range partners {
-				// ignore order of elements in slice while comparing
+				// ignore order of elements in slice while comparison
 				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
 			}
 		})
@@ -575,7 +575,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
 			assert.Equal(t, len(tt.partners), len(partners), tt.name)
 			for ind := range partners {
-				// ignore order of elements in slice while comparing
+				// ignore order of elements in slice while comparison
 				if !assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name) {
 					assert.Equal(t, partners[ind], tt.partners[ind], tt.name)
 				}
@@ -1993,6 +1993,130 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 	}
 }
 
+func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
+	type args struct {
+		ao   analytics.AuctionObject
+		rCtx *models.RequestCtx
+	}
+	tests := []struct {
+		name     string
+		args     args
+		partners map[string][]PartnerRecord
+	}{
+		{
+			name: "overwrite marketplace bid details",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{ID: "bid-id-1", ImpID: "imp1", Price: 1},
+								},
+							},
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{ID: "bid-id-2", ImpID: "imp1", Price: 2},
+								},
+							},
+							{
+								Seat: "groupm",
+								Bid: []openrtb2.Bid{
+									{ID: "bid-id-3", ImpID: "imp1", Price: 3},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					MarketPlaceBidders: map[string]struct{}{
+						"groupm": {},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							Bidders: map[string]models.PartnerData{
+								"appnexus": {
+									KGP:              "apnx_kgp",
+									KGPV:             "apnx_kgpv",
+									PrebidBidderCode: "appnexus",
+								},
+								"pubmatic": {
+									KGP:              "pubm_kgp",
+									KGPV:             "pubm_kgpv",
+									PrebidBidderCode: "pubmatic",
+								},
+								"groupm": {
+									KGP:              "gm_kgp",
+									KGPV:             "gm_kgpv",
+									PrebidBidderCode: "groupm",
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: models.USD,
+						GrossECPM:   1,
+						NetECPM:     1,
+						KGPV:        "apnx_kgpv",
+						KGPSV:       "apnx_kgpv",
+					},
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-2",
+						OrigBidID:   "bid-id-2",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: models.USD,
+						GrossECPM:   2,
+						NetECPM:     2,
+						KGPV:        "pubm_kgpv",
+						KGPSV:       "pubm_kgpv",
+					},
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "groupm",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-3",
+						OrigBidID:   "bid-id-3",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: models.USD,
+						GrossECPM:   3,
+						NetECPM:     3,
+						KGPV:        "pubm_kgpv",
+						KGPSV:       "pubm_kgpv",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
+			assert.Equal(t, len(tt.partners), len(partners), tt.name)
+			for ind := range partners {
+				// ignore order of elements in slice while comparison
+				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
+			}
+		})
+	}
+}
+
 func TestGetLogAuctionObjectAsURL(t *testing.T) {
 
 	cfg := ow.cfg
@@ -2496,4 +2620,195 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 	}
 }
 
-func TestGetPartnerRecordsByImpForMarketPlace(t *testing.T) {}
+func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
+
+	cfg := ow.cfg
+	defer func() {
+		ow.cfg = cfg
+	}()
+
+	ow.cfg.Endpoint = "http://10.172.141.11/wl"
+	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
+
+	type args struct {
+		ao                  analytics.AuctionObject
+		rCtx                *models.RequestCtx
+		logInfo, forRespExt bool
+	}
+	type want struct {
+		logger string
+		header http.Header
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "req.Imp not mapped in ImpBidCtx",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:    "imp1",
+									TagID: "tagid",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp1_tagid","au":"tagid","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "multi imps request",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:    "imp_1",
+									TagID: "tagid_1",
+								},
+								{
+									ID:    "imp_2",
+									TagID: "tagid_2",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "multi imps request and one request has incomingslots",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:    "imp_1",
+									TagID: "tagid_1",
+								},
+								{
+									ID:    "imp_2",
+									TagID: "tagid_2",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							IncomingSlots:     []string{"0x0v", "100x200"},
+							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+						},
+					},
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "multi imps request and one imp has partner record",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:    "imp_1",
+									TagID: "tagid_1",
+								},
+								{
+									ID:    "imp_2",
+									TagID: "tagid_2",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp_1",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							IncomingSlots:     []string{"0x0v", "100x200"},
+							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+						},
+					},
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1",` +
+					`"ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1",` +
+					`"origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD"}],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, header := GetLogAuctionObjectAsURL(tt.args.ao, tt.args.rCtx, tt.args.logInfo, tt.args.forRespExt)
+			logger, _ = url.QueryUnescape(logger)
+			assert.Equal(t, tt.want.logger, logger, tt.name)
+			assert.Equal(t, tt.want.header, header, tt.name)
+		})
+	}
+}

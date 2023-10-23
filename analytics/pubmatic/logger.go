@@ -35,12 +35,14 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		},
 	}
 
-	requestExt, err := ao.RequestWrapper.GetRequestExt()
-	if err == nil && requestExt != nil {
-		wlog.logFloorType(requestExt.GetPrebid())
+	requestExt := openrtb_ext.ExtRequest{}
+	err := json.Unmarshal(ao.RequestWrapper.BidRequest.Ext, &requestExt)
+	if err == nil {
+		wlog.logFloorType(&requestExt.Prebid)
 	}
 
 	wlog.logIntegrationType(rCtx.Endpoint)
+	wlog.logDeviceObject(rCtx, ao.RequestWrapper.BidRequest)
 
 	if ao.RequestWrapper.User != nil {
 		extUser := openrtb_ext.ExtUser{}
@@ -56,13 +58,9 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 	}
 
-	//log device object
-	wlog.logDeviceObject(*rCtx, rCtx.UA, ao.RequestWrapper.BidRequest, rCtx.Platform)
-
-	//log content object
-	if nil != ao.RequestWrapper.Site {
+	if ao.RequestWrapper.Site != nil {
 		wlog.logContentObject(ao.RequestWrapper.Site.Content)
-	} else if nil != ao.RequestWrapper.App {
+	} else if ao.RequestWrapper.App != nil {
 		wlog.logContentObject(ao.RequestWrapper.App.Content)
 	}
 
@@ -220,7 +218,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			// So, we want to skip this default/proxy bid to avoid duplicate or incomplete data and log the correct one that was rejected.
 			// We don't have bid.ID here so using bid.ImpID
 			// if bid.Price == 0 && bid.W == 0 && bid.H == 0 { //TODO ??
-			if isDefaultBid(&bid) {
+			if models.IsDefaultBid(&bid) {
 				if _, ok := rejectedBids[seatBid.Seat]; ok {
 					if _, ok := rejectedBids[seatBid.Seat][bid.ImpID]; ok {
 						continue
@@ -287,15 +285,9 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			//adformat to be derived from Prebid.Type or bid.AdM
-			if bidExt.Prebid != nil && bidExt.Prebid.Type != "" {
-				adFormat = string(bidExt.Prebid.Type)
-			} else if bid.AdM != "" {
-				adFormat = models.GetAdFormat(bid.AdM)
-			}
+			adFormat = models.GetAdFormat(&bid, &bidExt, &impCtx)
 
-			// 1. nobid
-			// if bid.Price == 0 && bid.H == 0 && bid.W == 0 {
-			if isDefaultBid(&bid) {
+			if models.IsDefaultBid(&bid) {
 				//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
 				if !isRegex && kgpv != "" { // unmapped pubmatic's slot
 					kgpsv = kgpv // - KGP: _AU_@_DIV_@_W_x_H_
@@ -342,9 +334,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			pr := PartnerRecord{
-				PartnerID:  partnerID, // prebid biddercode
-				BidderCode: seat,      // pubmatic biddercode: pubmatic2
-				// AdapterCode: adapterCode, // prebid adapter that brought the bid
+				PartnerID:         partnerID,                           // prebid biddercode
+				BidderCode:        seat,                                // pubmatic biddercode: pubmatic2
 				Latency1:          rCtx.BidderResponseTimeMillis[seat], // it is set inside auctionresponsehook for all bidders
 				KGPV:              kgpv,
 				KGPSV:             kgpsv,
@@ -361,6 +352,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DealID:            bid.DealID,
 				Nbr:               bidExt.Nbr,
 				FloorRuleValue:    -1,
+				Adformat:          adFormat,
 			}
 
 			if bidExt.Nbr != nil && *(bidExt.Nbr) == openrtb3.NoBidTimeoutError {
@@ -384,10 +376,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			var floorCurrency string
-			if adFormat != "" {
-				pr.Adformat = adFormat
-			}
-
 			if bidExt.Prebid != nil {
 				// don't want default banner for nobid in wl
 				if bidExt.Prebid.DealTierSatisfied && bidExt.Prebid.DealPriority > 0 {
@@ -431,10 +419,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.FloorRuleValue = 0 //reset the value back to 0
 			}
 
-			if pr.Adformat == "" && bid.AdM != "" { // for non-bid , bid.AdM  will be empty
-				pr.Adformat = models.GetAdFormat(bid.AdM)
-			}
-
 			if len(bid.ADomain) != 0 { // for non-bid , bid.ADomain  will be empty
 				if domain, err := ExtractDomain(bid.ADomain[0]); err == nil {
 					pr.ADomain = domain
@@ -473,8 +457,4 @@ func getDefaultPartnerRecordsByImp(rCtx *models.RequestCtx) map[string][]Partner
 		}}
 	}
 	return ipr
-}
-
-func isDefaultBid(bid *openrtb2.Bid) bool {
-	return bid.Price == 0 && bid.DealID == ""
 }

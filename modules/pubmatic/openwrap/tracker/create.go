@@ -84,7 +84,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 			var dspId int
 
 			var isRegex bool
-			var kgp, kgpv, kgpsv string
+			var kgp, kgpv, kgpsv, adformat string
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
@@ -143,6 +143,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 					}
 					bidType = bidCtx.CreativeType
 					dspId = bidCtx.DspId
+					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx) // TODO: confirm with Saurabh
 				}
 
 				_ = matchedSlot
@@ -210,7 +211,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 				GrossECPM:      models.GetGrossEcpm(price),
 				AdSize:         getSizeForPlatform(int(bid.W), int(bid.H), rctx.Platform),
 				AdDuration:     adduration,
-				Adformat:       models.GetAdFormat(bid.AdM),
+				Adformat:       adformat,
 				ServerSide:     1,
 				FloorValue:     floorValue,
 				FloorRuleValue: floorRuleValue,

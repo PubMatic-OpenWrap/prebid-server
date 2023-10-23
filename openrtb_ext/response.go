@@ -126,9 +126,8 @@ type NonBidObject struct {
 	Dur     int64                   `json:"dur,omitempty"`
 	MType   openrtb2.MarkupType     `json:"mtype,omitempty"`
 
-	OriginalBidCPM    float64 `json:"origbidcpm,omitempty"`
-	OriginalBidCur    string  `json:"origbidcur,omitempty"`
-	OriginalBidCPMUSD float64 `json:"-,omitempty"`
+	OriginalBidCPM float64 `json:"origbidcpm,omitempty"`
+	OriginalBidCur string  `json:"origbidcur,omitempty"`
 
 	//OW specific fields
 	ID                string              `json:"id"`
@@ -140,6 +139,7 @@ type NonBidObject struct {
 	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
 	BidId             string              `json:"bidid,omitempty"`
 	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
+	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
 }
 
 // ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext

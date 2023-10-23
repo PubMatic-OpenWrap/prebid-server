@@ -13,9 +13,16 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
 )
+
+var videoRegex *regexp.Regexp
+
+func init() {
+	videoRegex, _ = regexp.Compile("<VAST\\s+")
+}
 
 var SyncerMap map[string]usersync.Syncer
 
@@ -70,21 +77,55 @@ func CreatePartnerKey(partner, key string) string {
 	return key + "_" + partner
 }
 
-// GetAdFormat gets adformat from creative(adm) of the bid
-func GetAdFormat(adm string) string {
-	adFormat := Banner
-	videoRegex, _ := regexp.Compile("<VAST\\s+")
-
-	if videoRegex.MatchString(adm) {
-		adFormat = Video
-	} else {
-		var admJSON map[string]interface{}
-		err := json.Unmarshal([]byte(strings.Replace(adm, "/\\/g", "", -1)), &admJSON)
-		if err == nil && admJSON != nil && admJSON["native"] != nil { // need this check admJSON["native"] != nil ?
-			adFormat = Native
+// GetCreativeType gets adformat from creative(adm) of the bid
+func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
+	if bidExt.Prebid != nil && len(bidExt.Prebid.Type) > 0 {
+		return string(bidExt.Prebid.Type)
+	}
+	if bid.AdM == "" {
+		return ""
+	}
+	if videoRegex.MatchString(bid.AdM) {
+		return Video
+	}
+	if impCtx.Native != nil {
+		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "native"); err == nil {
+			return Native
+		}
+		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "link"); err == nil {
+			return Native
+		}
+		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "assets"); err == nil {
+			return Native
 		}
 	}
-	return adFormat
+	return Banner
+}
+
+func IsDefaultBid(bid *openrtb2.Bid) bool {
+	return bid.Price == 0 && bid.DealID == ""
+}
+
+// GetAdFormat returns adformat of the bid.
+// for default bid it refers to impression object
+// for non-default bids it uses creative(adm) of the bid
+func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
+	if bid == nil || bidExt == nil || impCtx == nil {
+		return ""
+	}
+	if IsDefaultBid(bid) {
+		if impCtx.Banner {
+			return Banner
+		}
+		if impCtx.Video != nil {
+			return Video
+		}
+		if impCtx.Native != nil {
+			return Native
+		}
+		return ""
+	}
+	return GetCreativeType(bid, bidExt, impCtx)
 }
 
 func GetRevenueShare(partnerConfig map[string]string) float64 {

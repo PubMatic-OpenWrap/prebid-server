@@ -13,10 +13,8 @@ import (
 
 func TestLogDeviceObject(t *testing.T) {
 	type args struct {
-		uaFromHTTPReq  string
 		ortbBidRequest *openrtb2.BidRequest
-		platform       string
-		rctx           models.RequestCtx
+		rctx           *models.RequestCtx
 	}
 
 	type want struct {
@@ -31,7 +29,7 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Nil request`,
 			args: args{
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformDesktop,
 				},
 			},
@@ -44,10 +42,8 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Empty uaFromHTTPReq`,
 			args: args{
-				uaFromHTTPReq:  `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{},
-				platform:       models.PLATFORM_AMP,
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
 			},
@@ -60,14 +56,12 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Invalid device ext`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`invalid ext`),
 					},
 				},
-				platform: models.PLATFORM_AMP,
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
 			},
@@ -80,16 +74,14 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `IFA Type key absent`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"anykey":"anyval"}`),
 					},
 				},
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
-				platform: models.PLATFORM_AMP,
 			},
 			want: want{
 				device: Device{
@@ -100,15 +92,13 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Invalid data type for ifa_type key`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"ifa_type": 123}`)},
 				},
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
-				platform: models.PLATFORM_AMP,
 			},
 			want: want{
 				device: Device{
@@ -119,16 +109,14 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `ifa_type missing in DeviceIFATypeID mapping`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"ifa_type": "anything"}`),
 					},
 				},
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
-				platform: models.PLATFORM_AMP,
 			},
 			want: want{
 				device: Device{
@@ -140,16 +128,14 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Case insensitive ifa_type`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"ifa_type": "DpId"}`),
 					},
 				},
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
-				platform: models.PLATFORM_AMP,
 			},
 			want: want{
 				device: Device{
@@ -161,16 +147,14 @@ func TestLogDeviceObject(t *testing.T) {
 		{
 			name: `Valid ifa_type`,
 			args: args{
-				uaFromHTTPReq: `Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36`,
 				ortbBidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"ifa_type": "sessionid"}`),
 					},
 				},
-				rctx: models.RequestCtx{
+				rctx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileWeb,
 				},
-				platform: models.PLATFORM_AMP,
 			},
 			want: want{
 				device: Device{
@@ -183,7 +167,7 @@ func TestLogDeviceObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wlog := &WloggerRecord{}
-			wlog.logDeviceObject(tt.args.rctx, tt.args.uaFromHTTPReq, tt.args.ortbBidRequest, tt.args.platform)
+			wlog.logDeviceObject(tt.args.rctx, tt.args.ortbBidRequest)
 			assert.Equal(t, tt.want.device, wlog.Device)
 		})
 	}
