@@ -394,7 +394,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
-		recordVastTag(e.me, adapterBids)
 
 		if e.floor.Enabled {
 			var rejectedBids []*entities.PbsOrtbSeatBid

@@ -11,6 +11,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/metrics/pubmatic_stats"
@@ -183,18 +184,18 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
-func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse) {
 	vastTag := Unknown
-	for _, adapterBid := range adapterBids {
-		for _, bid := range adapterBid.Bids {
-			if strings.Contains(bid.Bid.AdM, WrapperElement) {
+	for _, adapterBid := range adapterBids.Bids {
+		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
+			if strings.Contains(adapterBid.Bid.AdM, WrapperElement) {
 				vastTag = Wrapper
-			} else if strings.Contains(bid.Bid.AdM, InlineElement) {
+			} else if strings.Contains(adapterBid.Bid.AdM, InlineElement) {
 				vastTag = Inline
-			} else if IsUrl(bid.Bid.AdM) {
+			} else if IsUrl(adapterBid.Bid.AdM) {
 				vastTag = URL
 			}
-			metricsEngine.RecordVastTag(string(adapterBid.BidderCoreName), vastTag)
+			metricsEngine.RecordVastTag(string(adapterBid.Seat), vastTag)
 		}
 	}
 }

@@ -1623,7 +1623,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 func TestRecordVastTag(t *testing.T) {
 	type args struct {
 		metricsEngine    metrics.MetricsEngine
-		adapterBids      map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+		adapterBids      *adapters.BidderResponse
 		getMetricsEngine func() *metrics.MetricsEngineMock
 	}
 	tests := []struct {
@@ -1633,7 +1633,7 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "No Bids",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+				adapterBids: &adapters.BidderResponse{},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
 					return metricEngine
@@ -1643,10 +1643,8 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "Empty Bids in SeatBid",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						Bids: []*entities.PbsOrtbBid{},
-					},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{},
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
@@ -1657,15 +1655,14 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "Empty AdM",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						BidderCoreName: "pubmatic",
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									AdM: "",
-								},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "",
 							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
 						},
 					},
 				},
@@ -1679,15 +1676,14 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "ADM has wrapped XML",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						BidderCoreName: "pubmatic",
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									AdM: vastXMLAdM,
-								},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: vastXMLAdM,
 							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
 						},
 					},
 				},
@@ -1701,15 +1697,14 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "ADM has Inline XML",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						BidderCoreName: "pubmatic",
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									AdM: inlineXMLAdM,
-								},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: inlineXMLAdM,
 							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
 						},
 					},
 				},
@@ -1723,15 +1718,14 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "ADM has URL",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						BidderCoreName: "pubmatic",
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									AdM: URLAdM,
-								},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: URLAdM,
 							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
 						},
 					},
 				},
@@ -1745,25 +1739,28 @@ func TestRecordVastTag(t *testing.T) {
 		{
 			name: "ADM has Wrapper,InLine and URL ADM",
 			args: args{
-				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
-					"pubmatic": {
-						BidderCoreName: "pubmatic",
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									AdM: vastXMLAdM,
-								},
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: vastXMLAdM,
 							},
-							{
-								Bid: &openrtb2.Bid{
-									AdM: inlineXMLAdM,
-								},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								AdM: inlineXMLAdM,
 							},
-							{
-								Bid: &openrtb2.Bid{
-									AdM: URLAdM,
-								},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								AdM: URLAdM,
 							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
 						},
 					},
 				},
