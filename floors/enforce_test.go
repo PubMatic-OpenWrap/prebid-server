@@ -1220,7 +1220,6 @@ func TestUpdateEnforcePBS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := updateEnforcePBS(tt.args.enforceFloors, tt.args.reqExt)
 			assert.Equal(t, tt.want, got, tt.name)
-
 		})
 	}
 }

@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"errors"
-	"reflect"
 	"sync"
 	"testing"
 
@@ -13,6 +12,7 @@ import (
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFSCDisabledPublishers(t *testing.T) {
@@ -72,7 +72,8 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -88,9 +89,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 				t.Errorf("mySqlDB.GetFSCDisabledPublishers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("memCache.GetFSCDisabledPublishers() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 
 		})
 	}
@@ -153,7 +152,8 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -169,9 +169,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 				t.Errorf("mySqlDB.GetFSCThresholdPerDSP() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("memCache.GetFSCThresholdPerDSP() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 
 		})
 	}

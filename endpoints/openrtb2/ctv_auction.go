@@ -71,7 +71,9 @@ func NewCTVEndpoint(
 	pbsAnalytics analytics.PBSAnalyticsModule,
 	disabledBidders map[string]string,
 	defReqJSON []byte,
-	bidderMap map[string]openrtb_ext.BidderName) (httprouter.Handle, error) {
+	bidderMap map[string]openrtb_ext.BidderName,
+	planBuilder hooks.ExecutionPlanBuilder,
+	tmaxAdjustments *exchange.TmaxAdjustmentsPreprocessed) (httprouter.Handle, error) {
 
 	if ex == nil || validator == nil || requestsByID == nil || accounts == nil || cfg == nil || met == nil {
 		return nil, errors.New("NewCTVEndpoint requires non-nil arguments")
@@ -82,7 +84,6 @@ func NewCTVEndpoint(
 		IPv4PrivateNetworks: cfg.RequestValidation.IPv4PrivateNetworksParsed,
 		IPv6PrivateNetworks: cfg.RequestValidation.IPv6PrivateNetworksParsed,
 	}
-
 	var uuidGenerator uuidutil.UUIDGenerator
 	return httprouter.Handle((&ctvEndpointDeps{
 		endpointDeps: endpointDeps{
@@ -103,7 +104,8 @@ func NewCTVEndpoint(
 			nil,
 			ipValidator,
 			nil,
-			&hooks.EmptyPlanBuilder{},
+			planBuilder,
+			tmaxAdjustments,
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -121,9 +123,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		Status: http.StatusOK,
 		Errors: make([]error, 0),
 	}
-
-	vastUnwrapperEnable := GetContextValueForField(r.Context(), VastUnwrapperEnableKey)
-	util.JLogf("VastUnwrapperEnable", vastUnwrapperEnable)
 
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
@@ -147,9 +146,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.analytics.LogAuctionObject(&ao)
 	}()
 
-	hookExecuter := &hookexecution.EmptyHookExecutor{}
+	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointCtv, deps.metricsEngine)
+
 	//Parse ORTB Request and do Standard Validation
-	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecuter)
+	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecutor)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
@@ -182,7 +182,9 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 
 	//Parsing Cookies and Set Stats
-	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
+	usersyncs := usersync.ReadCookie(r, usersync.Base64Decoder{}, &deps.cfg.HostCookie)
+	usersync.SyncHostCookie(r, usersyncs, &deps.cfg.HostCookie)
+
 	if request.App != nil {
 		deps.labels.Source = metrics.DemandApp
 		deps.labels.RType = metrics.ReqTypeVideo
@@ -224,11 +226,18 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		StartTime:         start,
 		LegacyLabels:      deps.labels,
 		PubID:             deps.labels.PubID,
-		HookExecutor:      hookExecuter,
+		HookExecutor:      hookExecutor,
 		TCF2Config:        tcf2Config,
+		TmaxAdjustments:   deps.tmaxAdjustments,
 	}
 
 	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)
+	defer func() {
+		if !auctionRequest.BidderResponseStartTime.IsZero() {
+			deps.metricsEngine.RecordOverheadTime(metrics.MakeAuctionResponse, time.Since(auctionRequest.BidderResponseStartTime))
+		}
+	}()
+
 	ao.RequestWrapper = auctionRequest.BidRequestWrapper
 	if err != nil || auctionResponse == nil || auctionResponse.BidResponse == nil {
 		deps.labels.RequestStatus = metrics.RequestStatusErr

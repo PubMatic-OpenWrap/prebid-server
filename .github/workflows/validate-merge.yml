@@ -12,13 +12,17 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.19.2
+        go-version: 1.20.5
 
     - name: Checkout Merged Branch
       uses: actions/checkout@v3
 
     - name: Validate
       run: |
+        git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
         ./validate.sh --nofmt --cov --race 10
       env:
         GO111MODULE: "on"
+        GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+        TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+        USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}

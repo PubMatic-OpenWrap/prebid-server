@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -143,7 +142,8 @@ func Test_cache_Set(t *testing.T) {
 			want: "test_value",
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			c := &cache{
 				cache: tt.fields.cache,
@@ -201,7 +201,8 @@ func Test_cache_Get(t *testing.T) {
 			want1: true,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			c := &cache{
 				cache: tt.fields.cache,
@@ -210,9 +211,7 @@ func Test_cache_Get(t *testing.T) {
 			}
 			c.Set(tt.args.key, "test_value")
 			got, got1 := c.Get(tt.args.key)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("cache.Get() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 			if got1 != tt.want1 {
 				t.Errorf("cache.Get() got1 = %v, want %v", got1, tt.want1)
 			}

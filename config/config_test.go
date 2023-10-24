@@ -214,6 +214,9 @@ func TestDefaults(t *testing.T) {
 	cmpUnsignedInts(t, "tmax_adjustments.bidder_network_latency_buffer_ms", 0, cfg.TmaxAdjustments.BidderNetworkLatencyBuffer)
 	cmpUnsignedInts(t, "tmax_adjustments.pbs_response_preparation_duration_ms", 0, cfg.TmaxAdjustments.PBSResponsePreparationDuration)
 
+	cmpInts(t, "account_defaults.privacy.ipv6.anon_keep_bits", 56, cfg.AccountDefaults.Privacy.IPv6Config.AnonKeepBits)
+	cmpInts(t, "account_defaults.privacy.ipv4.anon_keep_bits", 24, cfg.AccountDefaults.Privacy.IPv4Config.AnonKeepBits)
+
 	//Assert purpose VendorExceptionMap hash tables were built correctly
 	expectedTCF2 := TCF2{
 		Enabled: true,
@@ -486,12 +489,17 @@ account_defaults:
         max_rules: 120
         max_schema_dims: 5
         fetch:
-            enabled: true
-            timeout_ms: 1000
-            max_file_size_kb: 100
-            max_rules: 1000
-            max_age_sec: 36000
-            period_sec: 7200
+          enabled: true
+          timeout_ms: 1000
+          max_file_size_kb: 100
+          max_rules: 1000
+          max_age_sec: 36000
+          period_sec: 7200
+    privacy:
+        ipv6:
+            anon_keep_bits: 50
+        ipv4:
+            anon_keep_bits: 20
 price_floor_fetcher:
   worker: 10
   capacity: 20
@@ -584,7 +592,7 @@ func TestFullConfig(t *testing.T) {
 	cmpStrings(t, "validations.secure_markup", "skip", cfg.Validations.SecureMarkup)
 	cmpInts(t, "validations.max_creative_width", 0, int(cfg.Validations.MaxCreativeWidth))
 	cmpInts(t, "validations.max_creative_height", 0, int(cfg.Validations.MaxCreativeHeight))
-	cmpBools(t, "tmax_adjustments.enabled", false, cfg.TmaxAdjustments.Enabled) // Tmax adjustment feature is still under development. Therefore enabled flag is set to false
+	cmpBools(t, "tmax_adjustments.enabled", true, cfg.TmaxAdjustments.Enabled)
 	cmpUnsignedInts(t, "tmax_adjustments.bidder_response_duration_min_ms", 700, cfg.TmaxAdjustments.BidderResponseDurationMin)
 	cmpUnsignedInts(t, "tmax_adjustments.bidder_network_latency_buffer_ms", 100, cfg.TmaxAdjustments.BidderNetworkLatencyBuffer)
 	cmpUnsignedInts(t, "tmax_adjustments.pbs_response_preparation_duration_ms", 100, cfg.TmaxAdjustments.PBSResponsePreparationDuration)
@@ -608,6 +616,9 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.period_sec", 7200, cfg.AccountDefaults.PriceFloors.Fetch.Period)
 	cmpInts(t, "price_floor_fetcher.worker", 10, cfg.PriceFloorFetcher.Worker)
 	cmpInts(t, "price_floor_fetcher.capacity", 20, cfg.PriceFloorFetcher.Capacity)
+
+	cmpInts(t, "account_defaults.privacy.ipv6.anon_keep_bits", 50, cfg.AccountDefaults.Privacy.IPv6Config.AnonKeepBits)
+	cmpInts(t, "account_defaults.privacy.ipv4.anon_keep_bits", 20, cfg.AccountDefaults.Privacy.IPv4Config.AnonKeepBits)
 
 	// Assert compression related defaults
 	cmpBools(t, "enable_gzip", false, cfg.EnableGzip)
@@ -920,7 +931,6 @@ func TestUserSyncFromEnv(t *testing.T) {
 	assert.Nil(t, cfg.BidderInfos["bidder2"].Syncer.Redirect)
 	assert.Nil(t, cfg.BidderInfos["bidder2"].Syncer.SupportCORS)
 
-	assert.Nil(t, cfg.BidderInfos["brightroll"].Syncer)
 }
 
 func TestBidderInfoFromEnv(t *testing.T) {

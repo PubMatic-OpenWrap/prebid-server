@@ -1,17 +1,15 @@
 package openwrap
 
 import (
-	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/usersync"
 )
 
 var (
@@ -25,6 +23,7 @@ var (
 	iosUARegex                  *regexp.Regexp
 	openRTBDeviceOsIosRegex     *regexp.Regexp
 	mobileDeviceUARegex         *regexp.Regexp
+	ctvRegex                    *regexp.Regexp
 )
 
 const test = "_test"
@@ -42,23 +41,26 @@ func init() {
 	iosUARegex = regexp.MustCompile(models.IosUARegexPattern)
 	openRTBDeviceOsIosRegex = regexp.MustCompile(models.OpenRTBDeviceOsIosRegexPattern)
 	mobileDeviceUARegex = regexp.MustCompile(models.MobileDeviceUARegexPattern)
+	ctvRegex = regexp.MustCompile(models.ConnectedDeviceUARegexPattern)
 }
 
+//	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform, rCtx.PubIDStr, m.metricEngine)
+//
 // GetDevicePlatform determines the device from which request has been generated
-func GetDevicePlatform(httpReqUAHeader string, bidRequest *openrtb2.BidRequest, platform string) models.DevicePlatform {
-	userAgentString := httpReqUAHeader
-	if userAgentString == "" && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
+func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
+	userAgentString := rCtx.UA
+	if userAgentString == "" && bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
 		userAgentString = bidRequest.Device.UA
 	}
 
-	switch platform {
+	switch rCtx.Platform {
 	case models.PLATFORM_AMP:
 		return models.DevicePlatformMobileWeb
 
 	case models.PLATFORM_APP:
 		//Its mobile; now determine ios or android
 		var os = ""
-		if bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
+		if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 			os = bidRequest.Device.OS
 		}
 		if isIos(os, userAgentString) {
@@ -69,9 +71,9 @@ func GetDevicePlatform(httpReqUAHeader string, bidRequest *openrtb2.BidRequest, 
 
 	case models.PLATFORM_DISPLAY:
 		//Its web; now determine mobile or desktop
-		var deviceType int
-		if bidRequest.Device != nil && bidRequest.Device.DeviceType != 0 {
-			deviceType = int(bidRequest.Device.DeviceType)
+		var deviceType adcom1.DeviceType
+		if bidRequest != nil && bidRequest.Device != nil && bidRequest.Device.DeviceType != 0 {
+			deviceType = bidRequest.Device.DeviceType
 		}
 		if isMobile(deviceType, userAgentString) {
 			return models.DevicePlatformMobileWeb
@@ -79,23 +81,39 @@ func GetDevicePlatform(httpReqUAHeader string, bidRequest *openrtb2.BidRequest, 
 		return models.DevicePlatformDesktop
 
 	case models.PLATFORM_VIDEO:
-		var deviceType int
-		if bidRequest.Device != nil && bidRequest.Device.DeviceType != 0 {
-			deviceType = int(bidRequest.Device.DeviceType)
+		var deviceType adcom1.DeviceType
+		if bidRequest != nil && bidRequest.Device != nil && bidRequest.Device.DeviceType != 0 {
+			deviceType = bidRequest.Device.DeviceType
 		}
-		if deviceType == models.DeviceTypeConnectedTv || deviceType == models.DeviceTypeSetTopBox {
+		isCtv := isCTV(userAgentString)
+		regexStatus := models.Failure
+
+		if deviceType != 0 {
+			if deviceType == adcom1.DeviceTV || deviceType == adcom1.DeviceConnected || deviceType == adcom1.DeviceSetTopBox {
+				if isCtv {
+					regexStatus = models.Success
+				}
+				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+				return models.DevicePlatformConnectedTv
+			}
+			if isCtv {
+				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+			}
+		}
+
+		if deviceType == 0 && isCtv {
 			return models.DevicePlatformConnectedTv
 		}
 
-		if bidRequest.Site != nil {
+		if bidRequest != nil && bidRequest.Site != nil {
 			//Its web; now determine mobile or desktop
-			if isMobile(int(bidRequest.Device.DeviceType), userAgentString) {
+			if isMobile(bidRequest.Device.DeviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop
 		}
 
-		if bidRequest.App != nil {
+		if bidRequest != nil && bidRequest.App != nil {
 			//Its mobile; now determine ios or android
 			var os = ""
 			if bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
@@ -117,9 +135,12 @@ func GetDevicePlatform(httpReqUAHeader string, bidRequest *openrtb2.BidRequest, 
 	return models.DevicePlatformNotDefined
 }
 
-func isMobile(deviceType int, userAgentString string) bool {
-	if deviceType == models.DeviceTypeMobile || deviceType == models.DeviceTypeTablet ||
-		deviceType == models.DeviceTypePhone {
+func isMobile(deviceType adcom1.DeviceType, userAgentString string) bool {
+	if deviceType != 0 {
+		return deviceType == adcom1.DeviceMobile || deviceType == adcom1.DeviceTablet || deviceType == adcom1.DevicePhone
+	}
+
+	if mobileDeviceUARegex.Match([]byte(strings.ToLower(userAgentString))) {
 		return true
 	}
 	return false
@@ -181,10 +202,6 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 		} else if len(bidRequest.Site.Page) != 0 {
 			source = getDomainFromUrl(bidRequest.Site.Page)
 			origin = source
-			pageURL, err := url.Parse(source)
-			if err == nil && pageURL != nil {
-				origin = pageURL.Host
-			}
 
 		}
 	} else if bidRequest.App != nil {
@@ -218,19 +235,9 @@ func getHostName() string {
 	return serverName
 }
 
-// parseUIDCookies returns the parsed-cookie if uidCookie is nil else returns new cookie object
-func parseUIDCookies(uidCookie *http.Cookie) *usersync.Cookie {
-
-	if uidCookie != nil {
-		return usersync.ParseCookie(uidCookie)
-	}
-	return usersync.NewCookie()
-}
-
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
 func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 
-	cookie := parseUIDCookies(rctx.UidCookie)
 	for _, partnerConfig := range rctx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] == "0" {
 			continue
@@ -239,7 +246,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 		partnerName := partnerConfig[models.PREBID_PARTNER_NAME]
 		syncer := models.SyncerMap[adapters.ResolveOWBidder(partnerName)]
 		if syncer != nil {
-			uid, _, _ := cookie.GetUID(syncer.Key())
+			uid, _, _ := rctx.ParsedUidCookie.GetUID(syncer.Key())
 			if uid != "" {
 				continue
 			}
@@ -278,4 +285,8 @@ func getPubmaticErrorCode(standardNBR int) int {
 	}
 
 	return -1
+}
+
+func isCTV(userAgent string) bool {
+	return ctvRegex.Match([]byte(userAgent))
 }
