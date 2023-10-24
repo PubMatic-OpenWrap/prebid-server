@@ -107,12 +107,15 @@ func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.
 	return defaultBids
 }
 
+// getNonBRCodeFromPartnerErrCode maps the error-code present in prebid partner response with standard nonBR code
 func getNonBRCodeFromPartnerErrCode(errcode int) *openrtb3.NonBidStatusCode {
 	switch errcode {
 	case errortypes.TimeoutErrorCode:
 		return GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError)
+	case errortypes.UnknownErrorCode:
+		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
 	}
-	return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
+	return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
 }
 
 func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) json.RawMessage {

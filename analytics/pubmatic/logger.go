@@ -280,7 +280,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok { // impCtx.BidCtx is formed in auctionresponsehook
 				bidExt = bidCtx.BidExt
 			} else {
-				// this is for nonbids
+				// fetch bidExt by unmarshaling bid.Ext for default-bids & non-bids
 				json.Unmarshal(bid.Ext, &bidExt)
 			}
 

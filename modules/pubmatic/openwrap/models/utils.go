@@ -110,7 +110,7 @@ func IsDefaultBid(bid *openrtb2.Bid) bool {
 // for default bid it refers to impression object
 // for non-default bids it uses creative(adm) of the bid
 func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
-	if bid == nil || bidExt == nil || impCtx == nil {
+	if bid == nil || impCtx == nil {
 		return ""
 	}
 	if IsDefaultBid(bid) {
@@ -123,6 +123,9 @@ func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 		if impCtx.Native != nil {
 			return Native
 		}
+		return ""
+	}
+	if bidExt == nil {
 		return ""
 	}
 	return GetCreativeType(bid, bidExt, impCtx)
