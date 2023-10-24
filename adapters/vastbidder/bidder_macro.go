@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -184,12 +185,12 @@ func (tag *BidderMacro) GetValue(key string) (string, bool) {
 	if macroKeys[0] == prefixkv || macroKeys[0] == prefixkvm {
 		isKeyFound = true
 		if tag.KV != nil {
-			if value, found := tag.KV[macroKeys[1]]; found {
-				if isMap(value) {
-					return getJsonString(value), isKeyFound
-				}
-				return fmt.Sprintf("%v", value), isKeyFound
+			val := extractDataFromMap(macroKeys[1:], tag.KV)
+			if isMap(val) {
+				return getJsonString(val), isKeyFound
 			}
+			return fmt.Sprintf("%v", val), isKeyFound
+
 		}
 	}
 	return "", isKeyFound
@@ -1216,17 +1217,14 @@ func (tag *BidderMacro) MacroKV(key string) string {
 		return ""
 	}
 
-	keyval := ""
+	data := url.Values{}
 	for key, val := range tag.KV {
 		if isMap(val) {
-			jsonString := getJsonString(val)
-			// keyval += fmt.Sprintf("%s=%v&", key, jsonString)
-			keyval += key + "=" + jsonString + "&"
-			continue
+			val = getJsonString(val)
 		}
-		keyval += fmt.Sprintf("%s=%v&", key, val)
+		data.Add(key, fmt.Sprintf("%v", val))
 	}
-	return strings.TrimSuffix(keyval, "&")
+	return data.Encode()
 }
 
 // MacroKVM replace the kvm macro

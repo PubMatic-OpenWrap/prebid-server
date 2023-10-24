@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -85,6 +86,23 @@ func getJsonString(kvmap any) string {
 }
 
 func isMap(data any) bool {
-	t := fmt.Sprintf("%T", data)
-	return strings.HasPrefix(t, "map[")
+	return reflect.TypeOf(data).Kind() == reflect.Map
+}
+
+func extractDataFromMap(keyOrder []string, dataMap map[string]interface{}) interface{} {
+	if len(keyOrder) == 0 {
+		return dataMap
+	}
+
+	nextKey := keyOrder[0]
+	value, keyExists := dataMap[nextKey]
+
+	if !keyExists {
+		return ""
+	}
+
+	if nestedMap, ok := value.(map[string]interface{}); ok {
+		return extractDataFromMap(keyOrder[1:], nestedMap)
+	}
+	return value
 }
