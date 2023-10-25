@@ -9,8 +9,7 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookstage"
 )
 
-func handleRawBidderResponseHook(
-	m VastUnwrapModule,
+func (m VastUnwrapModule) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 	unwrapURL string,
@@ -33,7 +32,7 @@ func handleRawBidderResponseHook(
 			wg.Add(1)
 			go func(bid *adapters.TypedBid) {
 				defer wg.Done()
-				doUnwrapandUpdateBid(m, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+				m.doUnwrapandUpdateBid(bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
 			}(bid)
 		}
 	}
