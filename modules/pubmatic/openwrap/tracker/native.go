@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
@@ -23,7 +24,7 @@ func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker m
 	setTrackerURL := false
 	callback := func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
-			//logger.DebugWithBid(requestID, "Error Getting EventTracker Value in Native Request: %s", *native.Request)
+			glog.Errorf("Error Getting EventTracker Value in Native Request: %s", native.Request)
 			return
 		}
 		if setTrackerURL {
@@ -38,7 +39,7 @@ func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker m
 		return adm, nil
 	}
 
-	//logger.DebugWithBid(requestID, "Tracker Not Injected in Native Adm EventTrackers: %s, Injecting it into ImpTrackers", *adm)
+	glog.Infof("Tracker Not Injected in Native Adm EventTrackers: %s, Injecting it into ImpTrackers", adm)
 
 	return injectNativeImpressionTracker(&adm, tracker)
 }
@@ -60,7 +61,7 @@ func injectNativeEventTracker(adm *string, value []byte, trackerParam models.OWT
 
 	newAdm, err := jsonparser.Set([]byte(*adm), []byte(nativeEventTracker), models.EventTrackers, "[]")
 	if err != nil {
-		//logger.DebugWithBid(requestID, "Failed to Inject Tracker in Native Adm, Tracker Not Appended: %s", string(newAdm))
+		glog.Errorf("Failed to Inject Tracker in Native Adm, Tracker Not Appended: %s", string(newAdm))
 		return *adm, false
 	}
 
