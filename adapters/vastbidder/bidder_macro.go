@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -177,21 +176,22 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// GetValue return the value from KV map corresponding to key
+// GetValue returns the value for given key
+// isKeyFound will check the key is present or not
 func (tag *BidderMacro) GetValue(key string) (string, bool) {
 	macroKeys := strings.Split(key, ".")
 	isKeyFound := false
 
-	if macroKeys[0] == prefixkv || macroKeys[0] == prefixkvm {
+	// This will check if key has prefix kv/kvm
+	// if prefix present it will always return isKeyFound as true as it will help to replace the key with empty string in VAST TAG
+	if (macroKeys[0] == MacroKV || macroKeys[0] == MacroKVM) && len(macroKeys) > 1 {
 		isKeyFound = true
-		if tag.KV != nil {
-			val := extractDataFromMap(macroKeys[1:], tag.KV)
-			if isMap(val) {
-				return getJsonString(val), isKeyFound
-			}
-			return fmt.Sprintf("%v", val), isKeyFound
-
+		val := tag.getValueFromKV(macroKeys[1:])
+		if isMap(val) {
+			return getJsonString(val), isKeyFound
 		}
+		return fmt.Sprintf("%v", val), isKeyFound
+
 	}
 	return "", isKeyFound
 }
@@ -1216,15 +1216,7 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-
-	data := url.Values{}
-	for key, val := range tag.KV {
-		if isMap(val) {
-			val = getJsonString(val)
-		}
-		data.Add(key, fmt.Sprintf("%v", val))
-	}
-	return data.Encode()
+	return mapToQuery(tag.KV)
 }
 
 // MacroKVM replace the kvm macro

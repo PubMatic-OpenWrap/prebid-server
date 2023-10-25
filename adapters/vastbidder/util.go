@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -89,20 +90,40 @@ func isMap(data any) bool {
 	return reflect.TypeOf(data).Kind() == reflect.Map
 }
 
-func extractDataFromMap(keyOrder []string, dataMap map[string]interface{}) interface{} {
-	if len(keyOrder) == 0 {
-		return dataMap
-	}
-
-	nextKey := keyOrder[0]
-	value, keyExists := dataMap[nextKey]
-
-	if !keyExists {
+// getValueFromKV help to get value from nested  map
+func (tag *BidderMacro) getValueFromKV(keyOrder []string) any {
+	if tag.KV == nil {
 		return ""
 	}
+	dataMap := tag.KV
+	for _, key := range keyOrder {
+		value, keyExists := dataMap[key]
+		if !keyExists {
+			return ""
+		}
 
-	if nestedMap, ok := value.(map[string]interface{}); ok {
-		return extractDataFromMap(keyOrder[1:], nestedMap)
+		if nestedMap, isMap := value.(map[string]any); isMap {
+			dataMap = nestedMap
+		} else {
+			return value
+		}
 	}
-	return value
+	return dataMap
+}
+
+// mapToQuery convert the map data into & seperated string
+func mapToQuery(m map[string]any) string {
+	values := url.Values{}
+	for key, value := range m {
+		switch reflect.TypeOf(value).Kind() {
+		case reflect.Map:
+			mvalue, ok := value.(map[string]any)
+			if ok {
+				values.Add(key, mapToQuery(mvalue))
+			}
+		default:
+			values.Add(key, fmt.Sprintf("%v", value))
+		}
+	}
+	return values.Encode()
 }

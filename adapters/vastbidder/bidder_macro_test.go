@@ -1358,7 +1358,7 @@ func TestBidderGetValue(t *testing.T) {
 					},
 				},
 			}},
-			args:       args{key: "someprefix.country"},
+			args:       args{key: "someprefix.kv"},
 			want:       "",
 			isKeyFound: false, // hence this key is not starting with kv/kvm prefix we return isKeyFound as false
 		},
@@ -1396,6 +1396,16 @@ func TestBidderGetValue(t *testing.T) {
 			want:       "",
 			isKeyFound: true,
 		},
+		{
+			name: "key_wihtout_any_prefix",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:       args{key: "kv"},
+			want:       "",
+			isKeyFound: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1403,8 +1413,8 @@ func TestBidderGetValue(t *testing.T) {
 				KV: tt.fields.KV,
 			}
 			value, isKeyFound := tag.GetValue(tt.args.key)
-			assert.Equal(t, tt.isKeyFound, isKeyFound)
 			assert.Equal(t, tt.want, value, tt.name)
+			assert.Equal(t, tt.isKeyFound, isKeyFound)
 		})
 	}
 }
@@ -1450,7 +1460,7 @@ func TestBidderMacroKV(t *testing.T) {
 			want: "age=22&url=http%253A%252F%252Fexample.com%253Fk1%253Dv1%2526k2%253Dv2",
 		},
 		{
-			name:   "Empty_KV_map",
+			name:   "empty_KV_map",
 			fields: fields{KV: nil},
 			args:   args{key: "kv"},
 			want:   "",
@@ -1471,7 +1481,7 @@ func TestBidderMacroKV(t *testing.T) {
 				},
 			}},
 			args: args{key: "kv"},
-			want: "age=22&country=%7B%22pincode%22%3A411041%2C%22state%22%3A%22MH%22%7D",
+			want: "age=22&country=pincode%3D411041%26state%3DMH",
 		},
 		{
 			name: "key_with_value_as_nested_map",
@@ -1487,7 +1497,7 @@ func TestBidderMacroKV(t *testing.T) {
 				},
 			}},
 			args: args{key: "kv"},
-			want: "age=22&country=%7B%22metadata%22%3A%7B%22k1%22%3A223%2C%22k2%22%3A%22v2%22%7D%2C%22pincode%22%3A411041%2C%22state%22%3A%22MH%22%7D",
+			want: "age=22&country=metadata%3Dk1%253D223%2526k2%253Dv2%26pincode%3D411041%26state%3DMH",
 		},
 	}
 	for _, tt := range tests {
@@ -1516,7 +1526,7 @@ func TestBidderMacroKVM(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "Valid_test",
+			name: "valid_test",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  "22",
@@ -1525,13 +1535,13 @@ func TestBidderMacroKVM(t *testing.T) {
 			want: "{\"age\":\"22\",\"name\":\"test\"}",
 		},
 		{
-			name:   "Empty_KV_map",
+			name:   "empty_kv_map",
 			fields: fields{KV: nil},
 			args:   args{key: "kvm"},
 			want:   "",
 		},
 		{
-			name: "Value_as_int_data_type",
+			name: "value_as_int_data_type",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  22,
@@ -1540,13 +1550,13 @@ func TestBidderMacroKVM(t *testing.T) {
 			want: "{\"age\":22,\"name\":\"test\"}",
 		},
 		{
-			name:   "KV_map_with_no_key_val_pair",
+			name:   "kv_map_with_no_key_val_pair",
 			fields: fields{KV: map[string]interface{}{}},
 			args:   args{key: "kvm"},
 			want:   "{}",
 		},
 		{
-			name: "Marshal_error",
+			name: "marshal_error",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  make(chan int),
