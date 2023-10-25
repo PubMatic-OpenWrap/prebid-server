@@ -31,10 +31,6 @@ const (
 const (
 	VASTTypeWrapperEndTag = "</Wrapper>"
 	VASTTypeInLineEndTag  = "</InLine>"
-	Wrapper               = "Wrapper"
-	Inline                = "InLine"
-	URL                   = "URL"
-	Unknown               = "Unknown"
 )
 
 // VASTTagType describes the allowed values for VASTTagType
