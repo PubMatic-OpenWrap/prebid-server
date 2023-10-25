@@ -195,9 +195,9 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
-	vastTagType := UnknownVASTTagType
 	for _, adapterBid := range adapterBids.Bids {
 		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
+			vastTagType := UnknownVASTTagType
 			if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeWrapperEndTag); index != -1 {
 				vastTagType = WrapperVASTTagType
 			} else if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeInLineEndTag); index != -1 {
