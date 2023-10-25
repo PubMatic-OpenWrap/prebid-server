@@ -14,6 +14,7 @@ func TestInjectTrackers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	defer ctrl.Finish()
+	models.TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`
 
 	type args struct {
 		rctx        models.RequestCtx
@@ -32,6 +33,41 @@ func TestInjectTrackers(t *testing.T) {
 			},
 			want:    &openrtb2.BidResponse{},
 			wantErr: false,
+		},
+		{
+			name: "tracker_params_missing",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:      "video",
+					Trackers:      map[string]models.OWTracker{},
+					MetricsEngine: mockEngine,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `creative`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `creative`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "invalid_adformat",
@@ -217,6 +253,181 @@ func TestInjectTrackers(t *testing.T) {
 							{
 								ID:  "12345",
 								AdM: `<VAST version="3.0"><Ad><Wrapper><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "platform_is_app",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `sample_creative`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "platform_is_app_with_OM_Inactive_pubmatic",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+							DspId:      -1,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `sample_creative`,
+								},
+							},
+							Seat: models.BidderPubMatic,
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+							},
+						},
+						Seat: models.BidderPubMatic,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "platform_is_app_with_OM_active_pubmatic",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+							DspId:      models.DspId_DV360,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `sample_creative`,
+								},
+							},
+							Seat: models.BidderPubMatic,
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`,
+							},
+						},
+						Seat: models.BidderPubMatic,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "adformat_is_native",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "native",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp123": {
+							Native: &openrtb2.Native{
+								Request: "{\"context\":1,\"plcmttype\":1,\"eventtrackers\":[{\"event\":1,\"methods\":[1]}],\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":0,\"img\":{\"type\":3,\"w\":300,\"h\":250}},{\"id\":1,\"required\":0,\"data\":{\"type\":1,\"len\":2}},{\"id\":2,\"required\":0,\"img\":{\"type\":1,\"w\":50,\"h\":50}},{\"id\":3,\"required\":0,\"title\":{\"len\":80}},{\"id\":4,\"required\":0,\"data\":{\"type\":2,\"len\":2}}]}",
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "12345",
+									ImpID: "imp123",
+									AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "12345",
+								ImpID: "imp123",
+								AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"},{"event":1,"method":1,"url":"Tracking URL"}]}`,
 							},
 						},
 					},
