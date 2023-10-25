@@ -30,7 +30,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			ServerLogger:      1,
 			TestConfigApplied: rCtx.ABTestConfigApplied,
 			Timeout:           int(rCtx.TMax),
-			PDC:               rCtx.DCName, //TODO: confirm this
+			PDC:               rCtx.DCName,
 			CachePutMiss:      rCtx.CachePutMiss,
 		},
 	}
@@ -152,20 +152,7 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 	return nil
 }
 
-func convertNonBidToBid(nonBid openrtb_ext.NonBid) (bid openrtb2.Bid) {
-
-	bid.Price = nonBid.Ext.Prebid.Bid.Price
-	bid.ADomain = nonBid.Ext.Prebid.Bid.ADomain
-	bid.CatTax = nonBid.Ext.Prebid.Bid.CatTax
-	bid.Cat = nonBid.Ext.Prebid.Bid.Cat
-	bid.DealID = nonBid.Ext.Prebid.Bid.DealID
-	bid.W = nonBid.Ext.Prebid.Bid.W
-	bid.H = nonBid.Ext.Prebid.Bid.H
-	bid.Dur = nonBid.Ext.Prebid.Bid.Dur
-	bid.MType = nonBid.Ext.Prebid.Bid.MType
-	bid.ID = nonBid.Ext.Prebid.Bid.ID
-	bid.ImpID = nonBid.ImpId
-
+func addNonBidExtInImpBidCtx(rctx *models.RequestCtx, nonBid *openrtb_ext.NonBid) {
 	bidExt := models.BidExt{}
 	bidExt.OriginalBidCPM = nonBid.Ext.Prebid.Bid.OriginalBidCPM
 	bidExt.OriginalBidCPMUSD = nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD
@@ -181,10 +168,47 @@ func convertNonBidToBid(nonBid openrtb_ext.NonBid) (bid openrtb2.Bid) {
 	bidExt.Prebid.Floors = nonBid.Ext.Prebid.Bid.Floors
 	bidExt.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
 
-	bidExtBytes, err := json.Marshal(bidExt)
-	if err == nil {
-		bid.Ext = bidExtBytes
+	impCtx := rctx.ImpBidCtx[nonBid.ImpId]
+	if impCtx.BidCtx == nil {
+		impCtx.BidCtx = make(map[string]models.BidCtx)
 	}
+	impCtx.BidCtx[nonBid.Ext.Prebid.Bid.ID] = models.BidCtx{BidExt: bidExt}
+	rctx.ImpBidCtx[nonBid.ImpId] = impCtx
+}
+
+func convertNonBidToBid(nonBid *openrtb_ext.NonBid) (bid openrtb2.Bid) {
+
+	bid.Price = nonBid.Ext.Prebid.Bid.Price
+	bid.ADomain = nonBid.Ext.Prebid.Bid.ADomain
+	bid.CatTax = nonBid.Ext.Prebid.Bid.CatTax
+	bid.Cat = nonBid.Ext.Prebid.Bid.Cat
+	bid.DealID = nonBid.Ext.Prebid.Bid.DealID
+	bid.W = nonBid.Ext.Prebid.Bid.W
+	bid.H = nonBid.Ext.Prebid.Bid.H
+	bid.Dur = nonBid.Ext.Prebid.Bid.Dur
+	bid.MType = nonBid.Ext.Prebid.Bid.MType
+	bid.ID = nonBid.Ext.Prebid.Bid.ID
+	bid.ImpID = nonBid.ImpId
+
+	// bidExt := models.BidExt{}
+	// bidExt.OriginalBidCPM = nonBid.Ext.Prebid.Bid.OriginalBidCPM
+	// bidExt.OriginalBidCPMUSD = nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD
+	// bidExt.OriginalBidCur = nonBid.Ext.Prebid.Bid.OriginalBidCur
+	// bidExt.Prebid = new(openrtb_ext.ExtBidPrebid)
+	// bidExt.Prebid.DealPriority = nonBid.Ext.Prebid.Bid.DealPriority
+	// bidExt.Prebid.DealTierSatisfied = nonBid.Ext.Prebid.Bid.DealTierSatisfied
+	// bidExt.Prebid.Meta = nonBid.Ext.Prebid.Bid.Meta
+	// bidExt.Prebid.Targeting = nonBid.Ext.Prebid.Bid.Targeting
+	// bidExt.Prebid.Type = nonBid.Ext.Prebid.Bid.Type
+	// bidExt.Prebid.Video = nonBid.Ext.Prebid.Bid.Video
+	// bidExt.Prebid.BidId = nonBid.Ext.Prebid.Bid.BidId
+	// bidExt.Prebid.Floors = nonBid.Ext.Prebid.Bid.Floors
+	// bidExt.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
+
+	// bidExtBytes, err := json.Marshal(bidExt)
+	// if err == nil {
+	// 	bid.Ext = bidExtBytes
+	// }
 	return bid
 }
 
@@ -196,14 +220,18 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 	rejectedBids := map[string]map[string]struct{}{}
 	loggerSeat := make(map[string][]openrtb2.Bid)
 
-	// add all seatNonBids in loggerSeat which we refer while creating partnerRecords
+	// currently, ao.SeatNonBid will contain the bids that got rejected in the prebid core
+	// it does not contain the bids that got rejected inside pubmatic ow module
+	// As of now, pubmatic ow module logs slot-not-map and partner-throttle related nonbids
+	// for which we don't create partner-record in the owlogger
 	for _, seatNonBid := range ao.SeatNonBid {
 		if _, ok := rejectedBids[seatNonBid.Seat]; !ok {
 			rejectedBids[seatNonBid.Seat] = map[string]struct{}{}
 		}
 		for _, nonBid := range seatNonBid.NonBid {
 			rejectedBids[seatNonBid.Seat][nonBid.ImpId] = struct{}{}
-			loggerSeat[seatNonBid.Seat] = append(loggerSeat[seatNonBid.Seat], convertNonBidToBid(nonBid))
+			loggerSeat[seatNonBid.Seat] = append(loggerSeat[seatNonBid.Seat], convertNonBidToBid(&nonBid))
+			addNonBidExtInImpBidCtx(rCtx, &nonBid)
 		}
 	}
 
@@ -211,11 +239,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 	// loggerSeat should not contain duplicate entry for same imp-seat combination
 	for _, seatBid := range ao.Response.SeatBid {
 		for _, bid := range seatBid.Bid {
-			// Check if this is a default and RejectedBid.
+			// Check if this is a default as well as nonbid.
 			// Ex. if only one bid is returned by pubmatic and it got rejected due to floors.
-			// then OW-Module would add one default/proxy bid in seatbid.
+			// then OW-Module will add one default/proxy bid in seatbid.
 			// and prebid core will add one nonbid in seat-non-bid.
-			// So, we want to skip this default/proxy bid to avoid duplicate or incomplete data and log the correct one that was rejected.
+			// So, we want to skip this default/proxy bid to avoid duplicate.
 			// We don't have bid.ID here so using bid.ImpID
 			// if bid.Price == 0 && bid.W == 0 && bid.H == 0 { //TODO ??
 			if models.IsDefaultBid(&bid) {
@@ -229,8 +257,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 	}
 
+	// include bids that got dropped from ao.SeatBid by pubmatic ow module. Ex. sendAllBids=false
 	for seat, Bids := range rCtx.DroppedBids {
-		// include bids dropped by module. Ex. sendAllBids=false
 		loggerSeat[seat] = append(loggerSeat[seat], Bids...)
 	}
 
@@ -241,12 +269,13 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
+	// loggerSeat contains valid-bids, default-bids, non-bids, dropped-bids
 	for seat, bids := range loggerSeat {
 		if seat == string(openrtb_ext.BidderOWPrebidCTV) {
 			continue
 		}
 
-		// Response would not contain non-mapped bids, do we need this
+		// owlogger would not contain throttled bidders, do we need this
 		if _, ok := rCtx.AdapterThrottleMap[seat]; ok {
 			continue
 		}
@@ -257,7 +286,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				continue
 			}
 
-			// Response would not contain non-mapped bids, do we need this
+			// owlogger would not contain non-mapped bidders, do we need this
 			if _, ok := impCtx.NonMapped[seat]; ok {
 				break
 			}
@@ -277,11 +306,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			var bidExt models.BidExt
-			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok { // impCtx.BidCtx is formed in auctionresponsehook
+			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
 				bidExt = bidCtx.BidExt
-			} else {
-				// fetch bidExt by unmarshaling bid.Ext for default-bids & non-bids
-				json.Unmarshal(bid.Ext, &bidExt)
 			}
 
 			//adformat to be derived from Prebid.Type or bid.AdM

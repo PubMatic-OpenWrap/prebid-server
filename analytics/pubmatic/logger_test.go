@@ -144,13 +144,12 @@ func TestConvertNonBidToBid(t *testing.T) {
 				DealID:  "d1",
 				W:       10,
 				H:       50,
-				Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD","nbr":301}`),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bid := convertNonBidToBid(tt.nonBid)
+			bid := convertNonBidToBid(&tt.nonBid)
 			fmt.Printf("%s", bid.Ext)
 			assert.Equal(t, tt.bid, bid, tt.name)
 		})
@@ -565,6 +564,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						OriginalCur: "USD",
 						NetECPM:     0,
 						GrossECPM:   0,
+						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 				},
 			},
@@ -633,12 +633,13 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 					AdapterThrottleMap: map[string]struct{}{
 						"pubmatic": {},
 					},
+					ImpBidCtx: make(map[string]models.ImpCtx),
 				},
 			},
 			partners: map[string][]PartnerRecord{},
 		},
 		{
-			name: "logger should not log non-bid if ImpBidCtx dont have entry in ImpBidCtx",
+			name: "logger should be logged if bidCtx is empty",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{},
@@ -648,7 +649,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+									StatusCode: int(openrtb3.LossBidBelowDealFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -665,7 +666,21 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 					ImpBidCtx: make(map[string]models.ImpCtx),
 				},
 			},
-			partners: map[string][]PartnerRecord{},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						DealID:      "-1",
+						NetECPM:     10,
+						GrossECPM:   10,
+						ServerSide:  1,
+						OriginalCur: "USD",
+						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowDealFloor),
+					},
+				},
+			},
 		},
 		{
 			name: "logger should not log non-bid for slot-not-mapped reason",
@@ -713,7 +728,8 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -814,12 +830,19 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
 												Price: 10,
 												ID:    "bid-id-1",
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorRule:      "*|*|ebay.com",
+													FloorRuleValue: 1,
+													FloorValue:     1,
+													FloorCurrency:  models.USD,
+												},
 											},
 										},
 									},
@@ -831,23 +854,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 1,
-													FloorValue:     1,
-													FloorCurrency:  models.USD,
-												},
-											},
-										},
-										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
-									},
-								},
-							},
 							BidFloor:    10.5,
 							BidFloorCur: "USD",
 						},
@@ -890,12 +896,19 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int((openrtb3.LossBidBelowAuctionFloor)),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
 												Price: 10,
 												ID:    "bid-id-1",
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorRule:      "*|*|ebay.com",
+													FloorRuleValue: 0,
+													FloorValue:     0,
+													FloorCurrency:  models.USD,
+												},
 											},
 										},
 									},
@@ -907,23 +920,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 0,
-													FloorValue:     0,
-													FloorCurrency:  models.USD,
-												},
-											},
-										},
-										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
-									},
-								},
-							},
 							BidFloor:    10.5,
 							BidFloorCur: "USD",
 						},
@@ -966,7 +962,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -983,16 +980,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{},
-										},
-										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
-									},
-								},
-							},
 							BidFloor:    10.567,
 							BidFloorCur: "USD",
 						},
@@ -1035,7 +1022,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1055,16 +1043,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{},
-										},
-										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
-									},
-								},
-							},
 							BidFloor:    10.567,
 							BidFloorCur: "JPY",
 						},
@@ -1107,12 +1085,19 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							Seat: "appnexus",
 							NonBid: []openrtb_ext.NonBid{
 								{
-									ImpId: "imp1",
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
 												Price: 10,
 												ID:    "bid-id-1",
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorRule:      "*|*|ebay.com",
+													FloorRuleValue: 1,
+													FloorValue:     1,
+													FloorCurrency:  "JPY",
+												},
 											},
 										},
 									},
@@ -1127,23 +1112,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 1,
-													FloorValue:     1,
-													FloorCurrency:  "JPY",
-												},
-											},
-										},
-										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
-									},
-								},
-							},
 							BidFloor:    10.567,
 							BidFloorCur: "JPY",
 						},

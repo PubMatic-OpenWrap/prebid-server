@@ -201,14 +201,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	/*
 		At this point of time,
 		1. For price-based auction (request with supportDeals = false),
-			    all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
+				all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
 		2. For request with supportDeals = true :
-		    2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
-		    	 then NonBR code for them will be LossLostToHigherBid which is expected.
-		    2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
-		  		expectation:
-			    	all rejected non-deal bids should have NonBR code as LossLostToDealBid
-			    	all rejected deal-bids should have NonBR code as LossLostToHigherBid
+			2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
+					then NonBR code for them will be LossLostToHigherBid which is expected.
+			2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
+				expectation:
+					all rejected non-deal bids should have NonBR code as LossLostToDealBid
+					all rejected deal-bids should have NonBR code as LossLostToHigherBid
 				addLostToDealBidNonBRCode function will make sure that above expectation are met.
 	*/
 	if anyDealTierSatisfyingBid {
@@ -231,7 +231,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse, m.currencyConversion)
 
@@ -256,9 +256,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	rctx.SeatNonBids = prepareSeatNonBids(rctx)
+	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
 	if rctx.ReturnAllBidStatus {
-		// prepare seat-non-bids and add them in the response-ext
-		rctx.SeatNonBids = prepareSeatNonBids(rctx)
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
 	}
 

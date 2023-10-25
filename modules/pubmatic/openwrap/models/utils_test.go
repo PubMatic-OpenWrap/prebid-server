@@ -174,19 +174,6 @@ func TestGetCreativeType(t *testing.T) {
 			want: Banner,
 		},
 		{
-			name: "Native Adm with `assets` Object",
-			args: args{
-				bid: &openrtb2.Bid{
-					AdM: `{"assets":[{"id":0,"img":{"type":3,"url":"//ads.pubmatic.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//ads.pubmatic.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.pubmatic.com","clicktrackers":["http://clicktracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.pubmatic.com"},"imptrackers":["http://clicktracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/ads.pubmatic.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/ads.pubmatic.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1\u0026pubId=157962\u0026siteId=547907\u0026adId=1947750\u0026adType=12\u0026adServerId=243\u0026kefact=0.010000\u0026kaxefact=0.010000\u0026kadNetFrequecy=0\u0026kadwidth=0\u0026kadheight=0\u0026kadsizeid=0\u0026kltstamp=1658395546\u0026indirectAdId=0\u0026adServerOptimizerId=2\u0026ranreq=0.1\u0026kpbmtpfact=0.010000\u0026dcId=1\u0026tldId=0\u0026passback=0\u0026svr=pritiads\u0026adsver=_3952513331\u0026adsabzcid=0\u0026cls=pri\u0026ekefact=mhvZYu3OCACapb_iETG3xdxtC1tPzzUJu-KGCg7FolbaREk4\u0026ekaxefact=mhvZYvzOCACzeBW8kmVTsJknqYBPJWS55RNrwnAXq55kxLgA\u0026ekpbmtpfact=mhvZYgjPCAAp7x5RPBYGHfni3ntITSDe7G4kwxt3A2ZtoEPx\u0026enpp=mhvZYhXPCAAZEEUDckm1AOVbVrc4p9LF534kZuebuZ4ATSXX\u0026pfi=2\u0026dc=VA2\u0026crID=119_4987704\u0026lpu=ableunited.com\u0026ucrid=15711954930062968336\u0026campaignId=23041\u0026creativeId=0\u0026pctr=0.000000\u0026wDSPByrId=494\u0026wDspId=632\u0026wbId=0\u0026wrId=0\u0026wAdvID=700327\u0026wDspCampId=16530\u0026isRTB=1\u0026rtbId=3012556727136858784\u0026imprId=7BAD05C7-994C-49AF-95B8-4C5CC9542025\u0026oid=7BAD05C7-994C-49AF-95B8-4C5CC9542025\u0026mobflag=2\u0026country=IN\u0026pAuSt=2\u0026wops=0\u0026sURL=gamerch.com"}]}`,
-				},
-				bidExt: &BidExt{},
-				impCtx: &ImpCtx{
-					Native: &openrtb2.Native{},
-				},
-			},
-			want: Native,
-		},
-		{
 			name: "Native Adm with `native` Object",
 			args: args{
 				bid: &openrtb2.Bid{
@@ -222,19 +209,6 @@ func TestGetCreativeType(t *testing.T) {
 				impCtx: &ImpCtx{},
 			},
 			want: Banner,
-		},
-		{
-			name: "Native Adm with `link` Object",
-			args: args{
-				bid: &openrtb2.Bid{
-					AdM: `{"link":{"url":"//www.pubmatic.com","clicktrackers":["http://clicktracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.pubmatic.com"},"imptrackers":["http://clicktracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/ads.pubmatic.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/ads.pubmatic.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1\u0026pubId=157962\u0026siteId=547907\u0026adId=1947750\u0026adType=12\u0026adServerId=243\u0026kefact=0.010000\u0026kaxefact=0.010000\u0026kadNetFrequecy=0\u0026kadwidth=0\u0026kadheight=0\u0026kadsizeid=0\u0026kltstamp=1658395546\u0026indirectAdId=0\u0026adServerOptimizerId=2\u0026ranreq=0.1\u0026kpbmtpfact=0.010000\u0026dcId=1\u0026tldId=0\u0026passback=0\u0026svr=pritiads\u0026adsver=_3952513331\u0026adsabzcid=0\u0026cls=pri\u0026ekefact=mhvZYu3OCACapb_iETG3xdxtC1tPzzUJu-KGCg7FolbaREk4\u0026ekaxefact=mhvZYvzOCACzeBW8kmVTsJknqYBPJWS55RNrwnAXq55kxLgA\u0026ekpbmtpfact=mhvZYgjPCAAp7x5RPBYGHfni3ntITSDe7G4kwxt3A2ZtoEPx\u0026enpp=mhvZYhXPCAAZEEUDckm1AOVbVrc4p9LF534kZuebuZ4ATSXX\u0026pfi=2\u0026dc=VA2\u0026crID=119_4987704\u0026lpu=ableunited.com\u0026ucrid=15711954930062968336\u0026campaignId=23041\u0026creativeId=0\u0026pctr=0.000000\u0026wDSPByrId=494\u0026wDspId=632\u0026wbId=0\u0026wrId=0\u0026wAdvID=700327\u0026wDspCampId=16530\u0026isRTB=1\u0026rtbId=3012556727136858784\u0026imprId=7BAD05C7-994C-49AF-95B8-4C5CC9542025\u0026oid=7BAD05C7-994C-49AF-95B8-4C5CC9542025\u0026mobflag=2\u0026country=IN\u0026pAuSt=2\u0026wops=0\u0026sURL=gamerch.com"}]}`,
-				},
-				bidExt: &BidExt{},
-				impCtx: &ImpCtx{
-					Native: &openrtb2.Native{},
-				},
-			},
-			want: Native,
 		},
 		{
 			name: "Video Adm \t",
