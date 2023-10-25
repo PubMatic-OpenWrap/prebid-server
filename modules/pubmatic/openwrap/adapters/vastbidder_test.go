@@ -73,24 +73,7 @@ func TestPrepareVASTBidderParamJSON(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "nil video input",
-			args: args{
-				imp: formImp(false),
-				pubVASTTags: models.PublisherVASTTags{
-					101: &models.VASTTag{URL: `vast-tag-url-1`, Duration: 15},
-					102: &models.VASTTag{URL: `vast-tag-url-2`, Duration: 20},
-				},
-				matchedSlotKeys: []string{"abc@123"},
-				slotMap: map[string]models.SlotMapping{
-					"abc@123": createSlotMapping("abc@123",
-						map[string]interface{}{"param1": "85394", "param2": "test", "param3": "example1"}),
-				},
-			},
-			want: nil,
-		},
-
-		{
-			name: "video input",
+			name: "VAST Tag slot mapping found",
 			args: args{
 				imp: formImp(true),
 				pubVASTTags: models.PublisherVASTTags{
@@ -137,7 +120,7 @@ func TestPrepareVASTBidderParamJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := PrepareVASTBidderParamJSON(tt.args.imp, tt.args.pubVASTTags, tt.args.matchedSlotKeys, tt.args.slotMap)
+			got := PrepareVASTBidderParamJSON(tt.args.pubVASTTags, tt.args.matchedSlotKeys, tt.args.slotMap)
 			assert.Equal(t, tt.want, got)
 		})
 	}

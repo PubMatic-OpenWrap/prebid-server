@@ -5,16 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func PrepareVASTBidderParamJSON(imp *openrtb2.Imp, pubVASTTags models.PublisherVASTTags, matchedSlotKeys []string, slotMap map[string]models.SlotMapping) json.RawMessage {
-	if imp.Video == nil {
-		return nil
-	}
+func PrepareVASTBidderParamJSON(pubVASTTags models.PublisherVASTTags, matchedSlotKeys []string, slotMap map[string]models.SlotMapping) json.RawMessage {
 
 	bidderExt := openrtb_ext.ExtImpVASTBidder{}
 	bidderExt.Tags = make([]*openrtb_ext.ExtImpVASTBidderTag, len(matchedSlotKeys))

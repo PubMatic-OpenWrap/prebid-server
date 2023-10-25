@@ -40,8 +40,12 @@ func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidReque
 	// 	bidderWrapper.VASTagFlags[key] = false
 	// }
 	// impWrapper.Bidder[bidderCode] = bidderWrapper
-
-	bidParams := adapters.PrepareVASTBidderParamJSON(&imp, pubVASTTags, matchedSlotKeys, slotMap)
+	var bidParams json.RawMessage
+	if imp.Video != nil {
+		bidParams = adapters.PrepareVASTBidderParamJSON(pubVASTTags, matchedSlotKeys, slotMap)
+	} else {
+		bidParams = nil
+	}
 
 	/*
 		Sample Values
