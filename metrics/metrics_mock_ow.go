@@ -41,7 +41,7 @@ func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
 	me.Called(coreBidder, vastVersion)
 }
 
-// RecordVastTag mock
-func (me *MetricsEngineMock) RecordVastTag(bidder, vastTag string) {
-	me.Called(bidder, vastTag)
+// RecordVASTTagType mock
+func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
+	me.Called(bidder, vastTagType)
 }

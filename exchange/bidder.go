@@ -261,7 +261,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 			errs = append(errs, moreErrs...)
 
 			if bidResponse != nil {
-				recordVastTag(bidder.me, bidResponse, bidder.BidderName)
+				recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
 				reject := hookExecutor.ExecuteRawBidderResponseStage(bidResponse, string(bidder.BidderName))
 				if reject != nil {
 					errs = append(errs, reject)

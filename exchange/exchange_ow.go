@@ -29,12 +29,22 @@ const (
 )
 
 const (
-	WrapperElement = "<Wrapper>"
-	InlineElement  = "<InLine>"
-	Wrapper        = "Wrapper"
-	Inline         = "InLine"
-	URL            = "URL"
-	Unknown        = "Unknown"
+	VASTTypeWrapperEndTag = "</Wrapper>"
+	VASTTypeInLineEndTag  = "</InLine>"
+	Wrapper               = "Wrapper"
+	Inline                = "InLine"
+	URL                   = "URL"
+	Unknown               = "Unknown"
+)
+
+// VASTTagType describes the allowed values for VASTTagType
+type VASTTagType string
+
+const (
+	WrapperVASTTagType VASTTagType = "Wrapper"
+	InLineVASTTagType  VASTTagType = "InLine"
+	URLVASTTagType     VASTTagType = "URL"
+	UnknownVASTTagType VASTTagType = "Unknown"
 )
 
 var (
@@ -184,18 +194,18 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
-func recordVastTag(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
-	vastTag := Unknown
+func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
+	vastTagType := UnknownVASTTagType
 	for _, adapterBid := range adapterBids.Bids {
 		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
-			if strings.Contains(adapterBid.Bid.AdM, WrapperElement) {
-				vastTag = Wrapper
-			} else if strings.Contains(adapterBid.Bid.AdM, InlineElement) {
-				vastTag = Inline
+			if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeWrapperEndTag); index != -1 {
+				vastTagType = WrapperVASTTagType
+			} else if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeInLineEndTag); index != -1 {
+				vastTagType = InLineVASTTagType
 			} else if IsUrl(adapterBid.Bid.AdM) {
-				vastTag = URL
+				vastTagType = URLVASTTagType
 			}
-			metricsEngine.RecordVastTag(string(bidder), vastTag)
+			metricsEngine.RecordVASTTagType(string(bidder), string(vastTagType))
 		}
 	}
 }

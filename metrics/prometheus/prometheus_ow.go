@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	pubIDLabel   = "pubid"
-	bidderLabel  = "bidder"
-	codeLabel    = "code"
-	profileLabel = "profileid"
-	dealLabel    = "deal"
-	vastTagLabel = "vasttag"
+	pubIDLabel       = "pubid"
+	bidderLabel      = "bidder"
+	codeLabel        = "code"
+	profileLabel     = "profileid"
+	dealLabel        = "deal"
+	vastTagTypeLabel = "type"
 )
 
 func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
@@ -122,10 +122,10 @@ func (m *Metrics) RecordHttpCounter() {
 	m.httpCounter.Inc()
 }
 
-// RecordVastTag record the count of vast tags labeled by bidder and vast tag
-func (m *Metrics) RecordVastTag(bidder, vastTag string) {
-	m.vastTag.With(prometheus.Labels{
-		bidderLabel:  bidder,
-		vastTagLabel: vastTag,
+// RecordVASTTagType record the count of vast tags labeled by bidder and vast tag
+func (m *Metrics) RecordVASTTagType(bidder, vastTagType string) {
+	m.vastTagType.With(prometheus.Labels{
+		bidderLabel:      bidder,
+		vastTagTypeLabel: vastTagType,
 	}).Inc()
 }

@@ -128,7 +128,7 @@ func TestRecordVastVersion(t *testing.T) {
 	}
 }
 
-func TestRecordVastTag(t *testing.T) {
+func TestRecordVASTTagType(t *testing.T) {
 	type testIn struct {
 		bidder, vastTag string
 	}
@@ -153,15 +153,15 @@ func TestRecordVastTag(t *testing.T) {
 	}
 	for _, test := range testCases {
 		pm := createMetricsForTesting()
-		pm.RecordVastTag(test.in.bidder, test.in.vastTag)
+		pm.RecordVASTTagType(test.in.bidder, test.in.vastTag)
 		assertCounterVecValue(t,
 			"",
 			"record vastTag",
-			pm.vastTag,
+			pm.vastTagType,
 			float64(test.out.expCount),
 			prometheus.Labels{
-				bidderLabel:  test.in.bidder,
-				vastTagLabel: test.in.vastTag,
+				bidderLabel:      test.in.bidder,
+				vastTagTypeLabel: test.in.vastTag,
 			})
 	}
 }
