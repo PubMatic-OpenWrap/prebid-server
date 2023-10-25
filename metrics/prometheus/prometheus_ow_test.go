@@ -14,12 +14,12 @@ func TestRecordRejectedBids(t *testing.T) {
 		expCount int
 	}
 	testCases := []struct {
-		description string
-		in          testIn
-		out         testOut
+		name string
+		in   testIn
+		out  testOut
 	}{
 		{
-			description: "record rejected bids",
+			name: "record rejected bids",
 			in: testIn{
 				pubid:  "1010",
 				bidder: "bidder",
@@ -55,12 +55,12 @@ func TestRecordBids(t *testing.T) {
 		expCount int
 	}
 	testCases := []struct {
-		description string
-		in          testIn
-		out         testOut
+		name string
+		in   testIn
+		out  testOut
 	}{
 		{
-			description: "record bids",
+			name: "record bids",
 			in: testIn{
 				pubid:     "1010",
 				bidder:    "bidder",
@@ -98,12 +98,12 @@ func TestRecordVastVersion(t *testing.T) {
 		expCount int
 	}
 	testCases := []struct {
-		description string
-		in          testIn
-		out         testOut
+		name string
+		in   testIn
+		out  testOut
 	}{
 		{
-			description: "record vast version",
+			name: "record vast version",
 			in: testIn{
 				coreBidder:  "bidder",
 				vastVersion: "2.0",
@@ -136,12 +136,12 @@ func TestRecordVASTTagType(t *testing.T) {
 		expCount int
 	}
 	tests := []struct {
-		description string
-		args        args
-		want        want
+		name string
+		args args
+		want want
 	}{
 		{
-			description: "record_vast_tag",
+			name: "record_vast_tag",
 			args: args{
 				bidder:      "bidder",
 				vastTagType: "Wrapper",
@@ -152,16 +152,19 @@ func TestRecordVASTTagType(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		pm := createMetricsForTesting()
-		pm.RecordVASTTagType(tt.args.bidder, tt.args.vastTagType)
-		assertCounterVecValue(t,
-			"",
-			"record vastTag",
-			pm.vastTagType,
-			float64(tt.want.expCount),
-			prometheus.Labels{
-				bidderLabel:      tt.args.bidder,
-				vastTagTypeLabel: tt.args.vastTagType,
-			})
+		t.Run(tt.name, func(t *testing.T) {
+
+			pm := createMetricsForTesting()
+			pm.RecordVASTTagType(tt.args.bidder, tt.args.vastTagType)
+			assertCounterVecValue(t,
+				"",
+				"record vastTag",
+				pm.vastTagType,
+				float64(tt.want.expCount),
+				prometheus.Labels{
+					bidderLabel:      tt.args.bidder,
+					vastTagTypeLabel: tt.args.vastTagType,
+				})
+		})
 	}
 }
