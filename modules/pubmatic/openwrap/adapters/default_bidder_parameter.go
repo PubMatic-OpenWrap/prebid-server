@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -44,8 +43,8 @@ type ArrayItemsType struct {
 	Type string `json:"type"`
 }
 
-func parseBidderParams(cfg config.Config) error {
-	schemas, err := parseBidderSchemaDefinitions()
+func parseBidderParams(schemaDirectory string) error {
+	schemas, err := parseBidderSchemaDefinitions(schemaDirectory)
 	if err != nil {
 		return err
 	}
@@ -129,10 +128,10 @@ func getType(param BidderParameter) string {
 	return tp
 }
 
-func parseBidderSchemaDefinitions() (map[string]*BidderParamJSON, error) {
+func parseBidderSchemaDefinitions(schemaDirectory string) (map[string]*BidderParamJSON, error) {
 	schemas := make(map[string]*BidderParamJSON)
 
-	schemaDirectory := getBidderParamsDirectory()
+	schemaDirectory = getBidderParamsDirectory(schemaDirectory)
 	if schemaDirectory == "" {
 		return schemas, errors.New("error failed to parse bidder params files")
 	}
@@ -174,8 +173,7 @@ func parseBidderSchemaDefinitions() (map[string]*BidderParamJSON, error) {
 	return schemas, nil
 }
 
-func getBidderParamsDirectory() string {
-	schemaDirectory := "./static/bidder-params"
+func getBidderParamsDirectory(schemaDirectory string) string {
 	if isDirectoryExists(schemaDirectory) {
 		return schemaDirectory
 	}

@@ -11,12 +11,8 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func PrepareVASTBidderParamJSON(request *openrtb2.BidRequest, imp *openrtb2.Imp,
-	pubVASTTags models.PublisherVASTTags,
-	matchedSlotKeys []string, slotMap map[string]models.SlotMapping,
-	adpod *models.AdPod) json.RawMessage {
-
-	if nil == imp.Video {
+func PrepareVASTBidderParamJSON(imp *openrtb2.Imp, pubVASTTags models.PublisherVASTTags, matchedSlotKeys []string, slotMap map[string]models.SlotMapping) json.RawMessage {
+	if imp.Video == nil {
 		return nil
 	}
 
@@ -25,12 +21,12 @@ func PrepareVASTBidderParamJSON(request *openrtb2.BidRequest, imp *openrtb2.Imp,
 	var tagIndex int = 0
 	for _, slotKey := range matchedSlotKeys {
 		vastTagID := getVASTTagID(slotKey)
-		if 0 == vastTagID {
+		if vastTagID == 0 {
 			continue
 		}
 
 		vastTag, ok := pubVASTTags[vastTagID]
-		if false == ok {
+		if !ok {
 			continue
 		}
 

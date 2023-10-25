@@ -3,7 +3,6 @@ package adapters
 import (
 	"encoding/json"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -55,6 +54,8 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderUnruly):         builderUnruly,
 		string(openrtb_ext.BidderMediafuse):      builderAppNexus,
 		string(openrtb_ext.BidderBoldwin):        builderBoldwin,
+		string(openrtb_ext.BidderColossus):       builderColossus,
+		string(openrtb_ext.BidderNextMillennium): builderNextmillennium,
 	}
 }
 
@@ -70,7 +71,7 @@ func getBuilder(adapterName string) builder {
 }
 
 // InitBidders will initialise bidder alias, default bidder parameter json and builders for each bidder
-func InitBidders(cfg config.Config) error {
+func InitBidders(schemaDirectory string) error {
 	initBidderBuilderFactory()
-	return parseBidderParams(cfg)
+	return parseBidderParams(schemaDirectory)
 }

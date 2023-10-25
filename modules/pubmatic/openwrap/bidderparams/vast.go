@@ -41,7 +41,7 @@ func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidReque
 	// }
 	// impWrapper.Bidder[bidderCode] = bidderWrapper
 
-	bidParams := adapters.PrepareVASTBidderParamJSON(&bidRequest, &imp, pubVASTTags, matchedSlotKeys, slotMap, adpodExt)
+	bidParams := adapters.PrepareVASTBidderParamJSON(&imp, pubVASTTags, matchedSlotKeys, slotMap)
 
 	/*
 		Sample Values
