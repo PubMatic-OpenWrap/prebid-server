@@ -34,7 +34,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -59,7 +59,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 			},
@@ -79,7 +79,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 			},
@@ -103,7 +103,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 			},
@@ -147,7 +147,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -171,7 +171,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			name: "Error from the DB",
 			fields: fields{
 				cache: newCache,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -194,7 +194,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			name: "empty_mappings",
 			fields: fields{
 				cache: newCache,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -217,7 +217,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			name: "valid_mappings",
 			fields: fields{
 				cache: newCache,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -268,7 +268,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			name: "HashValues",
 			fields: fields{
 				cache: newCache,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -348,7 +348,7 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -370,7 +370,7 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			fields: fields{
 				cache: newCache,
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -425,7 +425,7 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			fields: fields{
 				cache: newCache,
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -469,7 +469,7 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -491,7 +491,7 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			fields: fields{
 				cache: newCache,
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -526,7 +526,7 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
