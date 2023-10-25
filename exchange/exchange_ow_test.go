@@ -1667,7 +1667,7 @@ func TestRecordVASTTagType(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "Unknown").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Unknown").Return()
 					return metricEngine
 				},
 			},
@@ -1688,7 +1688,7 @@ func TestRecordVASTTagType(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "Wrapper").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Wrapper").Return()
 					return metricEngine
 				},
 			},
@@ -1709,7 +1709,7 @@ func TestRecordVASTTagType(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "InLine").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "InLine").Return()
 					return metricEngine
 				},
 			},
@@ -1730,7 +1730,7 @@ func TestRecordVASTTagType(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "URL").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "URL").Return()
 					return metricEngine
 				},
 			},
@@ -1765,9 +1765,9 @@ func TestRecordVASTTagType(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "Wrapper").Return()
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "InLine").Return()
-					metricEngine.Mock.On("RecordVastTag", "pubmatic", "URL").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Wrapper").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "InLine").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "URL").Return()
 					return metricEngine
 				},
 			},
