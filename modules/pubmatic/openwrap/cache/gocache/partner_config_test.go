@@ -20,7 +20,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 	}
 	type args struct {
 		pubID          int
@@ -40,7 +40,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			name: "get_valid_partnerConfig_map",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 					VASTTagCacheExpiry: 1000,
 				},
@@ -89,7 +89,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			name: "db_queries_failed_getting_partnerConfig_map",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 					VASTTagCacheExpiry: 1000,
 				},
@@ -119,7 +119,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			name: "db_queries_failed_getting_adunitconfig_and_wrapper_slotmappings",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 					VASTTagCacheExpiry: 1000,
 				},
@@ -183,7 +183,7 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 	}
 	type args struct {
 		pubID          int
@@ -203,7 +203,7 @@ func Test_cache_GetPartnerConfigMap_LockandLoad(t *testing.T) {
 			name: "get_partnerConfig_map",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 					VASTTagCacheExpiry: 1000,
 				},
@@ -282,7 +282,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -306,7 +306,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			name: "error_returning_Active_partner_configuration_from_DB",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -330,7 +330,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			name: "non_nil_partnerConfigMap_from_DB",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
@@ -375,7 +375,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			name: "empty_partnerConfigMap_from_DB",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 100,
 				},
 				db: mockDatabase,
