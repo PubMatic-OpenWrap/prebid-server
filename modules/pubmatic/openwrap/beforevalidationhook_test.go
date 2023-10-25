@@ -300,7 +300,8 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		metricEngine metrics.MetricsEngine
 	}
 	type args struct {
-		rCtx models.RequestCtx
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name   string
@@ -308,6 +309,30 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		args   args
 		want   int64
 	}{
+		{
+			name: "Highest_priority_to_request_tmax_parameter",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					TMax: 10,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 10,
+		},
 		{
 			name: "ssTimeout_greater_than_minTimeout_and_less_than_maxTimeout",
 			args: args{
@@ -318,6 +343,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -339,6 +365,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -360,6 +387,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -381,6 +409,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -407,6 +436,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -434,6 +464,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -461,6 +492,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -480,7 +512,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 				cache:        tt.fields.cache,
 				metricEngine: tt.fields.metricEngine,
 			}
-			got := m.setTimeout(tt.args.rCtx)
+			got := m.setTimeout(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, tt.want, got)
 		})
 	}

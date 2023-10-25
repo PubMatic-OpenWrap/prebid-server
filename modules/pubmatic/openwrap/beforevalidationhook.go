@@ -110,7 +110,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
-	rCtx.TMax = m.setTimeout(rCtx)
+	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
@@ -740,8 +740,13 @@ func updateAliasGVLIds(aliasgvlids map[string]uint16, bidderCode string, partner
 }
 
 // setTimeout - This utility returns timeout applicable for a profile
-func (m OpenWrap) setTimeout(rCtx models.RequestCtx) int64 {
+func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) int64 {
 	var auctionTimeout int64
+
+	// BidRequest.TMax has highest priority
+	if req.TMax != 0 {
+		return req.TMax
+	}
 
 	//check for ssTimeout in the partner config
 	ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)
