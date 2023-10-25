@@ -14,11 +14,39 @@ func TestGetOriginalBidId(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Split the bid Id",
+			name: "Split the bid Id when get valid bidId",
 			args: args{
 				bidId: "original-id::gen-id",
 			},
 			want: "original-id",
+		},
+		{
+			name: "Empty BidId",
+			args: args{
+				bidId: "",
+			},
+			want: "",
+		},
+		{
+			name: "Partial BidId",
+			args: args{
+				bidId: "::gen-id",
+			},
+			want: "",
+		},
+		{
+			name: "Partial BidId without generated and separator",
+			args: args{
+				bidId: "original-bid-1",
+			},
+			want: "original-bid-1",
+		},
+		{
+			name: "Partial BidId without generated",
+			args: args{
+				bidId: "original-bid::",
+			},
+			want: "original-bid",
 		},
 	}
 	for _, tt := range tests {
