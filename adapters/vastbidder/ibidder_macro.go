@@ -19,7 +19,6 @@ type IBidderMacro interface {
 	GetURI() string
 	GetHeaders() http.Header
 	GetValue(string) (string, bool)
-	getValueFromKV(lookUpOrder []string) any
 	//getAllHeaders returns default and custom heades
 	getAllHeaders() http.Header
 

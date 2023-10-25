@@ -72,7 +72,8 @@ var GetRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
 }
 
-func getJsonString(kvmap any) string {
+func getJSONString(kvmap any) string {
+
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
 
@@ -90,18 +91,17 @@ func isMap(data any) bool {
 	return reflect.TypeOf(data).Kind() == reflect.Map
 }
 
-// getValueFromKV help to get value from nested  map
-func (tag *BidderMacro) getValueFromKV(keyOrder []string) any {
-	if tag.KV == nil {
+// extractDataFromMap help to get value from nested  map
+func extractDataFromMap(lookUpOrder []string, dataMap map[string]any) any {
+	if len(lookUpOrder) == 0 {
 		return ""
 	}
-	dataMap := tag.KV
-	for _, key := range keyOrder {
+
+	for _, key := range lookUpOrder {
 		value, keyExists := dataMap[key]
 		if !keyExists {
 			return ""
 		}
-
 		if nestedMap, isMap := value.(map[string]any); isMap {
 			dataMap = nestedMap
 		} else {

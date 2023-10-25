@@ -1327,7 +1327,7 @@ func TestBidderGetValue(t *testing.T) {
 			isKeyFound: true,
 		},
 		{
-			name: "key_with_value_as_nested_map",
+			name: "kvm_prefix_key_with_value_as_nested_map",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"country": map[string]interface{}{
@@ -1342,6 +1342,24 @@ func TestBidderGetValue(t *testing.T) {
 			}},
 			args:       args{key: "kvm.country"},
 			want:       "{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+			isKeyFound: true,
+		},
+		{
+			name: "kv_prefix_key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http://example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "kv.country"},
+			want:       "metadata=k1%3Dv1%26k2%3Dv2&pincode=411041&state=MH&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 			isKeyFound: true,
 		},
 		{

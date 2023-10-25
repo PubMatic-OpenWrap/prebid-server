@@ -186,12 +186,23 @@ func (tag *BidderMacro) GetValue(key string) (string, bool) {
 	// if prefix present it will always return isKeyFound as true as it will help to replace the key with empty string in VAST TAG
 	if (macroKeys[0] == MacroKV || macroKeys[0] == MacroKVM) && len(macroKeys) > 1 {
 		isKeyFound = true
-		val := tag.getValueFromKV(macroKeys[1:])
-		if isMap(val) {
-			return getJsonString(val), isKeyFound
+		if tag.KV == nil {
+			return "", isKeyFound
 		}
-		return fmt.Sprintf("%v", val), isKeyFound
-
+		switch macroKeys[0] {
+		case MacroKV:
+			val := extractDataFromMap(macroKeys[1:], tag.KV)
+			if dataMap, ok := val.(map[string]interface{}); ok {
+				return mapToQuery(dataMap), isKeyFound
+			}
+			return fmt.Sprintf("%v", val), isKeyFound
+		case MacroKVM:
+			val := extractDataFromMap(macroKeys[1:], tag.KV)
+			if isMap(val) {
+				return getJSONString(val), isKeyFound
+			}
+			return fmt.Sprintf("%v", val), isKeyFound
+		}
 	}
 	return "", isKeyFound
 }
@@ -1224,7 +1235,7 @@ func (tag *BidderMacro) MacroKVM(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	return getJsonString(tag.KV)
+	return getJSONString(tag.KV)
 }
 
 /********************* Request Headers *********************/
