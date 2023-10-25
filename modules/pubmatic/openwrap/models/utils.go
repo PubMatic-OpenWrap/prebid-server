@@ -89,13 +89,9 @@ func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 		return Video
 	}
 	if impCtx.Native != nil {
-		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "native"); err == nil {
-			return Native
-		}
-		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "link"); err == nil {
-			return Native
-		}
-		if _, _, _, err := jsonparser.Get([]byte(bid.AdM), "assets"); err == nil {
+		var admJSON map[string]interface{}
+		err := json.Unmarshal([]byte(strings.Replace(bid.AdM, "/\\/g", "", -1)), &admJSON)
+		if err == nil && admJSON != nil && admJSON["native"] != nil {
 			return Native
 		}
 	}
