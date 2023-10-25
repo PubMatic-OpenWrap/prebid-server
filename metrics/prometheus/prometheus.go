@@ -117,7 +117,7 @@ type Metrics struct {
 	// Ad Pod Metrics
 
 	metricsDisabled config.DisabledMetrics
-	httpCounter prometheus.Counter
+	httpCounter     prometheus.Counter
 }
 
 const (
