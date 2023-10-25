@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, currencyConversion currency.Conversions) map[string]models.OWTracker {
@@ -23,34 +24,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 		PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
 	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
-	var responseExt openrtb_ext.ExtBidResponse
 
-	skipfloors, floorType, floorSource, floorModelVersion := 0, 0, 0, ""
-	err := json.Unmarshal(bidResponse.Ext, &responseExt)
-	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
-		floors := responseExt.Prebid.Floors
-		if floors.Skipped != nil {
-			skipfloors = 0
-			if *floors.Skipped {
-				skipfloors = 1
-			}
-		}
-
-		if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
-			floorModelVersion = floors.Data.ModelGroups[0].ModelVersion
-		}
-
-		if len(floors.PriceFloorLocation) > 0 {
-			if source, ok := models.FloorSourceMap[floors.PriceFloorLocation]; ok {
-				floorSource = source
-			}
-		}
-
-		if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
-			floorType = models.HardFloor
-		}
-	}
-
+	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(bidResponse)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -66,10 +41,15 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 				Origin:            rctx.Origin,
 				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
 				TestGroup:         rctx.ABTestConfigApplied,
-				FloorSkippedFlag:  &skipfloors,
 				FloorModelVersion: floorModelVersion,
-				FloorSource:       &floorSource,
 				FloorType:         floorType,
+			}
+
+			if skipfloors != nil {
+				tracker.FloorSkippedFlag = skipfloors
+			}
+			if floorSource != nil {
+				tracker.FloorSource = floorSource
 			}
 
 			tagid := ""
@@ -92,7 +72,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 					partnerID = bidderMeta.PrebidBidderCode
 				}
 
-				if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
+				bidCtx, ok := impCtx.BidCtx[bid.ID]
+				if ok {
 					if bidResponse.Cur != "USD" {
 						price = bidCtx.OriginalBidCPMUSD
 					}
@@ -171,6 +152,12 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 				} else if !isRegex {
 					if kgpv != "" { // unmapped pubmatic's slot
 						kgpsv = kgpv
+					} else if ok && bidCtx.CreativeType == models.Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
+						// 2. valid video bid
+						// kgpv has regex, do not generate slotName again
+						// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
+						kgpsv = bidderparams.GenerateSlotName(0, 0, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
+						kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
 					} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
 						// 2. valid bid
 						// kgpv has regex, do not generate slotName again
@@ -270,6 +257,34 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 	}
 
 	return trackers
+}
+
+func getFloorsDetails(bidResponse *openrtb2.BidResponse) (*int, int, *int, string) {
+	var responseExt openrtb_ext.ExtBidResponse
+	var skipfloors, floorSource *int
+	floorType, floorModelVersion := 0, ""
+	err := json.Unmarshal(bidResponse.Ext, &responseExt)
+	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
+		floors := responseExt.Prebid.Floors
+		if floors.Skipped != nil {
+			skipfloors = ptrutil.ToPtr(0)
+			if *floors.Skipped {
+				skipfloors = ptrutil.ToPtr(1)
+			}
+		}
+		if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+			floorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+		}
+		if len(floors.PriceFloorLocation) > 0 {
+			if source, ok := models.FloorSourceMap[floors.PriceFloorLocation]; ok {
+				floorSource = &source
+			}
+		}
+		if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+			floorType = models.HardFloor
+		}
+	}
+	return skipfloors, floorType, floorSource, floorModelVersion
 }
 
 func getRewardedInventoryFlag(reward *int8) int {
