@@ -53,6 +53,25 @@ func (m OpenWrap) HandleBeforeValidationHook(
 	return m.handleBeforeValidationHook(ctx, miCtx, payload)
 }
 
+func (m OpenWrap) HandleAllProcessedBidResponsesHook(
+	ctx context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.AllProcessedBidResponsesPayload,
+) (hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats(m.cfg.Server.HostName, "HandleAllProcessedBidResponsesHook")
+			request, err := json.Marshal(payload)
+			if err != nil {
+				glog.Error("request:" + string(request) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))
+			}
+			glog.Error("request:" + string(request) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
+	return m.handleAllProcessedBidResponsesHook(ctx, miCtx, payload)
+}
+
 func (m OpenWrap) HandleAuctionResponseHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
