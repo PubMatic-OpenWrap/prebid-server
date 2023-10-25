@@ -22,7 +22,7 @@ func PrepareBidParamJSONForPartner(width *int64, height *int64, fieldMap map[str
 	}
 
 	//get callback function and execute it
-	callback := getBuilder(params.AdapterName)
+	callback := GetBuilder(params.AdapterName)
 	return callback(params)
 }
 

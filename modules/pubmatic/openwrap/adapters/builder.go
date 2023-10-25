@@ -60,7 +60,7 @@ func initBidderBuilderFactory() {
 }
 
 // getBuilder will return core bidder hard coded builder, if not found then returns default builder
-func getBuilder(adapterName string) builder {
+func GetBuilder(adapterName string) builder {
 	//resolve hardcoded bidder alias
 	adapterName = ResolveOWBidder(adapterName)
 
