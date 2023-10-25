@@ -57,3 +57,31 @@ func TestGetOriginalBidId(t *testing.T) {
 		})
 	}
 }
+
+func TestSetUniqueBidID(t *testing.T) {
+	type args struct {
+		originalBidID  string
+		generatedBidID string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Unique bid id will be generated",
+			args: args{
+				originalBidID:  "orig-bid",
+				generatedBidID: "gen-bid",
+			},
+			want: "orig-bid::gen-bid",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SetUniqueBidID(tt.args.originalBidID, tt.args.generatedBidID); got != tt.want {
+				t.Errorf("SetUniqueBidId() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

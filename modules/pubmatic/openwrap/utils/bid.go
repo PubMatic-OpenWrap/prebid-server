@@ -6,8 +6,12 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
-var bidIdRegx = regexp.MustCompile("[" + models.BidIdSeparator + "]")
+var bidIDRegx = regexp.MustCompile("[" + models.BidIdSeparator + "]")
 
-func GetOriginalBidId(bidId string) string {
-	return bidIdRegx.Split(bidId, -1)[0]
+func GetOriginalBidId(bidID string) string {
+	return bidIDRegx.Split(bidID, -1)[0]
+}
+
+func SetUniqueBidID(originalBidID, generatedBidID string) string {
+	return originalBidID + models.BidIdSeparator + generatedBidID
 }

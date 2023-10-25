@@ -5,10 +5,12 @@ import (
 
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+// handleAllProcessedBidResponsesHook will create unique id for each bid in bid Response. This hook is introduced
+// because bidresponse should be updated in mutations and we need modified bidID at the start of auction response hook.
 func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	ctx context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -35,7 +37,7 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 func updateBidIds(bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 	for _, seatBid := range bidderResponses {
 		for i := range seatBid.Bids {
-			seatBid.Bids[i].Bid.ID = seatBid.Bids[i].Bid.ID + models.BidIdSeparator + seatBid.Bids[i].GeneratedBidID
+			seatBid.Bids[i].Bid.ID = utils.SetUniqueBidID(seatBid.Bids[i].Bid.ID, seatBid.Bids[i].GeneratedBidID)
 		}
 	}
 }
