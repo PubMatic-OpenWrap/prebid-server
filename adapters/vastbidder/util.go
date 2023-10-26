@@ -92,23 +92,23 @@ func isMap(data any) bool {
 }
 
 // extractDataFromMap help to get value from nested  map
-func extractDataFromMap(lookUpOrder []string, dataMap map[string]any) any {
+func getValueFromMap(lookUpOrder []string, m map[string]any) any {
 	if len(lookUpOrder) == 0 {
 		return ""
 	}
 
 	for _, key := range lookUpOrder {
-		value, keyExists := dataMap[key]
+		value, keyExists := m[key]
 		if !keyExists {
 			return ""
 		}
 		if nestedMap, isMap := value.(map[string]any); isMap {
-			dataMap = nestedMap
+			m = nestedMap
 		} else {
 			return value
 		}
 	}
-	return dataMap
+	return m
 }
 
 // mapToQuery convert the map data into & seperated string

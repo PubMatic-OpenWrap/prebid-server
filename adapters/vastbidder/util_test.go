@@ -51,7 +51,7 @@ func Test_getJSONString(t *testing.T) {
 func Test_extractDataFromMap(t *testing.T) {
 	type args struct {
 		lookUpOrder []string
-		dataMap     map[string]any
+		m           map[string]any
 	}
 	tests := []struct {
 		name string
@@ -61,7 +61,7 @@ func Test_extractDataFromMap(t *testing.T) {
 		{
 			name: "map_without_nesting",
 			args: args{lookUpOrder: []string{"k1"},
-				dataMap: map[string]any{
+				m: map[string]any{
 					"k1": "v1",
 					"k2": "v2",
 				},
@@ -71,7 +71,7 @@ func Test_extractDataFromMap(t *testing.T) {
 		{
 			name: "map_with_nesting",
 			args: args{lookUpOrder: []string{"country", "state"},
-				dataMap: map[string]any{
+				m: map[string]any{
 					"name": "test",
 					"country": map[string]any{
 						"state": "MH",
@@ -84,7 +84,7 @@ func Test_extractDataFromMap(t *testing.T) {
 		{
 			name: "key_not_exists",
 			args: args{lookUpOrder: []string{"country", "name"},
-				dataMap: map[string]any{
+				m: map[string]any{
 					"name": "test",
 					"country": map[string]any{
 						"state": "MH",
@@ -95,16 +95,16 @@ func Test_extractDataFromMap(t *testing.T) {
 			want: "",
 		},
 		{
-			name: "empty_datamap",
+			name: "empty_m",
 			args: args{lookUpOrder: []string{"country", "name"},
-				dataMap: map[string]any{},
+				m: map[string]any{},
 			},
 			want: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := extractDataFromMap(tt.args.lookUpOrder, tt.args.dataMap)
+			got := getValueFromMap(tt.args.lookUpOrder, tt.args.m)
 			assert.Equal(t, got, tt.want)
 		})
 	}

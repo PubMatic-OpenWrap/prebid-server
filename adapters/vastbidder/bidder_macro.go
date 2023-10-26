@@ -191,13 +191,13 @@ func (tag *BidderMacro) GetValue(key string) (string, bool) {
 		}
 		switch macroKeys[0] {
 		case MacroKV:
-			val := extractDataFromMap(macroKeys[1:], tag.KV)
+			val := getValueFromMap(macroKeys[1:], tag.KV)
 			if dataMap, ok := val.(map[string]interface{}); ok {
 				return mapToQuery(dataMap), isKeyFound
 			}
 			return fmt.Sprintf("%v", val), isKeyFound
 		case MacroKVM:
-			val := extractDataFromMap(macroKeys[1:], tag.KV)
+			val := getValueFromMap(macroKeys[1:], tag.KV)
 			if isMap(val) {
 				return getJSONString(val), isKeyFound
 			}
