@@ -48,7 +48,7 @@ func Test_getJSONString(t *testing.T) {
 	}
 }
 
-func Test_extractDataFromMap(t *testing.T) {
+func Test_getValueFromMap(t *testing.T) {
 	type args struct {
 		lookUpOrder []string
 		m           map[string]any
