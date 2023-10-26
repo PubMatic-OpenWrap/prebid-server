@@ -27,7 +27,7 @@ type BidExt struct {
 	OriginalBidCPM    float64                    `json:"origbidcpm,omitempty"`
 	OriginalBidCur    string                     `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64                    `json:"origbidcpmusd,omitempty"`
-	Nbr               *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // Reason for not bidding
+	Nbr               *openrtb3.NonBidStatusCode `json:"-"` // Reason for not bidding
 	Fsc               int                        `json:"fsc,omitempty"`
 }
 

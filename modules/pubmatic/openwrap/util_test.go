@@ -871,7 +871,7 @@ func TestGetHostName(t *testing.T) {
 				os.Setenv(models.ENV_VAR_POD_NAME, tt.args.podName)
 			}
 
-			got := getHostName()
+			got := GetHostName()
 			assert.Equal(t, tt.want, got)
 
 			resetEnvVarsForServerName()

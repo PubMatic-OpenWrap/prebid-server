@@ -3,10 +3,12 @@ package pubmatic
 import (
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -26,24 +28,33 @@ var once sync.Once
 
 // Module that can perform transactional logging
 type HTTPLogger struct {
-	cfg config.PubMaticWL
+	cfg      config.PubMaticWL
+	hostName string
 }
 
 // LogAuctionObject prepares the owlogger url and send it to logger endpoint
 func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
+
+	var rCtx *models.RequestCtx
 	defer func() {
 		if r := recover(); r != nil {
-			glog.Error(string(debug.Stack()))
+			if rCtx != nil {
+				rCtx.MetricsEngine.RecordOpenWrapServerPanicStats(ow.hostName, "LogAuctionObject")
+				glog.Errorf("stacktrace:"+string(debug.Stack()), "pubid:[%d], profid:[%d]", rCtx.PubID, rCtx.ProfileID)
+				return
+			}
+			glog.Errorf("stacktrace:" + string(debug.Stack()))
 		}
 	}()
 
-	rCtx := GetRequestCtx(ao.HookExecutionOutcome)
+	rCtx = GetRequestCtx(ao.HookExecutionOutcome)
 	if rCtx == nil {
 		// glog.Errorf("Failed to get the request context for AuctionObject - [%v]", ao)
 		// add this log once complete header-bidding code is migrated to modules
 		return
 	}
 
+	var startTime time.Time
 	var err error
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url != "" {
@@ -51,14 +62,19 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		if rCtx.KADUSERCookie != nil {
 			cookies[models.KADUSERCOOKIE] = rCtx.KADUSERCookie.Value
 		}
+		startTime = time.Now()
 		err = Send(url, headers, cookies)
 	}
 
-	// record the logger failure
 	if url == "" || err != nil {
+		// we will not record at version level in prometheus metric
+		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
 		glog.Errorf("Failed to send the owlogger for pub:[%d], profile:[%d], version:[%d].",
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
+		return
 	}
+	rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
+	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
 }
 
 // Writes VideoObject to file
@@ -87,7 +103,8 @@ func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
 		Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
 
 		ow = HTTPLogger{
-			cfg: cfg,
+			cfg:      cfg,
+			hostName: openwrap.GetHostName(),
 		}
 	})
 

@@ -213,7 +213,7 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 }
 
 // getHostName Generates server name from node and pod name in K8S  environment
-func getHostName() string {
+func GetHostName() string {
 	var (
 		nodeName string
 		podName  string
