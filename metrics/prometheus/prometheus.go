@@ -117,7 +117,6 @@ type Metrics struct {
 	// Ad Pod Metrics
 
 	metricsDisabled config.DisabledMetrics
-	httpCounter     prometheus.Counter
 }
 
 const (
@@ -590,9 +589,6 @@ func NewMetrics(cfg config.PrometheusMetrics, reg *prometheus.Registry, disabled
 	metrics.Registerer = prometheus.WrapRegistererWithPrefix(metricsPrefix, reg)
 	metrics.Registerer.MustRegister(promCollector.NewGoCollector())
 	preloadLabelValues(&metrics, syncerKeys, moduleStageNames)
-
-	metrics.httpCounter = newHttpCounter(cfg, reg)
-
 	return &metrics
 }
 
@@ -899,9 +895,6 @@ func (m *Metrics) RecordAdapterRequest(labels metrics.AdapterLabels) {
 			adapterErrorLabel: string(err),
 		}).Inc()
 	}
-}
-func (m *Metrics) RecordHttpCounter() {
-	m.httpCounter.Inc()
 }
 
 func (m *Metrics) RecordRejectedBidsForBidder(Adapter openrtb_ext.BidderName) {
