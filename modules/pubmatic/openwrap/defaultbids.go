@@ -10,10 +10,9 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	uuid "github.com/satori/go.uuid"
 )
 
-func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt *openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
+func (m *OpenWrap) addDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt *openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 	// responded bidders per impression
 	seatBids := make(map[string]map[string]struct{}, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
@@ -39,48 +38,29 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	defaultBids := make(map[string]map[string][]openrtb2.Bid, 0)
 	for impID, impCtx := range rctx.ImpBidCtx {
 		for bidder := range impCtx.Bidders {
-			if bidders, ok := seatBids[impID]; ok { // bid found for impID
-				if _, ok := bidders[bidder]; ok { // bid found for seat
-					continue
+			noBid := false
+			if bidders, ok := seatBids[impID]; ok {
+				if _, ok := bidders[bidder]; !ok {
+					noBid = true
 				}
+			} else {
+				noBid = true
 			}
 
-			if defaultBids[impID] == nil {
-				defaultBids[impID] = make(map[string][]openrtb2.Bid)
+			if noBid {
+				if defaultBids[impID] == nil {
+					defaultBids[impID] = make(map[string][]openrtb2.Bid)
+				}
+
+				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
+					ID:    impID,
+					ImpID: impID,
+					Ext:   newNoBidExt(rctx, impID),
+				})
+
+				// record error stats for each bidder
+				m.recordErrorStats(rctx, bidResponseExt, bidder)
 			}
-
-			var errcode int
-			errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
-			if len(errs) > 0 {
-				errcode = errs[0].Code
-			}
-
-			// TODO: confirm this behaviour change
-			uuid := uuid.NewV4().String()
-			bidExt := newNoBidExt(*rctx, impID, errcode)
-			bidExtJson, _ := json.Marshal(bidExt)
-
-			defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
-				ID:    uuid,
-				ImpID: impID,
-				Ext:   bidExtJson,
-			})
-
-			rctx.ImpBidCtx[impID].BidCtx[uuid] = models.BidCtx{
-				BidExt: models.BidExt{
-					Nbr:             bidExt.Nbr,
-					NetECPM:         bidExt.NetECPM,
-					Video:           bidExt.Video,
-					Banner:          bidExt.Banner,
-					RefreshInterval: bidExt.RefreshInterval,
-					ExtBid:          openrtb_ext.ExtBid{},
-					// why dont we set banner here ?
-				},
-			}
-
-			// record error stats for each bidder
-			m.recordErrorStats(*rctx, bidResponseExt, bidder)
-
 		}
 	}
 
@@ -91,15 +71,11 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			// TODO: confirm this behaviour change
-			bidExt := newNoBidExt(*rctx, impID, errortypes.UnknownErrorCode)
-			bidExtJson, _ := json.Marshal(bidExt)
-
 			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
-					ID:    uuid.NewV4().String(),
+					ID:    impID,
 					ImpID: impID,
-					Ext:   bidExtJson,
+					Ext:   newNoBidExt(rctx, impID),
 				},
 			}
 		}
@@ -112,14 +88,11 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			bidExt := newNoBidExt(*rctx, impID, errortypes.UnknownErrorCode)
-			bidExtJson, _ := json.Marshal(bidExt)
-
 			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
-					ID:    uuid.NewV4().String(),
+					ID:    impID,
 					ImpID: impID,
-					Ext:   bidExtJson,
+					Ext:   newNoBidExt(rctx, impID),
 				},
 			}
 		}
@@ -139,10 +112,9 @@ func getNonBRCodeFromPartnerErrCode(errcode int) *openrtb3.NonBidStatusCode {
 	return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
 }
 
-func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) *models.BidExt {
+func newNoBidExt(rctx models.RequestCtx, impID string) json.RawMessage {
 	bidExt := models.BidExt{
 		NetECPM: 0,
-		Nbr:     getNonBRCodeFromPartnerErrCode(errcode),
 	}
 	if rctx.ClientConfigFlag == 1 {
 		if cc := adunitconfig.GetClientConfigForMediaType(rctx, impID, "banner"); cc != nil {
@@ -165,13 +137,12 @@ func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) *models.BidE
 		}
 	}
 
-	// newBidExt, err := json.Marshal(bidExt)
-	// if err != nil {
-	// 	return nil
-	// }
+	newBidExt, err := json.Marshal(bidExt)
+	if err != nil {
+		return nil
+	}
 
-	// return json.RawMessage(newBidExt)
-	return &bidExt
+	return json.RawMessage(newBidExt)
 }
 
 func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {

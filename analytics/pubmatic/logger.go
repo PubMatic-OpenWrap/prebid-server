@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -152,7 +153,20 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 	return nil
 }
 
-func addNonBidExtInImpBidCtx(rctx *models.RequestCtx, nonBid *openrtb_ext.NonBid) {
+func convertNonBidToBid(nonBid *openrtb_ext.NonBid) (bid openrtb2.Bid) {
+
+	bid.Price = nonBid.Ext.Prebid.Bid.Price
+	bid.ADomain = nonBid.Ext.Prebid.Bid.ADomain
+	bid.CatTax = nonBid.Ext.Prebid.Bid.CatTax
+	bid.Cat = nonBid.Ext.Prebid.Bid.Cat
+	bid.DealID = nonBid.Ext.Prebid.Bid.DealID
+	bid.W = nonBid.Ext.Prebid.Bid.W
+	bid.H = nonBid.Ext.Prebid.Bid.H
+	bid.Dur = nonBid.Ext.Prebid.Bid.Dur
+	bid.MType = nonBid.Ext.Prebid.Bid.MType
+	bid.ID = nonBid.Ext.Prebid.Bid.ID
+	bid.ImpID = nonBid.ImpId
+
 	bidExt := models.BidExt{}
 	bidExt.OriginalBidCPM = nonBid.Ext.Prebid.Bid.OriginalBidCPM
 	bidExt.OriginalBidCPMUSD = nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD
@@ -168,47 +182,10 @@ func addNonBidExtInImpBidCtx(rctx *models.RequestCtx, nonBid *openrtb_ext.NonBid
 	bidExt.Prebid.Floors = nonBid.Ext.Prebid.Bid.Floors
 	bidExt.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
 
-	impCtx := rctx.ImpBidCtx[nonBid.ImpId]
-	if impCtx.BidCtx == nil {
-		impCtx.BidCtx = make(map[string]models.BidCtx)
+	bidExtBytes, err := json.Marshal(bidExt)
+	if err == nil {
+		bid.Ext = bidExtBytes
 	}
-	impCtx.BidCtx[nonBid.Ext.Prebid.Bid.ID] = models.BidCtx{BidExt: bidExt}
-	rctx.ImpBidCtx[nonBid.ImpId] = impCtx
-}
-
-func convertNonBidToBid(nonBid *openrtb_ext.NonBid) (bid openrtb2.Bid) {
-
-	bid.Price = nonBid.Ext.Prebid.Bid.Price
-	bid.ADomain = nonBid.Ext.Prebid.Bid.ADomain
-	bid.CatTax = nonBid.Ext.Prebid.Bid.CatTax
-	bid.Cat = nonBid.Ext.Prebid.Bid.Cat
-	bid.DealID = nonBid.Ext.Prebid.Bid.DealID
-	bid.W = nonBid.Ext.Prebid.Bid.W
-	bid.H = nonBid.Ext.Prebid.Bid.H
-	bid.Dur = nonBid.Ext.Prebid.Bid.Dur
-	bid.MType = nonBid.Ext.Prebid.Bid.MType
-	bid.ID = nonBid.Ext.Prebid.Bid.ID
-	bid.ImpID = nonBid.ImpId
-
-	// bidExt := models.BidExt{}
-	// bidExt.OriginalBidCPM = nonBid.Ext.Prebid.Bid.OriginalBidCPM
-	// bidExt.OriginalBidCPMUSD = nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD
-	// bidExt.OriginalBidCur = nonBid.Ext.Prebid.Bid.OriginalBidCur
-	// bidExt.Prebid = new(openrtb_ext.ExtBidPrebid)
-	// bidExt.Prebid.DealPriority = nonBid.Ext.Prebid.Bid.DealPriority
-	// bidExt.Prebid.DealTierSatisfied = nonBid.Ext.Prebid.Bid.DealTierSatisfied
-	// bidExt.Prebid.Meta = nonBid.Ext.Prebid.Bid.Meta
-	// bidExt.Prebid.Targeting = nonBid.Ext.Prebid.Bid.Targeting
-	// bidExt.Prebid.Type = nonBid.Ext.Prebid.Bid.Type
-	// bidExt.Prebid.Video = nonBid.Ext.Prebid.Bid.Video
-	// bidExt.Prebid.BidId = nonBid.Ext.Prebid.Bid.BidId
-	// bidExt.Prebid.Floors = nonBid.Ext.Prebid.Bid.Floors
-	// bidExt.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
-
-	// bidExtBytes, err := json.Marshal(bidExt)
-	// if err == nil {
-	// 	bid.Ext = bidExtBytes
-	// }
 	return bid
 }
 
@@ -231,7 +208,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		for _, nonBid := range seatNonBid.NonBid {
 			rejectedBids[seatNonBid.Seat][nonBid.ImpId] = struct{}{}
 			loggerSeat[seatNonBid.Seat] = append(loggerSeat[seatNonBid.Seat], convertNonBidToBid(&nonBid))
-			addNonBidExtInImpBidCtx(rCtx, &nonBid)
 		}
 	}
 
@@ -305,8 +281,20 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				isRegex = bidderMeta.IsRegex
 			}
 
+			// we will unmarshal and use bid.Ext for non-bids and default-bids
+			// we cannot create impBidCtx object because bidder alias can return same bid-id for multiple bids.
+			// we wont be able to differentiate them.
 			var bidExt models.BidExt
-			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
+			json.Unmarshal(bid.Ext, &bidExt)
+
+			var bidIDForLookup string
+			if bidExt.Prebid != nil {
+				bidIDForLookup = bidExt.Prebid.BidId
+			}
+			bidIDForLookup = utils.SetUniqueBidID(bid.ID, bidIDForLookup)
+
+			if bidCtx, ok := impCtx.BidCtx[bidIDForLookup]; ok {
+				// override bidExt since we have already prepared it in auction-response-hook for valid-seat-bids
 				bidExt = bidCtx.BidExt
 			}
 
