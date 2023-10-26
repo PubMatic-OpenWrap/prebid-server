@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/url"
+	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -67,4 +70,60 @@ func NormalizeJSON(obj map[string]interface{}) map[string]string {
 
 var GetRandomID = func() string {
 	return strconv.FormatInt(rand.Int63(), intBase)
+}
+
+func getJSONString(kvmap any) string {
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+
+	// Disable HTML escaping for special characters
+	encoder.SetEscapeHTML(false)
+
+	if err := encoder.Encode(kvmap); err != nil {
+		return ""
+	}
+	return strings.TrimRight(buf.String(), "\n")
+
+}
+
+func isMap(data any) bool {
+	return reflect.TypeOf(data).Kind() == reflect.Map
+}
+
+// extractDataFromMap help to get value from nested  map
+func getValueFromMap(lookUpOrder []string, m map[string]any) any {
+	if len(lookUpOrder) == 0 {
+		return ""
+	}
+
+	for _, key := range lookUpOrder {
+		value, keyExists := m[key]
+		if !keyExists {
+			return ""
+		}
+		if nestedMap, isMap := value.(map[string]any); isMap {
+			m = nestedMap
+		} else {
+			return value
+		}
+	}
+	return m
+}
+
+// mapToQuery convert the map data into & seperated string
+func mapToQuery(m map[string]any) string {
+	values := url.Values{}
+	for key, value := range m {
+		switch reflect.TypeOf(value).Kind() {
+		case reflect.Map:
+			mvalue, ok := value.(map[string]any)
+			if ok {
+				values.Add(key, mapToQuery(mvalue))
+			}
+		default:
+			values.Add(key, fmt.Sprintf("%v", value))
+		}
+	}
+	return values.Encode()
 }
