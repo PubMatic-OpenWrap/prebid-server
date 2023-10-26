@@ -10,9 +10,7 @@ import (
 func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device **openrtb2.Device) {
 	if *device == nil {
 		*device = &openrtb2.Device{}
-	}
-
-	if (*device).DeviceType != 0 {
+	} else if (*device).DeviceType != 0 {
 		return
 	}
 
