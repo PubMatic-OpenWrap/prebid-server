@@ -92,7 +92,7 @@ jobs:
           git add $directory/*
           git commit -m 'Add coverage files'
           git push origin coverage-preview
-          echo "remote_coverage_preview_dir=${directory}" >> $GITHUB_OUTPUT
+          
         
 
 
