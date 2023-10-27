@@ -113,17 +113,17 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	// 	headers.Add(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
 	// }
 
-	url := ow.cfg.Endpoint
-	if logInfo {
-		url = ow.cfg.PublicEndpoint
-	}
-
 	var responseExt openrtb_ext.ExtBidResponse
 	err = json.Unmarshal(ao.Response.Ext, &responseExt)
 	if err == nil {
 		if responseExt.Prebid != nil {
 			wlog.SetFloorDetails(responseExt.Prebid.Floors)
 		}
+	}
+
+	url := ow.cfg.Endpoint
+	if logInfo {
+		url = ow.cfg.PublicEndpoint
 	}
 
 	return PrepareLoggerURL(&wlog, url, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
@@ -427,7 +427,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// TODO: WinningBids is set inside auctionresponsehook
-			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bid.ID {
+			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bidIDForLookup {
 				pr.WinningBidStaus = 1
 			}
 
