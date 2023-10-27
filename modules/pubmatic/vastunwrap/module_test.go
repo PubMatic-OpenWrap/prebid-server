@@ -119,15 +119,16 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 		in0     context.Context
 		miCtx   hookstage.ModuleInvocationContext
 		payload hookstage.RawBidderResponsePayload
+		wantAdM bool
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		expectedBids []*adapters.TypedBid
-		want         hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		wantErr      bool
-		setup        func()
+		name          string
+		fields        fields
+		args          args
+		want          hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		wantErr       bool
+		setup         func()
+		unwrapRequest func(w http.ResponseWriter, req *http.Request)
 	}{
 		{
 			name: "Vast unwrap is enabled in the config",
@@ -156,24 +157,21 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 							BidType: "video",
 						}},
 					Bidder: "pubmatic",
-				}},
+				},
+				wantAdM: true,
+			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
 				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
 			},
-			expectedBids: []*adapters.TypedBid{{
-				Bid: &openrtb2.Bid{
-					ID:    "Bid-123",
-					ImpID: fmt.Sprintf("div-adunit-%d", 123),
-					Price: 2.1,
-					AdM:   inlineXMLAdM,
-					CrID:  "Cr-234",
-					W:     100,
-					H:     50,
-				},
-				BidType: "video",
-			}},
+			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "1")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(inlineXMLAdM))
+			},
+
 			want: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
 		},
 		{
@@ -203,18 +201,6 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 						}},
 				}},
 			want: hookstage.HookResult[hookstage.RawBidderResponsePayload]{},
-			expectedBids: []*adapters.TypedBid{{
-				Bid: &openrtb2.Bid{
-					ID:    "Bid-123",
-					ImpID: fmt.Sprintf("div-adunit-%d", 123),
-					Price: 2.1,
-					AdM:   "<div>This is an Ad</div>",
-					CrID:  "Cr-234",
-					W:     100,
-					H:     50,
-				},
-				BidType: "video",
-			}},
 		},
 	}
 	for _, tt := range tests {
@@ -226,12 +212,15 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				Cfg:           tt.fields.cfg.Cfg,
 				Enabled:       tt.fields.cfg.Enabled,
 				MetricsEngine: mockMetricsEngine,
+				unwrapRequest: tt.unwrapRequest,
 			}
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
 				return
 			}
-			assert.Equal(t, tt.expectedBids[0].Bid.AdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
+			if tt.args.wantAdM {
+				assert.Equal(t, inlineXMLAdM, tt.args.payload.Bids[0].Bid.AdM, "got, tt.want AdM is not updatd correctly after executing RawBidderResponse hook.")
+			}
 		})
 	}
 }
@@ -250,7 +239,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "Valid vast unwrap config",
 			args: args{
-				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				rawCfg: json.RawMessage(`{"enabled":true,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/tmp/debug.log","error_log_file":"/tmp/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
 				deps: moduledeps.ModuleDeps{
 					MetricsRegistry: metrics_cfg.MetricsRegistry{
 						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),
@@ -280,7 +269,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "Invalid vast unwrap config",
 			args: args{
-				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/home/test/PBSlogs/unwrap/debug.log","error_log_file":"/home/test/PBSlogs/unwrap/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
+				rawCfg: json.RawMessage(`{"enabled": 1,"vastunwrap_cfg":{"app_config":{"debug":1,"unwrap_default_timeout":100},"max_wrapper_support":5,"http_config":{"idle_conn_timeout":300,"max_idle_conns":100,"max_idle_conns_per_host":1},"log_config":{"debug_log_file":"/tmp/debug.log","error_log_file":"/tmp/error.log"},"server_config":{"dc_name":"OW_DC"},"stat_config":{"host":"10.172.141.13","port":8080,"referesh_interval_in_sec":1}}}`),
 				deps: moduledeps.ModuleDeps{
 					MetricsRegistry: metrics_cfg.MetricsRegistry{
 						metrics_cfg.PrometheusRegistry: prometheus.NewRegistry(),

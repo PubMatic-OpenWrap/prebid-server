@@ -402,7 +402,11 @@ const (
 	ContextOWLoggerKey contextKey = "owlogger"
 )
 
-const Pipe = "|"
+const (
+	Pipe           = "|"
+	BidIdSeparator = "::"
+)
+
 const (
 	EndpointV25     = "v25"
 	EndpointAMP     = "amp"

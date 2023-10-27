@@ -370,10 +370,6 @@ func getPlatformName(platform string) string {
 	return platform
 }
 
-func getIntPtr(i int) *int {
-	return &i
-}
-
 func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {

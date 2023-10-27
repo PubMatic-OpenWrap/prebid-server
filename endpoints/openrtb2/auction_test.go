@@ -22,7 +22,6 @@ import (
 	"github.com/prebid/openrtb/v19/native1"
 	nativeRequests "github.com/prebid/openrtb/v19/native1/request"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/analytics"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
@@ -39,7 +38,6 @@ import (
 	"github.com/prebid/prebid-server/util/iputil"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 const jsonFileExtension string = ".json"
@@ -456,7 +454,9 @@ func TestExplicitUserId(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	endpoint(httptest.NewRecorder(), request, nil)
 
@@ -495,7 +495,7 @@ func doBadAliasRequest(t *testing.T, filename string, expectMsg string) {
 	bidderInfos := getBidderInfos(nil, openrtb_ext.CoreBidderNames())
 
 	bidderMap := exchange.GetActiveBidders(bidderInfos)
-	disabledBidders := exchange.GetDisabledBiddersErrorMessages(bidderInfos)
+	disabledBidders := exchange.GetDisabledBidderWarningMessages(bidderInfos)
 
 	// NewMetrics() will create a new go_metrics MetricsEngine, bypassing the need for a crafted configuration set to support it.
 	// As a side effect this gives us some coverage of the go_metrics piece of the metrics engine.
@@ -512,7 +512,9 @@ func doBadAliasRequest(t *testing.T, filename string, expectMsg string) {
 		aliasJSON,
 		bidderMap,
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	request := httptest.NewRequest("POST", "/openrtb2/auction", bytes.NewReader(testBidRequest))
 	recorder := httptest.NewRecorder()
@@ -564,7 +566,9 @@ func TestNilExchange(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	if err == nil {
 		t.Errorf("NewEndpoint should return an error when given a nil Exchange.")
@@ -588,7 +592,9 @@ func TestNilValidator(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	if err == nil {
 		t.Errorf("NewEndpoint should return an error when given a nil BidderParamValidator.")
@@ -612,7 +618,9 @@ func TestExchangeError(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	request := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "site.json")))
 	recorder := httptest.NewRecorder()
@@ -737,7 +745,9 @@ func TestImplicitIPsEndToEnd(t *testing.T) {
 			[]byte{},
 			openrtb_ext.BuildBidderMap(),
 			empty_fetcher.EmptyFetcher{},
-			hooks.EmptyPlanBuilder{})
+			hooks.EmptyPlanBuilder{},
+			nil,
+		)
 
 		httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, test.reqJSONFile)))
 		httpReq.Header.Set("X-Forwarded-For", test.xForwardedForHeader)
@@ -935,7 +945,9 @@ func TestImplicitDNTEndToEnd(t *testing.T) {
 			[]byte{},
 			openrtb_ext.BuildBidderMap(),
 			empty_fetcher.EmptyFetcher{},
-			hooks.EmptyPlanBuilder{})
+			hooks.EmptyPlanBuilder{},
+			nil,
+		)
 
 		httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, test.reqJSONFile)))
 		httpReq.Header.Set("DNT", test.dntHeader)
@@ -1175,6 +1187,7 @@ func TestStoredRequests(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	testStoreVideoAttr := []bool{true, true, false, false, false}
@@ -1548,6 +1561,7 @@ func TestValidateRequest(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	testCases := []struct {
@@ -1642,7 +1656,7 @@ func TestValidateRequest(t *testing.T) {
 							Ext: []byte(`{"appnexus":{"placementId": 12345678}}`),
 						},
 					},
-					Ext: []byte(`{"prebid":{"aliases":{"brightroll":"appnexus"}, "aliasgvlids":{"pubmatic1":1}}}`),
+					Ext: []byte(`{"prebid":{"aliases":{"yahoossp":"appnexus"}, "aliasgvlids":{"pubmatic1":1}}}`),
 				},
 			},
 			givenIsAmp:            false,
@@ -1673,11 +1687,11 @@ func TestValidateRequest(t *testing.T) {
 							Ext: []byte(`{"appnexus":{"placementId": 12345678}}`),
 						},
 					},
-					Ext: []byte(`{"prebid":{"aliases":{"brightroll":"appnexus"}, "aliasgvlids":{"brightroll":0}}}`),
+					Ext: []byte(`{"prebid":{"aliases":{"yahoossp":"appnexus"}, "aliasgvlids":{"yahoossp":0}}}`),
 				},
 			},
 			givenIsAmp:            false,
-			expectedErrorList:     []error{errors.New("request.ext.prebid.aliasgvlids. Invalid vendorId 0 for alias: brightroll. Choose a different vendorId, or remove this entry.")},
+			expectedErrorList:     []error{errors.New("request.ext.prebid.aliasgvlids. Invalid vendorId 0 for alias: yahoossp. Choose a different vendorId, or remove this entry.")},
 			expectedChannelObject: &openrtb_ext.ExtRequestPrebidChannel{Name: appChannel, Version: ""},
 		},
 		{
@@ -1704,7 +1718,7 @@ func TestValidateRequest(t *testing.T) {
 							Ext: []byte(`{"appnexus":{"placementId": 12345678}}`),
 						},
 					},
-					Ext: []byte(`{"prebid":{"aliases":{"brightroll":"appnexus"}, "aliasgvlids":{"brightroll":1}}}`),
+					Ext: []byte(`{"prebid":{"aliases":{"yahoossp":"appnexus"}, "aliasgvlids":{"yahoossp":1}}}`),
 				},
 			},
 			givenIsAmp:            false,
@@ -2266,6 +2280,7 @@ func TestSetIntegrationType(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	testCases := []struct {
@@ -2331,6 +2346,7 @@ func TestStoredRequestGenerateUuid(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	req := &openrtb2.BidRequest{}
@@ -2434,6 +2450,7 @@ func TestOversizedRequest(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	req := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(reqBody))
@@ -2472,6 +2489,7 @@ func TestRequestSizeEdgeCase(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	req := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(reqBody))
@@ -2504,6 +2522,7 @@ func TestNoEncoding(t *testing.T) {
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	)
 	request := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "site.json")))
 	recorder := httptest.NewRecorder()
@@ -2588,6 +2607,7 @@ func TestContentType(t *testing.T) {
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	)
 	request := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "site.json")))
 	recorder := httptest.NewRecorder()
@@ -2808,23 +2828,26 @@ func TestValidateImpExt(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	for _, group := range testGroups {
 		for _, test := range group.testCases {
-			imp := &openrtb2.Imp{Ext: test.impExt}
-			impWrapper := &openrtb_ext.ImpWrapper{Imp: imp}
+			t.Run(test.description, func(t *testing.T) {
+				imp := &openrtb2.Imp{Ext: test.impExt}
+				impWrapper := &openrtb_ext.ImpWrapper{Imp: imp}
 
-			errs := deps.validateImpExt(impWrapper, nil, 0, false, nil)
+				errs := deps.validateImpExt(impWrapper, nil, 0, false, nil)
 
-			assert.NoError(t, impWrapper.RebuildImpressionExt(), test.description+":rebuild_imp")
+				assert.NoError(t, impWrapper.RebuildImpressionExt(), test.description+":rebuild_imp")
 
-			if len(test.expectedImpExt) > 0 {
-				assert.JSONEq(t, test.expectedImpExt, string(imp.Ext), "imp.ext JSON does not match expected. Test: %s. %s\n", group.description, test.description)
-			} else {
-				assert.Empty(t, imp.Ext, "imp.ext expected to be empty but was: %s. Test: %s. %s\n", string(imp.Ext), group.description, test.description)
-			}
-			assert.ElementsMatch(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
+				if len(test.expectedImpExt) > 0 {
+					assert.JSONEq(t, test.expectedImpExt, string(imp.Ext), "imp.ext JSON does not match expected. Test: %s. %s\n", group.description, test.description)
+				} else {
+					assert.Empty(t, imp.Ext, "imp.ext expected to be empty but was: %s. Test: %s. %s\n", string(imp.Ext), group.description, test.description)
+				}
+				assert.Equal(t, test.expectedErrs, errs, "errs slice does not match expected. Test: %s. %s\n", group.description, test.description)
+			})
 		}
 	}
 }
@@ -2860,6 +2883,7 @@ func TestCurrencyTrunc(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -2907,6 +2931,7 @@ func TestCCPAInvalid(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -2958,6 +2983,7 @@ func TestNoSaleInvalid(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -3012,6 +3038,7 @@ func TestValidateSourceTID(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -3056,6 +3083,7 @@ func TestSChainInvalid(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -3551,6 +3579,7 @@ func TestEidPermissionsInvalid(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	ui := int64(1)
@@ -3799,7 +3828,9 @@ func TestIOS14EndToEnd(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "app-ios140-no-ifa.json")))
 
@@ -3865,6 +3896,7 @@ func TestAuctionWarnings(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -3910,6 +3942,7 @@ func TestParseRequestParseImpInfoError(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -3989,6 +4022,7 @@ func TestParseGzipedRequest(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -4482,7 +4516,9 @@ func TestAuctionResponseHeaders(t *testing.T) {
 		[]byte{},
 		openrtb_ext.BuildBidderMap(),
 		empty_fetcher.EmptyFetcher{},
-		hooks.EmptyPlanBuilder{})
+		hooks.EmptyPlanBuilder{},
+		nil,
+	)
 
 	for _, test := range testCases {
 		httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(test.requestBody))
@@ -4586,6 +4622,7 @@ func TestParseRequestMergeBidderParams(t *testing.T) {
 				hardcodedResponseIPValidator{response: true},
 				empty_fetcher.EmptyFetcher{},
 				hooks.EmptyPlanBuilder{},
+				nil,
 			}
 
 			hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -4688,6 +4725,7 @@ func TestParseRequestStoredResponses(t *testing.T) {
 				hardcodedResponseIPValidator{response: true},
 				&mockStoredResponseFetcher{mockStoredResponses},
 				hooks.EmptyPlanBuilder{},
+				nil,
 			}
 
 			hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -4775,6 +4813,7 @@ func TestParseRequestStoredBidResponses(t *testing.T) {
 				hardcodedResponseIPValidator{response: true},
 				&mockStoredResponseFetcher{mockStoredBidResponses},
 				hooks.EmptyPlanBuilder{},
+				nil,
 			}
 
 			hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -4811,6 +4850,7 @@ func TestValidateStoredResp(t *testing.T) {
 		hardcodedResponseIPValidator{response: true},
 		&mockStoredResponseFetcher{},
 		hooks.EmptyPlanBuilder{},
+		nil,
 	}
 
 	testCases := []struct {
@@ -5623,6 +5663,7 @@ func TestParseRequestMultiBid(t *testing.T) {
 				hardcodedResponseIPValidator{response: true},
 				empty_fetcher.EmptyFetcher{},
 				hooks.EmptyPlanBuilder{},
+				nil,
 			}
 
 			hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
@@ -5687,15 +5728,6 @@ func (e mockStageExecutor) GetOutcomes() []hookexecution.StageOutcome {
 	return e.outcomes
 }
 
-func TestRecordResponsePreparationMetrics(t *testing.T) {
-	mbi := map[openrtb_ext.BidderName]adapters.MakeBidsTimeInfo{
-		openrtb_ext.BidderAppnexus: {Durations: []time.Duration{10, 15}, AfterMakeBidsStartTime: time.Now()},
-	}
-	mockMetricEngine := &metrics.MetricsEngineMock{}
-	mockMetricEngine.On("RecordOverheadTime", metrics.MakeAuctionResponse, mock.Anything)
-	recordResponsePreparationMetrics(mbi, mockMetricEngine)
-}
-
 func TestSetSeatNonBidRaw(t *testing.T) {
 	type args struct {
 		request         *openrtb_ext.RequestWrapper
@@ -5737,6 +5769,62 @@ func TestSetSeatNonBidRaw(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := setSeatNonBidRaw(tt.args.request, tt.args.auctionResponse); (err != nil) != tt.wantErr {
 				t.Errorf("setSeatNonBidRaw() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateAliases(t *testing.T) {
+	deps := &endpointDeps{
+		disabledBidders: map[string]string{"rubicon": "rubicon"},
+		bidderMap:       map[string]openrtb_ext.BidderName{"appnexus": openrtb_ext.BidderName("appnexus")},
+	}
+
+	testCases := []struct {
+		description     string
+		aliases         map[string]string
+		expectedAliases map[string]string
+		expectedError   error
+	}{
+		{
+			description:     "valid case",
+			aliases:         map[string]string{"test": "appnexus"},
+			expectedAliases: map[string]string{"test": "appnexus"},
+			expectedError:   nil,
+		},
+		{
+			description:     "valid case - case insensitive",
+			aliases:         map[string]string{"test": "Appnexus"},
+			expectedAliases: map[string]string{"test": "appnexus"},
+			expectedError:   nil,
+		},
+		{
+			description:     "disabled bidder",
+			aliases:         map[string]string{"test": "rubicon"},
+			expectedAliases: nil,
+			expectedError:   errors.New("request.ext.prebid.aliases.test refers to disabled bidder: rubicon"),
+		},
+		{
+			description:     "coreBidderName not found",
+			aliases:         map[string]string{"test": "anyBidder"},
+			expectedAliases: nil,
+			expectedError:   errors.New("request.ext.prebid.aliases.test refers to unknown bidder: anyBidder"),
+		},
+		{
+			description:     "alias name is coreBidder name",
+			aliases:         map[string]string{"appnexus": "appnexus"},
+			expectedAliases: nil,
+			expectedError:   errors.New("request.ext.prebid.aliases.appnexus defines a no-op alias. Choose a different alias, or remove this entry."),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+			err := deps.validateAliases(testCase.aliases)
+			if err != nil {
+				assert.Equal(t, testCase.expectedError, err)
+			} else {
+				assert.ObjectsAreEqualValues(testCase.expectedAliases, map[string]string{"test": "appnexus"})
 			}
 		})
 	}

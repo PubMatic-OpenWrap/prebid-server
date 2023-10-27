@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
@@ -15,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/usersync"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -115,6 +117,7 @@ func (m OpenWrap) handleEntrypointHook(
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
+		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
 	}
 
 	// SSAuction will be always 1 for CTV request
