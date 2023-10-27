@@ -66,6 +66,8 @@ type Metrics struct {
 	sendLoggerData        *prometheus.HistogramVec
 	owRequestTime         *prometheus.HistogramVec
 	country               *prometheus.CounterVec
+
+	prebidCacheWriteTimer *prometheus.HistogramVec
 }
 
 const (
@@ -83,6 +85,7 @@ const (
 	hostLabel      = "host" // combination of node:pod
 	methodLabel    = "method"
 	queryTypeLabel = "query_type"
+	successLabel   = "success"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
@@ -99,6 +102,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
+	cacheWriteTimeBuckets := []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1}
 
 	// general metrics
 	metrics.panics = newCounter(cfg, promRegistry,
@@ -241,6 +245,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count failed db calls at profile, version level",
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
+
+	metrics.prebidCacheWriteTimer = newHistogramVec(cfg, promRegistry,
+		"openwrap_write_time_seconds",
+		"Seconds to write to Prebid Cache labeled by success or failure. Failure timing is limited by Prebid Server enforced timeouts.",
+		[]string{successLabel},
+		cacheWriteTimeBuckets)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
@@ -473,3 +483,9 @@ func (m *Metrics) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publish
 }
 
 func (m *Metrics) Shutdown() {}
+
+func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duration) {
+	m.prebidCacheWriteTimer.With(prometheus.Labels{
+		successLabel: strconv.FormatBool(success),
+	}).Observe(length.Seconds())
+}

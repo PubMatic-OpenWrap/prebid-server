@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockMetricsEngine is a mock of MetricsEngine interface.
@@ -191,6 +191,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordCacheErrorRequests(arg0, arg1, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCacheErrorRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCacheErrorRequests), arg0, arg1, arg2)
 }
 
+// RecordCountry mocks base method.
+func (m *MockMetricsEngine) RecordCountry(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordCountry", arg0)
+}
+
+// RecordCountry indicates an expected call of RecordCountry.
+func (mr *MockMetricsEngineMockRecorder) RecordCountry(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCountry", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCountry), arg0)
+}
+
 // RecordCtvUaAccuracy mocks base method.
 func (m *MockMetricsEngine) RecordCtvUaAccuracy(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -323,18 +335,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordOWServerPanic(arg0, arg1, arg2, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordOWServerPanic", reflect.TypeOf((*MockMetricsEngine)(nil).RecordOWServerPanic), arg0, arg1, arg2, arg3)
 }
 
-// RecordCountry mocks base method.
-func (m *MockMetricsEngine) RecordCountry(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordCountry", arg0)
-}
-
-// RecordBids indicates an expected call of RecordCountry.
-func (mr *MockMetricsEngineMockRecorder) RecordCountry(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCountry", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCountry), arg0)
-}
-
 // RecordOpenWrapServerPanicStats mocks base method.
 func (m *MockMetricsEngine) RecordOpenWrapServerPanicStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -453,6 +453,18 @@ func (m *MockMetricsEngine) RecordPreProcessingTimeStats(arg0 string, arg1 int) 
 func (mr *MockMetricsEngineMockRecorder) RecordPreProcessingTimeStats(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPreProcessingTimeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPreProcessingTimeStats), arg0, arg1)
+}
+
+// RecordPrebidCacheRequestTime mocks base method.
+func (m *MockMetricsEngine) RecordPrebidCacheRequestTime(arg0 bool, arg1 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPrebidCacheRequestTime", arg0, arg1)
+}
+
+// RecordPrebidCacheRequestTime indicates an expected call of RecordPrebidCacheRequestTime.
+func (mr *MockMetricsEngineMockRecorder) RecordPrebidCacheRequestTime(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPrebidCacheRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPrebidCacheRequestTime), arg0, arg1)
 }
 
 // RecordPrebidTimeoutRequests mocks base method.

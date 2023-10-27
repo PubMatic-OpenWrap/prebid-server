@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	validator "github.com/asaskevich/govalidator"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -40,13 +38,6 @@ type bidResponseAdpod struct {
 	AdPodBids   []*adPodBid `json:"adpods,omitempty"`
 	Ext         interface{} `json:"ext,omitempty"`
 	RedirectURL *string     `json:"redirect_url,omitempty"`
-}
-
-type CacheWrapperStruct struct {
-	Adm    string  `json:"adm,omitempty"`
-	Price  float64 `json:"price"`
-	Width  int64   `json:"width,omitempty"`
-	Height int64   `json:"height,omitempty"`
 }
 
 func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
@@ -78,7 +69,7 @@ func isValidURL(urlVal string) bool {
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }
 
-func formJSONResponse(cacheURL string, cacheClient *pbc.Client, response []byte, redirectURL, debug string) []byte {
+func formJSONResponse(response []byte, redirectURL, debug string) []byte {
 	var bidResponse *openrtb2.BidResponse
 
 	err := json.Unmarshal(response, &bidResponse)
@@ -86,7 +77,7 @@ func formJSONResponse(cacheURL string, cacheClient *pbc.Client, response []byte,
 		return response
 	}
 
-	jsonResponse, err := getJsonResponse(cacheURL, cacheClient, bidResponse, redirectURL, debug)
+	jsonResponse, err := getJsonResponse(bidResponse, redirectURL, debug)
 	if err != nil {
 		return response
 	}
@@ -94,7 +85,7 @@ func formJSONResponse(cacheURL string, cacheClient *pbc.Client, response []byte,
 	return jsonResponse
 }
 
-func getJsonResponse(cacheURL string, client *pbc.Client, bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
+func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
 		return nil, errors.New("recieved invalid bidResponse")
 	}
@@ -115,7 +106,7 @@ func getJsonResponse(cacheURL string, client *pbc.Client, bidResponse *openrtb2.
 		}
 	}
 
-	adPodBids := formAdpodBids(cacheURL, client, bidArrayMap)
+	adPodBids := formAdpodBids(bidArrayMap)
 
 	var response []byte
 	if len(redirectURL) > 0 && debug != "1" {
@@ -169,7 +160,7 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 	return []byte(rURL)
 }
 
-func formAdpodBids(cacheURL string, client *pbc.Client, bidsMap map[string][]jsonBid) []*adPodBid {
+func formAdpodBids(bidsMap map[string][]jsonBid) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
 		adpodBid := adPodBid{
@@ -177,17 +168,10 @@ func formAdpodBids(cacheURL string, client *pbc.Client, bidsMap map[string][]jso
 		}
 		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
 
-		cacheIds, err := cacheAllBids(client, bids)
-		if err != nil {
-			adpodBid.Error = err.Error()
-			adpodBids = append(adpodBids, &adpodBid)
-			continue
-		}
-
 		targetings := []map[string]string{}
 		for i := 0; i < len(bids); i++ {
 			slotNo := i + 1
-			targeting := createTargetting(bids[i], slotNo, cacheIds[i], cacheURL)
+			targeting := createTargetting(bids[i], slotNo)
 			targetings = append(targetings, targeting)
 		}
 		adpodBid.Targeting = targetings
@@ -201,10 +185,9 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 	return fmt.Sprintf(slotKeyFormat, slotNo, key)
 }
 
-func createTargetting(bid jsonBid, slotNo int, cacheId, cacheURL string) map[string]string {
+func createTargetting(bid jsonBid, slotNo int) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 
-	targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_CACHEID)] = cacheId
 	if len(bid.Ext) > 0 {
 		bidExt := models.BidExt{}
 		err := json.Unmarshal(bid.Ext, &bidExt)
@@ -223,59 +206,12 @@ func createTargetting(bid jsonBid, slotNo int, cacheId, cacheURL string) map[str
 			for k, v := range bidExt.Prebid.Targeting {
 				targetingKeyValMap[k] = v
 			}
-			targetingKeyValMap[models.PWT_CACHEURL] = cacheURL
 		}
 
 	}
 
 	return targetingKeyValMap
 
-}
-
-func cacheAllBids(client *pbc.Client, bids []jsonBid) ([]string, error) {
-	var cobjs []pbc.Cacheable
-
-	for _, bid := range bids {
-		if len(bid.AdM) == 0 {
-			continue
-		}
-		cobj, err := portPrebidCacheable(bid, "video")
-		if err != nil {
-			return nil, err
-		}
-		cobjs = append(cobjs, cobj)
-	}
-
-	uuids, errs := (*client).PutJson(context.Background(), cobjs)
-	if len(errs) != 0 {
-		return nil, fmt.Errorf("prebid cache failed, error %v", errs)
-	}
-
-	return uuids, nil
-}
-
-func portPrebidCacheable(bid jsonBid, platform string) (pbc.Cacheable, error) {
-	var err error
-	var cacheBytes json.RawMessage
-	var cacheType pbc.PayloadType
-
-	if platform == "video" {
-		cacheType = pbc.TypeXML
-		cacheBytes, err = json.Marshal(bid.AdM)
-	} else {
-		cacheType = pbc.TypeJSON
-		cacheBytes, err = json.Marshal(CacheWrapperStruct{
-			Adm:    bid.AdM,
-			Price:  bid.Price,
-			Width:  bid.W,
-			Height: bid.H,
-		})
-	}
-
-	return pbc.Cacheable{
-		Type: cacheType,
-		Data: cacheBytes,
-	}, err
 }
 
 func writeErrorResponse(w http.ResponseWriter, code int, err CustomError) {

@@ -1,13 +1,13 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -69,15 +69,6 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 				continue
 			}
 
-			bidExt := &models.BidExt{}
-			if len(bid.Ext) > 0 {
-				_ = json.Unmarshal(bid.Ext, bidExt)
-
-				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-					bidId = bidExt.Prebid.BidId
-				}
-			}
-
 			isWinningBid := false
 			if rctx.WinningBids.IsWinningBid(impId, bidId) {
 				isWinningBid = true
@@ -117,7 +108,7 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 					bidCtx.Fsc = 1
 				}
 			} else if !rctx.SendAllBids {
-				warnings = append(warnings, "dropping bid "+bid.ID+" as sendAllBids is disabled")
+				warnings = append(warnings, "dropping bid "+utils.GetOriginalBidId(bid.ID)+" as sendAllBids is disabled")
 			}
 
 			// cache for bid details for logger and tracker

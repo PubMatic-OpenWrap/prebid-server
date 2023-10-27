@@ -3,6 +3,7 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,7 +16,9 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -67,11 +70,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	var winningAdpodBidIds map[string][]string
 	var errs []error
 	if rctx.IsCTVRequest {
-		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx.ImpBidCtx)
+		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx, m.bidCacheClient)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
 			}
+			result.Reject = true
+			result.NbrCode = nbr.InternalError
+			return result, errors.New("error in adpod auction")
 		}
 	}
 
@@ -106,10 +112,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if err != nil {
 					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+bidId)
 					// continue
-				}
-
-				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-					bidId = bidExt.Prebid.BidId
 				}
 
 				// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
@@ -189,7 +191,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 					winningBids.AppendBid(impId, owbid)
 				}
 			} else {
-				winningBids.AddBid(impId, owbid, rctx.SupportDeals)
+				winningBids.CheckForWinningBid(impId, owbid, rctx.SupportDeals)
 			}
 
 			if rctx.IsCTVRequest {
@@ -287,8 +289,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
-
 		ap.BidResponse.Ext = rctx.ResponseExt
+
+		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
@@ -310,16 +313,7 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 			filteredBid := make([]openrtb2.Bid, 0, len(bidResponse.SeatBid[i].Bid))
 			for _, bid := range bidResponse.SeatBid[i].Bid {
 				bid.ImpID, _ = models.GetImpressionID(bid.ImpID)
-				bidId := bid.ID
-				bidExt := &models.BidExt{}
-				if len(bid.Ext) > 0 {
-					_ = json.Unmarshal(bid.Ext, bidExt)
-
-					if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-						bidId = bidExt.Prebid.BidId
-					}
-				}
-				if rctx.WinningBids.IsWinningBid(bid.ImpID, bidId) {
+				if rctx.WinningBids.IsWinningBid(bid.ImpID, bid.ID) {
 					filteredBid = append(filteredBid, bid)
 				}
 			}
@@ -357,17 +351,7 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 				continue
 			}
 
-			bidId := bid.ID
-			bidExt := &models.BidExt{}
-			if len(bid.Ext) > 0 {
-				_ = json.Unmarshal(bid.Ext, bidExt)
-
-				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-					bidId = bidExt.Prebid.BidId
-				}
-			}
-
-			bidCtx, ok := impCtx.BidCtx[bidId]
+			bidCtx, ok := impCtx.BidCtx[bid.ID]
 			if !ok {
 				continue
 			}
@@ -390,6 +374,14 @@ func getIntPtr(i int) *int {
 	return &i
 }
 
+func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
+	for i, seatBid := range bidResponse.SeatBid {
+		for j, bid := range seatBid.Bid {
+			bidResponse.SeatBid[i].Bid[j].ID = utils.GetOriginalBidId(bid.ID)
+		}
+	}
+}
+
 func CheckWinningBidId(bidId string, wbidIds []string) bool {
 	if len(wbidIds) == 0 {
 		return false
@@ -407,7 +399,7 @@ func CheckWinningBidId(bidId string, wbidIds []string) bool {
 func GetTargettingForDebug(bidId, pubID, profileID, versionID, tagID string, ecpm float64) map[string]string {
 	targeting := make(map[string]string)
 
-	targeting[models.PwtBidID] = bidId
+	targeting[models.PwtBidID] = utils.GetOriginalBidId(bidId)
 	targeting[models.PWT_CACHE_PATH] = models.AMP_CACHE_PATH
 	targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", ecpm)
 	targeting[models.PWT_PUBID] = pubID
@@ -428,6 +420,7 @@ func GetTargettingForDebug(bidId, pubID, profileID, versionID, tagID string, ecp
 func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, impCtx models.ImpCtx, bidExt *models.BidExt, seat string) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 	targetingKeyValMap[models.PWT_PARTNERID] = seat
+	targetingKeyValMap[models.PWT_CACHEID] = impCtx.BidCacheIdMap[bid.ID]
 
 	if bidExt != nil {
 		if bidExt.Prebid != nil {

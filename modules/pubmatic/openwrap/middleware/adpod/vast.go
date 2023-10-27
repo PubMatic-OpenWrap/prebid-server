@@ -64,7 +64,7 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 		}
 	}
 
-	creative, _ := getAdPodBidCreativeAndPrice(bidArray, true)
+	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
 	if len(creative) == 0 {
 		return "", errors.New("error while creating creative")
 	}
@@ -73,7 +73,7 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 }
 
 // getAdPodBidCreative get commulative adpod bid details
-func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid, generatedBidID bool) (string, float64) {
+func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid) (string, float64) {
 	if len(bids) == 0 {
 		return "", 0
 	}
@@ -97,15 +97,6 @@ func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid, generatedBidID bool) (stri
 			adDoc := etree.NewDocument()
 			if err := adDoc.ReadFromString(bid.AdM); err != nil {
 				continue
-			}
-
-			if generatedBidID == false {
-				// adjust bidid in video event trackers and update
-				adjustBidIDInVideoEventTrackers(adDoc, &bid)
-				adm, err := adDoc.WriteToString()
-				if err == nil {
-					bid.AdM = adm
-				}
 			}
 
 			vastTag := adDoc.SelectElement(VASTElement)

@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/bidcache"
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
@@ -20,6 +21,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -27,9 +29,10 @@ const (
 )
 
 type OpenWrap struct {
-	cfg          config.Config
-	cache        cache.Cache
-	metricEngine metrics.MetricsEngine
+	cfg            config.Config
+	cache          cache.Cache
+	metricEngine   metrics.MetricsEngine
+	bidCacheClient pbc.Client
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -66,12 +69,16 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
+	// Creative cache client
+	bidCacheClient := bidcache.NewClient(cfg.BidCache, &metricEngine)
+
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
 	return OpenWrap{
-		cfg:          cfg,
-		cache:        owCache,
-		metricEngine: &metricEngine,
+		cfg:            cfg,
+		cache:          owCache,
+		metricEngine:   &metricEngine,
+		bidCacheClient: bidCacheClient,
 	}, nil
 }
 

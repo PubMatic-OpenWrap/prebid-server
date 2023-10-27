@@ -73,4 +73,7 @@ type MetricsEngine interface {
 	RecordRequestTime(requestType string, requestTime time.Duration)
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
 	RecordCountry(pubID string)
+
+	// prebid metrics
+	RecordPrebidCacheRequestTime(success bool, length time.Duration)
 }

@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
 )
 
@@ -18,6 +19,13 @@ type Config struct {
 	Features  FeatureToggle
 	Log       Log
 	Stats     stats.Stats
+	BidCache  BidCache
+}
+
+type BidCache struct {
+	CacheClient config.HTTPClient    `mapstructure:"http_client_cache" json:"http_client_cache"`
+	CacheURL    config.Cache         `mapstructure:"cache" json:"cache"`
+	ExtCacheURL config.ExternalCache `mapstructure:"external_cache" json:"external_cache"`
 }
 
 type Server struct {

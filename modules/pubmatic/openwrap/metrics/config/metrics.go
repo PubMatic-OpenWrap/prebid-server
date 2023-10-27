@@ -452,3 +452,10 @@ func (me *MultiMetricsEngine) RecordCountry(pubID string) {
 		thisME.RecordCountry(pubID)
 	}
 }
+
+// RecordPrebidCacheRequestTime across all engines
+func (me *MultiMetricsEngine) RecordPrebidCacheRequestTime(success bool, length time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPrebidCacheRequestTime(success, length)
+	}
+}

@@ -222,13 +222,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap)
 			if err != nil {
-				result.NbrCode = nbr.InternalError
+				result.NbrCode = nbr.InvalidRequest
 				err = errors.New("failed to get adpod configurations: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				return result, err
 			}
 			if err := adpod.Validate(adpodConfig); err != nil {
-				result.NbrCode = nbr.InternalError
+				result.NbrCode = nbr.InvalidRequest
 				err = errors.New("invalid adpod configurations: " + imp.ID + " reason: " + err.Error())
 				result.Errors = append(result.Errors, err.Error())
 				return result, err

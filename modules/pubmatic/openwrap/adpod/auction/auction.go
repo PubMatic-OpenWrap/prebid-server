@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 type Bid struct {
@@ -32,20 +33,23 @@ type AdPodBid struct {
 	SeatName      string
 }
 
-func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, impCtx map[string]models.ImpCtx) (map[string][]string, []error) {
-	var winningBidIds map[string][]string
+func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx, creativeCacheClient pbc.Client) (map[string][]string, []error) {
 	var errs []error
 
 	if len(response.SeatBid) == 0 {
-		return winningBidIds, errs
+		return nil, errs
 	}
 
-	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, impCtx)
-	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, impCtx)
+	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, rctx.ImpBidCtx)
+	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, rctx.ImpBidCtx)
 	if len(errs) > 0 {
 		return nil, errs
 	}
-	winningBidIds = GetWinningBidsIds(adpodBids)
+
+	winningBidIds, err := GetAndCacheWinningBidsIds(adpodBids, rctx.Endpoint, rctx.ImpBidCtx, creativeCacheClient)
+	if err != nil {
+		return nil, []error{err}
+	}
 
 	return winningBidIds, nil
 }

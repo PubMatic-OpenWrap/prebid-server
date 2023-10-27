@@ -8,7 +8,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -30,9 +29,10 @@ func (aw *AdpodWriter) Write(data []byte) (int, error) {
 	}
 
 	if aw.Response == nil {
-		aw.Response = make([]byte, len(data))
+		aw.Response = make([]byte, 0)
 	}
-	return copy(aw.Response, data), nil
+	aw.Response = append(aw.Response, data...)
+	return len(data), nil
 }
 
 func (aw *AdpodWriter) Header() http.Header {
@@ -47,13 +47,11 @@ func (aw *AdpodWriter) WriteHeader(statusCode int) {
 }
 
 type adpod struct {
-	handle      httprouter.Handle
-	cacheURL    string
-	cacheClient *pbc.Client
+	handle httprouter.Handle
 }
 
-func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, cacheURL string, pbsCacheClient *pbc.Client) *adpod {
-	return &adpod{handle: handleToWrap, cacheURL: cacheURL, cacheClient: pbsCacheClient}
+func NewAdpodWrapperHandle(handleToWrap httprouter.Handle) *adpod {
+	return &adpod{handle: handleToWrap}
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -106,10 +104,21 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	defer func() {
+		if recover := recover(); recover != nil {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
+				return
+			}
+			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
+		}
+	}()
+
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formJSONResponse(a.cacheURL, a.cacheClient, adpodResponseWriter.Response, "", r.URL.Query().Get(models.Debug))
+	finalResponse := formJSONResponse(adpodResponseWriter.Response, "", r.URL.Query().Get(models.Debug))
 	w.Header().Set(ContentType, ApplicationJSON)
 	if adpodResponseWriter.Code == 0 {
 		adpodResponseWriter.Code = http.StatusOK
@@ -140,7 +149,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formJSONResponse(a.cacheURL, a.cacheClient, adpodResponseWriter.Response, redirectURL, debug)
+	finalResponse := formJSONResponse(adpodResponseWriter.Response, redirectURL, debug)
 
 	if len(redirectURL) > 0 && debug != "1" {
 		http.Redirect(w, r, string(finalResponse), http.StatusFound)

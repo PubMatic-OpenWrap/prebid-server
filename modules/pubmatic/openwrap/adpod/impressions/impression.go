@@ -30,8 +30,9 @@ func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.
 
 	for _, imp := range request.Imp {
 		eachImpCtx := impCtx[imp.ID]
-		impConfig, err := getAdPodImpConfig(&imp, eachImpCtx.AdpodConfig)
-		if impConfig == nil {
+
+		impAdpodConfig, err := getAdPodImpConfig(&imp, eachImpCtx.AdpodConfig)
+		if impAdpodConfig == nil {
 			imps = append(imps, imp)
 			if err != nil {
 				errs = append(errs, err)
@@ -39,18 +40,18 @@ func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.
 			continue
 		}
 
-		eachImpCtx.ImpAdPodCfg = impConfig
+		eachImpCtx.ImpAdPodCfg = impAdpodConfig
 		impCtx[imp.ID] = eachImpCtx
 
-		for i := range impConfig {
+		for i := range impAdpodConfig {
 			video := *imp.Video
-			video.MinDuration = impConfig[i].MinDuration
-			video.MaxDuration = impConfig[i].MaxDuration
-			video.Sequence = impConfig[i].SequenceNumber
+			video.MinDuration = impAdpodConfig[i].MinDuration
+			video.MaxDuration = impAdpodConfig[i].MaxDuration
+			video.Sequence = impAdpodConfig[i].SequenceNumber
 			video.MaxExtended = 0
 
 			newImp := imp
-			newImp.ID = impConfig[i].ImpID
+			newImp.ID = impAdpodConfig[i].ImpID
 			newImp.Video = &video
 
 			imps = append(imps, newImp)

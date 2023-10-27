@@ -22,7 +22,7 @@ const (
 // not implementing middleware to avoid duplicate processing like read, unmarshal, write, etc.
 // handling the temporary middleware stuff in EntryPoint hook.
 func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprouter.Handle) {
-	adpod := middleware.NewAdpodWrapperHandle(openrtbEndpoint, g_cfg.ExternalURL, g_cacheClient)
+	adpod := middleware.NewAdpodWrapperHandle(openrtbEndpoint)
 
 	//OpenWrap hybrid
 	r.POST(OpenWrapAuction, openrtbEndpoint)

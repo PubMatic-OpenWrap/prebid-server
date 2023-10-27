@@ -47,7 +47,7 @@ func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	return isWinningBid
 }
 
-func (w WinningBids) AddBid(impId string, bid OwBid, preferDeals bool) {
+func (w WinningBids) CheckForWinningBid(impId string, bid OwBid, preferDeals bool) {
 	wbid, ok := w[impId]
 	if !ok {
 		wbid = make([]OwBid, 1)

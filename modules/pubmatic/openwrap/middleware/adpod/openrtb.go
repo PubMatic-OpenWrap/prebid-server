@@ -17,6 +17,7 @@ func formOperRTBResponse(response []byte) []byte {
 		return response
 	}
 
+	// TODO : Do not merge the response, respond with 2.6 response
 	mergedBidResponse, err := mergeSeatBids(bidResponse)
 	if err != nil {
 		return response
@@ -67,7 +68,7 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 		} else {
 			bid.ID = bids[0].ID
 		}
-		creative, price := getAdPodBidCreativeAndPrice(bids, true)
+		creative, price := getAdPodBidCreativeAndPrice(bids)
 		bid.AdM = creative
 		bid.Price = price
 		if len(bids) > 0 {

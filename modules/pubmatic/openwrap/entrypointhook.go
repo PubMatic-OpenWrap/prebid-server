@@ -62,6 +62,7 @@ func (m OpenWrap) handleEntrypointHook(
 		endpoint = models.EndpointAMP
 	case OpenWrapCTVOrtb, OpenWrapCTVVast, OpenWrapCTVJson:
 		requestExtWrapper, err = ctv.ConvertRequestAndGetRequestExtWrapper(payload, &result)
+		endpoint = getEndpoint(payload.Request.URL.Path)
 	default:
 		// we should return from here
 	}
@@ -143,4 +144,19 @@ func (m OpenWrap) handleEntrypointHook(
 	}, hookstage.MutationUpdate, "update-request-body")
 
 	return result, nil
+}
+
+func getEndpoint(url string) string {
+	var endpoint string
+
+	switch url {
+	case OpenWrapCTVOrtb:
+		endpoint = models.EndpointORTB
+	case OpenWrapCTVVast:
+		endpoint = models.EndpointVAST
+	case OpenWrapCTVJson:
+		endpoint = models.EndpointJson
+	}
+
+	return endpoint
 }

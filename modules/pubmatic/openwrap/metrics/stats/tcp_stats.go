@@ -340,3 +340,4 @@ func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, send
 func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
 func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
 func (st *StatsTCP) RecordCountry(pubID string)                                                     {}
+func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)                {}
