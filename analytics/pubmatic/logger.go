@@ -460,7 +460,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				if bidExt.Prebid.Floors != nil {
 					floorCurrency = bidExt.Prebid.Floors.FloorCurrency
 					pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
-					pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
+					pr.FloorRuleValue = pr.FloorValue
+					if bidExt.Prebid.Floors.FloorRuleValue > 0 {
+						pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
+					}
 				}
 
 				if len(bidExt.Prebid.BidId) > 0 {
