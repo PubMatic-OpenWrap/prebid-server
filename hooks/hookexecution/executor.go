@@ -197,8 +197,6 @@ func (e *hookExecutor) ExecuteProcessedAuctionStage(request *openrtb_ext.Request
 	outcome.Entity = entityAuctionRequest
 	outcome.Stage = stageName
 
-	request.Reset()
-
 	e.saveModuleContexts(contexts)
 	e.pushStageOutcome(outcome)
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
@@ -24,16 +25,16 @@ type ImpGenerator interface {
 	// Algorithm() int // returns algorithm used for computing number of impressions
 }
 
-func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.ImpCtx) ([]openrtb2.Imp, []error) {
-	var imps []openrtb2.Imp
+func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx) ([]*openrtb_ext.ImpWrapper, []error) {
+	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 
-	for _, imp := range request.Imp {
-		eachImpCtx := impCtx[imp.ID]
+	for _, impWrapper := range request.GetImp() {
+		eachImpCtx := impCtx[impWrapper.ID]
 
-		impAdpodConfig, err := getAdPodImpConfig(&imp, eachImpCtx.AdpodConfig)
+		impAdpodConfig, err := getAdPodImpConfig(impWrapper.Imp, eachImpCtx.AdpodConfig)
 		if impAdpodConfig == nil {
-			imps = append(imps, imp)
+			imps = append(imps, impWrapper)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -41,20 +42,29 @@ func GenerateImpressions(request *openrtb2.BidRequest, impCtx map[string]models.
 		}
 
 		eachImpCtx.ImpAdPodCfg = impAdpodConfig
-		impCtx[imp.ID] = eachImpCtx
+		impCtx[impWrapper.ID] = eachImpCtx
+
+		err = impWrapper.RebuildImpressionExt()
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
 
 		for i := range impAdpodConfig {
-			video := *imp.Video
+			video := *impWrapper.Video
 			video.MinDuration = impAdpodConfig[i].MinDuration
 			video.MaxDuration = impAdpodConfig[i].MaxDuration
 			video.Sequence = impAdpodConfig[i].SequenceNumber
 			video.MaxExtended = 0
 
-			newImp := imp
+			newImp := *impWrapper.Imp
 			newImp.ID = impAdpodConfig[i].ImpID
 			newImp.Video = &video
 
-			imps = append(imps, newImp)
+			newImpWrapper := &openrtb_ext.ImpWrapper{Imp: &newImp}
+			newImpWrapper.GetImpExt()
+
+			imps = append(imps, newImpWrapper)
 		}
 
 	}

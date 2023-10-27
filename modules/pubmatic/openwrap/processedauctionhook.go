@@ -3,10 +3,10 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod/impressions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(
@@ -30,10 +30,10 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		moduleCtx.ModuleContext["rctx"] = rctx
 	}()
 
-	var imps []openrtb2.Imp
+	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.BidRequest, rctx.ImpBidCtx)
+		imps, errs = impressions.GenerateImpressions(payload.RequestWrapper, rctx.ImpBidCtx)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Warnings = append(result.Warnings, errs[i].Error())
@@ -50,7 +50,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 
 		if rctx.IsCTVRequest {
 			if len(imps) > 0 {
-				parp.BidRequest.Imp = imps
+				parp.RequestWrapper.SetImp(imps)
 			}
 		}
 		return parp, nil
