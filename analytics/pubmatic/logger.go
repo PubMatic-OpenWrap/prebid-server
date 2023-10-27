@@ -3,6 +3,7 @@ package pubmatic
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"net/http"
 	"strconv"
@@ -332,10 +333,9 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			json.Unmarshal(bid.Ext, &bidExt)
 
 			bidIDForLookup := bid.ID
-			if bidExt.Prebid != nil {
+			if bidExt.Prebid != nil && !strings.Contains(bid.ID, models.BidIdSeparator) {
 				// this block will not be executed for default-bids.
-				bidIDForLookup = bidExt.Prebid.BidId
-				bidIDForLookup = utils.SetUniqueBidID(bid.ID, bidIDForLookup)
+				bidIDForLookup = utils.SetUniqueBidID(bid.ID, bidExt.Prebid.BidId)
 			}
 
 			if bidCtx, ok := impCtx.BidCtx[bidIDForLookup]; ok {
