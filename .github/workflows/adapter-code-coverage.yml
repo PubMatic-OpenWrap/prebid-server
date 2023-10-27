@@ -83,7 +83,6 @@ jobs:
         if: ${{ steps.run_coverage.outputs.coverage_dir }} != ""
         id: commit_coverage
         run: |
-          git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
 
           directory=.github/preview/${{ github.run_id }}_$(date +%s)
           mkdir -p $directory
@@ -94,11 +93,7 @@ jobs:
           git commit -m 'Add coverage files'
           git push origin coverage-preview
           echo "remote_coverage_preview_dir=${directory}" >> $GITHUB_OUTPUT
-        env:
-          GO111MODULE: "on"
-          GOPRIVATE: "git.pubmatic.com/PubMatic/*"
-          TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
-          USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
+        
 
 
       - name: Checkout master branch
