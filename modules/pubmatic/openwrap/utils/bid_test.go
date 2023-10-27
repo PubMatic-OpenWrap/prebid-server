@@ -76,6 +76,30 @@ func TestSetUniqueBidID(t *testing.T) {
 			},
 			want: "orig-bid::gen-bid",
 		},
+		{
+			name: "Original Bid Id empty",
+			args: args{
+				originalBidID:  "",
+				generatedBidID: "gen-bid",
+			},
+			want: "::gen-bid",
+		},
+		{
+			name: "generated BidId empty",
+			args: args{
+				originalBidID:  "orig-bid",
+				generatedBidID: "",
+			},
+			want: "orig-bid::",
+		},
+		{
+			name: "Both Id empty",
+			args: args{
+				originalBidID:  "",
+				generatedBidID: "",
+			},
+			want: "::",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
