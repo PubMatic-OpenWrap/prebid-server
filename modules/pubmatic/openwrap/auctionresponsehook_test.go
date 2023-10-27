@@ -124,3 +124,72 @@ func TestSeatNonBidsInHandleAuctionResponseHook(t *testing.T) {
 		})
 	}
 }
+
+func TestResetBidIdtoOriginal(t *testing.T) {
+	type args struct {
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "Reset Bid Id to original",
+			args: args{
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "original::generated",
+								},
+								{
+									ID: "original-1::generated-1",
+								},
+							},
+							Seat: "pubmatic",
+						},
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID: "original-2::generated-2",
+								},
+							},
+							Seat: "index",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID: "original",
+							},
+							{
+								ID: "original-1",
+							},
+						},
+						Seat: "pubmatic",
+					},
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID: "original-2",
+							},
+						},
+						Seat: "index",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetBidIdtoOriginal(tt.args.bidResponse)
+			assert.Equal(t, tt.want, tt.args.bidResponse, "Bid Id should reset to original")
+		})
+	}
+}
