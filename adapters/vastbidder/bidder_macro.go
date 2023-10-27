@@ -286,6 +286,57 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 	return ""
 }
 
+func (tag *BidderMacro) MacroSchain(key string) string {
+	if tag.Request.Source == nil || tag.Request.Source.SChain == nil {
+		return ""
+	}
+
+	serializedSchain := tag.Request.Source.SChain.Ver + "," + fmt.Sprintf("%v", tag.Request.Source.SChain.Complete) + "!"
+
+	//	loopUpOrder := []string{"ASI", "sid", "hp", "rid", "name", "domain", "ext"}
+
+	// there are multiple node -> for loop
+	// for each node look for lookUpOrder key
+	for _, node := range tag.Request.Source.SChain.Nodes {
+
+		if node.ASI != "" {
+			serializedSchain += node.ASI + ","
+		} else {
+			serializedSchain += ","
+		}
+		if node.SID != "" {
+			serializedSchain += node.SID + ","
+		} else {
+			serializedSchain += ","
+		}
+		if node.HP != nil {
+			serializedSchain += fmt.Sprintf("%v", *node.HP) + ","
+		} else {
+			serializedSchain += ","
+		}
+		if node.RID != "" {
+			serializedSchain += node.RID + ","
+		} else {
+			serializedSchain += ","
+		}
+		if node.Name != "" {
+			serializedSchain += node.Name + ","
+		} else {
+			serializedSchain += ","
+		}
+		if node.Domain != "" {
+			serializedSchain += node.Domain
+		} else {
+			serializedSchain += ","
+		}
+		if node.Ext != nil {
+			// How we can convert this ??
+		}
+	}
+
+	return serializedSchain
+}
+
 /********************* Regs *********************/
 
 // MacroCoppa contains definition for Coppa Parameter

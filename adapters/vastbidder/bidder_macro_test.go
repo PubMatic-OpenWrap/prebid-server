@@ -1619,3 +1619,114 @@ func TestBidderMacroKVM(t *testing.T) {
 		})
 	}
 }
+
+func TestBidderMacro_MacroSchain(t *testing.T) {
+	type fields struct {
+		Request *openrtb2.BidRequest
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "test1",
+			fields: fields{Request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Ver:      "1.0",
+						Nodes: []openrtb2.SupplyChainNode{
+							openrtb2.SupplyChainNode{
+								ASI:    "1",
+								SID:    "2",
+								RID:    "3",
+								Name:   "ankit",
+								Domain: "example.com",
+								HP:     openrtb2.Int8Ptr(90),
+								//Ext: json.RawMessage{},
+							},
+						},
+					},
+				},
+			}},
+			args: args{"schain"},
+			want: "1.0,1!1,2,90,3,ankit,example.com",
+		},
+		{
+			name: "test2",
+			fields: fields{Request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Ver:      "1.0",
+						Nodes: []openrtb2.SupplyChainNode{
+							openrtb2.SupplyChainNode{
+								//	ASI:    "1",
+								SID:    "2",
+								RID:    "3",
+								Name:   "ankit",
+								Domain: "example.com",
+								HP:     openrtb2.Int8Ptr(90),
+								//Ext: json.RawMessage{},
+							},
+						},
+					},
+				},
+			}},
+			args: args{"schain"},
+			want: "1.0,1!,2,90,3,ankit,example.com",
+		},
+		{
+			name: "test3",
+			fields: fields{Request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Ver:      "1.0",
+						Nodes: []openrtb2.SupplyChainNode{
+							openrtb2.SupplyChainNode{
+								//	ASI:    "1",
+								SID:    "2",
+								RID:    "3",
+								Name:   "ankit",
+								Domain: "example.com",
+								HP:     openrtb2.Int8Ptr(90),
+								//Ext: json.RawMessage{},
+							},
+							openrtb2.SupplyChainNode{
+								ASI:    "asi",
+								SID:    "sid",
+								RID:    "rid",
+								Name:   "name",
+								Domain: "domain",
+								HP:     openrtb2.Int8Ptr(90),
+								//Ext: json.RawMessage{},
+							},
+						},
+					},
+				},
+			}},
+			args: args{"schain"},
+			want: "1.0,1!,2,90,3,ankit,example.com!asi,sid,rid,name,domain",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				Request: tt.fields.Request,
+			}
+			// if got := tag.MacroSchain(tt.args.key); got != tt.want {
+			// 	t.Errorf("BidderMacro.MacroSchain() = %v, want %v", got, tt.want)
+			// }
+
+			got := tag.MacroSchain(tt.args.key)
+
+			assert.Equal(t, got, tt.want, tt.name)
+		})
+	}
+}
