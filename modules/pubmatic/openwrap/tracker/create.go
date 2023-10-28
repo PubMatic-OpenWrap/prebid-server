@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -25,14 +24,6 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 		for _, bid := range seatBid.Bid {
 			impId, _ := models.GetImpressionID(bid.ImpID)
 			bidId := bid.ID
-			bidExt := &models.BidExt{}
-			if len(bid.Ext) > 0 {
-				_ = json.Unmarshal(bid.Ext, bidExt)
-
-				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-					bidId = bidExt.Prebid.BidId
-				}
-			}
 			tracker := models.Tracker{
 				PubID:     rctx.PubID,
 				ProfileID: fmt.Sprintf("%d", rctx.ProfileID),

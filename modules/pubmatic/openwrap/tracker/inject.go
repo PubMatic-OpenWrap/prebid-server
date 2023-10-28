@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -14,16 +13,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
 			var errMsg string
-			bidId := bid.ID
-			bidExt := &models.BidExt{}
-			if len(bid.Ext) > 0 {
-				_ = json.Unmarshal(bid.Ext, bidExt)
-
-				if bidExt.Prebid != nil && len(bidExt.Prebid.BidId) > 0 {
-					bidId = bidExt.Prebid.BidId
-				}
-			}
-			tracker := rctx.Trackers[bidId]
+			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {
 				adformat = "video"
