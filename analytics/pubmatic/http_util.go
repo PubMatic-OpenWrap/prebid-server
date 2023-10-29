@@ -9,6 +9,7 @@ package pubmatic
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 
 	//"log"
@@ -215,4 +216,31 @@ func (hc *HttpCall) submit(wg *sync.WaitGroup) {
 	body, err := ioutil.ReadAll(hc.response.Body)
 	hc.respBody = string(body)
 	hc.err = err
+}
+
+// Send method
+func Send(url string, headers http.Header, cookies map[string]string) error {
+	mhc := NewMultiHttpContext()
+	hc, err := NewHttpCall(url, "")
+	if err != nil {
+		return err
+	}
+
+	for k, v := range headers {
+		if len(v) != 0 {
+			hc.AddHeader(k, v[0])
+		}
+	}
+
+	for k, v := range cookies {
+		hc.AddCookie(k, v)
+	}
+
+	mhc.AddHttpCall(hc)
+	_, erc := mhc.Execute()
+	if erc != 0 {
+		return errors.New("error in sending logger pixel")
+	}
+
+	return nil
 }

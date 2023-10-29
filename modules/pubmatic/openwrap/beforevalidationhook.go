@@ -56,6 +56,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
+	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -88,7 +89,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 		return result, err
 	}
 
@@ -97,17 +97,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.VersionID = ver
 	}
 
-	rCtx.Platform = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
-	if rCtx.Platform == "" {
+	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
 		err = errors.New("failed to get platform data")
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 		return result, err
 	}
-
+	rCtx.Platform = platform
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)

@@ -2,7 +2,6 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -10,7 +9,6 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
@@ -111,10 +109,10 @@ func TestConvertNonBidToBid(t *testing.T) {
 	tests := []struct {
 		name   string
 		nonBid openrtb_ext.NonBid
-		bid    openrtb2.Bid
+		bid    bidWrapper
 	}{
 		{
-			name: "nonbid to bid",
+			name: "nonbid to bidwrapper",
 			nonBid: openrtb_ext.NonBid{
 				StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 				ImpId:      "imp1",
@@ -137,20 +135,23 @@ func TestConvertNonBidToBid(t *testing.T) {
 					},
 				},
 			},
-			bid: openrtb2.Bid{
-				ImpID:   "imp1",
-				Price:   10,
-				ADomain: []string{"abc.com"},
-				DealID:  "d1",
-				W:       10,
-				H:       50,
+			bid: bidWrapper{
+				&openrtb2.Bid{
+					ImpID:   "imp1",
+					Price:   10,
+					ADomain: []string{"abc.com"},
+					DealID:  "d1",
+					W:       10,
+					H:       50,
+					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
+				},
+				openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bid := convertNonBidToBid(&tt.nonBid)
-			fmt.Printf("%s", bid.Ext)
+			bid := convertNonBidToBidWrapper(&tt.nonBid)
 			assert.Equal(t, tt.bid, bid, tt.name)
 		})
 	}
@@ -204,6 +205,455 @@ func TestGetDefaultPartnerRecordsByImp(t *testing.T) {
 				// ignore order of elements in slice while comparison
 				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
 			}
+		})
+	}
+}
+
+func TestGetPartnerRecordsByImp(t *testing.T) {
+	type args struct {
+		ao   analytics.AuctionObject
+		rCtx *models.RequestCtx
+	}
+	tests := []struct {
+		name     string
+		args     args
+		partners map[string][]PartnerRecord
+	}{
+		{
+			name: "adformat for default bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 0,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+							Video: &openrtb2.Video{
+								MinDuration: 1,
+								MaxDuration: 10,
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						Adformat:    models.Video,
+					},
+				},
+			},
+		},
+		{
+			name: "adformat for valid bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										AdM:   "{\"native\":{\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"Lexus - Luxury vehicles company\"}},{\"id\":2,\"img\":{\"h\":150,\"url\":\"https://stagingnyc.pubmatic.com:8443//sdk/lexus_logo.png\",\"w\":150},\"required\":0},{\"id\":3,\"img\":{\"h\":428,\"url\":\"https://stagingnyc.pubmatic.com:8443//sdk/28f48244cafa0363b03899f267453fe7%20copy.png\",\"w\":214},\"required\":0},{\"data\":{\"value\":\"Goto PubMatic\"},\"id\":4,\"required\":0},{\"data\":{\"value\":\"Lexus - Luxury vehicles company\"},\"id\":5,\"required\":0},{\"data\":{\"value\":\"4\"},\"id\":6,\"required\":0}],\"imptrackers\":[\"http://phtrack.pubmatic.com/?ts=1496043362&r=84137f17-eefd-4f06-8380-09138dc616e6&i=c35b1240-a0b3-4708-afca-54be95283c61&a=130917&t=9756&au=10002949&p=&c=10014299&o=10002476&wl=10009731&ty=1\"],\"link\":{\"clicktrackers\":[\"http://ct.pubmatic.com/track?ts=1496043362&r=84137f17-eefd-4f06-8380-09138dc616e6&i=c35b1240-a0b3-4708-afca-54be95283c61&a=130917&t=9756&au=10002949&p=&c=10014299&o=10002476&wl=10009731&ty=3&url=\"],\"url\":\"http://www.lexus.com/\"},\"ver\":1}}",
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+							Native: &openrtb2.Native{},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						Adformat:    models.Native,
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+				},
+			},
+		},
+		{
+			name: "latency for partner",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										AdM:   "{\"native\":{\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"Lexus - Luxury vehicles company\"}},{\"id\":2,\"img\":{\"h\":150,\"url\":\"https://stagingnyc.pubmatic.com:8443//sdk/lexus_logo.png\",\"w\":150},\"required\":0},{\"id\":3,\"img\":{\"h\":428,\"url\":\"https://stagingnyc.pubmatic.com:8443//sdk/28f48244cafa0363b03899f267453fe7%20copy.png\",\"w\":214},\"required\":0},{\"data\":{\"value\":\"Goto PubMatic\"},\"id\":4,\"required\":0},{\"data\":{\"value\":\"Lexus - Luxury vehicles company\"},\"id\":5,\"required\":0},{\"data\":{\"value\":\"4\"},\"id\":6,\"required\":0}],\"imptrackers\":[\"http://phtrack.pubmatic.com/?ts=1496043362&r=84137f17-eefd-4f06-8380-09138dc616e6&i=c35b1240-a0b3-4708-afca-54be95283c61&a=130917&t=9756&au=10002949&p=&c=10014299&o=10002476&wl=10009731&ty=1\"],\"link\":{\"clicktrackers\":[\"http://ct.pubmatic.com/track?ts=1496043362&r=84137f17-eefd-4f06-8380-09138dc616e6&i=c35b1240-a0b3-4708-afca-54be95283c61&a=130917&t=9756&au=10002949&p=&c=10014299&o=10002476&wl=10009731&ty=3&url=\"],\"url\":\"http://www.lexus.com/\"},\"ver\":1}}",
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+							Native: &openrtb2.Native{},
+						},
+					},
+					BidderResponseTimeMillis: map[string]int{
+						"pubmatic": 20,
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						Adformat:    models.Native,
+						NetECPM:     10,
+						GrossECPM:   10,
+						Latency1:    20,
+					},
+				},
+			},
+		},
+		{
+			name: "matchedimpression for partner",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					MatchedImpression: map[string]int{
+						"pubmatic": 1,
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:         "pubmatic",
+						BidderCode:        "pubmatic",
+						PartnerSize:       "0x0",
+						BidID:             "bid-id-1",
+						OrigBidID:         "bid-id-1",
+						DealID:            "-1",
+						ServerSide:        1,
+						OriginalCur:       "USD",
+						NetECPM:           10,
+						GrossECPM:         10,
+						MatchedImpression: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "partnersize for non-video bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										W:     30,
+										H:     50,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					Platform: models.PLATFORM_DISPLAY,
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "30x50",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+				},
+			},
+		},
+		{
+			name: "partnersize for video bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										W:     30,
+										H:     50,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					Platform: models.PLATFORM_VIDEO,
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "30x50v",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+				},
+			},
+		},
+		{
+			name: "dealid present, verify dealid and dealchannel",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:     "bid-id-1",
+										ImpID:  "imp1",
+										Price:  10,
+										DealID: "pubdeal",
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "pubdeal",
+						DealChannel: "PMP",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+				},
+			},
+		},
+		{
+			name: "log adomain field",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										ADomain: []string{
+											"http://google.com", "http://yahoo.com",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												BidId: "prebid-bid-id-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "prebid-bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: models.USD,
+						ADomain:     "google.com",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
+			assert.Equalf(t, partners, tt.partners, tt.name)
 		})
 	}
 }
@@ -422,7 +872,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			},
 		},
 		{
-			name: "default bid present but absent in seat-non-bid",
+			name: "partner timeout case, default bid present is seat-bid but absent in seat-non-bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -432,7 +882,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 									{
 										ID:    "bid-id-1",
 										ImpID: "imp1",
-										Price: 10,
+										Price: 0,
 									},
 								},
 								Seat: "pubmatic",
@@ -465,6 +915,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
 									},
 								},
 							},
@@ -486,22 +937,24 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
-						NetECPM:     10,
-						GrossECPM:   10,
+						PartnerID:            "pubmatic",
+						BidderCode:           "pubmatic",
+						PartnerSize:          "0x0",
+						BidID:                "bid-id-1",
+						OrigBidID:            "bid-id-1",
+						DealID:               "-1",
+						ServerSide:           1,
+						OriginalCur:          "USD",
+						NetECPM:              0,
+						GrossECPM:            0,
+						Nbr:                  openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						PostTimeoutBidStatus: 1,
 					},
 				},
 			},
 		},
 		{
-			name: "default bid present and same bid is available in seat-non-bid",
+			name: "floor rejected bid, default bid present in seat-bid and same bid is available in seat-non-bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -544,6 +997,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
 									},
 								},
 							},
@@ -569,6 +1023,86 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "slot not mapped, default bid present is seat-bid but absent in seat-non-bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 0,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+									},
+								},
+							},
+							NonMapped: map[string]struct{}{
+								"pubmatic": {},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{},
+		},
+		{
+			name: "partner throttled, default bid present is seat-bid but absent in seat-non-bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 0,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+									},
+								},
+							},
+						},
+					},
+					AdapterThrottleMap: map[string]struct{}{
+						"pubmatic": {},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -579,7 +1113,6 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 				if !assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name) {
 					assert.Equal(t, partners[ind], tt.partners[ind], tt.name)
 				}
-
 			}
 		})
 	}
@@ -599,47 +1132,15 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 			name: "empty seatnonbids, expect empty partnerRecord",
 			args: args{
 				ao: analytics.AuctionObject{
-					Response: &openrtb2.BidResponse{},
+					Response:   &openrtb2.BidResponse{},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
 				},
 				rCtx: &models.RequestCtx{},
 			},
 			partners: map[string][]PartnerRecord{},
 		},
 		{
-			name: "logger should not log partner-throttled seat-non-bid",
-			args: args{
-				ao: analytics.AuctionObject{
-					Response: &openrtb2.BidResponse{},
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							Seat: "pubmatic",
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: int(exchange.RequestBlockedPartnerThrottle),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
-												Price: 10,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					AdapterThrottleMap: map[string]struct{}{
-						"pubmatic": {},
-					},
-					ImpBidCtx: make(map[string]models.ImpCtx),
-				},
-			},
-			partners: map[string][]PartnerRecord{},
-		},
-		{
-			name: "logger should be logged if bidCtx is empty",
+			name: "ImpBidCtx is must to log partner-record in logger",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{},
@@ -664,56 +1165,6 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					ImpBidCtx: make(map[string]models.ImpCtx),
-				},
-			},
-			partners: map[string][]PartnerRecord{
-				"imp1": {
-					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						DealID:      "-1",
-						NetECPM:     10,
-						GrossECPM:   10,
-						ServerSide:  1,
-						OriginalCur: "USD",
-						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowDealFloor),
-					},
-				},
-			},
-		},
-		{
-			name: "logger should not log non-bid for slot-not-mapped reason",
-			args: args{
-				ao: analytics.AuctionObject{
-					Response: &openrtb2.BidResponse{},
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							Seat: "appnexus",
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: int(exchange.RequestBlockedPartnerThrottle),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
-												Price: 10,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp1": {
-							NonMapped: map[string]struct{}{
-								"appnexus": {},
-							},
-						},
-					},
 				},
 			},
 			partners: map[string][]PartnerRecord{},
@@ -947,6 +1398,72 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     0,
 						FloorRuleValue: 0,
+						Nbr:            openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+					},
+				},
+			},
+		},
+		{
+			name: "bid.ext.prebid.floors.floorRuleValue is 0 then set it to bid.ext.prebid.floors.floorRule",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{},
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							Seat: "appnexus",
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: int((openrtb3.LossBidBelowAuctionFloor)),
+									Ext: openrtb_ext.NonBidExt{
+										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+											Bid: openrtb_ext.NonBidObject{
+												Price: 10,
+												ID:    "bid-id-1",
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorRule:      "*|*|ebay.com",
+													FloorRuleValue: 0,
+													FloorValue:     10,
+													FloorCurrency:  models.USD,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidFloor:    10.5,
+							BidFloorCur: "USD",
+						},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						1: {},
+					},
+					WinningBids: make(map[string]models.OwBid),
+					Platform:    models.PLATFORM_APP,
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:      "appnexus",
+						BidderCode:     "appnexus",
+						PartnerSize:    "0x0",
+						BidID:          "bid-id-1",
+						OrigBidID:      "bid-id-1",
+						DealID:         "-1",
+						GrossECPM:      10,
+						NetECPM:        10,
+						ServerSide:     1,
+						OriginalCPM:    0,
+						OriginalCur:    models.USD,
+						FloorValue:     10,
+						FloorRuleValue: 10,
 						Nbr:            openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
 					},
 				},
@@ -1251,6 +1768,306 @@ func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 						OriginalCur:          models.USD,
 						PostTimeoutBidStatus: 1,
 						Nbr:                  openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
+			assert.Equal(t, tt.partners, partners, tt.name)
+		})
+	}
+}
+
+func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
+	type args struct {
+		ao   analytics.AuctionObject
+		rCtx *models.RequestCtx
+	}
+	tests := []struct {
+		name     string
+		args     args
+		partners map[string][]PartnerRecord
+	}{
+		{
+			name: "valid bid, impBidCtx bidID is in bidID::uuid format",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{"bidid":"uuid"}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+												BidId:             "uuid",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:    "appnexus",
+						BidderCode:   "appnexus",
+						PartnerSize:  "0x0",
+						BidID:        "uuid",
+						OrigBidID:    "bid-id-1",
+						DealID:       "-1",
+						ServerSide:   1,
+						OriginalCur:  models.USD,
+						NetECPM:      10,
+						GrossECPM:    10,
+						DealPriority: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "dropped bid, impBidCtx bidID is in bidID::uuid format",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{"bidid":"uuid"}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+											},
+										},
+										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:    "appnexus",
+						BidderCode:   "appnexus",
+						PartnerSize:  "0x0",
+						BidID:        "bid-id-1",
+						OrigBidID:    "bid-id-1",
+						DealID:       "-1",
+						ServerSide:   1,
+						OriginalCur:  models.USD,
+						NetECPM:      10,
+						GrossECPM:    10,
+						DealPriority: 1,
+						Nbr:          openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+					},
+				},
+			},
+		},
+		{
+			name: "default bid, impBidCtx bidID is in uuid format",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "uuid",
+										ImpID: "imp1",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:            "appnexus",
+						BidderCode:           "appnexus",
+						PartnerSize:          "0x0",
+						BidID:                "uuid",
+						OrigBidID:            "uuid",
+						DealID:               "-1",
+						ServerSide:           1,
+						OriginalCur:          models.USD,
+						Nbr:                  openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						PostTimeoutBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "non bid, no bidCtx in impBidCtx",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{},
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							Seat: "appnexus",
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidLostToDealBid),
+									Ext: openrtb_ext.NonBidExt{
+										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+											Bid: openrtb_ext.NonBidObject{
+												Price: 10,
+												ID:    "bid-id-1",
+												BidId: "uuid",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "uuid",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+						NetECPM:     10,
+						GrossECPM:   10,
+						OriginalCur: models.USD,
+						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+					},
+				},
+			},
+		},
+		{
+			name: "winning bid contains bidID in bidID::uuid format",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{"bidid":"uuid"}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+												BidId:             "uuid",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					WinningBids: map[string]models.OwBid{
+						"imp1": {
+							ID: "bid-id-1::uuid",
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:       "appnexus",
+						BidderCode:      "appnexus",
+						PartnerSize:     "0x0",
+						BidID:           "uuid",
+						OrigBidID:       "bid-id-1",
+						DealID:          "-1",
+						ServerSide:      1,
+						OriginalCur:     models.USD,
+						NetECPM:         10,
+						GrossECPM:       10,
+						DealPriority:    1,
+						WinningBidStaus: 1,
 					},
 				},
 			},

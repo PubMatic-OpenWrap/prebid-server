@@ -40,8 +40,6 @@ type record struct {
 	Content           *Content         `json:"ct,omitempty"`
 	TestConfigApplied int              `json:"tgid,omitempty"`
 	//Geo             GeoRecord    `json:"geo,omitempty"`
-
-	//AAA: owlogger migrate
 	FloorModelVersion string `json:"fmv,omitempty"`
 	FloorSource       *int   `json:"fsrc,omitempty"`
 	FloorType         int    `json:"ft"`
@@ -49,7 +47,6 @@ type record struct {
 	FloorFetchStatus  *int   `json:"ffs,omitempty"`
 	FloorProvider     string `json:"fp,omitempty"`
 	PDC               string `json:"pdc,omitempty"`
-	// Geo               GeoRecord        `json:"geo,omitempty"`
 }
 
 // Device struct for storing device information
@@ -101,9 +98,7 @@ type SlotRecord struct {
 	AdPodSlot         *AdPodSlot      `json:"aps,omitempty"`
 	PartnerData       []PartnerRecord `json:"ps"`
 	RewardedInventory int             `json:"rwrd,omitempty"` // Indicates if the ad slot was enabled (rwrd=1) for rewarded or disabled (rwrd=0)
-
-	//AAA:owloggger migration
-	FloorSkippedFlag *int `json:"fskp,omitempty"`
+	FloorSkippedFlag  *int            `json:"fskp,omitempty"`
 }
 
 // PartnerRecord structure for storing partner information
@@ -136,17 +131,13 @@ type PartnerRecord struct {
 	Cat                 []string `json:"cat,omitempty"`
 	NoBidReason         *int     `json:"aprc,omitempty"`
 
-	OriginalCPM float64 `json:"ocpm"`
-	OriginalCur string  `json:"ocry"`
+	OriginalCPM float64   `json:"ocpm"`
+	OriginalCur string    `json:"ocry"`
+	MetaData    *MetaData `json:"md,omitempty"`
 
-	MetaData *MetaData `json:"md,omitempty"`
-
-	FloorValue     float64 `json:"fv,omitempty"`
-	FloorRule      string  `json:"-,omitempty"` //TODO : this has been removed
-	FloorRuleValue float64 `json:"frv,omitempty"`
-
-	// owlogger migration
-	Nbr *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
+	FloorValue     float64                    `json:"fv,omitempty"`
+	FloorRuleValue float64                    `json:"frv,omitempty"`
+	Nbr            *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
 
 }
 
@@ -180,8 +171,7 @@ var FetchStatusMap = map[string]int{
 	openrtb_ext.FetchTimeout:    4,
 }
 
-// TODO: do we need to pass this uaFromHTTPReq ?
-// logDeviceObject will be used to log device specific parameters like platform and ifa_type
+// logDeviceObject is used to add device specific parameters like platform and ifa_type in logger
 func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidRequest *openrtb2.BidRequest) {
 
 	dvc := Device{
@@ -253,7 +243,7 @@ func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
 	}
 }
 
-// set partnerRecord MetaData
+// setMetaDataObject sets the MetaData object for partner-record
 func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
 
 	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
@@ -276,6 +266,7 @@ func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPr
 	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
 }
 
+// SetFloorDetails sets the fskp/fmv/fsrc/ffs/fp/ft for logger record
 func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) {
 
 	if floors == nil {
@@ -283,7 +274,7 @@ func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) 
 	}
 
 	if floors.Skipped != nil {
-		skipped := ConvertBoolToInt(*floors.Skipped)
+		skipped := convertBoolToInt(*floors.Skipped)
 		for i := range wlog.Slots {
 			wlog.Slots[i].FloorSkippedFlag = &skipped
 		}

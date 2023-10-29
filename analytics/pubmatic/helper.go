@@ -2,42 +2,12 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
-
-// Send method
-func Send(url string, headers http.Header, cookies map[string]string) error {
-	mhc := NewMultiHttpContext()
-	hc, err := NewHttpCall(url, "")
-	if err != nil { //TODO : err will always nil
-		return err
-	}
-
-	for k, v := range headers {
-		if len(v) != 0 {
-			hc.AddHeader(k, v[0])
-		}
-	}
-
-	// TODO : confirm this
-	for k, v := range cookies {
-		hc.AddCookie(k, v)
-	}
-
-	mhc.AddHttpCall(hc)
-	_, erc := mhc.Execute()
-	if erc != 0 {
-		return errors.New("error in sending logger pixel")
-	}
-
-	return nil
-}
 
 // PrepareLoggerURL returns the url for OW logger call
 func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) string {
@@ -67,7 +37,7 @@ func getSizeForPlatform(width, height int64, platform string) string {
 	return s
 }
 
-func ConvertBoolToInt(val bool) int {
+func convertBoolToInt(val bool) int {
 	if val {
 		return 1
 	}

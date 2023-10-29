@@ -49,15 +49,9 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			var errcode int
-			errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
-			if len(errs) > 0 {
-				errcode = errs[0].Code
-			}
-
 			// TODO: confirm this behaviour change
 			uuid := uuid.NewV4().String()
-			bidExt := newNoBidExt(*rctx, impID, errcode)
+			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
 			defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
@@ -75,7 +69,6 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 
 			// record error stats for each bidder
 			m.recordErrorStats(*rctx, bidResponseExt, bidder)
-
 		}
 	}
 
@@ -86,7 +79,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			bidExt := newNoBidExt(*rctx, impID, errortypes.UnknownErrorCode)
+			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 			// no need to create impBidCtx since we dont log partner-throttled bid in owlogger
 
@@ -107,7 +100,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			bidExt := newNoBidExt(*rctx, impID, errortypes.UnknownErrorCode)
+			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 			// no need to create impBidCtx since we dont log slot-not-mapped bid in owlogger
 
@@ -124,21 +117,28 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	return defaultBids
 }
 
-// getNonBRCodeFromPartnerErrCode maps the error-code present in prebid partner response with standard nonBR code
-func getNonBRCodeFromPartnerErrCode(errcode int) *openrtb3.NonBidStatusCode {
-	switch errcode {
+// getNonBRCodeFromBidRespExt maps the error-code present in prebid partner response with standard nonBR code
+func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt *openrtb_ext.ExtBidResponse) *openrtb3.NonBidStatusCode {
+	errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
+	if len(errs) == 0 {
+		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
+	}
+
+	switch errs[0].Code {
 	case errortypes.TimeoutErrorCode:
 		return GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError)
 	case errortypes.UnknownErrorCode:
 		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
+	default:
+		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
 	}
-	return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
 }
 
-func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) *models.BidExt {
+func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseExt *openrtb_ext.ExtBidResponse) *models.BidExt {
+
 	bidExt := models.BidExt{
 		NetECPM: 0,
-		Nbr:     getNonBRCodeFromPartnerErrCode(errcode),
+		Nbr:     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
 	}
 	if rctx.ClientConfigFlag == 1 {
 		if cc := adunitconfig.GetClientConfigForMediaType(rctx, impID, "banner"); cc != nil {
@@ -160,13 +160,6 @@ func newNoBidExt(rctx models.RequestCtx, impID string, errcode int) *models.BidE
 			bidExt.RefreshInterval = n
 		}
 	}
-
-	// newBidExt, err := json.Marshal(bidExt)
-	// if err != nil {
-	// 	return nil
-	// }
-
-	// return json.RawMessage(newBidExt)
 	return &bidExt
 }
 

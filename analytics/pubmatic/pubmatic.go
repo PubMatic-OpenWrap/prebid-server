@@ -40,10 +40,10 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		if r := recover(); r != nil {
 			if rCtx != nil {
 				rCtx.MetricsEngine.RecordOpenWrapServerPanicStats(ow.hostName, "LogAuctionObject")
-				glog.Errorf("stacktrace:"+string(debug.Stack()), "pubid:[%d], profid:[%d]", rCtx.PubID, rCtx.ProfileID)
+				glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%d], profid:[%d], ver:[%d]", string(debug.Stack()), r, rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 				return
 			}
-			glog.Errorf("stacktrace:" + string(debug.Stack()))
+			glog.Errorf("stacktrace:[%s], error:[%v]", string(debug.Stack()), r)
 		}
 	}()
 

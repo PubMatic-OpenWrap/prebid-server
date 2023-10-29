@@ -20,6 +20,7 @@ const (
 
 	REVSHARE      = "rev_share"
 	BID_PRECISION = 2
+	NOT_SET       = -1
 )
 
 // GetAdFormat gets adformat from creative(adm) of the bid
@@ -39,6 +40,7 @@ func GetAdFormat(adm string) string {
 	return adFormat
 }
 
+// confirm: why we are maintaining 2 copies of functions ?? 1 in ow-module and 1 here ??
 func GetRevenueShare(partnerConfig map[string]string) float64 {
 	var revShare float64
 
