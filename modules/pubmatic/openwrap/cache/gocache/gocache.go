@@ -32,7 +32,7 @@ func key(format string, v ...interface{}) string {
 type cache struct {
 	sync.Map
 	cache        *gocache.Cache
-	cfg          config.Cache
+	cfg          config.DBCache
 	db           database.Database
 	metricEngine metrics.MetricsEngine
 }
@@ -40,7 +40,7 @@ type cache struct {
 var c *cache
 var cOnce sync.Once
 
-func New(goCache *gocache.Cache, database database.Database, cfg config.Cache, metricEngine metrics.MetricsEngine) *cache {
+func New(goCache *gocache.Cache, database database.Database, cfg config.DBCache, metricEngine metrics.MetricsEngine) *cache {
 	cOnce.Do(
 		func() {
 			c = &cache{

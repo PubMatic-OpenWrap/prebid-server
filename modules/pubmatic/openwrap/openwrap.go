@@ -20,6 +20,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 const (
@@ -49,7 +50,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	db := mysql.New(mysqlDriver, cfg.Database)
 
 	// NYC_TODO: replace this with freecache and use concrete structure
-	cache := gocache.New(time.Duration(cfg.Cache.CacheDefaultExpiry)*time.Second, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL)
+	cache := gocache.New(time.Duration(cfg.DBCache.CacheDefaultExpiry)*time.Second, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL)
 	if cache == nil {
 		return OpenWrap{}, errors.New("error while initializing cache")
 	}
@@ -64,9 +65,13 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}
 
-	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
+	owCache := ow_gocache.New(cache, db, cfg.DBCache, &metricEngine)
 
-	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
+	// Init FSC and related services
+	fullscreenclickability.Init(owCache, cfg.DBCache.CacheDefaultExpiry)
+
+	// Init TBF (tracking-beacon-first) feature related services
+	tbf.Init(cfg.DBCache.CacheDefaultExpiry, owCache)
 
 	return OpenWrap{
 		cfg:          cfg,

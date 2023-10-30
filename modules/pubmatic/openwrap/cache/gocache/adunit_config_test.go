@@ -152,7 +152,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -177,7 +177,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(10, 10),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -200,7 +200,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(10, 10),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -223,7 +223,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(10, 10),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -277,7 +277,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -300,7 +300,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			name: "test_request",
 			fields: fields{
 				db: mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -321,7 +321,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			name: "successfully_get_value_from_cache",
 			fields: fields{
 				db: mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -345,7 +345,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			name: "got_empty_adunitconfig_from_cache",
 			fields: fields{
 				db: mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -370,7 +370,7 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
