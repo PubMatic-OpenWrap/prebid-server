@@ -6,25 +6,21 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 // Inject TrackerCall in Native Adm
 func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker models.OWTracker) (string, error) {
-
 	if native == nil {
 		return adm, errors.New("native object is missing")
 	}
 	if len(native.Request) == 0 {
 		return adm, errors.New("native request is empty")
 	}
-
 	setTrackerURL := false
 	callback := func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
-			glog.Errorf("Error Getting EventTracker Value in Native Request: %s", native.Request)
 			return
 		}
 		if setTrackerURL {
@@ -32,15 +28,11 @@ func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker m
 		}
 		adm, setTrackerURL = injectNativeEventTracker(&adm, value, tracker)
 	}
-
 	jsonparser.ArrayEach([]byte(native.Request), callback, models.EventTrackers)
 
 	if setTrackerURL {
 		return adm, nil
 	}
-
-	glog.Infof("Tracker Not Injected in Native Adm EventTrackers: %s, Injecting it into ImpTrackers", adm)
-
 	return injectNativeImpressionTracker(&adm, tracker)
 }
 
@@ -58,13 +50,10 @@ func injectNativeEventTracker(adm *string, value []byte, trackerParam models.OWT
 	}
 
 	nativeEventTracker := strings.Replace(models.NativeTrackerMacro, "${trackerUrl}", trackerParam.TrackerURL, 1)
-
 	newAdm, err := jsonparser.Set([]byte(*adm), []byte(nativeEventTracker), models.EventTrackers, "[]")
 	if err != nil {
-		glog.Errorf("Failed to Inject Tracker in Native Adm, Tracker Not Appended: %s", string(newAdm))
 		return *adm, false
 	}
-
 	*adm = string(newAdm)
 	return *adm, true
 }
@@ -76,7 +65,6 @@ func injectNativeImpressionTracker(adm *string, tracker models.OWTracker) (strin
 		impTrackers = append(impTrackers, string(value))
 	}
 	jsonparser.ArrayEach([]byte(*adm), callback, models.ImpTrackers)
-
 	//append trackerUrl
 	impTrackers = append(impTrackers, tracker.TrackerURL)
 	allImpTrackers := fmt.Sprintf(`["%s"]`, strings.Join(impTrackers, `","`))
@@ -84,7 +72,6 @@ func injectNativeImpressionTracker(adm *string, tracker models.OWTracker) (strin
 	if err != nil {
 		return *adm, errors.New("error setting imptrackers in native adm")
 	}
-
 	*adm = string(newAdm)
 	return *adm, nil
 }

@@ -6,14 +6,20 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 func TestInjectTrackers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockCache := mock_cache.NewMockCache(ctrl)
 	defer ctrl.Finish()
+	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+		5890: {1234: 100},
+	})
 	models.TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`
 
 	type args struct {
@@ -385,6 +391,50 @@ func TestInjectTrackers(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "native_obj_not_found",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "native",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+					MetricsEngine: mockEngine,
+					ImpBidCtx:     map[string]models.ImpCtx{},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "12345",
+									ImpID: "imp123",
+									AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "12345",
+								ImpID: "imp123",
+								AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "adformat_is_native",

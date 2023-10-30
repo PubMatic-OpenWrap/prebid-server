@@ -26,7 +26,6 @@ const (
 	TRKQMARK             = "?"
 	TRKAmpersand         = "&"
 	TRKSSAI              = "ssai"
-
 	TRKPlatform          = "plt"
 	TRKAdSize            = "psz"
 	TRKTestGroup         = "tgid"

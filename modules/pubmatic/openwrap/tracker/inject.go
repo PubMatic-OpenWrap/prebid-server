@@ -22,17 +22,16 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bidResponse.SeatBid[i].Bid[j], seatBid.Seat)
+				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat)
 			case models.Video:
-				// trackers := make([]models.OWTracker, 0, len(rctx.Trackers))
-				// for _, tracker := range rctx.Trackers {
-				// 	trackers = append(trackers, tracker)
-				// }
 				trackers := []models.OWTracker{tracker}
-
 				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
 			case models.Native:
-				bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(rctx.ImpBidCtx[bid.ImpID].Native, bidResponse.SeatBid[i].Bid[j].AdM, tracker)
+				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
+					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
+				} else {
+					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
+				}
 			default:
 				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
 			}
@@ -40,7 +39,6 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 			if err != nil {
 				errMsg = fmt.Sprintf("failed to inject tracker for bidid %s with error %s", bid.ID, err.Error())
 			}
-
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = models.ErrorWrap(errs, errors.New(errMsg))

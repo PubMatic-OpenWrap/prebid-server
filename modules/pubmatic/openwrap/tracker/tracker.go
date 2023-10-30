@@ -47,6 +47,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, prebidExt *openrtb_ext.ExtResponsePr
 	return trackerURL.String()
 }
 
+// sets floors details in tracker
 func setFloorsDetails(tracker *models.Tracker, prebidExt *openrtb_ext.ExtResponsePrebid) {
 	if prebidExt != nil && prebidExt.Floors != nil {
 		if prebidExt.Floors.Skipped != nil {
