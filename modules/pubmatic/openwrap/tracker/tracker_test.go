@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 

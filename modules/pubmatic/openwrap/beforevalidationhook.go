@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -148,12 +149,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		IncludeWinners:    boolutil.BoolPtr(true),
 	}
 
+	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
+		slotType := "banner"
 		var adpodExt *models.AdPod
+		var isAdPodImpression bool
 		imp := payload.BidRequest.Imp[i]
 
 		if imp.TagID == "" {
@@ -164,6 +168,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		if imp.Video != nil {
+			slotType = "video"
+
 			//add stats for video instl impressions
 			if imp.Instl == 1 {
 				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -171,6 +177,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if len(requestExt.Prebid.Macros) == 0 {
 				// provide custom macros for video event trackers
 				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+			}
+
+			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
+				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
+					isAdPodImpression = true
+					if !isAdPodRequest {
+						isAdPodRequest = true
+						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
+					}
+				}
 			}
 		}
 
@@ -216,11 +232,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			continue
 		}
 
-		slotType := "banner"
-		if imp.Video != nil {
-			slotType = "video"
-		}
-
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
@@ -252,11 +263,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			var isRegex bool
 			var slot, kgpv string
 			var bidderParams json.RawMessage
+			var matchedSlotKeysVAST []string
 			switch prebidBidderCode {
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			case models.BidderVASTBidder:
-				slot, bidderParams, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
+				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
 			default:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			}
@@ -278,6 +290,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
 				KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
 				IsRegex:          isRegex,                                                  // regex pattern
+			}
+
+			for _, bidder := range matchedSlotKeysVAST {
+				bidderMeta[bidder].VASTTagFlags[bidder] = false
 			}
 
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
@@ -322,6 +338,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		// cache the details for further processing
 		if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
+				ImpID:             imp.ID,
 				TagID:             imp.TagID,
 				Div:               div,
 				IsRewardInventory: reward,
@@ -335,7 +352,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 				Bidders:           make(map[string]models.PartnerData),
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
+				IsAdPodRequest:    isAdPodRequest,
 			}
+		}
+
+		if isAdPodImpression {
+			bidderMeta[string(openrtb_ext.BidderOWPrebidCTV)] = models.PartnerData{}
 		}
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
@@ -457,7 +479,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
-	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, bidRequest.Device)
+	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
 
 	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)

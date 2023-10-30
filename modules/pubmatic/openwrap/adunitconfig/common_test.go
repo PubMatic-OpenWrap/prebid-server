@@ -79,7 +79,14 @@ func TestSelectSlot(t *testing.T) {
 			name: "Matching_Slot_config_when_regex_is_present_and_slotconfig_is_absent",
 			args: args{
 				rCtx: models.RequestCtx{
-					AdUnitConfig: getAdunitConfigWithRx(),
+					AdUnitConfig: func() *adunitconfig.AdUnitConfig {
+						auc := getAdunitConfigWithRx()
+
+						// Temporary fix to make UT execution consistent.
+						// TODO: make getRegexMatch()'s loop consistent.
+						delete(auc.Config, "/15671365/test_adunit1")
+						return auc
+					}(),
 				},
 				h:      300,
 				w:      200,

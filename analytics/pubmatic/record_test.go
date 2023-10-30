@@ -192,17 +192,17 @@ func TestLogIntegrationType(t *testing.T) {
 		},
 		{
 			name:            "ctv-vast",
-			endpoint:        models.EndpointCTVVAST,
+			endpoint:        models.EndpointVAST,
 			integrationType: models.TypeTag,
 		},
 		{
 			name:            "ctv-ortb",
-			endpoint:        models.EndpointCTVORTB,
+			endpoint:        models.EndpointORTB,
 			integrationType: models.TypeS2S,
 		},
 		{
 			name:            "ctv-json",
-			endpoint:        models.EndpointCTVJson,
+			endpoint:        models.EndpointJson,
 			integrationType: models.TypeInline,
 		},
 		{

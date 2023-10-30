@@ -208,11 +208,11 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 		wlog.IntegrationType = models.TypeAmp
 	case models.EndpointV25:
 		wlog.IntegrationType = models.TypeSDK
-	case models.EndpointCTVVAST:
+	case models.EndpointVAST:
 		wlog.IntegrationType = models.TypeTag
-	case models.EndpointCTVJson, models.EndpointVideo:
+	case models.EndpointJson, models.EndpointVideo:
 		wlog.IntegrationType = models.TypeInline
-	case models.EndpointCTVORTB:
+	case models.EndpointORTB:
 		wlog.IntegrationType = models.TypeS2S
 	}
 }
