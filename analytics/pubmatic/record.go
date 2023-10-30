@@ -2,11 +2,12 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"math"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 // WloggerRecord structure for wrapper analytics logger object
@@ -28,8 +29,8 @@ type record struct {
 	GDPR              int8             `json:"gdpr,omitempty"`
 	ConsentString     string           `json:"cns,omitempty"`
 	PubmaticConsent   int              `json:"pmc,omitempty"`
-	UserID            string           `json:"uid,omitempty"`
-	PageValue         float64          `json:"pv,omitempty"` //sum of all winning bids
+	UserID            string           `json:"uid,omitempty"` // Not logged currently
+	PageValue         float64          `json:"pv,omitempty"`  //sum of all winning bids // Not logged currently
 	ServerLogger      int              `json:"sl,omitempty"`
 	Slots             []SlotRecord     `json:"s,omitempty"`
 	CachePutMiss      int              `json:"cm,omitempty"`
@@ -39,6 +40,13 @@ type record struct {
 	Content           *Content         `json:"ct,omitempty"`
 	TestConfigApplied int              `json:"tgid,omitempty"`
 	//Geo             GeoRecord    `json:"geo,omitempty"`
+	FloorModelVersion string `json:"fmv,omitempty"`
+	FloorSource       *int   `json:"fsrc,omitempty"`
+	FloorType         int    `json:"ft"`
+	IntegrationType   string `json:"it,omitempty"`
+	FloorFetchStatus  *int   `json:"ffs,omitempty"`
+	FloorProvider     string `json:"fp,omitempty"`
+	PDC               string `json:"pdc,omitempty"`
 }
 
 // Device struct for storing device information
@@ -90,6 +98,7 @@ type SlotRecord struct {
 	AdPodSlot         *AdPodSlot      `json:"aps,omitempty"`
 	PartnerData       []PartnerRecord `json:"ps"`
 	RewardedInventory int             `json:"rwrd,omitempty"` // Indicates if the ad slot was enabled (rwrd=1) for rewarded or disabled (rwrd=0)
+	FloorSkippedFlag  *int            `json:"fskp,omitempty"`
 }
 
 // PartnerRecord structure for storing partner information
@@ -122,14 +131,14 @@ type PartnerRecord struct {
 	Cat                 []string `json:"cat,omitempty"`
 	NoBidReason         *int     `json:"aprc,omitempty"`
 
-	OriginalCPM float64 `json:"ocpm"`
-	OriginalCur string  `json:"ocry"`
+	OriginalCPM float64   `json:"ocpm"`
+	OriginalCur string    `json:"ocry"`
+	MetaData    *MetaData `json:"md,omitempty"`
 
-	MetaData *MetaData `json:"md,omitempty"`
+	FloorValue     float64                    `json:"fv,omitempty"`
+	FloorRuleValue float64                    `json:"frv,omitempty"`
+	Nbr            *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
 
-	FloorValue     float64 `json:"fv,omitempty"`
-	FloorRule      string  `json:"fr,omitempty"`
-	FloorRuleValue float64 `json:"frv,omitempty"`
 }
 
 type MetaData struct {
@@ -147,8 +156,24 @@ type MetaData struct {
 	SecondaryCategoryIDs []string        `json:"secondaryCatIds,omitempty"`
 }
 
-// logDeviceObject will be used to log device specific parameters like platform and ifa_type
-func (wlog *WloggerRecord) logDeviceObject(rctx models.RequestCtx, uaFromHTTPReq string, ortbBidRequest *openrtb2.BidRequest, platform string) {
+var FloorSourceMap = map[string]int{
+	openrtb_ext.NoDataLocation:  0,
+	openrtb_ext.RequestLocation: 1,
+	openrtb_ext.FetchLocation:   2,
+}
+
+// FetchStatusMap maps floor fetch status with integer codes
+var FetchStatusMap = map[string]int{
+	openrtb_ext.FetchNone:       0,
+	openrtb_ext.FetchSuccess:    1,
+	openrtb_ext.FetchError:      2,
+	openrtb_ext.FetchInprogress: 3,
+	openrtb_ext.FetchTimeout:    4,
+}
+
+// logDeviceObject is used to add device specific parameters like platform and ifa_type in logger
+func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidRequest *openrtb2.BidRequest) {
+
 	dvc := Device{
 		Platform: rctx.DevicePlatform,
 	}
@@ -157,8 +182,7 @@ func (wlog *WloggerRecord) logDeviceObject(rctx models.RequestCtx, uaFromHTTPReq
 		ext := make(map[string]interface{})
 		err := json.Unmarshal(ortbBidRequest.Device.Ext, &ext)
 		if err != nil {
-			return
-
+			return // TODO - check if we shoul set dvc in logger
 		}
 		// if ext, ok := ortbBidRequest.Device.Ext.(map[string]interface{}); ok {
 		//use ext object for logging any other extension parameters
@@ -177,8 +201,105 @@ func (wlog *WloggerRecord) logDeviceObject(rctx models.RequestCtx, uaFromHTTPReq
 	wlog.Device = dvc
 }
 
-// Round value to 2 digit
-func roundToTwoDigit(value float64) float64 {
-	output := math.Pow(10, float64(2))
-	return float64(math.Round(value*output)) / output
+// SetIntegrationType sets the integration type in WloggerRecord
+func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
+	switch endpoint {
+	case models.EndpointAMP:
+		wlog.IntegrationType = models.TypeAmp
+	case models.EndpointV25:
+		wlog.IntegrationType = models.TypeSDK
+	case models.EndpointCTVVAST:
+		wlog.IntegrationType = models.TypeTag
+	case models.EndpointCTVJson, models.EndpointVideo:
+		wlog.IntegrationType = models.TypeInline
+	case models.EndpointCTVORTB:
+		wlog.IntegrationType = models.TypeS2S
+	}
+}
+
+// logFloorType will be used to log floor type
+func (wlog *WloggerRecord) logFloorType(prebid *openrtb_ext.ExtRequestPrebid) {
+	wlog.record.FloorType = models.SoftFloor
+	if prebid != nil && prebid.Floors != nil &&
+		prebid.Floors.Enabled != nil && *prebid.Floors.Enabled &&
+		prebid.Floors.Enforcement != nil && prebid.Floors.Enforcement.EnforcePBS != nil && *prebid.Floors.Enforcement.EnforcePBS {
+		wlog.record.FloorType = models.HardFloor
+	}
+}
+
+// logContentObject adds the content object details in logger
+func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
+	if nil == content {
+		return
+	}
+
+	wlog.Content = &Content{
+		ID:      content.ID,
+		Episode: int(content.Episode),
+		Title:   content.Title,
+		Series:  content.Series,
+		Season:  content.Season,
+		Cat:     content.Cat,
+	}
+}
+
+// setMetaDataObject sets the MetaData object for partner-record
+func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
+
+	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
+		partnerRecord.MetaData = &MetaData{
+			NetworkID:            meta.NetworkID,
+			AdvertiserID:         meta.AdvertiserID,
+			PrimaryCategoryID:    meta.PrimaryCategoryID,
+			AgencyID:             meta.AgencyID,
+			DemandSource:         meta.DemandSource,
+			SecondaryCategoryIDs: meta.SecondaryCategoryIDs,
+		}
+	}
+	//NOTE : We Don't get following Data points in Response, whenever got from translator,
+	//they can be populated.
+	//partnerRecord.MetaData.NetworkName = meta.NetworkName
+	//partnerRecord.MetaData.AdvertiserName = meta.AdvertiserName
+	//partnerRecord.MetaData.AgencyName = meta.AgencyName
+	//partnerRecord.MetaData.BrandName = meta.BrandName
+	//partnerRecord.MetaData.BrandID = meta.BrandID
+	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
+}
+
+// SetFloorDetails sets the fskp/fmv/fsrc/ffs/fp/ft for logger record
+func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) {
+
+	if floors == nil {
+		return
+	}
+
+	if floors.Skipped != nil {
+		skipped := convertBoolToInt(*floors.Skipped)
+		for i := range wlog.Slots {
+			wlog.Slots[i].FloorSkippedFlag = &skipped
+		}
+	}
+
+	if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+		wlog.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+	}
+
+	if len(floors.PriceFloorLocation) > 0 {
+		if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
+			wlog.FloorSource = &source
+		}
+	}
+
+	if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
+		wlog.FloorFetchStatus = &status
+	}
+
+	wlog.FloorProvider = floors.FloorProvider
+	if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
+		wlog.FloorProvider = floors.Data.FloorProvider
+	}
+
+	if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+		wlog.record.FloorType = models.HardFloor
+	}
 }

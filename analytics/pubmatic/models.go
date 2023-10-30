@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -21,19 +20,8 @@ const (
 
 	REVSHARE      = "rev_share"
 	BID_PRECISION = 2
+	NOT_SET       = -1
 )
-
-func GetSize(width, height int64) string {
-	return fmt.Sprintf("%dx%d", width, height)
-}
-
-// CreatePartnerKey returns key with partner appended
-func CreatePartnerKey(partner, key string) string {
-	if partner == "" {
-		return key
-	}
-	return key + "_" + partner
-}
 
 // GetAdFormat gets adformat from creative(adm) of the bid
 func GetAdFormat(adm string) string {
@@ -52,6 +40,7 @@ func GetAdFormat(adm string) string {
 	return adFormat
 }
 
+// confirm: why we are maintaining 2 copies of functions ?? 1 in ow-module and 1 here ??
 func GetRevenueShare(partnerConfig map[string]string) float64 {
 	var revShare float64
 
@@ -59,6 +48,15 @@ func GetRevenueShare(partnerConfig map[string]string) float64 {
 		revShare, _ = strconv.ParseFloat(val, 64)
 	}
 	return revShare
+}
+
+// GetGdprEnabledFlag returns gdpr flag set in the partner config
+func GetGdprEnabledFlag(partnerConfigMap map[int]map[string]string) int {
+	gdpr := 0
+	if val := partnerConfigMap[models.VersionLevelConfigID][models.GDPR_ENABLED]; val != "" {
+		gdpr, _ = strconv.Atoi(val)
+	}
+	return gdpr
 }
 
 func GetNetEcpm(price float64, revShare float64) float64 {
@@ -82,6 +80,12 @@ func round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }
 
+// Round value to 2 digit
+func roundToTwoDigit(value float64) float64 {
+	output := math.Pow(10, float64(2))
+	return float64(math.Round(value*output)) / output
+}
+
 func ExtractDomain(rawURL string) (string, error) {
 	if !strings.HasPrefix(rawURL, "http") {
 		rawURL = "http://" + rawURL
@@ -97,37 +101,4 @@ func ExtractDomain(rawURL string) (string, error) {
 
 func getSlotName(impID string, tagID string) string {
 	return fmt.Sprintf("%s_%s", impID, tagID)
-}
-
-func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
-	//get unique sizes from banner.format and banner.w and banner.h
-	sizes := make(map[string]bool)
-	var sizeArr []string
-	// TODO: handle video
-	if imp.Banner != nil && imp.Banner.W != nil && imp.Banner.H != nil {
-		size := getSizeForPlatform(*imp.Banner.W, *imp.Banner.H, platform)
-		if _, ok := sizes[size]; !ok {
-			sizeArr = append(sizeArr, size)
-			sizes[size] = true
-		}
-	}
-
-	if imp.Banner != nil && imp.Banner.Format != nil && len(imp.Banner.Format) != 0 {
-		for _, eachFormat := range imp.Banner.Format {
-			size := GetSize(eachFormat.W, eachFormat.H)
-			if _, ok := sizes[size]; !ok {
-				sizeArr = append(sizeArr, size)
-				sizes[size] = true
-			}
-		}
-	}
-
-	if imp.Video != nil {
-		size := getSizeForPlatform(imp.Video.W, imp.Video.H, models.PLATFORM_VIDEO)
-		if _, ok := sizes[size]; !ok {
-			sizeArr = append(sizeArr, size)
-			sizes[size] = true
-		}
-	}
-	return sizeArr
 }

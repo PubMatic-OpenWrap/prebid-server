@@ -40,3 +40,7 @@ func (me *Metrics) RecordVastVersion(biddder, vastVersion string) {
 
 func (me *Metrics) RecordHttpCounter() {
 }
+
+// RecordVASTTagType as a noop
+func (me *Metrics) RecordVASTTagType(biddder, vastTag string) {
+}

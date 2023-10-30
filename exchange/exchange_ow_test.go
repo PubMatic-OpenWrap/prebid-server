@@ -1615,3 +1615,216 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 		})
 	}
 }
+
+func TestRecordVASTTagType(t *testing.T) {
+	var vastXMLAdM = "<VAST version='3.0'><Ad><Wrapper><VASTAdTagURI><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/video/Shashank/dspResponse/vastInline.php?m=1&x=3&y=3&p=11&va=3&sc=1]]></VASTAdTagURI></Wrapper></Ad></VAST>"
+	var inlineXMLAdM = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><VAST version=\"3.0\"><Ad id=\"1329167\"><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description></InLine></Ad></VAST>"
+	var URLAdM = "http://pubmatic.com"
+	type args struct {
+		metricsEngine    metrics.MetricsEngine
+		adapterBids      *adapters.BidderResponse
+		getMetricsEngine func() *metrics.MetricsEngineMock
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "no_bids",
+			args: args{
+				adapterBids: &adapters.BidderResponse{},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "empty_bids_in_seatbids",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "empty_adm",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "",
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Unknown").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "adm_has_wrapped_xml",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: vastXMLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Wrapper").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "adm_has_inline_xml",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: inlineXMLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "InLine").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "adm_has_url",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: URLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "URL").Return()
+					return metricEngine
+				},
+			},
+		},
+		{
+			name: "adm_has_wrapper_inline_url_adm",
+			args: args{
+				adapterBids: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: vastXMLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								AdM: inlineXMLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								AdM: URLAdM,
+							},
+							Seat:    "pubmatic",
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+				},
+				getMetricsEngine: func() *metrics.MetricsEngineMock {
+					metricEngine := &metrics.MetricsEngineMock{}
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "Wrapper").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "InLine").Return()
+					metricEngine.Mock.On("RecordVASTTagType", "pubmatic", "URL").Return()
+					return metricEngine
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockMetricEngine := tt.args.getMetricsEngine()
+			recordVASTTagType(mockMetricEngine, tt.args.adapterBids, "pubmatic")
+			mockMetricEngine.AssertExpectations(t)
+		})
+	}
+}
+
+func TestIsUrl(t *testing.T) {
+	type args struct {
+		adm string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "empty_url",
+			args: args{
+				adm: "",
+			},
+			want: false,
+		},
+		{
+			name: "valid_url",
+			args: args{
+				adm: "http://www.test.com",
+			},
+			want: true,
+		},
+		{
+			name: "invalid_url_without_protocol",
+			args: args{
+				adm: "//www.test.com/vast.xml",
+			},
+			want: false,
+		},
+		{
+			name: "invalid_url_without_host",
+			args: args{
+				adm: "http://",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsUrl(tt.args.adm); got != tt.want {
+				t.Errorf("IsUrl() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

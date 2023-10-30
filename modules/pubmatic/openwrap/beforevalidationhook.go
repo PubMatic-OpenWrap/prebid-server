@@ -53,6 +53,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
+	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
+	rCtx.PageURL = getPageURL(payload.BidRequest)
+	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
+	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -89,8 +93,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
-	rCtx.Platform = rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
-	if rCtx.Platform == "" {
+	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
+		rCtx.VersionID = ver
+	}
+
+	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
 		err = errors.New("failed to get platform data")
 		result.Errors = append(result.Errors, err.Error())
@@ -98,12 +106,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, err
 	}
-
-	rCtx.PageURL = getPageURL(payload.BidRequest)
+	rCtx.Platform = platform
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
-	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
-	rCtx.TMax = m.setTimeout(rCtx)
+	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
@@ -733,8 +739,13 @@ func updateAliasGVLIds(aliasgvlids map[string]uint16, bidderCode string, partner
 }
 
 // setTimeout - This utility returns timeout applicable for a profile
-func (m OpenWrap) setTimeout(rCtx models.RequestCtx) int64 {
+func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) int64 {
 	var auctionTimeout int64
+
+	// BidRequest.TMax has highest priority
+	if req.TMax != 0 {
+		return req.TMax
+	}
 
 	//check for ssTimeout in the partner config
 	ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)

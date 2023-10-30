@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -39,6 +41,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}()
 
 	RecordPublisherPartnerNoCookieStats(rctx)
+	rctx.MatchedImpression = getMatchedImpressionWithParsedCookie(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -60,6 +63,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// 	return result, nil
 	// }
 
+	anyDealTierSatisfyingBid := false
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -103,9 +107,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if bidExt.Prebid != nil {
 					bidExt.CreativeType = string(bidExt.Prebid.Type)
 				}
-				// if bidExt.CreativeType == "" {
-				// 	bidExt.CreativeType = models.GetAdFormat(bid.AdM)
-				// }
+				if bidExt.CreativeType == "" {
+					bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
+				}
 
 				if payload.BidResponse.Cur != "USD" {
 					price = bidExt.OriginalBidCPMUSD
@@ -151,6 +155,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			bidDealTierSatisfied := false
 			if bidExt.Prebid != nil {
 				bidDealTierSatisfied = bidExt.Prebid.DealTierSatisfied
+				if bidDealTierSatisfied {
+					anyDealTierSatisfyingBid = true // found at least one bid which satisfies dealTier
+				}
 			}
 
 			owbid := models.OwBid{
@@ -158,9 +165,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 				NetEcpm:              bidExt.NetECPM,
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
-			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(owbid, wbid, rctx.SupportDeals) {
+			wbid, oldWinBidFound := winningBids[bid.ImpID]
+			if !oldWinBidFound || isNewWinningBid(&owbid, &wbid, rctx.SupportDeals) {
 				winningBids[bid.ImpID] = owbid
+			}
+
+			// update NonBr codes for current bid
+			if owbid.Nbr != nil {
+				bidExt.Nbr = owbid.Nbr
+			}
+
+			// if current bid is winner then update NonBr code for earlier winning bid
+			if winningBids[bid.ImpID].ID == owbid.ID && oldWinBidFound {
+				winBidCtx := rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID]
+				winBidCtx.BidExt.Nbr = wbid.Nbr
+				rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
 			}
 
 			// cache for bid details for logger and tracker
@@ -179,6 +198,23 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
 	}
 
+	/*
+		At this point of time,
+		1. For price-based auction (request with supportDeals = false),
+				all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
+		2. For request with supportDeals = true :
+			2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
+					then NonBR code for them will be LossLostToHigherBid which is expected.
+			2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
+				expectation:
+					all rejected non-deal bids should have NonBR code as LossLostToDealBid
+					all rejected deal-bids should have NonBR code as LossLostToHigherBid
+				addLostToDealBidNonBRCode function will make sure that above expectation are met.
+	*/
+	if anyDealTierSatisfyingBid {
+		addLostToDealBidNonBRCode(&rctx)
+	}
+
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
 	if len(droppedBids) != 0 {
 		rctx.DroppedBids = droppedBids
@@ -195,7 +231,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
@@ -220,8 +256,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
 	if rctx.ReturnAllBidStatus {
-		// prepare seat-non-bids and add them in the response-ext
 		rctx.SeatNonBids = prepareSeatNonBids(rctx)
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
 	}
@@ -251,8 +287,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
-
 		ap.BidResponse.Ext = rctx.ResponseExt
+
+		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
@@ -324,19 +361,26 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 }
 
 // isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
-func isNewWinningBid(bid, wbid models.OwBid, preferDeals bool) bool {
+func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return true
 		}
 	}
 	//both have deal or both do not have deal
-	return bid.NetEcpm > wbid.NetEcpm
+	if bid.NetEcpm > wbid.NetEcpm {
+		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		return true
+	}
+	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	return false
 }
 
 func getPlatformName(platform string) string {
@@ -344,4 +388,12 @@ func getPlatformName(platform string) string {
 		return models.PlatformAppTargetingKey
 	}
 	return platform
+}
+
+func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
+	for i, seatBid := range bidResponse.SeatBid {
+		for j, bid := range seatBid.Bid {
+			bidResponse.SeatBid[i].Bid[j].ID = utils.GetOriginalBidId(bid.ID)
+		}
+	}
 }

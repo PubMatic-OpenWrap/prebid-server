@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -79,13 +80,18 @@ type RequestCtx struct {
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
-	CurrencyConversion     func(from string, to string, value float64) (float64, error)
+
+	DCName             string
+	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion func(from string, to string, value float64) (float64, error)
+	MatchedImpression  map[string]int
 }
 
 type OwBid struct {
 	ID                   string
 	NetEcpm              float64
 	BidDealTierSatisfied bool
+	Nbr                  *openrtb3.NonBidStatusCode
 }
 
 func (r RequestCtx) GetVersionLevelKey(key string) string {

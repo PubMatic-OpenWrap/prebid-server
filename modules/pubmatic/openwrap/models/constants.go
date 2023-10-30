@@ -410,14 +410,18 @@ const (
 	ContextOWLoggerKey contextKey = "owlogger"
 )
 
-const Pipe = "|"
+const (
+	Pipe           = "|"
+	BidIdSeparator = "::"
+)
+
 const (
 	EndpointV25     = "v25"
 	EndpointAMP     = "amp"
-	EndpointVideo   = "video"
-	EndpointJson    = "json"
-	EndpointORTB    = "ortb"
-	EndpointVAST    = "vast"
+	EndpointVideo   = "v25_video"
+	EndpointCTVJson = "ctv_json"
+	EndpointCTVORTB = "ctv_openrtb"
+	EndpointCTVVAST = "ctv_vast"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"
@@ -452,6 +456,15 @@ const (
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+)
+
+// constants for owlogger Integration Type
+const (
+	TypeTag    = "tag"
+	TypeInline = "inline"
+	TypeAmp    = "amp"
+	TypeSDK    = "sdk"
+	TypeS2S    = "s2s"
 )
 
 // constants to accept request-test value

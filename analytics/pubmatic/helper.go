@@ -2,39 +2,12 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
 )
-
-// Send method
-func Send(url string, headers http.Header) error {
-	mhc := NewMultiHttpContext()
-	hc, err := NewHttpCall(url, "")
-	if err != nil {
-		return err
-	}
-
-	for k, v := range headers {
-		if len(v) != 0 {
-			hc.AddHeader(k, v[0])
-		}
-	}
-
-	mhc.AddHttpCall(hc)
-	_, erc := mhc.Execute()
-	if erc != 0 {
-		return errors.New("error in sending logger pixel")
-	}
-
-	return nil
-}
 
 // PrepareLoggerURL returns the url for OW logger call
 func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) string {
@@ -56,20 +29,6 @@ func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) st
 	return finalLoggerURL
 }
 
-func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
-	if nil == content {
-		return
-	}
-
-	wlog.Content = &Content{
-		ID:      content.ID,
-		Episode: int(content.Episode),
-		Title:   content.Title,
-		Series:  content.Series,
-		Season:  content.Season,
-		Cat:     content.Cat,
-	}
-}
 func getSizeForPlatform(width, height int64, platform string) string {
 	s := models.GetSize(width, height)
 	if platform == models.PLATFORM_VIDEO {
@@ -78,27 +37,11 @@ func getSizeForPlatform(width, height int64, platform string) string {
 	return s
 }
 
-// set partnerRecord MetaData
-func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
-
-	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
-		partnerRecord.MetaData = &MetaData{
-			NetworkID:            meta.NetworkID,
-			AdvertiserID:         meta.AdvertiserID,
-			PrimaryCategoryID:    meta.PrimaryCategoryID,
-			AgencyID:             meta.AgencyID,
-			DemandSource:         meta.DemandSource,
-			SecondaryCategoryIDs: meta.SecondaryCategoryIDs,
-		}
+func convertBoolToInt(val bool) int {
+	if val {
+		return 1
 	}
-	//NOTE : We Don't get following Data points in Response, whenever got from translator,
-	//they can be populated.
-	//partnerRecord.MetaData.NetworkName = meta.NetworkName
-	//partnerRecord.MetaData.AdvertiserName = meta.AdvertiserName
-	//partnerRecord.MetaData.AgencyName = meta.AgencyName
-	//partnerRecord.MetaData.BrandName = meta.BrandName
-	//partnerRecord.MetaData.BrandID = meta.BrandID
-	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
+	return 0
 }
 
 // Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml

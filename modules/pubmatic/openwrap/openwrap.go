@@ -99,6 +99,6 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 }
 
 func patchConfig(cfg *config.Config) {
-	cfg.Server.HostName = getHostName()
+	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 }

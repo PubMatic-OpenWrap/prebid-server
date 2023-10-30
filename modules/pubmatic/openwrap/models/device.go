@@ -14,7 +14,7 @@ const (
 )
 
 // DevicePlatform defines enums as per int values from KomliAdServer.platform table
-type DevicePlatform int
+type DevicePlatform = int
 
 const (
 	DevicePlatformUnknown          DevicePlatform = -1
