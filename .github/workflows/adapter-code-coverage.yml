@@ -77,7 +77,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: coverage-preview
-          repository: prebid/prebid-server
+          repository: PubMatic-OpenWrap/prebid-server
 
       - name: Commit coverage files to coverage-preview branch
         if: ${{ steps.run_coverage.outputs.coverage_dir }} != ""
@@ -92,6 +92,7 @@ jobs:
           git add $directory/*
           git commit -m 'Add coverage files'
           git push origin coverage-preview
+          echo "remote_coverage_preview_dir=${directory}" >> $GITHUB_OUTPUT
           
         
 
