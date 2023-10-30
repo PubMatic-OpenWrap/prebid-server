@@ -16,6 +16,8 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
 )
 
+var UnwrapURL = "http://localhost:8003/unwrap"
+
 type VastUnwrapModule struct {
 	Cfg               unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
 	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
@@ -57,6 +59,7 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 	if m.Enabled {
+		UnwrapURL = UnwrapURL + "?pub_id=" + miCtx.AccountID
 		return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil

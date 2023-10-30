@@ -10,7 +10,6 @@ const (
 	Failure             = "Failure"
 	Timeout             = "Timeout"
 	UnwrapStatusTimeout = "2"
-	UnwrapURL           = "http://localhost:8003/unwrap"
 	ContentType         = "Content-Type"
 	UnwrapTimeout       = "unwrap-timeout"
 	MediaTypeVideo      = "video"
