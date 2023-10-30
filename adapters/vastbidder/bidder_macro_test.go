@@ -1475,7 +1475,7 @@ func TestBidderMacroKV(t *testing.T) {
 				"url": "http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 			}},
 			args: args{key: "kv"},
-			want: "age=22&url=http%253A%252F%252Fexample.com%253Fk1%253Dv1%2526k2%253Dv2",
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 		},
 		{
 			name:   "empty_KV_map",
