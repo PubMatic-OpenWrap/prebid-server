@@ -78,3 +78,4 @@ type ExtBidCommerce struct {
 	ProductDetails   map[string]interface{}  `json:"productdetails,omitempty"`
 }
 
+
