@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 )
 
 func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
@@ -132,8 +133,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:  partnerID,
 				BidderCode: seatBid.Seat,
-				BidID:      bid.ID,
-				OrigBidID:  bid.ID,
+				BidID:      utils.GetOriginalBidId(bid.ID),
+				OrigBidID:  utils.GetOriginalBidId(bid.ID),
 				KGPV:       kgpv,
 				NetECPM:    float64(netECPM),
 				GrossECPM:  models.GetGrossEcpm(price),

@@ -150,20 +150,6 @@ func (me *MultiMetricsEngine) RecordAdapterRequest(labels metrics.AdapterLabels)
 	}
 }
 
-// RecordRejectedBidsForBidder across all engines
-func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
-	for _, thisME := range *me {
-		thisME.RecordRejectedBidsForBidder(bidder)
-	}
-}
-
-// RecordDynamicFetchFailure across all engines
-func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
-	for _, thisME := range *me {
-		thisME.RecordDynamicFetchFailure(pubId, code)
-	}
-}
-
 // Keeps track of created and reused connections to adapter bidders and the time from the
 // connection request, to the connection creation, or reuse from the pool across all engines
 func (me *MultiMetricsEngine) RecordAdapterConnections(bidderName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration) {
@@ -317,10 +303,6 @@ func (me *MultiMetricsEngine) RecordPodImpGenTime(labels metrics.PodLabels, star
 	}
 }
 
-// RecordRejectedBidsForBidder as a noop
-func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
-}
-
 // RecordPodCombGenTime as a noop
 func (me *MultiMetricsEngine) RecordPodCombGenTime(labels metrics.PodLabels, elapsedTime time.Duration) {
 	for _, thisME := range *me {
@@ -470,25 +452,6 @@ func (me *MultiMetricsEngine) RecordModuleExecutionError(labels metrics.ModuleLa
 func (me *MultiMetricsEngine) RecordModuleTimeout(labels metrics.ModuleLabels) {
 	for _, thisME := range *me {
 		thisME.RecordModuleTimeout(labels)
-	}
-}
-func (me *MultiMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
-	for _, thisME := range *me {
-		thisME.RecordRejectedBids(pubid, bidder, code)
-	}
-}
-
-func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
-	for _, thisME := range *me {
-		thisME.RecordBids(pubid, profileid, biddder, deal)
-	}
-}
-func (me *MultiMetricsEngine) RecordHttpCounter() {
-}
-
-func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
-	for _, thisME := range *me {
-		thisME.RecordVastVersion(biddder, vastVersion)
 	}
 }
 
@@ -698,23 +661,4 @@ func (me *NilMetricsEngine) RecordModuleExecutionError(labels metrics.ModuleLabe
 }
 
 func (me *NilMetricsEngine) RecordModuleTimeout(labels metrics.ModuleLabels) {
-}
-
-// RecordDynamicFetchFailure as a noop
-func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
-}
-
-// RecordRejectedBids as a noop
-func (me *NilMetricsEngine) RecordRejectedBids(pubid, bidder, code string) {
-}
-
-// RecordBids as a noop
-func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
-}
-
-// RecordVastVersion as a noop
-func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
-}
-
-func (m *NilMetricsEngine) RecordHttpCounter() {
 }
