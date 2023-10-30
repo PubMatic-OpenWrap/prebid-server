@@ -3,11 +3,20 @@ package tracker
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 func Test_injectBannerTracker(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+		5890: {1234: 100},
+	})
 	type args struct {
 		rctx    models.RequestCtx
 		tracker models.OWTracker

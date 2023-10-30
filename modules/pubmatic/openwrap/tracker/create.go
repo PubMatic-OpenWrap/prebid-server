@@ -9,23 +9,50 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
-func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, currencyConversion currency.Conversions) map[string]models.OWTracker {
+// pubmatic's KGP details per impression
+type pubmaticMarketplaceMeta struct {
+	PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
+}
+
+func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
-	// pubmatic's KGP details per impression
-	type pubmaticMarketplaceMeta struct {
-		PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
-	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
-	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(bidResponse)
+	trackers = createTrackers(trackers, rctx, bidResponse, pmMkt)
+
+	// overwrite marketplace bid details with that of parent bidder
+	for bidID, tracker := range trackers {
+		if _, ok := rctx.MarketPlaceBidders[tracker.Tracker.PartnerInfo.BidderCode]; ok {
+			if v, ok := pmMkt[tracker.Tracker.ImpID]; ok {
+				tracker.Tracker.PartnerInfo.PartnerID = "pubmatic"
+				tracker.Tracker.PartnerInfo.KGPV = v.PubmaticKGPV
+			}
+		}
+
+		var finalTrackerURL string
+		trackerURL := ConstructTrackerURL(rctx, tracker.Tracker)
+		trackURL, err := url.Parse(trackerURL)
+		if err == nil {
+			trackURL.Scheme = models.HTTPSProtocol
+			finalTrackerURL = trackURL.String()
+		}
+		tracker.TrackerURL = finalTrackerURL
+
+		trackers[bidID] = tracker
+	}
+
+	return trackers
+}
+
+func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
+	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(bidResponse.Ext)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -43,28 +70,17 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 				TestGroup:         rctx.ABTestConfigApplied,
 				FloorModelVersion: floorModelVersion,
 				FloorType:         floorType,
+				FloorSkippedFlag:  skipfloors,
+				FloorSource:       floorSource,
 			}
-
-			if skipfloors != nil {
-				tracker.FloorSkippedFlag = skipfloors
-			}
-			if floorSource != nil {
-				tracker.FloorSource = floorSource
-			}
-
-			tagid := ""
-			netECPM := float64(0)
-			matchedSlot := ""
-			price := bid.Price
-			isRewardInventory := 0
-			partnerID := seatBid.Seat
-			bidType := "banner"
-			adduration := 0
-			floorValue, floorRuleValue := 0.0, 0.0
-			var dspId int
-
-			var isRegex bool
-			var kgp, kgpv, kgpsv string
+			var (
+				bidType, tagid, kgp, kgpv, kgpsv, matchedSlot, adformat = "banner", "", "", "", "", "", ""
+				netECPM, floorValue, floorRuleValue                     = float64(0), float64(0), float64(0)
+				price, partnerID                                        = bid.Price, seatBid.Seat
+				isRewardInventory, adduration                           = 0, 0
+				dspId                                                   int
+				isRegex                                                 bool
+			)
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
@@ -115,15 +131,16 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 						}
 
 						if floorCurrency != "" && floorCurrency != models.USD {
-							fv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorValue)
+							fv, _ := rctx.CurrencyConversion(floorCurrency, models.USD, floorValue)
 							floorValue = roundToTwoDigit(fv)
 
-							frv, _ := currencyConverter(currencyConversion, floorCurrency, models.USD, floorRuleValue)
+							frv, _ := rctx.CurrencyConversion(floorCurrency, models.USD, floorRuleValue)
 							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
 					bidType = bidCtx.CreativeType
 					dspId = bidCtx.DspId
+					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx)
 				}
 
 				_ = matchedSlot
@@ -158,7 +175,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 						kgpsv = bidderparams.GenerateSlotName(0, 0, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
 						kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
 					} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
-						// 2. valid bid
+						// 3. valid bid
 						// kgpv has regex, do not generate slotName again
 						// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
 						kgpsv := bidderparams.GenerateSlotName(bid.H, bid.W, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
@@ -197,7 +214,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 				GrossECPM:      models.GetGrossEcpm(price),
 				AdSize:         getSizeForPlatform(int(bid.W), int(bid.H), rctx.Platform),
 				AdDuration:     adduration,
-				Adformat:       models.GetAdFormat(bid.AdM),
+				Adformat:       adformat,
 				ServerSide:     1,
 				FloorValue:     floorValue,
 				FloorRuleValue: floorRuleValue,
@@ -233,36 +250,14 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, c
 			}
 		}
 	}
-
-	// overwrite marketplace bid details with that of parent bidder
-	for bidID, tracker := range trackers {
-		if _, ok := rctx.MarketPlaceBidders[tracker.Tracker.PartnerInfo.BidderCode]; ok {
-			if v, ok := pmMkt[tracker.Tracker.ImpID]; ok {
-				tracker.Tracker.PartnerInfo.PartnerID = "pubmatic"
-				tracker.Tracker.PartnerInfo.KGPV = v.PubmaticKGPV
-			}
-		}
-
-		var finalTrackerURL string
-		trackerURL := ConstructTrackerURL(rctx, tracker.Tracker)
-		trackURL, err := url.Parse(trackerURL)
-		if err == nil {
-			trackURL.Scheme = models.HTTPSProtocol
-			finalTrackerURL = trackURL.String()
-		}
-		tracker.TrackerURL = finalTrackerURL
-
-		trackers[bidID] = tracker
-	}
-
 	return trackers
 }
 
-func getFloorsDetails(bidResponse *openrtb2.BidResponse) (*int, int, *int, string) {
+func getFloorsDetails(bidResponseExt json.RawMessage) (*int, int, *int, string) {
 	var responseExt openrtb_ext.ExtBidResponse
 	var skipfloors, floorSource *int
 	floorType, floorModelVersion := 0, ""
-	err := json.Unmarshal(bidResponse.Ext, &responseExt)
+	err := json.Unmarshal(bidResponseExt, &responseExt)
 	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
 		floors := responseExt.Prebid.Floors
 		if floors.Skipped != nil {
@@ -305,15 +300,6 @@ func getSizeForPlatform(width int, height int, platform string) string {
 func roundToTwoDigit(value float64) float64 {
 	output := math.Pow(10, float64(2))
 	return float64(math.Round(value*output)) / output
-}
-
-// method for currency conversion
-func currencyConverter(currencyConversion currency.Conversions, from, to string, value float64) (float64, error) {
-	rate, err := currencyConversion.GetRate(from, to)
-	if err == nil {
-		return value * rate, nil
-	}
-	return 0, err
 }
 
 // ConstructTrackerURL constructing tracker url for impression
@@ -404,7 +390,7 @@ func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	}
 
 	errorURL.Scheme = models.HTTPSProtocol
-	tracker.SURL = rctx.OriginCookie
+	tracker.SURL = url.QueryEscape(rctx.OriginCookie)
 
 	//operId Note: It should be first parameter in url otherwise it will get failed at analytics side.
 	if len(errorURL.RawQuery) > 0 {
