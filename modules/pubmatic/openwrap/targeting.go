@@ -29,7 +29,6 @@ func allowTargetingKey(key string) bool {
 }
 
 func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float64, bid *openrtb2.Bid, isWinningBid bool) {
-
 	if isWinningBid {
 		targeting[models.CreatePartnerKey(seat, models.PWT_SLOTID)] = utils.GetOriginalBidId(bid.ID)
 		targeting[models.CreatePartnerKey(seat, models.PWT_SZ)] = models.GetSize(bid.W, bid.H)
@@ -54,10 +53,6 @@ func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float
 }
 
 func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (droppedBids map[string][]openrtb2.Bid, warnings []string) {
-	if rctx.Platform != models.PLATFORM_APP {
-		return
-	}
-
 	if !rctx.SendAllBids {
 		droppedBids = make(map[string][]openrtb2.Bid)
 	}
