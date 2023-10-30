@@ -104,9 +104,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if bidExt.Prebid != nil {
 					bidExt.CreativeType = string(bidExt.Prebid.Type)
 				}
-				if bidExt.CreativeType == "" {
-					bidExt.CreativeType = models.GetAdFormat(bid.AdM)
-				}
+				// if bidExt.CreativeType == "" {
+				// 	bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+				// }
 
 				if payload.BidResponse.Cur != "USD" {
 					price = bidExt.OriginalBidCPMUSD
@@ -198,7 +198,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
 
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse, m.currencyConversion)
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
 	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs
@@ -217,7 +217,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.LogInfoFlag == 1 {
 		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
-			Tracker: tracker.GetTrackerInfo(rctx),
+			Tracker: tracker.GetTrackerInfo(rctx, responseExt.Prebid),
 		}
 	}
 
