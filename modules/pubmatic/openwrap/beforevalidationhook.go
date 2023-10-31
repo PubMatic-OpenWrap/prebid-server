@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -150,6 +151,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 		var adpodExt *models.AdPod
 		imp := payload.BidRequest.Imp[i]
 
+		impExt := &models.ImpExtension{}
+		if len(imp.Ext) != 0 {
+			err := json.Unmarshal(imp.Ext, impExt)
+			if err != nil {
+				result.NbrCode = nbr.InternalError
+				err = errors.New("failed to parse imp.ext: " + imp.ID)
+				result.Errors = append(result.Errors, err.Error())
+				return result, err
+			}
+		}
+		if rCtx.Endpoint == models.EndpointOWS2S {
+			imp.TagID = getTagID(imp, impExt)
+		}
 		if imp.TagID == "" {
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
@@ -165,17 +179,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if len(requestExt.Prebid.Macros) == 0 {
 				// provide custom macros for video event trackers
 				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
-			}
-		}
-
-		impExt := &models.ImpExtension{}
-		if len(imp.Ext) != 0 {
-			err := json.Unmarshal(imp.Ext, impExt)
-			if err != nil {
-				result.NbrCode = nbr.InternalError
-				err = errors.New("failed to parse imp.ext: " + imp.ID)
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
 			}
 		}
 
@@ -820,4 +823,19 @@ func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
 	return pubID, err
+}
+
+func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
+	//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
+	tagId := imp.TagID
+	if imp.TagID == "" {
+		tagId = impExt.Data.PbAdslot
+	}
+	if impExt.Gpid != "" {
+		tagId = impExt.Gpid
+		if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
+			tagId = impExt.Gpid[:idx]
+		}
+	}
+	return tagId
 }
