@@ -75,12 +75,12 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 				FloorSource:       floorSource,
 			}
 			var (
-				bidType, tagid, kgp, kgpv, kgpsv, matchedSlot, adformat = "banner", "", "", "", "", "", ""
-				netECPM, floorValue, floorRuleValue                     = float64(0), float64(0), float64(0)
-				price, partnerID                                        = bid.Price, seatBid.Seat
-				isRewardInventory, adduration                           = 0, 0
-				dspId                                                   int
-				isRegex                                                 bool
+				tagid, kgp, kgpv, kgpsv, matchedSlot, adformat = "", "", "", "", "", "banner"
+				netECPM, floorValue, floorRuleValue            = float64(0), float64(0), float64(0)
+				price, partnerID                               = bid.Price, seatBid.Seat
+				isRewardInventory, adduration                  = 0, 0
+				dspId                                          int
+				isRegex                                        bool
 			)
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
@@ -139,7 +139,6 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 							floorRuleValue = roundToTwoDigit(frv)
 						}
 					}
-					bidType = bidCtx.CreativeType
 					dspId = bidCtx.DspId
 					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx)
 				}
@@ -159,7 +158,7 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 				}
 
 				// 1. nobid
-				if bid.Price == 0 && bid.H == 0 && bid.W == 0 {
+				if models.IsDefaultBid(&bid) {
 					//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
 					if !isRegex && kgpv != "" { // unmapped pubmatic's slot
 						kgpsv = kgpv
@@ -246,7 +245,7 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 				PriceModel:    models.VideoPricingModelCPM,
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      ConstructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
-				BidType:       bidType,
+				BidType:       adformat,
 				DspId:         dspId,
 			}
 		}
