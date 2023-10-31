@@ -33,7 +33,8 @@ func (m OpenWrap) handleEntrypointHook(
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 	queryParams := payload.Request.URL.Query()
-	if queryParams.Get("sshb") != "1" {
+	source := queryParams.Get("source")
+	if queryParams.Get("sshb") != "1" && source != "pbjs" {
 		return result, nil
 	}
 
@@ -43,10 +44,12 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	switch payload.Request.URL.Path {
 	case hookexecution.EndpointAuction:
-		if !models.IsHybrid(payload.Body) { // new hybrid api should not execute module
+		if models.IsHybrid(payload.Body) && source != "pbjs" { // new hybrid api should not execute module
 			return result, nil
 		}
+		//Flow for the OWS2S endpoint
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+		endpoint = models.EndpointOWS2S
 	case OpenWrapAuction: // legacy hybrid api should not execute module
 		m.metricEngine.RecordPBSAuctionRequestsStats()
 		return result, nil

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -25,14 +26,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		Reject: true,
-	}
+	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+	result.Reject = true
 	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
@@ -160,6 +160,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 		var isAdPodImpression bool
 		imp := payload.BidRequest.Imp[i]
 
+		impExt := &models.ImpExtension{}
+		if len(imp.Ext) != 0 {
+			err := json.Unmarshal(imp.Ext, impExt)
+			if err != nil {
+				result.NbrCode = nbr.InternalError
+				err = errors.New("failed to parse imp.ext: " + imp.ID)
+				result.Errors = append(result.Errors, err.Error())
+				return result, err
+			}
+		}
+		if rCtx.Endpoint == models.EndpointOWS2S {
+			imp.TagID = getTagID(imp, impExt)
+		}
 		if imp.TagID == "" {
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
@@ -187,17 +200,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
 					}
 				}
-			}
-		}
-
-		impExt := &models.ImpExtension{}
-		if len(imp.Ext) != 0 {
-			err := json.Unmarshal(imp.Ext, impExt)
-			if err != nil {
-				result.NbrCode = nbr.InternalError
-				err = errors.New("failed to parse imp.ext: " + imp.ID)
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
 			}
 		}
 
@@ -447,7 +449,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
-		bidRequest.Cur = []string{cur}
+		bidRequest.Cur = append(bidRequest.Cur, cur)
 	}
 	if bidRequest.TMax == 0 {
 		bidRequest.TMax = rctx.TMax
@@ -810,6 +812,9 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 // if ssauction flag is not set and platform is dislay, then by default send all bids
 // if ssauction flag is not set and platform is in-app, then check if profile setting sendAllBids is set to 1
 func isSendAllBids(rctx models.RequestCtx) bool {
+	if rctx.SSAuction == -1 && rctx.Platform == models.PLATFORM_DISPLAY { //Need to check ssAuction is always=-1
+		return true
+	}
 
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {
@@ -856,4 +861,19 @@ func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
 	return pubID, err
+}
+
+func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
+	//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
+	tagId := imp.TagID
+	if imp.TagID == "" {
+		tagId = impExt.Data.PbAdslot
+	}
+	if impExt.Gpid != "" {
+		tagId = impExt.Gpid
+		if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
+			tagId = impExt.Gpid[:idx]
+		}
+	}
+	return tagId
 }

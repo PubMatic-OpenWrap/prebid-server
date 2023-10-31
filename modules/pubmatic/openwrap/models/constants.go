@@ -423,6 +423,7 @@ const (
 	EndpointORTB    = "ortb"
 	EndpointVAST    = "vast"
 	EndPointCTV     = "ctv"
+	EndpointOWS2S   = "ows2s"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"
