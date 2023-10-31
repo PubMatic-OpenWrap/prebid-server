@@ -40,10 +40,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
-	if rctx.Endpoint == models.EndpointOWS2S {
-		return result, nil
-	}
-
 	RecordPublisherPartnerNoCookieStats(rctx)
 	rctx.MatchedImpression = getMatchedImpressionWithParsedCookie(rctx)
 
@@ -61,6 +57,17 @@ func (m OpenWrap) handleAuctionResponseHook(
 				},
 			},
 		},
+	}
+
+	if rctx.Endpoint == models.EndpointOWS2S {
+		rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
+			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			var err error
+			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+			return ap, err
+		}, hookstage.MutationUpdate, "response-body-with-ows2s-format")
+		return result, nil
 	}
 
 	// if payload.BidResponse.NBR != nil {
