@@ -59,7 +59,7 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 			tracker := models.Tracker{
 				PubID:             rctx.PubID,
 				ProfileID:         fmt.Sprintf("%d", rctx.ProfileID),
-				VersionID:         fmt.Sprintf("%d", rctx.DisplayID),
+				VersionID:         fmt.Sprintf("%d", rctx.VersionID),
 				PageURL:           rctx.PageURL,
 				Timestamp:         rctx.StartTime,
 				IID:               rctx.LoggerImpressionID,
