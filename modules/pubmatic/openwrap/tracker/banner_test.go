@@ -152,3 +152,73 @@ func Test_trackerWithOM(t *testing.T) {
 		})
 	}
 }
+
+func Test_applyTBFFeature(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockCache := mock_cache.NewMockCache(ctrl)
+	defer ctrl.Finish()
+	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+		5890: {1234: 100},
+	})
+
+	type args struct {
+		rctx    models.RequestCtx
+		bid     openrtb2.Bid
+		tracker string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "tbf_feature_disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 100,
+				},
+				bid: openrtb2.Bid{
+					AdM: "<start>bid_AdM<end>",
+				},
+				tracker: "<start>tracker_url<end>",
+			},
+			want: "<start>bid_AdM<end><start>tracker_url<end>",
+		},
+		{
+			name: "tbf_feature_enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+				},
+				bid: openrtb2.Bid{
+					AdM: "<start>bid_AdM<end>",
+				},
+				tracker: "<start>tracker_url<end>",
+			},
+			want: "<start>tracker_url<end><start>bid_AdM<end>",
+		},
+		{
+			name: "invalid_pubid",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     -1,
+					ProfileID: 1234,
+				},
+				bid: openrtb2.Bid{
+					AdM: "<start>bid_AdM<end>",
+				},
+				tracker: "<start>tracker_url<end>",
+			},
+			want: "<start>bid_AdM<end><start>tracker_url<end>",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := applyTBFFeature(tt.args.rctx, tt.args.bid, tt.args.tracker); got != tt.want {
+				t.Errorf("applyTBFFeature() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
