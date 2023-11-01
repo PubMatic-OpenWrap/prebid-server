@@ -320,6 +320,30 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 					},
 				},
 				bidRequest: &openrtb2.BidRequest{
+					TMax: 220,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 220,
+		},
+		{
+			name: "tmax_parameter_less_than_minTimeout",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
 					TMax: 10,
 				},
 			},
@@ -331,7 +355,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 					},
 				},
 			},
-			want: 10,
+			want: 200,
 		},
 		{
 			name: "ssTimeout_greater_than_minTimeout_and_less_than_maxTimeout",
