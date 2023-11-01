@@ -98,7 +98,7 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
+  "expectedBidResponses": [],
   "expectedMakeBidsErrors": [
     {
       "value": "missing pangleExt/adtype in bid ext",

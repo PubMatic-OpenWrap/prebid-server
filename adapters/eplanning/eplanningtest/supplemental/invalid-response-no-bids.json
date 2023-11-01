@@ -47,5 +47,5 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}]
+  "expectedBidResponses": []
 }

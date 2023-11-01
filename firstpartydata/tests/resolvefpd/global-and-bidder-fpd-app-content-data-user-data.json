@@ -11,7 +11,7 @@
     "user": {
       "id": "reqUserID",
       "yob": 1982,
-      "gender": "reqUserGender"
+      "gender": "M"
     }
   },
   "bidderConfigFPD": {
@@ -20,7 +20,11 @@
         "id": "apnAppId",
         "ext": {
           "data": {
-            "morefpdData": "morefpddata"
+            "morefpdData": "morefpddata",
+            "appFpddata": "appFpddata",
+            "moreFpd": {
+              "fpd": 123
+            }
           }
         }
       }
@@ -56,7 +60,7 @@
   },
   "outputRequestData": {
     "app": {
-      "id": "apnAppId",
+      "id": "reqAppId",
       "page": "http://www.foobar.com/1234.html",
       "publisher": {
         "id": "1"
@@ -75,15 +79,20 @@
       },
       "ext": {
         "data": {
+          "moreFpd": {
+            "fpd": 123
+          },
+          "id": "apnAppId",
           "morefpdData": "morefpddata",
-          "appFpd": 123
+          "appFpd": 123,
+          "appFpddata": "appFpddata"
         }
       }
     },
     "user": {
       "id": "reqUserID",
       "yob": 1982,
-      "gender": "reqUserGender",
+      "gender": "M",
       "data": [
         {
           "id": "userData1",
@@ -102,3 +111,4 @@
     }
   }
 }
+

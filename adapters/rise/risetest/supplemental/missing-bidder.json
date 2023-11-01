@@ -28,7 +28,7 @@
   },
   "expectedMakeRequestsErrors": [
     {
-      "value": "extractOrg: unmarshal ImpExtRise: unexpected end of JSON input",
+      "value": "extractPublisherID: unmarshal ImpExtRise: unexpected end of JSON input",
       "comparison": "literal"
     }
   ]

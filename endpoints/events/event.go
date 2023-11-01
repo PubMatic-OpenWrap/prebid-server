@@ -217,7 +217,7 @@ func HandleAccountServiceErrors(errs []error) (status int, messages []string) {
 		}
 	}
 
-	return
+	return status, messages
 }
 
 func optionalParameters(request *analytics.EventRequest) string {

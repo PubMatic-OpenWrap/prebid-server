@@ -1,4 +1,4 @@
-endpoint: "https://bidder.east2.pubwise.io/bid/pubwisedirect"
+endpoint: "https://bid.pubwise.io/prebid"
 maintainer:
   email: info@pubwise.io
 gvlVendorID: 842

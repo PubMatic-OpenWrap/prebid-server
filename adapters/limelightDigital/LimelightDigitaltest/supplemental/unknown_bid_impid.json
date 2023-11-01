@@ -68,7 +68,6 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeBidsErrors": [
     {
       "value": "bid contains unknown imp id: test-unknown-banner-id",

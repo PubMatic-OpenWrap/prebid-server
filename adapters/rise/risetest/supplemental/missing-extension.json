@@ -27,7 +27,7 @@
   },
   "expectedMakeRequestsErrors": [
     {
-      "value": "extractOrg: unmarshal bidderExt: unexpected end of JSON input",
+      "value": "extractPublisherID: unmarshal bidderExt: unexpected end of JSON input",
       "comparison": "literal"
     }
   ]

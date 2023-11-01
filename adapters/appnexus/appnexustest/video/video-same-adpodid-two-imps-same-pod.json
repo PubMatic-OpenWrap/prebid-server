@@ -47,8 +47,9 @@
 			"id": "test-request-id",
 			"ext": {
 				"appnexus": {
-				 "hb_source": 6
-				}
+				  "hb_source": 6
+				},
+				"prebid": {}
 			},
 			"imp": [
 			  {
@@ -91,6 +92,5 @@
 		  "body": {}
 		}
 	  }
-	],
-    "expectedBidResponses": [{"currency":"USD","bids":[]}]
+	]
   }

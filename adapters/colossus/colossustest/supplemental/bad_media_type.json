@@ -72,7 +72,6 @@
             }
         }
     }],
-    "expectedBidResponses": [{"currency":"USD","bids":[]}],
     "expectedMakeBidsErrors": [
         {
           "value": "Failed to find impression \"test-imp-id\"",

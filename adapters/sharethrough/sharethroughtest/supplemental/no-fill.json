@@ -90,5 +90,8 @@
       }
     }
   ],
+  "expectedBidResponses": [
+    null
+  ],
   "expectedMakeBidsErrors": []
 }

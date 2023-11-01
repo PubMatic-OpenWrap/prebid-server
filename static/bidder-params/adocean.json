@@ -6,13 +6,8 @@
   "properties": {
     "emiter": {
       "type": "string",
-      "description": "Deprecated, use emitterPrefix instead. AdOcean emiter",
+      "description": "AdOcean emiter",
       "pattern": ".+"
-    },
-    "emitterPrefix": {
-      "type": "string",
-      "description": "AdOcean emitter prefix",
-      "pattern": "^[\\w\\-]+$"
     },
     "masterId": {
       "type": "string",
@@ -25,8 +20,5 @@
       "pattern": "^adocean[\\w.]+$"
     }
   },
-  "oneOf": [
-    { "required": ["emiter", "masterId", "slaveId"] },
-    { "required": ["emitterPrefix", "masterId", "slaveId"] }
-  ]
+  "required": ["emiter", "masterId", "slaveId"]
 }

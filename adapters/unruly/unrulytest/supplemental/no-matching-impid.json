@@ -87,7 +87,6 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeBidsErrors": [
     {
       "comparison": "literal",

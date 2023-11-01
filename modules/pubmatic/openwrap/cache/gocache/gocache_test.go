@@ -142,8 +142,7 @@ func Test_cache_Set(t *testing.T) {
 			want: "test_value",
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &cache{
 				cache: tt.fields.cache,
@@ -201,8 +200,7 @@ func Test_cache_Get(t *testing.T) {
 			want1: true,
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &cache{
 				cache: tt.fields.cache,

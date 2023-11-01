@@ -100,7 +100,8 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
+  "expectedBidResponses": [
+  ],
   "expectedMakeBidsErrors": [
     {
       "value": "unrecognized adtype in response",

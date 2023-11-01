@@ -34,6 +34,8 @@
             "appnexus": {
               "is_amp": 1,
               "hb_source": 5
+            },
+            "prebid": {
             }
           },
           "id": "test-request-id",

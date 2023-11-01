@@ -115,8 +115,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			},
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -206,8 +205,7 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			},
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()

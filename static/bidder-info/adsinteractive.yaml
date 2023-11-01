@@ -12,6 +12,6 @@ capabilities:
       - banner
 userSync:
   redirect:
-    url: "https://sync.adsinteractive.com/getuid?{{.RedirectURL}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}"
+    url: "http://bid.adsinteractive.com/getuid?{{.RedirectURL}}"
     userMacro: "$AUID"
  

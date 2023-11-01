@@ -66,19 +66,5 @@
 			}
 		}
 	],
-    "expectedBidResponses": [
-      {
-        "currency": "EUR",
-        "bids": [
-          {
-            "bid": {
-              "id": "test-bid-id-1",
-              "impid": "test-impression-id-1",
-              "price": 1
-            },
-            "type": "video"
-          }
-        ]
-      }
-    ]
+	"expectedBidResponses": []
 }

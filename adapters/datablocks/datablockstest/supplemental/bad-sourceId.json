@@ -16,7 +16,7 @@
         {
           "bidder":
           {
-              "host": "pbserver.dblks.net",
+              "host": "search.nutella.datablocks.net",
               "sourceId": 0
           }
         }

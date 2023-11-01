@@ -79,7 +79,7 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
+  "expectedBidResponses": [],
   "expectedMakeBidsErrors": [ 
     {
       "value": "Failed to parse impression \"test-imp-id\" mediatype",

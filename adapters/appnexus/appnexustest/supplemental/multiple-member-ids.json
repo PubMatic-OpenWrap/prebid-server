@@ -61,7 +61,7 @@
   "expectedBidResponses": [],
   "expectedMakeRequestsErrors": [
     {
-      "value": "all request.imp[i].ext.prebid.bidder.appnexus.member params must match. Request contained member IDs 103 and 104",
+      "value": "All request.imp[i].ext.prebid.bidder.appnexus.member params must match. Request contained: [103 104]",
       "comparison": "literal"
     }
   ]

@@ -72,8 +72,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -152,8 +151,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()

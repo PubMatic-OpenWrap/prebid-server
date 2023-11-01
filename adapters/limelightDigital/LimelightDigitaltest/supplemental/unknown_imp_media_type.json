@@ -52,7 +52,6 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeBidsErrors": [
     {
       "value": "unknown media type of imp: test-banner-id",

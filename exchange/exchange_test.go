@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -39,7 +38,6 @@ import (
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/privacy"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/stored_requests/backends/file_fetcher"
 	"github.com/prebid/prebid-server/usersync"
@@ -170,9 +168,12 @@ func TestCharacterEscape(t *testing.T) {
 	var errList []error
 
 	// 	4) Build bid response
-	bidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, nil, nil, true, nil, "", errList)
+	bidResp, err := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, nil, nil, true, nil, "", errList)
 
 	// 	5) Assert we have no errors and one '&' character as we are supposed to
+	if err != nil {
+		t.Errorf("exchange.buildBidResponse returned unexpected error: %v", err)
+	}
 	if len(errList) > 0 {
 		t.Errorf("exchange.buildBidResponse returned %d errors", len(errList))
 	}
@@ -379,7 +380,7 @@ func TestDebugBehaviour(t *testing.T) {
 		// Assert no HoldAuction error
 		assert.NoErrorf(t, err, "%s. ex.HoldAuction returned an error: %v \n", test.desc, err)
 		assert.NotNilf(t, outBidResponse.Ext, "%s. outBidResponse.Ext should not be nil \n", test.desc)
-		assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
+
 		actualExt := &openrtb_ext.ExtBidResponse{}
 		err = json.Unmarshal(outBidResponse.Ext, actualExt)
 		assert.NoErrorf(t, err, "%s. \"ext\" JSON field could not be unmarshaled. err: \"%v\" \n outBidResponse.Ext: \"%s\" \n", test.desc, err, outBidResponse.Ext)
@@ -541,7 +542,6 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 		// Assert no HoldAuction err
 		assert.NoErrorf(t, err, "ex.HoldAuction returned an err")
 		assert.NotNilf(t, outBidResponse.Ext, "outBidResponse.Ext should not be nil")
-		assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
 
 		actualExt := &openrtb_ext.ExtBidResponse{}
 		err = json.Unmarshal(outBidResponse.Ext, actualExt)
@@ -717,7 +717,6 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 
 		// Assertions
 		assert.NoErrorf(t, err, "%s. HoldAuction error: %v \n", test.desc, err)
-		assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
 
 		if test.expected.numBids > 0 {
 			// Assert out currency
@@ -1367,7 +1366,6 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 				continue
 			} else {
 				assert.NoErrorf(t, err, "%s: %s. HoldAuction error: %v \n", testGroup.groupDesc, test.desc, err)
-				assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
 			}
 
 			// Assert returned bid
@@ -1536,7 +1534,10 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 	var errList []error
 
 	// 	4) Build bid response
-	bid_resp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, auc, nil, true, nil, "", errList)
+	bid_resp, err := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, auc, nil, true, nil, "", errList)
+
+	// 	5) Assert we have no errors and the bid response we expected
+	assert.NoError(t, err, "[TestGetBidCacheInfo] buildBidResponse() threw an error")
 
 	expectedBidResponse := &openrtb2.BidResponse{
 		SeatBid: []openrtb2.SeatBid{
@@ -1909,7 +1910,8 @@ func TestBidResponseCurrency(t *testing.T) {
 	}
 	// Run tests
 	for i := range testCases {
-		actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, testCases[i].adapterBids, bidRequest, adapterExtra, nil, bidResponseExt, true, nil, "", errList)
+		actualBidResp, err := e.buildBidResponse(context.Background(), liveAdapters, testCases[i].adapterBids, bidRequest, adapterExtra, nil, bidResponseExt, true, nil, "", errList)
+		assert.NoError(t, err, fmt.Sprintf("[TEST_FAILED] e.buildBidResponse resturns error in test: %s Error message: %s \n", testCases[i].description, err))
 		assert.Equalf(t, testCases[i].expectedBidResponse, actualBidResp, fmt.Sprintf("[TEST_FAILED] Objects must be equal for test: %s \n Expected: >>%s<< \n Actual: >>%s<< ", testCases[i].description, testCases[i].expectedBidResponse.Ext, actualBidResp.Ext))
 	}
 }
@@ -1975,7 +1977,8 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 
 	expectedBidResponseExt := `{"origbidcpm":0,"prebid":{"type":"video","passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`
 
-	actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, nil, nil, nil, true, impExtInfo, "", errList)
+	actualBidResp, err := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, nil, nil, nil, true, impExtInfo, "", errList)
+	assert.NoError(t, err, fmt.Sprintf("imp ext info was not passed through correctly: %s", err))
 
 	resBidExt := string(actualBidResp.SeatBid[0].Bid[0].Ext)
 	assert.Equalf(t, expectedBidResponseExt, resBidExt, "Expected bid response extension is incorrect")
@@ -2086,7 +2089,7 @@ func getTestBuildRequest(t *testing.T) *openrtb2.BidRequest {
 					H: 600,
 				}},
 			},
-			Ext: json.RawMessage(`{"prebid":{"bidder":{"appnexus": {"placementId": 1}}}}`),
+			Ext: json.RawMessage(`{"ext_field":"value}"}`),
 		}, {
 			Video: &openrtb2.Video{
 				MIMEs:       []string{"video/mp4"},
@@ -2095,7 +2098,7 @@ func getTestBuildRequest(t *testing.T) *openrtb2.BidRequest {
 				W:           300,
 				H:           600,
 			},
-			Ext: json.RawMessage(`{"prebid":{"bidder":{"appnexus": {"placementId": 1}}}}`),
+			Ext: json.RawMessage(`{"ext_field":"value}"}`),
 		}},
 	}
 }
@@ -2358,8 +2361,6 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		impExtInfoMap[impID] = ImpExtInfo{}
 	}
 
-	activityControl := privacy.NewActivityControl(spec.AccountPrivacy)
-
 	auctionRequest := &AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: &spec.IncomingRequest.OrtbRequest},
 		Account: config.Account{
@@ -2375,7 +2376,6 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		ImpExtInfoMap: impExtInfoMap,
 		HookExecutor:  &hookexecution.EmptyHookExecutor{},
 		TCF2Config:    gdpr.NewTCF2Config(privacyConfig.GDPR.TCF2, config.AccountGDPR{}),
-		Activities:    activityControl,
 	}
 
 	if spec.MultiBid != nil {
@@ -3304,7 +3304,7 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 			BidRequest: &openrtb2.BidRequest{},
 		},
 	}
-	requestExt.Prebid.Targeting.DurationRangeSec = []int{30, 10, 25, 5, 20, 50}
+	requestExt.Prebid.Targeting.DurationRangeSec = []int{15, 30}
 
 	adapterBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 
@@ -3313,8 +3313,8 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 	bid1 := openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: cats1, W: 1, H: 1}
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 12.0000, Cat: cats2, W: 1, H: 1}
 
-	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 17}, nil, nil, 0, false, "", 10.0000, "USD", "", 10}
-	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 8}, nil, nil, 0, false, "", 12.0000, "USD", "", 12}
+	bid1_1 := entities.PbsOrtbBid{&bid1, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, nil, 0, false, "", 10.0000, "USD", "", 10.0000}
+	bid1_2 := entities.PbsOrtbBid{&bid2, nil, "video", nil, &openrtb_ext.ExtBidPrebidVideo{Duration: 30}, nil, nil, 0, false, "", 12.0000, "USD", "", 12.0000}
 
 	innerBids1 := []*entities.PbsOrtbBid{
 		&bid1_1,
@@ -3338,8 +3338,8 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 
 	assert.NoError(t, err, "Category mapping error should be empty")
 	assert.Empty(t, rejections, "There should be 0 bid rejection messages")
-	assert.Equal(t, "10.00_20s_bidder1", bidCategory["bid_id1"], "Category mapping doesn't match")
-	assert.Equal(t, "12.00_10s_bidder2", bidCategory["bid_id2"], "Category mapping doesn't match")
+	assert.Equal(t, "10.00_30s_bidder1", bidCategory["bid_id1"], "Category mapping doesn't match")
+	assert.Equal(t, "12.00_30s_bidder2", bidCategory["bid_id2"], "Category mapping doesn't match")
 	assert.Len(t, adapterBids[bidderName1].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, adapterBids[bidderName2].Bids, 1, "Bidders number doesn't match")
 	assert.Len(t, bidCategory, 2, "Bidders category mapping doesn't match")
@@ -3463,7 +3463,7 @@ func TestBidRejectionErrors(t *testing.T) {
 			},
 			duration: 70,
 			expectedRejections: []string{
-				"bid rejected [bid ID: bid_id1] reason: bid duration exceeds maximum allowed",
+				"bid rejected [bid ID: bid_id1] reason: Bid duration exceeds maximum allowed",
 			},
 			expectedseatNonBids: nonBids{
 				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
@@ -3842,7 +3842,7 @@ func TestApplyDealSupport(t *testing.T) {
 		{
 			description:  "hb_pb_cat_dur should be modified",
 			dealPriority: 5,
-			impExt:       json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+			impExt:       json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 			targ: map[string]string{
 				"hb_pb_cat_dur": "12.00_movies_30s",
 			},
@@ -3853,7 +3853,7 @@ func TestApplyDealSupport(t *testing.T) {
 		{
 			description:  "hb_pb_cat_dur should not be modified due to priority not exceeding min",
 			dealPriority: 9,
-			impExt:       json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 10, "prefix": "tier"}, "placementId": 10433394}}}}`),
+			impExt:       json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 10, "prefix": "tier"}, "placementId": 10433394}}`),
 			targ: map[string]string{
 				"hb_pb_cat_dur": "12.00_medicine_30s",
 			},
@@ -3864,7 +3864,7 @@ func TestApplyDealSupport(t *testing.T) {
 		{
 			description:  "hb_pb_cat_dur should not be modified due to invalid config",
 			dealPriority: 5,
-			impExt:       json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": ""}, "placementId": 10433394}}}}`),
+			impExt:       json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": ""}, "placementId": 10433394}}`),
 			targ: map[string]string{
 				"hb_pb_cat_dur": "12.00_games_30s",
 			},
@@ -3875,7 +3875,7 @@ func TestApplyDealSupport(t *testing.T) {
 		{
 			description:  "hb_pb_cat_dur should not be modified due to deal priority of 0",
 			dealPriority: 0,
-			impExt:       json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+			impExt:       json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 			targ: map[string]string{
 				"hb_pb_cat_dur": "12.00_auto_30s",
 			},
@@ -3945,11 +3945,11 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					Imp: []openrtb2.Imp{
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 					},
 				},
@@ -3991,11 +3991,11 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					Imp: []openrtb2.Imp{
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 					},
 				},
@@ -4042,11 +4042,11 @@ func TestApplyDealSupportMultiBid(t *testing.T) {
 					Imp: []openrtb2.Imp{
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 						{
 							ID:  "imp_id1",
-							Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}}}`),
+							Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}, "placementId": 10433394}}`),
 						},
 					},
 				},
@@ -4119,7 +4119,7 @@ func TestGetDealTiers(t *testing.T) {
 			description: "One",
 			request: openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
-					{ID: "imp1", Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}}}}}`)},
+					{ID: "imp1", Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier"}}}`)},
 				},
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
@@ -4130,8 +4130,8 @@ func TestGetDealTiers(t *testing.T) {
 			description: "Many",
 			request: openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
-					{ID: "imp1", Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier1"}}}}}`)},
-					{ID: "imp2", Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 8, "prefix": "tier2"}}}}}`)},
+					{ID: "imp1", Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier1"}}}`)},
+					{ID: "imp2", Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 8, "prefix": "tier2"}}}`)},
 				},
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
@@ -4143,12 +4143,13 @@ func TestGetDealTiers(t *testing.T) {
 			description: "Many - Skips Malformed",
 			request: openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
-					{ID: "imp1", Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier1"}}}}}`)},
-					{ID: "imp2", Ext: json.RawMessage(`{"prebid": {"bidder": {"appnexus": {"dealTier": "wrong type"}}}}`)},
+					{ID: "imp1", Ext: json.RawMessage(`{"appnexus": {"dealTier": {"minDealTier": 5, "prefix": "tier1"}}}`)},
+					{ID: "imp2", Ext: json.RawMessage(`{"appnexus": {"dealTier": "wrong type"}}`)},
 				},
 			},
 			expected: map[string]openrtb_ext.DealTierBidderMap{
 				"imp1": {openrtb_ext.BidderAppnexus: {Prefix: "tier1", MinDealTier: 5}},
+				"imp2": {},
 			},
 		},
 	}
@@ -5397,7 +5398,6 @@ func TestOverrideConfigAlternateBidderCodesWithRequestValues(t *testing.T) {
 		// Assertions
 		assert.NoErrorf(t, err, "%s. HoldAuction error: %v \n", test.desc, err)
 		assert.NotNil(t, outBidResponse)
-		assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
 
 		// So 2 seatBids are expected as,
 		// the default "" and "pubmatic" bids will be in one seat and the extra-bids "groupm"/"appnexus"/"ix" in another seat.
@@ -5446,7 +5446,6 @@ type exchangeSpec struct {
 	FledgeEnabled              bool                   `json:"fledge_enabled,omitempty"`
 	MultiBid                   *multiBidSpec          `json:"multiBid,omitempty"`
 	Server                     exchangeServer         `json:"server,omitempty"`
-	AccountPrivacy             *config.AccountPrivacy `json:"accountPrivacy,omitempty"`
 }
 
 type multiBidSpec struct {
@@ -5527,7 +5526,7 @@ type validatingBidder struct {
 	mockResponses map[string]bidderResponse
 }
 
-func (b *validatingBidder) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, executor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) (seatBids []*entities.PbsOrtbSeatBid, extaInfo extraBidderRespInfo, errs []error) {
+func (b *validatingBidder) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, executor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) (seatBids []*entities.PbsOrtbSeatBid, errs []error) {
 	if expectedRequest, ok := b.expectations[string(bidderRequest.BidderName)]; ok {
 		if expectedRequest != nil {
 			if !reflect.DeepEqual(expectedRequest.BidAdjustments, bidRequestOptions.bidAdjustments) {
@@ -5693,7 +5692,7 @@ func (e *emptyUsersync) HasAnyLiveSyncs() bool {
 
 type panicingAdapter struct{}
 
-func (panicingAdapter) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestMetadata bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, executor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) (posb []*entities.PbsOrtbSeatBid, extraInfo extraBidderRespInfo, errs []error) {
+func (panicingAdapter) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestMetadata bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, executor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) (posb []*entities.PbsOrtbSeatBid, errs []error) {
 	panic("Panic! Panic! The world is ending!")
 }
 
@@ -5825,7 +5824,6 @@ func TestModulesCanBeExecutedForMultipleBiddersSimultaneously(t *testing.T) {
 	_, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 	// Assert no HoldAuction err
 	assert.NoErrorf(t, err, "ex.HoldAuction returned an err")
-	assert.False(t, auctionRequest.BidderResponseStartTime.IsZero())
 
 	// check stage outcomes
 	assert.Equal(t, len(exec.GetOutcomes()), len(e.adapterMap), "stage outcomes append operation failed")
@@ -5897,77 +5895,6 @@ func TestNilAuctionRequest(t *testing.T) {
 	response, err := ex.HoldAuction(context.Background(), nil, &DebugLog{})
 	assert.Nil(t, response)
 	assert.Nil(t, err)
-}
-
-func TestSelectNewDuration(t *testing.T) {
-	type testInput struct {
-		dur       int
-		durRanges []int
-	}
-	type testOutput struct {
-		dur int
-		err error
-	}
-	testCases := []struct {
-		desc     string
-		in       testInput
-		expected testOutput
-	}{
-		{
-			desc: "nil duration range array, don't expect error",
-			in: testInput{
-				dur:       1,
-				durRanges: nil,
-			},
-			expected: testOutput{1, nil},
-		},
-		{
-			desc: "empty duration range array, don't expect error",
-			in: testInput{
-				dur:       1,
-				durRanges: []int{},
-			},
-			expected: testOutput{1, nil},
-		},
-		{
-			desc: "all duration range array elements less than duration, expect error",
-			in: testInput{
-				dur:       5,
-				durRanges: []int{-1, 0, 1, 2, 3},
-			},
-			expected: testOutput{5, errors.New("bid duration exceeds maximum allowed")},
-		},
-		{
-			desc: "all duration range array elements greater than duration, expect smallest element in durRanges and nil error",
-			in: testInput{
-				dur:       5,
-				durRanges: []int{9, math.MaxInt32, 8},
-			},
-			expected: testOutput{8, nil},
-		},
-		{
-			desc: "some array elements greater than duration, expect the value greater than dur that is closest in value.",
-			in: testInput{
-				dur:       5,
-				durRanges: []int{math.MaxInt32, -3, 7, 2},
-			},
-			expected: testOutput{7, nil},
-		},
-		{
-			desc: "an entry in the duration range array is equal to duration, expect its value in return.",
-			in: testInput{
-				dur:       5,
-				durRanges: []int{-3, math.MaxInt32, 5, 7},
-			},
-			expected: testOutput{5, nil},
-		},
-	}
-	for _, tc := range testCases {
-		newDur, err := findDurationRange(tc.in.dur, tc.in.durRanges)
-
-		assert.Equal(t, tc.expected.dur, newDur, tc.desc)
-		assert.Equal(t, tc.expected.err, err, tc.desc)
-	}
 }
 
 func TestSetSeatNonBid(t *testing.T) {

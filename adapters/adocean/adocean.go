@@ -21,7 +21,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-const adapterVersion = "1.3.0"
+const adapterVersion = "1.2.0"
 const maxUriLength = 8000
 const measurementCode = `
 	<script>
@@ -95,13 +95,13 @@ func (a *AdOceanAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ada
 		}
 	}
 
-	var reqCreationErrors []error
+	var errors []error
 	var err error
 	requestsData := make([]*requestData, 0, len(request.Imp))
 	for _, auction := range request.Imp {
 		requestsData, err = a.addNewBid(requestsData, &auction, request, consentString)
 		if err != nil {
-			reqCreationErrors = append(reqCreationErrors, err)
+			errors = append(errors, err)
 		}
 	}
 
@@ -114,7 +114,7 @@ func (a *AdOceanAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ada
 		})
 	}
 
-	return httpRequests, reqCreationErrors
+	return httpRequests, errors
 }
 
 func (a *AdOceanAdapter) addNewBid(
@@ -134,12 +134,6 @@ func (a *AdOceanAdapter) addNewBid(
 	if err := json.Unmarshal(bidderExt.Bidder, &adOceanExt); err != nil {
 		return requestsData, &errortypes.BadInput{
 			Message: "Error parsing adOceanExt parameters",
-		}
-	}
-
-	if adOceanExt.EmitterPrefix == "" {
-		return requestsData, &errortypes.BadInput{
-			Message: "No emitterPrefix param",
 		}
 	}
 
@@ -202,7 +196,7 @@ func (a *AdOceanAdapter) makeURL(
 	slaveSizes map[string]string,
 	consentString string,
 ) (*url.URL, error) {
-	endpointParams := macros.EndpointTemplateParams{Host: params.EmitterPrefix}
+	endpointParams := macros.EndpointTemplateParams{Host: params.EmitterDomain}
 	host, err := macros.ResolveMacros(a.endpointTemplate, endpointParams)
 	if err != nil {
 		return nil, &errortypes.BadInput{
@@ -350,7 +344,7 @@ func (a *AdOceanAdapter) MakeBids(
 	}
 
 	var parsedResponses = adapters.NewBidderResponseWithBidsCapacity(len(auctionIDs))
-	var parsingErrors []error
+	var errors []error
 	var slaveToAuctionIDMap = make(map[string]string, len(auctionIDs))
 
 	for _, auctionFullID := range auctionIDs {
@@ -369,7 +363,7 @@ func (a *AdOceanAdapter) MakeBids(
 			height, _ := strconv.ParseInt(bid.Height, 10, 64)
 			adCode, err := a.prepareAdCodeForBid(bid)
 			if err != nil {
-				parsingErrors = append(parsingErrors, err)
+				errors = append(errors, err)
 				continue
 			}
 
@@ -389,7 +383,7 @@ func (a *AdOceanAdapter) MakeBids(
 		}
 	}
 
-	return parsedResponses, parsingErrors
+	return parsedResponses, errors
 }
 
 func (a *AdOceanAdapter) prepareAdCodeForBid(bid ResponseAdUnit) (string, error) {

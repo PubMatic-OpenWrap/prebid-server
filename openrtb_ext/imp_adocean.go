@@ -1,7 +1,7 @@
 package openrtb_ext
 
 type ExtImpAdOcean struct {
-	EmitterPrefix string `json:"emitterPrefix"`
+	EmitterDomain string `json:"emiter"`
 	MasterID      string `json:"masterId"`
 	SlaveID       string `json:"slaveId"`
 }

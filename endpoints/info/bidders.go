@@ -11,8 +11,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 )
 
-var invalidEnabledOnlyMsg = []byte(`Invalid value for 'enabledonly' query param, must be of boolean type`)
-var invalidBaseAdaptersOnlyMsg = []byte(`Invalid value for 'baseadaptersonly' query param, must be of boolean type`)
+var invalidEnabledOnly = []byte(`Invalid value for 'enabledonly' query param, must be of boolean type`)
 
 // NewBiddersEndpoint builds a handler for the /info/bidders endpoint.
 func NewBiddersEndpoint(bidders config.BidderInfos, aliases map[string]string) httprouter.Handle {
@@ -21,74 +20,43 @@ func NewBiddersEndpoint(bidders config.BidderInfos, aliases map[string]string) h
 		glog.Fatalf("error creating /info/bidders endpoint all bidders response: %v", err)
 	}
 
-	responseAllBaseOnly, err := prepareBiddersResponseAllBaseOnly(bidders)
-	if err != nil {
-		glog.Fatalf("error creating /info/bidders endpoint all bidders (base adapters only) response: %v", err)
-	}
-
 	responseEnabledOnly, err := prepareBiddersResponseEnabledOnly(bidders, aliases)
 	if err != nil {
 		glog.Fatalf("error creating /info/bidders endpoint enabled only response: %v", err)
 	}
 
-	responseEnabledOnlyBaseOnly, err := prepareBiddersResponseEnabledOnlyBaseOnly(bidders)
-	if err != nil {
-		glog.Fatalf("error creating /info/bidders endpoint enabled only (base adapters only) response: %v", err)
-	}
-
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		enabledOnly, baseAdaptersOnly, errMsg := readQueryFlags(r)
-		if errMsg != nil {
-			writeBadRequest(w, errMsg)
-			return
+		var writeErr error
+		switch readEnabledOnly(r) {
+		case "true":
+			w.Header().Set("Content-Type", "application/json")
+			_, writeErr = w.Write(responseEnabledOnly)
+		case "false":
+			w.Header().Set("Content-Type", "application/json")
+			_, writeErr = w.Write(responseAll)
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+			_, writeErr = w.Write(invalidEnabledOnly)
 		}
 
-		var response []byte
-		switch {
-		case !enabledOnly && !baseAdaptersOnly:
-			response = responseAll
-		case !enabledOnly && baseAdaptersOnly:
-			response = responseAllBaseOnly
-		case enabledOnly && !baseAdaptersOnly:
-			response = responseEnabledOnly
-		case enabledOnly && baseAdaptersOnly:
-			response = responseEnabledOnlyBaseOnly
+		if writeErr != nil {
+			glog.Errorf("error writing response to /info/bidders: %v", writeErr)
 		}
-		writeResponse(w, response)
 	}
 }
 
-func readQueryFlags(r *http.Request) (enabledOnly, baseAdaptersOnly bool, errMsg []byte) {
-	enabledOnly, ok := readQueryFlag(r, "enabledonly")
-	if !ok {
-		return false, false, invalidEnabledOnlyMsg
-	}
-
-	baseAdapterOnly, ok := readQueryFlag(r, "baseadaptersonly")
-	if !ok {
-		return false, false, invalidBaseAdaptersOnlyMsg
-	}
-
-	return enabledOnly, baseAdapterOnly, nil
-}
-
-func readQueryFlag(r *http.Request, queryParam string) (flag, ok bool) {
+func readEnabledOnly(r *http.Request) string {
 	q := r.URL.Query()
 
-	v, exists := q[queryParam]
+	v, exists := q["enabledonly"]
 
 	if !exists || len(v) == 0 {
-		return false, true
+		// if the enabledOnly query parameter is not specified, default to false to match
+		// previous behavior of returning all adapters regardless of their enabled status.
+		return "false"
 	}
 
-	switch strings.ToLower(v[0]) {
-	case "true":
-		return true, true
-	case "false":
-		return false, true
-	default:
-		return false, false
-	}
+	return strings.ToLower(v[0])
 }
 
 func prepareBiddersResponseAll(bidders config.BidderInfos, aliases map[string]string) ([]byte, error) {
@@ -103,19 +71,7 @@ func prepareBiddersResponseAll(bidders config.BidderInfos, aliases map[string]st
 	}
 
 	sort.Strings(bidderNames)
-	return json.Marshal(bidderNames)
-}
 
-func prepareBiddersResponseAllBaseOnly(bidders config.BidderInfos) ([]byte, error) {
-	bidderNames := make([]string, 0, len(bidders))
-
-	for name, info := range bidders {
-		if len(info.AliasOf) == 0 {
-			bidderNames = append(bidderNames, name)
-		}
-	}
-
-	sort.Strings(bidderNames)
 	return json.Marshal(bidderNames)
 }
 
@@ -137,33 +93,4 @@ func prepareBiddersResponseEnabledOnly(bidders config.BidderInfos, aliases map[s
 	sort.Strings(bidderNames)
 
 	return json.Marshal(bidderNames)
-}
-
-func prepareBiddersResponseEnabledOnlyBaseOnly(bidders config.BidderInfos) ([]byte, error) {
-	bidderNames := make([]string, 0, len(bidders))
-
-	for name, info := range bidders {
-		if info.IsEnabled() && len(info.AliasOf) == 0 {
-			bidderNames = append(bidderNames, name)
-		}
-	}
-
-	sort.Strings(bidderNames)
-	return json.Marshal(bidderNames)
-}
-
-func writeBadRequest(w http.ResponseWriter, data []byte) {
-	w.WriteHeader(http.StatusBadRequest)
-	writeWithErrorHandling(w, data)
-}
-
-func writeResponse(w http.ResponseWriter, data []byte) {
-	w.Header().Set("Content-Type", "application/json")
-	writeWithErrorHandling(w, data)
-}
-
-func writeWithErrorHandling(w http.ResponseWriter, data []byte) {
-	if _, err := w.Write(data); err != nil {
-		glog.Errorf("error writing response to /info/bidders: %v", err)
-	}
 }

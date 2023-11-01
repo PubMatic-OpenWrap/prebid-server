@@ -84,13 +84,13 @@ func (adapter *adapter) MakeBids(
 		return nil, []error{err}
 	}
 
-	bidderResponse = adapters.NewBidderResponseWithBidsCapacity(len(openRTBRequest.Imp))
-	bidderResponse.Currency = openRTBBidderResponse.Cur
+	bidsCapacity := len(openRTBBidderResponse.SeatBid[0].Bid)
+	bidderResponse = adapters.NewBidderResponseWithBidsCapacity(bidsCapacity)
 	var typedBid *adapters.TypedBid
 	for _, seatBid := range openRTBBidderResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			activeBid := bid
-			bidType, err := getReturnTypeFromMtypeForImp(activeBid.MType)
+			bidType, err := getMediaTypeForImp(activeBid.ImpID, openRTBRequest.Imp)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -105,17 +105,21 @@ func (adapter *adapter) MakeBids(
 
 }
 
-func getReturnTypeFromMtypeForImp(mType openrtb2.MarkupType) (openrtb_ext.BidType, error) {
-	switch mType {
-	case openrtb2.MarkupBanner:
-		return openrtb_ext.BidTypeBanner, nil
-	case openrtb2.MarkupVideo:
-		return openrtb_ext.BidTypeVideo, nil
-	case openrtb2.MarkupNative:
-		return openrtb_ext.BidTypeNative, nil
-	case openrtb2.MarkupAudio:
-		return openrtb_ext.BidTypeAudio, nil
-	default:
-		return "", &errortypes.BadServerResponse{Message: "Unsupported return type"}
+func getMediaTypeForImp(impID string, imps []openrtb2.Imp) (openrtb_ext.BidType, error) {
+	for _, imp := range imps {
+		if imp.ID == impID {
+			if imp.Native != nil {
+				return openrtb_ext.BidTypeNative, nil
+			} else if imp.Banner != nil {
+				return openrtb_ext.BidTypeBanner, nil
+			} else if imp.Video != nil {
+				return openrtb_ext.BidTypeVideo, nil
+			}
+
+		}
+	}
+
+	return "", &errortypes.BadInput{
+		Message: fmt.Sprintf("Failed to find native/banner/video impression \"%s\" ", impID),
 	}
 }
