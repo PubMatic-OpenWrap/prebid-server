@@ -744,15 +744,15 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 
 	// BidRequest.TMax has highest priority
 	if req.TMax != 0 {
-		return req.TMax
-	}
-
-	//check for ssTimeout in the partner config
-	ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)
-	if ssTimeout != "" {
-		ssTimeoutDB, err := strconv.Atoi(ssTimeout)
-		if err == nil {
-			auctionTimeout = int64(ssTimeoutDB)
+		auctionTimeout = req.TMax
+	} else {
+		//check for ssTimeout in the partner config
+		ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)
+		if ssTimeout != "" {
+			ssTimeoutDB, err := strconv.Atoi(ssTimeout)
+			if err == nil {
+				auctionTimeout = int64(ssTimeoutDB)
+			}
 		}
 	}
 

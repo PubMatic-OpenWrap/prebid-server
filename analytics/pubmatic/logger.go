@@ -381,6 +381,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			if nbr != nil && *nbr == openrtb3.NoBidTimeoutError {
 				pr.PostTimeoutBidStatus = 1
+				pr.Latency1 = 0
 			}
 
 			// WinningBids contains map of imp.id against bid.id+::+uuid
