@@ -13,4 +13,5 @@ const (
 	PRODUCT_ID            = "ProductID"
 	VIEW_BEACON           = "OnViewBeacon"
 	CLICK_BEACON          = "OnClickBeacon"
+	PUBMATIC_TRACKING     = "PubMaticTracking"
 )

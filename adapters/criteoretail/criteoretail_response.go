@@ -68,13 +68,28 @@ func (a *CriteoRetailAdapter) MakeBids(internalRequest *openrtb2.BidRequest, ext
 			Message: "No Bid For the given Request",
 		}}
 	}
+	
+	var configValueMap = make(map[string]string)
+        var configTypeMap = make(map[string]int)
+	for _,obj := range commerceExt.Bidder.CustomConfig {
+		configValueMap[obj.Key] = obj.Value
+		configTypeMap[obj.Key] = obj.Type
+	}
+	
+	pubMaticTracking := false
+	val, ok := configValueMap[AUCTIONDETAILS_PREFIX + PUBMATIC_TRACKING]
+	if ok {
+		if val == "true" {
+			pubMaticTracking = true
+		}
+	}
 
 	impID := internalRequest.Imp[0].ID
-	bidderResponse := a.getBidderResponse(internalRequest, &criteoResponse, impID)
+	bidderResponse := a.getBidderResponse(internalRequest, &criteoResponse, impID, pubMaticTracking)
 	return bidderResponse, nil
 }
 
-func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, criteoResponse *CriteoResponse, requestImpID string) *adapters.BidderResponse {
+func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, criteoResponse *CriteoResponse, requestImpID string, pubMaticTracking bool) *adapters.BidderResponse {
 
 	noOfBids := countSponsoredProducts(criteoResponse)
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfBids)
@@ -90,8 +105,14 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 						clickPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[CLICK_PRICE].(string)), 64)
 						productID := productMap[PRODUCT_ID].(string)
 
-						impressionURL := IMP_KEY + adapters.EncodeURL(productMap[VIEW_BEACON].(string))
-						clickURL := CLICK_KEY + adapters.EncodeURL(productMap[CLICK_BEACON].(string))
+						var impressionURL,clickURL string
+						if pubMaticTracking {
+							impressionURL = IMP_KEY + adapters.EncodeURL(productMap[VIEW_BEACON].(string))
+							clickURL = CLICK_KEY + adapters.EncodeURL(productMap[CLICK_BEACON].(string))
+						} else {
+							impressionURL = productMap[VIEW_BEACON].(string)
+							clickURL = productMap[CLICK_BEACON].(string)
+						}
 						index++
 
 						// Add ProductDetails to bidExtension

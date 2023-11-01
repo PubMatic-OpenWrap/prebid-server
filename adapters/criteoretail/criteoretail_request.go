@@ -36,14 +36,14 @@ func (a *CriteoRetailAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo
 		return nil, errors
 	}
 
-    var configValueMap = make(map[string]string)
-    var configTypeMap = make(map[string]int)
+        var configValueMap = make(map[string]string)
+        var configTypeMap = make(map[string]int)
 	for _,obj := range commerceExt.Bidder.CustomConfig {
 		configValueMap[obj.Key] = obj.Value
 		configTypeMap[obj.Key] = obj.Type
 	}
 	
-     _, err := url.Parse(a.endpoint)
+        _, err := url.Parse(a.endpoint)
 	if err != nil {
 		return nil, []error{fmt.Errorf("failed to parse yieldlab endpoint: %v", err)}
 	}
