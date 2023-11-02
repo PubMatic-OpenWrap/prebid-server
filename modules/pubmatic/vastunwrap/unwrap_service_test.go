@@ -36,7 +36,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with Empty Bid",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{},
 				},
@@ -47,7 +47,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with Empty ADM",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -66,7 +66,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with invalid URL and timeout",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 2}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 2}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -95,7 +95,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -127,7 +127,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with invalid vast xml",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
