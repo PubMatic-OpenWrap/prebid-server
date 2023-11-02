@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func Test_setFloorsExt(t *testing.T) {
+func TestSetFloorsExt(t *testing.T) {
 	enable := true
 	disable := false
 
@@ -21,7 +21,7 @@ func Test_setFloorsExt(t *testing.T) {
 		want *models.RequestExt
 	}{
 		{
-			name: "JSON URL is present in db",
+			name: "Only JSON URL is present in db",
 			args: args{
 				requestExt: &models.RequestExt{},
 				configMap: map[int]map[string]string{
