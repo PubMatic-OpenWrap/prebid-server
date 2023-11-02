@@ -20,6 +20,8 @@ var mockProductDetails = map[string]interface{}{
     "shortDescription": "Disinfecting/sanitizing bathroom cleaner for infection prevention and control",
     "MatchType": "sku",
     "ParentSKU": "24442430",
+    "ComparePrice":"25.39",
+    "Price":"25.39",
 }
 
 const (
@@ -86,7 +88,7 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 		bidExt := &openrtb_ext.ExtBidCommerce{
 			ProductId:  productid,
 			ClickPrice: clickPrice,
-			ClickUrl: CLICK_URL,
+			//ClickUrl: CLICK_URL,
 			ProductDetails: mockProductDetails,
 		}
 
