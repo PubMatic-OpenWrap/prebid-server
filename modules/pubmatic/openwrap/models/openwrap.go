@@ -59,7 +59,7 @@ type RequestCtx struct {
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
 	NewReqExt          json.RawMessage
-	ResponseExt        json.RawMessage
+	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}

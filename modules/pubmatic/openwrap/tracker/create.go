@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/url"
@@ -26,7 +25,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
-	trackers = createTrackers(trackers, rctx, bidResponse, pmMkt)
+	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt)
 
 	// overwrite marketplace bid details with that of parent bidder
 	for bidID, tracker := range trackers {
@@ -38,7 +37,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 		}
 
 		var finalTrackerURL string
-		trackerURL := ConstructTrackerURL(rctx, tracker.Tracker)
+		trackerURL := constructTrackerURL(rctx, tracker.Tracker)
 		trackURL, err := url.Parse(trackerURL)
 		if err == nil {
 			trackURL.Scheme = models.HTTPSProtocol
@@ -52,8 +51,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 	return trackers
 }
 
-func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
-	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(bidResponse.Ext)
+func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
+	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(rctx.ResponseExt)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -231,7 +230,7 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 			}
 
 			var finalTrackerURL string
-			trackerURL := ConstructTrackerURL(rctx, tracker)
+			trackerURL := constructTrackerURL(rctx, tracker)
 			trackURL, err := url.Parse(trackerURL)
 			if err == nil {
 				trackURL.Scheme = models.HTTPSProtocol
@@ -244,7 +243,7 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 				Price:         price,
 				PriceModel:    models.VideoPricingModelCPM,
 				PriceCurrency: bidResponse.Cur,
-				ErrorURL:      ConstructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
+				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
 				BidType:       adformat,
 				DspId:         dspId,
 			}
@@ -253,12 +252,10 @@ func createTrackers(trackers map[string]models.OWTracker, rctx models.RequestCtx
 	return trackers
 }
 
-func getFloorsDetails(bidResponseExt json.RawMessage) (*int, int, *int, string) {
-	var responseExt openrtb_ext.ExtBidResponse
+func getFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (*int, int, *int, string) {
 	var skipfloors, floorSource *int
 	floorType, floorModelVersion := 0, ""
-	err := json.Unmarshal(bidResponseExt, &responseExt)
-	if err == nil && responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
+	if responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
 		floors := responseExt.Prebid.Floors
 		if floors.Skipped != nil {
 			skipfloors = ptrutil.ToPtr(0)
@@ -303,7 +300,7 @@ func roundToTwoDigit(value float64) float64 {
 }
 
 // ConstructTrackerURL constructing tracker url for impression
-func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string {
+func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string {
 	trackerURL, err := url.Parse(rctx.TrackerEndpoint)
 	if err != nil {
 		return ""
@@ -379,7 +376,7 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 }
 
 // ConstructVideoErrorURL constructing video error url for video impressions
-func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid openrtb2.Bid, tracker models.Tracker) string {
+func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid openrtb2.Bid, tracker models.Tracker) string {
 	if len(errorURLString) == 0 {
 		return ""
 	}

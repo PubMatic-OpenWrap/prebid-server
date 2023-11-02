@@ -3,7 +3,6 @@ package tracker
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -11,10 +10,7 @@ import (
 )
 
 func Test_injectBannerTracker(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockCache := mock_cache.NewMockCache(ctrl)
-	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
 		5890: {1234: 100},
 	})
 	type args struct {
@@ -77,6 +73,22 @@ func Test_injectBannerTracker(t *testing.T) {
 				seat: models.BidderPubMatic,
 			},
 			want: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+		},
+		{
+			name: "tbf_feature_enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+				},
+				tracker: models.OWTracker{
+					TrackerURL: `Tracking URL`,
+				},
+				bid: openrtb2.Bid{
+					AdM: `sample_creative`,
+				},
+			},
+			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
 		},
 	}
 	for _, tt := range tests {
@@ -154,10 +166,7 @@ func Test_trackerWithOM(t *testing.T) {
 }
 
 func Test_applyTBFFeature(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockCache := mock_cache.NewMockCache(ctrl)
-	defer ctrl.Finish()
-	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
 		5890: {1234: 100},
 	})
 

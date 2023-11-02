@@ -6,25 +6,27 @@ import (
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
-func GetTrackerInfo(rCtx models.RequestCtx, prebidExt *openrtb_ext.ExtResponsePrebid) string {
-
+func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
+	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(responseExt)
 	tracker := models.Tracker{
-		PubID:     rCtx.PubID,
-		ProfileID: fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID: fmt.Sprintf("%d", rCtx.DisplayID),
-		PageURL:   rCtx.PageURL,
-		Timestamp: rCtx.StartTime,
-		IID:       rCtx.LoggerImpressionID,
-		Platform:  int(rCtx.DevicePlatform),
-		Origin:    rCtx.Origin,
-		TestGroup: rCtx.ABTestConfigApplied,
+		PubID:             rCtx.PubID,
+		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+		PageURL:           rCtx.PageURL,
+		Timestamp:         rCtx.StartTime,
+		IID:               rCtx.LoggerImpressionID,
+		Platform:          int(rCtx.DevicePlatform),
+		Origin:            rCtx.Origin,
+		TestGroup:         rCtx.ABTestConfigApplied,
+		FloorModelVersion: floorModelVersion,
+		FloorType:         floorType,
+		FloorSkippedFlag:  skipfloors,
+		FloorSource:       floorSource,
 	}
 
-	setFloorsDetails(&tracker, prebidExt)
-	constructedURLString := ConstructTrackerURL(rCtx, tracker)
+	constructedURLString := constructTrackerURL(rCtx, tracker)
 
 	trackerURL, err := url.Parse(constructedURLString)
 	if err != nil {
@@ -45,28 +47,4 @@ func GetTrackerInfo(rCtx models.RequestCtx, prebidExt *openrtb_ext.ExtResponsePr
 	trackerURL.RawQuery = params.Encode()
 
 	return trackerURL.String()
-}
-
-// sets floors details in tracker
-func setFloorsDetails(tracker *models.Tracker, prebidExt *openrtb_ext.ExtResponsePrebid) {
-	if prebidExt != nil && prebidExt.Floors != nil {
-		if prebidExt.Floors.Skipped != nil {
-			skipfloors := ptrutil.ToPtr(0)
-			if *prebidExt.Floors.Skipped {
-				skipfloors = ptrutil.ToPtr(1)
-			}
-			tracker.FloorSkippedFlag = skipfloors
-		}
-		if prebidExt.Floors.Data != nil && len(prebidExt.Floors.Data.ModelGroups) > 0 {
-			tracker.FloorModelVersion = prebidExt.Floors.Data.ModelGroups[0].ModelVersion
-		}
-		if len(prebidExt.Floors.PriceFloorLocation) > 0 {
-			if source, ok := models.FloorSourceMap[prebidExt.Floors.PriceFloorLocation]; ok {
-				tracker.FloorSource = &source
-			}
-		}
-		if prebidExt.Floors.Enforcement != nil && prebidExt.Floors.Enforcement.EnforcePBS != nil && *prebidExt.Floors.Enforcement.EnforcePBS {
-			tracker.FloorType = models.HardFloor
-		}
-	}
 }
