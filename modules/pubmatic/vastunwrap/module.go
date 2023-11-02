@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
@@ -31,8 +29,6 @@ func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, e
 }
 
 func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnwrapModule, error) {
-	t := time.Now()
-	defer glog.Infof("Time taken by initVastUnwrap---%v", time.Since(t).Milliseconds())
 	vastUnwrapModuleCfg := VastUnwrapModule{}
 	err := json.Unmarshal(rawCfg, &vastUnwrapModuleCfg)
 	if err != nil {
