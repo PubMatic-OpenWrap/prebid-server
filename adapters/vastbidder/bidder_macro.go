@@ -301,15 +301,18 @@ func (tag *BidderMacro) MacroSchain(key string) string {
 
 	err = json.Unmarshal(schain, &schainObj)
 
+	if err != nil {
+		return ""
+	}
+
 	serializedSchain := schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete)
 
-	//	loopUpOrder := []string{"ASI", "sid", "hp", "rid", "name", "domain", "ext"}
-
-	cnt := 0
+	// count track the current index for schain node
+	count := 0
 	l := len(schainObj.Nodes)
 
 	for _, node := range schainObj.Nodes {
-		if cnt < l {
+		if count < l {
 			serializedSchain += "!"
 		}
 		if node.ASI != "" {

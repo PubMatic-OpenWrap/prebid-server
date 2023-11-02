@@ -1635,7 +1635,7 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "single_hop_complete_chain",
+			name: "schain_with_single_node",
 			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
 				Ext: []byte(`{
 					"schain":{
@@ -1644,8 +1644,10 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 							{
 								"asi":"exchange1.com",
 								"sid":"1234&abcd",
-								"hp":1,
-								"ext":{"k1":"v1"}
+								"rid":"bid-request-1",
+								"name":"publisher name",
+								"domain":"publisher.com",
+								"hp":1
 							}
 						],
 						"ver":"1.0"
@@ -1653,10 +1655,10 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 				}`),
 			}}},
 			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,,,,%7B%22k1%22%3A%22v1%22%7D",
+			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com",
 		},
 		{
-			name: "nodes_with_multiple_supply_chain_nodes",
+			name: "schain_with_multiple_nodes",
 			fields: fields{&openrtb2.BidRequest{
 				Source: &openrtb2.Source{
 					Ext: []byte(`{
@@ -1691,6 +1693,26 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 
 		{
 			name: "nodes_with_missing_optional_parameters",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!exchange1.com,1234&abcd,1,,,",
+		},
+		{
+			name: "nodes_with_extension_and_missing_optional_parameters",
 			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
 				Ext: []byte(`{
 					"schain":{
