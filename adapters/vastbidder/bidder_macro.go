@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -287,51 +288,62 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 }
 
 func (tag *BidderMacro) MacroSchain(key string) string {
-	if tag.Request.Source == nil || tag.Request.Source.SChain == nil {
+	if tag.Request.Source == nil || tag.Request.Source.Ext == nil {
 		return ""
 	}
 
-	serializedSchain := tag.Request.Source.SChain.Ver + "," + fmt.Sprintf("%v", tag.Request.Source.SChain.Complete) + "!"
+	schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, "schain")
+
+	if err != nil {
+		return ""
+	}
+	var schainObj openrtb2.SupplyChain
+
+	err = json.Unmarshal(schain, &schainObj)
+
+	serializedSchain := schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete)
 
 	//	loopUpOrder := []string{"ASI", "sid", "hp", "rid", "name", "domain", "ext"}
 
-	// there are multiple node -> for loop
-	// for each node look for lookUpOrder key
-	for _, node := range tag.Request.Source.SChain.Nodes {
+	cnt := 0
+	l := len(schainObj.Nodes)
 
+	for _, node := range schainObj.Nodes {
+		if cnt < l {
+			serializedSchain += "!"
+		}
 		if node.ASI != "" {
-			serializedSchain += node.ASI + ","
+			serializedSchain += url.PathEscape(node.ASI) + ","
 		} else {
 			serializedSchain += ","
 		}
 		if node.SID != "" {
-			serializedSchain += node.SID + ","
+			serializedSchain += url.PathEscape(node.SID) + ","
 		} else {
 			serializedSchain += ","
 		}
 		if node.HP != nil {
-			serializedSchain += fmt.Sprintf("%v", *node.HP) + ","
+			serializedSchain += url.PathEscape(fmt.Sprintf("%v", *node.HP)) + ","
 		} else {
 			serializedSchain += ","
 		}
 		if node.RID != "" {
-			serializedSchain += node.RID + ","
+			serializedSchain += url.PathEscape(node.RID) + ","
 		} else {
 			serializedSchain += ","
 		}
 		if node.Name != "" {
-			serializedSchain += node.Name + ","
+			serializedSchain += url.PathEscape(node.Name) + ","
 		} else {
 			serializedSchain += ","
 		}
 		if node.Domain != "" {
-			serializedSchain += node.Domain
-		} else {
+			serializedSchain += url.PathEscape(node.Domain)
+		} else if node.Ext != nil {
 			serializedSchain += ","
+			serializedSchain += url.QueryEscape(string(node.Ext)) // PathEscape() does not encode the : , & and to check
 		}
-		if node.Ext != nil {
-			// How we can convert this ??
-		}
+
 	}
 
 	return serializedSchain
