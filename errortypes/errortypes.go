@@ -183,8 +183,7 @@ func (err *MalformedAcct) Severity() Severity {
 	return SeverityFatal
 }
 
-// Warning is a generic non-fatal error. Throughout the codebase, an error can
-// only be a warning if it's of the type defined below
+// Warning is a generic non-fatal error.
 type Warning struct {
 	Message     string
 	WarningCode int

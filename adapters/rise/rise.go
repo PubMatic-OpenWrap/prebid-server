@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -27,9 +26,9 @@ func Builder(_ openrtb_ext.BidderName, config config.Adapter, _ config.Server) (
 
 // MakeRequests prepares the HTTP requests which should be made to fetch bids.
 func (a *adapter) MakeRequests(openRTBRequest *openrtb2.BidRequest, _ *adapters.ExtraRequestInfo) (requestsToBidder []*adapters.RequestData, errs []error) {
-	org, err := extractOrg(openRTBRequest)
+	publisherID, err := extractPublisherID(openRTBRequest)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("extractOrg: %w", err))
+		errs = append(errs, fmt.Errorf("extractPublisherID: %w", err))
 		return nil, errs
 	}
 
@@ -44,7 +43,7 @@ func (a *adapter) MakeRequests(openRTBRequest *openrtb2.BidRequest, _ *adapters.
 
 	return append(requestsToBidder, &adapters.RequestData{
 		Method:  http.MethodPost,
-		Uri:     a.endpointURL + "?publisher_id=" + org,
+		Uri:     a.endpointURL + "?publisher_id=" + publisherID,
 		Body:    openRTBRequestJSON,
 		Headers: headers,
 	}), nil
@@ -88,7 +87,7 @@ func (a *adapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData
 	return bidResponse, errs
 }
 
-func extractOrg(openRTBRequest *openrtb2.BidRequest) (string, error) {
+func extractPublisherID(openRTBRequest *openrtb2.BidRequest) (string, error) {
 	var err error
 	for _, imp := range openRTBRequest.Imp {
 		var bidderExt adapters.ExtImpBidder
@@ -101,15 +100,12 @@ func extractOrg(openRTBRequest *openrtb2.BidRequest) (string, error) {
 			return "", fmt.Errorf("unmarshal ImpExtRise: %w", err)
 		}
 
-		if impExt.Org != "" {
-			return strings.TrimSpace(impExt.Org), nil
-		}
 		if impExt.PublisherID != "" {
 			return strings.TrimSpace(impExt.PublisherID), nil
 		}
 	}
 
-	return "", errors.New("no org or publisher_id supplied")
+	return "", errors.New("no publisherID supplied")
 }
 
 func getMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {

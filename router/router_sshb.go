@@ -47,7 +47,6 @@ var (
 	g_tcf2CfgBuilder      gdpr.TCF2ConfigBuilder
 	g_planBuilder         *hooks.ExecutionPlanBuilder
 	g_currencyConversions currency.Conversions
-	g_tmaxAdjustments     *exchange.TmaxAdjustmentsPreprocessed
 )
 
 func GetCacheClient() *pbc.Client {
@@ -73,7 +72,7 @@ func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
 
 // OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
 func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
-	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher, *g_planBuilder, g_tmaxAdjustments)
+	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher, *g_planBuilder)
 	if err != nil {
 		return err
 	}
@@ -92,7 +91,7 @@ func GetPBSCurrencyConversion(from, to string, value float64) (float64, error) {
 
 // VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
 func VideoAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
-	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(*g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_videoFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_planBuilder, g_tmaxAdjustments)
+	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(*g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_videoFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_planBuilder)
 	if err != nil {
 		return err
 	}

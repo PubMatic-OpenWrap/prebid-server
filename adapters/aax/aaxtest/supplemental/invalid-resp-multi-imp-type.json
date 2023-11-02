@@ -141,7 +141,7 @@
             }
         }
     ],
-    "expectedBidResponses": [{"currency":"USD","bids":[]}],
+    "expectedBidResponses": [],
     "expectedMakeBidsErrors": [
         {
             "value": "unable to fetch mediaType in multi-format: test-imp-id",

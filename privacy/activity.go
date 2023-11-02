@@ -1,7 +1,6 @@
 package privacy
 
-// Activity defines Prebid Server actions which can be controlled directly
-// by the publisher or via privacy policies.
+// Activity defines privileges which can be controlled directly by the publisher or via privacy policies.
 type Activity int
 
 const (
@@ -11,8 +10,7 @@ const (
 	ActivityReportAnalytics
 	ActivityTransmitUserFPD
 	ActivityTransmitPreciseGeo
-	ActivityTransmitUniqueRequestIDs
-	ActivityTransmitTIDs
+	ActivityTransmitUniqueRequestIds
 )
 
 func (a Activity) String() string {
@@ -29,10 +27,8 @@ func (a Activity) String() string {
 		return "transmitUfpd"
 	case ActivityTransmitPreciseGeo:
 		return "transmitPreciseGeo"
-	case ActivityTransmitUniqueRequestIDs:
+	case ActivityTransmitUniqueRequestIds:
 		return "transmitUniqueRequestIds"
-	case ActivityTransmitTIDs:
-		return "transmitTid"
 	}
 
 	return ""

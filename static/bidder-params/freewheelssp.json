@@ -6,7 +6,7 @@
 
   "properties": {
     "zoneId": {
-      "type": ["integer", "string"],
+      "type": "integer",
       "description": "Zone ID"
     }
   },

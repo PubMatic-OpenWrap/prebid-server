@@ -123,7 +123,6 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeBidsErrors": [
     {
       "value": "Failed to find banner/native impression \"incorrect-impression-id\" ",

@@ -65,7 +65,7 @@
   },
   "outputRequestData": {
     "app": {
-      "id": "apnAppId",
+      "id": "reqAppId",
       "publisher": {
         "id": "1"
       },
@@ -89,6 +89,7 @@
       "ext": {
         "testAppExt": 123,
         "data": {
+          "id": "apnAppId",
           "moreFpd": {
             "fpd": 123
           },

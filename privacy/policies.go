@@ -1,6 +1,16 @@
 package privacy
 
-// Policies contains privacy signals and consent for non-OpenRTB activities.
+import (
+	"github.com/prebid/prebid-server/privacy/ccpa"
+	"github.com/prebid/prebid-server/privacy/gdpr"
+	"github.com/prebid/prebid-server/privacy/gpp"
+	"github.com/prebid/prebid-server/privacy/lmt"
+)
+
+// Policies represents the privacy regulations for an OpenRTB bid request.
 type Policies struct {
-	GPPSID []int8
+	CCPA ccpa.Policy
+	GDPR gdpr.Policy
+	LMT  lmt.Policy
+	GPP  gpp.Policy
 }

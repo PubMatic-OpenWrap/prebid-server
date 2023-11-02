@@ -53,7 +53,7 @@ type hookRepository struct {
 	auctionResponseHooks         map[string]hookstage.AuctionResponse
 }
 
-func (r *hookRepository) GetEntrypointHook(id string) (hookstage.Entrypoint, bool) {
+func (r *hookRepository) GetEntrypointHook(id string) (h hookstage.Entrypoint, ok bool) {
 	return getHook(r.entrypointHooks, id)
 }
 

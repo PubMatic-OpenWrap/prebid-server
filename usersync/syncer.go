@@ -11,13 +11,14 @@ import (
 	validator "github.com/asaskevich/govalidator"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/macros"
+	"github.com/prebid/prebid-server/privacy"
 )
 
 var (
-	ErrSyncerEndpointRequired = errors.New("at least one endpoint (iframe and/or redirect) is required")
-	ErrSyncerKeyRequired      = errors.New("key is required")
-	errNoSyncTypesProvided    = errors.New("no sync types provided")
-	errNoSyncTypesSupported   = errors.New("no sync types supported")
+	errNoSyncTypesProvided        = errors.New("no sync types provided")
+	errNoSyncTypesSupported       = errors.New("no sync types supported")
+	errDefaultTypeMissingIFrame   = errors.New("default is set to iframe but no iframe endpoint is configured")
+	errDefaultTypeMissingRedirect = errors.New("default is set to redirect but no redirect endpoint is configured")
 )
 
 // Syncer represents the user sync configuration for a bidder or a shared set of bidders.
@@ -34,7 +35,7 @@ type Syncer interface {
 
 	// GetSync returns a user sync for the user's device to perform, or an error if the none of the
 	// sync types are supported or if macro substitution fails.
-	GetSync(syncTypes []SyncType, userSyncMacros macros.UserSyncPrivacy) (Sync, error)
+	GetSync(syncTypes []SyncType, privacyPolicies privacy.Policies) (Sync, error)
 }
 
 // Sync represents a user sync to be performed by the user's device.
@@ -57,9 +58,12 @@ const (
 	setuidSyncTypeRedirect = "i" // i = image response
 )
 
+var ErrSyncerEndpointRequired = errors.New("at least one endpoint (iframe and/or redirect) is required")
+var ErrSyncerKeyRequired = errors.New("key is required")
+
 // NewSyncer creates a new Syncer from the provided configuration, or return an error if macro substition
 // fails or an endpoint url is invalid.
-func NewSyncer(hostConfig config.UserSync, syncerConfig config.Syncer, bidder string) (Syncer, error) {
+func NewSyncer(hostConfig config.UserSync, syncerConfig config.Syncer) (Syncer, error) {
 	if syncerConfig.Key == "" {
 		return nil, ErrSyncerKeyRequired
 	}
@@ -76,7 +80,7 @@ func NewSyncer(hostConfig config.UserSync, syncerConfig config.Syncer, bidder st
 
 	if syncerConfig.IFrame != nil {
 		var err error
-		syncer.iframe, err = buildTemplate(bidder, setuidSyncTypeIFrame, hostConfig, syncerConfig.ExternalURL, *syncerConfig.IFrame)
+		syncer.iframe, err = buildTemplate(syncerConfig.Key, setuidSyncTypeIFrame, hostConfig, syncerConfig.ExternalURL, *syncerConfig.IFrame)
 		if err != nil {
 			return nil, fmt.Errorf("iframe %v", err)
 		}
@@ -87,7 +91,7 @@ func NewSyncer(hostConfig config.UserSync, syncerConfig config.Syncer, bidder st
 
 	if syncerConfig.Redirect != nil {
 		var err error
-		syncer.redirect, err = buildTemplate(bidder, setuidSyncTypeRedirect, hostConfig, syncerConfig.ExternalURL, *syncerConfig.Redirect)
+		syncer.redirect, err = buildTemplate(syncerConfig.Key, setuidSyncTypeRedirect, hostConfig, syncerConfig.ExternalURL, *syncerConfig.Redirect)
 		if err != nil {
 			return nil, fmt.Errorf("redirect %v", err)
 		}
@@ -110,14 +114,13 @@ func resolveDefaultSyncType(syncerConfig config.Syncer) SyncType {
 var (
 	macroRegexExternalHost = regexp.MustCompile(`{{\s*\.ExternalURL\s*}}`)
 	macroRegexSyncerKey    = regexp.MustCompile(`{{\s*\.SyncerKey\s*}}`)
-	macroRegexBidderName   = regexp.MustCompile(`{{\s*\.BidderName\s*}}`)
 	macroRegexSyncType     = regexp.MustCompile(`{{\s*\.SyncType\s*}}`)
 	macroRegexUserMacro    = regexp.MustCompile(`{{\s*\.UserMacro\s*}}`)
 	macroRegexRedirect     = regexp.MustCompile(`{{\s*\.RedirectURL\s*}}`)
 	macroRegex             = regexp.MustCompile(`{{\s*\..*?\s*}}`)
 )
 
-func buildTemplate(bidderName, syncTypeValue string, hostConfig config.UserSync, syncerExternalURL string, syncerEndpoint config.SyncerEndpoint) (*template.Template, error) {
+func buildTemplate(key, syncTypeValue string, hostConfig config.UserSync, syncerExternalURL string, syncerEndpoint config.SyncerEndpoint) (*template.Template, error) {
 	redirectTemplate := syncerEndpoint.RedirectURL
 	if redirectTemplate == "" {
 		redirectTemplate = hostConfig.RedirectURL
@@ -125,8 +128,7 @@ func buildTemplate(bidderName, syncTypeValue string, hostConfig config.UserSync,
 
 	externalURL := chooseExternalURL(syncerEndpoint.ExternalURL, syncerExternalURL, hostConfig.ExternalURL)
 
-	redirectURL := macroRegexSyncerKey.ReplaceAllLiteralString(redirectTemplate, bidderName)
-	redirectURL = macroRegexBidderName.ReplaceAllLiteralString(redirectURL, bidderName)
+	redirectURL := macroRegexSyncerKey.ReplaceAllLiteralString(redirectTemplate, key)
 	redirectURL = macroRegexSyncType.ReplaceAllLiteralString(redirectURL, syncTypeValue)
 	redirectURL = macroRegexUserMacro.ReplaceAllLiteralString(redirectURL, syncerEndpoint.UserMacro)
 	redirectURL = macroRegexExternalHost.ReplaceAllLiteralString(redirectURL, externalURL)
@@ -134,7 +136,7 @@ func buildTemplate(bidderName, syncTypeValue string, hostConfig config.UserSync,
 
 	url := macroRegexRedirect.ReplaceAllString(syncerEndpoint.URL, redirectURL)
 
-	templateName := strings.ToLower(bidderName) + "_usersync_url"
+	templateName := strings.ToLower(key) + "_usersync_url"
 	return template.New(templateName).Parse(url)
 }
 
@@ -166,7 +168,7 @@ func escapeTemplate(x string) string {
 	return escaped.String()
 }
 
-var templateTestValues = macros.UserSyncPrivacy{
+var templateTestValues = macros.UserSyncTemplateParams{
 	GDPR:        "anyGDPR",
 	GDPRConsent: "anyGDPRConsent",
 	USPrivacy:   "anyCCPAConsent",
@@ -215,7 +217,7 @@ func (s standardSyncer) filterSupportedSyncTypes(syncTypes []SyncType) []SyncTyp
 	return supported
 }
 
-func (s standardSyncer) GetSync(syncTypes []SyncType, userSyncMacros macros.UserSyncPrivacy) (Sync, error) {
+func (s standardSyncer) GetSync(syncTypes []SyncType, privacyPolicies privacy.Policies) (Sync, error) {
 	syncType, err := s.chooseSyncType(syncTypes)
 	if err != nil {
 		return Sync{}, err
@@ -223,7 +225,13 @@ func (s standardSyncer) GetSync(syncTypes []SyncType, userSyncMacros macros.User
 
 	syncTemplate := s.chooseTemplate(syncType)
 
-	url, err := macros.ResolveMacros(syncTemplate, userSyncMacros)
+	url, err := macros.ResolveMacros(syncTemplate, macros.UserSyncTemplateParams{
+		GDPR:        privacyPolicies.GDPR.Signal,
+		GDPRConsent: privacyPolicies.GDPR.Consent,
+		USPrivacy:   privacyPolicies.CCPA.Consent,
+		GPP:         privacyPolicies.GPP.Consent,
+		GPPSID:      privacyPolicies.GPP.RawSID,
+	})
 	if err != nil {
 		return Sync{}, err
 	}

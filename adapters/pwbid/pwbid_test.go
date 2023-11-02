@@ -10,7 +10,7 @@ import (
 
 func TestJsonSamples(t *testing.T) {
 	bidder, buildErr := Builder(openrtb_ext.BidderPWBid, config.Adapter{
-		Endpoint: "https://bidder.east2.pubwise.io/bid/pubwisedirect"},
+		Endpoint: "https://bid.pubwise.io/prebid"},
 		config.Server{ExternalUrl: "http://hosturl.com", GvlID: 842, DataCenter: "2"})
 
 	if buildErr != nil {

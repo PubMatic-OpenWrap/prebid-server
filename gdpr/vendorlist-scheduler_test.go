@@ -146,33 +146,17 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 			assert.False(t, tt.fields.scheduler.isStarted, "VendorListScheduler should not be already running")
 
 			tt.fields.scheduler.timeout = 2 * time.Minute
-			mockCacheSave := func(uint16, uint16, api.VendorList) {}
-			cacheSave, cacheLoad = newVendorListCache() // initialise global func variables
 
+			mockCacheSave := func(uint16, api.VendorList) {}
+			latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(0), mockCacheSave)
+
+			cacheSave, cacheLoad = newVendorListCache()
 			tt.fields.scheduler.runLoadCache()
 
-			versions := [2]struct {
-				specVersion      uint16
-				firstListVersion uint16
-			}{
-				{
-					specVersion:      2,
-					firstListVersion: 2,
-				},
-				{
-					specVersion:      3,
-					firstListVersion: 1,
-				},
-			}
-			for _, v := range versions {
-				// saveOne uses mockCacheSave hence it will not save data into actual-cache
-				latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(v.specVersion, 0), mockCacheSave)
-				assert.NotEqual(t, latestVersion, 0, "saveOne function returned 0 for version-[%+v]", v)
-				for i := latestVersion; i >= v.firstListVersion; i-- {
-					// Check if version is present in the cache
-					list := cacheLoad(v.specVersion, i)
-					assert.NotNilf(t, list, "vendor-list file should be present in cache for versions-[%+v]", v)
-				}
+			firstVersionToLoad := uint16(2)
+			for i := latestVersion; i >= firstVersionToLoad; i-- {
+				list := cacheLoad(i)
+				assert.NotNil(t, list, "vendor-list file should be present in cache")
 			}
 		})
 	}
@@ -195,11 +179,9 @@ func Benchmark_vendorListScheduler_runLoadCache(b *testing.B) {
 func Test_vendorListScheduler_cacheFuncs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(mockServer(serverSettings{
 		vendorListLatestVersion: 1,
-		vendorLists: map[int]map[int]string{
-			2: {
-				1: vendorList1,
-				2: vendorList2,
-			},
+		vendorLists: map[int]string{
+			1: vendorList1,
+			2: vendorList2,
 		},
 	})))
 	defer server.Close()

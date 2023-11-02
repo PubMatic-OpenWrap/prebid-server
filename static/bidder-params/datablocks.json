@@ -9,7 +9,11 @@
         "type": "integer",
         "minimum": 1,
         "description": "Website Source Id"
+      },
+      "host": {
+        "type": "string",
+        "description": "Network Host to request from"
       }
   },
-  "required": ["sourceId"]
+  "required": ["host", "sourceId"]
 }

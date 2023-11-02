@@ -140,7 +140,6 @@ func (a *ImprovedigitalAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(seatBid.Bid))
-	bidResponse.Currency = bidResp.Cur
 
 	for i := range seatBid.Bid {
 		bid := seatBid.Bid[i]

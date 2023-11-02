@@ -60,7 +60,7 @@
         }
       }
     ],
-    "expectedBidResponses": [{"currency":"USD","bids":[]}],
+    "expectedBidResponses": [],
     "expectedMakeBidsErrors": [
       {
       "value": "Failed to find impression \"XYZ\"",

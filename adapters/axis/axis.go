@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"text/template"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/macros"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 type adapter struct {
-	endpoint string
+	endpoint *template.Template
 }
 
 type reqBodyExt struct {
@@ -21,8 +23,13 @@ type reqBodyExt struct {
 }
 
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
+	template, err := template.New("endpointTemplate").Parse(config.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse endpoint url template: %v", err)
+	}
+
 	bidder := &adapter{
-		endpoint: config.Endpoint,
+		endpoint: template,
 	}
 
 	return bidder, nil
@@ -42,6 +49,11 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 			continue
 		}
 
+		url, err := a.buildEndpointURL(&bidderExt)
+		if err != nil {
+			return nil, []error{err}
+		}
+
 		extJson, err := json.Marshal(bidderExt)
 		if err != nil {
 			return nil, []error{err}
@@ -49,7 +61,7 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 
 		request.Imp[0].Ext = extJson
 
-		adapterReq, err := a.buildRequest(request)
+		adapterReq, err := buildRequest(request, url)
 		if err != nil {
 			return nil, []error{err}
 		}
@@ -62,7 +74,16 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.E
 	return adapterRequests, nil
 }
 
-func (a *adapter) buildRequest(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
+func (a *adapter) buildEndpointURL(bidderExt *reqBodyExt) (string, error) {
+	endpointParams := macros.EndpointTemplateParams{
+		AccountID: bidderExt.AxisBidderExt.Integration,
+		SourceId:  bidderExt.AxisBidderExt.Token,
+	}
+
+	return macros.ResolveMacros(a.endpoint, endpointParams)
+}
+
+func buildRequest(request *openrtb2.BidRequest, url string) (*adapters.RequestData, error) {
 	reqJSON, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -74,7 +95,7 @@ func (a *adapter) buildRequest(request *openrtb2.BidRequest) (*adapters.RequestD
 
 	return &adapters.RequestData{
 		Method:  "POST",
-		Uri:     a.endpoint,
+		Uri:     url,
 		Body:    reqJSON,
 		Headers: headers,
 	}, nil

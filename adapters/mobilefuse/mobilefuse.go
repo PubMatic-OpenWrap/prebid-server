@@ -27,10 +27,6 @@ type BidExt struct {
 	Mf ExtMf `json:"mf"`
 }
 
-type ExtSkadn struct {
-	Skadn json.RawMessage `json:"skadn"`
-}
-
 // Builder builds a new instance of the MobileFuse adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
 	template, err := template.New("endpointTemplate").Parse(config.Endpoint)
@@ -83,7 +79,7 @@ func (adapter *MobileFuseAdapter) MakeBids(incomingRequest *openrtb2.BidRequest,
 
 	for _, seatbid := range incomingBidResponse.SeatBid {
 		for i := range seatbid.Bid {
-			bidType := getBidType(seatbid.Bid[i])
+			bidType := adapter.getBidType(seatbid.Bid[i])
 			seatbid.Bid[i].Ext = nil
 
 			outgoingBidResponse.Bids = append(outgoingBidResponse.Bids, &adapters.TypedBid{
@@ -99,18 +95,22 @@ func (adapter *MobileFuseAdapter) MakeBids(incomingRequest *openrtb2.BidRequest,
 func (adapter *MobileFuseAdapter) makeRequest(bidRequest *openrtb2.BidRequest) (*adapters.RequestData, []error) {
 	var errs []error
 
-	mobileFuseExtension, errs := getFirstMobileFuseExtension(bidRequest)
+	mobileFuseExtension, errs := adapter.getFirstMobileFuseExtension(bidRequest)
+
 	if errs != nil {
 		return nil, errs
 	}
 
 	endpoint, err := adapter.getEndpoint(mobileFuseExtension)
+
 	if err != nil {
 		return nil, append(errs, err)
 	}
 
-	validImps, err := getValidImps(bidRequest, mobileFuseExtension)
-	if err != nil {
+	validImps := adapter.getValidImps(bidRequest, mobileFuseExtension)
+
+	if len(validImps) == 0 {
+		err := fmt.Errorf("No valid imps")
 		errs = append(errs, err)
 		return nil, errs
 	}
@@ -118,6 +118,7 @@ func (adapter *MobileFuseAdapter) makeRequest(bidRequest *openrtb2.BidRequest) (
 	mobileFuseBidRequest := *bidRequest
 	mobileFuseBidRequest.Imp = validImps
 	body, err := json.Marshal(mobileFuseBidRequest)
+
 	if err != nil {
 		return nil, append(errs, err)
 	}
@@ -134,7 +135,7 @@ func (adapter *MobileFuseAdapter) makeRequest(bidRequest *openrtb2.BidRequest) (
 	}, errs
 }
 
-func getFirstMobileFuseExtension(request *openrtb2.BidRequest) (*openrtb_ext.ExtImpMobileFuse, []error) {
+func (adapter *MobileFuseAdapter) getFirstMobileFuseExtension(request *openrtb2.BidRequest) (*openrtb_ext.ExtImpMobileFuse, []error) {
 	var mobileFuseImpExtension openrtb_ext.ExtImpMobileFuse
 	var errs []error
 
@@ -161,23 +162,13 @@ func getFirstMobileFuseExtension(request *openrtb2.BidRequest) (*openrtb_ext.Ext
 	return &mobileFuseImpExtension, errs
 }
 
-func getMobileFuseExtensionForImp(imp *openrtb2.Imp, mobileFuseImpExtension *openrtb_ext.ExtImpMobileFuse) error {
-	var bidder_imp_extension adapters.ExtImpBidder
-
-	err := json.Unmarshal(imp.Ext, &bidder_imp_extension)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(bidder_imp_extension.Bidder, &mobileFuseImpExtension)
-}
-
 func (adapter *MobileFuseAdapter) getEndpoint(ext *openrtb_ext.ExtImpMobileFuse) (string, error) {
 	publisher_id := strconv.Itoa(ext.PublisherId)
 
-	url, err := macros.ResolveMacros(adapter.EndpointTemplate, macros.EndpointTemplateParams{PublisherID: publisher_id})
-	if err != nil {
-		return "", err
+	url, errs := macros.ResolveMacros(adapter.EndpointTemplate, macros.EndpointTemplateParams{PublisherID: publisher_id})
+
+	if errs != nil {
+		return "", errs
 	}
 
 	if ext.TagidSrc == "ext" {
@@ -187,45 +178,23 @@ func (adapter *MobileFuseAdapter) getEndpoint(ext *openrtb_ext.ExtImpMobileFuse)
 	return url, nil
 }
 
-func getValidImps(bidRequest *openrtb2.BidRequest, ext *openrtb_ext.ExtImpMobileFuse) ([]openrtb2.Imp, error) {
+func (adapter *MobileFuseAdapter) getValidImps(bidRequest *openrtb2.BidRequest, ext *openrtb_ext.ExtImpMobileFuse) []openrtb2.Imp {
 	var validImps []openrtb2.Imp
 
 	for _, imp := range bidRequest.Imp {
 		if imp.Banner != nil || imp.Video != nil || imp.Native != nil {
-			err := getMobileFuseExtensionForImp(&imp, ext)
-			if err != nil {
-				return nil, err
-			}
-
 			imp.TagID = strconv.Itoa(ext.PlacementId)
-
-			var extSkadn ExtSkadn
-			err = json.Unmarshal(imp.Ext, &extSkadn)
-			if err != nil {
-				return nil, err
-			}
-
-			if extSkadn.Skadn != nil {
-				imp.Ext, err = json.Marshal(map[string]json.RawMessage{"skadn": extSkadn.Skadn})
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				imp.Ext = nil
-			}
-
+			imp.Ext = nil
 			validImps = append(validImps, imp)
+
+			break
 		}
 	}
 
-	if len(validImps) == 0 {
-		return nil, fmt.Errorf("No valid imps")
-	}
-
-	return validImps, nil
+	return validImps
 }
 
-func getBidType(bid openrtb2.Bid) openrtb_ext.BidType {
+func (adapter *MobileFuseAdapter) getBidType(bid openrtb2.Bid) openrtb_ext.BidType {
 	if bid.Ext != nil {
 		var bidExt BidExt
 		err := json.Unmarshal(bid.Ext, &bidExt)

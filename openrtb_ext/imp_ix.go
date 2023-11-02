@@ -4,5 +4,4 @@ package openrtb_ext
 type ExtImpIx struct {
 	SiteId string `json:"siteId"`
 	Size   []int  `json:"size"`
-	Sid    string `json:"sid"`
 }

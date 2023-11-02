@@ -176,6 +176,12 @@ type rubiconUserExtEidExt struct {
 	Segments []string `json:"segments,omitempty"`
 }
 
+// defines the contract for bidrequest.user.ext.eids[i].uids[j].ext
+type rubiconUserExtEidUidExt struct {
+	RtiPartner string `json:"rtiPartner,omitempty"`
+	Stype      string `json:"stype"`
+}
+
 type mappedRubiconUidsParam struct {
 	segments    []string
 	liverampIdl string
@@ -934,7 +940,15 @@ func extractUserBuyerUID(eids []openrtb2.EID) string {
 		}
 
 		for _, uid := range eid.UIDs {
-			return uid.ID
+			var uidExt rubiconUserExtEidUidExt
+			err := json.Unmarshal(uid.Ext, &uidExt)
+			if err != nil {
+				continue
+			}
+
+			if uidExt.Stype == "ppuid" || uidExt.Stype == "other" {
+				return uid.ID
+			}
 		}
 	}
 
@@ -1033,11 +1047,8 @@ func resolveNativeObject(native *openrtb2.Native, target map[string]interface{})
 		return nil, fmt.Errorf("Eventtrackers are not present or not of array type")
 	}
 
-	context := target["context"]
-	if context != nil {
-		if _, ok := context.(float64); !ok {
-			return nil, fmt.Errorf("Context is not of int type")
-		}
+	if _, ok := target["context"].(float64); !ok {
+		return nil, fmt.Errorf("Context is not present or not of int type")
 	}
 
 	if _, ok := target["plcmttype"].(float64); !ok {
