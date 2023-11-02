@@ -1,14 +1,12 @@
 package adbuttler
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -32,17 +30,6 @@ type AdButlerResponse struct {
 	Status string         `json:"status,omitempty"`
 	Code   int32          `json:"code,omitempty"`
 	Bids   []*AdButlerBid `json:"items,omitempty"`
-}
-
-func AddDefaultFields(bid *openrtb2.Bid) {
-	if bid != nil {
-		bid.CrID = "DefaultCRID"
-	}
-}
-
-func GenerateUniqueBidID() string {
-	id := uuid.New()
-	return id.String()
 }
 
 func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
@@ -109,20 +96,15 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 
 }
 
-func EncodeURl(url string) string {
-	str := base64.StdEncoding.EncodeToString([]byte(url))
-	return str
-}
-
 func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerResponse, requestImpID string) *adapters.BidderResponse {
 
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(adButlerResp.Bids))
 	var commerceExt *openrtb_ext.ExtImpCommerce
-	var adbutlerID, zoneID, adbUID string
+	var adbutlerID, zoneID, adbUID, keyToRemove string
 	var configValueMap = make(map[string]string)
 
 	if len(request.Imp) > 0 {
-		commerceExt, _ = a.getImpressionExt(&(request.Imp[0]))
+		commerceExt, _ = adapters.GetImpressionExtComm(&(request.Imp[0]))
 		for _, obj := range commerceExt.Bidder.CustomConfig {
 			configValueMap[obj.Key] = obj.Value
 		}
@@ -142,7 +124,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 
 	for index, adButlerBid := range adButlerResp.Bids {
 
-		bidID := GenerateUniqueBidID()
+		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := requestImpID + "_" + strconv.Itoa(index+1)
 		bidPrice := adButlerBid.CPCBid
 		campaignID := strconv.FormatInt(adButlerBid.CampaignID, 10)
@@ -153,32 +135,39 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
 		if ok {
 			productid = adButlerBid.ProductData[val]
+			keyToRemove = val
 		}
 		if productid == "" {
 			productid = adButlerBid.ProductData[DEFAULT_PRODUCTID]
+			keyToRemove = DEFAULT_PRODUCTID
 		}
+
+		productDetails := make(map[string]interface{})
+		for key, value := range adButlerBid.ProductData {
+			productDetails[key] = value
+		}
+
+		// Delete the "Product Id" key if present
+		delete(productDetails, keyToRemove)
 
 		var impressionUrl, clickUrl, conversionUrl string
 		for _, beacon := range adButlerBid.Beacons {
 			switch beacon.Type {
 			case BEACONTYPE_IMP:
-				if beacon.TrackingUrl != "" {
-					impressionUrl = IMP_KEY + EncodeURl(beacon.TrackingUrl)
-				}
+				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl)
 			case BEACONTYPE_CLICK:
-				if beacon.TrackingUrl != "" {
-					clickUrl = CLICK_KEY + EncodeURl(beacon.TrackingUrl)
-				}
+				clickUrl = CLICK_KEY + adapters.EncodeURL(beacon.TrackingUrl)
 			}
 		}
 
 		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
 
 		bidExt := &openrtb_ext.ExtBidCommerce{
-			ProductId:     productid,
-			ClickUrl:      clickUrl,
-			ClickPrice:    clickPrice,
-			ConversionUrl: conversionUrl,
+			ProductId:      productid,
+			ClickUrl:       clickUrl,
+			ClickPrice:     clickPrice,
+			ConversionUrl:  conversionUrl,
+			ProductDetails: productDetails,
 		}
 
 		bid := &openrtb2.Bid{
@@ -193,7 +182,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			continue
 		}
 
-		AddDefaultFields(bid)
+		adapters.AddDefaultFieldsComm(bid)
 
 		bidExtJSON, err1 := json.Marshal(bidExt)
 		if nil == err1 {
@@ -223,18 +212,19 @@ func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2
 }
 
 func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string {
-	/*var hostname string
-		url, err := url.Parse(clickurl)
-	    if err == nil {
-			hostname = url.Hostname()
-		 }
+	/*
+		var hostname string
+			url, err := url.Parse(clickurl)
+		    if err == nil {
+				hostname = url.Hostname()
+			 }
 
-		conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)*/
+			conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)
+	*/
 	conversionUrl := strings.Replace(CONVERSION_URL, CONV_ADBUTLERID, adbutlerID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ZONEID, zoneID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ADBUID, adbUID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_IDENTIFIER, productID, 1)
 
 	return conversionUrl
-
 }
