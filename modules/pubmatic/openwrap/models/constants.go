@@ -478,3 +478,9 @@ const (
 	Success = "success"
 	Failure = "failure"
 )
+
+// constants for imp.Ext.Data fields
+const (
+	Pbadslot    = "pbadslot"
+	GamAdServer = "gam"
+)

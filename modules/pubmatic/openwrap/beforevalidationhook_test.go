@@ -2263,3 +2263,174 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSlotName(t *testing.T) {
+	type args struct {
+		tagId, pbadslot string
+		impExt          *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Slot_name_from_gpid",
+			args: args{
+				tagId: "/Some/Id",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+				},
+			},
+			want: "some-gpid",
+		},
+		{
+			name: "Slot_name_from_tagid",
+			args: args{
+				tagId: "/Some/TagId",
+				impExt: &models.ImpExtension{
+					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+				},
+			},
+			want: "/Some/TagId",
+		},
+		{
+			name: "Slot_name_from_pbadslot",
+			args: args{
+				tagId:    "",
+				pbadslot: "/some/pbadslot",
+				impExt: &models.ImpExtension{
+					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+				},
+			},
+			want: "/some/pbadslot",
+		},
+		{
+			name: "Slot_name_from_stored_request_id",
+			args: args{
+				tagId: "",
+				impExt: &models.ImpExtension{
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "stored-req-id",
+		},
+		{
+			name: "imp_ext_nil_slot_name_from_tag_id",
+			args: args{
+				tagId:  "/Tag/Id",
+				impExt: nil,
+			},
+			want: "/Tag/Id",
+		},
+		{
+			name: "empty_slot_name",
+			args: args{
+				tagId:  "",
+				impExt: &models.ImpExtension{},
+			},
+			want: "",
+		},
+		{
+			name: "all_level_information_is_present_slot_name_picked_by_preference",
+			args: args{
+				tagId:    "/Tag/Id",
+				pbadslot: "/some/pbadslot",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "some-gpid",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSlotName(tt.args.tagId, tt.args.pbadslot, tt.args.impExt); got != tt.want {
+				t.Errorf("getSlotName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetAdunitName(t *testing.T) {
+	type args struct {
+		tagId, pbAdslot string
+		impExtData      json.RawMessage
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "adunit_from_adserver_slot",
+			args: args{
+				tagId:      "/Tag/Id",
+				pbAdslot:   "/some/pbadslot",
+				impExtData: json.RawMessage(`{"adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
+			},
+			want: "/GAM/Unit",
+		},
+		{
+			name: "adunit_from_pbadslot",
+			args: args{
+				tagId:      "/Tag/Id",
+				pbAdslot:   "/some/pbadslot",
+				impExtData: json.RawMessage(`{"adserver":{"name":"gam"}}`),
+			},
+			want: "/some/pbadslot",
+		},
+		{
+			name: "adunit_from_TagId",
+			args: args{
+				tagId:      "/Tag/Id",
+				impExtData: json.RawMessage(`{"adserver":{"name":"gam"}}`),
+			},
+			want: "/Tag/Id",
+		},
+		// {
+		// 	name: "adunit_from_TagId_imp_ext_nil",
+		// 	args: args{
+		// 		tagId:  "/Tag/Id",
+		// 		impExt: nil,
+		// 	},
+		// 	want: "/Tag/Id",
+		// },
+		// {
+		// 	name: "adunit_from_TagId_imp_ext_nil",
+		// 	args: args{
+		// 		tagId:  "/Tag/Id",
+		// 		impExt: &openrtb.ImpExtension{},
+		// 	},
+		// 	want: "/Tag/Id",
+		// },
+		// {
+		// 	name: "all_level_information_is_present_adunit_name_picked_by_preference",
+		// 	args: args{
+		// 		tagId: "/Tag/Id",
+		// 		impExt: &openrtb.ImpExtension{
+		// 			GpId: "some-gpid",
+		// 			Data: json.RawMessage(`{"pbadslot":"/PB/Unit","adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
+		// 		},
+		// 	},
+		// 	want: "/GAM/Unit",
+		// },
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getAdunitName(tt.args.tagId, tt.args.pbAdslot, tt.args.impExtData); got != tt.want {
+				t.Errorf("getAdunit() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

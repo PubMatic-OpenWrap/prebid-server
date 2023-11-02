@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -311,6 +312,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Prebid.IsRewardedInventory = reward
 		}
 
+		// if imp.ext.data.pbadslot is absent then set it to tagId
+		impExtData := map[string]interface{}{}
+		var pbadslotstr string
+		_ = json.Unmarshal(impExt.Data, &impExtData)
+		pbadslot := impExtData[models.Pbadslot]
+		if pbadslot == nil {
+			impExtData[models.Pbadslot] = imp.TagID
+		} else {
+			pbadslotstr, _ = pbadslot.(string)
+			if len(pbadslotstr) == 0 {
+				impExtData[models.Pbadslot] = imp.TagID
+			}
+		}
+		impExt.Data, _ = json.Marshal(impExtData)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -335,6 +350,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				Bidders:           make(map[string]models.PartnerData),
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
+				SlotName:          getSlotName(imp.TagID, pbadslotstr, impExt),
+				AdUnitName:        getAdunitName(imp.TagID, pbadslotstr, impExt.Data),
 			}
 		}
 
@@ -660,6 +677,63 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Banner = nil
 		return
 	}
+}
+
+/*
+getSlotName will return slot name according to below priority
+ 1. imp.ext.gpid
+ 2. imp.tagid
+ 3. imp.ext.data.pbadslot
+ 4. imp.ext.prebid.storedrequest.id
+*/
+func getSlotName(tagId, pbadslot string, impExt *models.ImpExtension) string {
+	if impExt == nil {
+		return tagId
+	}
+
+	if len(impExt.GpId) > 0 {
+		return impExt.GpId
+	}
+
+	if len(tagId) > 0 {
+		return tagId
+	}
+
+	if len(pbadslot) > 0 {
+		return pbadslot
+	}
+
+	var storeReqId string
+	if impExt.Prebid.StoredRequest != nil {
+		storeReqId = impExt.Prebid.StoredRequest.ID
+	}
+
+	return storeReqId
+}
+
+/*
+getAdunitName will return adunit name according to below priority
+ 1. imp.ext.data.adserver.adslot if imp.ext.data.adserver.name == "gam"
+ 2. imp.ext.data.pbadslot
+ 3. imp.tagid
+*/
+func getAdunitName(tagId, pbAdslot string, impExtData json.RawMessage) string {
+	if impExtData == nil {
+		if len(pbAdslot) > 0 {
+			return pbAdslot
+		}
+		return tagId
+	}
+
+	if name, err := jsonparser.GetString(impExtData, "adserver", "name"); err == nil && name == models.GamAdServer {
+		if adslot, err := jsonparser.GetString(impExtData, "adserver", "adslot"); err == nil && adslot != "" {
+			return adslot
+		}
+	}
+	if len(pbAdslot) > 0 {
+		return pbAdslot
+	}
+	return tagId
 }
 
 func getDomainFromUrl(pageUrl string) string {
