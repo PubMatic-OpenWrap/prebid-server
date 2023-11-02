@@ -292,8 +292,8 @@ cloud.google.com/go/workflows v1.9.0/go.mod h1:ZGkj1aFIOd9c8Gerkjjq7OW7I5+l6cSvT
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 h1:VpgP7xuJadIUuKccphEpTJnWhS2jkQyMt6Y7pJCD7fY=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231012062530-95f4848c9fb7 h1:YD51mgFU5YJX6ufDBO19QIx/vX38uk7bxNhxYfqEytA=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231012062530-95f4848c9fb7/go.mod h1:dgTumQ6/KYeLbpWq3HVOaqkZos6Q0QGwZmQmEIhQ3To=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231102070946-3c5a3bc1dff5 h1:nK2YP3aS8+5dwc5cMJ8IxI0Sh7yfd858LKmcvwfkOUo=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231102070946-3c5a3bc1dff5/go.mod h1:dgTumQ6/KYeLbpWq3HVOaqkZos6Q0QGwZmQmEIhQ3To=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802 h1:1BDTz0u9nC3//pOCMdNH+CiXJVYJh5UQNCOBG7jbELc=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
