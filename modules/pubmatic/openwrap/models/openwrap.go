@@ -79,6 +79,7 @@ type RequestCtx struct {
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	Errors                 []error
 }
 
 type OwBid struct {

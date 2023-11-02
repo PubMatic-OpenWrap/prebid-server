@@ -195,6 +195,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			if rctx.IsCTVRequest {
+				if impCtx.AdpodConfig != nil {
+					bidExt.AdPod.IsAdpodBid = true
+				}
 				bidExt.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidExt, seatBid.Seat)
 				if rctx.Debug {
 					bidExt.AdPod.Debug.Targeting = GetTargettingForDebug(bid.ID, rctx.PubIDStr, rctx.ProfileIDStr, fmt.Sprint(rctx.DisplayID), impCtx.TagID, bidExt.NetECPM)
@@ -312,8 +315,11 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 		for i := range bidResponse.SeatBid {
 			filteredBid := make([]openrtb2.Bid, 0, len(bidResponse.SeatBid[i].Bid))
 			for _, bid := range bidResponse.SeatBid[i].Bid {
-				bid.ImpID, _ = models.GetImpressionID(bid.ImpID)
-				if rctx.WinningBids.IsWinningBid(bid.ImpID, bid.ID) {
+				impId := bid.ID
+				if rctx.IsCTVRequest {
+					impId, _ = models.GetImpressionID(bid.ImpID)
+				}
+				if rctx.WinningBids.IsWinningBid(impId, bid.ID) {
 					filteredBid = append(filteredBid, bid)
 				}
 			}
@@ -346,7 +352,11 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 	// update bid ext and other details
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
-			impCtx, ok := rctx.ImpBidCtx[bid.ImpID]
+			impId := bid.ID
+			if rctx.IsCTVRequest {
+				impId, _ = models.GetImpressionID(bid.ImpID)
+			}
+			impCtx, ok := rctx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}

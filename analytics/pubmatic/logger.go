@@ -72,7 +72,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	for _, imp := range ao.RequestWrapper.Imp {
 		reward := 0
 		var incomingSlots []string
-		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+		if ok {
 			if impCtx.IsRewardInventory != nil {
 				reward = int(*impCtx.IsRewardInventory)
 			}
@@ -91,7 +92,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			Adunit:            imp.TagID,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
-			// AdPodSlot:         getAdPodSlot(imp, responseMap.AdPodBidsExt),
+			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
 		})
 	}
 
@@ -135,6 +136,23 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 		}
 	}
 	return nil
+}
+
+func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
+	if adPodConfig == nil {
+		return nil
+	}
+
+	adPodSlot := AdPodSlot{
+		MinAds:                      adPodConfig.MinAds,
+		MaxAds:                      adPodConfig.MaxAds,
+		MinDuration:                 adPodConfig.MinDuration,
+		MaxDuration:                 adPodConfig.MaxDuration,
+		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
+		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
+	}
+
+	return &adPodSlot
 }
 
 func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx) map[string][]PartnerRecord {
@@ -194,7 +212,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
+			var sequence int
+			impId := bid.ImpID
+			if rCtx.IsCTVRequest {
+				impId, sequence = models.GetImpressionID(impId)
+			}
+			impCtx, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}
@@ -340,6 +363,14 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			if len(bid.ADomain) != 0 {
 				if domain, err := ExtractDomain(bid.ADomain[0]); err == nil {
 					pr.ADomain = domain
+				}
+			}
+
+			// Adpod parameters
+			if impCtx.AdpodConfig != nil {
+				pr.AdPodSequenceNumber = &sequence
+				if len(bid.Cat) > 0 {
+					pr.Cat = append(pr.Cat, bid.Cat...)
 				}
 			}
 

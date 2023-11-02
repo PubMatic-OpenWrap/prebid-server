@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
 
+	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -17,12 +17,8 @@ func formOperRTBResponse(response []byte) []byte {
 		return response
 	}
 
-	// TODO : Do not merge the response, respond with 2.6 response
-	mergedBidResponse, err := mergeSeatBids(bidResponse)
-	if err != nil {
-		return response
-	}
-
+	// TODO: Do not merge the response, respond with 2.6 response
+	mergedBidResponse := mergeSeatBids(bidResponse)
 	data, err := json.Marshal(mergedBidResponse)
 	if err != nil {
 		return response
@@ -31,30 +27,46 @@ func formOperRTBResponse(response []byte) []byte {
 	return data
 }
 
-func mergeSeatBids(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return nil, errors.New("recieved invalid bidResponse")
+		return bidResponse
 	}
 
+	var seatBids []openrtb2.SeatBid
 	bidArrayMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
+		//Copy seatBid and reset its bids
+		videoSeatBid := seatBid
+		videoSeatBid.Bid = nil
 		for _, bid := range seatBid.Bid {
-			if bid.Price > 0 {
-				impId, _ := models.GetImpressionID(bid.ImpID)
-				bids, ok := bidArrayMap[impId]
-				if !ok {
-					bids = make([]openrtb2.Bid, 0)
-				}
-
-				bids = append(bids, bid)
-				bidArrayMap[impId] = bids
+			if bid.Price == 0 {
+				continue
 			}
+
+			adpodBid, _ := jsonparser.GetBoolean(bid.Ext, "adpod", "isAdpodBid")
+			if !adpodBid {
+				videoSeatBid.Bid = append(videoSeatBid.Bid, bid)
+				continue
+			}
+
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bids := bidArrayMap[impId]
+			bids = append(bids, bid)
+			bidArrayMap[impId] = bids
+		}
+
+		if len(videoSeatBid.Bid) > 0 {
+			seatBids = append(seatBids, videoSeatBid)
 		}
 	}
 
-	bidResponse.SeatBid = getPrebidCTVSeatBid(bidArrayMap)
+	// Get Merged prebid_ctv bid
+	ctvSeatBid := getPrebidCTVSeatBid(bidArrayMap)
 
-	return bidResponse, nil
+	seatBids = append(seatBids, ctvSeatBid...)
+	bidResponse.SeatBid = seatBids
+
+	return bidResponse
 }
 
 func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {

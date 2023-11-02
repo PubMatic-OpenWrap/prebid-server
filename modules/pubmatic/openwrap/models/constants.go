@@ -490,3 +490,7 @@ const (
 	Success = "success"
 	Failure = "failure"
 )
+
+const (
+	AdPodEnabled = 1
+)

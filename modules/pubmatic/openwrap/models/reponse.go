@@ -29,8 +29,9 @@ type BidExt struct {
 }
 
 type AdpodBidExt struct {
-	Targeting map[string]string
-	Debug     AdpodDebug
+	IsAdpodBid bool              `json:"isAdpodBid,omitempty"`
+	Targeting  map[string]string `json:"targeting,omitempty"`
+	Debug      AdpodDebug        `json:"debug,omitempty"`
 }
 
 type AdpodDebug struct {

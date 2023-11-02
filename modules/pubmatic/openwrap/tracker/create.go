@@ -22,7 +22,11 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId, _ := models.GetImpressionID(bid.ImpID)
+			impId := bid.ImpID
+			if rctx.IsCTVRequest {
+				impId, _ = models.GetImpressionID(bid.ImpID)
+			}
+
 			bidId := bid.ID
 			tracker := models.Tracker{
 				PubID:     rctx.PubID,
@@ -114,6 +118,10 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 					kgpv = kgpsv
 				}
 				// --------------------------------------------------------------------------------------------------
+
+				if impCtx.AdpodConfig != nil {
+					tracker.AdPodSlot = models.AdPodEnabled
+				}
 
 				tagid = impCtx.TagID
 				tracker.Secure = impCtx.Secure

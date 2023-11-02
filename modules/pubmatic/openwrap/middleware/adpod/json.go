@@ -22,11 +22,6 @@ var (
 	redirectTargetingKeys = []string{"pwtpb", "pwtdur", "pwtcid", "pwtpid", "pwtdealtier", "pwtdid"}
 )
 
-type jsonBid struct {
-	*openrtb2.Bid
-	Seat string
-}
-
 type adPodBid struct {
 	ID        *string             `json:"id,omitempty"`
 	Targeting []map[string]string `json:"targeting,omitempty"`
@@ -90,17 +85,17 @@ func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug strin
 		return nil, errors.New("recieved invalid bidResponse")
 	}
 
-	bidArrayMap := make(map[string][]jsonBid)
+	bidArrayMap := make(map[string][]responseBid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			if bid.Price > 0 {
 				impId, _ := models.GetImpressionID(bid.ImpID)
 				bids, ok := bidArrayMap[impId]
 				if !ok {
-					bids = make([]jsonBid, 0)
+					bids = make([]responseBid, 0)
 				}
 
-				bids = append(bids, jsonBid{Bid: &bid, Seat: seatBid.Seat})
+				bids = append(bids, responseBid{Bid: &bid, seat: seatBid.Seat})
 				bidArrayMap[impId] = bids
 			}
 		}
@@ -160,7 +155,7 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 	return []byte(rURL)
 }
 
-func formAdpodBids(bidsMap map[string][]jsonBid) []*adPodBid {
+func formAdpodBids(bidsMap map[string][]responseBid) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
 		adpodBid := adPodBid{
@@ -172,9 +167,15 @@ func formAdpodBids(bidsMap map[string][]jsonBid) []*adPodBid {
 		for i := 0; i < len(bids); i++ {
 			slotNo := i + 1
 			targeting := createTargetting(bids[i], slotNo)
-			targetings = append(targetings, targeting)
+			if len(targeting) > 0 {
+				targetings = append(targetings, targeting)
+			}
 		}
-		adpodBid.Targeting = targetings
+
+		if len(targetings) > 0 {
+			adpodBid.Targeting = targetings
+		}
+
 		adpodBids = append(adpodBids, &adpodBid)
 	}
 
@@ -185,7 +186,7 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 	return fmt.Sprintf(slotKeyFormat, slotNo, key)
 }
 
-func createTargetting(bid jsonBid, slotNo int) map[string]string {
+func createTargetting(bid responseBid, slotNo int) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 
 	if len(bid.Ext) > 0 {

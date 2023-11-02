@@ -74,12 +74,12 @@ type Content struct {
 
 // AdPodSlot of adpod object logging
 type AdPodSlot struct {
-	MinAds                      *int `json:"mnad,omitempty"` //Default 1 if not specified
-	MaxAds                      *int `json:"mxad,omitempty"` //Default 1 if not specified
-	MinDuration                 *int `json:"amnd,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
-	MaxDuration                 *int `json:"amxd,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
-	AdvertiserExclusionPercent  *int `json:"exap,omitempty"` // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
-	IABCategoryExclusionPercent *int `json:"exip,omitempty"` // Percent value 0 means all ads should be of different IAB categories.
+	MinAds                      int `json:"mnad,omitempty"` //Default 1 if not specified
+	MaxAds                      int `json:"mxad,omitempty"` //Default 1 if not specified
+	MinDuration                 int `json:"amnd,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
+	MaxDuration                 int `json:"amxd,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
+	AdvertiserExclusionPercent  int `json:"exap,omitempty"` // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
+	IABCategoryExclusionPercent int `json:"exip,omitempty"` // Percent value 0 means all ads should be of different IAB categories.
 }
 
 // SlotRecord structure for storing slot level information

@@ -27,6 +27,7 @@ type Tracker struct {
 	SURL              string // contains either req.site.domain or req.app.bundle value
 	Platform          int
 	Advertiser        string
+	AdPodSlot         int
 	// SSAI identifies the name of the SSAI vendor
 	// Applicable only in case of incase of video/json endpoint.
 	SSAI string
