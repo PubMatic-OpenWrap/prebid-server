@@ -287,12 +287,13 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 	return ""
 }
 
+// MacroSchain contains definition for Schain Parameter
 func (tag *BidderMacro) MacroSchain(key string) string {
 	if tag.Request.Source == nil || tag.Request.Source.Ext == nil {
 		return ""
 	}
 
-	schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, "schain")
+	schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
 
 	if err != nil {
 		return ""
@@ -305,51 +306,48 @@ func (tag *BidderMacro) MacroSchain(key string) string {
 		return ""
 	}
 
-	serializedSchain := schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete)
+	var serializedSchain strings.Builder
 
-	// count track the current index for schain node
-	count := 0
-	l := len(schainObj.Nodes)
+	serializedSchain.WriteString(schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete))
 
 	for _, node := range schainObj.Nodes {
-		if count < l {
-			serializedSchain += "!"
-		}
+
+		serializedSchain.WriteString("!")
+
 		if node.ASI != "" {
-			serializedSchain += url.PathEscape(node.ASI) + ","
+			serializedSchain.WriteString(url.PathEscape(node.ASI) + ",")
 		} else {
-			serializedSchain += ","
+			serializedSchain.WriteString(",")
 		}
 		if node.SID != "" {
-			serializedSchain += url.PathEscape(node.SID) + ","
+			serializedSchain.WriteString(url.PathEscape(node.SID) + ",")
 		} else {
-			serializedSchain += ","
+			serializedSchain.WriteString(",")
 		}
 		if node.HP != nil {
-			serializedSchain += url.PathEscape(fmt.Sprintf("%v", *node.HP)) + ","
+			// node.HP is integer pointer so 1st dereference it then convert it to string and push to serializedSchain
+			serializedSchain.WriteString(url.PathEscape(fmt.Sprintf("%v", *node.HP)) + ",")
 		} else {
-			serializedSchain += ","
+			serializedSchain.WriteString(",")
 		}
 		if node.RID != "" {
-			serializedSchain += url.PathEscape(node.RID) + ","
+			serializedSchain.WriteString(url.PathEscape(node.RID) + ",")
 		} else {
-			serializedSchain += ","
+			serializedSchain.WriteString(",")
 		}
 		if node.Name != "" {
-			serializedSchain += url.PathEscape(node.Name) + ","
+			serializedSchain.WriteString(url.PathEscape(node.Name) + ",")
 		} else {
-			serializedSchain += ","
+			serializedSchain.WriteString(",")
 		}
 		if node.Domain != "" {
-			serializedSchain += url.PathEscape(node.Domain)
-		} else if node.Ext != nil {
-			serializedSchain += ","
-			serializedSchain += url.QueryEscape(string(node.Ext)) // PathEscape() does not encode the : , & and to check
+			serializedSchain.WriteString(url.PathEscape(node.Domain))
 		}
-
+		if node.Ext != nil {
+			serializedSchain.WriteString("," + url.QueryEscape(string(node.Ext)))
+		}
 	}
-
-	return serializedSchain
+	return serializedSchain.String()
 }
 
 /********************* Regs *********************/

@@ -1620,7 +1620,7 @@ func TestBidderMacroKVM(t *testing.T) {
 	}
 }
 
-func TestBidderMacro_MacroSchain(t *testing.T) {
+func TestMacroSchain(t *testing.T) {
 
 	type fields struct {
 		Request *openrtb2.BidRequest
@@ -1692,7 +1692,7 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 		},
 
 		{
-			name: "nodes_with_missing_optional_parameters",
+			name: "node_with_missing_all_optional_parameters",
 			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
 				Ext: []byte(`{
 					"schain":{
@@ -1710,6 +1710,27 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 			}}},
 			args: args{key: "schain"},
 			want: "1.0,1!exchange1.com,1234&abcd,1,,,",
+		},
+		{
+			name: "nodes_with_missing_some_optional_parameters",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"name":"publisher name"
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!exchange1.com,1234&abcd,1,,publisher%20name,",
 		},
 		{
 			name: "nodes_with_extension_and_missing_optional_parameters",
@@ -1731,6 +1752,66 @@ func TestBidderMacro_MacroSchain(t *testing.T) {
 			}}},
 			args: args{key: "schain"},
 			want: "1.0,1!exchange1.com,1234&abcd,1,,,,%7B%22k1%22%3A%22v1%22%7D",
+		},
+		{
+			name: "multi_nodes_with_extension",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"rid":"bid-request-1",
+								"name":"publisher name",
+								"domain":"publisher.com",
+								"hp":1,
+								"ext": "hello"
+							} ,
+							{
+								"asi":"exchange2.com",
+								"sid":"abc,d",
+								"rid":"bid-request-2",
+								"name":"intermediary",
+								"domain":"intermediary.com",
+								"hp":1,
+								"ext":{"name":"test","num":1}
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com,%22hello%22!exchange2.com,abc%2Cd,1,bid-request-2,intermediary,intermediary.com,%7B%22name%22%3A%22test%22%2C%22num%22%3A1%7D",
+		},
+		{
+			name: "missing_schain_object",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"somechain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"ext":{"k1":"v1"}
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+		{
+			name:   "nil_schain_object",
+			fields: fields{&openrtb2.BidRequest{Source: nil}},
+			args:   args{key: "schain"},
+			want:   "",
 		},
 	}
 
