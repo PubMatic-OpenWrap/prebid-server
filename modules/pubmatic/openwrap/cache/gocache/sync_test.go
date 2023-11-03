@@ -20,7 +20,7 @@ func Test_cache_LockAndLoad(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.Cache
+		cfg   config.DBCache
 		db    database.Database
 	}
 	type args struct {
@@ -38,7 +38,7 @@ func Test_cache_LockAndLoad(t *testing.T) {
 			name: "test",
 			fields: fields{
 				cache: gocache.New(100, 100),
-				cfg: config.Cache{
+				cfg: config.DBCache{
 					CacheDefaultExpiry: 1000,
 				},
 				db: mockDatabase,

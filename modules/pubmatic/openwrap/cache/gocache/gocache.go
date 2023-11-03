@@ -31,25 +31,23 @@ func key(format string, v ...interface{}) string {
 // any db or cache should be injectable
 type cache struct {
 	sync.Map
-	cache               *gocache.Cache
-	cfg                 config.Cache
-	db                  database.Database
-	metricEngine        metrics.MetricsEngine
-	partnerConfigExpiry int
+	cache        *gocache.Cache
+	cfg          config.DBCache
+	db           database.Database
+	metricEngine metrics.MetricsEngine
 }
 
 var c *cache
 var cOnce sync.Once
 
-func New(goCache *gocache.Cache, database database.Database, cfg config.Cache, metricEngine metrics.MetricsEngine) *cache {
+func New(goCache *gocache.Cache, database database.Database, cfg config.DBCache, metricEngine metrics.MetricsEngine) *cache {
 	cOnce.Do(
 		func() {
 			c = &cache{
-				cache:               goCache,
-				db:                  database,
-				cfg:                 cfg,
-				metricEngine:        metricEngine,
-				partnerConfigExpiry: cfg.CacheDefaultExpiry - 60, // Reduced partnerConfig expiry by 1 minute to avoid inconsistent exipry of partnerConfig, adUnitConfig and WrapperConfig
+				cache:        goCache,
+				db:           database,
+				cfg:          cfg,
+				metricEngine: metricEngine,
 			}
 		})
 	return c

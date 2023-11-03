@@ -396,7 +396,11 @@ const (
 	ContextOWLoggerKey contextKey = "owlogger"
 )
 
-const Pipe = "|"
+const (
+	Pipe           = "|"
+	BidIdSeparator = "::"
+)
+
 const (
 	EndpointV25     = "v25"
 	EndpointAMP     = "amp"
@@ -405,6 +409,7 @@ const (
 	EndpointORTB    = "ortb"
 	EndpointVAST    = "vast"
 	EndpointOWS2S   = "ows2s"
+	EndPointCTV     = "ctv"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"

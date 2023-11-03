@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -255,8 +256,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
-
 		ap.BidResponse.Ext = rctx.ResponseExt
+
+		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
@@ -348,4 +350,12 @@ func getPlatformName(platform string) string {
 		return models.PlatformAppTargetingKey
 	}
 	return platform
+}
+
+func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
+	for i, seatBid := range bidResponse.SeatBid {
+		for j, bid := range seatBid.Bid {
+			bidResponse.SeatBid[i].Bid[j].ID = utils.GetOriginalBidId(bid.ID)
+		}
+	}
 }
