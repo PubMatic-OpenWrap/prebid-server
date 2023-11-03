@@ -3408,9 +3408,15 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 
 	cfg := ow.cfg
+	uuidFunc := getUUID
 	defer func() {
 		ow.cfg = cfg
+		getUUID = uuidFunc
 	}()
+
+	getUUID = func() string {
+		return "sid"
+	}
 
 	ow.cfg.Endpoint = "http://10.172.141.11/wl"
 	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
@@ -3452,7 +3458,7 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp1_tagid","au":"tagid","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3481,12 +3487,22 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							SlotName:   "imp_1_tagid_1",
+							AdUnitName: "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
+						},
+					},
 				},
 				logInfo:    false,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3519,6 +3535,12 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 						"imp_1": {
 							IncomingSlots:     []string{"0x0v", "100x200"},
 							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+							SlotName:          "imp_1_tagid_1",
+							AdUnitName:        "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
 						},
 					},
 				},
@@ -3526,7 +3548,7 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3571,6 +3593,12 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 						"imp_1": {
 							IncomingSlots:     []string{"0x0v", "100x200"},
 							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+							SlotName:          "imp_1_tagid_1",
+							AdUnitName:        "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
 						},
 					},
 				},
@@ -3578,9 +3606,9 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1",` +
+				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1",` +
 					`"ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1",` +
-					`"origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD"}],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+					`"origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD"}],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
