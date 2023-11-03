@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -82,10 +83,11 @@ func (m OpenWrap) handleEntrypointHook(
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
 	}
-
+	debuglocation := []string{"ext", "prebid", "debug"}
+	requestDebug, _ := jsonparser.GetBoolean(payload.Body, debuglocation...)
 	rCtx := models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
-		Debug:                     queryParams.Get(models.Debug) == "1",
+		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
