@@ -31,28 +31,43 @@ func (m OpenWrap) handleEntrypointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
-) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
 	queryParams := payload.Request.URL.Query()
 	source := queryParams.Get("source")
-	if queryParams.Get("sshb") != "1" && source != "pbjs" {
-		return result, nil
-	}
-
-	var pubid int
+	var rCtx models.RequestCtx
 	var endpoint string
-	var err error
 	var requestExtWrapper models.RequestExtWrapper
+	defer func() {
+		if result.Reject {
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+		} else {
+			result.ModuleContext = make(hookstage.ModuleContext)
+			result.ModuleContext["rctx"] = rCtx
+		}
+	}()
+
 	switch payload.Request.URL.Path {
+	// direct call to 8000 port
 	case hookexecution.EndpointAuction:
-		if models.IsHybrid(payload.Body) && source != "pbjs" { // new hybrid api should not execute module
+		switch source {
+		case "pbjs":
+			endpoint = models.EndpointOWS2S
+		case "inapp":
+			endpoint = models.EndpointV25
+		default:
+			rCtx = models.RequestCtx{
+				Endpoint: models.EndpointHybrid,
+			}
 			return result, nil
 		}
-		//Flow for the OWS2S endpoint
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		endpoint = models.EndpointOWS2S
+
+	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
 		m.metricEngine.RecordPBSAuctionRequestsStats()
+		rCtx = models.RequestCtx{
+			Endpoint: models.EndpointHybrid,
+		}
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
@@ -76,12 +91,6 @@ func (m OpenWrap) handleEntrypointHook(
 		// we should return from here
 	}
 
-	defer func() {
-		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
-		}
-	}()
-
 	// init default for all modules
 	result.Reject = true
 
@@ -98,7 +107,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 	debuglocation := []string{"ext", "prebid", "debug"}
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, debuglocation...)
-	rCtx := models.RequestCtx{
+	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
 		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
 		UA:                        payload.Request.Header.Get("User-Agent"),
@@ -137,14 +146,6 @@ func (m OpenWrap) handleEntrypointHook(
 	if rCtx.LoggerImpressionID == "" {
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
 	}
-
-	// temp, for AMP, etc
-	if pubid != 0 {
-		rCtx.PubID = pubid
-	}
-
-	result.ModuleContext = make(hookstage.ModuleContext)
-	result.ModuleContext["rctx"] = rCtx
 
 	result.Reject = false
 	return result, nil

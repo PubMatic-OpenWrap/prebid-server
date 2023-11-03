@@ -410,6 +410,7 @@ const (
 	EndpointVAST    = "vast"
 	EndpointOWS2S   = "ows2s"
 	EndPointCTV     = "ctv"
+	EndpointHybrid  = "hybrid"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"

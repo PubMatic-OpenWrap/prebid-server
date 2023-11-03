@@ -26,13 +26,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
+	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
-	result.Reject = true
 	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
@@ -45,6 +44,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
+
+	if rCtx.Endpoint == models.EndpointHybrid {
+		// fix bidder params
+		result.Reject = false
+		return
+	}
 
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
