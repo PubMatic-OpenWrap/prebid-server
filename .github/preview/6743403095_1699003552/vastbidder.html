@@ -1,0 +1,2683 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>vastbidder: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/bidder_macro.go (93.1%)</option>
+				
+				<option value="file1">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/ibidder_macro.go (80.0%)</option>
+				
+				<option value="file2">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/itag_response_handler.go (0.0%)</option>
+				
+				<option value="file3">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/macro_processor.go (87.1%)</option>
+				
+				<option value="file4">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/mapper.go (100.0%)</option>
+				
+				<option value="file5">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/tagbidder.go (52.0%)</option>
+				
+				<option value="file6">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/util.go (60.4%)</option>
+				
+				<option value="file7">github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder/vast_tag_response_handler.go (71.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package vastbidder
+
+import (
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "net/url"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/buger/jsonparser"
+        "github.com/prebid/openrtb/v19/adcom1"
+        "github.com/prebid/openrtb/v19/openrtb2"
+        "github.com/prebid/prebid-server/adapters"
+        "github.com/prebid/prebid-server/config"
+        "github.com/prebid/prebid-server/openrtb_ext"
+)
+
+// BidderMacro default implementation
+type BidderMacro struct {
+        IBidderMacro
+
+        //Configuration Parameters
+        Conf *config.Adapter
+
+        //OpenRTB Specific Parameters
+        Request   *openrtb2.BidRequest
+        IsApp     bool
+        HasGeo    bool
+        Imp       *openrtb2.Imp
+        Publisher *openrtb2.Publisher
+        Content   *openrtb2.Content
+
+        //Extensions
+        ImpBidderExt openrtb_ext.ExtImpVASTBidder
+        VASTTag      *openrtb_ext.ExtImpVASTBidderTag
+        UserExt      *openrtb_ext.ExtUser
+        RegsExt      *openrtb_ext.ExtRegs
+        DeviceExt    *openrtb_ext.ExtDevice
+
+        //Impression level Request Headers
+        ImpReqHeaders http.Header
+
+        //Key-Values Map
+        KV map[string]any
+}
+
+// NewBidderMacro contains definition for all openrtb macro's
+func NewBidderMacro() IBidderMacro <span class="cov8" title="1">{
+        obj := &amp;BidderMacro{}
+        obj.IBidderMacro = obj
+        return obj
+}</span>
+
+func (tag *BidderMacro) init() <span class="cov8" title="1">{
+        if nil != tag.Request.App </span><span class="cov8" title="1">{
+                tag.IsApp = true
+                tag.Publisher = tag.Request.App.Publisher
+                tag.Content = tag.Request.App.Content
+        }</span> else<span class="cov8" title="1"> {
+                tag.Publisher = tag.Request.Site.Publisher
+                tag.Content = tag.Request.Site.Content
+        }</span>
+        <span class="cov8" title="1">tag.HasGeo = nil != tag.Request.Device &amp;&amp; nil != tag.Request.Device.Geo
+
+        //Read User Extensions
+        if nil != tag.Request.User &amp;&amp; nil != tag.Request.User.Ext </span><span class="cov8" title="1">{
+                var ext openrtb_ext.ExtUser
+                err := json.Unmarshal(tag.Request.User.Ext, &amp;ext)
+                if nil == err </span><span class="cov8" title="1">{
+                        tag.UserExt = &amp;ext
+                }</span>
+        }
+
+        //Read Regs Extensions
+        <span class="cov8" title="1">if nil != tag.Request.Regs &amp;&amp; nil != tag.Request.Regs.Ext </span><span class="cov8" title="1">{
+                var ext openrtb_ext.ExtRegs
+                err := json.Unmarshal(tag.Request.Regs.Ext, &amp;ext)
+                if nil == err </span><span class="cov8" title="1">{
+                        tag.RegsExt = &amp;ext
+                }</span>
+        }
+
+        //Read Device Extensions
+        <span class="cov8" title="1">if nil != tag.Request.Device &amp;&amp; nil != tag.Request.Device.Ext </span><span class="cov8" title="1">{
+                var ext openrtb_ext.ExtDevice
+                err := json.Unmarshal(tag.Request.Device.Ext, &amp;ext)
+                if nil == err </span><span class="cov8" title="1">{
+                        tag.DeviceExt = &amp;ext
+                }</span>
+        }
+        <span class="cov8" title="1">if tag.Request != nil &amp;&amp; tag.Request.Ext != nil </span><span class="cov0" title="0">{
+                keyval, _, _, err := jsonparser.Get(tag.Request.Ext, prebid, keyval)
+                if err != nil </span><span class="cov0" title="0">{
+                        return
+                }</span>
+                <span class="cov0" title="0">var kv map[string]any
+                err = json.Unmarshal(keyval, &amp;kv)
+                if err != nil </span><span class="cov0" title="0">{
+                        return
+                }</span>
+                <span class="cov0" title="0">tag.KV = kv</span>
+        }
+
+}
+
+// InitBidRequest will initialise BidRequest
+func (tag *BidderMacro) InitBidRequest(request *openrtb2.BidRequest) <span class="cov8" title="1">{
+        tag.Request = request
+        tag.init()
+}</span>
+
+// LoadImpression will set current imp
+func (tag *BidderMacro) LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error) <span class="cov8" title="1">{
+        tag.Imp = imp
+
+        var bidderExt adapters.ExtImpBidder
+        if err := json.Unmarshal(imp.Ext, &amp;bidderExt); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">tag.ImpBidderExt = openrtb_ext.ExtImpVASTBidder{}
+        if err := json.Unmarshal(bidderExt.Bidder, &amp;tag.ImpBidderExt); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return &amp;tag.ImpBidderExt, nil</span>
+}
+
+// LoadVASTTag will set current VAST Tag details in bidder keys
+func (tag *BidderMacro) LoadVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) <span class="cov0" title="0">{
+        tag.VASTTag = vastTag
+}</span>
+
+// GetBidderKeys will set bidder level keys
+func (tag *BidderMacro) GetBidderKeys() map[string]string <span class="cov0" title="0">{
+        //Adding VAST Tag Bidder Parameters
+        keys := NormalizeJSON(tag.VASTTag.Params)
+
+        //Adding VAST Tag Standard Params
+        keys["dur"] = strconv.Itoa(tag.VASTTag.Duration)
+
+        //Adding Headers as Custom Macros
+
+        //Adding Cookies as Custom Macros
+
+        //Adding Default Empty for standard keys
+        for i := range ParamKeys </span><span class="cov0" title="0">{
+                if _, ok := keys[ParamKeys[i]]; !ok </span><span class="cov0" title="0">{
+                        keys[ParamKeys[i]] = ""
+                }</span>
+        }
+
+        <span class="cov0" title="0">return keys</span>
+}
+
+// SetAdapterConfig will set Adapter config
+func (tag *BidderMacro) SetAdapterConfig(conf *config.Adapter) <span class="cov8" title="1">{
+        tag.Conf = conf
+}</span>
+
+// GetURI get URL
+func (tag *BidderMacro) GetURI() string <span class="cov0" title="0">{
+
+        //check for URI at impression level
+        if nil != tag.VASTTag </span><span class="cov0" title="0">{
+                return tag.VASTTag.URL
+        }</span>
+
+        //check for URI at config level
+        <span class="cov0" title="0">return tag.Conf.Endpoint</span>
+}
+
+// GetHeaders returns list of custom request headers
+// Override this method if your Vast bidder needs custom  request headers
+func (tag *BidderMacro) GetHeaders() http.Header <span class="cov0" title="0">{
+        return http.Header{}
+}</span>
+
+// GetValue returns the value for given key
+// isKeyFound will check the key is present or not
+func (tag *BidderMacro) GetValue(key string) (string, bool) <span class="cov8" title="1">{
+        macroKeys := strings.Split(key, ".")
+        isKeyFound := false
+
+        // This will check if key has prefix kv/kvm
+        // if prefix present it will always return isKeyFound as true as it will help to replace the key with empty string in VAST TAG
+        if (macroKeys[0] == MacroKV || macroKeys[0] == MacroKVM) &amp;&amp; len(macroKeys) &gt; 1 </span><span class="cov8" title="1">{
+                isKeyFound = true
+                if tag.KV == nil </span><span class="cov8" title="1">{
+                        return "", isKeyFound
+                }</span>
+                <span class="cov8" title="1">switch macroKeys[0] </span>{
+                case MacroKV:<span class="cov8" title="1">
+                        val := getValueFromMap(macroKeys[1:], tag.KV)
+                        if dataMap, ok := val.(map[string]interface{}); ok </span><span class="cov8" title="1">{
+                                return mapToQuery(dataMap), isKeyFound
+                        }</span>
+                        <span class="cov8" title="1">return fmt.Sprintf("%v", val), isKeyFound</span>
+                case MacroKVM:<span class="cov8" title="1">
+                        val := getValueFromMap(macroKeys[1:], tag.KV)
+                        if isMap(val) </span><span class="cov8" title="1">{
+                                return getJSONString(val), isKeyFound
+                        }</span>
+                        <span class="cov8" title="1">return fmt.Sprintf("%v", val), isKeyFound</span>
+                }
+        }
+        <span class="cov8" title="1">return "", isKeyFound</span>
+}
+
+/********************* Request *********************/
+
+// MacroTest contains definition for Test Parameter
+func (tag *BidderMacro) MacroTest(key string) string <span class="cov8" title="1">{
+        if tag.Request.Test &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.Itoa(int(tag.Request.Test))
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroTimeout contains definition for Timeout Parameter
+func (tag *BidderMacro) MacroTimeout(key string) string <span class="cov8" title="1">{
+        if tag.Request.TMax &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Request.TMax, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroWhitelistSeat contains definition for WhitelistSeat Parameter
+func (tag *BidderMacro) MacroWhitelistSeat(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.WSeat, comma)
+}</span>
+
+// MacroWhitelistLang contains definition for WhitelistLang Parameter
+func (tag *BidderMacro) MacroWhitelistLang(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.WLang, comma)
+}</span>
+
+// MacroBlockedSeat contains definition for Blockedseat Parameter
+func (tag *BidderMacro) MacroBlockedSeat(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.BSeat, comma)
+}</span>
+
+// MacroCurrency contains definition for Currency Parameter
+func (tag *BidderMacro) MacroCurrency(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.Cur, comma)
+}</span>
+
+// MacroBlockedCategory contains definition for BlockedCategory Parameter
+func (tag *BidderMacro) MacroBlockedCategory(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.BCat, comma)
+}</span>
+
+// MacroBlockedAdvertiser contains definition for BlockedAdvertiser Parameter
+func (tag *BidderMacro) MacroBlockedAdvertiser(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.BAdv, comma)
+}</span>
+
+// MacroBlockedApp contains definition for BlockedApp Parameter
+func (tag *BidderMacro) MacroBlockedApp(key string) string <span class="cov8" title="1">{
+        return strings.Join(tag.Request.BApp, comma)
+}</span>
+
+/********************* Source *********************/
+
+// MacroFD contains definition for FD Parameter
+func (tag *BidderMacro) MacroFD(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Source </span><span class="cov8" title="1">{
+                return strconv.Itoa(int(tag.Request.Source.FD))
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroTransactionID contains definition for TransactionID Parameter
+func (tag *BidderMacro) MacroTransactionID(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Source </span><span class="cov8" title="1">{
+                return tag.Request.Source.TID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroPaymentIDChain contains definition for PaymentIDChain Parameter
+func (tag *BidderMacro) MacroPaymentIDChain(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Source </span><span class="cov8" title="1">{
+                return tag.Request.Source.PChain
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSchain contains definition for Schain Parameter
+func (tag *BidderMacro) MacroSchain(key string) string <span class="cov8" title="1">{
+        if tag.Request.Source == nil || tag.Request.Source.Ext == nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+
+        <span class="cov8" title="1">schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
+
+        if err != nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">var schainObj openrtb2.SupplyChain
+
+        err = json.Unmarshal(schain, &amp;schainObj)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+
+        <span class="cov8" title="1">var serializedSchain strings.Builder
+
+        serializedSchain.WriteString(schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete))
+
+        for _, node := range schainObj.Nodes </span><span class="cov8" title="1">{
+
+                serializedSchain.WriteString("!")
+
+                if node.ASI != "" </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString(url.PathEscape(node.ASI) + ",")
+                }</span> else<span class="cov0" title="0"> {
+                        serializedSchain.WriteString(",")
+                }</span>
+                <span class="cov8" title="1">if node.SID != "" </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString(url.PathEscape(node.SID) + ",")
+                }</span> else<span class="cov0" title="0"> {
+                        serializedSchain.WriteString(",")
+                }</span>
+                <span class="cov8" title="1">if node.HP != nil </span><span class="cov8" title="1">{
+                        // node.HP is integer pointer so 1st dereference it then convert it to string and push to serializedSchain
+                        serializedSchain.WriteString(url.PathEscape(fmt.Sprintf("%v", *node.HP)) + ",")
+                }</span> else<span class="cov0" title="0"> {
+                        serializedSchain.WriteString(",")
+                }</span>
+                <span class="cov8" title="1">if node.RID != "" </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString(url.PathEscape(node.RID) + ",")
+                }</span> else<span class="cov8" title="1"> {
+                        serializedSchain.WriteString(",")
+                }</span>
+                <span class="cov8" title="1">if node.Name != "" </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString(url.PathEscape(node.Name) + ",")
+                }</span> else<span class="cov8" title="1"> {
+                        serializedSchain.WriteString(",")
+                }</span>
+                <span class="cov8" title="1">if node.Domain != "" </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString(url.PathEscape(node.Domain))
+                }</span>
+                <span class="cov8" title="1">if node.Ext != nil </span><span class="cov8" title="1">{
+                        serializedSchain.WriteString("," + url.QueryEscape(string(node.Ext)))
+                }</span>
+        }
+        <span class="cov8" title="1">return serializedSchain.String()</span>
+}
+
+/********************* Regs *********************/
+
+// MacroCoppa contains definition for Coppa Parameter
+func (tag *BidderMacro) MacroCoppa(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Regs </span><span class="cov8" title="1">{
+                return strconv.Itoa(int(tag.Request.Regs.COPPA))
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Impression *********************/
+
+// MacroDisplayManager contains definition for DisplayManager Parameter
+func (tag *BidderMacro) MacroDisplayManager(key string) string <span class="cov8" title="1">{
+        return tag.Imp.DisplayManager
+}</span>
+
+// MacroDisplayManagerVersion contains definition for DisplayManagerVersion Parameter
+func (tag *BidderMacro) MacroDisplayManagerVersion(key string) string <span class="cov8" title="1">{
+        return tag.Imp.DisplayManagerVer
+}</span>
+
+// MacroInterstitial contains definition for Interstitial Parameter
+func (tag *BidderMacro) MacroInterstitial(key string) string <span class="cov8" title="1">{
+        if tag.Imp.Instl &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.Itoa(int(tag.Imp.Instl))
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroTagID contains definition for TagID Parameter
+func (tag *BidderMacro) MacroTagID(key string) string <span class="cov8" title="1">{
+        return tag.Imp.TagID
+}</span>
+
+// MacroBidFloor contains definition for BidFloor Parameter
+func (tag *BidderMacro) MacroBidFloor(key string) string <span class="cov8" title="1">{
+        if tag.Imp.BidFloor &gt; 0 </span><span class="cov8" title="1">{
+                return fmt.Sprintf("%g", tag.Imp.BidFloor)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroBidFloorCurrency contains definition for BidFloorCurrency Parameter
+func (tag *BidderMacro) MacroBidFloorCurrency(key string) string <span class="cov8" title="1">{
+        return tag.Imp.BidFloorCur
+}</span>
+
+// MacroSecure contains definition for Secure Parameter
+func (tag *BidderMacro) MacroSecure(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Secure </span><span class="cov8" title="1">{
+                return strconv.Itoa(int(*tag.Imp.Secure))
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroPMP contains definition for PMP Parameter
+func (tag *BidderMacro) MacroPMP(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.PMP </span><span class="cov8" title="1">{
+                data, _ := json.Marshal(tag.Imp.PMP)
+                return string(data)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Video *********************/
+
+// MacroVideoMIMES contains definition for VideoMIMES Parameter
+func (tag *BidderMacro) MacroVideoMIMES(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                return strings.Join(tag.Imp.Video.MIMEs, comma)
+        }</span>
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroVideoMinimumDuration contains definition for VideoMinimumDuration Parameter
+func (tag *BidderMacro) MacroVideoMinimumDuration(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.MinDuration &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Imp.Video.MinDuration, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoMaximumDuration contains definition for VideoMaximumDuration Parameter
+func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.MaxDuration &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Imp.Video.MaxDuration, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoProtocols contains definition for VideoProtocols Parameter
+func (tag *BidderMacro) MacroVideoProtocols(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                value := tag.Imp.Video.Protocols
+                return ObjectArrayToString(len(value), comma, func(i int) string </span><span class="cov8" title="1">{
+                        return strconv.FormatInt(int64(value[i]), intBase)
+                }</span>)
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroVideoPlayerWidth contains definition for VideoPlayerWidth Parameter
+func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.W &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.W), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoPlayerHeight contains definition for VideoPlayerHeight Parameter
+func (tag *BidderMacro) MacroVideoPlayerHeight(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.H &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.H), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoStartDelay contains definition for VideoStartDelay Parameter
+func (tag *BidderMacro) MacroVideoStartDelay(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; nil != tag.Imp.Video.StartDelay </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Imp.Video.StartDelay), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoPlacement contains definition for VideoPlacement Parameter
+func (tag *BidderMacro) MacroVideoPlacement(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.Placement &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.Placement), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoLinearity contains definition for VideoLinearity Parameter
+func (tag *BidderMacro) MacroVideoLinearity(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.Linearity &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.Linearity), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoSkip contains definition for VideoSkip Parameter
+func (tag *BidderMacro) MacroVideoSkip(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; nil != tag.Imp.Video.Skip </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Imp.Video.Skip), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoSkipMinimum contains definition for VideoSkipMinimum Parameter
+func (tag *BidderMacro) MacroVideoSkipMinimum(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.SkipMin &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Imp.Video.SkipMin, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoSkipAfter contains definition for VideoSkipAfter Parameter
+func (tag *BidderMacro) MacroVideoSkipAfter(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.SkipAfter &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Imp.Video.SkipAfter, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoSequence contains definition for VideoSequence Parameter
+func (tag *BidderMacro) MacroVideoSequence(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.Sequence &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.Sequence), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoBlockedAttribute contains definition for VideoBlockedAttribute Parameter
+func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                value := tag.Imp.Video.BAttr
+                return ObjectArrayToString(len(value), comma, func(i int) string </span><span class="cov8" title="1">{
+                        return strconv.FormatInt(int64(value[i]), intBase)
+                }</span>)
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroVideoMaximumExtended contains definition for VideoMaximumExtended Parameter
+func (tag *BidderMacro) MacroVideoMaximumExtended(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.MaxExtended &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Imp.Video.MaxExtended, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoMinimumBitRate contains definition for VideoMinimumBitRate Parameter
+func (tag *BidderMacro) MacroVideoMinimumBitRate(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.MinBitRate &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.MinBitRate), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoMaximumBitRate contains definition for VideoMaximumBitRate Parameter
+func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.MaxBitRate &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.MaxBitRate), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoBoxing contains definition for VideoBoxing Parameter
+func (tag *BidderMacro) MacroVideoBoxing(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; tag.Imp.Video.BoxingAllowed &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Imp.Video.BoxingAllowed), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoPlaybackMethod contains definition for VideoPlaybackMethod Parameter
+func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                value := tag.Imp.Video.PlaybackMethod
+                return ObjectArrayToString(len(value), comma, func(i int) string </span><span class="cov8" title="1">{
+                        return strconv.FormatInt(int64(value[i]), intBase)
+                }</span>)
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroVideoDelivery contains definition for VideoDelivery Parameter
+func (tag *BidderMacro) MacroVideoDelivery(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                value := tag.Imp.Video.Delivery
+                return ObjectArrayToString(len(value), comma, func(i int) string </span><span class="cov8" title="1">{
+                        return strconv.FormatInt(int64(value[i]), intBase)
+                }</span>)
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroVideoPosition contains definition for VideoPosition Parameter
+func (tag *BidderMacro) MacroVideoPosition(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video &amp;&amp; nil != tag.Imp.Video.Pos </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Imp.Video.Pos), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroVideoAPI contains definition for VideoAPI Parameter
+func (tag *BidderMacro) MacroVideoAPI(key string) string <span class="cov8" title="1">{
+        if nil != tag.Imp.Video </span><span class="cov8" title="1">{
+                value := tag.Imp.Video.API
+                return ObjectArrayToString(len(value), comma, func(i int) string </span><span class="cov8" title="1">{
+                        return strconv.FormatInt(int64(value[i]), intBase)
+                }</span>)
+        }
+        <span class="cov0" title="0">return ""</span>
+}
+
+/********************* Site *********************/
+
+// MacroSiteID contains definition for SiteID Parameter
+func (tag *BidderMacro) MacroSiteID(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.Site.ID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSiteName contains definition for SiteName Parameter
+func (tag *BidderMacro) MacroSiteName(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.Site.Name
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSitePage contains definition for SitePage Parameter
+func (tag *BidderMacro) MacroSitePage(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp &amp;&amp; nil != tag.Request &amp;&amp; nil != tag.Request.Site </span><span class="cov8" title="1">{
+                return tag.Request.Site.Page
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSiteReferrer contains definition for SiteReferrer Parameter
+func (tag *BidderMacro) MacroSiteReferrer(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.Site.Ref
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSiteSearch contains definition for SiteSearch Parameter
+func (tag *BidderMacro) MacroSiteSearch(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.Site.Search
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroSiteMobile contains definition for SiteMobile Parameter
+func (tag *BidderMacro) MacroSiteMobile(key string) string <span class="cov8" title="1">{
+        if !tag.IsApp &amp;&amp; tag.Request.Site.Mobile &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.Site.Mobile), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* App *********************/
+
+// MacroAppID contains definition for AppID Parameter
+func (tag *BidderMacro) MacroAppID(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.ID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroAppName contains definition for AppName Parameter
+func (tag *BidderMacro) MacroAppName(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.Name
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroAppBundle contains definition for AppBundle Parameter
+func (tag *BidderMacro) MacroAppBundle(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.Bundle
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroAppStoreURL contains definition for AppStoreURL Parameter
+func (tag *BidderMacro) MacroAppStoreURL(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.StoreURL
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroAppVersion contains definition for AppVersion Parameter
+func (tag *BidderMacro) MacroAppVersion(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.Ver
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroAppPaid contains definition for AppPaid Parameter
+func (tag *BidderMacro) MacroAppPaid(key string) string <span class="cov8" title="1">{
+        if tag.IsApp &amp;&amp; tag.Request.App.Paid != 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.App.Paid), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Site/App Common *********************/
+
+// MacroCategory contains definition for Category Parameter
+func (tag *BidderMacro) MacroCategory(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return strings.Join(tag.Request.App.Cat, comma)
+        }</span>
+        <span class="cov8" title="1">return strings.Join(tag.Request.Site.Cat, comma)</span>
+}
+
+// MacroDomain contains definition for Domain Parameter
+func (tag *BidderMacro) MacroDomain(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.Domain
+        }</span>
+        <span class="cov8" title="1">return tag.Request.Site.Domain</span>
+}
+
+// MacroSectionCategory contains definition for SectionCategory Parameter
+func (tag *BidderMacro) MacroSectionCategory(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return strings.Join(tag.Request.App.SectionCat, comma)
+        }</span>
+        <span class="cov8" title="1">return strings.Join(tag.Request.Site.SectionCat, comma)</span>
+}
+
+// MacroPageCategory contains definition for PageCategory Parameter
+func (tag *BidderMacro) MacroPageCategory(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return strings.Join(tag.Request.App.PageCat, comma)
+        }</span>
+        <span class="cov8" title="1">return strings.Join(tag.Request.Site.PageCat, comma)</span>
+}
+
+// MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
+func (tag *BidderMacro) MacroPrivacyPolicy(key string) string <span class="cov8" title="1">{
+        var value int8 = 0
+        if tag.IsApp </span><span class="cov8" title="1">{
+                value = tag.Request.App.PrivacyPolicy
+        }</span> else<span class="cov8" title="1"> {
+                value = tag.Request.Site.PrivacyPolicy
+        }</span>
+        <span class="cov8" title="1">if value &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(value), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroKeywords contains definition for Keywords Parameter
+func (tag *BidderMacro) MacroKeywords(key string) string <span class="cov8" title="1">{
+        if tag.IsApp </span><span class="cov8" title="1">{
+                return tag.Request.App.Keywords
+        }</span>
+        <span class="cov8" title="1">return tag.Request.Site.Keywords</span>
+}
+
+/********************* Publisher *********************/
+
+// MacroPubID contains definition for PubID Parameter
+func (tag *BidderMacro) MacroPubID(key string) string <span class="cov8" title="1">{
+        if nil != tag.Publisher </span><span class="cov8" title="1">{
+                return tag.Publisher.ID
+        }</span>
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroPubName contains definition for PubName Parameter
+func (tag *BidderMacro) MacroPubName(key string) string <span class="cov8" title="1">{
+        if nil != tag.Publisher </span><span class="cov8" title="1">{
+                return tag.Publisher.Name
+        }</span>
+        <span class="cov0" title="0">return ""</span>
+}
+
+// MacroPubDomain contains definition for PubDomain Parameter
+func (tag *BidderMacro) MacroPubDomain(key string) string <span class="cov8" title="1">{
+        if nil != tag.Publisher </span><span class="cov8" title="1">{
+                return tag.Publisher.Domain
+        }</span>
+        <span class="cov0" title="0">return ""</span>
+}
+
+/********************* Content *********************/
+
+// MacroContentID contains definition for ContentID Parameter
+func (tag *BidderMacro) MacroContentID(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.ID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentEpisode contains definition for ContentEpisode Parameter
+func (tag *BidderMacro) MacroContentEpisode(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.Episode), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentTitle contains definition for ContentTitle Parameter
+func (tag *BidderMacro) MacroContentTitle(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Title
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentSeries contains definition for ContentSeries Parameter
+func (tag *BidderMacro) MacroContentSeries(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Series
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentSeason contains definition for ContentSeason Parameter
+func (tag *BidderMacro) MacroContentSeason(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Season
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentArtist contains definition for ContentArtist Parameter
+func (tag *BidderMacro) MacroContentArtist(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Artist
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentGenre contains definition for ContentGenre Parameter
+func (tag *BidderMacro) MacroContentGenre(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Genre
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentAlbum contains definition for ContentAlbum Parameter
+func (tag *BidderMacro) MacroContentAlbum(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Album
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentISrc contains definition for ContentISrc Parameter
+func (tag *BidderMacro) MacroContentISrc(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.ISRC
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentURL contains definition for ContentURL Parameter
+func (tag *BidderMacro) MacroContentURL(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.URL
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentCategory contains definition for ContentCategory Parameter
+func (tag *BidderMacro) MacroContentCategory(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strings.Join(tag.Content.Cat, comma)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentProductionQuality contains definition for ContentProductionQuality Parameter
+func (tag *BidderMacro) MacroContentProductionQuality(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; nil != tag.Content.ProdQ </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Content.ProdQ), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentVideoQuality contains definition for ContentVideoQuality Parameter
+func (tag *BidderMacro) MacroContentVideoQuality(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; nil != tag.Content.VideoQuality </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Content.VideoQuality), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentContext contains definition for ContentContext Parameter
+func (tag *BidderMacro) MacroContentContext(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; tag.Content.Context &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.Context), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentContentRating contains definition for ContentContentRating Parameter
+func (tag *BidderMacro) MacroContentContentRating(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.ContentRating
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentUserRating contains definition for ContentUserRating Parameter
+func (tag *BidderMacro) MacroContentUserRating(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.UserRating
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentQAGMediaRating contains definition for ContentQAGMediaRating Parameter
+func (tag *BidderMacro) MacroContentQAGMediaRating(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; tag.Content.QAGMediaRating &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.QAGMediaRating), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentKeywords contains definition for ContentKeywords Parameter
+func (tag *BidderMacro) MacroContentKeywords(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Keywords
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentLiveStream contains definition for ContentLiveStream Parameter
+func (tag *BidderMacro) MacroContentLiveStream(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.LiveStream), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
+func (tag *BidderMacro) MacroContentSourceRelationship(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.SourceRelationship), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentLength contains definition for ContentLength Parameter
+func (tag *BidderMacro) MacroContentLength(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.Len), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentLanguage contains definition for ContentLanguage Parameter
+func (tag *BidderMacro) MacroContentLanguage(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return tag.Content.Language
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
+func (tag *BidderMacro) MacroContentEmbeddable(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Content.Embeddable), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Producer *********************/
+
+// MacroProducerID contains definition for ProducerID Parameter
+func (tag *BidderMacro) MacroProducerID(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; nil != tag.Content.Producer </span><span class="cov8" title="1">{
+                return tag.Content.Producer.ID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroProducerName contains definition for ProducerName Parameter
+func (tag *BidderMacro) MacroProducerName(key string) string <span class="cov8" title="1">{
+        if nil != tag.Content &amp;&amp; nil != tag.Content.Producer </span><span class="cov8" title="1">{
+                return tag.Content.Producer.Name
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Device *********************/
+
+// MacroUserAgent contains definition for UserAgent Parameter
+func (tag *BidderMacro) MacroUserAgent(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request &amp;&amp; nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.UA
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDNT contains definition for DNT Parameter
+func (tag *BidderMacro) MacroDNT(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device &amp;&amp; nil != tag.Request.Device.DNT </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Request.Device.DNT), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroLMT contains definition for LMT Parameter
+func (tag *BidderMacro) MacroLMT(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device &amp;&amp; nil != tag.Request.Device.Lmt </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.Request.Device.Lmt), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroIP contains definition for IP Parameter
+func (tag *BidderMacro) MacroIP(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request &amp;&amp; nil != tag.Request.Device </span><span class="cov8" title="1">{
+                if len(tag.Request.Device.IP) &gt; 0 </span><span class="cov8" title="1">{
+                        return tag.Request.Device.IP
+                }</span> else<span class="cov8" title="1"> if len(tag.Request.Device.IPv6) &gt; 0 </span><span class="cov8" title="1">{
+                        return tag.Request.Device.IPv6
+                }</span>
+        }
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceType contains definition for DeviceType Parameter
+func (tag *BidderMacro) MacroDeviceType(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device &amp;&amp; tag.Request.Device.DeviceType &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.Device.DeviceType), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroMake contains definition for Make Parameter
+func (tag *BidderMacro) MacroMake(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.Make
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroModel contains definition for Model Parameter
+func (tag *BidderMacro) MacroModel(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.Model
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceOS contains definition for DeviceOS Parameter
+func (tag *BidderMacro) MacroDeviceOS(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.OS
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceOSVersion contains definition for DeviceOSVersion Parameter
+func (tag *BidderMacro) MacroDeviceOSVersion(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.OSV
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceWidth contains definition for DeviceWidth Parameter
+func (tag *BidderMacro) MacroDeviceWidth(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.Device.W), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceHeight contains definition for DeviceHeight Parameter
+func (tag *BidderMacro) MacroDeviceHeight(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.Device.H), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceJS contains definition for DeviceJS Parameter
+func (tag *BidderMacro) MacroDeviceJS(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(tag.Request.Device.JS), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceLanguage contains definition for DeviceLanguage Parameter
+func (tag *BidderMacro) MacroDeviceLanguage(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request &amp;&amp; nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.Language
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceIFA contains definition for DeviceIFA Parameter
+func (tag *BidderMacro) MacroDeviceIFA(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.IFA
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceIFAType contains definition for DeviceIFAType
+func (tag *BidderMacro) MacroDeviceIFAType(key string) string <span class="cov8" title="1">{
+        if nil != tag.DeviceExt </span><span class="cov8" title="1">{
+                return tag.DeviceExt.IFAType
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceDIDSHA1 contains definition for DeviceDIDSHA1 Parameter
+func (tag *BidderMacro) MacroDeviceDIDSHA1(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.DIDSHA1
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceDIDMD5 contains definition for DeviceDIDMD5 Parameter
+func (tag *BidderMacro) MacroDeviceDIDMD5(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.DIDMD5
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceDPIDSHA1 contains definition for DeviceDPIDSHA1 Parameter
+func (tag *BidderMacro) MacroDeviceDPIDSHA1(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.DPIDSHA1
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceDPIDMD5 contains definition for DeviceDPIDMD5 Parameter
+func (tag *BidderMacro) MacroDeviceDPIDMD5(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.DPIDMD5
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceMACSHA1 contains definition for DeviceMACSHA1 Parameter
+func (tag *BidderMacro) MacroDeviceMACSHA1(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.MACSHA1
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroDeviceMACMD5 contains definition for DeviceMACMD5 Parameter
+func (tag *BidderMacro) MacroDeviceMACMD5(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.Device </span><span class="cov8" title="1">{
+                return tag.Request.Device.MACMD5
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Geo *********************/
+
+// MacroLatitude contains definition for Latitude Parameter
+func (tag *BidderMacro) MacroLatitude(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return fmt.Sprintf("%g", tag.Request.Device.Geo.Lat)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroLongitude contains definition for Longitude Parameter
+func (tag *BidderMacro) MacroLongitude(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return fmt.Sprintf("%g", tag.Request.Device.Geo.Lon)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroCountry contains definition for Country Parameter
+func (tag *BidderMacro) MacroCountry(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return tag.Request.Device.Geo.Country
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroRegion contains definition for Region Parameter
+func (tag *BidderMacro) MacroRegion(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return tag.Request.Device.Geo.Region
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroCity contains definition for City Parameter
+func (tag *BidderMacro) MacroCity(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return tag.Request.Device.Geo.City
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroZip contains definition for Zip Parameter
+func (tag *BidderMacro) MacroZip(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return tag.Request.Device.Geo.ZIP
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroUTCOffset contains definition for UTCOffset Parameter
+func (tag *BidderMacro) MacroUTCOffset(key string) string <span class="cov8" title="1">{
+        if tag.HasGeo </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Request.Device.Geo.UTCOffset, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* User *********************/
+
+// MacroUserID contains definition for UserID Parameter
+func (tag *BidderMacro) MacroUserID(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.User </span><span class="cov8" title="1">{
+                return tag.Request.User.ID
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroYearOfBirth contains definition for YearOfBirth Parameter
+func (tag *BidderMacro) MacroYearOfBirth(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.User &amp;&amp; tag.Request.User.Yob &gt; 0 </span><span class="cov8" title="1">{
+                return strconv.FormatInt(tag.Request.User.Yob, intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroGender contains definition for Gender Parameter
+func (tag *BidderMacro) MacroGender(key string) string <span class="cov8" title="1">{
+        if nil != tag.Request.User </span><span class="cov8" title="1">{
+                return tag.Request.User.Gender
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Extension *********************/
+
+// MacroGDPRConsent contains definition for GDPRConsent Parameter
+func (tag *BidderMacro) MacroGDPRConsent(key string) string <span class="cov8" title="1">{
+        if nil != tag.UserExt </span><span class="cov8" title="1">{
+                return tag.UserExt.Consent
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroGDPR contains definition for GDPR Parameter
+func (tag *BidderMacro) MacroGDPR(key string) string <span class="cov8" title="1">{
+        if nil != tag.RegsExt &amp;&amp; nil != tag.RegsExt.GDPR </span><span class="cov8" title="1">{
+                return strconv.FormatInt(int64(*tag.RegsExt.GDPR), intBase)
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+// MacroUSPrivacy contains definition for USPrivacy Parameter
+func (tag *BidderMacro) MacroUSPrivacy(key string) string <span class="cov8" title="1">{
+        if nil != tag.RegsExt </span><span class="cov8" title="1">{
+                return tag.RegsExt.USPrivacy
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+
+/********************* Additional *********************/
+
+// MacroCacheBuster contains definition for CacheBuster Parameter
+func (tag *BidderMacro) MacroCacheBuster(key string) string <span class="cov0" title="0">{
+        //change implementation
+        return strconv.FormatInt(time.Now().UnixNano(), intBase)
+}</span>
+
+// MacroKV replace the kv macro
+func (tag *BidderMacro) MacroKV(key string) string <span class="cov8" title="1">{
+        if tag.KV == nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return mapToQuery(tag.KV)</span>
+}
+
+// MacroKVM replace the kvm macro
+func (tag *BidderMacro) MacroKVM(key string) string <span class="cov8" title="1">{
+        if tag.KV == nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return getJSONString(tag.KV)</span>
+}
+
+/********************* Request Headers *********************/
+
+// setDefaultHeaders sets following default headers based on VAST protocol version
+//
+//        X-device-IP; end users IP address, per VAST 4.x
+//        X-Forwarded-For; end users IP address, prior VAST versions
+//        X-Device-User-Agent; End users user agent, per VAST 4.x
+//        User-Agent; End users user agent, prior VAST versions
+//        X-Device-Referer; Referer value from the original request, per VAST 4.x
+//        X-device-Accept-Language, Accept-language value from the original request, per VAST 4.x
+func setDefaultHeaders(tag *BidderMacro) <span class="cov8" title="1">{
+        // openrtb2. auction.go setDeviceImplicitly
+        // already populates OpenRTB bid request based on http request headers
+        // reusing the same information to set these headers via Macro* methods
+        headers := http.Header{}
+        ip := tag.IBidderMacro.MacroIP("")
+        userAgent := tag.IBidderMacro.MacroUserAgent("")
+        referer := tag.IBidderMacro.MacroSitePage("")
+        language := tag.IBidderMacro.MacroDeviceLanguage("")
+
+        // 1 - vast 1 - 3 expected, 2 - vast 4 expected
+        expectedVastTags := 0
+        if nil != tag.Imp &amp;&amp; nil != tag.Imp.Video &amp;&amp; nil != tag.Imp.Video.Protocols &amp;&amp; len(tag.Imp.Video.Protocols) &gt; 0 </span><span class="cov8" title="1">{
+                for _, protocol := range tag.Imp.Video.Protocols </span><span class="cov8" title="1">{
+                        if protocol == adcom1.CreativeVAST40 || protocol == adcom1.CreativeVAST40Wrapper </span><span class="cov8" title="1">{
+                                expectedVastTags |= 1 &lt;&lt; 1
+                        }</span>
+                        <span class="cov8" title="1">if protocol &lt;= adcom1.CreativeVAST30Wrapper </span><span class="cov8" title="1">{
+                                expectedVastTags |= 1 &lt;&lt; 0
+                        }</span>
+                }
+        } else<span class="cov8" title="1"> {
+                // not able to detect protocols. set all headers
+                expectedVastTags = 3
+        }</span>
+
+        <span class="cov8" title="1">if expectedVastTags == 1 || expectedVastTags == 3 </span><span class="cov8" title="1">{
+                // vast prior to version 3 headers
+                setHeaders(headers, "X-Forwarded-For", ip)
+                setHeaders(headers, "User-Agent", userAgent)
+        }</span>
+
+        <span class="cov8" title="1">if expectedVastTags == 2 || expectedVastTags == 3 </span><span class="cov8" title="1">{
+                // vast 4 specific headers
+                setHeaders(headers, "X-device-Ip", ip)
+                setHeaders(headers, "X-Device-User-Agent", userAgent)
+                setHeaders(headers, "X-Device-Referer", referer)
+                setHeaders(headers, "X-Device-Accept-Language", language)
+        }</span>
+        <span class="cov8" title="1">tag.ImpReqHeaders = headers</span>
+}
+
+func setHeaders(headers http.Header, key, value string) <span class="cov8" title="1">{
+        if len(value) &gt; 0 </span><span class="cov8" title="1">{
+                headers.Set(key, value)
+        }</span>
+}
+
+// getAllHeaders combines default and custom headers and returns common list
+// It internally calls GetHeaders() method for obtaining list of custom headers
+func (tag *BidderMacro) getAllHeaders() http.Header <span class="cov8" title="1">{
+        setDefaultHeaders(tag)
+        customHeaders := tag.IBidderMacro.GetHeaders()
+        if nil != customHeaders </span><span class="cov8" title="1">{
+                for k, v := range customHeaders </span><span class="cov8" title="1">{
+                        // custom header may contains default header key with value
+                        // in such case custom value will be prefered
+                        if nil != v &amp;&amp; len(v) &gt; 0 </span><span class="cov8" title="1">{
+                                tag.ImpReqHeaders.Set(k, v[0])
+                                for i := 1; i &lt; len(v); i++ </span><span class="cov0" title="0">{
+                                        tag.ImpReqHeaders.Add(k, v[i])
+                                }</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return tag.ImpReqHeaders</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package vastbidder
+
+import (
+        "net/http"
+
+        "github.com/prebid/openrtb/v19/openrtb2"
+        "github.com/prebid/prebid-server/config"
+        "github.com/prebid/prebid-server/openrtb_ext"
+)
+
+// IBidderMacro interface will capture all macro definition
+type IBidderMacro interface {
+        //Helper Function
+        InitBidRequest(request *openrtb2.BidRequest)
+        LoadImpression(imp *openrtb2.Imp) (*openrtb_ext.ExtImpVASTBidder, error)
+        LoadVASTTag(tag *openrtb_ext.ExtImpVASTBidderTag)
+        GetBidderKeys() map[string]string
+        SetAdapterConfig(*config.Adapter)
+        GetURI() string
+        GetHeaders() http.Header
+        GetValue(string) (string, bool)
+        //getAllHeaders returns default and custom heades
+        getAllHeaders() http.Header
+
+        //Request
+        MacroTest(string) string
+        MacroTimeout(string) string
+        MacroWhitelistSeat(string) string
+        MacroWhitelistLang(string) string
+        MacroBlockedSeat(string) string
+        MacroCurrency(string) string
+        MacroBlockedCategory(string) string
+        MacroBlockedAdvertiser(string) string
+        MacroBlockedApp(string) string
+
+        //Source
+        MacroFD(string) string
+        MacroTransactionID(string) string
+        MacroPaymentIDChain(string) string
+        MacroSchain(string) string
+
+        //Regs
+        MacroCoppa(string) string
+
+        //Impression
+        MacroDisplayManager(string) string
+        MacroDisplayManagerVersion(string) string
+        MacroInterstitial(string) string
+        MacroTagID(string) string
+        MacroBidFloor(string) string
+        MacroBidFloorCurrency(string) string
+        MacroSecure(string) string
+        MacroPMP(string) string
+
+        //Video
+        MacroVideoMIMES(string) string
+        MacroVideoMinimumDuration(string) string
+        MacroVideoMaximumDuration(string) string
+        MacroVideoProtocols(string) string
+        MacroVideoPlayerWidth(string) string
+        MacroVideoPlayerHeight(string) string
+        MacroVideoStartDelay(string) string
+        MacroVideoPlacement(string) string
+        MacroVideoLinearity(string) string
+        MacroVideoSkip(string) string
+        MacroVideoSkipMinimum(string) string
+        MacroVideoSkipAfter(string) string
+        MacroVideoSequence(string) string
+        MacroVideoBlockedAttribute(string) string
+        MacroVideoMaximumExtended(string) string
+        MacroVideoMinimumBitRate(string) string
+        MacroVideoMaximumBitRate(string) string
+        MacroVideoBoxing(string) string
+        MacroVideoPlaybackMethod(string) string
+        MacroVideoDelivery(string) string
+        MacroVideoPosition(string) string
+        MacroVideoAPI(string) string
+
+        //Site
+        MacroSiteID(string) string
+        MacroSiteName(string) string
+        MacroSitePage(string) string
+        MacroSiteReferrer(string) string
+        MacroSiteSearch(string) string
+        MacroSiteMobile(string) string
+
+        //App
+        MacroAppID(string) string
+        MacroAppName(string) string
+        MacroAppBundle(string) string
+        MacroAppStoreURL(string) string
+        MacroAppVersion(string) string
+        MacroAppPaid(string) string
+
+        //SiteAppCommon
+        MacroCategory(string) string
+        MacroDomain(string) string
+        MacroSectionCategory(string) string
+        MacroPageCategory(string) string
+        MacroPrivacyPolicy(string) string
+        MacroKeywords(string) string
+
+        //Publisher
+        MacroPubID(string) string
+        MacroPubName(string) string
+        MacroPubDomain(string) string
+
+        //Content
+        MacroContentID(string) string
+        MacroContentEpisode(string) string
+        MacroContentTitle(string) string
+        MacroContentSeries(string) string
+        MacroContentSeason(string) string
+        MacroContentArtist(string) string
+        MacroContentGenre(string) string
+        MacroContentAlbum(string) string
+        MacroContentISrc(string) string
+        MacroContentURL(string) string
+        MacroContentCategory(string) string
+        MacroContentProductionQuality(string) string
+        MacroContentVideoQuality(string) string
+        MacroContentContext(string) string
+        MacroContentContentRating(string) string
+        MacroContentUserRating(string) string
+        MacroContentQAGMediaRating(string) string
+        MacroContentKeywords(string) string
+        MacroContentLiveStream(string) string
+        MacroContentSourceRelationship(string) string
+        MacroContentLength(string) string
+        MacroContentLanguage(string) string
+        MacroContentEmbeddable(string) string
+
+        //Producer
+        MacroProducerID(string) string
+        MacroProducerName(string) string
+
+        //Device
+        MacroUserAgent(string) string
+        MacroDNT(string) string
+        MacroLMT(string) string
+        MacroIP(string) string
+        MacroDeviceType(string) string
+        MacroMake(string) string
+        MacroModel(string) string
+        MacroDeviceOS(string) string
+        MacroDeviceOSVersion(string) string
+        MacroDeviceWidth(string) string
+        MacroDeviceHeight(string) string
+        MacroDeviceJS(string) string
+        MacroDeviceLanguage(string) string
+        MacroDeviceIFA(string) string
+        MacroDeviceIFAType(string) string
+        MacroDeviceDIDSHA1(string) string
+        MacroDeviceDIDMD5(string) string
+        MacroDeviceDPIDSHA1(string) string
+        MacroDeviceDPIDMD5(string) string
+        MacroDeviceMACSHA1(string) string
+        MacroDeviceMACMD5(string) string
+
+        //Geo
+        MacroLatitude(string) string
+        MacroLongitude(string) string
+        MacroCountry(string) string
+        MacroRegion(string) string
+        MacroCity(string) string
+        MacroZip(string) string
+        MacroUTCOffset(string) string
+
+        //User
+        MacroUserID(string) string
+        MacroYearOfBirth(string) string
+        MacroGender(string) string
+
+        //Extension
+        MacroGDPRConsent(string) string
+        MacroGDPR(string) string
+        MacroUSPrivacy(string) string
+
+        //Additional
+        MacroCacheBuster(string) string
+
+        //Keyval
+        MacroKV(string) string
+        MacroKVM(string) string
+}
+
+var bidderMacroMap = map[openrtb_ext.BidderName]func() IBidderMacro{}
+
+// RegisterNewBidderMacro will be used by each bidder to set its respective macro IBidderMacro
+func RegisterNewBidderMacro(bidder openrtb_ext.BidderName, macro func() IBidderMacro) <span class="cov8" title="1">{
+        bidderMacroMap[bidder] = macro
+}</span>
+
+// GetNewBidderMacro will return IBidderMacro of specific bidder
+func GetNewBidderMacro(bidder openrtb_ext.BidderName) IBidderMacro <span class="cov8" title="1">{
+        callback, ok := bidderMacroMap[bidder]
+        if ok </span><span class="cov8" title="1">{
+                return callback()
+        }</span>
+        <span class="cov0" title="0">return NewBidderMacro()</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package vastbidder
+
+import (
+        "errors"
+
+        "github.com/prebid/openrtb/v19/openrtb2"
+        "github.com/prebid/prebid-server/adapters"
+)
+
+// ITagRequestHandler parse bidder request
+type ITagRequestHandler interface {
+        MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error)
+}
+
+// ITagResponseHandler parse bidder response
+type ITagResponseHandler interface {
+        Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error
+        MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error)
+}
+
+// HandlerType list of tag based response handlers
+type HandlerType string
+
+const (
+        VASTTagHandlerType HandlerType = `vasttag`
+)
+
+// GetResponseHandler returns response handler
+func GetResponseHandler(responseType HandlerType) (ITagResponseHandler, error) <span class="cov0" title="0">{
+        switch responseType </span>{
+        case VASTTagHandlerType:<span class="cov0" title="0">
+                return NewVASTTagResponseHandler(), nil</span>
+        }
+        <span class="cov0" title="0">return nil, errors.New(`Unkown Response Handler`)</span>
+}
+
+func GetRequestHandler(responseType HandlerType) (ITagRequestHandler, error) <span class="cov0" title="0">{
+        switch responseType </span>{
+        case VASTTagHandlerType:<span class="cov0" title="0">
+                return nil, nil</span>
+        }
+        <span class="cov0" title="0">return nil, errors.New(`Unkown Response Handler`)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package vastbidder
+
+import (
+        "bytes"
+        "net/url"
+        "strings"
+
+        "github.com/golang/glog"
+)
+
+const (
+        macroPrefix          string = `{` //macro prefix can not be empty
+        macroSuffix          string = `}` //macro suffix can not be empty
+        macroEscapeSuffix    string = `_ESC`
+        macroPrefixLen       int    = len(macroPrefix)
+        macroSuffixLen       int    = len(macroSuffix)
+        macroEscapeSuffixLen int    = len(macroEscapeSuffix)
+)
+
+//Flags to customize macro processing wrappers
+
+// MacroProcessor struct to hold openrtb request and cache values
+type MacroProcessor struct {
+        bidderMacro IBidderMacro
+        mapper      Mapper
+        macroCache  map[string]string
+        bidderKeys  map[string]string
+}
+
+// NewMacroProcessor will process macro's of openrtb bid request
+func NewMacroProcessor(bidderMacro IBidderMacro, mapper Mapper) *MacroProcessor <span class="cov8" title="1">{
+        return &amp;MacroProcessor{
+                bidderMacro: bidderMacro,
+                mapper:      mapper,
+                macroCache:  make(map[string]string),
+        }
+}</span>
+
+// SetMacro Adding Custom Macro Manually
+func (mp *MacroProcessor) SetMacro(key, value string) <span class="cov0" title="0">{
+        mp.macroCache[key] = value
+}</span>
+
+// SetBidderKeys will flush and set bidder specific keys
+func (mp *MacroProcessor) SetBidderKeys(keys map[string]string) <span class="cov0" title="0">{
+        mp.bidderKeys = keys
+}</span>
+
+// processKey : returns value of key macro and status found or not
+func (mp *MacroProcessor) processKey(key string) (string, bool) <span class="cov8" title="1">{
+        var valueCallback *macroCallBack
+        var value string
+        nEscaping := 0
+        tmpKey := key
+        found := false
+
+        for </span><span class="cov8" title="1">{
+                //Search in macro cache
+                if value, found = mp.macroCache[tmpKey]; found </span><span class="cov8" title="1">{
+                        break</span>
+                }
+
+                //Search for bidder keys
+                <span class="cov8" title="1">if nil != mp.bidderKeys </span><span class="cov0" title="0">{
+                        if value, found = mp.bidderKeys[tmpKey]; found </span><span class="cov0" title="0">{
+                                //default escaping of bidder keys
+                                if len(value) &gt; 0 &amp;&amp; nEscaping == 0 </span><span class="cov0" title="0">{
+                                        //escape parameter only if _ESC is not present
+                                        value = url.QueryEscape(value)
+                                }</span>
+                                <span class="cov0" title="0">break</span>
+                        }
+                }
+
+                <span class="cov8" title="1">valueCallback, found = mp.mapper[tmpKey]
+
+                if found </span><span class="cov8" title="1">{
+                        //found callback function
+                        value = valueCallback.callback(mp.bidderMacro, tmpKey)
+                        //checking if default escaping needed or not
+                        if len(value) &gt; 0 &amp;&amp; valueCallback.escape &amp;&amp; nEscaping == 0 </span><span class="cov8" title="1">{
+                                //escape parameter only if defaultescaping is true and _ESC is not present
+                                value = url.QueryEscape(value)
+                        }</span>
+                        <span class="cov8" title="1">break</span>
+                } else<span class="cov8" title="1"> if strings.HasSuffix(tmpKey, macroEscapeSuffix) </span><span class="cov8" title="1">{
+                        //escaping macro found
+                        tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
+                        nEscaping++
+                        continue</span>
+                } else<span class="cov8" title="1"> {
+                        value, found = mp.bidderMacro.GetValue(tmpKey)
+                }</span>
+                <span class="cov8" title="1">break</span>
+        }
+
+        <span class="cov8" title="1">if found </span><span class="cov8" title="1">{
+                if len(value) &gt; 0 </span><span class="cov8" title="1">{
+                        if nEscaping &gt; 0 </span><span class="cov8" title="1">{
+                                //escaping string nEscaping times
+                                value = escape(value, nEscaping)
+                        }</span>
+                        <span class="cov8" title="1">if nil != valueCallback &amp;&amp; valueCallback.cached </span><span class="cov8" title="1">{
+                                //cached value if its cached flag is true
+                                mp.macroCache[key] = value
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return value, found</span>
+}
+
+// Process : Substitute macros in input string
+func (mp *MacroProcessor) Process(in string) (response string) <span class="cov8" title="1">{
+        var out bytes.Buffer
+        pos, start, end, size := 0, 0, 0, len(in)
+
+        for pos &lt; size </span><span class="cov8" title="1">{
+                //find macro prefix index
+                if start = strings.Index(in[pos:], macroPrefix); -1 == start </span><span class="cov8" title="1">{
+                        //[prefix_not_found] append remaining string to response
+                        out.WriteString(in[pos:])
+
+                        //macro prefix not found
+                        break</span>
+                }
+
+                //prefix index w.r.t original string
+                <span class="cov8" title="1">start = start + pos
+
+                //append non macro prefix content
+                out.WriteString(in[pos:start])
+
+                if (end - macroSuffixLen) &lt;= (start + macroPrefixLen) </span><span class="cov8" title="1">{
+                        //string contains {{TEXT_{{MACRO}} -&gt; it should replace it with{{TEXT_MACROVALUE
+                        //find macro suffix index
+                        if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); -1 == end </span><span class="cov0" title="0">{
+                                //[suffix_not_found] append remaining string to response
+                                out.WriteString(in[start:])
+
+                                // We Found First %% and Not Found Second %% But We are in between of string
+                                break</span>
+                        }
+
+                        <span class="cov8" title="1">end = start + macroPrefixLen + end + macroSuffixLen</span>
+                }
+
+                //get actual macro key by removing macroPrefix and macroSuffix from key itself
+                <span class="cov8" title="1">key := in[start+macroPrefixLen : end-macroSuffixLen]
+
+                //process macro
+                value, found := mp.processKey(key)
+                if found </span><span class="cov8" title="1">{
+                        out.WriteString(value)
+                        pos = end
+                }</span> else<span class="cov8" title="1"> {
+                        out.WriteByte(macroPrefix[0])
+                        pos = start + 1
+                }</span>
+                //glog.Infof("\nSearch[%d] &lt;start,end,key&gt;: [%d,%d,%s]", count, start, end, key)
+        }
+        <span class="cov8" title="1">response = out.String()
+        glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", in, response)
+        return</span>
+}
+
+// GetMacroKey will return macro formatted key
+func GetMacroKey(key string) string <span class="cov8" title="1">{
+        return macroPrefix + key + macroSuffix
+}</span>
+
+func escape(str string, n int) string <span class="cov8" title="1">{
+        for ; n &gt; 0; n-- </span><span class="cov8" title="1">{
+                str = url.QueryEscape(str)
+        }</span>
+        <span class="cov8" title="1">return str[:]</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package vastbidder
+
+type macroCallBack struct {
+        cached   bool
+        escape   bool
+        callback func(IBidderMacro, string) string
+}
+
+// Mapper will map macro with its respective call back function
+type Mapper map[string]*macroCallBack
+
+func (obj Mapper) clone() Mapper <span class="cov8" title="1">{
+        cloned := make(Mapper, len(obj))
+        for k, v := range obj </span><span class="cov8" title="1">{
+                newCallback := *v
+                cloned[k] = &amp;newCallback
+        }</span>
+        <span class="cov8" title="1">return cloned</span>
+}
+
+var _defaultMapper = Mapper{
+        //Request
+        MacroTest:              &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroTest},
+        MacroTimeout:           &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroTimeout},
+        MacroWhitelistSeat:     &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroWhitelistSeat},
+        MacroWhitelistLang:     &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroWhitelistLang},
+        MacroBlockedSeat:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedSeat},
+        MacroCurrency:          &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroCurrency},
+        MacroBlockedCategory:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedCategory},
+        MacroBlockedAdvertiser: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedAdvertiser},
+        MacroBlockedApp:        &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroBlockedApp},
+
+        //Source
+        MacroFD:             &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroFD},
+        MacroTransactionID:  &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroTransactionID},
+        MacroPaymentIDChain: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPaymentIDChain},
+        MacroSchain:         &amp;macroCallBack{cached: true, escape: false, callback: IBidderMacro.MacroSchain},
+
+        //Regs
+        MacroCoppa: &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroCoppa},
+
+        //Impression
+        MacroDisplayManager:        &amp;macroCallBack{cached: false, escape: true, callback: IBidderMacro.MacroDisplayManager},
+        MacroDisplayManagerVersion: &amp;macroCallBack{cached: false, escape: true, callback: IBidderMacro.MacroDisplayManagerVersion},
+        MacroInterstitial:          &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroInterstitial},
+        MacroTagID:                 &amp;macroCallBack{cached: false, escape: true, callback: IBidderMacro.MacroTagID},
+        MacroBidFloor:              &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroBidFloor},
+        MacroBidFloorCurrency:      &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroBidFloorCurrency},
+        MacroSecure:                &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroSecure},
+        MacroPMP:                   &amp;macroCallBack{cached: false, escape: true, callback: IBidderMacro.MacroPMP},
+
+        //Video
+        MacroVideoMIMES:            &amp;macroCallBack{cached: false, escape: true, callback: IBidderMacro.MacroVideoMIMES},
+        MacroVideoMinimumDuration:  &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoMinimumDuration},
+        MacroVideoMaximumDuration:  &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoMaximumDuration},
+        MacroVideoProtocols:        &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoProtocols},
+        MacroVideoPlayerWidth:      &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoPlayerWidth},
+        MacroVideoPlayerHeight:     &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoPlayerHeight},
+        MacroVideoStartDelay:       &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoStartDelay},
+        MacroVideoPlacement:        &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoPlacement},
+        MacroVideoLinearity:        &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoLinearity},
+        MacroVideoSkip:             &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoSkip},
+        MacroVideoSkipMinimum:      &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoSkipMinimum},
+        MacroVideoSkipAfter:        &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoSkipAfter},
+        MacroVideoSequence:         &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoSequence},
+        MacroVideoBlockedAttribute: &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoBlockedAttribute},
+        MacroVideoMaximumExtended:  &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoMaximumExtended},
+        MacroVideoMinimumBitRate:   &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoMinimumBitRate},
+        MacroVideoMaximumBitRate:   &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoMaximumBitRate},
+        MacroVideoBoxing:           &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoBoxing},
+        MacroVideoPlaybackMethod:   &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoPlaybackMethod},
+        MacroVideoDelivery:         &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoDelivery},
+        MacroVideoPosition:         &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoPosition},
+        MacroVideoAPI:              &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroVideoAPI},
+
+        //Site
+        MacroSiteID:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSiteID},
+        MacroSiteName:     &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSiteName},
+        MacroSitePage:     &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSitePage},
+        MacroSiteReferrer: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSiteReferrer},
+        MacroSiteSearch:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSiteSearch},
+        MacroSiteMobile:   &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroSiteMobile},
+
+        //App
+        MacroAppID:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroAppID},
+        MacroAppName:     &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroAppName},
+        MacroAppBundle:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroAppBundle},
+        MacroAppStoreURL: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroAppStoreURL},
+        MacroAppVersion:  &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroAppVersion},
+        MacroAppPaid:     &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroAppPaid},
+
+        //SiteAppCommon
+        MacroCategory:        &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroCategory},
+        MacroDomain:          &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDomain},
+        MacroSectionCategory: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroSectionCategory},
+        MacroPageCategory:    &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPageCategory},
+        MacroPrivacyPolicy:   &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroPrivacyPolicy},
+        MacroKeywords:        &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroKeywords},
+
+        //Publisher
+        MacroPubID:     &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroPubID},
+        MacroPubName:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPubName},
+        MacroPubDomain: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPubDomain},
+
+        //Content
+        MacroContentID:                 &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentID},
+        MacroContentEpisode:            &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentEpisode},
+        MacroContentTitle:              &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentTitle},
+        MacroContentSeries:             &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentSeries},
+        MacroContentSeason:             &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentSeason},
+        MacroContentArtist:             &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentArtist},
+        MacroContentGenre:              &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentGenre},
+        MacroContentAlbum:              &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentAlbum},
+        MacroContentISrc:               &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentISrc},
+        MacroContentURL:                &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentURL},
+        MacroContentCategory:           &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentCategory},
+        MacroContentProductionQuality:  &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentProductionQuality},
+        MacroContentVideoQuality:       &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentVideoQuality},
+        MacroContentContext:            &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentContext},
+        MacroContentContentRating:      &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentContentRating},
+        MacroContentUserRating:         &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentUserRating},
+        MacroContentQAGMediaRating:     &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentQAGMediaRating},
+        MacroContentKeywords:           &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentKeywords},
+        MacroContentLiveStream:         &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentLiveStream},
+        MacroContentSourceRelationship: &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentSourceRelationship},
+        MacroContentLength:             &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentLength},
+        MacroContentLanguage:           &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroContentLanguage},
+        MacroContentEmbeddable:         &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroContentEmbeddable},
+
+        //Producer
+        MacroProducerID:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroProducerID},
+        MacroProducerName: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroProducerName},
+
+        //Device
+        MacroUserAgent:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroUserAgent},
+        MacroDNT:             &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroDNT},
+        MacroLMT:             &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroLMT},
+        MacroIP:              &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroIP},
+        MacroDeviceType:      &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceType},
+        MacroMake:            &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroMake},
+        MacroModel:           &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroModel},
+        MacroDeviceOS:        &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceOS},
+        MacroDeviceOSVersion: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceOSVersion},
+        MacroDeviceWidth:     &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceWidth},
+        MacroDeviceHeight:    &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceHeight},
+        MacroDeviceJS:        &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroDeviceJS},
+        MacroDeviceLanguage:  &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceLanguage},
+        MacroDeviceIFA:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceIFA},
+        MacroDeviceIFAType:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceIFAType},
+        MacroDeviceDIDSHA1:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceDIDSHA1},
+        MacroDeviceDIDMD5:    &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceDIDMD5},
+        MacroDeviceDPIDSHA1:  &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceDPIDSHA1},
+        MacroDeviceDPIDMD5:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceDPIDMD5},
+        MacroDeviceMACSHA1:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceMACSHA1},
+        MacroDeviceMACMD5:    &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroDeviceMACMD5},
+
+        //Geo
+        MacroLatitude:  &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroLatitude},
+        MacroLongitude: &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroLongitude},
+        MacroCountry:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroCountry},
+        MacroRegion:    &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroRegion},
+        MacroCity:      &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroCity},
+        MacroZip:       &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroZip},
+        MacroUTCOffset: &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroUTCOffset},
+
+        //User
+        MacroUserID:      &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroUserID},
+        MacroYearOfBirth: &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroYearOfBirth},
+        MacroGender:      &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroGender},
+
+        //Extension
+        MacroGDPRConsent: &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroGDPRConsent},
+        MacroGDPR:        &amp;macroCallBack{cached: true, callback: IBidderMacro.MacroGDPR},
+        MacroUSPrivacy:   &amp;macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroUSPrivacy},
+
+        //Additional
+        MacroCacheBuster: &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
+
+        //KeyVal
+        MacroKV:  &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroKV},
+        MacroKVM: &amp;macroCallBack{cached: false, callback: IBidderMacro.MacroKVM},
+}
+
+// GetDefaultMapper will return clone of default Mapper function
+func GetDefaultMapper() Mapper <span class="cov8" title="1">{
+        return _defaultMapper.clone()
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package vastbidder
+
+import (
+        "github.com/prebid/openrtb/v19/openrtb2"
+        "github.com/prebid/prebid-server/adapters"
+        "github.com/prebid/prebid-server/config"
+        "github.com/prebid/prebid-server/openrtb_ext"
+)
+
+// TagBidder is default implementation of ITagBidder
+type TagBidder struct {
+        adapters.Bidder
+        bidderName    openrtb_ext.BidderName
+        adapterConfig *config.Adapter
+}
+
+// MakeRequests will contains default definition for processing queries
+func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) <span class="cov8" title="1">{
+        bidderMacro := GetNewBidderMacro(a.bidderName)
+        bidderMapper := GetDefaultMapper()
+        macroProcessor := NewMacroProcessor(bidderMacro, bidderMapper)
+
+        //Setting config parameters
+        //bidderMacro.SetBidderConfig(a.bidderConfig)
+        bidderMacro.SetAdapterConfig(a.adapterConfig)
+        bidderMacro.InitBidRequest(request)
+
+        requestData := []*adapters.RequestData{}
+        for impIndex := range request.Imp </span><span class="cov8" title="1">{
+                bidderExt, err := bidderMacro.LoadImpression(&amp;request.Imp[impIndex])
+                if nil != err </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                //iterate each vast tags, and load vast tag
+                <span class="cov8" title="1">for vastTagIndex, tag := range bidderExt.Tags </span><span class="cov0" title="0">{
+                        //load vasttag
+                        bidderMacro.LoadVASTTag(tag)
+
+                        //Setting Bidder Level Keys
+                        bidderKeys := bidderMacro.GetBidderKeys()
+                        macroProcessor.SetBidderKeys(bidderKeys)
+
+                        uri := macroProcessor.Process(bidderMacro.GetURI())
+
+                        // append custom headers if any
+                        headers := bidderMacro.getAllHeaders()
+
+                        requestData = append(requestData, &amp;adapters.RequestData{
+                                Params: &amp;adapters.BidRequestParams{
+                                        ImpIndex:     impIndex,
+                                        VASTTagIndex: vastTagIndex,
+                                },
+                                Method:  `GET`,
+                                Uri:     uri,
+                                Headers: headers,
+                        })
+                }</span>
+        }
+
+        <span class="cov8" title="1">return requestData, nil</span>
+}
+
+// MakeBids makes bids
+func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) <span class="cov0" title="0">{
+        //response validation can be done here independently
+        //handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
+        handler, err := GetResponseHandler(VASTTagHandlerType)
+        if nil != err </span><span class="cov0" title="0">{
+                return nil, []error{err}
+        }</span>
+        <span class="cov0" title="0">return handler.MakeBids(internalRequest, externalRequest, response)</span>
+}
+
+// NewTagBidder is an constructor for TagBidder
+func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *TagBidder <span class="cov8" title="1">{
+        obj := &amp;TagBidder{
+                bidderName:    bidderName,
+                adapterConfig: &amp;config,
+        }
+        return obj
+}</span>
+
+// Builder builds a new instance of the 33Across adapter for the given bidder with the given config.
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, _ config.Server) (adapters.Bidder, error) <span class="cov0" title="0">{
+        return NewTagBidder(bidderName, config), nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package vastbidder
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "math/rand"
+        "net/url"
+        "reflect"
+        "strconv"
+        "strings"
+
+        "github.com/prebid/prebid-server/adapters"
+        "github.com/prebid/prebid-server/openrtb_ext"
+)
+
+func ObjectArrayToString(len int, separator string, cb func(i int) string) string <span class="cov8" title="1">{
+        if 0 == len </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+
+        <span class="cov8" title="1">var out bytes.Buffer
+        for i := 0; i &lt; len; i++ </span><span class="cov8" title="1">{
+                if out.Len() &gt; 0 </span><span class="cov8" title="1">{
+                        out.WriteString(separator)
+                }</span>
+                <span class="cov8" title="1">out.WriteString(cb(i))</span>
+        }
+        <span class="cov8" title="1">return out.String()</span>
+}
+
+func readImpExt(impExt json.RawMessage) (*openrtb_ext.ExtImpVASTBidder, error) <span class="cov0" title="0">{
+        var bidderExt adapters.ExtImpBidder
+        if err := json.Unmarshal(impExt, &amp;bidderExt); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">vastBidderExt := openrtb_ext.ExtImpVASTBidder{}
+        if err := json.Unmarshal(bidderExt.Bidder, &amp;vastBidderExt); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;vastBidderExt, nil</span>
+}
+
+func normalizeObject(prefix string, out map[string]string, obj map[string]interface{}) <span class="cov0" title="0">{
+        for k, value := range obj </span><span class="cov0" title="0">{
+                key := k
+                if len(prefix) &gt; 0 </span><span class="cov0" title="0">{
+                        key = prefix + "." + k
+                }</span>
+
+                <span class="cov0" title="0">switch val := value.(type) </span>{
+                case string:<span class="cov0" title="0">
+                        out[key] = val</span>
+                case []interface{}:<span class="cov0" title="0"> //array
+                        continue</span>
+                case map[string]interface{}:<span class="cov0" title="0"> //object
+                        normalizeObject(key, out, val)</span>
+                default:<span class="cov0" title="0"> //all int, float
+                        out[key] = fmt.Sprint(value)</span>
+                }
+        }
+}
+
+func NormalizeJSON(obj map[string]interface{}) map[string]string <span class="cov0" title="0">{
+        out := map[string]string{}
+        normalizeObject("", out, obj)
+        return out
+}</span>
+
+var GetRandomID = func() string <span class="cov0" title="0">{
+        return strconv.FormatInt(rand.Int63(), intBase)
+}</span>
+
+func getJSONString(kvmap any) string <span class="cov8" title="1">{
+
+        var buf bytes.Buffer
+        encoder := json.NewEncoder(&amp;buf)
+
+        // Disable HTML escaping for special characters
+        encoder.SetEscapeHTML(false)
+
+        if err := encoder.Encode(kvmap); err != nil </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return strings.TrimRight(buf.String(), "\n")</span>
+
+}
+
+func isMap(data any) bool <span class="cov8" title="1">{
+        return reflect.TypeOf(data).Kind() == reflect.Map
+}</span>
+
+// extractDataFromMap help to get value from nested  map
+func getValueFromMap(lookUpOrder []string, m map[string]any) any <span class="cov8" title="1">{
+        if len(lookUpOrder) == 0 </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+
+        <span class="cov8" title="1">for _, key := range lookUpOrder </span><span class="cov8" title="1">{
+                value, keyExists := m[key]
+                if !keyExists </span><span class="cov8" title="1">{
+                        return ""
+                }</span>
+                <span class="cov8" title="1">if nestedMap, isMap := value.(map[string]any); isMap </span><span class="cov8" title="1">{
+                        m = nestedMap
+                }</span> else<span class="cov8" title="1"> {
+                        return value
+                }</span>
+        }
+        <span class="cov8" title="1">return m</span>
+}
+
+// mapToQuery convert the map data into &amp; seperated string
+func mapToQuery(m map[string]any) string <span class="cov8" title="1">{
+        values := url.Values{}
+        for key, value := range m </span><span class="cov8" title="1">{
+                switch reflect.TypeOf(value).Kind() </span>{
+                case reflect.Map:<span class="cov8" title="1">
+                        mvalue, ok := value.(map[string]any)
+                        if ok </span><span class="cov8" title="1">{
+                                values.Add(key, mapToQuery(mvalue))
+                        }</span>
+                default:<span class="cov8" title="1">
+                        values.Add(key, fmt.Sprintf("%v", value))</span>
+                }
+        }
+        <span class="cov8" title="1">return values.Encode()</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package vastbidder
+
+import (
+        "encoding/json"
+        "errors"
+        "net/http"
+        "regexp"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/beevik/etree"
+        "github.com/golang/glog"
+        "github.com/prebid/openrtb/v19/openrtb2"
+        "github.com/prebid/prebid-server/adapters"
+        "github.com/prebid/prebid-server/errortypes"
+        "github.com/prebid/prebid-server/openrtb_ext"
+)
+
+var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)
+
+// IVASTTagResponseHandler to parse VAST Tag
+type IVASTTagResponseHandler interface {
+        ITagResponseHandler
+        ParseExtension(version string, tag *etree.Element, bid *adapters.TypedBid) []error
+        GetStaticPrice(ext json.RawMessage) float64
+}
+
+// VASTTagResponseHandler to parse VAST Tag
+type VASTTagResponseHandler struct {
+        IVASTTagResponseHandler
+        ImpBidderExt *openrtb_ext.ExtImpVASTBidder
+        VASTTag      *openrtb_ext.ExtImpVASTBidderTag
+}
+
+// NewVASTTagResponseHandler returns new object
+func NewVASTTagResponseHandler() *VASTTagResponseHandler <span class="cov8" title="1">{
+        obj := &amp;VASTTagResponseHandler{}
+        obj.IVASTTagResponseHandler = obj
+        return obj
+}</span>
+
+// Validate will return bids
+func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error <span class="cov0" title="0">{
+        if response.StatusCode != http.StatusOK </span><span class="cov0" title="0">{
+                return []error{errors.New(`validation failed`)}
+        }</span>
+
+        <span class="cov0" title="0">if len(internalRequest.Imp) &lt; externalRequest.Params.ImpIndex </span><span class="cov0" title="0">{
+                return []error{errors.New(`validation failed invalid impression index`)}
+        }</span>
+
+        <span class="cov0" title="0">impExt, err := readImpExt(internalRequest.Imp[externalRequest.Params.ImpIndex].Ext)
+        if nil != err </span><span class="cov0" title="0">{
+                return []error{err}
+        }</span>
+
+        <span class="cov0" title="0">if len(impExt.Tags) &lt; externalRequest.Params.VASTTagIndex </span><span class="cov0" title="0">{
+                return []error{errors.New(`validation failed invalid vast tag index`)}
+        }</span>
+
+        //Initialise Extensions
+        <span class="cov0" title="0">handler.ImpBidderExt = impExt
+        handler.VASTTag = impExt.Tags[externalRequest.Params.VASTTagIndex]
+        return nil</span>
+}
+
+// MakeBids will return bids
+func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) <span class="cov0" title="0">{
+        if err := handler.IVASTTagResponseHandler.Validate(internalRequest, externalRequest, response); len(err) &gt; 0 </span><span class="cov0" title="0">{
+                return nil, err[:]
+        }</span>
+
+        <span class="cov0" title="0">bidResponses, err := handler.vastTagToBidderResponse(internalRequest, externalRequest, response)
+        return bidResponses, err</span>
+}
+
+// ParseExtension will parse VAST XML extension object
+func (handler *VASTTagResponseHandler) ParseExtension(version string, ad *etree.Element, bid *adapters.TypedBid) []error <span class="cov8" title="1">{
+        return nil
+}</span>
+
+func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) <span class="cov8" title="1">{
+        var errs []error
+
+        doc := etree.NewDocument()
+
+        //Read Document
+        if err := doc.ReadFromBytes(response.Body); err != nil </span><span class="cov0" title="0">{
+                errs = append(errs, err)
+                return nil, errs[:]
+        }</span>
+
+        //Check VAST Tag
+        <span class="cov8" title="1">vast := doc.Element.FindElement(`./VAST`)
+        if vast == nil </span><span class="cov0" title="0">{
+                errs = append(errs, errors.New("VAST Tag Not Found"))
+                return nil, errs[:]
+        }</span>
+
+        //Check VAST/Ad Tag
+        <span class="cov8" title="1">adElement := getAdElement(vast)
+        if nil == adElement </span><span class="cov0" title="0">{
+                errs = append(errs, errors.New("VAST/Ad Tag Not Found"))
+                return nil, errs[:]
+        }</span>
+
+        <span class="cov8" title="1">typedBid := &amp;adapters.TypedBid{
+                Bid:     &amp;openrtb2.Bid{},
+                BidType: openrtb_ext.BidTypeVideo,
+                BidVideo: &amp;openrtb_ext.ExtBidPrebidVideo{
+                        VASTTagID: handler.VASTTag.TagID,
+                },
+        }
+
+        creatives := adElement.FindElements("Creatives/Creative")
+        if nil != creatives </span><span class="cov8" title="1">{
+                for _, creative := range creatives </span><span class="cov8" title="1">{
+                        // get creative id
+                        typedBid.Bid.CrID = getCreativeID(creative)
+
+                        // get duration from vast creative
+                        dur, err := getDuration(creative)
+                        if nil != err </span><span class="cov8" title="1">{
+                                // get duration from input bidder vast tag
+                                dur = getStaticDuration(handler.VASTTag)
+                        }</span>
+                        <span class="cov8" title="1">if dur &gt; 0 </span><span class="cov8" title="1">{
+                                typedBid.BidVideo.Duration = int(dur) // prebid expects int value
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">bidResponse := &amp;adapters.BidderResponse{
+                Bids:     []*adapters.TypedBid{typedBid},
+                Currency: `USD`, //TODO: Need to check how to get currency value
+        }
+
+        //GetVersion
+        version := vast.SelectAttrValue(`version`, `2.0`)
+
+        if err := handler.IVASTTagResponseHandler.ParseExtension(version, adElement, typedBid); len(err) &gt; 0 </span><span class="cov0" title="0">{
+                errs = append(errs, err...)
+                return nil, errs[:]
+        }</span>
+
+        //if bid.price is not set in ParseExtension
+        <span class="cov8" title="1">if typedBid.Bid.Price &lt;= 0 </span><span class="cov8" title="1">{
+                price, currency := getPricingDetails(version, adElement)
+                if price &lt;= 0 </span><span class="cov0" title="0">{
+                        price, currency = getStaticPricingDetails(handler.VASTTag)
+                        if price &lt;= 0 </span><span class="cov0" title="0">{
+                                errs = append(errs, &amp;errortypes.NoBidPrice{Message: "Bid Price Not Present"})
+                                return nil, errs[:]
+                        }</span>
+                }
+                <span class="cov8" title="1">typedBid.Bid.Price = price
+                if len(currency) &gt; 0 </span><span class="cov8" title="1">{
+                        bidResponse.Currency = currency
+                }</span>
+        }
+
+        <span class="cov8" title="1">typedBid.Bid.ADomain = getAdvertisers(version, adElement)
+
+        //if bid.id is not set in ParseExtension
+        if len(typedBid.Bid.ID) == 0 </span><span class="cov8" title="1">{
+                typedBid.Bid.ID = GetRandomID()
+        }</span>
+
+        //if bid.impid is not set in ParseExtension
+        <span class="cov8" title="1">if len(typedBid.Bid.ImpID) == 0 </span><span class="cov8" title="1">{
+                typedBid.Bid.ImpID = internalRequest.Imp[externalRequest.Params.ImpIndex].ID
+        }</span>
+
+        //if bid.adm is not set in ParseExtension
+        <span class="cov8" title="1">if len(typedBid.Bid.AdM) == 0 </span><span class="cov8" title="1">{
+                typedBid.Bid.AdM = string(response.Body)
+        }</span>
+
+        //if bid.CrID is not set in ParseExtension
+        <span class="cov8" title="1">if len(typedBid.Bid.CrID) == 0 </span><span class="cov8" title="1">{
+                typedBid.Bid.CrID = "cr_" + GetRandomID()
+        }</span>
+
+        // set vastTagId in bid.Ext
+        <span class="cov8" title="1">bidExt := openrtb_ext.ExtBid{
+                Prebid: &amp;openrtb_ext.ExtBidPrebid{
+                        Video: typedBid.BidVideo,
+                        Type:  typedBid.BidType,
+                },
+        }
+
+        bidExtBytes, err := json.Marshal(bidExt)
+        if err == nil </span><span class="cov8" title="1">{
+                typedBid.Bid.Ext = bidExtBytes
+        }</span>
+
+        <span class="cov8" title="1">return bidResponse, nil</span>
+}
+
+func getAdElement(vast *etree.Element) *etree.Element <span class="cov8" title="1">{
+        if ad := vast.FindElement(`./Ad/Wrapper`); nil != ad </span><span class="cov0" title="0">{
+                return ad
+        }</span>
+        <span class="cov8" title="1">if ad := vast.FindElement(`./Ad/InLine`); nil != ad </span><span class="cov8" title="1">{
+                return ad
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func getAdvertisers(vastVer string, ad *etree.Element) []string <span class="cov8" title="1">{
+        version, err := strconv.ParseFloat(vastVer, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                version = 2.0
+        }</span>
+
+        <span class="cov8" title="1">advertisers := make([]string, 0)
+
+        switch int(version) </span>{
+        case 2, 3:<span class="cov8" title="1">
+                for _, ext := range ad.FindElements(`./Extensions/Extension/`) </span><span class="cov8" title="1">{
+                        for _, attr := range ext.Attr </span><span class="cov8" title="1">{
+                                if attr.Key == "type" &amp;&amp; attr.Value == "advertiser" </span><span class="cov8" title="1">{
+                                        for _, ele := range ext.ChildElements() </span><span class="cov8" title="1">{
+                                                if ele.Tag == "Advertiser" </span><span class="cov8" title="1">{
+                                                        if strings.TrimSpace(ele.Text()) != "" </span><span class="cov8" title="1">{
+                                                                advertisers = append(advertisers, ele.Text())
+                                                        }</span>
+                                                }
+                                        }
+                                }
+                        }
+                }
+        case 4:<span class="cov8" title="1">
+                if ad.FindElement("./Advertiser") != nil </span><span class="cov8" title="1">{
+                        adv := strings.TrimSpace(ad.FindElement("./Advertiser").Text())
+                        if adv != "" </span><span class="cov8" title="1">{
+                                advertisers = append(advertisers, adv)
+                        }</span>
+                }
+        default:<span class="cov0" title="0">
+                glog.V(3).Infof("Handle getAdvertisers for VAST version %d", int(version))</span>
+        }
+
+        <span class="cov8" title="1">if len(advertisers) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">return advertisers</span>
+}
+
+func getStaticPricingDetails(vastTag *openrtb_ext.ExtImpVASTBidderTag) (float64, string) <span class="cov0" title="0">{
+        if nil == vastTag </span><span class="cov0" title="0">{
+                return 0.0, ""
+        }</span>
+        <span class="cov0" title="0">return vastTag.Price, "USD"</span>
+}
+
+func getPricingDetails(version string, ad *etree.Element) (float64, string) <span class="cov8" title="1">{
+        var currency string
+        var node *etree.Element
+
+        if version == `2.0` </span><span class="cov8" title="1">{
+                node = ad.FindElement(`./Extensions/Extension/Price`)
+        }</span> else<span class="cov0" title="0"> {
+                node = ad.FindElement(`./Pricing`)
+        }</span>
+
+        <span class="cov8" title="1">if node == nil </span><span class="cov0" title="0">{
+                return 0.0, currency
+        }</span>
+
+        <span class="cov8" title="1">priceValue, err := strconv.ParseFloat(node.Text(), 64)
+        if nil != err </span><span class="cov0" title="0">{
+                return 0.0, currency
+        }</span>
+
+        <span class="cov8" title="1">currencyNode := node.SelectAttr(`currency`)
+        if nil != currencyNode </span><span class="cov8" title="1">{
+                currency = currencyNode.Value
+        }</span>
+
+        <span class="cov8" title="1">return priceValue, currency</span>
+}
+
+// getDuration extracts the duration of the bid from input creative of Linear type.
+// The lookup may vary from vast version provided in the input
+// returns duration in seconds or error if failed to obtained the duration.
+// If multple Linear tags are present, onlyfirst one will be used
+//
+// It will lookup for duration only in case of creative type is Linear.
+// If creative type other than Linear then this function will return error
+// For Linear Creative it will lookup for Duration attribute.Duration value will be in hh:mm:ss.mmm format as per VAST specifications
+// If Duration attribute not present this will return error
+//
+// # After extracing the duration it will convert it into seconds
+//
+// The ad server uses the &lt;Duration&gt; element to denote
+// the intended playback duration for the video or audio component of the ad.
+// Time value may be in the format HH:MM:SS.mmm where .mmm indicates milliseconds.
+// Providing milliseconds is optional.
+//
+// Reference
+// 1.https://iabtechlab.com/wp-content/uploads/2019/06/VAST_4.2_final_june26.pdf
+// 2.https://iabtechlab.com/wp-content/uploads/2018/11/VAST4.1-final-Nov-8-2018.pdf
+// 3.https://iabtechlab.com/wp-content/uploads/2016/05/VAST4.0_Updated_April_2016.pdf
+// 4.https://iabtechlab.com/wp-content/uploads/2016/04/VASTv3_0.pdf
+func getDuration(creative *etree.Element) (int, error) <span class="cov8" title="1">{
+        if nil == creative </span><span class="cov8" title="1">{
+                return 0, errors.New("Invalid Creative")
+        }</span>
+        <span class="cov8" title="1">node := creative.FindElement("./Linear/Duration")
+        if nil == node </span><span class="cov8" title="1">{
+                return 0, errors.New("Invalid Duration")
+        }</span>
+        <span class="cov8" title="1">duration := node.Text()
+        // check if milliseconds is provided
+        match := durationRegExp.FindStringSubmatch(duration)
+        if nil == match </span><span class="cov8" title="1">{
+                return 0, errors.New("Invalid Duration")
+        }</span>
+        <span class="cov8" title="1">repl := "${1}h${2}m${3}s"
+        ms := match[5]
+        if "" != ms </span><span class="cov8" title="1">{
+                repl += "${5}ms"
+        }</span>
+        <span class="cov8" title="1">duration = durationRegExp.ReplaceAllString(duration, repl)
+        dur, err := time.ParseDuration(duration)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return int(dur.Seconds()), nil</span>
+}
+
+func getStaticDuration(vastTag *openrtb_ext.ExtImpVASTBidderTag) int <span class="cov8" title="1">{
+        if nil == vastTag </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+        <span class="cov8" title="1">return vastTag.Duration</span>
+}
+
+// getCreativeID looks for ID inside input creative tag
+func getCreativeID(creative *etree.Element) string <span class="cov8" title="1">{
+        if nil == creative </span><span class="cov8" title="1">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return creative.SelectAttrValue("id", "")</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
