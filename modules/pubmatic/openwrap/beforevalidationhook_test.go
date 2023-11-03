@@ -2398,33 +2398,30 @@ func TestGetAdunitName(t *testing.T) {
 			},
 			want: "/Tag/Id",
 		},
-		// {
-		// 	name: "adunit_from_TagId_imp_ext_nil",
-		// 	args: args{
-		// 		tagId:  "/Tag/Id",
-		// 		impExt: nil,
-		// 	},
-		// 	want: "/Tag/Id",
-		// },
-		// {
-		// 	name: "adunit_from_TagId_imp_ext_nil",
-		// 	args: args{
-		// 		tagId:  "/Tag/Id",
-		// 		impExt: &openrtb.ImpExtension{},
-		// 	},
-		// 	want: "/Tag/Id",
-		// },
-		// {
-		// 	name: "all_level_information_is_present_adunit_name_picked_by_preference",
-		// 	args: args{
-		// 		tagId: "/Tag/Id",
-		// 		impExt: &openrtb.ImpExtension{
-		// 			GpId: "some-gpid",
-		// 			Data: json.RawMessage(`{"pbadslot":"/PB/Unit","adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
-		// 		},
-		// 	},
-		// 	want: "/GAM/Unit",
-		// },
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:      "/Tag/Id",
+				impExtData: nil,
+			},
+			want: "/Tag/Id",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:      "/Tag/Id",
+				impExtData: json.RawMessage{},
+			},
+			want: "/Tag/Id",
+		},
+		{
+			name: "all_level_information_is_present_adunit_name_picked_by_preference",
+			args: args{
+				tagId:      "/Tag/Id",
+				impExtData: json.RawMessage(`{"pbadslot":"/PB/Unit","adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
+			},
+			want: "/GAM/Unit",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
