@@ -258,3 +258,83 @@ func ErrorWrap(cErr, nErr error) error {
 
 	return errors.Wrap(cErr, nErr.Error())
 }
+
+func GetSizeForPlatform(width, height int64, platform string) string {
+	s := fmt.Sprintf("%dx%d", width, height)
+	if platform == PLATFORM_VIDEO {
+		s = s + VideoSizeSuffix
+	}
+	return s
+}
+
+func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
+	kgpv := bidderMeta.KGPV
+	kgpsv := bidderMeta.MatchedSlot
+	isRegex := bidderMeta.IsRegex
+	// 1. nobid
+	if IsDefaultBid(&bid) {
+		//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
+		if !isRegex && kgpv != "" { // unmapped pubmatic's slot
+			kgpsv = kgpv
+		} else if !isRegex {
+			kgpv = kgpsv
+		}
+	} else if !isRegex {
+		if kgpv != "" { // unmapped pubmatic's slot
+			kgpsv = kgpv
+		} else if adformat == Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
+			// 2. valid video bid
+			// kgpv has regex, do not generate slotName again
+			// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
+			kgpsv = GenerateSlotName(0, 0, bidderMeta.KGP, tagId, div, source)
+			kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
+		} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
+			// 3. valid bid
+			// kgpv has regex, do not generate slotName again
+			// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
+			kgpsv := GenerateSlotName(bid.H, bid.W, bidderMeta.KGP, tagId, div, source)
+			kgpv = kgpsv
+		}
+	}
+	if kgpv == "" {
+		kgpv = kgpsv
+	}
+	return kgpv, kgpsv
+}
+
+// Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml
+// mysql> SELECT DISTINCT key_gen_pattern FROM wrapper_mapping_template;
+// +----------------------+
+// | key_gen_pattern      |
+// +----------------------+
+// | _AU_@_W_x_H_         |
+// | _DIV_@_W_x_H_        |
+// | _W_x_H_@_W_x_H_      |
+// | _DIV_                |
+// | _AU_@_DIV_@_W_x_H_   |
+// | _AU_@_SRC_@_VASTTAG_ |
+// +----------------------+
+// 6 rows in set (0.21 sec)
+func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
+	// func (H, W, Div), no need to validate, will always be non-nil
+	switch kgp {
+	case "_AU_": // adunitconfig
+		return tagid
+	case "_DIV_":
+		return div
+	case "_AU_@_W_x_H_":
+		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
+	case "_DIV_@_W_x_H_":
+		return fmt.Sprintf("%s@%dx%d", div, w, h)
+	case "_W_x_H_@_W_x_H_":
+		return fmt.Sprintf("%dx%d@%dx%d", w, h, w, h)
+	case "_AU_@_DIV_@_W_x_H_":
+		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
+	case "_AU_@_SRC_@_VASTTAG_":
+		return fmt.Sprintf("%s@%s@_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
+	default:
+		// TODO: check if we need to fallback to old generic flow (below)
+		// Add this cases in a map and read it from yaml file
+	}
+	return ""
+}

@@ -3,16 +3,12 @@ package tracker
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"net/url"
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 // pubmatic's KGP details per impression
@@ -33,6 +29,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			if v, ok := pmMkt[tracker.Tracker.ImpID]; ok {
 				tracker.Tracker.PartnerInfo.PartnerID = "pubmatic"
 				tracker.Tracker.PartnerInfo.KGPV = v.PubmaticKGPV
+				tracker.Tracker.LoggerData.KGPSV = v.PubmaticKGPSV
 			}
 		}
 
@@ -72,14 +69,14 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorType:         floorType,
 				FloorSkippedFlag:  skipfloors,
 				FloorSource:       floorSource,
+				LoggerData:        models.LoggerData{},
 			}
 			var (
-				tagid, kgp, kgpv, kgpsv, matchedSlot, adformat = "", "", "", "", "", "banner"
-				netECPM, floorValue, floorRuleValue            = float64(0), float64(0), float64(0)
-				price, partnerID                               = bid.Price, seatBid.Seat
-				isRewardInventory, adduration                  = 0, 0
-				dspId                                          int
-				isRegex                                        bool
+				tagid, kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "", "banner", ""
+				netECPM, floorValue, floorRuleValue                   = float64(0), float64(0), float64(0)
+				price, partnerID                                      = bid.Price, seatBid.Seat
+				isRewardInventory, adduration                         = 0, 0
+				dspId                                                 int
 			)
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
@@ -101,6 +98,9 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					if bidExt.Prebid != nil {
 						if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
 							adduration = bidExt.Prebid.Video.Duration
+						}
+						if len(bidExt.Prebid.BidId) > 0 {
+							bidId = bidExt.Prebid.BidId
 						}
 						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
 							partnerID = bidExt.Prebid.Meta.AdapterCode
@@ -151,44 +151,14 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					partnerID = bidderMeta.PrebidBidderCode
 					kgp = bidderMeta.KGP
-					kgpv = bidderMeta.KGPV
-					kgpsv = bidderMeta.MatchedSlot
-					isRegex = bidderMeta.IsRegex
-				}
-
-				// 1. nobid
-				if models.IsDefaultBid(&bid) {
-					//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
-					if !isRegex && kgpv != "" { // unmapped pubmatic's slot
-						kgpsv = kgpv
-					} else if !isRegex {
-						kgpv = kgpsv
-					}
-				} else if !isRegex {
-					if kgpv != "" { // unmapped pubmatic's slot
-						kgpsv = kgpv
-					} else if ok && bidCtx.CreativeType == models.Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
-						// 2. valid video bid
-						// kgpv has regex, do not generate slotName again
-						// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
-						kgpsv = bidderparams.GenerateSlotName(0, 0, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
-						kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
-					} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
-						// 3. valid bid
-						// kgpv has regex, do not generate slotName again
-						// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
-						kgpsv := bidderparams.GenerateSlotName(bid.H, bid.W, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
-						kgpv = kgpsv
-					}
-				}
-
-				if kgpv == "" {
-					kgpv = kgpsv
+					kgpv, kgpsv = models.GetKGPSV(bid, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
 				}
 				// --------------------------------------------------------------------------------------------------
 
 				tagid = impCtx.TagID
+				tracker.LoggerData.KGPSV = kgpsv
 				tracker.Secure = impCtx.Secure
+				//tracker.Adunit = rctx.AdunitName
 				isRewardInventory = getRewardedInventoryFlag(rctx.ImpBidCtx[bid.ImpID].IsRewardInventory)
 			}
 
@@ -200,7 +170,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				}
 			}
 
-			tracker.Adunit = tagid
 			tracker.SlotID = fmt.Sprintf("%s_%s", bid.ImpID, tagid)
 			tracker.RewardedInventory = isRewardInventory
 			tracker.PartnerInfo = models.Partner{
@@ -211,7 +180,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				KGPV:           kgpv,
 				NetECPM:        float64(netECPM),
 				GrossECPM:      models.GetGrossEcpm(price),
-				AdSize:         getSizeForPlatform(int(bid.W), int(bid.H), rctx.Platform),
+				AdSize:         models.GetSizeForPlatform(bid.W, bid.H, rctx.Platform),
 				AdDuration:     adduration,
 				Adformat:       adformat,
 				ServerSide:     1,
@@ -219,7 +188,9 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue: floorRuleValue,
 				DealID:         "-1",
 			}
-
+			if len(bidId) > 0 {
+				tracker.PartnerInfo.BidID = bidId
+			}
 			if len(bid.ADomain) != 0 {
 				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
 					tracker.PartnerInfo.Advertiser = domain
@@ -250,53 +221,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 		}
 	}
 	return trackers
-}
-
-func getFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (*int, int, *int, string) {
-	var skipfloors, floorSource *int
-	floorType, floorModelVersion := 0, ""
-	if responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
-		floors := responseExt.Prebid.Floors
-		if floors.Skipped != nil {
-			skipfloors = ptrutil.ToPtr(0)
-			if *floors.Skipped {
-				skipfloors = ptrutil.ToPtr(1)
-			}
-		}
-		if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
-			floorModelVersion = floors.Data.ModelGroups[0].ModelVersion
-		}
-		if len(floors.PriceFloorLocation) > 0 {
-			if source, ok := models.FloorSourceMap[floors.PriceFloorLocation]; ok {
-				floorSource = &source
-			}
-		}
-		if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
-			floorType = models.HardFloor
-		}
-	}
-	return skipfloors, floorType, floorSource, floorModelVersion
-}
-
-func getRewardedInventoryFlag(reward *int8) int {
-	if reward != nil {
-		return int(*reward)
-	}
-	return 0
-}
-
-func getSizeForPlatform(width int, height int, platform string) string {
-	s := fmt.Sprintf("%dx%d", width, height)
-	if platform == models.PLATFORM_VIDEO {
-		s = s + models.VideoSizeSuffix
-	}
-	return s
-}
-
-// Round value to 2 digit
-func roundToTwoDigit(value float64) float64 {
-	output := math.Pow(10, float64(2))
-	return float64(math.Round(value*output)) / output
 }
 
 // ConstructTrackerURL constructing tracker url for impression
