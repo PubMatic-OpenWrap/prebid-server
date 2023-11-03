@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -1600,7 +1599,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject:        false,
+				Reject:        true,
 				DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
 			},
 			wantErr: false,
@@ -1622,6 +1621,23 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        true,
 				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Endpoint: models.EndpointHybrid,
+						},
+					},
+				},
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
 			},
 			wantErr: false,
 		},
@@ -2246,7 +2262,6 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				assert.NotEmpty(t, tt.want.DebugMessages)
 				return
 			}
-			fmt.Println(got.DebugMessages)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return

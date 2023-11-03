@@ -36,6 +36,7 @@ func (m OpenWrap) handleEntrypointHook(
 	source := queryParams.Get("source")
 	var rCtx models.RequestCtx
 	var endpoint string
+	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
@@ -47,12 +48,14 @@ func (m OpenWrap) handleEntrypointHook(
 	}()
 
 	switch payload.Request.URL.Path {
-	// direct call to 8000 port
+	// Direct call to 8000 port
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
 			endpoint = models.EndpointOWS2S
+			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 		case "inapp":
+			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 			endpoint = models.EndpointV25
 		default:
 			rCtx = models.RequestCtx{
@@ -60,8 +63,6 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return result, nil
 		}
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-
 	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
 		m.metricEngine.RecordPBSAuctionRequestsStats()
@@ -145,6 +146,11 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if rCtx.LoggerImpressionID == "" {
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
+	}
+
+	// temp, for AMP, etc
+	if pubid != 0 {
+		rCtx.PubID = pubid
 	}
 
 	result.Reject = false

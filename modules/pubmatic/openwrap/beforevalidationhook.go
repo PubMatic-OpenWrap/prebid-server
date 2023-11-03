@@ -27,7 +27,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true}
-
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
@@ -46,9 +45,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}()
 
 	if rCtx.Endpoint == models.EndpointHybrid {
-		// fix bidder params
+		//TODO: Add bidder params fix
 		result.Reject = false
-		return
+		return result, nil
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
