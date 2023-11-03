@@ -106,6 +106,8 @@ type ImpCtx struct {
 	ImpID             string
 	TagID             string
 	Div               string
+	SlotName          string
+	AdUnitName        string
 	Secure            int
 	BidFloor          float64
 	BidFloorCur       string

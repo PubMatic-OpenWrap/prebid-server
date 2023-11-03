@@ -2,7 +2,6 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/url"
 	"regexp"
@@ -99,6 +98,6 @@ func ExtractDomain(rawURL string) (string, error) {
 	return u.Host, nil
 }
 
-func getSlotName(impID string, tagID string) string {
-	return fmt.Sprintf("%s_%s", impID, tagID)
-}
+// func getSlotName(impID string, tagID string) string {
+// 	return fmt.Sprintf("%s_%s", impID, tagID)
+// }

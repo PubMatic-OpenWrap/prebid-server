@@ -92,6 +92,7 @@ type AdPodSlot struct {
 
 // SlotRecord structure for storing slot level information
 type SlotRecord struct {
+	SlotId            string          `json:"sid"`
 	SlotName          string          `json:"sn,omitempty"`
 	SlotSize          []string        `json:"sz,omitempty"`
 	Adunit            string          `json:"au,omitempty"`

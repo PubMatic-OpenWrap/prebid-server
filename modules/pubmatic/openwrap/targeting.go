@@ -78,7 +78,9 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			if !ok {
 				continue
 			}
-
+			if bidCtx.Prebid == nil {
+				bidCtx.Prebid = new(openrtb_ext.ExtBidPrebid)
+			}
 			newTargeting := make(map[string]string)
 			for key, value := range bidCtx.Prebid.Targeting {
 				if allowTargetingKey(key) {

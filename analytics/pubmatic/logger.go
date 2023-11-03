@@ -16,12 +16,18 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	uuid "github.com/satori/go.uuid"
 )
 
 // TODO: confirm file location
 type bidWrapper struct {
 	*openrtb2.Bid
 	Nbr *openrtb3.NonBidStatusCode
+}
+
+// getUUID is function variable which will return uuid
+var getUUID = func() string {
+	return uuid.NewV4().String()
 }
 
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
@@ -85,12 +91,14 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	for _, imp := range ao.RequestWrapper.Imp {
 		reward := 0
 		var incomingSlots []string
-		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
-			if impCtx.IsRewardInventory != nil {
-				reward = int(*impCtx.IsRewardInventory)
-			}
-			incomingSlots = impCtx.IncomingSlots
+		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+		if !ok {
+			continue
 		}
+		if impCtx.IsRewardInventory != nil {
+			reward = int(*impCtx.IsRewardInventory)
+		}
+		incomingSlots = impCtx.IncomingSlots
 
 		// to keep existing response intact
 		partnerData := make([]PartnerRecord, 0)
@@ -99,9 +107,10 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotName:          getSlotName(imp.ID, imp.TagID),
+			SlotId:            getUUID(),
+			SlotName:          impCtx.SlotName,
 			SlotSize:          incomingSlots,
-			Adunit:            imp.TagID,
+			Adunit:            impCtx.AdUnitName,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
 			// AdPodSlot:         getAdPodSlot(imp, responseMap.AdPodBidsExt),
