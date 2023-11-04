@@ -328,19 +328,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// if imp.ext.data.pbadslot is absent then set it to tagId
-		impExtData := map[string]interface{}{}
-		var pbadslotstr string
-		_ = json.Unmarshal(impExt.Data, &impExtData)
-		pbadslot := impExtData[models.Pbadslot]
-		if pbadslot == nil {
-			impExtData[models.Pbadslot] = imp.TagID
-		} else {
-			pbadslotstr, _ = pbadslot.(string)
-			if len(pbadslotstr) == 0 {
-				impExtData[models.Pbadslot] = imp.TagID
-			}
+		if len(impExt.Data.PbAdslot) == 0 {
+			impExt.Data.PbAdslot = imp.TagID
 		}
-		impExt.Data, _ = json.Marshal(impExtData)
+
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -367,8 +358,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
 				IsAdPodRequest:    isAdPodRequest,
-				SlotName:          getSlotName(imp.TagID, pbadslotstr, impExt),
-				AdUnitName:        getAdunitName(imp.TagID, pbadslotstr, impExt.Data),
+				SlotName:          getSlotName(imp.TagID, impExt),
+				AdUnitName:        getAdunitName(imp.TagID, impExt),
 			}
 		}
 
@@ -707,7 +698,7 @@ getSlotName will return slot name according to below priority
  3. imp.ext.data.pbadslot
  4. imp.ext.prebid.storedrequest.id
 */
-func getSlotName(tagId, pbadslot string, impExt *models.ImpExtension) string {
+func getSlotName(tagId string, impExt *models.ImpExtension) string {
 	if impExt == nil {
 		return tagId
 	}
@@ -720,8 +711,8 @@ func getSlotName(tagId, pbadslot string, impExt *models.ImpExtension) string {
 		return tagId
 	}
 
-	if len(pbadslot) > 0 {
-		return pbadslot
+	if len(impExt.Data.PbAdslot) > 0 {
+		return impExt.Data.PbAdslot
 	}
 
 	var storeReqId string
@@ -738,21 +729,15 @@ getAdunitName will return adunit name according to below priority
  2. imp.ext.data.pbadslot
  3. imp.tagid
 */
-func getAdunitName(tagId, pbAdslot string, impExtData json.RawMessage) string {
-	if impExtData == nil {
-		if len(pbAdslot) > 0 {
-			return pbAdslot
-		}
+func getAdunitName(tagId string, impExt *models.ImpExtension) string {
+	if impExt == nil {
 		return tagId
 	}
-
-	if name, err := jsonparser.GetString(impExtData, "adserver", "name"); err == nil && name == models.GamAdServer {
-		if adslot, err := jsonparser.GetString(impExtData, "adserver", "adslot"); err == nil && adslot != "" {
-			return adslot
-		}
+	if impExt.Data.AdServer != nil && impExt.Data.AdServer.Name == models.GamAdServer && impExt.Data.AdServer.AdSlot != "" {
+		return impExt.Data.AdServer.AdSlot
 	}
-	if len(pbAdslot) > 0 {
-		return pbAdslot
+	if len(impExt.Data.PbAdslot) > 0 {
+		return impExt.Data.PbAdslot
 	}
 	return tagId
 }

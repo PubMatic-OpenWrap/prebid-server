@@ -2264,8 +2264,8 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 
 func TestGetSlotName(t *testing.T) {
 	type args struct {
-		tagId, pbadslot string
-		impExt          *models.ImpExtension
+		tagId  string
+		impExt *models.ImpExtension
 	}
 	tests := []struct {
 		name string
@@ -2275,7 +2275,7 @@ func TestGetSlotName(t *testing.T) {
 		{
 			name: "Slot_name_from_gpid",
 			args: args{
-				tagId: "/Some/Id",
+				tagId: "some-tagid",
 				impExt: &models.ImpExtension{
 					GpId: "some-gpid",
 				},
@@ -2285,23 +2285,26 @@ func TestGetSlotName(t *testing.T) {
 		{
 			name: "Slot_name_from_tagid",
 			args: args{
-				tagId: "/Some/TagId",
+				tagId: "some-tagid",
 				impExt: &models.ImpExtension{
-					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
 				},
 			},
-			want: "/Some/TagId",
+			want: "some-tagid",
 		},
 		{
 			name: "Slot_name_from_pbadslot",
 			args: args{
-				tagId:    "",
-				pbadslot: "/some/pbadslot",
+				tagId: "",
 				impExt: &models.ImpExtension{
-					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
 				},
 			},
-			want: "/some/pbadslot",
+			want: "some-pbadslot",
 		},
 		{
 			name: "Slot_name_from_stored_request_id",
@@ -2320,10 +2323,10 @@ func TestGetSlotName(t *testing.T) {
 		{
 			name: "imp_ext_nil_slot_name_from_tag_id",
 			args: args{
-				tagId:  "/Tag/Id",
+				tagId:  "some-tagid",
 				impExt: nil,
 			},
-			want: "/Tag/Id",
+			want: "some-tagid",
 		},
 		{
 			name: "empty_slot_name",
@@ -2336,11 +2339,12 @@ func TestGetSlotName(t *testing.T) {
 		{
 			name: "all_level_information_is_present_slot_name_picked_by_preference",
 			args: args{
-				tagId:    "/Tag/Id",
-				pbadslot: "/some/pbadslot",
+				tagId: "some-tagid",
 				impExt: &models.ImpExtension{
 					GpId: "some-gpid",
-					Data: json.RawMessage(`{"pbadslot":"/some/pbadslot"}`),
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
 					Prebid: openrtb_ext.ExtImpPrebid{
 						StoredRequest: &openrtb_ext.ExtStoredRequest{
 							ID: "stored-req-id",
@@ -2353,17 +2357,16 @@ func TestGetSlotName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getSlotName(tt.args.tagId, tt.args.pbadslot, tt.args.impExt); got != tt.want {
-				t.Errorf("getSlotName() = %v, want %v", got, tt.want)
-			}
+			got := getSlotName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
 func TestGetAdunitName(t *testing.T) {
 	type args struct {
-		tagId, pbAdslot string
-		impExtData      json.RawMessage
+		tagId  string
+		impExt *models.ImpExtension
 	}
 	tests := []struct {
 		name string
@@ -2373,62 +2376,105 @@ func TestGetAdunitName(t *testing.T) {
 		{
 			name: "adunit_from_adserver_slot",
 			args: args{
-				tagId:      "/Tag/Id",
-				pbAdslot:   "/some/pbadslot",
-				impExtData: json.RawMessage(`{"adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
 			},
-			want: "/GAM/Unit",
+			want: "gam-unit",
 		},
 		{
 			name: "adunit_from_pbadslot",
 			args: args{
-				tagId:      "/Tag/Id",
-				pbAdslot:   "/some/pbadslot",
-				impExtData: json.RawMessage(`{"adserver":{"name":"gam"}}`),
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
 			},
-			want: "/some/pbadslot",
+			want: "some-pbadslot",
+		},
+		{
+			name: "adunit_from_pbadslot_when_gam_is_absent",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   "freewheel",
+							AdSlot: "freewheel-unit",
+						},
+					},
+				},
+			},
+			want: "some-pbadslot",
 		},
 		{
 			name: "adunit_from_TagId",
 			args: args{
-				tagId:      "/Tag/Id",
-				impExtData: json.RawMessage(`{"adserver":{"name":"gam"}}`),
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
 			},
-			want: "/Tag/Id",
+			want: "some-tagid",
 		},
-		// {
-		// 	name: "adunit_from_TagId_imp_ext_nil",
-		// 	args: args{
-		// 		tagId:  "/Tag/Id",
-		// 		impExt: nil,
-		// 	},
-		// 	want: "/Tag/Id",
-		// },
-		// {
-		// 	name: "adunit_from_TagId_imp_ext_nil",
-		// 	args: args{
-		// 		tagId:  "/Tag/Id",
-		// 		impExt: &openrtb.ImpExtension{},
-		// 	},
-		// 	want: "/Tag/Id",
-		// },
-		// {
-		// 	name: "all_level_information_is_present_adunit_name_picked_by_preference",
-		// 	args: args{
-		// 		tagId: "/Tag/Id",
-		// 		impExt: &openrtb.ImpExtension{
-		// 			GpId: "some-gpid",
-		// 			Data: json.RawMessage(`{"pbadslot":"/PB/Unit","adserver":{"name":"gam","adslot":"/GAM/Unit"}}`),
-		// 		},
-		// 	},
-		// 	want: "/GAM/Unit",
-		// },
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: nil,
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: &models.ImpExtension{},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "all_level_information_is_present_adunit_name_picked_by_preference",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
+			},
+			want: "gam-unit",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getAdunitName(tt.args.tagId, tt.args.pbAdslot, tt.args.impExtData); got != tt.want {
-				t.Errorf("getAdunit() = %v, want %v", got, tt.want)
-			}
+			got := getAdunitName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
