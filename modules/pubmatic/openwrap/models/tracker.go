@@ -36,6 +36,7 @@ type Tracker struct {
 	FloorModelVersion string
 	FloorSource       *int
 	FloorType         int
+	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
 	ImpID  string `json:"-"`
 	Secure int    `json:"-"`
@@ -58,4 +59,9 @@ type Partner struct {
 	FloorValue     float64
 	FloorRuleValue float64
 	DealID         string
+}
+
+// LoggerData: this data to be needed in logger
+type LoggerData struct {
+	KGPSV string
 }
