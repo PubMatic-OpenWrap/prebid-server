@@ -9,7 +9,7 @@ import (
 )
 
 func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
-	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(responseExt)
+	floorsDetails := models.GetFloorsDetails(responseExt)
 	tracker := models.Tracker{
 		PubID:             rCtx.PubID,
 		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
@@ -20,10 +20,10 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 		Platform:          int(rCtx.DevicePlatform),
 		Origin:            rCtx.Origin,
 		TestGroup:         rCtx.ABTestConfigApplied,
-		FloorModelVersion: floorModelVersion,
-		FloorType:         floorType,
-		FloorSkippedFlag:  skipfloors,
-		FloorSource:       floorSource,
+		FloorModelVersion: floorsDetails.FloorModelVersion,
+		FloorType:         floorsDetails.FloorType,
+		FloorSkippedFlag:  floorsDetails.Skipfloors,
+		FloorSource:       floorsDetails.FloorSource,
 	}
 
 	constructedURLString := constructTrackerURL(rCtx, tracker)

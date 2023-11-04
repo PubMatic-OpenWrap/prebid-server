@@ -425,21 +425,25 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
-	rCtx.NewReqExt, err = json.Marshal(requestExt)
-	if err != nil {
-		result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
-	}
+	rCtx.NewReqExt = requestExt
 
 	if rCtx.Debug {
 		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
 		result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
-		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(rCtx.NewReqExt))
+		newReqExt, _ := json.Marshal(rCtx.NewReqExt)
+		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var err error
+		var requestExtjson json.RawMessage
+		requestExtjson, err = json.Marshal(rctx.NewReqExt)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
+		}
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
+		ep.BidRequest.Ext = requestExtjson
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
@@ -507,8 +511,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	} else if bidRequest.App != nil && bidRequest.App.Content != nil {
 		bidRequest.App.Content.Language = getValidLanguage(bidRequest.App.Content.Language)
 	}
-
-	bidRequest.Ext = rctx.NewReqExt
 	return bidRequest, nil
 }
 

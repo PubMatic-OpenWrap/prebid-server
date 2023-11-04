@@ -58,7 +58,7 @@ type RequestCtx struct {
 	// imp-bid ctx to avoid computing same thing for bidder params, logger and tracker
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
-	NewReqExt          json.RawMessage
+	NewReqExt          *RequestExt
 	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 

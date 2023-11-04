@@ -19,18 +19,21 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// TODO: confirm file location
 type bidWrapper struct {
 	*openrtb2.Bid
 	Nbr *openrtb3.NonBidStatusCode
 }
 
-// getUUID is function variable which will return uuid
+// getUUID is a function variable which will return uuid
 var getUUID = func() string {
 	return uuid.NewV4().String()
 }
 
+// GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+		return "", nil
+	}
 
 	wlog := WloggerRecord{
 		record: record{
@@ -47,12 +50,6 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			PDC:               rCtx.DCName,
 			CachePutMiss:      rCtx.CachePutMiss,
 		},
-	}
-
-	requestExt := openrtb_ext.ExtRequest{}
-	err := json.Unmarshal(ao.RequestWrapper.BidRequest.Ext, &requestExt)
-	if err == nil {
-		wlog.logFloorType(&requestExt.Prebid)
 	}
 
 	wlog.logIntegrationType(rCtx.Endpoint)
@@ -79,7 +76,6 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	}
 
 	var ipr map[string][]PartnerRecord
-
 	if logInfo {
 		ipr = getDefaultPartnerRecordsByImp(rCtx)
 	} else {
@@ -89,16 +85,14 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	// parent bidder could in one of the above and we need them by prebid's bidderCode and not seat(could be alias)
 	slots := make([]SlotRecord, 0)
 	for _, imp := range ao.RequestWrapper.Imp {
-		reward := 0
-		var incomingSlots []string
 		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
 		if !ok {
 			continue
 		}
+		reward := 0
 		if impCtx.IsRewardInventory != nil {
 			reward = int(*impCtx.IsRewardInventory)
 		}
-		incomingSlots = impCtx.IncomingSlots
 
 		// to keep existing response intact
 		partnerData := make([]PartnerRecord, 0)
@@ -107,9 +101,9 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(),
+			SlotId:            getUUID(), // TODO ***************** use from tracker
 			SlotName:          impCtx.SlotName,
-			SlotSize:          incomingSlots,
+			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
@@ -120,15 +114,44 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	wlog.Slots = slots
 
 	headers := http.Header{
-		models.USER_AGENT_HEADER: []string{rCtx.UA}, // TODO: check which UA is set here ? dev.UA or header-UA ?
+		models.USER_AGENT_HEADER: []string{rCtx.UA},
 		models.IP_HEADER:         []string{rCtx.IP},
 	}
 
-	var responseExt openrtb_ext.ExtBidResponse
-	err = json.Unmarshal(ao.Response.Ext, &responseExt)
-	if err == nil {
-		if responseExt.Prebid != nil {
-			wlog.SetFloorDetails(responseExt.Prebid.Floors)
+	// first set the floor type from bidrequest.ext
+	if rCtx.NewReqExt != nil {
+		wlog.logFloorType(&rCtx.NewReqExt.Prebid)
+	}
+
+	// set the floor details from tracker
+	floorDetailsSet := false
+	for _, tracker := range rCtx.Trackers {
+		wlog.FloorType = tracker.Tracker.FloorType
+		wlog.FloorModelVersion = tracker.Tracker.FloorModelVersion
+		wlog.FloorSource = tracker.Tracker.FloorSource
+		wlog.FloorFetchStatus = tracker.Tracker.LoggerData.FloorFetchStatus
+		wlog.FloorProvider = tracker.Tracker.LoggerData.FloorProvider
+		for i := range wlog.Slots {
+			wlog.Slots[i].FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
+		}
+		floorDetailsSet = true
+		break // For all trackers, floor-details are common so break the loop
+	}
+
+	// if floor details not present in tracker then use response.ext
+	// this wil happen only if no valid bid is present in response.seatbid
+	if !floorDetailsSet {
+		if rCtx.ResponseExt.Prebid != nil {
+			// wlog.SetFloorDetails(rCtx.ResponseExt.Prebid.Floors)
+			floorDetails := models.GetFloorsDetails(rCtx.ResponseExt)
+			wlog.FloorFetchStatus = floorDetails.FloorFetchStatus
+			wlog.FloorModelVersion = floorDetails.FloorModelVersion
+			wlog.FloorFetchStatus = floorDetails.FloorFetchStatus
+			wlog.FloorProvider = floorDetails.FloorProvider
+			wlog.FloorType = floorDetails.FloorType
+			for i := range wlog.Slots {
+				wlog.Slots[i].FloorSkippedFlag = floorDetails.Skipfloors
+			}
 		}
 	}
 
@@ -137,7 +160,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		url = ow.cfg.PublicEndpoint
 	}
 
-	return PrepareLoggerURL(&wlog, url, GetGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
+	return PrepareLoggerURL(&wlog, url, getGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
 }
 
 // TODO filter by name. (*stageOutcomes[8].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(data))
@@ -165,34 +188,36 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 }
 
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
-
-	bid.Bid = &openrtb2.Bid{}
-	bid.Price = nonBid.Ext.Prebid.Bid.Price
-	bid.ADomain = nonBid.Ext.Prebid.Bid.ADomain
-	bid.CatTax = nonBid.Ext.Prebid.Bid.CatTax
-	bid.Cat = nonBid.Ext.Prebid.Bid.Cat
-	bid.DealID = nonBid.Ext.Prebid.Bid.DealID
-	bid.W = nonBid.Ext.Prebid.Bid.W
-	bid.H = nonBid.Ext.Prebid.Bid.H
-	bid.Dur = nonBid.Ext.Prebid.Bid.Dur
-	bid.MType = nonBid.Ext.Prebid.Bid.MType
-	bid.ID = nonBid.Ext.Prebid.Bid.ID
-	bid.ImpID = nonBid.ImpId
-
-	bidExt := models.BidExt{}
-	bidExt.OriginalBidCPM = nonBid.Ext.Prebid.Bid.OriginalBidCPM
-	bidExt.OriginalBidCPMUSD = nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD
-	bidExt.OriginalBidCur = nonBid.Ext.Prebid.Bid.OriginalBidCur
-	bidExt.Prebid = new(openrtb_ext.ExtBidPrebid)
-	bidExt.Prebid.DealPriority = nonBid.Ext.Prebid.Bid.DealPriority
-	bidExt.Prebid.DealTierSatisfied = nonBid.Ext.Prebid.Bid.DealTierSatisfied
-	bidExt.Prebid.Meta = nonBid.Ext.Prebid.Bid.Meta
-	bidExt.Prebid.Targeting = nonBid.Ext.Prebid.Bid.Targeting
-	bidExt.Prebid.Type = nonBid.Ext.Prebid.Bid.Type
-	bidExt.Prebid.Video = nonBid.Ext.Prebid.Bid.Video
-	bidExt.Prebid.BidId = nonBid.Ext.Prebid.Bid.BidId
-	bidExt.Prebid.Floors = nonBid.Ext.Prebid.Bid.Floors
-
+	bid.Bid = &openrtb2.Bid{
+		Price:   nonBid.Ext.Prebid.Bid.Price,
+		ADomain: nonBid.Ext.Prebid.Bid.ADomain,
+		CatTax:  nonBid.Ext.Prebid.Bid.CatTax,
+		Cat:     nonBid.Ext.Prebid.Bid.Cat,
+		DealID:  nonBid.Ext.Prebid.Bid.DealID,
+		W:       nonBid.Ext.Prebid.Bid.W,
+		H:       nonBid.Ext.Prebid.Bid.H,
+		Dur:     nonBid.Ext.Prebid.Bid.Dur,
+		MType:   nonBid.Ext.Prebid.Bid.MType,
+		ID:      nonBid.Ext.Prebid.Bid.ID,
+		ImpID:   nonBid.ImpId,
+	}
+	bidExt := models.BidExt{
+		OriginalBidCPM:    nonBid.Ext.Prebid.Bid.OriginalBidCPM,
+		OriginalBidCPMUSD: nonBid.Ext.Prebid.Bid.OriginalBidCPMUSD,
+		OriginalBidCur:    nonBid.Ext.Prebid.Bid.OriginalBidCur,
+		ExtBid: openrtb_ext.ExtBid{
+			Prebid: &openrtb_ext.ExtBidPrebid{
+				DealPriority:      nonBid.Ext.Prebid.Bid.DealPriority,
+				DealTierSatisfied: nonBid.Ext.Prebid.Bid.DealTierSatisfied,
+				Meta:              nonBid.Ext.Prebid.Bid.Meta,
+				Targeting:         nonBid.Ext.Prebid.Bid.Targeting,
+				Type:              nonBid.Ext.Prebid.Bid.Type,
+				Video:             nonBid.Ext.Prebid.Bid.Video,
+				BidId:             nonBid.Ext.Prebid.Bid.BidId,
+				Floors:            nonBid.Ext.Prebid.Bid.Floors,
+			},
+		},
+	}
 	bidExtBytes, err := json.Marshal(bidExt)
 	if err == nil {
 		bid.Ext = bidExtBytes
@@ -234,7 +259,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			// then OW-Module will add one default/proxy bid in seatbid.
 			// and prebid core will add one nonbid in seat-non-bid.
 			// So, we want to skip this default/proxy bid to avoid duplicate entry in logger
-			// if bid.Price == 0 && bid.W == 0 && bid.H == 0 { //TODO ??
 			if models.IsDefaultBid(&bid) {
 				if _, ok := rejectedBids[seatBid.Seat]; ok {
 					if _, ok := rejectedBids[seatBid.Seat][bid.ImpID]; ok {
@@ -283,26 +307,23 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				break
 			}
 
-			revShare := 0.0
-			partnerID := seat
-			var isRegex bool
 			var kgp, kgpv, kgpsv, adFormat string
 
-			if bidderMeta, ok := impCtx.Bidders[seat]; ok {
-				revShare, _ = strconv.ParseFloat(rCtx.PartnerConfigMap[bidderMeta.PartnerID][models.REVSHARE], 64)
+			revShare := 0.0
+			partnerID := seat
+			bidderMeta, ok := impCtx.Bidders[seat]
+			if ok {
 				partnerID = bidderMeta.PrebidBidderCode
-				kgp = bidderMeta.KGP           // _AU_@_W_x_H_
-				kgpv = bidderMeta.KGPV         // ^/43743431/DMDemo[0-9]*@Div[12]@^728x90$
-				kgpsv = bidderMeta.MatchedSlot // /43743431/DMDemo1@@728x90
-				isRegex = bidderMeta.IsRegex
+				kgp = bidderMeta.KGP
+				revShare, _ = strconv.ParseFloat(rCtx.PartnerConfigMap[bidderMeta.PartnerID][models.REVSHARE], 64)
 			}
 
 			// impBidCtx contains info about valid-bids + dropped-bids + default-bids
+			// impBidCtx not contains info about seat-non-bids.
 			// impBidCtx contains bid-id in form of 'bid-id::uuid' for valid-bids + dropped-bids
 			// impBidCtx contains bid-id in form of 'uuid' for default-bids
-			// impBidCtx not contains info about non-bids
 			var bidExt models.BidExt
-			json.Unmarshal(bid.Ext, &bidExt) // add UT if unmarshal fails
+			json.Unmarshal(bid.Ext, &bidExt)
 
 			bidIDForLookup := bid.ID
 			if bidExt.Prebid != nil && !strings.Contains(bid.ID, models.BidIdSeparator) {
@@ -316,44 +337,28 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				bidExt = bidCtx.BidExt
 			}
 
-			// adformat to be derived from prebid.type or bid.AdM
-			adFormat = models.GetAdFormat(bid.Bid, &bidExt, &impCtx)
+			// get the tracker details from rctx, to avoid repetitive computation.
+			// tracker will be available only for valid-bids and will be absent for dropped-bids + default-bids + seat-non-bids
+			// tracker contains bid-id in form of 'bid-id::uuid'
+			tracker, trackerPresent := rCtx.Trackers[bidIDForLookup]
 
-			if models.IsDefaultBid(bid.Bid) {
-				//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
-				if !isRegex && kgpv != "" { // unmapped pubmatic's slot
-					kgpsv = kgpv // - KGP: _AU_@_DIV_@_W_x_H_
-				} else if !isRegex {
-					kgpv = kgpsv
-				}
-			} else if !isRegex {
-				if kgpv != "" { // unmapped pubmatic's slot
-					kgpsv = kgpv // /43743431/DMDemo1234@300x250 -->
-				} else if adFormat == models.Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
-					// 2. valid video bid
-					// kgpv has regex, do not generate slotName again
-					// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
-					kgpsv = GenerateSlotName(0, 0, kgp, impCtx.TagID, impCtx.Div, rCtx.Source)
-					kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
-				} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
-					// 3. valid bid
-					// kgpv has regex, do not generate slotName again
-					// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
-					kgpsv = GenerateSlotName(bid.H, bid.W, kgp, impCtx.TagID, impCtx.Div, rCtx.Source)
-					kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@222x111
-				}
+			adFormat = tracker.Tracker.PartnerInfo.Adformat
+			if adFormat == "" {
+				adFormat = models.GetAdFormat(bid.Bid, &bidExt, &impCtx)
 			}
 
-			if kgpv == "" {
-				kgpv = kgpsv
+			kgpv = tracker.Tracker.PartnerInfo.KGPV
+			kgpsv = tracker.Tracker.LoggerData.KGPSV
+			if kgpv == "" || kgpsv == "" {
+				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
 			}
 
 			price := bid.Price
-			if ao.Response.Cur != "USD" && bidExt.OriginalBidCPMUSD != 0 {
+			if ao.Response.Cur != models.USD && bidExt.OriginalBidCPMUSD != 0 {
 				price = bidExt.OriginalBidCPMUSD
 			}
 
-			if seat == "pubmatic" {
+			if seat == models.BidderPubMatic {
 				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
@@ -361,7 +366,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
-			nbr := bid.Nbr // non-bids
+			nbr := bid.Nbr // only for seat-non-bids this will present at bid level
 			if nbr == nil {
 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
 			}
@@ -377,15 +382,33 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DefaultBidStatus:  0, // this will be always 0 , decide whether to drop this field in future
 				ServerSide:        1,
 				MatchedImpression: rCtx.MatchedImpression[seat],
-				NetECPM:           GetNetEcpm(price, revShare),
-				GrossECPM:         GetGrossEcpm(price),
-				OriginalCPM:       GetGrossEcpm(bidExt.OriginalBidCPM),
+				OriginalCPM:       models.GetGrossEcpm(bidExt.OriginalBidCPM),
 				OriginalCur:       bidExt.OriginalBidCur,
-				PartnerSize:       getSizeForPlatform(bid.W, bid.H, rCtx.Platform),
 				DealID:            bid.DealID,
 				Nbr:               nbr,
-				FloorRuleValue:    NOT_SET,
 				Adformat:          adFormat,
+			}
+
+			pr.NetECPM = tracker.Tracker.PartnerInfo.NetECPM
+			if pr.NetECPM == 0 {
+				pr.NetECPM = models.GetNetEcpm(price, revShare)
+			}
+
+			pr.GrossECPM = tracker.Tracker.PartnerInfo.GrossECPM
+			if pr.GrossECPM == 0 {
+				pr.GrossECPM = models.GetGrossEcpm(price)
+			}
+
+			pr.PartnerSize = tracker.Tracker.PartnerInfo.AdSize
+			if pr.PartnerSize == "" {
+				pr.PartnerSize = models.GetSizeForPlatform(bid.W, bid.H, rCtx.Platform)
+			}
+
+			if trackerPresent {
+				pr.FloorRuleValue = tracker.Tracker.PartnerInfo.FloorRuleValue
+				pr.FloorValue = tracker.Tracker.PartnerInfo.FloorValue
+			} else {
+				pr.FloorValue, pr.FloorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rCtx.CurrencyConversion)
 			}
 
 			if nbr != nil && *nbr == openrtb3.NoBidTimeoutError {
@@ -400,18 +423,16 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			if len(pr.OriginalCur) == 0 {
 				pr.OriginalCPM = float64(0)
-				pr.OriginalCur = "USD"
+				pr.OriginalCur = models.USD
 			}
 
 			if len(pr.DealID) != 0 {
 				pr.DealChannel = models.DEFAULT_DEALCHANNEL
 			} else {
-				pr.DealID = "-1"
+				pr.DealID = models.DealIDAbsent
 			}
 
-			var floorCurrency string
 			if bidExt.Prebid != nil {
-				// don't want default banner for nobid in wl  ???
 				if bidExt.Prebid.DealTierSatisfied && bidExt.Prebid.DealPriority > 0 {
 					pr.DealPriority = bidExt.Prebid.DealPriority
 				}
@@ -424,40 +445,14 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 					pr.setMetaDataObject(bidExt.Prebid.Meta)
 				}
 
-				if bidExt.Prebid.Floors != nil {
-					floorCurrency = bidExt.Prebid.Floors.FloorCurrency
-					pr.FloorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
-					pr.FloorRuleValue = pr.FloorValue
-					if bidExt.Prebid.Floors.FloorRuleValue > 0 {
-						pr.FloorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
-					}
-				}
-
 				if len(bidExt.Prebid.BidId) > 0 {
 					pr.BidID = bidExt.Prebid.BidId
 				}
 			}
 
-			// if floor values are not set from bid.ext then fall back to imp.bidfloor
-			if pr.FloorRuleValue == NOT_SET && impCtx.BidFloor != 0 {
-				pr.FloorValue = roundToTwoDigit(impCtx.BidFloor)
-				pr.FloorRuleValue = pr.FloorValue
-				floorCurrency = impCtx.BidFloorCur
-			}
-
-			if floorCurrency != "" && floorCurrency != models.USD {
-				value, _ := rCtx.CurrencyConversion(floorCurrency, models.USD, pr.FloorValue)
-				pr.FloorValue = roundToTwoDigit(value)
-				value, _ = rCtx.CurrencyConversion(floorCurrency, models.USD, pr.FloorRuleValue)
-				pr.FloorRuleValue = roundToTwoDigit(value)
-			}
-
-			if pr.FloorRuleValue == NOT_SET {
-				pr.FloorRuleValue = 0 //reset the value back to 0
-			}
-
-			if len(bid.ADomain) != 0 {
-				if domain, err := ExtractDomain(bid.ADomain[0]); err == nil {
+			pr.ADomain = tracker.Tracker.PartnerInfo.Advertiser
+			if pr.ADomain == "" && len(bid.ADomain) != 0 {
+				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
 					pr.ADomain = domain
 				}
 			}

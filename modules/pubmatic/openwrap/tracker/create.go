@@ -49,7 +49,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 }
 
 func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
-	skipfloors, floorType, floorSource, floorModelVersion := getFloorsDetails(rctx.ResponseExt)
+	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -65,11 +65,14 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				Origin:            rctx.Origin,
 				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
 				TestGroup:         rctx.ABTestConfigApplied,
-				FloorModelVersion: floorModelVersion,
-				FloorType:         floorType,
-				FloorSkippedFlag:  skipfloors,
-				FloorSource:       floorSource,
-				LoggerData:        models.LoggerData{},
+				FloorModelVersion: floorsDetails.FloorModelVersion,
+				FloorType:         floorsDetails.FloorType,
+				FloorSkippedFlag:  floorsDetails.Skipfloors,
+				FloorSource:       floorsDetails.FloorSource,
+				LoggerData: models.LoggerData{
+					FloorFetchStatus: floorsDetails.FloorFetchStatus,
+					FloorProvider:    floorsDetails.FloorProvider,
+				},
 			}
 			var (
 				tagid, kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "", "banner", ""
@@ -111,35 +114,10 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 								}
 							}
 						}
-
-						var floorCurrency string
-						//Set Floor Details
-						if bidExt.Prebid.Floors != nil {
-							floorValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
-							if bidExt.Prebid.Floors.FloorRuleValue > 0.0 {
-								floorRuleValue = roundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
-							} else {
-								floorRuleValue = floorValue
-							}
-							floorCurrency = bidExt.Prebid.Floors.FloorCurrency
-						} else if impCtx.BidFloor != 0.0 {
-							floorValue = roundToTwoDigit(impCtx.BidFloor)
-							floorRuleValue = floorValue
-							if len(impCtx.BidFloorCur) > 0 {
-								floorCurrency = impCtx.BidFloorCur
-							}
-						}
-
-						if floorCurrency != "" && floorCurrency != models.USD {
-							fv, _ := rctx.CurrencyConversion(floorCurrency, models.USD, floorValue)
-							floorValue = roundToTwoDigit(fv)
-
-							frv, _ := rctx.CurrencyConversion(floorCurrency, models.USD, floorRuleValue)
-							floorRuleValue = roundToTwoDigit(frv)
-						}
 					}
 					dspId = bidCtx.DspId
 					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx)
+					floorValue, floorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rctx.CurrencyConversion)
 				}
 
 				_ = matchedSlot

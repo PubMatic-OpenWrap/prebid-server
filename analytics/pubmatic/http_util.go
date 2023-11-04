@@ -9,7 +9,6 @@ package pubmatic
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 
 	//"log"
@@ -17,6 +16,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 // Default Sizes
@@ -218,13 +220,11 @@ func (hc *HttpCall) submit(wg *sync.WaitGroup) {
 	hc.err = err
 }
 
-// Send method
-func Send(url string, headers http.Header, cookies map[string]string) error {
+// send function will send the owlogger to analytics endpoint
+func send(rCtx *models.RequestCtx, url string, headers http.Header) {
+	startTime := time.Now()
 	mhc := NewMultiHttpContext()
-	hc, err := NewHttpCall(url, "")
-	if err != nil {
-		return err
-	}
+	hc, _ := NewHttpCall(url, "")
 
 	for k, v := range headers {
 		if len(v) != 0 {
@@ -232,15 +232,19 @@ func Send(url string, headers http.Header, cookies map[string]string) error {
 		}
 	}
 
-	for k, v := range cookies {
-		hc.AddCookie(k, v)
+	if rCtx.KADUSERCookie != nil {
+		hc.AddCookie(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
 	}
 
 	mhc.AddHttpCall(hc)
 	_, erc := mhc.Execute()
 	if erc != 0 {
-		return errors.New("error in sending logger pixel")
-	}
+		glog.Errorf("Failed to send the owlogger for pub:[%d], profile:[%d], version:[%d].",
+			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 
-	return nil
+		// we will not record at version level in prometheus metric
+		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
+		rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
+		// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
+	}
 }

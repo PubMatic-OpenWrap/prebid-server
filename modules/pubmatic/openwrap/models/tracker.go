@@ -63,5 +63,17 @@ type Partner struct {
 
 // LoggerData: this data to be needed in logger
 type LoggerData struct {
-	KGPSV string
+	KGPSV            string
+	FloorProvider    string
+	FloorFetchStatus *int
+}
+
+// FloorsDetails contains floors info derived from responseExt.Prebid.Floors
+type FloorsDetails struct {
+	FloorType         int
+	FloorModelVersion string
+	FloorProvider     string
+	Skipfloors        *int
+	FloorFetchStatus  *int
+	FloorSource       *int
 }
