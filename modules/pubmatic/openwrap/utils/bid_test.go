@@ -48,6 +48,20 @@ func TestGetOriginalBidId(t *testing.T) {
 			},
 			want: "original-bid",
 		},
+		{
+			name: "BidId with single colon in origin Id",
+			args: args{
+				bidId: "original-bid:2::generated-bid",
+			},
+			want: "original-bid:2",
+		},
+		{
+			name: "BidId with single colon in generated Id",
+			args: args{
+				bidId: "original-bid:2::generated-bid:3",
+			},
+			want: "original-bid:2",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

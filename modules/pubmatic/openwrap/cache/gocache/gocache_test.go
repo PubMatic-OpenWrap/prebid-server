@@ -52,7 +52,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		goCache       *gocache.Cache
 		database      database.Database
-		cfg           config.DBCache
+		cfg           config.Cache
 		metricsEngine metrics.MetricsEngine
 	}
 	tests := []struct {
@@ -64,7 +64,7 @@ func TestNew(t *testing.T) {
 			args: args{
 				goCache:  gocache.New(100, 100),
 				database: mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 				metricsEngine: mockEngine,
@@ -113,7 +113,7 @@ func Test_cache_Set(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	type args struct {
@@ -131,7 +131,7 @@ func Test_cache_Set(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -172,7 +172,7 @@ func Test_cache_Get(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	type args struct {
@@ -190,7 +190,7 @@ func Test_cache_Get(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},

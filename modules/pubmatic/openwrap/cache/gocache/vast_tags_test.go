@@ -24,7 +24,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	type args struct {
@@ -47,7 +47,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					VASTTagCacheExpiry: 100000,
 				},
 			},
@@ -69,7 +69,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 				Map:   sync.Map{},
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					VASTTagCacheExpiry: 100000,
 				},
 			},
@@ -98,7 +98,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					VASTTagCacheExpiry: 100000,
 				},
 			},
@@ -150,7 +150,7 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	type args struct {
@@ -168,7 +168,7 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					VASTTagCacheExpiry: 100000,
 				},
 			},
@@ -193,7 +193,7 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					VASTTagCacheExpiry: 100000,
 				},
 			},
