@@ -6,6 +6,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
+
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -60,7 +62,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	go send(rCtx, url, headers)
+	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
 }
 
 // Writes VideoObject to file
@@ -86,7 +88,7 @@ func (ow HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent)
 // Method to initialize the analytic module
 func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
 	once.Do(func() {
-		Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
+		mhttp.Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
 
 		ow = HTTPLogger{
 			cfg:      cfg,

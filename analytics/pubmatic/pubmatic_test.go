@@ -3,57 +3,77 @@ package pubmatic
 import (
 	"testing"
 
+	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewHTTPLogger(t *testing.T) {
-
-	type want struct {
-		MaxClients     int32
-		MaxConnections int
-		MaxCalls       int
-	}
-
 	tests := []struct {
 		name string
 		cfg  config.PubMaticWL
-		want want
 	}{
 		{
-			name: "test global variable values",
-			cfg: config.PubMaticWL{
-				MaxClients:     1,
-				MaxConnections: 10,
-				MaxCalls:       1,
-				RespTimeout:    10,
-			},
-			want: want{
-				MaxClients:     1,
-				MaxConnections: 10,
-				MaxCalls:       1,
-			},
-		},
-		{
-			name: "test singleton instance",
+			name: "check if NewHTTPLogger returns nil",
 			cfg: config.PubMaticWL{
 				MaxClients:     5,
 				MaxConnections: 50,
 				MaxCalls:       5,
 				RespTimeout:    50,
 			},
-			want: want{
-				MaxClients:     1,
-				MaxConnections: 10,
-				MaxCalls:       1,
-			},
 		},
 	}
 	for _, tt := range tests {
 		module := NewHTTPLogger(tt.cfg)
 		assert.NotNil(t, module, tt.name)
-		assert.Equal(t, maxHttpClients, tt.want.MaxClients, tt.name)
-		assert.Equal(t, maxHttpConnections, tt.want.MaxConnections, tt.name)
-		assert.Equal(t, maxHttpCalls, tt.want.MaxCalls, tt.name)
+	}
+}
+
+// TestLogAuctionObject just increases code coverage, it does not validate anything
+func TestLogAuctionObject(t *testing.T) {
+	tests := []struct {
+		name string
+		ao   *analytics.AuctionObject
+	}{
+		{
+			name: "rctx is nil",
+			ao:   &analytics.AuctionObject{},
+		},
+		{
+			name: "rctx is present",
+			ao: &analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		HTTPLogger{}.LogAuctionObject(tt.ao)
 	}
 }

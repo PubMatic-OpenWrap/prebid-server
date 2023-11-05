@@ -1,9 +1,14 @@
 package pubmatic
 
 import (
+	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
+	mock_mhttp "github.com/prebid/prebid-server/analytics/pubmatic/mhttp/mock"
+	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -134,6 +139,85 @@ func TestGetGdprEnabledFlag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gdprFlag := getGdprEnabledFlag(tt.partnerConfig)
 			assert.Equal(t, tt.gdprFlag, gdprFlag, tt.name)
+		})
+	}
+}
+
+func TestSendMethod(t *testing.T) {
+	// initialise global variables
+	mhttp.Init(1, 1, 1, 2000)
+	// init mock
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	type args struct {
+		rctx    *models.RequestCtx
+		url     string
+		headers http.Header
+	}
+	tests := []struct {
+		name                    string
+		args                    args
+		getMetricsEngine        func() *mock_metrics.MockMetricsEngine
+		getMockMultiHttpContext func() *mock_mhttp.MockMultiHttpContextInterface
+	}{
+		{
+			name: "send success",
+			args: args{
+				rctx: &models.RequestCtx{
+					PubIDStr:     "5890",
+					ProfileIDStr: "1",
+					Endpoint:     models.EndpointV25,
+				},
+				url: "http://10.172.11.11/wl",
+				headers: http.Header{
+					"key": []string{"val"},
+				},
+			},
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordSendLoggerDataTime(models.EndpointV25, "1", gomock.Any())
+				return mockEngine
+			},
+			getMockMultiHttpContext: func() *mock_mhttp.MockMultiHttpContextInterface {
+				mockHttpCtx := mock_mhttp.NewMockMultiHttpContextInterface(ctrl)
+				mockHttpCtx.EXPECT().AddHttpCall(gomock.Any())
+				mockHttpCtx.EXPECT().Execute().Return(0, 0)
+				return mockHttpCtx
+			},
+		},
+		{
+			name: "send fail",
+			args: args{
+				rctx: &models.RequestCtx{
+					PubIDStr:      "5890",
+					ProfileIDStr:  "1",
+					Endpoint:      models.EndpointV25,
+					KADUSERCookie: &http.Cookie{},
+				},
+				url: "http://10.172.11.11/wl",
+				headers: http.Header{
+					"key": []string{"val"},
+				},
+			},
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure("5890", "1", "")
+				mockEngine.EXPECT().RecordSendLoggerDataTime(models.EndpointV25, "1", gomock.Any())
+				return mockEngine
+			},
+			getMockMultiHttpContext: func() *mock_mhttp.MockMultiHttpContextInterface {
+				mockHttpCtx := mock_mhttp.NewMockMultiHttpContextInterface(ctrl)
+				mockHttpCtx.EXPECT().AddHttpCall(gomock.Any())
+				mockHttpCtx.EXPECT().Execute().Return(0, 1)
+				return mockHttpCtx
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.rctx.MetricsEngine = tt.getMetricsEngine()
+			send(tt.args.rctx, tt.args.url, tt.args.headers, tt.getMockMultiHttpContext())
 		})
 	}
 }
