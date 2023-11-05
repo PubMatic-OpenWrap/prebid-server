@@ -144,7 +144,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		if rCtx.ResponseExt.Prebid != nil {
 			// wlog.SetFloorDetails(rCtx.ResponseExt.Prebid.Floors)
 			floorDetails := models.GetFloorsDetails(rCtx.ResponseExt)
-			wlog.FloorFetchStatus = floorDetails.FloorFetchStatus
+			wlog.FloorSource = floorDetails.FloorSource
 			wlog.FloorModelVersion = floorDetails.FloorModelVersion
 			wlog.FloorFetchStatus = floorDetails.FloorFetchStatus
 			wlog.FloorProvider = floorDetails.FloorProvider

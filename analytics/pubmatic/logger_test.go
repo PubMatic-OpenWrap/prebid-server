@@ -4144,7 +4144,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","ft":1,"ffs":2,"fp":"provider"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
