@@ -148,17 +148,17 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
-
 	finalResponse := formJSONResponse(adpodResponseWriter.Response, redirectURL, debug)
 
-	if len(redirectURL) > 0 && debug != "1" {
+	if len(redirectURL) > 0 && debug == "0" {
 		http.Redirect(w, r, string(finalResponse), http.StatusFound)
-	} else {
-		w.Header().Set(ContentType, ApplicationJSON)
-		if adpodResponseWriter.Code == 0 {
-			adpodResponseWriter.Code = http.StatusOK
-		}
-		w.WriteHeader(adpodResponseWriter.Code)
-		w.Write(finalResponse)
+		return
 	}
+
+	w.Header().Set(ContentType, ApplicationJSON)
+	if adpodResponseWriter.Code == 0 {
+		adpodResponseWriter.Code = http.StatusOK
+	}
+	w.WriteHeader(adpodResponseWriter.Code)
+	w.Write(finalResponse)
 }

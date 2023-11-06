@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -23,7 +22,7 @@ var (
 )
 
 type adPodBid struct {
-	ID        *string             `json:"id,omitempty"`
+	ID        string              `json:"id,omitempty"`
 	Targeting []map[string]string `json:"targeting,omitempty"`
 	Error     string              `json:"error,omitempty"`
 	Ext       interface{}         `json:"ext,omitempty"`
@@ -33,6 +32,17 @@ type bidResponseAdpod struct {
 	AdPodBids   []*adPodBid `json:"adpods,omitempty"`
 	Ext         interface{} `json:"ext,omitempty"`
 	RedirectURL *string     `json:"redirect_url,omitempty"`
+}
+
+func formAdpodBidErrorResponse(id string, err string, ext interface{}) []byte {
+	errResponse := adPodBid{
+		ID:    id,
+		Error: err,
+		Ext:   ext,
+	}
+
+	response, _ := json.Marshal(errResponse)
+	return response
 }
 
 func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
@@ -69,54 +79,51 @@ func formJSONResponse(response []byte, redirectURL, debug string) []byte {
 
 	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		return response
+		if len(redirectURL) > 0 && debug == "0" {
+			return []byte(redirectURL)
+		}
+		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", nil)
 	}
 
-	jsonResponse, err := getJsonResponse(bidResponse, redirectURL, debug)
-	if err != nil {
-		return response
-	}
-
-	return jsonResponse
+	return getJsonResponse(bidResponse, redirectURL, debug)
 }
 
-func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug string) ([]byte, error) {
-	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return nil, errors.New("recieved invalid bidResponse")
+func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug string) []byte {
+	if bidResponse == nil {
+		if len(redirectURL) > 0 && debug == "0" {
+			return []byte(redirectURL)
+		}
+		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", nil)
 	}
 
-	bidArrayMap := make(map[string][]responseBid)
+	if bidResponse.SeatBid == nil {
+		if len(redirectURL) > 0 && debug == "0" {
+			return []byte(redirectURL)
+		}
+		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", bidResponse.Ext)
+	}
+
+	bidArrayMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			if bid.Price > 0 {
 				impId, _ := models.GetImpressionID(bid.ImpID)
-				bids, ok := bidArrayMap[impId]
-				if !ok {
-					bids = make([]responseBid, 0)
-				}
-
-				bids = append(bids, responseBid{Bid: &bid, seat: seatBid.Seat})
+				bids := bidArrayMap[impId]
+				bids = append(bids, bid)
 				bidArrayMap[impId] = bids
 			}
 		}
 	}
-
 	adPodBids := formAdpodBids(bidArrayMap)
 
-	var response []byte
-	if len(redirectURL) > 0 && debug != "1" {
-		response = getRedirectResponse(adPodBids, redirectURL)
-	} else {
-		var err error
-		adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
-		response, err = json.Marshal(adpodResponse)
-		if err != nil {
-			return nil, err
-		}
+	if len(redirectURL) > 0 && debug == "0" {
+		return getRedirectResponse(adPodBids, redirectURL)
 	}
 
-	return response, nil
+	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
+	response, _ := json.Marshal(adpodResponse)
 
+	return response
 }
 
 func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
@@ -155,11 +162,11 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 	return []byte(rURL)
 }
 
-func formAdpodBids(bidsMap map[string][]responseBid) []*adPodBid {
+func formAdpodBids(bidsMap map[string][]openrtb2.Bid) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
 		adpodBid := adPodBid{
-			ID: &impId,
+			ID: impId,
 		}
 		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
 
@@ -175,7 +182,6 @@ func formAdpodBids(bidsMap map[string][]responseBid) []*adPodBid {
 		if len(targetings) > 0 {
 			adpodBid.Targeting = targetings
 		}
-
 		adpodBids = append(adpodBids, &adpodBid)
 	}
 
@@ -186,7 +192,7 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 	return fmt.Sprintf(slotKeyFormat, slotNo, key)
 }
 
-func createTargetting(bid responseBid, slotNo int) map[string]string {
+func createTargetting(bid openrtb2.Bid, slotNo int) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 
 	if len(bid.Ext) > 0 {
