@@ -69,7 +69,7 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
-		m.metricEngine.RecordPBSAuctionRequestsStats()
+		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after call through module
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	case OpenWrapV25:
