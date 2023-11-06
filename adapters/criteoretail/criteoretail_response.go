@@ -102,7 +102,7 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 						bidID := adapters.GenerateUniqueBidIDComm()
 						impID := requestImpID + "_" + strconv.Itoa(index)
 						bidPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[BID_PRICE].(string)), 64)
-						//clickPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[CLICK_PRICE].(string)), 64)
+						clickPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[CLICK_PRICE].(string)), 64)
 						productID := productMap[PRODUCT_ID].(string)
 
 						var impressionURL,clickURL string
@@ -122,15 +122,15 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 						}
 
 						delete(productDetails, PRODUCT_ID)
-						//delete(productDetails, BID_PRICE)
-						//delete(productDetails, CLICK_PRICE)
+						delete(productDetails, BID_PRICE)
+						delete(productDetails, CLICK_PRICE)
 						delete(productDetails, VIEW_BEACON)
 						delete(productDetails, CLICK_BEACON)
 
 						bidExt := &openrtb_ext.ExtBidCommerce{
 							ProductId:      productID,
 							ClickUrl:       clickURL,
-							//ClickPrice:     clickPrice,
+							ClickPrice:     clickPrice,
 							ProductDetails: productDetails,
 						}
 
