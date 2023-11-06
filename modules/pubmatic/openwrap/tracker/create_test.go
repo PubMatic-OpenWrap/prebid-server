@@ -16,7 +16,7 @@ import (
 var rctx = models.RequestCtx{
 	PubID:               5890,
 	ProfileID:           1234,
-	VersionID:           1,
+	DisplayID:           1,
 	PageURL:             "abc.com",
 	LoggerImpressionID:  "loggerIID",
 	DevicePlatform:      5,
