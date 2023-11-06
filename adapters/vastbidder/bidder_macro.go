@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -289,59 +288,25 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 
 // MacroSchain contains definition for Schain Parameter
 func (tag *BidderMacro) MacroSchain(key string) string {
-	if tag.Request.Source == nil || tag.Request.Source.Ext == nil {
+	if tag.Request.Source == nil {
 		return ""
 	}
-	schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
-	if err != nil {
-		return ""
+	if tag.Request.Source.SChain != nil {
+		return openrtb_ext.SerializeSupplyChain(tag.Request.Source.SChain)
 	}
-	var schainObj openrtb2.SupplyChain
-	err = json.Unmarshal(schain, &schainObj)
-	if err != nil {
-		return ""
+	if tag.Request.Source.Ext != nil {
+		schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
+		if err != nil {
+			return ""
+		}
+		var schainObj openrtb2.SupplyChain
+		err = json.Unmarshal(schain, &schainObj)
+		if err != nil {
+			return ""
+		}
+		return openrtb_ext.SerializeSupplyChain(&schainObj)
 	}
-
-	var serializedSchain strings.Builder
-	serializedSchain.WriteString(schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete))
-	for _, node := range schainObj.Nodes {
-
-		serializedSchain.WriteString("!")
-
-		if node.ASI != "" {
-			serializedSchain.WriteString(url.PathEscape(node.ASI) + ",")
-		} else {
-			serializedSchain.WriteString(",")
-		}
-		if node.SID != "" {
-			serializedSchain.WriteString(url.PathEscape(node.SID) + ",")
-		} else {
-			serializedSchain.WriteString(",")
-		}
-		if node.HP != nil {
-			// node.HP is integer pointer so 1st dereference it then convert it to string and push to serializedSchain
-			serializedSchain.WriteString(url.PathEscape(fmt.Sprintf("%v", *node.HP)) + ",")
-		} else {
-			serializedSchain.WriteString(",")
-		}
-		if node.RID != "" {
-			serializedSchain.WriteString(url.PathEscape(node.RID) + ",")
-		} else {
-			serializedSchain.WriteString(",")
-		}
-		if node.Name != "" {
-			serializedSchain.WriteString(url.PathEscape(node.Name) + ",")
-		} else {
-			serializedSchain.WriteString(",")
-		}
-		if node.Domain != "" {
-			serializedSchain.WriteString(url.PathEscape(node.Domain))
-		}
-		if node.Ext != nil {
-			serializedSchain.WriteString("," + url.QueryEscape(string(node.Ext)))
-		}
-	}
-	return serializedSchain.String()
+	return ""
 }
 
 /********************* Regs *********************/

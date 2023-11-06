@@ -81,3 +81,134 @@ func TestCloneSupplyChain(t *testing.T) {
 		})
 	}
 }
+
+func TestSerializeSupplyChain(t *testing.T) {
+	type args struct {
+		schain *openrtb2.SupplyChain
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "single hop - chain complete",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI:    "exchange1.com",
+						SID:    "1234",
+						RID:    "bid-request-1",
+						Name:   "publisher",
+						Domain: "publisher.com",
+						HP:     openrtb2.Int8Ptr(1),
+					},
+				}}},
+			want: "1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com",
+		},
+		{
+			name: "single hop - chain Complete, optional fields missing",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI: "exchange1.com",
+						SID: "1234",
+						HP:  openrtb2.Int8Ptr(1),
+					},
+				}}},
+			want: "1.0,1!exchange1.com,1234,1,,,",
+		},
+		{
+			name: "multiple hops - with all properties supplied",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI:    "exchange1.com",
+						SID:    "1234",
+						HP:     openrtb2.Int8Ptr(1),
+						RID:    "bid-request-1",
+						Name:   "publisher",
+						Domain: "publisher.com",
+					},
+					{
+						ASI:    "exchange2.com",
+						SID:    "abcd",
+						HP:     openrtb2.Int8Ptr(1),
+						RID:    "bid-request-2",
+						Name:   "intermediary",
+						Domain: "intermediary.com",
+					},
+				}}},
+			want: "1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com",
+		},
+		{
+			name: "multiple hops - chain incomplete",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 0,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI: "exchange1.com",
+						SID: "1234",
+						HP:  openrtb2.Int8Ptr(1),
+					},
+				}}},
+			want: "1.0,0!exchange1.com,1234,1,,,",
+		},
+		{
+			name: "single hop - chain complete, encoded values",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI:    "exchange1.com",
+						SID:    "1234!abcd",
+						HP:     openrtb2.Int8Ptr(1),
+						RID:    "bid-request-1",
+						Name:   "publisher, Inc.",
+						Domain: "publisher.com",
+					},
+				}}},
+			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com",
+		},
+		{
+			name: "zero hop - chain complete",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes:    []openrtb2.SupplyChainNode{}}},
+			want: "",
+		},
+		{
+			name: "single hop with extension - chain complete",
+			args: args{schain: &openrtb2.SupplyChain{
+				Complete: 1,
+				Ver:      "1.0",
+				Nodes: []openrtb2.SupplyChainNode{
+					{
+						ASI:    "exchange1.com",
+						SID:    "1234",
+						RID:    "bid-request-1",
+						Name:   "publisher",
+						Domain: "publisher.com",
+						HP:     openrtb2.Int8Ptr(1),
+						Ext:    []byte(`{"test":1}`),
+					},
+				}}},
+			want: "1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com,%7B%22test%22%3A1%7D",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SerializeSupplyChain(tt.args.schain)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
