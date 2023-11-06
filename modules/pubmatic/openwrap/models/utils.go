@@ -293,7 +293,7 @@ func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId s
 			// 3. valid bid
 			// kgpv has regex, do not generate slotName again
 			// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
-			kgpsv := GenerateSlotName(bid.H, bid.W, bidderMeta.KGP, tagId, div, source)
+			kgpsv = GenerateSlotName(bid.H, bid.W, bidderMeta.KGP, tagId, div, source)
 			kgpv = kgpsv
 		}
 	}

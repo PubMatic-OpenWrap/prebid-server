@@ -26,17 +26,24 @@ var rctx = models.RequestCtx{
 	PrebidBidderCode: map[string]string{
 		"pubmatic": "pubmatic",
 	},
+	MarketPlaceBidders: map[string]struct{}{
+		"pubmatic": {},
+	},
 	ImpBidCtx: map[string]models.ImpCtx{
 		"impID-1": {
-			TagID: "adunit-1",
+			TagID:      "adunit-1",
+			AdUnitName: "adunit-1",
+			SlotName:   "impID-1_adunit-1",
 			Bidders: map[string]models.PartnerData{
 				"pubmatic": {
 					MatchedSlot:      "matchedSlot",
 					PrebidBidderCode: "prebidBidderCode",
+					KGP:              "_AU_@_W_x_H_",
 				},
 				"pubmatic2": {
 					MatchedSlot:      "matchedSlot2",
 					PrebidBidderCode: "prebidBidderCode2",
+					KGP:              "_AU_@_W_x_H_",
 				},
 			},
 			BidFloor:    5.5,
@@ -135,7 +142,7 @@ func Test_createTrackers(t *testing.T) {
 						PartnerInfo: models.Partner{
 							PartnerID:      "prebidBidderCode",
 							BidderCode:     "pubmatic",
-							KGPV:           "matchedSlot",
+							KGPV:           "adunit-1@250x300",
 							GrossECPM:      8.7,
 							NetECPM:        8.7,
 							BidID:          "bidID-1",
@@ -155,8 +162,11 @@ func Test_createTrackers(t *testing.T) {
 						TestGroup: 1,
 						Origin:    "publisher.com",
 						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=matchedSlot&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -209,7 +219,7 @@ func Test_createTrackers(t *testing.T) {
 						PartnerInfo: models.Partner{
 							PartnerID:      "prebidBidderCode2",
 							BidderCode:     "pubmatic2",
-							KGPV:           "matchedSlot2",
+							KGPV:           "adunit-1@250x300",
 							GrossECPM:      8.7,
 							NetECPM:        8.7,
 							BidID:          "bidID-1",
@@ -229,8 +239,11 @@ func Test_createTrackers(t *testing.T) {
 						TestGroup: 1,
 						Origin:    "publisher.com",
 						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=matchedSlot2&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -732,6 +745,100 @@ func TestConstructVideoErrorURL(t *testing.T) {
 					assert.Contains(t, constructedURL, tt.prefix)
 				}
 			}
+		})
+	}
+}
+
+func TestCreateTrackers(t *testing.T) {
+	startTime := time.Now().Unix()
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]models.OWTracker
+	}{
+		{
+			name: "overwrite marketplace bid details",
+			args: args{
+				rctx: func() models.RequestCtx {
+					testRctx := rctx
+					testRctx.StartTime = startTime
+					return testRctx
+				}(),
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:      "bidID-1",
+									ImpID:   "impID-1",
+									Price:   8.7,
+									W:       250,
+									H:       300,
+									ADomain: []string{"domain.com"},
+									DealID:  "deal-id-1",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Cur: models.USD,
+				},
+			},
+			want: map[string]models.OWTracker{
+				"bidID-1": {
+					Tracker: models.Tracker{
+						PubID:     5890,
+						PageURL:   "abc.com",
+						Timestamp: startTime,
+						IID:       "loggerIID",
+						ProfileID: "1234",
+						VersionID: "1",
+						Adunit:    "adunit-1",
+						SlotID:    "impID-1_adunit-1",
+						PartnerInfo: models.Partner{
+							PartnerID:      "pubmatic",
+							BidderCode:     "pubmatic",
+							KGPV:           "adunit-1@250x300",
+							GrossECPM:      8.7,
+							NetECPM:        8.7,
+							BidID:          "bidID-1",
+							OrigBidID:      "bidID-1",
+							AdSize:         "250x300",
+							AdDuration:     20,
+							Adformat:       "banner",
+							ServerSide:     1,
+							Advertiser:     "domain.com",
+							FloorValue:     6.4,
+							FloorRuleValue: 4.4,
+							DealID:         "deal-id-1",
+						},
+						Platform:  5,
+						SSAI:      "mediatailor",
+						AdPodSlot: 0,
+						TestGroup: 1,
+						Origin:    "publisher.com",
+						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
+					},
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					Price:         8.7,
+					PriceModel:    "CPM",
+					PriceCurrency: "USD",
+					BidType:       "banner",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -1183,3 +1183,151 @@ func Test_getFloorsDetails(t *testing.T) {
 		})
 	}
 }
+
+func TestGetKGPSV(t *testing.T) {
+	type args struct {
+		bid        openrtb2.Bid
+		bidderMeta PartnerData
+		adformat   string
+		tagId      string
+		div        string
+		source     string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		kgpv  string
+		kgpsv string
+	}{
+		{
+			name: "default bid not regex",
+			args: args{
+				bidderMeta: PartnerData{
+					KGPV: "kgpv",
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpv",
+		},
+		{
+			name: "default bid regex",
+			args: args{
+				bidderMeta: PartnerData{
+					KGPV:    "kgpv",
+					IsRegex: true,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "",
+		},
+		{
+			name: "only kgpsv found in partnerData",
+			args: args{
+				bidderMeta: PartnerData{
+					MatchedSlot: "kgpsv",
+					IsRegex:     true,
+				},
+			},
+			kgpv:  "kgpsv",
+			kgpsv: "kgpsv",
+		},
+		{
+			name: "valid bid found in partnerData and regex true",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				bidderMeta: PartnerData{
+					KGPV:        "kgpv",
+					MatchedSlot: "kgpsv",
+					IsRegex:     true,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpsv",
+		},
+		{
+			name: "valid bid and regex false",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				bidderMeta: PartnerData{
+					KGPV:        "kgpv",
+					MatchedSlot: "kgpsv",
+					IsRegex:     false,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpv",
+		},
+		{
+			name: "KGPV and KGP not present in partnerData,regex false and adformat is video",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Video,
+			},
+			kgpv:  "",
+			kgpsv: "",
+		},
+		{
+			name: "KGPV not present in partnerData,regex false and adformat is video",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Video,
+				bidderMeta: PartnerData{
+					KGP: "_AU_@_W_x_H_",
+				},
+				tagId: "adunit",
+			},
+			kgpv:  "adunit@0x0",
+			kgpsv: "adunit@0x0",
+		},
+		{
+			name: "KGPV not present in partnerData,regex false and adformat is banner",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Banner,
+				bidderMeta: PartnerData{
+					KGP:         "_AU_@_W_x_H_",
+					MatchedSlot: "matchedSlot",
+				},
+				tagId: "adunit",
+			},
+			kgpv:  "adunit@250x300",
+			kgpsv: "adunit@250x300",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
+			if got != tt.kgpv {
+				t.Errorf("GetKGPSV() got = %v, want %v", got, tt.kgpv)
+			}
+			if got1 != tt.kgpsv {
+				t.Errorf("GetKGPSV() got1 = %v, want %v", got1, tt.kgpsv)
+			}
+		})
+	}
+}

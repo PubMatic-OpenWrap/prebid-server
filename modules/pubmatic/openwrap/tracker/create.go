@@ -75,11 +75,11 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				},
 			}
 			var (
-				tagid, kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "", "banner", ""
-				netECPM, floorValue, floorRuleValue                   = float64(0), float64(0), float64(0)
-				price, partnerID                                      = bid.Price, seatBid.Seat
-				isRewardInventory, adduration                         = 0, 0
-				dspId                                                 int
+				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
+				netECPM, floorValue, floorRuleValue            = float64(0), float64(0), float64(0)
+				price, partnerID                               = bid.Price, seatBid.Seat
+				isRewardInventory, adduration                  = 0, 0
+				dspId                                          int
 			)
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
@@ -133,11 +133,14 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				}
 				// --------------------------------------------------------------------------------------------------
 
-				tagid = impCtx.TagID
+				tracker.SlotID = impCtx.SlotName
 				tracker.LoggerData.KGPSV = kgpsv
 				tracker.Secure = impCtx.Secure
-				//tracker.Adunit = rctx.AdunitName
-				isRewardInventory = getRewardedInventoryFlag(rctx.ImpBidCtx[bid.ImpID].IsRewardInventory)
+				tracker.Adunit = impCtx.AdUnitName
+				isRewardInventory = 0
+				if impCtx.IsRewardInventory != nil {
+					isRewardInventory = int(*impCtx.IsRewardInventory)
+				}
 			}
 
 			if seatBid.Seat == "pubmatic" {
@@ -148,7 +151,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				}
 			}
 
-			tracker.SlotID = fmt.Sprintf("%s_%s", bid.ImpID, tagid)
 			tracker.RewardedInventory = isRewardInventory
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:      partnerID,
