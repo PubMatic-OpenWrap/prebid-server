@@ -39,7 +39,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		record: record{
 			PubID:             rCtx.PubID,
 			ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
-			VersionID:         fmt.Sprintf("%d", rCtx.VersionID),
+			VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
 			Origin:            rCtx.Origin,
 			PageURL:           rCtx.PageURL,
 			IID:               rCtx.LoggerImpressionID,
@@ -377,8 +377,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				Latency1:          rCtx.BidderResponseTimeMillis[seat], // it is set inside auctionresponsehook for all bidders
 				KGPV:              kgpv,
 				KGPSV:             kgpsv,
-				BidID:             bid.ID,
-				OrigBidID:         bid.ID,
+				BidID:             utils.GetOriginalBidId(bid.ID),
+				OrigBidID:         utils.GetOriginalBidId(bid.ID),
 				DefaultBidStatus:  0, // this will be always 0 , decide whether to drop this field in future
 				ServerSide:        1,
 				MatchedImpression: rCtx.MatchedImpression[seat],

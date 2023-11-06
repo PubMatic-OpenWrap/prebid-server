@@ -99,7 +99,6 @@ func (m OpenWrap) handleEntrypointHook(
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
-		VersionID:                 requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,

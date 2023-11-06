@@ -67,6 +67,7 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 
 		// we will not record at version level in prometheus metric
 		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
+		return
 	}
 	rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
 	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels

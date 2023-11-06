@@ -94,7 +94,6 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					"rctx": models.RequestCtx{
 						ProfileID:                 5890,
 						DisplayID:                 1,
-						VersionID:                 1,
 						SSAuction:                 -1,
 						Debug:                     true,
 						UA:                        "go-test",
@@ -157,7 +156,6 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					"rctx": models.RequestCtx{
 						ProfileID:                 5890,
 						DisplayID:                 1,
-						VersionID:                 1,
 						SSAuction:                 -1,
 						Debug:                     true,
 						UA:                        "go-test",
