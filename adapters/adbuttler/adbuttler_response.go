@@ -204,7 +204,7 @@ func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2
 	if bid.Price == 0 || bid.IURL == "" {
 		return false
 	}
-	if bidExt.ProductId == "" || bidExt.ClickUrl == "" {
+	if bidExt.ProductId == "" || bidExt.ClickUrl == "" || bidExt.ClickPrice == 0 {
 		return false
 	}
 
