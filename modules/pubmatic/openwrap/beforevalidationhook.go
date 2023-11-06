@@ -46,6 +46,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
+	//request executed in HB(8001) should not execute module
+	if rCtx.Sshb == "1" {
+		result.Reject = false
+		return result, nil
+	}
+
 	if rCtx.Endpoint == models.EndpointHybrid {
 		//TODO: Add bidder params fix
 		result.Reject = false

@@ -34,7 +34,8 @@ func (m OpenWrap) handleEntrypointHook(
 ) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
 	queryParams := payload.Request.URL.Query()
 	source := queryParams.Get("source")
-	var rCtx models.RequestCtx
+
+	rCtx := models.RequestCtx{}
 	var endpoint string
 	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
@@ -47,6 +48,11 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 	}()
 
+	rCtx.Sshb = queryParams.Get("sshb")
+	if queryParams.Get("sshb") == "1" {
+		return result, nil
+	}
+
 	switch payload.Request.URL.Path {
 	// Direct call to 8000 port
 	case hookexecution.EndpointAuction:
@@ -58,17 +64,13 @@ func (m OpenWrap) handleEntrypointHook(
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 			endpoint = models.EndpointV25
 		default:
-			rCtx = models.RequestCtx{
-				Endpoint: models.EndpointHybrid,
-			}
+			rCtx.Endpoint = models.EndpointHybrid
 			return result, nil
 		}
 	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
 		m.metricEngine.RecordPBSAuctionRequestsStats()
-		rCtx = models.RequestCtx{
-			Endpoint: models.EndpointHybrid,
-		}
+		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
