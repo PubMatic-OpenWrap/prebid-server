@@ -9,7 +9,6 @@ import (
 )
 
 func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string) {
-
 	if configMap == nil || configMap[models.VersionLevelConfigID] == nil {
 		return
 	}
@@ -24,14 +23,6 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 	if requestExt.Prebid.Floors.Enabled == nil {
 		requestExt.Prebid.Floors.Enabled = ptrutil.ToPtr(true)
 
-		enable, enabledExists := configMap[models.VersionLevelConfigID][models.FloorModuleEnabled]
-		if enabledExists && enable != "1" {
-			*requestExt.Prebid.Floors.Enabled = false
-		}
-	}
-
-	if !(*requestExt.Prebid.Floors.Enabled) {
-		return
 	}
 
 	if requestExt.Prebid.Floors.Enforcement == nil {
@@ -48,12 +39,15 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 		}
 	}
 
-	url, urlExists := configMap[models.VersionLevelConfigID][models.PriceFloorURL]
-	if urlExists {
-		if requestExt.Prebid.Floors.Location == nil {
-			requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
+	// Based on floorPriceModuleEnabled flag, dynamic fetch would be enabled/disabled
+	enableFlag, isFlagPresent := configMap[models.VersionLevelConfigID][models.FloorModuleEnabled]
+	if isFlagPresent && enableFlag == "1" {
+		url, urlExists := configMap[models.VersionLevelConfigID][models.PriceFloorURL]
+		if urlExists {
+			if requestExt.Prebid.Floors.Location == nil {
+				requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
+			}
+			requestExt.Prebid.Floors.Location.URL = url
 		}
-		requestExt.Prebid.Floors.Location.URL = url
 	}
-
 }
