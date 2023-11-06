@@ -93,14 +93,14 @@ func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug strin
 		if len(redirectURL) > 0 && debug == "0" {
 			return []byte(redirectURL)
 		}
-		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", nil)
+		return formAdpodBidErrorResponse("", "empty bid response recieved", nil)
 	}
 
 	if bidResponse.SeatBid == nil {
 		if len(redirectURL) > 0 && debug == "0" {
 			return []byte(redirectURL)
 		}
-		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", bidResponse.Ext)
+		return formAdpodBidErrorResponse("", "no seat bids in the response", bidResponse.Ext)
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)
