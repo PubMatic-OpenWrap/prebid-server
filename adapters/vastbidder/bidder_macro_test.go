@@ -1678,7 +1678,6 @@ func TestMacroSchain(t *testing.T) {
 									"sid":"abc,d",
 									"rid":"bid-request-2",
 									"name":"intermediary",
-									"domain":"intermediary.com",
 									"hp":1
 								}
 							],
@@ -1688,7 +1687,7 @@ func TestMacroSchain(t *testing.T) {
 				},
 			}},
 			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com!exchange2.com,abc%2Cd,1,bid-request-2,intermediary,intermediary.com",
+			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com!exchange2.com,abc%2Cd,1,bid-request-2,intermediary,",
 		},
 
 		{
@@ -1752,6 +1751,28 @@ func TestMacroSchain(t *testing.T) {
 			}}},
 			args: args{key: "schain"},
 			want: "1.0,1!exchange1.com,1234&abcd,1,,,,%7B%22k1%22%3A%22v1%22%7D",
+		},
+		{
+			name: "incomplete_chain",
+			fields: fields{&openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{
+						"schain":{
+							"complete":0,
+							"nodes":[
+								{
+									"asi":"exchange2.com",
+									"sid":"abcd",
+									"hp":1
+								} 
+							],
+							"ver":"1.0"
+						}
+					}`),
+				},
+			}},
+			args: args{key: "schain"},
+			want: "1.0,0!exchange2.com,abcd,1,,,",
 		},
 		{
 			name: "multi_nodes_with_extension",

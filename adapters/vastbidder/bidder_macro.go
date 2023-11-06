@@ -292,24 +292,18 @@ func (tag *BidderMacro) MacroSchain(key string) string {
 	if tag.Request.Source == nil || tag.Request.Source.Ext == nil {
 		return ""
 	}
-
 	schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
-
 	if err != nil {
 		return ""
 	}
 	var schainObj openrtb2.SupplyChain
-
 	err = json.Unmarshal(schain, &schainObj)
-
 	if err != nil {
 		return ""
 	}
 
 	var serializedSchain strings.Builder
-
 	serializedSchain.WriteString(schainObj.Ver + "," + fmt.Sprintf("%v", schainObj.Complete))
-
 	for _, node := range schainObj.Nodes {
 
 		serializedSchain.WriteString("!")
