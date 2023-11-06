@@ -81,6 +81,11 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 		len(adButlerResp.Bids) > 0) {
 		impID := internalRequest.Imp[0].ID
 		responseF := a.GetBidderResponse(internalRequest, &adButlerResp, impID)
+		if len(responseF.Bids) <= 0 {
+			return nil, []error{&errortypes.NoValidBid{
+				Message: "No Valid Bid For the given Request",
+			}}
+		}
 		return responseF, errors
 	}
 
@@ -127,7 +132,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 
 		var productid string
 		//Retailer Specific ProductID is present from Product Feed Template
-		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_PRODUCTID]
+		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
 		if ok {
 			productid = adButlerBid.ProductData[val]
 			keyToRemove = val
@@ -141,11 +146,9 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		for key, value := range adButlerBid.ProductData {
 			productDetails[key] = value
 		}
-	
+
 		// Delete the "Product Id" key if present
-		if _, ok := productDetails[keyToRemove]; ok {
-			delete(productDetails, keyToRemove)
-		}
+		delete(productDetails, keyToRemove)
 
 		var impressionUrl, clickUrl, conversionUrl string
 		for _, beacon := range adButlerBid.Beacons {
@@ -160,10 +163,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
 
 		bidExt := &openrtb_ext.ExtBidCommerce{
-			ProductId:     productid,
-			ClickUrl:      clickUrl,
-			ClickPrice:    clickPrice,
-			ConversionUrl: conversionUrl,
+			ProductId:      productid,
+			ClickUrl:       clickUrl,
+			ClickPrice:     clickPrice,
+			ConversionUrl:  conversionUrl,
 			ProductDetails: productDetails,
 		}
 
@@ -173,6 +176,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			Price: bidPrice,
 			CID:   campaignID,
 			IURL:  impressionUrl,
+		}
+
+		if !areMandatoryFieldsPresent(bidExt, bid) {
+			continue
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -186,12 +193,34 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			Bid:  bid,
 			Seat: openrtb_ext.BidderName(SEAT_ADBUTLER),
 		}
+
 		bidResponse.Bids = append(bidResponse.Bids, typedbid)
 	}
 	return bidResponse
 }
 
+func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2.Bid) bool {
+
+	if bid.Price == 0 || bid.IURL == "" {
+		return false
+	}
+	if bidExt.ProductId == "" || bidExt.ClickUrl == "" || bidExt.ClickPrice == 0 {
+		return false
+	}
+
+	return true
+}
+
 func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string {
+	/*
+		var hostname string
+			url, err := url.Parse(clickurl)
+		    if err == nil {
+				hostname = url.Hostname()
+			 }
+
+			conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)
+	*/
 	conversionUrl := strings.Replace(CONVERSION_URL, CONV_ADBUTLERID, adbutlerID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ZONEID, zoneID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ADBUID, adbUID, 1)
@@ -199,4 +228,3 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
-
