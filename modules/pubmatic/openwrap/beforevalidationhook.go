@@ -29,6 +29,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 		Reject: true,
 	}
+
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
@@ -46,7 +47,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
-	//request executed in HB(8001) should not execute module
+	//Do not execute the module for requests processed in HB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
 		return result, nil

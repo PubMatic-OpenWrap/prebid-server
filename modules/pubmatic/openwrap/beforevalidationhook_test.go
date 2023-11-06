@@ -1589,6 +1589,22 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		wantErr              bool
 	}{
 		{
+			name: "request_with_sshb=1",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Sshb: "1",
+						},
+					},
+				},
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+		},
+		{
 			name: "empty_module_context",
 			args: args{
 				ctx:       context.Background(),
