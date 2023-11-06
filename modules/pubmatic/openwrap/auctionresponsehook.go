@@ -39,6 +39,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
+	//HB request should not exexute module
+	if rctx.Sshb == "1" {
+		return result, nil
+	}
 	if rctx.Endpoint == models.EndpointOWS2S {
 		return result, nil
 	}
