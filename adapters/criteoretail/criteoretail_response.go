@@ -190,3 +190,4 @@ func countSponsoredProducts(adResponse *CriteoResponse) int {
 	return count
 }
 
+
