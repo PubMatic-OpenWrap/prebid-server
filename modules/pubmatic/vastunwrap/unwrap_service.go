@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func (m VastUnwrapModule) doUnwrapandUpdateBid(bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
+func (m VastUnwrapModule) doUnwrapandUpdateBid(bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string, VastUnwrapStatsEnabled bool) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -42,11 +42,14 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(bid *adapters.TypedBid, userAgent
 	m.unwrapRequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(UnwrapCount), 10, 0)
-	respBody := httpResp.Body.Bytes()
-	if httpResp.Code == http.StatusOK {
-		bid.Bid.AdM = string(respBody)
-		return
+	if !VastUnwrapStatsEnabled {
+		respBody := httpResp.Body.Bytes()
+		if httpResp.Code == http.StatusOK {
+			bid.Bid.AdM = string(respBody)
+			return
+		}
 	}
+
 	glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)
 	return
 }
