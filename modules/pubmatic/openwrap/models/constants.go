@@ -337,11 +337,23 @@ const (
 	Device     = "device"
 	DeviceType = "deviceType"
 
+	//constant for native tracker
+	EventTrackers = "eventtrackers"
+	ImpTrackers   = "imptrackers"
+	Event         = "event"
+	Methods       = "methods"
+	EventValue    = "1"
+	MethodValue   = "1"
+
 	//constants for Universal Pixel
 	PixelTypeUrl  = "url"
 	PixelTypeJS   = "js"
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
+
+	//floor types
+	SoftFloor = 0
+	HardFloor = 1
 )
 
 const (
@@ -382,6 +394,8 @@ var (
 	VASTErrorResponse = `<VAST version="2.0"><Ad><InLine><Extensions><Extension><OWStatus><Error code="%v">%v</Error></OWStatus></Extension></Extensions></InLine></Ad></VAST>`
 	//TrackerCallWrap
 	TrackerCallWrap = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${escapedUrl}"></div>`
+	//Tracker Format for Native
+	NativeTrackerMacro = `{"event":1,"method":1,"url":"${trackerUrl}"}`
 	//TrackerCallWrapOMActive for Open Measurement in In-App Banner
 	TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="${OMScript}"></script>`
 )
@@ -430,7 +444,7 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetParterConfig"
+	PartnerConfigQuery             = "GetPartnerConfig"
 	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
 	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
 	AdunitConfigQuery              = "GetAdunitConfigQuery"

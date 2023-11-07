@@ -327,9 +327,9 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
-			if pr.Adformat == "" && bid.AdM != "" {
-				pr.Adformat = models.GetAdFormat(bid.AdM)
-			}
+			// if pr.Adformat == "" && bid.AdM != "" {
+			// 	pr.Adformat = models.GetAdFormat(bid.AdM)
+			// }
 
 			if len(bid.ADomain) != 0 {
 				if domain, err := ExtractDomain(bid.ADomain[0]); err == nil {

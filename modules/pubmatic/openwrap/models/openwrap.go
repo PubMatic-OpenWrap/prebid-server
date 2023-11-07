@@ -79,6 +79,7 @@ type RequestCtx struct {
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	CurrencyConversion     func(from string, to string, value float64) (float64, error)
 }
 
 type OwBid struct {
@@ -100,6 +101,8 @@ type ImpCtx struct {
 	TagID             string
 	Div               string
 	Secure            int
+	BidFloor          float64
+	BidFloorCur       string
 	IsRewardInventory *int8
 	Banner            bool
 	Video             *openrtb2.Video
