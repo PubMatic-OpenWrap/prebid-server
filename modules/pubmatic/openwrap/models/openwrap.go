@@ -13,16 +13,26 @@ import (
 )
 
 type RequestCtx struct {
-	PubID, ProfileID, DisplayID, VersionID int
-	SSAuction                              int
-	SummaryDisable                         int
-	LogInfoFlag                            int
-	SSAI                                   string
-	PartnerConfigMap                       map[int]map[string]string
-	SupportDeals                           bool
-	Platform                               string
-	LoggerImpressionID                     string
-	ClientConfigFlag                       int
+	// PubID is the publisher id retrieved from request
+	PubID int
+	// ProfileID is the value received in profileid field in wrapper object.
+	ProfileID int
+	// DisplayID is the value received in versionid field in wrapper object.
+	DisplayID int
+	// VersionID is the unique id from DB associated with the incoming DisplayID
+	VersionID int
+	// DisplayVersionID is the DisplayID of the profile selected by OpenWrap incase DisplayID/versionid is 0
+	DisplayVersionID int
+
+	SSAuction          int
+	SummaryDisable     int
+	LogInfoFlag        int
+	SSAI               string
+	PartnerConfigMap   map[int]map[string]string
+	SupportDeals       bool
+	Platform           string
+	LoggerImpressionID string
+	ClientConfigFlag   int
 
 	IP   string
 	TMax int64

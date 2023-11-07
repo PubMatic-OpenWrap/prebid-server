@@ -39,7 +39,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		record: record{
 			PubID:             rCtx.PubID,
 			ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
-			VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+			VersionID:         fmt.Sprintf("%d", rCtx.DisplayVersionID),
 			Origin:            rCtx.Origin,
 			PageURL:           rCtx.PageURL,
 			IID:               rCtx.LoggerImpressionID,

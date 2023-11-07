@@ -94,6 +94,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
+	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
+		rCtx.DisplayVersionID = ver
+	}
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform

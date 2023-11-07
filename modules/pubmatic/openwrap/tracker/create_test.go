@@ -17,6 +17,7 @@ var rctx = models.RequestCtx{
 	PubID:               5890,
 	ProfileID:           1234,
 	DisplayID:           1,
+	DisplayVersionID:    1,
 	PageURL:             "abc.com",
 	LoggerImpressionID:  "loggerIID",
 	DevicePlatform:      5,
