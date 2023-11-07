@@ -24,7 +24,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	tests := []struct {
@@ -49,7 +49,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -65,7 +65,7 @@ func TestGetFSCDisabledPublishers(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -104,7 +104,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
-		cfg   config.DBCache
+		cfg   config.Cache
 		db    database.Database
 	}
 	tests := []struct {
@@ -129,7 +129,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},
@@ -145,7 +145,7 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 			fields: fields{
 				cache: gocache.New(100, 100),
 				db:    mockDatabase,
-				cfg: config.DBCache{
+				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
 			},

@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Server    Server
 	Database  Database
-	DBCache   DBCache
+	Cache     Cache
 	Timeout   Timeout
 	Tracker   Tracker
 	PixelView PixelView
@@ -58,7 +58,7 @@ type Queries struct {
 	GetTBFRateQuery                   string
 }
 
-type DBCache struct {
+type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
 	CacheDefaultExpiry int // in seconds

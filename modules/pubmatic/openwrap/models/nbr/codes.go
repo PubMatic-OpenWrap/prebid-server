@@ -10,7 +10,8 @@ const (
 	InvalidRequest int = 2
 
 	// 500+ Vendor-specific codes.
-	InvalidRequestWrapperExtension int = 500 + iota
+	// 5xx already in use by seat non bid. https://github.com/PubMatic-OpenWrap/prebid-openrtb/blob/main/openrtb3/non_bid_status_code.go#L53
+	InvalidRequestWrapperExtension int = 600 + iota
 	InvalidPublisherID
 	InvalidProfileID
 	InvalidProfileConfiguration
