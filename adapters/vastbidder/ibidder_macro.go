@@ -37,6 +37,7 @@ type IBidderMacro interface {
 	MacroFD(string) string
 	MacroTransactionID(string) string
 	MacroPaymentIDChain(string) string
+	MacroSchain(string) string
 
 	//Regs
 	MacroCoppa(string) string
