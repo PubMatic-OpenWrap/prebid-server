@@ -164,7 +164,7 @@ func TestSerializeSupplyChain(t *testing.T) {
 						Domain: "publisher.com",
 					},
 				}}},
-			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com",
+			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C+Inc.,publisher.com",
 		},
 		{
 			name: "multiple hops - with all properties supplied,encoded values",
@@ -174,7 +174,7 @@ func TestSerializeSupplyChain(t *testing.T) {
 				Nodes: []openrtb2.SupplyChainNode{
 					{
 						ASI:    "exchange1.com",
-						SID:    "1234!abcd",
+						SID:    "1234&abcd",
 						HP:     openrtb2.Int8Ptr(1),
 						RID:    "bid-request-1",
 						Name:   "publisher?name",
@@ -182,14 +182,14 @@ func TestSerializeSupplyChain(t *testing.T) {
 					},
 					{
 						ASI:    "exchange2.com",
-						SID:    "abcd&12345",
+						SID:    "abcd?12345",
 						HP:     openrtb2.Int8Ptr(1),
 						RID:    "bid-request-2",
 						Name:   "intermediary",
 						Domain: "intermediary.com",
 					},
 				}}},
-			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%3Fname,publisher.com!exchange2.com,abcd&12345,1,bid-request-2,intermediary,intermediary.com",
+			want: "1.0,1!exchange1.com,1234%26abcd,1,bid-request-1,publisher%3Fname,publisher.com!exchange2.com,abcd%3F12345,1,bid-request-2,intermediary,intermediary.com",
 		},
 		{
 			name: "single hop - chain complete, missing optional field - encoded values",
@@ -199,13 +199,13 @@ func TestSerializeSupplyChain(t *testing.T) {
 				Nodes: []openrtb2.SupplyChainNode{
 					{
 						ASI:  "exchange1.com",
-						SID:  "1234!abcd",
+						SID:  "1234&&abcd",
 						HP:   openrtb2.Int8Ptr(1),
 						RID:  "bid-request-1",
 						Name: "publisher, Inc.",
 					},
 				}}},
-			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,",
+			want: "1.0,1!exchange1.com,1234%26%26abcd,1,bid-request-1,publisher%2C+Inc.,",
 		},
 		{
 			name: "single hop - chain complete, missing domain field - encoded values",
@@ -221,7 +221,7 @@ func TestSerializeSupplyChain(t *testing.T) {
 						Name: "publisher, Inc.",
 					},
 				}}},
-			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,",
+			want: "1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C+Inc.,",
 		},
 		{
 			name: "single hop with extension - chain complete",

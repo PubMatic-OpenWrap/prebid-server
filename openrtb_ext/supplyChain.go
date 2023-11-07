@@ -41,12 +41,12 @@ func SerializeSupplyChain(schain *openrtb2.SupplyChain) string {
 		serializedSchain.WriteByte('!')
 
 		if node.ASI != "" {
-			serializedSchain.WriteString(url.PathEscape(node.ASI))
+			serializedSchain.WriteString(url.QueryEscape(node.ASI))
 		}
 		serializedSchain.WriteByte(',')
 
 		if node.SID != "" {
-			serializedSchain.WriteString(url.PathEscape(node.SID))
+			serializedSchain.WriteString(url.QueryEscape(node.SID))
 		}
 		serializedSchain.WriteByte(',')
 
@@ -57,17 +57,17 @@ func SerializeSupplyChain(schain *openrtb2.SupplyChain) string {
 		serializedSchain.WriteByte(',')
 
 		if node.RID != "" {
-			serializedSchain.WriteString(url.PathEscape(node.RID))
+			serializedSchain.WriteString(url.QueryEscape(node.RID))
 		}
 		serializedSchain.WriteByte(',')
 
 		if node.Name != "" {
-			serializedSchain.WriteString(url.PathEscape(node.Name))
+			serializedSchain.WriteString(url.QueryEscape(node.Name))
 		}
 		serializedSchain.WriteByte(',')
 
 		if node.Domain != "" {
-			serializedSchain.WriteString(url.PathEscape(node.Domain))
+			serializedSchain.WriteString(url.QueryEscape(node.Domain))
 		}
 		if node.Ext != nil {
 			serializedSchain.WriteByte(',')
