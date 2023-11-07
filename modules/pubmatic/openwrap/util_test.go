@@ -898,7 +898,7 @@ func TestGetPubmaticErrorCode(t *testing.T) {
 		{
 			name: "ErrBadRequest",
 			args: args{
-				standardNBR: nbr.InvalidRequest,
+				standardNBR: nbr.InvalidRequestExt,
 			},
 			want: 18,
 		},
