@@ -47,7 +47,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
-	//Do not execute the module for requests processed in HB(8001)
+	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
 		return result, nil

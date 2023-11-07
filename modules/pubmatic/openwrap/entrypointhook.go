@@ -33,7 +33,7 @@ func (m OpenWrap) handleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
 	queryParams := payload.Request.URL.Query()
-	source := queryParams.Get("source")
+	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
 
 	rCtx := models.RequestCtx{}
 	var endpoint string
@@ -49,7 +49,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}()
 
 	rCtx.Sshb = queryParams.Get("sshb")
-	//Do not execute the module for requests processed in HB(8001)
+	//Do not execute the module for requests processed in SSHB(8001)
 	if queryParams.Get("sshb") == "1" {
 		return result, nil
 	}
@@ -70,7 +70,7 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
-		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after call through module
+		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after hybrid call through module
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	case OpenWrapV25:
@@ -109,8 +109,8 @@ func (m OpenWrap) handleEntrypointHook(
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
 	}
-	debuglocation := []string{"ext", "prebid", "debug"}
-	requestDebug, _ := jsonparser.GetBoolean(payload.Body, debuglocation...)
+
+	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
 		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,

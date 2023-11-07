@@ -35,7 +35,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		return result, nil
 	}
 
-	//HB request should not exexute module
+	//SSHB request should not execute module
 	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
