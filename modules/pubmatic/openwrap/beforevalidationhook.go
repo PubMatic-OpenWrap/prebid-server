@@ -933,11 +933,11 @@ func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 
 func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 	//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
-	if impExt.Gpid != "" {
-		if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
-			return impExt.Gpid[:idx]
+	if impExt.GpId != "" {
+		if idx := strings.Index(impExt.GpId, "#"); idx != -1 {
+			return impExt.GpId[:idx]
 		}
-		return impExt.Gpid
+		return impExt.GpId
 	} else if imp.TagID != "" {
 		return imp.TagID
 	}

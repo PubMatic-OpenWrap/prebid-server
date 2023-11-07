@@ -2583,7 +2583,7 @@ func TestGetTagID(t *testing.T) {
 			args: args{
 				imp: openrtb2.Imp{},
 				impExt: &models.ImpExtension{
-					Gpid: "/7578294/adunit1",
+					GpId: "/7578294/adunit1",
 				},
 			},
 			want: "/7578294/adunit1",
@@ -2615,7 +2615,7 @@ func TestGetTagID(t *testing.T) {
 			args: args{
 				imp: openrtb2.Imp{},
 				impExt: &models.ImpExtension{
-					Gpid: "/7578294/adunit123",
+					GpId: "/7578294/adunit123",
 					Data: openrtb_ext.ExtImpData{
 						PbAdslot: "/7578294/adunit",
 					},
@@ -2630,7 +2630,7 @@ func TestGetTagID(t *testing.T) {
 					TagID: "/7578294/adunit",
 				},
 				impExt: &models.ImpExtension{
-					Gpid: "/7578294/adunit123",
+					GpId: "/7578294/adunit123",
 				},
 			},
 			want: "/7578294/adunit123",
@@ -2656,7 +2656,7 @@ func TestGetTagID(t *testing.T) {
 					TagID: "/7578294/adunit",
 				},
 				impExt: &models.ImpExtension{
-					Gpid: "/7578294/adunit123",
+					GpId: "/7578294/adunit123",
 					Data: openrtb_ext.ExtImpData{
 						PbAdslot: "/7578294/adunit12345",
 					},
@@ -2671,7 +2671,7 @@ func TestGetTagID(t *testing.T) {
 					TagID: "/7578294/adunit",
 				},
 				impExt: &models.ImpExtension{
-					Gpid: "/43743431/DMDemo#Div1",
+					GpId: "/43743431/DMDemo#Div1",
 					Data: openrtb_ext.ExtImpData{
 						PbAdslot: "/7578294/adunit12345",
 					},

@@ -44,7 +44,6 @@ type ImpExtension struct {
 	Data        openrtb_ext.ExtImpData   `json:"data,omitempty"`
 	GpId        string                   `json:"gpid,omitempty"`
 	Prebid      openrtb_ext.ExtImpPrebid `json:"prebid,omitempty"`
-	Gpid        string                   `json:"gpid,omitempty"`
 }
 
 // BidderExtension - Bidder specific items
