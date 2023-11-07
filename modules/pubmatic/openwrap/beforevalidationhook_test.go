@@ -1668,12 +1668,12 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequest))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequest)
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidRequest,
+				NbrCode: nbr.InvalidRequestExt,
 				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
 			},
 			wantErr: true,
