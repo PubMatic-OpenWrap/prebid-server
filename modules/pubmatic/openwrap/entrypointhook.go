@@ -99,12 +99,12 @@ func (m OpenWrap) handleEntrypointHook(
 	result.Reject = true
 
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequest
+		result.NbrCode = nbr.InvalidRequestWrapperExtension
 		result.Errors = append(result.Errors, "InvalidRequest")
 		return result, err
 	}
 
-	if requestExtWrapper.ProfileId == 0 {
+	if requestExtWrapper.ProfileId <= 0 {
 		result.NbrCode = nbr.InvalidProfileID
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err

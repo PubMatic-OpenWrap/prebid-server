@@ -286,6 +286,33 @@ func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 	return ""
 }
 
+// MacroSchain contains definition for Schain Parameter
+func (tag *BidderMacro) MacroSchain(key string) string {
+	if tag.Request.Source == nil {
+		return ""
+	}
+
+	if tag.Request.Source.SChain != nil {
+		return openrtb_ext.SerializeSupplyChain(tag.Request.Source.SChain)
+	}
+
+	if tag.Request.Source.Ext != nil {
+		schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
+
+		if err != nil {
+			return ""
+		}
+		var schainObj openrtb2.SupplyChain
+		err = json.Unmarshal(schain, &schainObj)
+
+		if err != nil {
+			return ""
+		}
+		return openrtb_ext.SerializeSupplyChain(&schainObj)
+	}
+	return ""
+}
+
 /********************* Regs *********************/
 
 // MacroCoppa contains definition for Coppa Parameter

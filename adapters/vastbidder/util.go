@@ -122,7 +122,12 @@ func mapToQuery(m map[string]any) string {
 				values.Add(key, mapToQuery(mvalue))
 			}
 		default:
-			values.Add(key, fmt.Sprintf("%v", value))
+			v := fmt.Sprintf("%v", value)
+			decodedString, err := url.QueryUnescape(v)
+			if err == nil {
+				v = decodedString
+			}
+			values.Add(key, v)
 		}
 	}
 	return values.Encode()

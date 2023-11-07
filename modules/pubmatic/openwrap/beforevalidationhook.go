@@ -75,7 +75,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequest
+		result.NbrCode = nbr.InvalidRequestExt
 		err = errors.New("failed to get request ext: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
