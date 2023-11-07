@@ -6,7 +6,9 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_injectBannerTracker(t *testing.T) {
@@ -18,6 +20,7 @@ func Test_injectBannerTracker(t *testing.T) {
 		tracker models.OWTracker
 		bid     openrtb2.Bid
 		seat    string
+		pixels  []adunitconfig.UniversalPixel
 	}
 	tests := []struct {
 		name string
@@ -93,7 +96,7 @@ func Test_injectBannerTracker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat); got != tt.want {
+			if got := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels); got != tt.want {
 				t.Errorf("injectBannerTracker() = %v, want %v", got, tt.want)
 			}
 		})
@@ -228,6 +231,71 @@ func Test_applyTBFFeature(t *testing.T) {
 			if got := applyTBFFeature(tt.args.rctx, tt.args.bid, tt.args.tracker); got != tt.want {
 				t.Errorf("applyTBFFeature() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_appendUPixelinBanner(t *testing.T) {
+	type args struct {
+		adm            string
+		universalPixel []adunitconfig.UniversalPixel
+	}
+	type want struct {
+		creative string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "empty universal pixel",
+			args: args{
+				adm: `sample_creative`,
+			},
+			want: want{
+				creative: `sample_creative`,
+			},
+		},
+		{
+			name: "valid insertion of upixel",
+			args: args{
+				adm: `sample_creative`,
+				universalPixel: []adunitconfig.UniversalPixel{
+					{
+						Id:        123,
+						Pixel:     `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+						PixelType: models.PixelTypeUrl,
+						Pos:       models.PixelPosAbove,
+						MediaType: "banner",
+						Partners:  []string{"pubmatic", "appnexus"},
+					},
+					{
+						Id:        123,
+						Pixel:     "<script>__script__</script>",
+						PixelType: models.PixelTypeJS,
+						Pos:       models.PixelPosBelow,
+						MediaType: "banner",
+						Partners:  []string{"pubmatic", "appnexus"},
+					},
+					{
+						Id:        123,
+						Pixel:     `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+						PixelType: "url",
+						MediaType: "banner",
+						Partners:  []string{"pubmatic", "appnexus"},
+					},
+				},
+			},
+			want: want{
+				creative: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>sample_creative<script>__script__</script><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendUPixelinBanner(tt.args.adm, tt.args.universalPixel)
+			assert.Equal(t, tt.want.creative, got)
 		})
 	}
 }

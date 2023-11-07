@@ -398,6 +398,8 @@ var (
 	NativeTrackerMacro = `{"event":1,"method":1,"url":"${trackerUrl}"}`
 	//TrackerCallWrapOMActive for Open Measurement in In-App Banner
 	TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="${OMScript}"></script>`
+	//Universal Pixel Macro
+	UniversalPixelMacroForUrl = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${pixelUrl}"></div>`
 )
 
 // LogOnlyWinBidArr is an array containing Partners who only want winning bids to be logged
