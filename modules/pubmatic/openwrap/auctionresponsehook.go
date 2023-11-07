@@ -34,6 +34,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	//SSHB request should not execute module
+	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
+		return result, nil
+	}
+	if rctx.Endpoint == models.EndpointOWS2S {
+		return result, nil
+	}
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))

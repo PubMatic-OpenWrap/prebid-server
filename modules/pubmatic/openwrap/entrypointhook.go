@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -30,25 +31,47 @@ func (m OpenWrap) handleEntrypointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
-) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
 	queryParams := payload.Request.URL.Query()
-	if queryParams.Get("sshb") != "1" {
+	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
+
+	rCtx := models.RequestCtx{}
+	var endpoint string
+	var pubid int
+	var requestExtWrapper models.RequestExtWrapper
+	defer func() {
+		if result.Reject {
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+		} else {
+			result.ModuleContext = make(hookstage.ModuleContext)
+			result.ModuleContext["rctx"] = rCtx
+		}
+	}()
+
+	rCtx.Sshb = queryParams.Get("sshb")
+	//Do not execute the module for requests processed in SSHB(8001)
+	if queryParams.Get("sshb") == "1" {
 		return result, nil
 	}
 
-	var pubid int
-	var endpoint string
-	var err error
-	var requestExtWrapper models.RequestExtWrapper
 	switch payload.Request.URL.Path {
+	// Direct call to 8000 port
 	case hookexecution.EndpointAuction:
-		if !models.IsHybrid(payload.Body) { // new hybrid api should not execute module
+		switch source {
+		case "pbjs":
+			endpoint = models.EndpointOWS2S
+			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+		case "inapp":
+			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+			endpoint = models.EndpointV25
+		default:
+			rCtx.Endpoint = models.EndpointHybrid
 			return result, nil
 		}
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+	// call to 8001 port and here via reverse proxy
 	case OpenWrapAuction: // legacy hybrid api should not execute module
-		m.metricEngine.RecordPBSAuctionRequestsStats()
+		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after hybrid call through module
+		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	case OpenWrapV25:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
@@ -72,12 +95,6 @@ func (m OpenWrap) handleEntrypointHook(
 		// we should return from here
 	}
 
-	defer func() {
-		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
-		}
-	}()
-
 	// init default for all modules
 	result.Reject = true
 
@@ -93,9 +110,10 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, err
 	}
 
-	rCtx := models.RequestCtx{
+	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
+	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
-		Debug:                     queryParams.Get(models.Debug) == "1",
+		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
@@ -137,9 +155,6 @@ func (m OpenWrap) handleEntrypointHook(
 	if pubid != 0 {
 		rCtx.PubID = pubid
 	}
-
-	result.ModuleContext = make(hookstage.ModuleContext)
-	result.ModuleContext["rctx"] = rCtx
 
 	result.Reject = false
 	return result, nil
