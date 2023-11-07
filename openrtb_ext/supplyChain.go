@@ -52,7 +52,7 @@ func SerializeSupplyChain(schain *openrtb2.SupplyChain) string {
 
 		if node.HP != nil {
 			// node.HP is integer pointer so 1st dereference it then convert it to string and push to serializedSchain
-			serializedSchain.WriteString(fmt.Sprintf("%v", *node.HP))
+			fmt.Fprintf(&serializedSchain, "%d", *node.HP)
 		}
 		serializedSchain.WriteByte(',')
 

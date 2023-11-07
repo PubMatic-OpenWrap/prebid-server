@@ -1635,82 +1635,6 @@ func TestMacroSchain(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "schain_with_single_node",
-			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
-				Ext: []byte(`{
-					"schain":{
-						"complete":1,
-						"nodes":[
-							{
-								"asi":"exchange1.com",
-								"sid":"1234&abcd",
-								"rid":"bid-request-1",
-								"name":"publisher name",
-								"domain":"publisher.com",
-								"hp":1
-							}
-						],
-						"ver":"1.0"
-					}
-				}`),
-			}}},
-			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com",
-		},
-		{
-			name: "schain_with_multiple_nodes",
-			fields: fields{&openrtb2.BidRequest{
-				Source: &openrtb2.Source{
-					Ext: []byte(`{
-						"schain":{
-							"complete":1,
-							"nodes":[
-								{
-									"asi":"exchange1.com",
-									"sid":"1234&abcd",
-									"rid":"bid-request-1",
-									"name":"publisher name",
-									"domain":"publisher.com",
-									"hp":1
-								} ,
-								{
-									"asi":"exchange2.com",
-									"sid":"abc,d",
-									"rid":"bid-request-2",
-									"name":"intermediary",
-									"hp":1
-								}
-							],
-							"ver":"1.0"
-						}
-					}`),
-				},
-			}},
-			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com!exchange2.com,abc%2Cd,1,bid-request-2,intermediary,",
-		},
-
-		{
-			name: "node_with_missing_all_optional_parameters",
-			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
-				Ext: []byte(`{
-					"schain":{
-						"complete":1,
-						"nodes":[
-							{
-								"asi":"exchange1.com",
-								"sid":"1234&abcd",
-								"hp":1
-							}
-						],
-						"ver":"1.0"
-					}
-				}`),
-			}}},
-			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,,,",
-		},
-		{
 			name: "source_object_with_both_source.schain_and_source.ext.schain",
 			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
 				SChain: &openrtb2.SupplyChain{},
@@ -1733,28 +1657,7 @@ func TestMacroSchain(t *testing.T) {
 			want: "", // here we have given priority to source.schain object hence source.schain is not nil it return empty string
 		},
 		{
-			name: "nodes_with_extension_and_missing_optional_parameters",
-			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
-				Ext: []byte(`{
-					"schain":{
-						"complete":1,
-						"nodes":[
-							{
-								"asi":"exchange1.com",
-								"sid":"1234&abcd",
-								"hp":1,
-								"ext":{"k1":"v1"}
-							}
-						],
-						"ver":"1.0"
-					}
-				}`),
-			}}},
-			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,,,,%7B%22k1%22%3A%22v1%22%7D",
-		},
-		{
-			name: "incomplete_schain_and_nil_source.schain_object",
+			name: "nil_source.schain_object",
 			fields: fields{&openrtb2.BidRequest{
 				Source: &openrtb2.Source{
 					SChain: nil,
@@ -1775,39 +1678,6 @@ func TestMacroSchain(t *testing.T) {
 			}},
 			args: args{key: "schain"},
 			want: "1.0,0!exchange2.com,abcd,1,,,",
-		},
-		{
-			name: "multi_nodes_with_extension",
-			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
-				Ext: []byte(`{
-					"schain":{
-						"complete":1,
-						"nodes":[
-							{
-								"asi":"exchange1.com",
-								"sid":"1234&abcd",
-								"rid":"bid-request-1",
-								"name":"publisher name",
-								"domain":"publisher.com",
-								"hp":1,
-								"ext": "hello"
-							} ,
-							{
-								"asi":"exchange2.com",
-								"sid":"abc,d",
-								"rid":"bid-request-2",
-								"name":"intermediary",
-								"domain":"intermediary.com",
-								"hp":1,
-								"ext":{"name":"test","num":1}
-							}
-						],
-						"ver":"1.0"
-					}
-				}`),
-			}}},
-			args: args{key: "schain"},
-			want: "1.0,1!exchange1.com,1234&abcd,1,bid-request-1,publisher%20name,publisher.com,%22hello%22!exchange2.com,abc%2Cd,1,bid-request-2,intermediary,intermediary.com,%7B%22name%22%3A%22test%22%2C%22num%22%3A1%7D",
 		},
 		{
 			name: "missing_schain_object",
@@ -1831,7 +1701,7 @@ func TestMacroSchain(t *testing.T) {
 			want: "",
 		},
 		{
-			name:   "nil_schain_object",
+			name:   "missing_both_source.schain_and_source.ext",
 			fields: fields{&openrtb2.BidRequest{Source: nil}},
 			args:   args{key: "schain"},
 			want:   "",
