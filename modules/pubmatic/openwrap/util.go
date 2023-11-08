@@ -88,18 +88,10 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			deviceType = bidRequest.Device.DeviceType
 		}
 		isCtv := isCTV(userAgentString)
-		// regexStatus := models.Failure
 
 		if deviceType != 0 {
 			if deviceType == adcom1.DeviceTV || deviceType == adcom1.DeviceConnected || deviceType == adcom1.DeviceSetTopBox {
-				if isCtv {
-					// regexStatus = models.Success
-				}
-				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 				return models.DevicePlatformConnectedTv
-			}
-			if isCtv {
-				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 			}
 		}
 

@@ -35,7 +35,6 @@ type HTTPLogger struct {
 
 // LogAuctionObject prepares the owlogger url and send it to logger endpoint
 func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
-
 	var rCtx *models.RequestCtx
 	defer func() {
 		if r := recover(); r != nil {

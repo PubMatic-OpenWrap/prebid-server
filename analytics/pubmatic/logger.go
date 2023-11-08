@@ -101,7 +101,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(), // TODO ***************** use from tracker
+			SlotId:            getUUID(),
 			SlotName:          impCtx.SlotName,
 			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,
@@ -387,19 +387,20 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				DealID:            bid.DealID,
 				Nbr:               nbr,
 				Adformat:          adFormat,
+				NetECPM:           tracker.Tracker.PartnerInfo.NetECPM,
+				GrossECPM:         tracker.Tracker.PartnerInfo.GrossECPM,
+				PartnerSize:       tracker.Tracker.PartnerInfo.AdSize,
+				ADomain:           tracker.Tracker.PartnerInfo.Advertiser,
 			}
 
-			pr.NetECPM = tracker.Tracker.PartnerInfo.NetECPM
 			if pr.NetECPM == 0 {
 				pr.NetECPM = models.GetNetEcpm(price, revShare)
 			}
 
-			pr.GrossECPM = tracker.Tracker.PartnerInfo.GrossECPM
 			if pr.GrossECPM == 0 {
 				pr.GrossECPM = models.GetGrossEcpm(price)
 			}
 
-			pr.PartnerSize = tracker.Tracker.PartnerInfo.AdSize
 			if pr.PartnerSize == "" {
 				pr.PartnerSize = models.GetSizeForPlatform(bid.W, bid.H, rCtx.Platform)
 			}
@@ -450,7 +451,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
-			pr.ADomain = tracker.Tracker.PartnerInfo.Advertiser
 			if pr.ADomain == "" && len(bid.ADomain) != 0 {
 				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
 					pr.ADomain = domain

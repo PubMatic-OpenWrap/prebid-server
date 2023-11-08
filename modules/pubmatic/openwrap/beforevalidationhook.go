@@ -436,13 +436,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var err error
-		var requestExtjson json.RawMessage
-		requestExtjson, err = json.Marshal(rctx.NewReqExt)
-		if err != nil {
-			result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
-		}
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
-		ep.BidRequest.Ext = requestExtjson
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
+		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
@@ -510,7 +507,14 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	} else if bidRequest.App != nil && bidRequest.App.Content != nil {
 		bidRequest.App.Content.Language = getValidLanguage(bidRequest.App.Content.Language)
 	}
-	return bidRequest, nil
+
+	var err error
+	var requestExtjson json.RawMessage
+	if rctx.NewReqExt != nil {
+		requestExtjson, err = json.Marshal(rctx.NewReqExt)
+		bidRequest.Ext = requestExtjson
+	}
+	return bidRequest, err
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {

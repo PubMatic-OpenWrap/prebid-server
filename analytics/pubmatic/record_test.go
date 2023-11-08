@@ -174,7 +174,6 @@ func TestLogDeviceObject(t *testing.T) {
 }
 
 func TestLogIntegrationType(t *testing.T) {
-
 	tests := []struct {
 		name            string
 		endpoint        string
@@ -226,7 +225,6 @@ func TestLogIntegrationType(t *testing.T) {
 }
 
 func TestLogFloorType(t *testing.T) {
-
 	tests := []struct {
 		name      string
 		prebidExt *openrtb_ext.ExtRequestPrebid

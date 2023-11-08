@@ -103,9 +103,7 @@ func TestGetRequestCtx(t *testing.T) {
 		})
 	}
 }
-
 func TestConvertNonBidToBid(t *testing.T) {
-
 	tests := []struct {
 		name   string
 		nonBid openrtb_ext.NonBid
@@ -156,9 +154,7 @@ func TestConvertNonBidToBid(t *testing.T) {
 		})
 	}
 }
-
 func TestGetDefaultPartnerRecordsByImp(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		rCtx     *models.RequestCtx
@@ -208,7 +204,6 @@ func TestGetDefaultPartnerRecordsByImp(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImp(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -657,7 +652,6 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -828,7 +822,6 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -981,7 +974,6 @@ func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1288,7 +1280,6 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1431,7 +1422,6 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1840,7 +1830,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForReserveredBidders(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1883,7 +1872,6 @@ func TestGetPartnerRecordsByImpForReserveredBidders(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1951,7 +1939,6 @@ func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -2309,7 +2296,6 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -2538,7 +2524,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -2929,7 +2914,6 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -3235,7 +3219,6 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 		})
 	}
 }
-
 func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -3359,7 +3342,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 		})
 	}
 }
-
 func TestGetLogAuctionObjectAsURL(t *testing.T) {
 
 	cfg := ow.cfg
@@ -3748,9 +3730,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 		})
 	}
 }
-
 func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
-
 	cfg := ow.cfg
 	defer func() {
 		ow.cfg = cfg
@@ -3974,7 +3954,6 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 		})
 	}
 }
-
 func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 	cfg := ow.cfg
 	uuidFunc := getUUID
@@ -4162,7 +4141,6 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 	}
 }
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
-
 	cfg := ow.cfg
 	uuidFunc := getUUID
 	defer func() {

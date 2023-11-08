@@ -13,7 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt *openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
+func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 	// responded bidders per impression
 	seatBids := make(map[string]map[string]struct{}, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
@@ -49,7 +49,6 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
 
-			// TODO: confirm this behaviour change
 			uuid := uuid.NewV4().String()
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
@@ -118,7 +117,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 }
 
 // getNonBRCodeFromBidRespExt maps the error-code present in prebid partner response with standard nonBR code
-func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt *openrtb_ext.ExtBidResponse) *openrtb3.NonBidStatusCode {
+func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *openrtb3.NonBidStatusCode {
 	errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
 	if len(errs) == 0 {
 		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
@@ -134,7 +133,7 @@ func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt *openrtb_ext.ExtBi
 	}
 }
 
-func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseExt *openrtb_ext.ExtBidResponse) *models.BidExt {
+func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
 
 	bidExt := models.BidExt{
 		NetECPM: 0,
@@ -189,7 +188,7 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 
 	return bidResponse, nil
 }
-func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt *openrtb_ext.ExtBidResponse, bidder string) {
+func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt openrtb_ext.ExtBidResponse, bidder string) {
 
 	responseError := models.PartnerErrNoBid
 

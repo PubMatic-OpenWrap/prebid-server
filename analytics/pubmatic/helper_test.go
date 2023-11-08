@@ -87,7 +87,6 @@ func TestPrepareLoggerURL(t *testing.T) {
 		})
 	}
 }
-
 func TestGetGdprEnabledFlag(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -142,7 +141,6 @@ func TestGetGdprEnabledFlag(t *testing.T) {
 		})
 	}
 }
-
 func TestSendMethod(t *testing.T) {
 	// initialise global variables
 	mhttp.Init(1, 1, 1, 2000)

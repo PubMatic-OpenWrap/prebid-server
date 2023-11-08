@@ -12,7 +12,7 @@ import (
 func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 	type args struct {
 		bidder         string
-		bidResponseExt *openrtb_ext.ExtBidResponse
+		bidResponseExt openrtb_ext.ExtBidResponse
 	}
 	tests := []struct {
 		name string
@@ -23,7 +23,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 			name: "bidResponseExt.Errors_is_empty",
 			args: args{
 				bidder: "pubmatic",
-				bidResponseExt: &openrtb_ext.ExtBidResponse{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
 					Errors: nil,
 				},
 			},
@@ -33,7 +33,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 			name: "invalid_partner_err",
 			args: args{
 				bidder: "pubmatic",
-				bidResponseExt: &openrtb_ext.ExtBidResponse{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
 					Errors: map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage{
 						"pubmatic": {
 							{
@@ -49,7 +49,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 			name: "unknown_partner_err",
 			args: args{
 				bidder: "pubmatic",
-				bidResponseExt: &openrtb_ext.ExtBidResponse{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
 					Errors: map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage{
 						"pubmatic": {
 							{
@@ -65,7 +65,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 			name: "partner_timeout_err",
 			args: args{
 				bidder: "pubmatic",
-				bidResponseExt: &openrtb_ext.ExtBidResponse{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
 					Errors: map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage{
 						"pubmatic": {
 							{
