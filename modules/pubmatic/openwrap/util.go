@@ -255,7 +255,7 @@ func getPubmaticErrorCode(standardNBR int) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequest:
+	case nbr.InvalidRequestExt:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:

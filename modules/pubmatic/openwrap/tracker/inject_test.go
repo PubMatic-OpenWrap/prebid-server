@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
@@ -499,6 +501,188 @@ func TestInjectTrackers(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("InjectTrackers() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_getUniversalPixels(t *testing.T) {
+	type args struct {
+		rctx       models.RequestCtx
+		adFormat   string
+		bidderCode string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []adunitconfig.UniversalPixel
+	}{
+		{
+			name: "No default in adunitconfig",
+			args: args{
+				adFormat:   models.Banner,
+				bidderCode: models.BidderPubMatic,
+				rctx: models.RequestCtx{
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						Config: map[string]*adunitconfig.AdConfig{},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "No partners",
+			args: args{
+				adFormat:   models.Banner,
+				bidderCode: models.BidderPubMatic,
+				rctx: models.RequestCtx{
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								UniversalPixel: []adunitconfig.UniversalPixel{
+									{
+										Id:        123,
+										Pixel:     "sample.com",
+										PixelType: models.PixelTypeUrl,
+										Pos:       models.PixelPosAbove,
+										MediaType: "banner",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []adunitconfig.UniversalPixel{
+				{
+					Id:        123,
+					Pixel:     `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					PixelType: models.PixelTypeUrl,
+					Pos:       models.PixelPosAbove,
+					MediaType: "banner",
+				},
+			},
+		},
+		{
+			name: "partner not present",
+			args: args{
+				adFormat:   models.Banner,
+				bidderCode: models.BidderPubMatic,
+				rctx: models.RequestCtx{
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								UniversalPixel: []adunitconfig.UniversalPixel{
+									{
+										Id:        123,
+										Pixel:     "sample.com",
+										PixelType: models.PixelTypeUrl,
+										Pos:       models.PixelPosAbove,
+										MediaType: models.Banner,
+										Partners:  []string{"appnexus"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "mismatch in adformat and mediatype",
+			args: args{
+				adFormat: models.Banner,
+				rctx: models.RequestCtx{
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								UniversalPixel: []adunitconfig.UniversalPixel{
+									{
+										Id:        123,
+										Pixel:     "sample.com",
+										PixelType: models.PixelTypeJS,
+										Pos:       models.PixelPosAbove,
+										MediaType: "video",
+										Partners:  []string{"pubmatic", "appnexus"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "send valid upixel",
+			args: args{
+				bidderCode: models.BidderPubMatic,
+				adFormat:   models.Banner,
+				rctx: models.RequestCtx{
+					AdUnitConfig: &adunitconfig.AdUnitConfig{
+						Config: map[string]*adunitconfig.AdConfig{
+							"default": {
+								UniversalPixel: []adunitconfig.UniversalPixel{
+									{
+										Id:        123,
+										Pixel:     "sample.com",
+										PixelType: "url",
+										Pos:       models.PixelPosAbove,
+										MediaType: "banner",
+										Partners:  []string{"pubmatic", "appnexus"},
+									},
+									{
+										Id:        123,
+										Pixel:     "<script>__script__</script>",
+										PixelType: models.PixelTypeJS,
+										Pos:       models.PixelPosBelow,
+										MediaType: "banner",
+										Partners:  []string{"pubmatic", "appnexus"},
+									},
+									{
+										Id:        123,
+										Pixel:     "sample.com",
+										PixelType: "url",
+										MediaType: "banner",
+										Partners:  []string{"pubmatic", "appnexus"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []adunitconfig.UniversalPixel{
+				{
+					Id:        123,
+					Pixel:     `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					PixelType: "url",
+					Pos:       models.PixelPosAbove,
+					MediaType: "banner",
+					Partners:  []string{"pubmatic", "appnexus"},
+				},
+				{
+					Id:        123,
+					Pixel:     "<script>__script__</script>",
+					PixelType: models.PixelTypeJS,
+					Pos:       models.PixelPosBelow,
+					MediaType: "banner",
+					Partners:  []string{"pubmatic", "appnexus"},
+				},
+				{
+					Id:        123,
+					Pixel:     `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					PixelType: "url",
+					MediaType: "banner",
+					Partners:  []string{"pubmatic", "appnexus"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getUniversalPixels(tt.args.rctx, tt.args.adFormat, tt.args.bidderCode)
+			assert.Equal(t, got, tt.want)
 		})
 	}
 }

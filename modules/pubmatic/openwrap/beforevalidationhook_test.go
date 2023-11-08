@@ -94,7 +94,7 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 			},
 		}
 	}
-	testReq.Cur = []string{}
+	testReq.Cur = []string{"EUR"}
 	testReq.WLang = []string{"english", "hindi"}
 	testReq.Device = &openrtb2.Device{
 		DeviceType: 1,
@@ -885,7 +885,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -948,7 +948,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -1645,6 +1645,22 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		wantErr              bool
 	}{
 		{
+			name: "request_with_sshb=1",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Sshb: "1",
+						},
+					},
+				},
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+		},
+		{
 			name: "empty_module_context",
 			args: args{
 				ctx:       context.Background(),
@@ -1677,6 +1693,23 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        true,
 				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Endpoint: models.EndpointHybrid,
+						},
+					},
+				},
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
 			},
 			wantErr: false,
 		},
@@ -1723,12 +1756,12 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequest))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequest)
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidRequest,
+				NbrCode: nbr.InvalidRequestExt,
 				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
 			},
 			wantErr: true,
@@ -1896,7 +1929,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "TagID_not_prsent_in_imp",
+			name: "TagID_not_present_in_imp",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
@@ -1931,6 +1964,54 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidImpressionTagID,
+				Errors:  []string{"tagid missing for imp: 123"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "TagID_not_present_in_imp_and_not_found_for_client_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": func() models.RequestCtx {
+							testRctx := rctx
+							testRctx.Endpoint = models.EndpointOWS2S
+							return testRctx
+						}(),
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointOWS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointOWS2S, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2475,6 +2556,135 @@ func TestGetAdunitName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getAdunitName(tt.args.tagId, tt.args.impExt)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetTagID(t *testing.T) {
+	type args struct {
+		imp    openrtb2.Imp
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "tagId_not_found",
+			args: args{
+				imp:    openrtb2.Imp{},
+				impExt: &models.ImpExtension{},
+			},
+			want: "",
+		},
+		{
+			name: "tagId_present_in_gpid",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit1",
+				},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_set_by_publisher_on_page",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit1",
+				},
+				impExt: &models.ImpExtension{},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_present_in_pbadslot",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit1",
+					},
+				},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_present_in_pbadslot_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_pbadslot",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit123",
+				},
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_pbadslot_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit12345",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "GpId_contains_'#'",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/43743431/DMDemo#Div1",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit12345",
+					},
+				},
+			},
+			want: "/43743431/DMDemo",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getTagID(tt.args.imp, tt.args.impExt); got != tt.want {
+				t.Errorf("getTagID() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
