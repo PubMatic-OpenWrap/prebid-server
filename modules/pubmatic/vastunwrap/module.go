@@ -69,7 +69,7 @@ func (m VastUnwrapModule) HandleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	if m.Enabled {
-		return handleEntrypointHook(ctx, miCtx, payload, m)
+		return handleEntrypointHook(ctx, miCtx, payload)
 	}
 	return hookstage.HookResult[hookstage.EntrypointPayload]{}, nil
 }

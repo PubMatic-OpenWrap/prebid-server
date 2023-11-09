@@ -1,13 +1,20 @@
 package vastunwrap
 
 import (
+	"math/rand"
+	"strconv"
 	"sync"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 )
+
+var getRandomNumber = func() int {
+	return rand.Intn(100)
+}
 
 func (m VastUnwrapModule) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
@@ -19,6 +26,11 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
 		return result, nil
 	}
+	pubId, _ := strconv.Atoi(miCtx.AccountID)
+	vastRequestContext.PubID = pubId
+	vastUnwrapEnabled := openwrap.GetVastUnwrapEnable(vastRequestContext)
+	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled && getRandomNumber() < m.TrafficPercentage
+
 	if !vastRequestContext.VastUnwrapEnabled {
 		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
 		return result, nil

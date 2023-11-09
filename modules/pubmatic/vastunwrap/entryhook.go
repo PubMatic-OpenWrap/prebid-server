@@ -2,7 +2,6 @@ package vastunwrap
 
 import (
 	"context"
-	"math/rand"
 	"runtime/debug"
 
 	"github.com/golang/glog"
@@ -10,19 +9,16 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
-func getVastUnwrapperEnable(ctx context.Context, field string) bool {
-	vastEnableUnwrapper, _ := ctx.Value(field).(string)
-	return vastEnableUnwrapper == "1"
-}
-
-var getRandomNumber = func() int {
-	return rand.Intn(100)
+func getValueFromContext(ctx context.Context) (int, int) {
+	profileId := ctx.Value(ProfileId).(int)
+	versionId := ctx.Value(VersionId).(int)
+	return profileId, versionId
 }
 
 func handleEntrypointHook(
 	_ context.Context,
 	_ hookstage.ModuleInvocationContext,
-	payload hookstage.EntrypointPayload, config VastUnwrapModule,
+	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -30,8 +26,12 @@ func handleEntrypointHook(
 		}
 	}()
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+	profileId, versionId := getValueFromContext(payload.Request.Context())
 	vastRequestContext := models.RequestCtx{
-		VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled) && getRandomNumber() < config.TrafficPercentage,
+		ProfileID: profileId,
+		VersionID: versionId,
+		// DisplayID: versionId,
+		Endpoint: payload.Request.URL.Path,
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext

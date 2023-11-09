@@ -31,6 +31,7 @@ const (
 	GDPR_ENABLED               = "gdpr"
 	PLATFORM_KEY               = "platform"
 	SendAllBidsKey             = "sendAllBids"
+	VastUnwrapperEnableKey     = "enableVastUnwrapper"
 	SSTimeoutKey               = "ssTimeout"
 	PWC                        = "awc"
 	MAX_SLOT_COUNT             = 5000

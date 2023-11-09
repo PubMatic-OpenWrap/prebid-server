@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"sync"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/modules/moduledeps"
@@ -33,7 +34,10 @@ type OpenWrap struct {
 	metricEngine metrics.MetricsEngine
 }
 
+var ow *OpenWrap
+
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
+	var once sync.Once
 	cfg := config.Config{}
 
 	err := json.Unmarshal(rawCfg, &cfg)
@@ -73,11 +77,14 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	// Init TBF (tracking-beacon-first) feature related services
 	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
 
-	return OpenWrap{
-		cfg:          cfg,
-		cache:        owCache,
-		metricEngine: &metricEngine,
-	}, nil
+	once.Do(func() {
+		ow = &OpenWrap{
+			cfg:          cfg,
+			cache:        owCache,
+			metricEngine: &metricEngine,
+		}
+	})
+	return *ow, nil
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {

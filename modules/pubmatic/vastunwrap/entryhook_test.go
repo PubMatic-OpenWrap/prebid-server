@@ -27,6 +27,10 @@ func TestHandleEntrypointHook(t *testing.T) {
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "0")
+						ctx = context.WithValue(ctx, ProfileId, 0)
+						ctx = context.WithValue(ctx, VersionId, 0)
+						ctx = context.WithValue(ctx, DisplayId, 0)
+						ctx = context.WithValue(ctx, Endpoint, "")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -44,6 +48,10 @@ func TestHandleEntrypointHook(t *testing.T) {
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
+						ctx = context.WithValue(ctx, ProfileId, 0)
+						ctx = context.WithValue(ctx, VersionId, 0)
+						ctx = context.WithValue(ctx, DisplayId, 0)
+						ctx = context.WithValue(ctx, Endpoint, "")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -53,7 +61,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 				},
 			},
 			randomNum: 1,
-			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 		},
 		{
 			name: "Enable Vast Unwrapper with random number equal to traffic percenatge",
@@ -61,6 +69,10 @@ func TestHandleEntrypointHook(t *testing.T) {
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
+						ctx = context.WithValue(ctx, ProfileId, 0)
+						ctx = context.WithValue(ctx, VersionId, 0)
+						ctx = context.WithValue(ctx, DisplayId, 0)
+						ctx = context.WithValue(ctx, Endpoint, "")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -78,6 +90,10 @@ func TestHandleEntrypointHook(t *testing.T) {
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
+						ctx = context.WithValue(ctx, ProfileId, 0)
+						ctx = context.WithValue(ctx, VersionId, 0)
+						ctx = context.WithValue(ctx, DisplayId, 0)
+						ctx = context.WithValue(ctx, Endpoint, "")
 						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
 						return r
 					}(),
@@ -97,7 +113,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 			defer func() {
 				getRandomNumber = oldRandomNumberGen
 			}()
-			got, _ := handleEntrypointHook(nil, hookstage.ModuleInvocationContext{}, tt.args.payload, tt.args.config)
+			got, _ := handleEntrypointHook(nil, hookstage.ModuleInvocationContext{}, tt.args.payload)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("handleEntrypointHook() = %v, want %v", got, tt.want)
 			}
