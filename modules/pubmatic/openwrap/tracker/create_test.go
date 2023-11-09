@@ -571,7 +571,7 @@ func TestConstructVideoErrorURL(t *testing.T) {
 			name: "valid_video_errorUrl",
 			args: args{
 				rctx: models.RequestCtx{
-					OriginCookie: "domain.com:8080",
+					Origin: "domain.com:8080",
 				},
 				errorURLString: `//t.pubmatic.com/wt`,
 				bid:            openrtb2.Bid{},
@@ -612,7 +612,7 @@ func TestConstructVideoErrorURL(t *testing.T) {
 			name: "URL_with_Constant_Parameter",
 			args: args{
 				rctx: models.RequestCtx{
-					OriginCookie: "domain.com:8080",
+					Origin: "domain.com:8080",
 				},
 				errorURLString: `//t.pubmatic.com/wt?p1=v1&p2=v2`,
 				bid:            openrtb2.Bid{},
@@ -653,7 +653,7 @@ func TestConstructVideoErrorURL(t *testing.T) {
 			name: "Creative_ID_in_bid",
 			args: args{
 				rctx: models.RequestCtx{
-					OriginCookie: "domain.com:8080",
+					Origin: "domain.com:8080",
 				},
 				errorURLString: `//t.pubmatic.com/wt`,
 				bid: openrtb2.Bid{
@@ -696,7 +696,7 @@ func TestConstructVideoErrorURL(t *testing.T) {
 			name: "URL_with_Schema",
 			args: args{
 				rctx: models.RequestCtx{
-					OriginCookie: "com.myapp.test",
+					Origin: "com.myapp.test",
 				},
 				errorURLString: `http://t.pubmatic.com/wt?p1=v1&p2=v2`,
 				bid:            openrtb2.Bid{},

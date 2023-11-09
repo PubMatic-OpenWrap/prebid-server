@@ -291,7 +291,7 @@ func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	}
 
 	errorURL.Scheme = models.HTTPSProtocol
-	tracker.SURL = url.QueryEscape(rctx.OriginCookie)
+	tracker.SURL = url.QueryEscape(rctx.Origin)
 
 	//operId Note: It should be first parameter in url otherwise it will get failed at analytics side.
 	if len(errorURL.RawQuery) > 0 {
