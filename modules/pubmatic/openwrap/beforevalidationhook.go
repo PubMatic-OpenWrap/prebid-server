@@ -220,7 +220,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 			div = impExt.Wrapper.Div
 		}
 
+		// reuse the existing impExt instead of allocating a new one
+		reward := impExt.Reward
+		if reward != nil {
+			impExt.Prebid.IsRewardedInventory = reward
+		}
+		// if imp.ext.data.pbadslot is absent then set it to tagId
+		if len(impExt.Data.PbAdslot) == 0 {
+			impExt.Data.PbAdslot = imp.TagID
+		}
+
 		incomingSlots := getIncomingSlots(imp)
+		slotName := getSlotName(imp.TagID, impExt)
+		adUnitName := getAdunitName(imp.TagID, impExt)
 
 		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
@@ -241,7 +253,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
-				IncomingSlots: incomingSlots,
+				IncomingSlots:     incomingSlots,
+				AdUnitName:        adUnitName,
+				SlotName:          slotName,
+				IsRewardInventory: reward,
 			}
 			continue
 		}
@@ -334,18 +349,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
 
-		// reuse the existing impExt instead of allocating a new one
-		reward := impExt.Reward
-
-		if reward != nil {
-			impExt.Prebid.IsRewardedInventory = reward
-		}
-
-		// if imp.ext.data.pbadslot is absent then set it to tagId
-		if len(impExt.Data.PbAdslot) == 0 {
-			impExt.Data.PbAdslot = imp.TagID
-		}
-
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -372,8 +375,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
 				IsAdPodRequest:    isAdPodRequest,
-				SlotName:          getSlotName(imp.TagID, impExt),
-				AdUnitName:        getAdunitName(imp.TagID, impExt),
+				SlotName:          slotName,
+				AdUnitName:        adUnitName,
 			}
 		}
 

@@ -83,7 +83,7 @@ func TestPrepareLoggerURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			owlogger := PrepareLoggerURL(tt.args.wlog, tt.args.loggerURL, tt.args.gdprEnabled)
 			decodedOwlogger, _ := url.QueryUnescape(owlogger)
-			assert.Equal(t, decodedOwlogger, tt.owlogger, tt.name)
+			assert.Equal(t, tt.owlogger, decodedOwlogger, tt.name)
 		})
 	}
 }
