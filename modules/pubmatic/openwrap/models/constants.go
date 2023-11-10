@@ -470,6 +470,7 @@ const (
 	TypeAmp    = "amp"
 	TypeSDK    = "sdk"
 	TypeS2S    = "s2s"
+	TypeWebS2S = "webs2s"
 )
 
 // constants to accept request-test value

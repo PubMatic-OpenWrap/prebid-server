@@ -211,6 +211,11 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeInline,
 		},
 		{
+			name:            "ows2s",
+			endpoint:        models.EndpointOWS2S,
+			integrationType: models.TypeWebS2S,
+		},
+		{
 			name:            "invalid",
 			endpoint:        "invalid",
 			integrationType: "",
