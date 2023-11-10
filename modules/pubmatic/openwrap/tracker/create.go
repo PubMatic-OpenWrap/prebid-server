@@ -36,9 +36,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			}
 
 			tagid := ""
-			netECPM := float64(0)
+			var eg, en float64
 			matchedSlot := ""
-			price := bid.Price
 			isRewardInventory := 0
 			partnerID := seatBid.Seat
 			bidType := "banner"
@@ -54,10 +53,6 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 				}
 
 				if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
-					if bidResponse.Cur != "USD" {
-						price = bidCtx.OriginalBidCPMUSD
-					}
-					netECPM = bidCtx.NetECPM
 
 					// TODO do most calculation in wt
 					// marketplace/alternatebiddercodes feature
@@ -73,6 +68,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 					}
 					bidType = bidCtx.CreativeType
 					dspId = bidCtx.DspId
+					eg = bidCtx.EG
+					en = bidCtx.EN
 				}
 
 				_ = matchedSlot
@@ -136,8 +133,8 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 				BidID:      utils.GetOriginalBidId(bid.ID),
 				OrigBidID:  utils.GetOriginalBidId(bid.ID),
 				KGPV:       kgpv,
-				NetECPM:    float64(netECPM),
-				GrossECPM:  models.GetGrossEcpm(price),
+				GrossECPM:  eg,
+				NetECPM:    en,
 			}
 
 			if len(bid.ADomain) != 0 {
@@ -157,7 +154,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			trackers[bid.ID] = models.OWTracker{
 				Tracker:       tracker,
 				TrackerURL:    finalTrackerURL,
-				Price:         price,
+				Price:         bid.Price,
 				PriceModel:    models.VideoPricingModelCPM,
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      ConstructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),

@@ -81,80 +81,85 @@ func (m OpenWrap) handleAuctionResponseHook(
 				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+bid.ImpID)
 				continue
 			}
+
 			partnerID := 0
 			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 				partnerID = bidderMeta.PartnerID
 			}
 
-			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			price := bid.Price
-
+			var eg, en float64
 			bidExt := &models.BidExt{}
-			if len(bid.Ext) != 0 { //NYC_TODO: most of the fields should be filled even if unmarshal fails
+
+			if len(bid.Ext) != 0 {
 				err := json.Unmarshal(bid.Ext, bidExt)
 				if err != nil {
 					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+bid.ID)
 					// continue
 				}
+			}
 
-				// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
-				if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
-					bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
-					bidExt.Prebid.Video = nil
+			// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
+			if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
+				bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
+				bidExt.Prebid.Video = nil
+			}
+
+			if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
+				n, err := strconv.Atoi(v)
+				if err == nil {
+					bidExt.RefreshInterval = n
 				}
+			}
 
-				if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
-					n, err := strconv.Atoi(v)
-					if err == nil {
-						bidExt.RefreshInterval = n
-					}
+			if bidExt.Prebid != nil {
+				bidExt.CreativeType = string(bidExt.Prebid.Type)
+			}
+			if bidExt.CreativeType == "" {
+				bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+			}
+
+			// set response netecpm and logger/tracker en
+			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
+			bidExt.NetECPM = models.GetNetEcpm(bid.Price, revShare)
+			eg = bid.Price
+			en = bidExt.NetECPM
+			if payload.BidResponse.Cur != "USD" {
+				eg = bidExt.OriginalBidCPMUSD
+				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				bidExt.OriginalBidCPMUSD = 0
+			}
+
+			if impCtx.Video != nil && impCtx.Type == "video" && bidExt.CreativeType == "video" {
+				if bidExt.Video == nil {
+					bidExt.Video = &models.ExtBidVideo{}
 				}
-
-				if bidExt.Prebid != nil {
-					bidExt.CreativeType = string(bidExt.Prebid.Type)
+				if impCtx.Video.MaxDuration != 0 {
+					bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
 				}
-				if bidExt.CreativeType == "" {
-					bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+				if impCtx.Video.MinDuration != 0 {
+					bidExt.Video.MinDuration = impCtx.Video.MinDuration
 				}
-
-				if payload.BidResponse.Cur != "USD" {
-					price = bidExt.OriginalBidCPMUSD
+				if impCtx.Video.Skip != nil {
+					bidExt.Video.Skip = impCtx.Video.Skip
 				}
-
-				bidExt.NetECPM = models.GetNetEcpm(price, revShare)
-
-				if impCtx.Video != nil && impCtx.Type == "video" && bidExt.CreativeType == "video" {
-					if bidExt.Video == nil {
-						bidExt.Video = &models.ExtBidVideo{}
+				if impCtx.Video.SkipAfter != 0 {
+					bidExt.Video.SkipAfter = impCtx.Video.SkipAfter
+				}
+				if impCtx.Video.SkipMin != 0 {
+					bidExt.Video.SkipMin = impCtx.Video.SkipMin
+				}
+				bidExt.Video.BAttr = impCtx.Video.BAttr
+				bidExt.Video.PlaybackMethod = impCtx.Video.PlaybackMethod
+				if rctx.ClientConfigFlag == 1 {
+					bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "video")
+				}
+			} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
+				cc := adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "banner")
+				if len(cc) != 0 {
+					if bidExt.Banner == nil {
+						bidExt.Banner = &models.ExtBidBanner{}
 					}
-					if impCtx.Video.MaxDuration != 0 {
-						bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
-					}
-					if impCtx.Video.MinDuration != 0 {
-						bidExt.Video.MinDuration = impCtx.Video.MinDuration
-					}
-					if impCtx.Video.Skip != nil {
-						bidExt.Video.Skip = impCtx.Video.Skip
-					}
-					if impCtx.Video.SkipAfter != 0 {
-						bidExt.Video.SkipAfter = impCtx.Video.SkipAfter
-					}
-					if impCtx.Video.SkipMin != 0 {
-						bidExt.Video.SkipMin = impCtx.Video.SkipMin
-					}
-					bidExt.Video.BAttr = impCtx.Video.BAttr
-					bidExt.Video.PlaybackMethod = impCtx.Video.PlaybackMethod
-					if rctx.ClientConfigFlag == 1 {
-						bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "video")
-					}
-				} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
-					cc := adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "banner")
-					if len(cc) != 0 {
-						if bidExt.Banner == nil {
-							bidExt.Banner = &models.ExtBidBanner{}
-						}
-						bidExt.Banner.ClientConfig = cc
-					}
+					bidExt.Banner.ClientConfig = cc
 				}
 			}
 
@@ -179,6 +184,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 			impCtx.BidCtx[bid.ID] = models.BidCtx{
 				BidExt: *bidExt,
+				EG:     eg,
+				EN:     en,
 			}
 			rctx.ImpBidCtx[bid.ImpID] = impCtx
 		}

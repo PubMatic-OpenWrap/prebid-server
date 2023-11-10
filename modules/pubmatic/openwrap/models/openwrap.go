@@ -135,6 +135,11 @@ type PartnerData struct {
 
 type BidCtx struct {
 	BidExt
+
+	// EG gross net in USD for tracker and logger
+	EG float64
+	// EN gross net in USD for tracker and logger
+	EN float64
 }
 
 type AdUnitCtx struct {
