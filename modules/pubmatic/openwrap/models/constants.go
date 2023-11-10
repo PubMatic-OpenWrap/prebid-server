@@ -424,7 +424,7 @@ const (
 	EndpointJson    = "json"
 	EndpointORTB    = "ortb"
 	EndpointVAST    = "vast"
-	EndpointOWS2S   = "ows2s"
+	EndpointWebS2S  = "webs2s"
 	EndPointCTV     = "ctv"
 	EndpointHybrid  = "hybrid"
 	Openwrap        = "openwrap"

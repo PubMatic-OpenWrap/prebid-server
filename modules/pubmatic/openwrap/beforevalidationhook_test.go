@@ -1980,7 +1980,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 					ModuleContext: hookstage.ModuleContext{
 						"rctx": func() models.RequestCtx {
 							testRctx := rctx
-							testRctx.Endpoint = models.EndpointOWS2S
+							testRctx.Endpoint = models.EndpointWebS2S
 							return testRctx
 						}(),
 					},
@@ -2009,9 +2009,9 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(models.EndpointOWS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointOWS2S, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,

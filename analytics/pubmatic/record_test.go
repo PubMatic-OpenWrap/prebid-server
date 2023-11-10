@@ -212,7 +212,7 @@ func TestLogIntegrationType(t *testing.T) {
 		},
 		{
 			name:            "ows2s",
-			endpoint:        models.EndpointOWS2S,
+			endpoint:        models.EndpointWebS2S,
 			integrationType: models.TypeWebS2S,
 		},
 		{

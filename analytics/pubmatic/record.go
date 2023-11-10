@@ -211,7 +211,7 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 		wlog.IntegrationType = models.TypeInline
 	case models.EndpointORTB:
 		wlog.IntegrationType = models.TypeS2S
-	case models.EndpointOWS2S:
+	case models.EndpointWebS2S:
 		wlog.IntegrationType = models.TypeWebS2S
 	}
 }

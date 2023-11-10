@@ -181,7 +181,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == models.EndpointOWS2S {
+		if rCtx.Endpoint == models.EndpointWebS2S {
 			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
