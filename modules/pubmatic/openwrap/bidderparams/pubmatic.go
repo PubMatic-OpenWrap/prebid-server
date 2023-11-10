@@ -13,6 +13,12 @@ import (
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
+
+	// change profile id for pubmatic2
+	if secondaryProfileID, ok := rctx.PartnerConfigMap[partnerID][models.KEY_PROFILE_ID]; ok {
+		wrapExt = fmt.Sprintf(`{"%s":0,"%s":%s}`, models.SS_PM_VERSION_ID, models.SS_PM_PROFILE_ID, secondaryProfileID)
+	}
+
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: strconv.Itoa(rctx.PubID),
 		WrapExt:     json.RawMessage(wrapExt),
