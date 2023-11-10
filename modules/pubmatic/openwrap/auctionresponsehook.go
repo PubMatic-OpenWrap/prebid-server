@@ -40,9 +40,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
-	if rctx.Endpoint == models.EndpointWebS2S {
-		return result, nil
-	}
 
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
