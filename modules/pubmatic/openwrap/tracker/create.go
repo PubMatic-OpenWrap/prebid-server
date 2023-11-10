@@ -76,10 +76,11 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			}
 			var (
 				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
-				netECPM, floorValue, floorRuleValue            = float64(0), float64(0), float64(0)
-				price, partnerID                               = bid.Price, seatBid.Seat
+				floorValue, floorRuleValue                     = float64(0), float64(0)
+				partnerID                                      = seatBid.Seat
 				isRewardInventory, adduration                  = 0, 0
 				dspId                                          int
+				eg, en                                         float64
 			)
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
@@ -90,11 +91,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 
 				bidCtx, ok := impCtx.BidCtx[bid.ID]
 				if ok {
-					if bidResponse.Cur != "USD" {
-						price = bidCtx.OriginalBidCPMUSD
-					}
-					netECPM = bidCtx.NetECPM
-
 					// TODO do most calculation in wt
 					// marketplace/alternatebiddercodes feature
 					bidExt := bidCtx.BidExt
@@ -116,6 +112,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 						}
 					}
 					dspId = bidCtx.DspId
+					eg = bidCtx.EG
+					en = bidCtx.EN
 					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx)
 					floorValue, floorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rctx.CurrencyConversion)
 				}
@@ -158,8 +156,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				BidID:          utils.GetOriginalBidId(bid.ID),
 				OrigBidID:      utils.GetOriginalBidId(bid.ID),
 				KGPV:           kgpv,
-				NetECPM:        float64(netECPM),
-				GrossECPM:      models.GetGrossEcpm(price),
+				NetECPM:        en,
+				GrossECPM:      eg,
 				AdSize:         models.GetSizeForPlatform(bid.W, bid.H, rctx.Platform),
 				AdDuration:     adduration,
 				Adformat:       adformat,
@@ -191,7 +189,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			trackers[bid.ID] = models.OWTracker{
 				Tracker:       tracker,
 				TrackerURL:    finalTrackerURL,
-				Price:         price,
+				Price:         bid.Price,
 				PriceModel:    models.VideoPricingModelCPM,
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
