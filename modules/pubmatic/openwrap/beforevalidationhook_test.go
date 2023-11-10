@@ -1015,11 +1015,15 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 		rCtx models.RequestCtx
 		imp  *openrtb2.Imp
 	}
+	type want struct {
+		rCtx models.RequestCtx
+		imp  *openrtb2.Imp
+	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   *openrtb2.Imp
+		want   want
 	}{
 		{
 			name: "imp.video_is_nil",
@@ -1028,8 +1032,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: nil,
 				},
 			},
-			want: &openrtb2.Imp{
-				Video: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					Video: nil,
+				},
 			},
 		},
 		{
@@ -1049,9 +1055,20 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: &openrtb2.Video{},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: &openrtb2.Video{},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: nil,
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1076,11 +1093,27 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video:       &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:          "testImp",
-				Video:       &openrtb2.Video{},
-				BidFloor:    2.0,
-				BidFloorCur: "USD",
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Video:       &openrtb2.Video{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1102,10 +1135,23 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: &openrtb2.Video{},
-				Exp:   10,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: &openrtb2.Video{},
+					Exp:   10,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Exp: ptrutil.ToPtr(10),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1130,11 +1176,24 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W: 200,
-					H: 300,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W: 200,
+						H: 300,
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: nil,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1162,9 +1221,24 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: nil,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1218,35 +1292,80 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W:              640,
-					H:              480,
-					MinDuration:    10,
-					MaxDuration:    40,
-					Skip:           ptrutil.ToPtr(int8(1)),
-					SkipMin:        5,
-					SkipAfter:      10,
-					Plcmt:          1,
-					Placement:      1,
-					MinBitRate:     100,
-					MaxBitRate:     200,
-					MaxExtended:    50,
-					Linearity:      1,
-					Protocol:       1,
-					Sequence:       2,
-					BoxingAllowed:  1,
-					PlaybackEnd:    2,
-					MIMEs:          []string{"mimes"},
-					API:            []adcom1.APIFramework{1, 2},
-					Delivery:       []adcom1.DeliveryMethod{1, 2},
-					PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
-					BAttr:          []adcom1.CreativeAttribute{1, 2},
-					StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
-					Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
-					Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
-					CompanionType:  []adcom1.CompanionType{1, 2},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W:              640,
+						H:              480,
+						MinDuration:    10,
+						MaxDuration:    40,
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        5,
+						SkipAfter:      10,
+						Plcmt:          1,
+						Placement:      1,
+						MinBitRate:     100,
+						MaxBitRate:     200,
+						MaxExtended:    50,
+						Linearity:      1,
+						Protocol:       1,
+						Sequence:       2,
+						BoxingAllowed:  1,
+						PlaybackEnd:    2,
+						MIMEs:          []string{"mimes"},
+						API:            []adcom1.APIFramework{1, 2},
+						Delivery:       []adcom1.DeliveryMethod{1, 2},
+						PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
+						BAttr:          []adcom1.CreativeAttribute{1, 2},
+						StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
+						Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
+						Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
+						CompanionType:  []adcom1.CompanionType{1, 2},
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MinDuration:    10,
+												MaxDuration:    40,
+												Skip:           ptrutil.ToPtr(int8(1)),
+												SkipMin:        5,
+												SkipAfter:      10,
+												Plcmt:          1,
+												Placement:      1,
+												MinBitRate:     100,
+												MaxBitRate:     200,
+												MaxExtended:    50,
+												Linearity:      1,
+												Protocol:       1,
+												W:              640,
+												H:              480,
+												Sequence:       2,
+												BoxingAllowed:  1,
+												PlaybackEnd:    2,
+												MIMEs:          []string{"mimes"},
+												API:            []adcom1.APIFramework{1, 2},
+												Delivery:       []adcom1.DeliveryMethod{1, 2},
+												PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
+												BAttr:          []adcom1.CreativeAttribute{1, 2},
+												StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
+												Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
+												Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
+												CompanionType:  []adcom1.CompanionType{1, 2},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1288,16 +1407,40 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W:           640,
-					H:           480,
-					MinDuration: 20,
-					MaxDuration: 60,
-					Skip:        ptrutil.ToPtr(int8(2)),
-					SkipMin:     10,
-					SkipAfter:   20,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W:           640,
+						H:           480,
+						MinDuration: 20,
+						MaxDuration: 60,
+						Skip:        ptrutil.ToPtr(int8(2)),
+						SkipMin:     10,
+						SkipAfter:   20,
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MinDuration: 10,
+												MaxDuration: 40,
+												Skip:        ptrutil.ToPtr(int8(1)),
+												SkipMin:     5,
+												SkipAfter:   10,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1310,7 +1453,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				metricEngine: tt.fields.metricEngine,
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
-			assert.Equal(t, tt.args.imp, tt.want, "Imp video is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.rCtx, tt.want.rCtx, "rctx is not upadted as expected from adunit config")
 		})
 	}
 }

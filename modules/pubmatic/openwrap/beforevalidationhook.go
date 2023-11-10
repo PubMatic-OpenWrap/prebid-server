@@ -84,6 +84,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
+	rCtx.NewReqExt = requestExt
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
@@ -442,7 +443,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
-	rCtx.NewReqExt = requestExt
 
 	if rCtx.Debug {
 		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
@@ -545,13 +545,17 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		return
 	}
 
+	impBidCtx := rCtx.ImpBidCtx[imp.ID]
 	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
 		imp.BidFloor = *adUnitCfg.BidFloor
+		impBidCtx.BidFloor = imp.BidFloor
 	}
 
 	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
 		imp.BidFloorCur = *adUnitCfg.BidFloorCur
+		impBidCtx.BidFloorCur = imp.BidFloorCur
 	}
+	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
 	if adUnitCfg.Exp != nil {
 		imp.Exp = int64(*adUnitCfg.Exp)
