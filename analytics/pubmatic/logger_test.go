@@ -658,6 +658,177 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 	}
 }
 
+func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
+	type args struct {
+		ao   analytics.AuctionObject
+		rCtx *models.RequestCtx
+	}
+	tests := []struct {
+		name     string
+		args     args
+		partners map[string][]PartnerRecord
+	}{
+		{
+			name: "prefer tracker details, avoid computation",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					Trackers: map[string]models.OWTracker{
+						"bid-id-1": {
+							Tracker: models.Tracker{
+								PartnerInfo: models.Partner{
+									Adformat:       models.Native,
+									KGPV:           "kgpv",
+									NetECPM:        10,
+									GrossECPM:      12,
+									AdSize:         "15x15",
+									FloorValue:     1,
+									FloorRuleValue: 2,
+									Advertiser:     "sony.com",
+								},
+								LoggerData: models.LoggerData{
+									KGPSV: "kgpsv",
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:      "pubmatic",
+						BidderCode:     "pubmatic",
+						PartnerSize:    "15x15",
+						BidID:          "bid-id-1",
+						OrigBidID:      "bid-id-1",
+						DealID:         "-1",
+						ServerSide:     1,
+						OriginalCur:    "USD",
+						Adformat:       models.Native,
+						NetECPM:        10,
+						GrossECPM:      12,
+						FloorValue:     1,
+						FloorRuleValue: 2,
+						ADomain:        "sony.com",
+						KGPV:           "kgpv",
+						KGPSV:          "kgpsv",
+					},
+				},
+			},
+		},
+		{
+			name: "tracker absent, compute data",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:      "bid-id-1",
+										ImpID:   "imp1",
+										W:       15,
+										H:       15,
+										Price:   12,
+										ADomain: []string{"http://sony.com"},
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					Trackers: map[string]models.OWTracker{},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorValue:     1,
+													FloorRuleValue: 2,
+												},
+												Type: models.Native,
+											},
+										},
+									},
+								},
+							},
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+									PartnerID:        1,
+									KGP:              "kgp",
+									KGPV:             "kgpv",
+								},
+							},
+							Native: &openrtb2.Native{},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:      "pubmatic",
+						BidderCode:     "pubmatic",
+						PartnerSize:    "15x15",
+						BidID:          "bid-id-1",
+						OrigBidID:      "bid-id-1",
+						DealID:         "-1",
+						ServerSide:     1,
+						OriginalCur:    "USD",
+						Adformat:       models.Native,
+						NetECPM:        12,
+						GrossECPM:      12,
+						FloorValue:     1,
+						FloorRuleValue: 2,
+						ADomain:        "sony.com",
+						KGPV:           "kgpv",
+						KGPSV:          "kgpv",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
+			assert.Equalf(t, partners, tt.partners, tt.name)
+		})
+	}
+}
+
 func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 	type args struct {
 		ao   analytics.AuctionObject
@@ -1850,6 +2021,64 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 			},
 		},
 		{
+			name: "valid bid, but json unmarshal fails",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+												BidId:             "uuid",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:    "appnexus",
+						BidderCode:   "appnexus",
+						PartnerSize:  "0x0",
+						BidID:        "bid-id-1",
+						OrigBidID:    "bid-id-1",
+						DealID:       "-1",
+						ServerSide:   1,
+						OriginalCur:  models.USD,
+						NetECPM:      10,
+						GrossECPM:    10,
+						DealPriority: 0,
+					},
+				},
+			},
+		},
+		{
 			name: "dropped bid, impBidCtx bidID is in bidID::uuid format",
 			args: args{
 				ao: analytics.AuctionObject{
@@ -2068,6 +2297,235 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						GrossECPM:       10,
 						DealPriority:    1,
 						WinningBidStaus: 1,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
+			assert.Equal(t, tt.partners, partners, tt.name)
+		})
+	}
+}
+
+func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
+	type args struct {
+		ao   analytics.AuctionObject
+		rCtx *models.RequestCtx
+	}
+	tests := []struct {
+		name     string
+		args     args
+		partners map[string][]PartnerRecord
+	}{
+		{
+			name: "valid bid, but bid.ext is empty",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+												BidId:             "uuid",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:    "appnexus",
+						BidderCode:   "appnexus",
+						PartnerSize:  "0x0",
+						BidID:        "bid-id-1",
+						OrigBidID:    "bid-id-1",
+						DealID:       "-1",
+						ServerSide:   1,
+						OriginalCur:  models.USD,
+						NetECPM:      10,
+						GrossECPM:    10,
+						DealPriority: 0,
+					},
+				},
+			},
+		},
+		{
+			name: "dropped bid, bidExt unmarshal fails",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1::uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												DealPriority:      1,
+												DealTierSatisfied: true,
+											},
+										},
+										Nbr: openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:    "appnexus",
+						BidderCode:   "appnexus",
+						PartnerSize:  "0x0",
+						BidID:        "bid-id-1",
+						OrigBidID:    "bid-id-1",
+						DealID:       "-1",
+						ServerSide:   1,
+						OriginalCur:  models.USD,
+						NetECPM:      10,
+						GrossECPM:    10,
+						DealPriority: 0,
+						Nbr:          nil,
+					},
+				},
+			},
+		},
+		{
+			name: "default bid, bidExt unmarshal fails",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "uuid",
+										ImpID: "imp1",
+										Ext:   json.RawMessage(`{{{`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"uuid": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:            "appnexus",
+						BidderCode:           "appnexus",
+						PartnerSize:          "0x0",
+						BidID:                "uuid",
+						OrigBidID:            "uuid",
+						DealID:               "-1",
+						ServerSide:           1,
+						OriginalCur:          models.USD,
+						Nbr:                  openwrap.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						PostTimeoutBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "non bid, bidExt empty",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{},
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							Seat: "appnexus",
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: int(openrtb3.LossBidLostToDealBid),
+									Ext:        openrtb_ext.NonBidExt{},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "",
+						OrigBidID:   "",
+						DealID:      "-1",
+						ServerSide:  1,
+						NetECPM:     0,
+						GrossECPM:   0,
+						OriginalCur: models.USD,
+						Nbr:         openwrap.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
 					},
 				},
 			},
@@ -2927,7 +3385,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 		want want
 	}{
 		{
-			name: "log integration type",
+			name: "do not prepare owlogger if pubid is missing",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
@@ -2942,7 +3400,65 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: "",
+				header: nil,
+			},
+		},
+		{
+			name: "do not prepare owlogger if bidrequest is nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: nil,
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: "",
+				header: nil,
+			},
+		},
+		{
+			name: "do not prepare owlogger if bidrequestwrapper is nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: nil,
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: "",
+				header: nil,
+			},
+		},
+		{
+			name: "log integration type",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+					PubID:    5890,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -2962,12 +3478,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","cns":"any-random-consent-string","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","cns":"any-random-consent-string","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -2987,12 +3505,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","gdpr":1,"sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","gdpr":1,"sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3010,12 +3530,13 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileAppAndroid,
+					PubID:          5890,
 				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3037,12 +3558,13 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					DevicePlatform: models.DevicePlatformMobileAppAndroid,
+					PubID:          5890,
 				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3066,12 +3588,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones","cat":["IAB-1"]},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones","cat":["IAB-1"]},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3094,12 +3618,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones"},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones"},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3119,12 +3645,13 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					UA:            "mozilla",
 					IP:            "10.10.10.10",
 					KADUSERCookie: &http.Cookie{Name: "uids", Value: "eidsabcd"},
+					PubID:         5890,
 				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{"mozilla"},
 					models.IP_HEADER:         []string{"10.10.10.10"},
@@ -3140,12 +3667,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    false,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3163,12 +3692,14 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 						Ext: json.RawMessage("{}"),
 					},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.PublicEndpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3182,16 +3713,25 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					RequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{},
 					},
-					Response: &openrtb2.BidResponse{
-						Ext: json.RawMessage(`{"prebid":{"floors":{"floorprovider":"provider-1"}}}`),
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					Trackers: map[string]models.OWTracker{
+						"any-bid-id": {
+							Tracker: models.Tracker{
+								LoggerData: models.LoggerData{
+									FloorProvider: "provider-1",
+								},
+							},
+						},
 					},
 				},
-				rCtx:       &models.RequestCtx{},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.PublicEndpoint + `?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"fp":"provider-1"}&pubid=0`,
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"fp":"provider-1"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3234,45 +3774,25 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 		want want
 	}{
 		{
-			name: "unmarshal error for BidRequest.Ext",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{invalid-json}`),
-						},
-					},
-					Response: &openrtb2.BidResponse{},
-				},
-				rCtx:       &models.RequestCtx{},
-				logInfo:    true,
-				forRespExt: true,
-			},
-			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
-				header: http.Header{
-					models.USER_AGENT_HEADER: []string{""},
-					models.IP_HEADER:         []string{""},
-				},
-			},
-		},
-		{
 			name: "Floor type should be soft when prebid is nil",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3284,18 +3804,23 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"prebid":{}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{},
+						},
+					},
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3307,18 +3832,30 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": false}}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: ptrutil.ToPtr(false),
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										EnforcePBS: ptrutil.ToPtr(true),
+									},
+								},
+							},
+						},
+					},
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3330,18 +3867,27 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true}}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: ptrutil.ToPtr(true),
+								},
+							},
+						},
+					},
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3353,18 +3899,30 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true, "enforcement": {"enforcepbs": false}}}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: ptrutil.ToPtr(true),
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										EnforcePBS: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3376,18 +3934,30 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"prebid":{"floors": {"enabled": true, "enforcement": {"enforcepbs": true}}}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
-				rCtx:       &models.RequestCtx{},
+				rCtx: &models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: ptrutil.ToPtr(true),
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										EnforcePBS: ptrutil.ToPtr(true),
+									},
+								},
+							},
+						},
+					},
+					PubID: 5890,
+				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":1}&pubid=0`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":1}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3405,12 +3975,204 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 	}
 }
 
+func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
+	cfg := ow.cfg
+	uuidFunc := getUUID
+	defer func() {
+		ow.cfg = cfg
+		getUUID = uuidFunc
+	}()
+
+	getUUID = func() string { return "uuid" }
+	ow.cfg.Endpoint = "http://10.172.141.11/wl"
+	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
+
+	type args struct {
+		ao                  analytics.AuctionObject
+		rCtx                *models.RequestCtx
+		logInfo, forRespExt bool
+	}
+	type want struct {
+		logger string
+		header http.Header
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "set floor details from tracker when slots are absent",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					Trackers: map[string]models.OWTracker{
+						"any-bid": {
+							Tracker: models.Tracker{
+								FloorSkippedFlag:  ptrutil.ToPtr(1),
+								FloorModelVersion: "model-version",
+								FloorSource:       ptrutil.ToPtr(2),
+								FloorType:         0,
+								LoggerData: models.LoggerData{
+									FloorProvider:    "provider",
+									FloorFetchStatus: ptrutil.ToPtr(3),
+								},
+							},
+						},
+					},
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider"}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "set floor details from tracker when slots are present",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID: "imp-1",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							AdUnitName: "au",
+							SlotName:   "sn",
+						},
+					},
+					Trackers: map[string]models.OWTracker{
+						"any-bid": {
+							Tracker: models.Tracker{
+								FloorSkippedFlag:  ptrutil.ToPtr(1),
+								FloorModelVersion: "model-version",
+								FloorSource:       ptrutil.ToPtr(2),
+								FloorType:         0,
+								LoggerData: models.LoggerData{
+									FloorProvider:    "provider",
+									FloorFetchStatus: ptrutil.ToPtr(3),
+								},
+							},
+						},
+					},
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider"}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "set floor details from responseExt if tracker details are absent",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID: "imp-1",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							AdUnitName: "au",
+							SlotName:   "sn",
+						},
+					},
+					ResponseExt: openrtb_ext.ExtBidResponse{
+						Prebid: &openrtb_ext.ExtResponsePrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Skipped:     ptrutil.ToPtr(true),
+								FetchStatus: openrtb_ext.FetchError,
+								Data: &openrtb_ext.PriceFloorData{
+									ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+										{
+											ModelVersion: "model-version",
+										},
+									},
+									FloorProvider: "provider",
+								},
+								PriceFloorLocation: openrtb_ext.FetchLocation,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									EnforcePBS: ptrutil.ToPtr(true),
+								},
+							},
+						},
+					},
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider"}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, header := GetLogAuctionObjectAsURL(tt.args.ao, tt.args.rCtx, tt.args.logInfo, tt.args.forRespExt)
+			logger, _ = url.PathUnescape(logger)
+			assert.Equal(t, tt.want.logger, logger, tt.name)
+			assert.Equal(t, tt.want.header, header, tt.name)
+		})
+	}
+}
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 
 	cfg := ow.cfg
+	uuidFunc := getUUID
 	defer func() {
 		ow.cfg = cfg
+		getUUID = uuidFunc
 	}()
+
+	getUUID = func() string {
+		return "sid"
+	}
 
 	ow.cfg.Endpoint = "http://10.172.141.11/wl"
 	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
@@ -3447,12 +4209,13 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					Endpoint: models.EndpointV25,
+					PubID:    5890,
 				},
 				logInfo:    false,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp1_tagid","au":"tagid","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3480,13 +4243,24 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
+					PubID:    5890,
 					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							SlotName:   "imp_1_tagid_1",
+							AdUnitName: "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
+						},
+					},
 				},
 				logInfo:    false,
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3514,11 +4288,18 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
+					PubID:    5890,
 					Endpoint: models.EndpointV25,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp_1": {
 							IncomingSlots:     []string{"0x0v", "100x200"},
 							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+							SlotName:          "imp_1_tagid_1",
+							AdUnitName:        "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
 						},
 					},
 				},
@@ -3526,7 +4307,7 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -3566,11 +4347,18 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
+					PubID:    5890,
 					Endpoint: models.EndpointV25,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp_1": {
 							IncomingSlots:     []string{"0x0v", "100x200"},
 							IsRewardInventory: ptrutil.ToPtr(int8(1)),
+							SlotName:          "imp_1_tagid_1",
+							AdUnitName:        "tagid_1",
+						},
+						"imp_2": {
+							AdUnitName: "tagid_2",
+							SlotName:   "imp_2_tagid_2",
 						},
 					},
 				},
@@ -3578,9 +4366,9 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pid":"0","pdvid":"0","sl":1,"s":[{"sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1",` +
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1",` +
 					`"ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1",` +
-					`"origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD"}],"rwrd":1},{"sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=0`,
+					`"origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD"}],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},

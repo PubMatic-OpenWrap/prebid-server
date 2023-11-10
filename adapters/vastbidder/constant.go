@@ -22,6 +22,7 @@ const (
 	MacroFD             = `fd`
 	MacroTransactionID  = `tid`
 	MacroPaymentIDChain = `pchain`
+	MacroSchain         = `schain`
 
 	//Regs
 	MacroCoppa = `coppa`

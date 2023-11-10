@@ -5,18 +5,36 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string) string {
+func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) string {
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
 	if trackerWithOM(tracker, rctx.Platform, seat) {
 		trackerFormat = models.TrackerCallWrapOMActive
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
-	return applyTBFFeature(rctx, bid, replacedTrackerStr)
+	adm := applyTBFFeature(rctx, bid, replacedTrackerStr)
+	return appendUPixelinBanner(adm, pixels)
+}
+
+// append universal pixels in creative based on conditions
+func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPixel) string {
+	if universalPixel == nil {
+		return adm
+	}
+
+	for _, pixelVal := range universalPixel {
+		if pixelVal.Pos == models.PixelPosAbove {
+			adm = pixelVal.Pixel + adm
+			continue
+		}
+		adm = adm + pixelVal.Pixel
+	}
+	return adm
 }
 
 // TrackerWithOM checks for OM active condition for DV360

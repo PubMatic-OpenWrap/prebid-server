@@ -35,6 +35,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	//SSHB request should not execute module
+	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
+		return result, nil
+	}
+	if rctx.Endpoint == models.EndpointOWS2S {
+		return result, nil
+	}
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
@@ -242,6 +251,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	rctx.ResponseExt = responseExt
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
@@ -263,7 +273,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.LogInfoFlag == 1 {
 		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
-			Tracker: tracker.GetTrackerInfo(rctx, responseExt.Prebid),
+			Tracker: tracker.GetTrackerInfo(rctx, responseExt),
 		}
 	}
 
@@ -271,12 +281,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.ReturnAllBidStatus {
 		rctx.SeatNonBids = prepareSeatNonBids(rctx)
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
-
-	var err error
-	rctx.ResponseExt, err = json.Marshal(responseExt)
-	if err != nil {
-		result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
 	}
 
 	if rctx.Debug {
@@ -297,8 +301,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
+		var responseExtjson json.RawMessage
+		responseExtjson, err = json.Marshal(responseExt)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
+		}
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
-		ap.BidResponse.Ext = rctx.ResponseExt
+		ap.BidResponse.Ext = responseExtjson
 
 		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err

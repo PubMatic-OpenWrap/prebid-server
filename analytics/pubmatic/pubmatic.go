@@ -3,10 +3,11 @@ package pubmatic
 import (
 	"runtime/debug"
 	"sync"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
+
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -54,27 +55,14 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	var startTime time.Time
-	var err error
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
-	if url != "" {
-		cookies := make(map[string]string)
-		if rCtx.KADUSERCookie != nil {
-			cookies[models.KADUSERCOOKIE] = rCtx.KADUSERCookie.Value
-		}
-		startTime = time.Now()
-		err = Send(url, headers, cookies)
-	}
-
-	if url == "" || err != nil {
-		// we will not record at version level in prometheus metric
-		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
-		glog.Errorf("Failed to send the owlogger for pub:[%d], profile:[%d], version:[%d].",
+	if url == "" {
+		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 		return
 	}
-	rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
-	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
+
+	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
 }
 
 // Writes VideoObject to file
@@ -100,7 +88,7 @@ func (ow HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent)
 // Method to initialize the analytic module
 func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
 	once.Do(func() {
-		Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
+		mhttp.Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
 
 		ow = HTTPLogger{
 			cfg:      cfg,

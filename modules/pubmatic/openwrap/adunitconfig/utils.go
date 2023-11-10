@@ -2,7 +2,6 @@ package adunitconfig
 
 import (
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
@@ -19,7 +18,7 @@ func GetMatchedSlotName(rCtx models.RequestCtx, imp openrtb2.Imp, impExt models.
 		div = impExt.Wrapper.Div
 	}
 
-	slotName := bidderparams.GenerateSlotName(height, width, rCtx.AdUnitConfig.ConfigPattern, tagID, div, rCtx.Source)
+	slotName := models.GenerateSlotName(height, width, rCtx.AdUnitConfig.ConfigPattern, tagID, div, rCtx.Source)
 
 	var ok bool
 	slotAdUnitConfig, ok = rCtx.AdUnitConfig.Config[slotName]

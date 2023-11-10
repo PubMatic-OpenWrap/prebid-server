@@ -89,3 +89,17 @@ var FloorSourceMap = map[string]int{
 	openrtb_ext.RequestLocation: 1,
 	openrtb_ext.FetchLocation:   2,
 }
+
+// FetchStatusMap maps floor fetch status with integer codes
+var FetchStatusMap = map[string]int{
+	openrtb_ext.FetchNone:       0,
+	openrtb_ext.FetchSuccess:    1,
+	openrtb_ext.FetchError:      2,
+	openrtb_ext.FetchInprogress: 3,
+	openrtb_ext.FetchTimeout:    4,
+}
+
+const (
+	NotSet       = -1
+	DealIDAbsent = "-1"
+)

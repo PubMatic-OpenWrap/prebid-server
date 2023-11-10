@@ -95,7 +95,7 @@ func Test_getValueFromMap(t *testing.T) {
 			want: "",
 		},
 		{
-			name: "empty_m",
+			name: "empty_map",
 			args: args{lookUpOrder: []string{"country", "name"},
 				m: map[string]any{},
 			},

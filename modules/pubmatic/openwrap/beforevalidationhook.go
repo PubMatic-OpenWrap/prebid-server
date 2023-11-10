@@ -46,6 +46,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rCtx.Sshb == "1" {
+		result.Reject = false
+		return result, nil
+	}
+
+	if rCtx.Endpoint == models.EndpointHybrid {
+		//TODO: Add bidder params fix
+		result.Reject = false
+		return result, nil
+	}
+
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPublisherID
@@ -66,7 +78,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequest
+		result.NbrCode = nbr.InvalidRequestExt
 		err = errors.New("failed to get request ext: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
@@ -95,9 +107,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
 	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
-		rCtx.VersionID = ver
+		rCtx.DisplayVersionID = ver
 	}
-
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
@@ -329,6 +340,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Prebid.IsRewardedInventory = reward
 		}
 
+		// if imp.ext.data.pbadslot is absent then set it to tagId
+		if len(impExt.Data.PbAdslot) == 0 {
+			impExt.Data.PbAdslot = imp.TagID
+		}
+
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -355,6 +371,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
 				IsAdPodRequest:    isAdPodRequest,
+				SlotName:          getSlotName(imp.TagID, impExt),
+				AdUnitName:        getAdunitName(imp.TagID, impExt),
 			}
 		}
 
@@ -420,21 +438,25 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
-	rCtx.NewReqExt, err = json.Marshal(requestExt)
-	if err != nil {
-		result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
-	}
+	rCtx.NewReqExt = requestExt
 
 	if rCtx.Debug {
 		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
 		result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
-		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(rCtx.NewReqExt))
+		newReqExt, _ := json.Marshal(rCtx.NewReqExt)
+		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var err error
+		var requestExtjson json.RawMessage
+		requestExtjson, err = json.Marshal(rctx.NewReqExt)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to update request.ext "+err.Error())
+		}
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
+		ep.BidRequest.Ext = requestExtjson
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
@@ -502,8 +524,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	} else if bidRequest.App != nil && bidRequest.App.Content != nil {
 		bidRequest.App.Content.Language = getValidLanguage(bidRequest.App.Content.Language)
 	}
-
-	bidRequest.Ext = rctx.NewReqExt
 	return bidRequest, nil
 }
 
@@ -686,6 +706,57 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 }
 
+/*
+getSlotName will return slot name according to below priority
+ 1. imp.ext.gpid
+ 2. imp.tagid
+ 3. imp.ext.data.pbadslot
+ 4. imp.ext.prebid.storedrequest.id
+*/
+func getSlotName(tagId string, impExt *models.ImpExtension) string {
+	if impExt == nil {
+		return tagId
+	}
+
+	if len(impExt.GpId) > 0 {
+		return impExt.GpId
+	}
+
+	if len(tagId) > 0 {
+		return tagId
+	}
+
+	if len(impExt.Data.PbAdslot) > 0 {
+		return impExt.Data.PbAdslot
+	}
+
+	var storeReqId string
+	if impExt.Prebid.StoredRequest != nil {
+		storeReqId = impExt.Prebid.StoredRequest.ID
+	}
+
+	return storeReqId
+}
+
+/*
+getAdunitName will return adunit name according to below priority
+ 1. imp.ext.data.adserver.adslot if imp.ext.data.adserver.name == "gam"
+ 2. imp.ext.data.pbadslot
+ 3. imp.tagid
+*/
+func getAdunitName(tagId string, impExt *models.ImpExtension) string {
+	if impExt == nil {
+		return tagId
+	}
+	if impExt.Data.AdServer != nil && impExt.Data.AdServer.Name == models.GamAdServer && impExt.Data.AdServer.AdSlot != "" {
+		return impExt.Data.AdServer.AdSlot
+	}
+	if len(impExt.Data.PbAdslot) > 0 {
+		return impExt.Data.PbAdslot
+	}
+	return tagId
+}
+
 func getDomainFromUrl(pageUrl string) string {
 	u, err := url.Parse(pageUrl)
 	if err != nil {
@@ -768,15 +839,15 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 
 	// BidRequest.TMax has highest priority
 	if req.TMax != 0 {
-		return req.TMax
-	}
-
-	//check for ssTimeout in the partner config
-	ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)
-	if ssTimeout != "" {
-		ssTimeoutDB, err := strconv.Atoi(ssTimeout)
-		if err == nil {
-			auctionTimeout = int64(ssTimeoutDB)
+		auctionTimeout = req.TMax
+	} else {
+		//check for ssTimeout in the partner config
+		ssTimeout := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.SSTimeoutKey)
+		if ssTimeout != "" {
+			ssTimeoutDB, err := strconv.Atoi(ssTimeout)
+			if err == nil {
+				auctionTimeout = int64(ssTimeoutDB)
+			}
 		}
 	}
 
@@ -812,10 +883,6 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 // if ssauction flag is not set and platform is dislay, then by default send all bids
 // if ssauction flag is not set and platform is in-app, then check if profile setting sendAllBids is set to 1
 func isSendAllBids(rctx models.RequestCtx) bool {
-	if rctx.SSAuction == -1 && rctx.Platform == models.PLATFORM_DISPLAY { //Need to check ssAuction is always=-1
-		return true
-	}
-
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {
 		return true
@@ -865,15 +932,13 @@ func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
 
 func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 	//priority for tagId is imp.ext.gpid > imp.TagID > imp.ext.data.pbadslot
-	tagId := imp.TagID
-	if imp.TagID == "" {
-		tagId = impExt.Data.PbAdslot
-	}
-	if impExt.Gpid != "" {
-		tagId = impExt.Gpid
-		if idx := strings.Index(impExt.Gpid, "#"); idx != -1 {
-			tagId = impExt.Gpid[:idx]
+	if impExt.GpId != "" {
+		if idx := strings.Index(impExt.GpId, "#"); idx != -1 {
+			return impExt.GpId[:idx]
 		}
+		return impExt.GpId
+	} else if imp.TagID != "" {
+		return imp.TagID
 	}
-	return tagId
+	return impExt.Data.PbAdslot
 }

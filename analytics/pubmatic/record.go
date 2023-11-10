@@ -92,6 +92,7 @@ type AdPodSlot struct {
 
 // SlotRecord structure for storing slot level information
 type SlotRecord struct {
+	SlotId            string          `json:"sid"`
 	SlotName          string          `json:"sn,omitempty"`
 	SlotSize          []string        `json:"sz,omitempty"`
 	Adunit            string          `json:"au,omitempty"`
@@ -173,7 +174,6 @@ var FetchStatusMap = map[string]int{
 
 // logDeviceObject is used to add device specific parameters like platform and ifa_type in logger
 func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidRequest *openrtb2.BidRequest) {
-
 	dvc := Device{
 		Platform: rctx.DevicePlatform,
 	}
@@ -182,19 +182,16 @@ func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidReque
 		ext := make(map[string]interface{})
 		err := json.Unmarshal(ortbBidRequest.Device.Ext, &ext)
 		if err != nil {
-			return // TODO - check if we shoul set dvc in logger
+			return
 		}
-		// if ext, ok := ortbBidRequest.Device.Ext.(map[string]interface{}); ok {
-		//use ext object for logging any other extension parameters
 
+		//use ext object for logging any other extension parameters
 		//log device.ext.ifa_type parameter to ifty in logger record
 		if value, ok := ext["ifa_type"].(string); ok {
-
-			//ifa_type checkking is valid parameter and log its respective id
+			//ifa_type checking is valid parameter and log its respective id
 			ifaType := models.DeviceIFATypeID[strings.ToLower(value)]
 			dvc.IFAType = &ifaType
 		}
-		// }
 	}
 
 	//settind device object
@@ -245,7 +242,6 @@ func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
 
 // setMetaDataObject sets the MetaData object for partner-record
 func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
-
 	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
 		partnerRecord.MetaData = &MetaData{
 			NetworkID:            meta.NetworkID,
@@ -264,42 +260,4 @@ func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPr
 	//partnerRecord.MetaData.BrandName = meta.BrandName
 	//partnerRecord.MetaData.BrandID = meta.BrandID
 	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
-}
-
-// SetFloorDetails sets the fskp/fmv/fsrc/ffs/fp/ft for logger record
-func (wlog *WloggerRecord) SetFloorDetails(floors *openrtb_ext.PriceFloorRules) {
-
-	if floors == nil {
-		return
-	}
-
-	if floors.Skipped != nil {
-		skipped := convertBoolToInt(*floors.Skipped)
-		for i := range wlog.Slots {
-			wlog.Slots[i].FloorSkippedFlag = &skipped
-		}
-	}
-
-	if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
-		wlog.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
-	}
-
-	if len(floors.PriceFloorLocation) > 0 {
-		if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
-			wlog.FloorSource = &source
-		}
-	}
-
-	if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
-		wlog.FloorFetchStatus = &status
-	}
-
-	wlog.FloorProvider = floors.FloorProvider
-	if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
-		wlog.FloorProvider = floors.Data.FloorProvider
-	}
-
-	if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
-		wlog.record.FloorType = models.HardFloor
-	}
 }

@@ -52,6 +52,7 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 	userAgentString := rCtx.UA
 	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
 		userAgentString = bidRequest.Device.UA
+		rCtx.UA = userAgentString
 	}
 
 	switch rCtx.Platform {
@@ -262,7 +263,7 @@ func getPubmaticErrorCode(standardNBR int) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequest:
+	case nbr.InvalidRequestExt:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:

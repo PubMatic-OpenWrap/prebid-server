@@ -1,15 +1,265 @@
 package tracker
 
 import (
-	"encoding/json"
 	"net/url"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
+
+var rctx = models.RequestCtx{
+	PubID:               5890,
+	ProfileID:           1234,
+	DisplayID:           1,
+	DisplayVersionID:    1,
+	PageURL:             "abc.com",
+	LoggerImpressionID:  "loggerIID",
+	DevicePlatform:      5,
+	SSAI:                "mediatailor",
+	Origin:              "publisher.com",
+	ABTestConfigApplied: 1,
+	PrebidBidderCode: map[string]string{
+		"pubmatic": "pubmatic",
+	},
+	MarketPlaceBidders: map[string]struct{}{
+		"pubmatic": {},
+	},
+	ImpBidCtx: map[string]models.ImpCtx{
+		"impID-1": {
+			TagID:      "adunit-1",
+			AdUnitName: "adunit-1",
+			SlotName:   "impID-1_adunit-1",
+			Bidders: map[string]models.PartnerData{
+				"pubmatic": {
+					MatchedSlot:      "matchedSlot",
+					PrebidBidderCode: "prebidBidderCode",
+					KGP:              "_AU_@_W_x_H_",
+				},
+				"pubmatic2": {
+					MatchedSlot:      "matchedSlot2",
+					PrebidBidderCode: "prebidBidderCode2",
+					KGP:              "_AU_@_W_x_H_",
+				},
+			},
+			BidFloor:    5.5,
+			BidFloorCur: "EUR",
+			BidCtx: map[string]models.BidCtx{
+				"bidID-1": {
+					BidExt: models.BidExt{
+						OriginalBidCPMUSD: 0,
+						NetECPM:           8.7,
+						ExtBid: openrtb_ext.ExtBid{
+							Prebid: &openrtb_ext.ExtBidPrebid{
+								BidId: "bidID-1",
+								Video: &openrtb_ext.ExtBidPrebidVideo{
+									Duration: 20,
+								},
+								Meta: &openrtb_ext.ExtBidPrebidMeta{
+									AdapterCode: "pubmatic",
+								},
+								Floors: &openrtb_ext.ExtBidPrebidFloors{
+									FloorRule:      "rule1",
+									FloorValue:     6.4,
+									FloorRuleValue: 4.4,
+								},
+								Type: models.Banner,
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
+func Test_createTrackers(t *testing.T) {
+	startTime := time.Now().Unix()
+	type args struct {
+		trackers    map[string]models.OWTracker
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+		pmMkt       map[string]pubmaticMarketplaceMeta
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]models.OWTracker
+	}{
+		{
+			name: "empty_bidResponse",
+			args: args{
+				trackers:    map[string]models.OWTracker{},
+				bidResponse: &openrtb2.BidResponse{},
+			},
+			want: map[string]models.OWTracker{},
+		},
+		{
+			name: "response with all details",
+			args: args{
+				trackers: map[string]models.OWTracker{},
+				rctx: func() models.RequestCtx {
+					testRctx := rctx
+					testRctx.StartTime = startTime
+					return testRctx
+				}(),
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:      "bidID-1",
+									ImpID:   "impID-1",
+									Price:   8.7,
+									W:       250,
+									H:       300,
+									ADomain: []string{"domain.com"},
+									DealID:  "deal-id-1",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Cur: models.USD,
+				},
+				pmMkt: map[string]pubmaticMarketplaceMeta{},
+			},
+			want: map[string]models.OWTracker{
+				"bidID-1": {
+					Tracker: models.Tracker{
+						PubID:     5890,
+						PageURL:   "abc.com",
+						Timestamp: startTime,
+						IID:       "loggerIID",
+						ProfileID: "1234",
+						VersionID: "1",
+						Adunit:    "adunit-1",
+						SlotID:    "impID-1_adunit-1",
+						PartnerInfo: models.Partner{
+							PartnerID:      "prebidBidderCode",
+							BidderCode:     "pubmatic",
+							KGPV:           "adunit-1@250x300",
+							GrossECPM:      8.7,
+							NetECPM:        8.7,
+							BidID:          "bidID-1",
+							OrigBidID:      "bidID-1",
+							AdSize:         "250x300",
+							AdDuration:     20,
+							Adformat:       "banner",
+							ServerSide:     1,
+							Advertiser:     "domain.com",
+							FloorValue:     6.4,
+							FloorRuleValue: 4.4,
+							DealID:         "deal-id-1",
+						},
+						Platform:  5,
+						SSAI:      "mediatailor",
+						AdPodSlot: 0,
+						TestGroup: 1,
+						Origin:    "publisher.com",
+						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
+					},
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					Price:         8.7,
+					PriceModel:    "CPM",
+					PriceCurrency: "USD",
+					BidType:       "banner",
+				},
+			},
+		},
+		{
+			name: "response with all details with alias partner",
+			args: args{
+				trackers: map[string]models.OWTracker{},
+				rctx: func() models.RequestCtx {
+					testRctx := rctx
+					testRctx.StartTime = startTime
+					testRctx.PrebidBidderCode["pubmatic"] = "pubmatic2"
+					return testRctx
+				}(),
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:      "bidID-1",
+									ImpID:   "impID-1",
+									Price:   8.7,
+									W:       250,
+									H:       300,
+									ADomain: []string{"domain.com"},
+									DealID:  "deal-id-1",
+								},
+							},
+							Seat: "pubmatic2",
+						},
+					},
+					Cur: models.USD,
+				},
+				pmMkt: map[string]pubmaticMarketplaceMeta{},
+			},
+			want: map[string]models.OWTracker{
+				"bidID-1": {
+					Tracker: models.Tracker{
+						PubID:     5890,
+						PageURL:   "abc.com",
+						Timestamp: startTime,
+						IID:       "loggerIID",
+						ProfileID: "1234",
+						VersionID: "1",
+						Adunit:    "adunit-1",
+						SlotID:    "impID-1_adunit-1",
+						PartnerInfo: models.Partner{
+							PartnerID:      "prebidBidderCode2",
+							BidderCode:     "pubmatic2",
+							KGPV:           "adunit-1@250x300",
+							GrossECPM:      8.7,
+							NetECPM:        8.7,
+							BidID:          "bidID-1",
+							OrigBidID:      "bidID-1",
+							AdSize:         "250x300",
+							AdDuration:     20,
+							Adformat:       "banner",
+							ServerSide:     1,
+							Advertiser:     "domain.com",
+							FloorValue:     6.4,
+							FloorRuleValue: 4.4,
+							DealID:         "deal-id-1",
+						},
+						Platform:  5,
+						SSAI:      "mediatailor",
+						AdPodSlot: 0,
+						TestGroup: 1,
+						Origin:    "publisher.com",
+						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
+					},
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					Price:         8.7,
+					PriceModel:    "CPM",
+					PriceCurrency: "USD",
+					BidType:       "banner",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := createTrackers(tt.args.rctx, tt.args.trackers, tt.args.bidResponse, tt.args.pmMkt)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
 
 func TestConstructTrackerURL(t *testing.T) {
 	type args struct {
@@ -77,7 +327,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&ft=0&iid=98765&kgpv=adunit%40300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&ft=0&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_ssai_in_tracker",
@@ -124,7 +374,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test+version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit%40300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_secure_enable_in_tracker",
@@ -170,7 +420,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test+version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit%40300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_RewardInventory_in_tracker",
@@ -215,7 +465,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test+version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit%40300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_floors_details_in_tracker",
@@ -259,14 +509,14 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test+version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit%40300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ConstructTrackerURL(tt.args.rctx, tt.args.tracker); got != tt.want {
-				t.Errorf("ConstructTrackerURL() = %v, want %v", got, tt.want)
-			}
+			trackerUrl := constructTrackerURL(tt.args.rctx, tt.args.tracker)
+			decodedTrackerUrl, _ := url.QueryUnescape(trackerUrl)
+			assert.Equal(t, tt.want, decodedTrackerUrl, tt.name)
 		})
 	}
 }
@@ -486,7 +736,7 @@ func TestConstructVideoErrorURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			constructedURL := ConstructVideoErrorURL(tt.args.rctx, tt.args.errorURLString, tt.args.bid, tt.args.tracker)
+			constructedURL := constructVideoErrorURL(tt.args.rctx, tt.args.errorURLString, tt.args.bid, tt.args.tracker)
 			if len(constructedURL) > 0 && len(tt.want) > 0 {
 				wantURL, _ := url.Parse(constructedURL)
 				expectedURL, _ := url.Parse(tt.want)
@@ -500,102 +750,96 @@ func TestConstructVideoErrorURL(t *testing.T) {
 	}
 }
 
-func Test_getFloorsDetails(t *testing.T) {
+func TestCreateTrackers(t *testing.T) {
+	startTime := time.Now().Unix()
 	type args struct {
-		bidResponseExt json.RawMessage
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
 	}
 	tests := []struct {
-		name              string
-		args              args
-		skipfloors        *int
-		floorType         int
-		floorSource       *int
-		floorModelVersion string
+		name string
+		args args
+		want map[string]models.OWTracker
 	}{
 		{
-			name: "invalid_responseExt",
+			name: "overwrite marketplace bid details",
 			args: args{
-				bidResponseExt: json.RawMessage(``),
+				rctx: func() models.RequestCtx {
+					testRctx := rctx
+					testRctx.StartTime = startTime
+					return testRctx
+				}(),
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:      "bidID-1",
+									ImpID:   "impID-1",
+									Price:   8.7,
+									W:       250,
+									H:       300,
+									ADomain: []string{"domain.com"},
+									DealID:  "deal-id-1",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Cur: models.USD,
+				},
 			},
-			skipfloors:  nil,
-			floorSource: nil,
-		},
-		{
-			name: "empty_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{}`),
+			want: map[string]models.OWTracker{
+				"bidID-1": {
+					Tracker: models.Tracker{
+						PubID:     5890,
+						PageURL:   "abc.com",
+						Timestamp: startTime,
+						IID:       "loggerIID",
+						ProfileID: "1234",
+						VersionID: "1",
+						Adunit:    "adunit-1",
+						SlotID:    "impID-1_adunit-1",
+						PartnerInfo: models.Partner{
+							PartnerID:      "pubmatic",
+							BidderCode:     "pubmatic",
+							KGPV:           "adunit-1@250x300",
+							GrossECPM:      8.7,
+							NetECPM:        8.7,
+							BidID:          "bidID-1",
+							OrigBidID:      "bidID-1",
+							AdSize:         "250x300",
+							AdDuration:     20,
+							Adformat:       "banner",
+							ServerSide:     1,
+							Advertiser:     "domain.com",
+							FloorValue:     6.4,
+							FloorRuleValue: 4.4,
+							DealID:         "deal-id-1",
+						},
+						Platform:  5,
+						SSAI:      "mediatailor",
+						AdPodSlot: 0,
+						TestGroup: 1,
+						Origin:    "publisher.com",
+						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
+					},
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					Price:         8.7,
+					PriceModel:    "CPM",
+					PriceCurrency: "USD",
+					BidType:       "banner",
+				},
 			},
-			skipfloors:  nil,
-			floorSource: nil,
-		},
-		{
-			name: "empty_prebid_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{}}`),
-			},
-			skipfloors:  nil,
-			floorSource: nil,
-		},
-		{
-			name: "empty_prebidfloors_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{"floors":{}}}`),
-			},
-			skipfloors:  nil,
-			floorSource: nil,
-		},
-		{
-			name: "no_enforced_floors_data_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{"floors":{"data":{},"location":"fetch"}}}`),
-			},
-			skipfloors:        nil,
-			floorType:         models.SoftFloor,
-			floorSource:       ptrutil.ToPtr(2),
-			floorModelVersion: "",
-		},
-		{
-			name: "no_modelsgroups_floors_data_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{"floors":{"data":{},"location":"fetch","enforcement":{"enforcepbs":true}}}}`),
-			},
-			skipfloors:        nil,
-			floorType:         models.HardFloor,
-			floorSource:       ptrutil.ToPtr(2),
-			floorModelVersion: "",
-		},
-		{
-			name: "no_skipped_floors_data_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{"floors":{"data":{"modelgroups":[{"modelversion":"version 1"}]},"location":"fetch","enforcement":{"enforcepbs":true}}}}`),
-			},
-			skipfloors:        nil,
-			floorType:         models.HardFloor,
-			floorSource:       ptrutil.ToPtr(2),
-			floorModelVersion: "version 1",
-		},
-		{
-			name: "all_floors_data_in_responseExt",
-			args: args{
-				bidResponseExt: json.RawMessage(`{"prebid":{"floors":{"skipped":true,"data":{"modelgroups":[{"modelversion":"version 1"}]},"location":"fetch","enforcement":{"enforcepbs":true}}}}`),
-			},
-			skipfloors:        ptrutil.ToPtr(1),
-			floorType:         models.HardFloor,
-			floorSource:       ptrutil.ToPtr(2),
-			floorModelVersion: "version 1",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3 := getFloorsDetails(tt.args.bidResponseExt)
-			assert.Equal(t, got, tt.skipfloors)
-			if got1 != tt.floorType {
-				t.Errorf("getFloorsDetails() got1 = %v, want %v", got1, tt.floorType)
-			}
-			assert.Equal(t, got2, tt.floorSource)
-			if got3 != tt.floorModelVersion {
-				t.Errorf("getFloorsDetails() got3 = %v, want %v", got3, tt.floorModelVersion)
-			}
+			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

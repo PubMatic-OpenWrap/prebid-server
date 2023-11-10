@@ -13,16 +13,26 @@ import (
 )
 
 type RequestCtx struct {
-	PubID, ProfileID, DisplayID, VersionID int
-	SSAuction                              int
-	SummaryDisable                         int
-	LogInfoFlag                            int
-	SSAI                                   string
-	PartnerConfigMap                       map[int]map[string]string
-	SupportDeals                           bool
-	Platform                               string
-	LoggerImpressionID                     string
-	ClientConfigFlag                       int
+	// PubID is the publisher id retrieved from request
+	PubID int
+	// ProfileID is the value received in profileid field in wrapper object.
+	ProfileID int
+	// DisplayID is the value received in versionid field in wrapper object.
+	DisplayID int
+	// VersionID is the unique id from DB associated with the incoming DisplayID
+	VersionID int
+	// DisplayVersionID is the DisplayID of the profile selected by OpenWrap incase DisplayID/versionid is 0
+	DisplayVersionID int
+
+	SSAuction          int
+	SummaryDisable     int
+	LogInfoFlag        int
+	SSAI               string
+	PartnerConfigMap   map[int]map[string]string
+	SupportDeals       bool
+	Platform           string
+	LoggerImpressionID string
+	ClientConfigFlag   int
 
 	IP   string
 	TMax int64
@@ -58,8 +68,8 @@ type RequestCtx struct {
 	// imp-bid ctx to avoid computing same thing for bidder params, logger and tracker
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
-	NewReqExt          json.RawMessage
-	ResponseExt        json.RawMessage
+	NewReqExt          *RequestExt
+	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
@@ -79,7 +89,8 @@ type RequestCtx struct {
 	Endpoint               string
 	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine          metrics.MetricsEngine
-	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	ReturnAllBidStatus     bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
 
 	DCName             string
 	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
@@ -106,6 +117,8 @@ type ImpCtx struct {
 	ImpID             string
 	TagID             string
 	Div               string
+	SlotName          string
+	AdUnitName        string
 	Secure            int
 	BidFloor          float64
 	BidFloorCur       string

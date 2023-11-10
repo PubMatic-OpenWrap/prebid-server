@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -389,6 +390,944 @@ func TestGetAdFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			creativeType := GetAdFormat(tt.args.bid, tt.args.bidExt, tt.args.impCtx)
 			assert.Equal(t, tt.want, creativeType, tt.name)
+		})
+	}
+}
+
+func TestGetSizeForPlatform(t *testing.T) {
+	type args struct {
+		width, height int64
+		platform      string
+	}
+	tests := []struct {
+		name string
+		args args
+		size string
+	}{
+		{
+			name: "in-app platform",
+			args: args{
+				width:    100,
+				height:   10,
+				platform: PLATFORM_APP,
+			},
+			size: "100x10",
+		},
+		{
+			name: "video platform",
+			args: args{
+				width:    100,
+				height:   10,
+				platform: PLATFORM_VIDEO,
+			},
+			size: "100x10v",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			size := GetSizeForPlatform(tt.args.width, tt.args.height, tt.args.platform)
+			assert.Equal(t, tt.size, size, tt.name)
+		})
+	}
+}
+
+func TestGenerateSlotName(t *testing.T) {
+	type args struct {
+		h     int64
+		w     int64
+		kgp   string
+		tagid string
+		div   string
+		src   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "_AU_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_AU_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit",
+		},
+		{
+			name: "_DIV_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_DIV_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "Div1",
+		},
+		{
+			name: "_AU_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_AU_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit",
+		},
+		{
+			name: "_AU_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_AU_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit@200x100",
+		},
+		{
+			name: "_DIV_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_DIV_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "Div1@200x100",
+		},
+		{
+			name: "_W_x_H_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_W_x_H_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "200x100@200x100",
+		},
+		{
+			name: "_AU_@_DIV_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_AU_@_DIV_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit@Div1@200x100",
+		},
+		{
+			name: "_AU_@_SRC_@_VASTTAG_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_AU_@_SRC_@_VASTTAG_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit@test.com@_VASTTAG_",
+		},
+		{
+			name: "empty_kgp",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "",
+		},
+		{
+			name: "random_kgp",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "fjkdfhk",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GenerateSlotName(tt.args.h, tt.args.w, tt.args.kgp, tt.args.tagid, tt.args.div, tt.args.src)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetRevenueShare(t *testing.T) {
+	tests := []struct {
+		name          string
+		partnerConfig map[string]string
+		revshare      float64
+	}{
+		{
+			name:          "Empty partnerConfig",
+			partnerConfig: make(map[string]string),
+			revshare:      0,
+		},
+		{
+			name: "partnerConfig without rev_share",
+			partnerConfig: map[string]string{
+				"anykey": "anyval",
+			},
+			revshare: 0,
+		},
+		{
+			name: "partnerConfig with invalid rev_share",
+			partnerConfig: map[string]string{
+				REVSHARE: "invalid",
+			},
+			revshare: 0,
+		},
+		{
+			name: "partnerConfig with valid rev_share",
+			partnerConfig: map[string]string{
+				REVSHARE: "10",
+			},
+			revshare: 10,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			revshare := GetRevenueShare(tt.partnerConfig)
+			assert.Equal(t, tt.revshare, revshare, tt.name)
+		})
+	}
+}
+
+func TestGetNetEcpm(t *testing.T) {
+	type args struct {
+		price, revShare float64
+	}
+	tests := []struct {
+		name    string
+		args    args
+		netecpm float64
+	}{
+		{
+			name: "revshare is 0",
+			args: args{
+				revShare: 0,
+				price:    10,
+			},
+			netecpm: 10,
+		},
+		{
+			name: "revshare is int",
+			args: args{
+				revShare: 2,
+				price:    2,
+			},
+			netecpm: 1.96,
+		},
+		{
+			name: "revshare is float",
+			args: args{
+				revShare: 3.338,
+				price:    100,
+			},
+			netecpm: 96.66,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			netecpm := GetNetEcpm(tt.args.price, tt.args.revShare)
+			assert.Equal(t, tt.netecpm, netecpm, tt.name)
+		})
+	}
+}
+
+func TestGetGrossEcpm(t *testing.T) {
+
+	tests := []struct {
+		name      string
+		price     float64
+		grossecpm float64
+	}{
+		{
+			name:      "grossecpm ceiling",
+			price:     18.998,
+			grossecpm: 19,
+		},
+		{
+			name:      "grossecpm floor",
+			price:     18.901,
+			grossecpm: 18.90,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			grossecpm := GetGrossEcpm(tt.price)
+			assert.Equal(t, tt.grossecpm, grossecpm, tt.name)
+		})
+	}
+}
+
+func TestExtractDomain(t *testing.T) {
+	type want struct {
+		domain string
+		err    bool
+	}
+	tests := []struct {
+		name string
+		url  string
+		want want
+	}{
+		{
+			name: "url without http prefix",
+			url:  "google.com",
+			want: want{
+				domain: "google.com",
+			},
+		},
+		{
+			name: "url with http prefix",
+			url:  "http://google.com",
+			want: want{
+				domain: "google.com",
+			},
+		},
+		{
+			name: "url with https prefix",
+			url:  "https://google.com",
+			want: want{
+				domain: "google.com",
+			},
+		},
+		{
+			name: "invalid",
+			url:  "https://google:com?a=1;b=2",
+			want: want{
+				domain: "",
+				err:    true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			domain, err := ExtractDomain(tt.url)
+			assert.Equal(t, tt.want.domain, domain, tt.name)
+			assert.Equal(t, tt.want.err, err != nil, tt.name)
+		})
+	}
+}
+
+func TestGetBidLevelFloorsDetails(t *testing.T) {
+	type args struct {
+		bidExt             BidExt
+		impCtx             ImpCtx
+		currencyConversion func(from, to string, value float64) (float64, error)
+	}
+	type want struct {
+		fv, frv float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "set_floor_values_from_bidExt",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{
+							Floors: &openrtb_ext.ExtBidPrebidFloors{
+								FloorRuleValue: 10,
+								FloorValue:     5,
+							},
+						},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "EUR",
+				},
+			},
+			want: want{
+				fv:  5,
+				frv: 10,
+			},
+		},
+		{
+			name: "frv_absent_in_bidExt",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{
+							Floors: &openrtb_ext.ExtBidPrebidFloors{
+								FloorValue: 5,
+							},
+						},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "EUR",
+				},
+			},
+			want: want{
+				fv:  5,
+				frv: 5,
+			},
+		},
+		{
+			name: "fv_is_0_in_bidExt",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{
+							Floors: &openrtb_ext.ExtBidPrebidFloors{
+								FloorValue: 0,
+							},
+						},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "EUR",
+				},
+			},
+			want: want{
+				fv:  0,
+				frv: 0,
+			},
+		},
+		{
+			name: "currency_conversion_for_floor_values_in_bidExt",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{
+							Floors: &openrtb_ext.ExtBidPrebidFloors{
+								FloorValue:    5,
+								FloorCurrency: "EUR",
+							},
+						},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "EUR",
+				},
+				currencyConversion: func(from, to string, value float64) (float64, error) {
+					return 10, nil
+				},
+			},
+			want: want{
+				fv:  10,
+				frv: 10,
+			},
+		},
+		{
+			name: "floor_values_missing_in_bidExt_fallback_to_impctx",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "USD",
+				},
+			},
+			want: want{
+				fv:  2.2,
+				frv: 2.2,
+			},
+		},
+		{
+			name: "bidExt.Prebid_is_nil_fallback_to_impctx",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: nil,
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "USD",
+				},
+			},
+			want: want{
+				fv:  2.2,
+				frv: 2.2,
+			},
+		},
+		{
+			name: "bidExt.Prebid.Floors_is_nil_fallback_to_impctx",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{
+						Prebid: &openrtb_ext.ExtBidPrebid{
+							Floors: nil,
+						},
+					},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    2.2,
+					BidFloorCur: "USD",
+				},
+			},
+			want: want{
+				fv:  2.2,
+				frv: 2.2,
+			},
+		},
+		{
+			name: "currency_conversion_for_floor_values_in_impctx",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{},
+				},
+				impCtx: ImpCtx{
+					BidFloor:    5,
+					BidFloorCur: "EUR",
+				},
+				currencyConversion: func(from, to string, value float64) (float64, error) {
+					return 10, nil
+				},
+			},
+			want: want{
+				fv:  10,
+				frv: 10,
+			},
+		},
+		{
+			name: "floor_values_not_set_in_both_bidExt_and_impctx",
+			args: args{
+				bidExt: BidExt{
+					ExtBid: openrtb_ext.ExtBid{},
+				},
+				impCtx: ImpCtx{},
+				currencyConversion: func(from, to string, value float64) (float64, error) {
+					return 10, nil
+				},
+			},
+			want: want{
+				fv:  0,
+				frv: 0,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fv, frv := GetBidLevelFloorsDetails(tt.args.bidExt, tt.args.impCtx, tt.args.currencyConversion)
+			assert.Equal(t, tt.want.fv, fv, tt.name)
+			assert.Equal(t, tt.want.frv, frv, tt.name)
+		})
+	}
+}
+
+func Test_getFloorsDetails(t *testing.T) {
+	type args struct {
+		bidResponseExt openrtb_ext.ExtBidResponse
+	}
+	tests := []struct {
+		name         string
+		args         args
+		floorDetails FloorsDetails
+	}{
+		{
+			name:         "no_responseExt",
+			args:         args{},
+			floorDetails: FloorsDetails{},
+		},
+		{
+			name: "empty_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{},
+			},
+			floorDetails: FloorsDetails{},
+		},
+		{
+			name: "empty_prebid_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{},
+				},
+			},
+			floorDetails: FloorsDetails{},
+		},
+		{
+			name: "empty_prebidfloors_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{},
+		},
+		{
+			name: "no_enforced_floors_data_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Data:               &openrtb_ext.PriceFloorData{},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        nil,
+				FloorType:         SoftFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "",
+			},
+		},
+		{
+			name: "no_modelsgroups_floors_data_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Data:               &openrtb_ext.PriceFloorData{},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        nil,
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "",
+			},
+		},
+		{
+			name: "no_skipped_floors_data_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Data: &openrtb_ext.PriceFloorData{
+								ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+									{
+										ModelVersion: "version 1",
+									},
+								},
+							},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        nil,
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "version 1",
+			},
+		},
+		{
+			name: "all_floors_data_in_responseExt",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Skipped: ptrutil.ToPtr(true),
+							Data: &openrtb_ext.PriceFloorData{
+								ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+									{
+										ModelVersion: "version 1",
+									},
+								},
+							},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        ptrutil.ToPtr(1),
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "version 1",
+			},
+		},
+		{
+			name: "floor_provider_present",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Skipped: ptrutil.ToPtr(true),
+							Data: &openrtb_ext.PriceFloorData{
+								ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+									{
+										ModelVersion: "version 1",
+									},
+								},
+								FloorProvider: "provider",
+							},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        ptrutil.ToPtr(1),
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "version 1",
+				FloorProvider:     "provider",
+			},
+		},
+		{
+			name: "floor_fetch_status_absent_in_FloorSourceMap",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Skipped:     ptrutil.ToPtr(true),
+							FetchStatus: "invalid",
+							Data: &openrtb_ext.PriceFloorData{
+								ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+									{
+										ModelVersion: "version 1",
+									},
+								},
+								FloorProvider: "provider",
+							},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        ptrutil.ToPtr(1),
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "version 1",
+				FloorProvider:     "provider",
+			},
+		},
+		{
+			name: "floor_fetch_status_present_in_FloorSourceMap",
+			args: args{
+				bidResponseExt: openrtb_ext.ExtBidResponse{
+					Prebid: &openrtb_ext.ExtResponsePrebid{
+						Floors: &openrtb_ext.PriceFloorRules{
+							Skipped:     ptrutil.ToPtr(true),
+							FetchStatus: openrtb_ext.FetchError,
+							Data: &openrtb_ext.PriceFloorData{
+								ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+									{
+										ModelVersion: "version 1",
+									},
+								},
+								FloorProvider: "provider",
+							},
+							PriceFloorLocation: openrtb_ext.FetchLocation,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				},
+			},
+			floorDetails: FloorsDetails{
+				Skipfloors:        ptrutil.ToPtr(1),
+				FloorType:         HardFloor,
+				FloorSource:       ptrutil.ToPtr(2),
+				FloorModelVersion: "version 1",
+				FloorProvider:     "provider",
+				FloorFetchStatus:  ptrutil.ToPtr(2),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			floorsDetails := GetFloorsDetails(tt.args.bidResponseExt)
+			assert.Equal(t, tt.floorDetails, floorsDetails, tt.name)
+		})
+	}
+}
+
+func TestGetKGPSV(t *testing.T) {
+	type args struct {
+		bid        openrtb2.Bid
+		bidderMeta PartnerData
+		adformat   string
+		tagId      string
+		div        string
+		source     string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		kgpv  string
+		kgpsv string
+	}{
+		{
+			name: "default bid not regex",
+			args: args{
+				bidderMeta: PartnerData{
+					KGPV: "kgpv",
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpv",
+		},
+		{
+			name: "default bid regex",
+			args: args{
+				bidderMeta: PartnerData{
+					KGPV:    "kgpv",
+					IsRegex: true,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "",
+		},
+		{
+			name: "only kgpsv found in partnerData",
+			args: args{
+				bidderMeta: PartnerData{
+					MatchedSlot: "kgpsv",
+					IsRegex:     true,
+				},
+			},
+			kgpv:  "kgpsv",
+			kgpsv: "kgpsv",
+		},
+		{
+			name: "valid bid found in partnerData and regex true",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				bidderMeta: PartnerData{
+					KGPV:        "kgpv",
+					MatchedSlot: "kgpsv",
+					IsRegex:     true,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpsv",
+		},
+		{
+			name: "valid bid and regex false",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				bidderMeta: PartnerData{
+					KGPV:        "kgpv",
+					MatchedSlot: "kgpsv",
+					IsRegex:     false,
+				},
+			},
+			kgpv:  "kgpv",
+			kgpsv: "kgpv",
+		},
+		{
+			name: "KGPV and KGP not present in partnerData,regex false and adformat is video",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Video,
+			},
+			kgpv:  "",
+			kgpsv: "",
+		},
+		{
+			name: "KGPV not present in partnerData,regex false and adformat is video",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Video,
+				bidderMeta: PartnerData{
+					KGP: "_AU_@_W_x_H_",
+				},
+				tagId: "adunit",
+			},
+			kgpv:  "adunit@0x0",
+			kgpsv: "adunit@0x0",
+		},
+		{
+			name: "KGPV not present in partnerData,regex false and adformat is banner",
+			args: args{
+				bid: openrtb2.Bid{
+					Price:  1,
+					DealID: "deal",
+					W:      250,
+					H:      300,
+				},
+				adformat: Banner,
+				bidderMeta: PartnerData{
+					KGP:         "_AU_@_W_x_H_",
+					MatchedSlot: "matchedSlot",
+				},
+				tagId: "adunit",
+			},
+			kgpv:  "adunit@250x300",
+			kgpsv: "adunit@250x300",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
+			if got != tt.kgpv {
+				t.Errorf("GetKGPSV() got = %v, want %v", got, tt.kgpv)
+			}
+			if got1 != tt.kgpsv {
+				t.Errorf("GetKGPSV() got1 = %v, want %v", got1, tt.kgpsv)
+			}
 		})
 	}
 }
