@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -300,7 +299,8 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		metricEngine metrics.MetricsEngine
 	}
 	type args struct {
-		rCtx models.RequestCtx
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name   string
@@ -308,6 +308,54 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		args   args
 		want   int64
 	}{
+		{
+			name: "Highest_priority_to_request_tmax_parameter",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					TMax: 220,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 220,
+		},
+		{
+			name: "tmax_parameter_less_than_minTimeout",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					TMax: 10,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 200,
+		},
 		{
 			name: "ssTimeout_greater_than_minTimeout_and_less_than_maxTimeout",
 			args: args{
@@ -318,6 +366,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -339,6 +388,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -360,6 +410,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -381,6 +432,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -407,6 +459,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -434,6 +487,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -461,6 +515,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -480,7 +535,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 				cache:        tt.fields.cache,
 				metricEngine: tt.fields.metricEngine,
 			}
-			got := m.setTimeout(tt.args.rCtx)
+			got := m.setTimeout(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -2124,7 +2179,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						},
 					},
 				},
-				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
 			fields: fields{
 				cache:        mockCache,
@@ -2198,12 +2253,228 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				assert.NotEmpty(t, tt.want.DebugMessages)
 				return
 			}
-			fmt.Println(got.DebugMessages)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetSlotName(t *testing.T) {
+	type args struct {
+		tagId  string
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Slot_name_from_gpid",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+				},
+			},
+			want: "some-gpid",
+		},
+		{
+			name: "Slot_name_from_tagid",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+				},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "Slot_name_from_pbadslot",
+			args: args{
+				tagId: "",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "Slot_name_from_stored_request_id",
+			args: args{
+				tagId: "",
+				impExt: &models.ImpExtension{
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "stored-req-id",
+		},
+		{
+			name: "imp_ext_nil_slot_name_from_tag_id",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: nil,
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "empty_slot_name",
+			args: args{
+				tagId:  "",
+				impExt: &models.ImpExtension{},
+			},
+			want: "",
+		},
+		{
+			name: "all_level_information_is_present_slot_name_picked_by_preference",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "some-gpid",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSlotName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetAdunitName(t *testing.T) {
+	type args struct {
+		tagId  string
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "adunit_from_adserver_slot",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
+			},
+			want: "gam-unit",
+		},
+		{
+			name: "adunit_from_pbadslot",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "adunit_from_pbadslot_when_gam_is_absent",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   "freewheel",
+							AdSlot: "freewheel-unit",
+						},
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "adunit_from_TagId",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: nil,
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: &models.ImpExtension{},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "all_level_information_is_present_adunit_name_picked_by_preference",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
+			},
+			want: "gam-unit",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAdunitName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }

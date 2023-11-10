@@ -13,13 +13,22 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
+	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 const (
 	impressionIDSeparator = `_`
 )
+
+var videoRegex *regexp.Regexp
+
+func init() {
+	videoRegex, _ = regexp.Compile("<VAST\\s+")
+}
 
 var SyncerMap map[string]usersync.Syncer
 
@@ -27,7 +36,7 @@ func SetSyncerMap(s map[string]usersync.Syncer) {
 	SyncerMap = s
 }
 
-type WinningBids map[string][]OwBid
+type WinningBids map[string][]*OwBid
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	var isWinningBid bool
@@ -50,14 +59,14 @@ func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 func (w WinningBids) CheckForWinningBid(impId string, bid OwBid, preferDeals bool) {
 	wbid, ok := w[impId]
 	if !ok {
-		wbid = make([]OwBid, 1)
-		wbid[0] = bid
+		wbid = make([]*OwBid, 1)
+		wbid[0] = &bid
 		w[impId] = wbid
 		return
 	}
 
-	if isNewWinningBid(bid, wbid[0], preferDeals) {
-		wbid[0] = bid
+	if isNewWinningBid(&bid, wbid[0], preferDeals) {
+		wbid[0] = &bid
 		w[impId] = wbid
 	}
 }
@@ -65,27 +74,38 @@ func (w WinningBids) CheckForWinningBid(impId string, bid OwBid, preferDeals boo
 func (w WinningBids) AppendBid(impId string, bid OwBid) {
 	wbid, ok := w[impId]
 	if !ok {
-		wbid = make([]OwBid, 0)
+		wbid = make([]*OwBid, 0)
 	}
 
-	wbid = append(wbid, bid)
+	wbid = append(wbid, &bid)
 	w[impId] = wbid
 }
 
 // isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
-func isNewWinningBid(bid, wbid OwBid, preferDeals bool) bool {
+func isNewWinningBid(bid, wbid *OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return true
 		}
 	}
 	//both have deal or both do not have deal
-	return bid.NetEcpm > wbid.NetEcpm
+	if bid.NetEcpm > wbid.NetEcpm {
+		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		return true
+	}
+	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	return false
+}
+
+func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
+	return &nbr
 }
 
 // IsCTVAPIRequest will return true if reqAPI is from CTV EndPoint
@@ -135,21 +155,54 @@ func CreatePartnerKey(partner, key string) string {
 	return key + "_" + partner
 }
 
-// GetAdFormat gets adformat from creative(adm) of the bid
-func GetAdFormat(adm string) string {
-	adFormat := Banner
-	videoRegex, _ := regexp.Compile("<VAST\\s+")
-
-	if videoRegex.MatchString(adm) {
-		adFormat = Video
-	} else {
+// GetCreativeType gets adformat from creative(adm) of the bid
+func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
+	if bidExt.Prebid != nil && len(bidExt.Prebid.Type) > 0 {
+		return string(bidExt.Prebid.Type)
+	}
+	if bid.AdM == "" {
+		return ""
+	}
+	if videoRegex.MatchString(bid.AdM) {
+		return Video
+	}
+	if impCtx.Native != nil {
 		var admJSON map[string]interface{}
-		err := json.Unmarshal([]byte(strings.Replace(adm, "/\\/g", "", -1)), &admJSON)
+		err := json.Unmarshal([]byte(strings.Replace(bid.AdM, "/\\/g", "", -1)), &admJSON)
 		if err == nil && admJSON != nil && admJSON["native"] != nil {
-			adFormat = Native
+			return Native
 		}
 	}
-	return adFormat
+	return Banner
+}
+
+func IsDefaultBid(bid *openrtb2.Bid) bool {
+	return bid.Price == 0 && bid.DealID == "" && bid.W == 0 && bid.H == 0
+}
+
+// GetAdFormat returns adformat of the bid.
+// for default bid it refers to impression object
+// for non-default bids it uses creative(adm) of the bid
+func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
+	if bid == nil || impCtx == nil {
+		return ""
+	}
+	if IsDefaultBid(bid) {
+		if impCtx.Banner {
+			return Banner
+		}
+		if impCtx.Video != nil {
+			return Video
+		}
+		if impCtx.Native != nil {
+			return Native
+		}
+		return ""
+	}
+	if bidExt == nil {
+		return ""
+	}
+	return GetCreativeType(bid, bidExt, impCtx)
 }
 
 func GetRevenueShare(partnerConfig map[string]string) float64 {
@@ -307,4 +360,158 @@ func DecodeImpressionID(id string) (string, int) {
 	}
 
 	return id[:index], sequence
+}
+
+func GetSizeForPlatform(width, height int64, platform string) string {
+	s := fmt.Sprintf("%dx%d", width, height)
+	if platform == PLATFORM_VIDEO {
+		s = s + VideoSizeSuffix
+	}
+	return s
+}
+
+func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
+	kgpv := bidderMeta.KGPV
+	kgpsv := bidderMeta.MatchedSlot
+	isRegex := bidderMeta.IsRegex
+	// 1. nobid
+	if IsDefaultBid(&bid) {
+		//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
+		if !isRegex && kgpv != "" { // unmapped pubmatic's slot
+			kgpsv = kgpv
+		} else if !isRegex {
+			kgpv = kgpsv
+		}
+	} else if !isRegex {
+		if kgpv != "" { // unmapped pubmatic's slot
+			kgpsv = kgpv
+		} else if adformat == Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
+			// 2. valid video bid
+			// kgpv has regex, do not generate slotName again
+			// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
+			kgpsv = GenerateSlotName(0, 0, bidderMeta.KGP, tagId, div, source)
+			kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
+		} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
+			// 3. valid bid
+			// kgpv has regex, do not generate slotName again
+			// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
+			kgpsv = GenerateSlotName(bid.H, bid.W, bidderMeta.KGP, tagId, div, source)
+			kgpv = kgpsv
+		}
+	}
+	if kgpv == "" {
+		kgpv = kgpsv
+	}
+	return kgpv, kgpsv
+}
+
+// Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml
+// mysql> SELECT DISTINCT key_gen_pattern FROM wrapper_mapping_template;
+// +----------------------+
+// | key_gen_pattern      |
+// +----------------------+
+// | _AU_@_W_x_H_         |
+// | _DIV_@_W_x_H_        |
+// | _W_x_H_@_W_x_H_      |
+// | _DIV_                |
+// | _AU_@_DIV_@_W_x_H_   |
+// | _AU_@_SRC_@_VASTTAG_ |
+// +----------------------+
+// 6 rows in set (0.21 sec)
+func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
+	// func (H, W, Div), no need to validate, will always be non-nil
+	switch kgp {
+	case "_AU_": // adunitconfig
+		return tagid
+	case "_DIV_":
+		return div
+	case "_AU_@_W_x_H_":
+		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
+	case "_DIV_@_W_x_H_":
+		return fmt.Sprintf("%s@%dx%d", div, w, h)
+	case "_W_x_H_@_W_x_H_":
+		return fmt.Sprintf("%dx%d@%dx%d", w, h, w, h)
+	case "_AU_@_DIV_@_W_x_H_":
+		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
+	case "_AU_@_SRC_@_VASTTAG_":
+		return fmt.Sprintf("%s@%s@_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
+	default:
+		// TODO: check if we need to fallback to old generic flow (below)
+		// Add this cases in a map and read it from yaml file
+	}
+	return ""
+}
+
+func RoundToTwoDigit(value float64) float64 {
+	output := math.Pow(10, float64(2))
+	return float64(math.Round(value*output)) / output
+}
+
+// GetBidLevelFloorsDetails return floorvalue and floorrulevalue
+func GetBidLevelFloorsDetails(bidExt BidExt, impCtx ImpCtx,
+	currencyConversion func(from, to string, value float64) (float64, error)) (fv, frv float64) {
+	var floorCurrency string
+	frv = NotSet
+
+	if bidExt.Prebid != nil && bidExt.Prebid.Floors != nil {
+		floorCurrency = bidExt.Prebid.Floors.FloorCurrency
+		fv = RoundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
+		frv = fv
+		if bidExt.Prebid.Floors.FloorRuleValue > 0 {
+			frv = RoundToTwoDigit(bidExt.Prebid.Floors.FloorRuleValue)
+		}
+	}
+
+	// if floor values are not set from bid.ext then fall back to imp.bidfloor
+	if frv == NotSet && impCtx.BidFloor != 0 {
+		fv = RoundToTwoDigit(impCtx.BidFloor)
+		frv = fv
+		floorCurrency = impCtx.BidFloorCur
+	}
+
+	// convert the floor values in USD currency
+	if floorCurrency != "" && floorCurrency != USD {
+		value, _ := currencyConversion(floorCurrency, USD, fv)
+		fv = RoundToTwoDigit(value)
+		value, _ = currencyConversion(floorCurrency, USD, frv)
+		frv = RoundToTwoDigit(value)
+	}
+
+	if frv == NotSet {
+		frv = 0 // set it back to 0
+	}
+
+	return
+}
+
+// GetFloorsDetails returns floors details from response.ext.prebid
+func GetFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (floorDetails FloorsDetails) {
+	if responseExt.Prebid != nil && responseExt.Prebid.Floors != nil {
+		floors := responseExt.Prebid.Floors
+		if floors.Skipped != nil {
+			floorDetails.Skipfloors = ptrutil.ToPtr(0)
+			if *floors.Skipped {
+				floorDetails.Skipfloors = ptrutil.ToPtr(1)
+			}
+		}
+		if floors.Data != nil && len(floors.Data.ModelGroups) > 0 {
+			floorDetails.FloorModelVersion = floors.Data.ModelGroups[0].ModelVersion
+		}
+		if len(floors.PriceFloorLocation) > 0 {
+			if source, ok := FloorSourceMap[floors.PriceFloorLocation]; ok {
+				floorDetails.FloorSource = &source
+			}
+		}
+		if status, ok := FetchStatusMap[floors.FetchStatus]; ok {
+			floorDetails.FloorFetchStatus = &status
+		}
+		floorDetails.FloorProvider = floors.FloorProvider
+		if floors.Data != nil && len(floors.Data.FloorProvider) > 0 {
+			floorDetails.FloorProvider = floors.Data.FloorProvider
+		}
+		if floors.Enforcement != nil && floors.Enforcement.EnforcePBS != nil && *floors.Enforcement.EnforcePBS {
+			floorDetails.FloorType = HardFloor
+		}
+	}
+	return floorDetails
 }

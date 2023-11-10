@@ -46,6 +46,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}()
 
 	RecordPublisherPartnerNoCookieStats(rctx)
+	rctx.MatchedImpression = getMatchedImpressionWithParsedCookie(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -81,6 +82,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	anyDealTierSatisfyingBid := false
 	winningBids := models.WinningBids{}
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -131,7 +133,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 					bidExt.CreativeType = string(bidExt.Prebid.Type)
 				}
 				if bidExt.CreativeType == "" {
-					bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+					bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
 				}
 
 				if payload.BidResponse.Cur != "USD" {
@@ -178,6 +180,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			bidDealTierSatisfied := false
 			if bidExt.Prebid != nil {
 				bidDealTierSatisfied = bidExt.Prebid.DealTierSatisfied
+				if bidDealTierSatisfied {
+					anyDealTierSatisfyingBid = true // found at least one bid which satisfies dealTier
+				}
 			}
 
 			owbid := models.OwBid{
@@ -204,6 +209,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
+			// update NonBr codes for current bid
+			if owbid.Nbr != nil {
+				bidExt.Nbr = owbid.Nbr
+			}
+
+			oldWinBids, oldWinBidFound := winningBids[impId]
+			// if current bid is winner then update NonBr code for earlier winning bid
+			if winningBids.IsWinningBid(impId, owbid.ID) && oldWinBidFound {
+				for _, wbid := range oldWinBids {
+					winBidCtx := rctx.ImpBidCtx[impId].BidCtx[wbid.ID]
+					winBidCtx.BidExt.Nbr = wbid.Nbr
+					rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
+				}
+			}
+
 			// cache for bid details for logger and tracker
 			if impCtx.BidCtx == nil {
 				impCtx.BidCtx = make(map[string]models.BidCtx)
@@ -218,6 +238,23 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.WinningBids = winningBids
 	if len(winningBids) == 0 {
 		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
+	}
+
+	/*
+		At this point of time,
+		1. For price-based auction (request with supportDeals = false),
+				all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
+		2. For request with supportDeals = true :
+			2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
+					then NonBR code for them will be LossLostToHigherBid which is expected.
+			2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
+				expectation:
+					all rejected non-deal bids should have NonBR code as LossLostToDealBid
+					all rejected deal-bids should have NonBR code as LossLostToHigherBid
+				addLostToDealBidNonBRCode function will make sure that above expectation are met.
+	*/
+	if anyDealTierSatisfyingBid {
+		addLostToDealBidNonBRCode(&rctx)
 	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
@@ -236,7 +273,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.ResponseExt = responseExt
+	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, &responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
@@ -257,20 +295,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.LogInfoFlag == 1 {
 		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
-			Tracker: tracker.GetTrackerInfo(rctx),
+			Tracker: tracker.GetTrackerInfo(rctx, responseExt),
 		}
 	}
 
+	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
 	if rctx.ReturnAllBidStatus {
-		// prepare seat-non-bids and add them in the response-ext
 		rctx.SeatNonBids = prepareSeatNonBids(rctx)
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
-
-	var err error
-	rctx.ResponseExt, err = json.Marshal(responseExt)
-	if err != nil {
-		result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
 	}
 
 	if rctx.Debug {
@@ -291,8 +323,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
+		var responseExtjson json.RawMessage
+		responseExtjson, err = json.Marshal(responseExt)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
+		}
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
-		ap.BidResponse.Ext = rctx.ResponseExt
+		ap.BidResponse.Ext = responseExtjson
 
 		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err

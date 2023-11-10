@@ -1,4 +1,4 @@
-package pubmatic
+package mhttp
 
 // mhttp - Multi Http Calls
 // mhttp like multi curl provides a wrapper interface over net/http client to
@@ -72,12 +72,20 @@ func Init(maxClients int32, maxConnections, maxCalls, respTimeout int) {
 	}
 
 	timeout := time.Duration(time.Duration(respTimeout) * time.Millisecond)
-	for i := int32(0); i < maxClients; i++ {
+	for i := int32(0); i < maxHttpClients; i++ {
 		//tr := &http.Transport{MaxIdleConnsPerHost: maxConnections, Dial: dialTimeout, ResponseHeaderTimeout: timeout}
-		tr := &http.Transport{DisableKeepAlives: false, MaxIdleConnsPerHost: maxConnections}
+		tr := &http.Transport{DisableKeepAlives: false, MaxIdleConnsPerHost: maxHttpConnections}
 		clients[i] = &http.Client{Transport: tr, Timeout: timeout}
 	}
 	nextClientIndex = -1
+}
+
+type HttpCallInterface interface {
+	AddHeader(name, value string)
+	AddCookie(name, value string)
+	submit(wg *sync.WaitGroup)
+	getError() error
+	GetResponseBody() string
 }
 
 // Wrapper to hold both http request and response data for a single http call
@@ -122,6 +130,11 @@ func (hc *HttpCall) GetResponseBody() string {
 	return hc.respBody
 }
 
+// API call to get error
+func (hc *HttpCall) getError() error {
+	return hc.err
+}
+
 // API call to get the reponse body in string format
 func (hc *HttpCall) GetResponseHeader(hname string) string {
 	return hc.response.Header.Get(hname)
@@ -132,9 +145,14 @@ func (hc *HttpCall) GetResponseHeaders() *http.Header {
 	return &hc.response.Header
 }
 
+type MultiHttpContextInterface interface {
+	Execute() (vrc int, erc int)
+	AddHttpCall(hc HttpCallInterface)
+}
+
 // MultiHttpContext is required to hold the information about all http calls to run
 type MultiHttpContext struct {
-	hclist  [MAX_HTTP_CALLS]*HttpCall
+	hclist  [MAX_HTTP_CALLS]HttpCallInterface
 	hccount int
 	wg      sync.WaitGroup
 }
@@ -147,7 +165,7 @@ func NewMultiHttpContext() *MultiHttpContext {
 }
 
 // Add a http call to multi-http-context
-func (mhc *MultiHttpContext) AddHttpCall(hc *HttpCall) {
+func (mhc *MultiHttpContext) AddHttpCall(hc HttpCallInterface) {
 	if mhc.hccount < maxHttpCalls {
 		mhc.hclist[mhc.hccount] = hc
 		mhc.hccount += 1
@@ -172,7 +190,7 @@ func (mhc *MultiHttpContext) Execute() (vrc int, erc int) {
 	mhc.wg.Wait() //Wait for all go routines to finish
 
 	for i := 0; i < mhc.hccount; i++ { // validate each response
-		if mhc.hclist[i].err == nil && mhc.hclist[i].respBody != "" {
+		if mhc.hclist[i].getError() == nil && mhc.hclist[i].GetResponseBody() != "" {
 			vrc += 1
 		} else {
 			erc += 1
@@ -182,7 +200,7 @@ func (mhc *MultiHttpContext) Execute() (vrc int, erc int) {
 }
 
 // Get all the http calls from multi-http-context
-func (mhc *MultiHttpContext) GetRequestsFromMultiHttpContext() [MAX_HTTP_CALLS]*HttpCall {
+func (mhc *MultiHttpContext) GetRequestsFromMultiHttpContext() [MAX_HTTP_CALLS]HttpCallInterface {
 	return mhc.hclist
 
 }

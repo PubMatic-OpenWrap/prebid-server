@@ -21,13 +21,13 @@ import (
 )
 
 const (
-	OpenWrapAuction  = "/pbs/openrtb2/auction"
-	OpenWrapV25      = "/openrtb/2.5"
-	OpenWrapV25Video = "/openrtb/2.5/video"
-	OpenWrapAmp      = "/openrtb/amp"
-	OpenWrapCTVOrtb  = "/video/openrtb"
-	OpenWrapCTVVast  = "/video/vast"
-	OpenWrapCTVJson  = "/video/json"
+	OpenWrapAuction      = "/pbs/openrtb2/auction"
+	OpenWrapV25          = "/openrtb/2.5"
+	OpenWrapV25Video     = "/openrtb/2.5/video"
+	OpenWrapOpenRTBVideo = "/video/openrtb"
+	OpenWrapVAST         = "/video/vast"
+	OpenWrapJSON         = "/video/json"
+	OpenWrapAmp          = "/amp"
 )
 
 func (m OpenWrap) handleEntrypointHook(
@@ -41,6 +41,7 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	var pubid int
 	var endpoint string
 	var err error
 	var requestExtWrapper models.RequestExtWrapper
@@ -60,9 +61,9 @@ func (m OpenWrap) handleEntrypointHook(
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 		endpoint = models.EndpointVideo
 	case OpenWrapAmp:
-		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
+		requestExtWrapper, pubid, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 		endpoint = models.EndpointAMP
-	case OpenWrapCTVOrtb, OpenWrapCTVVast, OpenWrapCTVJson:
+	case OpenWrapOpenRTBVideo, OpenWrapVAST, OpenWrapJSON:
 		requestExtWrapper, err = ctv.ConvertRequestAndGetRequestExtWrapper(payload, &result)
 		endpoint = getEndpoint(payload.Request.URL.Path)
 	default:
@@ -116,8 +117,17 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
+		DCName:                    m.cfg.Server.DCName,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		TMax:                      m.cfg.Timeout.MaxTimeout,
+		CurrencyConversion: func(from, to string, value float64) (float64, error) {
+			rate, err := m.currencyConversion.GetRate(from, to)
+			if err == nil {
+				return value * rate, nil
+			}
+			return 0, err
+		},
 	}
 
 	// SSAuction will be always 1 for CTV request
@@ -134,6 +144,11 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if rCtx.LoggerImpressionID == "" {
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
+	}
+
+	// temp, for AMP, etc
+	if pubid != 0 {
+		rCtx.PubID = pubid
 	}
 
 	result.ModuleContext = make(hookstage.ModuleContext)
@@ -153,11 +168,11 @@ func getEndpoint(url string) string {
 	var endpoint string
 
 	switch url {
-	case OpenWrapCTVOrtb:
+	case OpenWrapOpenRTBVideo:
 		endpoint = models.EndpointORTB
-	case OpenWrapCTVVast:
+	case OpenWrapVAST:
 		endpoint = models.EndpointVAST
-	case OpenWrapCTVJson:
+	case OpenWrapJSON:
 		endpoint = models.EndpointJson
 	}
 

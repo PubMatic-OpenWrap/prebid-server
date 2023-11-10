@@ -7,174 +7,21 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 )
+
+// pubmatic's KGP details per impression
+type pubmaticMarketplaceMeta struct {
+	PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
+}
 
 func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
-	// pubmatic's KGP details per impression
-	type pubmaticMarketplaceMeta struct {
-		PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
-	}
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
-	for _, seatBid := range bidResponse.SeatBid {
-		for _, bid := range seatBid.Bid {
-			impId := bid.ImpID
-			if rctx.IsCTVRequest {
-				impId, _ = models.GetImpressionID(bid.ImpID)
-			}
-
-			bidId := bid.ID
-			tracker := models.Tracker{
-				PubID:     rctx.PubID,
-				ProfileID: fmt.Sprintf("%d", rctx.ProfileID),
-				VersionID: fmt.Sprintf("%d", rctx.DisplayID),
-				PageURL:   rctx.PageURL,
-				Timestamp: rctx.StartTime,
-				IID:       rctx.LoggerImpressionID,
-				Platform:  int(rctx.DevicePlatform),
-				SSAI:      rctx.SSAI,
-				ImpID:     impId,
-			}
-
-			tagid := ""
-			netECPM := float64(0)
-			matchedSlot := ""
-			price := bid.Price
-			isRewardInventory := 0
-			partnerID := seatBid.Seat
-			bidType := "banner"
-			var dspId int
-
-			var isRegex bool
-			var kgp, kgpv, kgpsv string
-
-			if impCtx, ok := rctx.ImpBidCtx[impId]; ok {
-				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
-					matchedSlot = bidderMeta.MatchedSlot
-					partnerID = bidderMeta.PrebidBidderCode
-				}
-
-				if bidCtx, ok := impCtx.BidCtx[bidId]; ok {
-					if bidResponse.Cur != "USD" {
-						price = bidCtx.OriginalBidCPMUSD
-					}
-					netECPM = bidCtx.NetECPM
-
-					// TODO do most calculation in wt
-					// marketplace/alternatebiddercodes feature
-					bidExt := bidCtx.BidExt
-					if bidExt.Prebid != nil && bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
-						partnerID = bidExt.Prebid.Meta.AdapterCode
-
-						if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
-							if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
-								matchedSlot = bidderMeta.MatchedSlot
-							}
-						}
-					}
-					bidType = bidCtx.CreativeType
-					dspId = bidCtx.DspId
-				}
-
-				_ = matchedSlot
-				// --------------------------------------------------------------------------------------------------
-				// Move this code to a function. Confirm the kgp, kgpv, kgpsv relation in wt and wl.
-				// --------------------------------------------------------------------------------------------------
-				// var kgp, kgpv, kgpsv string
-
-				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
-					partnerID = bidderMeta.PrebidBidderCode
-					kgp = bidderMeta.KGP
-					kgpv = bidderMeta.KGPV
-					kgpsv = bidderMeta.MatchedSlot
-					isRegex = bidderMeta.IsRegex
-				}
-
-				// 1. nobid
-				if bid.Price == 0 && bid.H == 0 && bid.W == 0 {
-					//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
-					if !isRegex && kgpv != "" { // unmapped pubmatic's slot
-						kgpsv = kgpv
-					} else if !isRegex {
-						kgpv = kgpsv
-					}
-				} else if !isRegex {
-					if kgpv != "" { // unmapped pubmatic's slot
-						kgpsv = kgpv
-					} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
-						// 2. valid bid
-						// kgpv has regex, do not generate slotName again
-						// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
-						kgpsv := bidderparams.GenerateSlotName(bid.H, bid.W, kgp, impCtx.TagID, impCtx.Div, rctx.Source)
-						kgpv = kgpsv
-					}
-				}
-
-				if kgpv == "" {
-					kgpv = kgpsv
-				}
-				// --------------------------------------------------------------------------------------------------
-
-				if impCtx.AdpodConfig != nil {
-					tracker.AdPodSlot = models.AdPodEnabled
-				}
-
-				tagid = impCtx.TagID
-				tracker.Secure = impCtx.Secure
-				isRewardInventory = getRewardedInventoryFlag(rctx.ImpBidCtx[impId].IsRewardInventory)
-			}
-
-			if seatBid.Seat == "pubmatic" {
-				pmMkt[impId] = pubmaticMarketplaceMeta{
-					PubmaticKGP:   kgp,
-					PubmaticKGPV:  kgpv,
-					PubmaticKGPSV: kgpsv,
-				}
-			}
-
-			tracker.Adunit = tagid
-			tracker.SlotID = fmt.Sprintf("%s_%s", impId, tagid)
-			tracker.RewardedInventory = isRewardInventory
-			tracker.PartnerInfo = models.Partner{
-				PartnerID:  partnerID,
-				BidderCode: seatBid.Seat,
-				BidID:      bidId,
-				OrigBidID:  bid.ID,
-				KGPV:       kgpv,
-				NetECPM:    float64(netECPM),
-				GrossECPM:  models.GetGrossEcpm(price),
-			}
-
-			if len(bid.ADomain) != 0 {
-				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
-					tracker.Advertiser = domain
-				}
-			}
-
-			var finalTrackerURL string
-			trackerURL := ConstructTrackerURL(rctx, tracker)
-			trackURL, err := url.Parse(trackerURL)
-			if err == nil {
-				trackURL.Scheme = models.HTTPSProtocol
-				finalTrackerURL = trackURL.String()
-			}
-
-			trackers[bidId] = models.OWTracker{
-				Tracker:       tracker,
-				TrackerURL:    finalTrackerURL,
-				Price:         price,
-				PriceModel:    models.VideoPricingModelCPM,
-				PriceCurrency: bidResponse.Cur,
-				ErrorURL:      ConstructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
-				BidType:       bidType,
-				DspId:         dspId,
-			}
-		}
-	}
+	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt)
 
 	// overwrite marketplace bid details with that of parent bidder
 	for bidID, tracker := range trackers {
@@ -182,11 +29,12 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 			if v, ok := pmMkt[tracker.Tracker.ImpID]; ok {
 				tracker.Tracker.PartnerInfo.PartnerID = "pubmatic"
 				tracker.Tracker.PartnerInfo.KGPV = v.PubmaticKGPV
+				tracker.Tracker.LoggerData.KGPSV = v.PubmaticKGPSV
 			}
 		}
 
 		var finalTrackerURL string
-		trackerURL := ConstructTrackerURL(rctx, tracker.Tracker)
+		trackerURL := constructTrackerURL(rctx, tracker.Tracker)
 		trackURL, err := url.Parse(trackerURL)
 		if err == nil {
 			trackURL.Scheme = models.HTTPSProtocol
@@ -200,15 +48,171 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 	return trackers
 }
 
-func getRewardedInventoryFlag(reward *int8) int {
-	if reward != nil {
-		return int(*reward)
+func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
+	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
+	for _, seatBid := range bidResponse.SeatBid {
+		for _, bid := range seatBid.Bid {
+			impId := bid.ImpID
+			if rctx.IsCTVRequest {
+				impId, _ = models.GetImpressionID(bid.ImpID)
+			}
+
+			tracker := models.Tracker{
+				PubID:             rctx.PubID,
+				ProfileID:         fmt.Sprintf("%d", rctx.ProfileID),
+				VersionID:         fmt.Sprintf("%d", rctx.DisplayID),
+				PageURL:           rctx.PageURL,
+				Timestamp:         rctx.StartTime,
+				IID:               rctx.LoggerImpressionID,
+				Platform:          int(rctx.DevicePlatform),
+				SSAI:              rctx.SSAI,
+				ImpID:             impId,
+				Origin:            rctx.Origin,
+				TestGroup:         rctx.ABTestConfigApplied,
+				FloorModelVersion: floorsDetails.FloorModelVersion,
+				FloorType:         floorsDetails.FloorType,
+				FloorSkippedFlag:  floorsDetails.Skipfloors,
+				FloorSource:       floorsDetails.FloorSource,
+				LoggerData: models.LoggerData{
+					FloorFetchStatus: floorsDetails.FloorFetchStatus,
+					FloorProvider:    floorsDetails.FloorProvider,
+				},
+			}
+			var (
+				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
+				netECPM, floorValue, floorRuleValue            = float64(0), float64(0), float64(0)
+				price, partnerID                               = bid.Price, seatBid.Seat
+				isRewardInventory, adduration                  = 0, 0
+				dspId                                          int
+			)
+
+			if impCtx, ok := rctx.ImpBidCtx[impId]; ok {
+				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
+					matchedSlot = bidderMeta.MatchedSlot
+					partnerID = bidderMeta.PrebidBidderCode
+				}
+
+				bidCtx, ok := impCtx.BidCtx[bid.ID]
+				if ok {
+					if bidResponse.Cur != "USD" {
+						price = bidCtx.OriginalBidCPMUSD
+					}
+					netECPM = bidCtx.NetECPM
+
+					// TODO do most calculation in wt
+					// marketplace/alternatebiddercodes feature
+					bidExt := bidCtx.BidExt
+					if bidExt.Prebid != nil {
+						if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
+							adduration = bidExt.Prebid.Video.Duration
+						}
+						if len(bidExt.Prebid.BidId) > 0 {
+							bidId = bidExt.Prebid.BidId
+						}
+						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
+							partnerID = bidExt.Prebid.Meta.AdapterCode
+
+							if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
+								if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
+									matchedSlot = bidderMeta.MatchedSlot
+								}
+							}
+						}
+					}
+					dspId = bidCtx.DspId
+					adformat = models.GetAdFormat(&bid, &bidExt, &impCtx)
+					floorValue, floorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rctx.CurrencyConversion)
+				}
+
+				_ = matchedSlot
+				// --------------------------------------------------------------------------------------------------
+				// Move this code to a function. Confirm the kgp, kgpv, kgpsv relation in wt and wl.
+				// --------------------------------------------------------------------------------------------------
+				// var kgp, kgpv, kgpsv string
+
+				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
+					partnerID = bidderMeta.PrebidBidderCode
+					kgp = bidderMeta.KGP
+					kgpv, kgpsv = models.GetKGPSV(bid, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
+				}
+				// --------------------------------------------------------------------------------------------------
+
+				tracker.SlotID = impCtx.SlotName
+				tracker.LoggerData.KGPSV = kgpsv
+				tracker.Secure = impCtx.Secure
+				tracker.Adunit = impCtx.AdUnitName
+				isRewardInventory = 0
+				if impCtx.IsRewardInventory != nil {
+					isRewardInventory = int(*impCtx.IsRewardInventory)
+				}
+
+				if impCtx.AdpodConfig != nil {
+					tracker.AdPodSlot = models.AdPodEnabled
+				}
+			}
+
+			if seatBid.Seat == "pubmatic" {
+				pmMkt[impId] = pubmaticMarketplaceMeta{
+					PubmaticKGP:   kgp,
+					PubmaticKGPV:  kgpv,
+					PubmaticKGPSV: kgpsv,
+				}
+			}
+
+			tracker.RewardedInventory = isRewardInventory
+			tracker.PartnerInfo = models.Partner{
+				PartnerID:      partnerID,
+				BidderCode:     seatBid.Seat,
+				BidID:          utils.GetOriginalBidId(bid.ID),
+				OrigBidID:      utils.GetOriginalBidId(bid.ID),
+				KGPV:           kgpv,
+				NetECPM:        float64(netECPM),
+				GrossECPM:      models.GetGrossEcpm(price),
+				AdSize:         models.GetSizeForPlatform(bid.W, bid.H, rctx.Platform),
+				AdDuration:     adduration,
+				Adformat:       adformat,
+				ServerSide:     1,
+				FloorValue:     floorValue,
+				FloorRuleValue: floorRuleValue,
+				DealID:         "-1",
+			}
+			if len(bidId) > 0 {
+				tracker.PartnerInfo.BidID = bidId
+			}
+			if len(bid.ADomain) != 0 {
+				if domain, err := models.ExtractDomain(bid.ADomain[0]); err == nil {
+					tracker.PartnerInfo.Advertiser = domain
+				}
+			}
+			if len(bid.DealID) > 0 {
+				tracker.PartnerInfo.DealID = bid.DealID
+			}
+
+			var finalTrackerURL string
+			trackerURL := constructTrackerURL(rctx, tracker)
+			trackURL, err := url.Parse(trackerURL)
+			if err == nil {
+				trackURL.Scheme = models.HTTPSProtocol
+				finalTrackerURL = trackURL.String()
+			}
+
+			trackers[bid.ID] = models.OWTracker{
+				Tracker:       tracker,
+				TrackerURL:    finalTrackerURL,
+				Price:         price,
+				PriceModel:    models.VideoPricingModelCPM,
+				PriceCurrency: bidResponse.Cur,
+				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
+				BidType:       adformat,
+				DspId:         dspId,
+			}
+		}
 	}
-	return 0
+	return trackers
 }
 
 // ConstructTrackerURL constructing tracker url for impression
-func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string {
+func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string {
 	trackerURL, err := url.Parse(rctx.TrackerEndpoint)
 	if err != nil {
 		return ""
@@ -226,6 +230,10 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.RewardedInventory == 1 {
 		v.Set(models.TRKRewardedInventory, strconv.Itoa(tracker.RewardedInventory))
 	}
+	v.Set(models.TRKPlatform, strconv.Itoa(tracker.Platform))
+	v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	v.Set(models.TRKPubDomain, tracker.Origin)
+	v.Set(models.TRKAdPodExist, strconv.Itoa(tracker.AdPodSlot))
 	partner := tracker.PartnerInfo
 	v.Set(models.TRKPartnerID, partner.PartnerID)
 	v.Set(models.TRKBidderCode, partner.BidderCode)
@@ -237,6 +245,32 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKSSAI, tracker.SSAI)
 	}
 	v.Set(models.TRKOrigBidID, partner.OrigBidID)
+	v.Set(models.TRKAdSize, partner.AdSize)
+	if partner.AdDuration > 0 {
+		v.Set(models.TRKAdDuration, strconv.Itoa(partner.AdDuration))
+	}
+	v.Set(models.TRKAdformat, partner.Adformat)
+	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
+	v.Set(models.TRKAdvertiser, partner.Advertiser)
+
+	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
+	if tracker.FloorSkippedFlag != nil {
+		v.Set(models.TRKFloorSkippedFlag, strconv.Itoa(*tracker.FloorSkippedFlag))
+	}
+	if len(tracker.FloorModelVersion) > 0 {
+		v.Set(models.TRKFloorModelVersion, tracker.FloorModelVersion)
+	}
+	if tracker.FloorSource != nil {
+		v.Set(models.TRKFloorSource, strconv.Itoa(*tracker.FloorSource))
+	}
+	if partner.FloorValue > 0 {
+		v.Set(models.TRKFloorValue, fmt.Sprint(partner.FloorValue))
+	}
+	if partner.FloorRuleValue > 0 {
+		v.Set(models.TRKFloorRuleValue, fmt.Sprint(partner.FloorRuleValue))
+	}
+	v.Set(models.TRKServerLogger, "1")
+	v.Set(models.TRKDealID, partner.DealID)
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform
@@ -254,7 +288,7 @@ func ConstructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 }
 
 // ConstructVideoErrorURL constructing video error url for video impressions
-func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid openrtb2.Bid, tracker models.Tracker) string {
+func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid openrtb2.Bid, tracker models.Tracker) string {
 	if len(errorURLString) == 0 {
 		return ""
 	}
@@ -265,7 +299,7 @@ func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	}
 
 	errorURL.Scheme = models.HTTPSProtocol
-	tracker.SURL = rctx.OriginCookie
+	tracker.SURL = url.QueryEscape(rctx.OriginCookie)
 
 	//operId Note: It should be first parameter in url otherwise it will get failed at analytics side.
 	if len(errorURL.RawQuery) > 0 {
@@ -284,7 +318,7 @@ func ConstructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRAdunit, tracker.Adunit)                              //au
 	v.Set(models.ERRSUrl, tracker.SURL)                                  // sURL
 	v.Set(models.ERRPlatform, strconv.Itoa(tracker.Platform))            // pfi
-	v.Set(models.ERRAdvertiser, tracker.Advertiser)                      // adv
+	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
 
 	if tracker.SSAI != "" {
 		v.Set(models.ERRSSAI, tracker.SSAI) // ssai for video/json endpoint

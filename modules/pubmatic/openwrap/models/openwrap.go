@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -57,8 +58,8 @@ type RequestCtx struct {
 	// imp-bid ctx to avoid computing same thing for bidder params, logger and tracker
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
-	NewReqExt          json.RawMessage
-	ResponseExt        json.RawMessage
+	NewReqExt          *RequestExt
+	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
@@ -80,12 +81,18 @@ type RequestCtx struct {
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 	Errors                 []error
+
+	DCName             string
+	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion func(from string, to string, value float64) (float64, error)
+	MatchedImpression  map[string]int
 }
 
 type OwBid struct {
 	ID                   string
 	NetEcpm              float64
 	BidDealTierSatisfied bool
+	Nbr                  *openrtb3.NonBidStatusCode
 }
 
 func (r RequestCtx) GetVersionLevelKey(key string) string {
@@ -100,10 +107,15 @@ type ImpCtx struct {
 	ImpID             string
 	TagID             string
 	Div               string
+	SlotName          string
+	AdUnitName        string
 	Secure            int
+	BidFloor          float64
+	BidFloorCur       string
 	IsRewardInventory *int8
 	Banner            bool
 	Video             *openrtb2.Video
+	Native            *openrtb2.Native
 	IncomingSlots     []string
 	Type              string // banner, video, native, etc
 	Bidders           map[string]PartnerData
@@ -115,6 +127,10 @@ type ImpCtx struct {
 	AdpodConfig       *AdPod
 	ImpAdPodCfg       []*ImpAdPodConfig
 	BidCacheIdMap     map[string]string
+
+	//temp
+	BidderError    string
+	IsAdPodRequest bool
 }
 
 type PartnerData struct {
@@ -125,6 +141,8 @@ type PartnerData struct {
 	KGPV             string
 	IsRegex          bool
 	Params           json.RawMessage
+	VASTTagFlag      bool
+	VASTTagFlags     map[string]bool
 }
 
 type BidCtx struct {

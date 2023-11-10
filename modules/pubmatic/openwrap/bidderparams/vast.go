@@ -13,33 +13,25 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
-func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod) (string, json.RawMessage, error) {
+func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod) (string, json.RawMessage, []string, error) {
 	if imp.Video == nil {
-		return "", nil, nil
+		return "", nil, nil, nil
 	}
 
 	slots, slotMap, _, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 	if len(slots) == 0 {
-		return "", nil, nil
+		return "", nil, nil, nil
 	}
 
 	pubVASTTags := cache.GetPublisherVASTTagsFromCache(rctx.PubID)
 	if len(pubVASTTags) == 0 {
-		return "", nil, nil
+		return "", nil, nil, nil
 	}
 
 	matchedSlotKeys, err := getVASTBidderSlotKeys(&imp, slots[0], slotMap, pubVASTTags, adpodExt)
 	if len(matchedSlotKeys) == 0 {
-		return "", nil, err
+		return "", nil, nil, err
 	}
-
-	// NYC_TODO:
-	//setting flagmap
-	// bidderWrapper := &BidderWrapper{VASTagFlags: make(map[string]bool)}
-	// for _, key := range matchedSlotKeys {
-	// 	bidderWrapper.VASTagFlags[key] = false
-	// }
-	// impWrapper.Bidder[bidderCode] = bidderWrapper
 
 	bidParams := adapters.PrepareVASTBidderParamJSON(&bidRequest, &imp, pubVASTTags, matchedSlotKeys, slotMap, adpodExt)
 
@@ -50,7 +42,7 @@ func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidReque
 			//slotMap:map[/15671365/DMDemo1@com.pubmatic.openbid.app@101:map[param1:6005 param2:test param3:example]]
 			//Ext:{"tags":[{"tagid":"101","url":"sample_url_1","dur":15,"price":"15","params":{"param1":"6005","param2":"test","param3":"example"}}]}
 	*/
-	return slots[0], bidParams, nil
+	return slots[0], bidParams, matchedSlotKeys, nil
 }
 
 // getVASTBidderSlotKeys returns all slot keys which are matching to vast tag slot key

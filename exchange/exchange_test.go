@@ -2777,12 +2777,13 @@ func TestCategoryMapping(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          40.0000,
-								Cat:            cats4,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 40,
-								OriginalBidCur: "USD",
+								Price:             40.0000,
+								Cat:               cats4,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    40,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 40,
 
 								ID:   "bid_id4",
 								Type: openrtb_ext.BidTypeVideo,
@@ -2927,12 +2928,13 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          30.0000,
-								Cat:            cats3,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 30,
-								OriginalBidCur: "USD",
+								Price:             30.0000,
+								Cat:               cats3,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    30,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 30,
 
 								ID:   "bid_id3",
 								Type: openrtb_ext.BidTypeVideo,
@@ -3396,12 +3398,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3435,12 +3438,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3474,12 +3478,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3515,12 +3520,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,

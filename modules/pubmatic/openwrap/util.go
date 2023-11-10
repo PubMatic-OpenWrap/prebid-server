@@ -49,8 +49,9 @@ func init() {
 // GetDevicePlatform determines the device from which request has been generated
 func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
-	if userAgentString == "" && bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
 		userAgentString = bidRequest.Device.UA
+		rCtx.UA = userAgentString
 	}
 
 	switch rCtx.Platform {
@@ -86,18 +87,18 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			deviceType = bidRequest.Device.DeviceType
 		}
 		isCtv := isCTV(userAgentString)
-		regexStatus := models.Failure
+		// regexStatus := models.Failure
 
 		if deviceType != 0 {
 			if deviceType == adcom1.DeviceTV || deviceType == adcom1.DeviceConnected || deviceType == adcom1.DeviceSetTopBox {
 				if isCtv {
-					regexStatus = models.Success
+					// regexStatus = models.Success
 				}
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 				return models.DevicePlatformConnectedTv
 			}
 			if isCtv {
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
+				// rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 			}
 		}
 
@@ -212,7 +213,7 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 }
 
 // getHostName Generates server name from node and pod name in K8S  environment
-func getHostName() string {
+func GetHostName() string {
 	var (
 		nodeName string
 		podName  string
@@ -289,4 +290,15 @@ func getPubmaticErrorCode(standardNBR int) int {
 
 func isCTV(userAgent string) bool {
 	return ctvRegex.Match([]byte(userAgent))
+}
+
+func getPlatformFromRequest(request *openrtb2.BidRequest) string {
+	var platform string
+	if request.Site != nil {
+		return models.PLATFORM_DISPLAY
+	}
+	if request.App != nil {
+		return models.PLATFORM_APP
+	}
+	return platform
 }
