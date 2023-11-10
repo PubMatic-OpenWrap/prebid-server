@@ -26,7 +26,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
+	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+		Reject: true,
+	}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")

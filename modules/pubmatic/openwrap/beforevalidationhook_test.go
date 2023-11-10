@@ -1671,7 +1671,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject:        false,
+				Reject:        true,
 				DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
 			},
 			wantErr: false,

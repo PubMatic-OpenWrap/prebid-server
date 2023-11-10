@@ -275,7 +275,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	if rctx.Endpoint == models.EndpointWebS2S {
-		rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 			var err error
