@@ -696,13 +696,17 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		return
 	}
 
+	impBidCtx := rCtx.ImpBidCtx[imp.ID]
 	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
 		imp.BidFloor = *adUnitCfg.BidFloor
+		impBidCtx.BidFloor = imp.BidFloor
 	}
 
 	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
 		imp.BidFloorCur = *adUnitCfg.BidFloorCur
+		impBidCtx.BidFloorCur = imp.BidFloorCur
 	}
+	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
 	if adUnitCfg.Exp != nil {
 		imp.Exp = int64(*adUnitCfg.Exp)
