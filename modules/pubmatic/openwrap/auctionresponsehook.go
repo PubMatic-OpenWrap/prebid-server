@@ -49,9 +49,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
-	RecordPublisherPartnerNoCookieStats(rctx)
-	rctx.MatchedImpression = getMatchedImpressionWithParsedCookie(rctx)
-
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
 		Activities: []hookanalytics.Activity{
@@ -251,7 +248,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()
-	if matchedImpression := getMatchedImpression(rctx); matchedImpression != nil {
+	rctx.MatchedImpression = getMatchedImpression(rctx)
+	matchedImpression, err := json.Marshal(rctx.MatchedImpression)
+	if err == nil {
 		responseExt.OwMatchedImpression = matchedImpression
 	}
 
