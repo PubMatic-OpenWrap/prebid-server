@@ -197,6 +197,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 						},
 					},
@@ -280,6 +282,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -290,6 +294,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -301,6 +307,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -385,6 +393,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -396,6 +406,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -408,6 +420,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -467,6 +481,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 						},
 					},
@@ -550,6 +566,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -561,6 +579,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -572,6 +592,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -656,6 +678,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -667,6 +691,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -678,6 +704,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -762,6 +790,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -773,6 +803,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -784,6 +816,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 									},
 									NetECPM: 10,
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -868,6 +902,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 									},
 									NetECPM: 20,
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -879,6 +915,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -890,6 +928,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},
@@ -974,6 +1014,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 									},
 									NetECPM: 20,
 								},
+								EG: 20,
+								EN: 20,
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
@@ -986,6 +1028,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 									NetECPM: 5,
 									Nbr:     GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
 								},
+								EG: 5,
+								EN: 5,
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
@@ -998,6 +1042,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 									Nbr:     GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
 									NetECPM: 10,
 								},
+								EG: 10,
+								EN: 10,
 							},
 						},
 					},

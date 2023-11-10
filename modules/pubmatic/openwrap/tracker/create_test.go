@@ -51,9 +51,10 @@ var rctx = models.RequestCtx{
 			BidFloorCur: "EUR",
 			BidCtx: map[string]models.BidCtx{
 				"bidID-1": {
+					EG: 8.7,
+					EN: 8.7,
 					BidExt: models.BidExt{
 						OriginalBidCPMUSD: 0,
-						NetECPM:           8.7,
 						ExtBid: openrtb_ext.ExtBid{
 							Prebid: &openrtb_ext.ExtBidPrebid{
 								BidId: "bidID-1",

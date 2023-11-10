@@ -331,7 +331,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				bidIDForLookup = utils.SetUniqueBidID(bid.ID, bidExt.Prebid.BidId)
 			}
 
-			if bidCtx, ok := impCtx.BidCtx[bidIDForLookup]; ok {
+			bidCtx, ok := impCtx.BidCtx[bidIDForLookup]
+			if ok {
 				// override bidExt for valid-bids + default-bids + dropped-bids
 				// since we have already prepared it under auction-response-hook
 				bidExt = bidCtx.BidExt
@@ -354,8 +355,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			price := bid.Price
-			if ao.Response.Cur != models.USD && bidExt.OriginalBidCPMUSD != 0 {
-				price = bidExt.OriginalBidCPMUSD
+			if ao.Response.Cur != models.USD {
+				if bidExt.OriginalBidCPMUSD != 0 {
+					price = bidExt.OriginalBidCPMUSD // non-bids
+				} else if bidCtx.EG != 0 {
+					price = bidCtx.EG // valid-bids + dropped-bids+ default-bids
+				}
 			}
 
 			if seat == models.BidderPubMatic {

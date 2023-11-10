@@ -3122,6 +3122,8 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 										OriginalBidCPM: 125.16829,
 										OriginalBidCur: "INR",
 									},
+									EG: 125.16829,
+									EN: 125.16829,
 								},
 							},
 						},
