@@ -1469,11 +1469,15 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 		rCtx models.RequestCtx
 		imp  *openrtb2.Imp
 	}
+	type want struct {
+		rCtx models.RequestCtx
+		imp  *openrtb2.Imp
+	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   *openrtb2.Imp
+		want   want
 	}{
 		{
 			name: "imp.banner_is_nil",
@@ -1482,8 +1486,10 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: nil,
 				},
 			},
-			want: &openrtb2.Imp{
-				Banner: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					Banner: nil,
+				},
 			},
 		},
 		{
@@ -1503,9 +1509,20 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: &openrtb2.Banner{},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: &openrtb2.Banner{},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: nil,
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1530,11 +1547,27 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner:      &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:          "testImp",
-				Banner:      &openrtb2.Banner{},
-				BidFloor:    2.0,
-				BidFloorCur: "USD",
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Banner:      &openrtb2.Banner{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1556,10 +1589,23 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: &openrtb2.Banner{},
-				Exp:    10,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: &openrtb2.Banner{},
+					Exp:    10,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Exp: ptrutil.ToPtr(10),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1584,11 +1630,24 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](200),
-					H: ptrutil.ToPtr[int64](300),
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Banner: nil,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1616,9 +1675,24 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: nil,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Banner: &adunitconfig.Banner{
+										Enabled: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -1630,7 +1704,8 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 				metricEngine: tt.fields.metricEngine,
 			}
 			m.applyBannerAdUnitConfig(tt.args.rCtx, tt.args.imp)
-			assert.Equal(t, tt.args.imp, tt.want, "Imp banner is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp banner is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.rCtx, tt.want.rCtx, "rctx is not upadted as expected from adunit config")
 		})
 	}
 }
