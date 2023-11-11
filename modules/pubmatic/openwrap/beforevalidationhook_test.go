@@ -551,6 +551,15 @@ func TestIsSendAllBids(t *testing.T) {
 		want bool
 	}{
 		{
+			name: "sendallbids_always_true_for_webs2s_endpoint",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+				},
+			},
+			want: true,
+		},
+		{
 			name: "Don't_do_ssauction",
 			args: args{
 				rctx: models.RequestCtx{
