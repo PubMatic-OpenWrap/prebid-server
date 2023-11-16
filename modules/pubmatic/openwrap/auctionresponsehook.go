@@ -126,7 +126,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if payload.BidResponse.Cur != "USD" {
 				eg = bidExt.OriginalBidCPMUSD
 				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
-				// bidExt.OriginalBidCPMUSD = 0 // TODO -comment this to avoid sending in final response
+				bidExt.OriginalBidCPMUSD = 0
 			}
 
 			if impCtx.Video != nil && impCtx.Type == "video" && bidExt.CreativeType == "video" {
