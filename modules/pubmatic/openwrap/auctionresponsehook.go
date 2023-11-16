@@ -133,25 +133,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if bidExt.Video == nil {
 					bidExt.Video = &models.ExtBidVideo{}
 				}
-			}
-
-			if bidExt.Prebid != nil {
-				bidExt.CreativeType = string(bidExt.Prebid.Type)
-			}
-			if bidExt.CreativeType == "" {
-				bidExt.CreativeType = models.GetAdFormat(bid.AdM)
-			}
-
-			// set response netecpm and logger/tracker en
-			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			bidExt.NetECPM = models.GetNetEcpm(bid.Price, revShare)
-			eg = bid.Price
-			en = bidExt.NetECPM
-			if payload.BidResponse.Cur != "USD" {
-				eg = bidExt.OriginalBidCPMUSD
-				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
-				bidExt.OriginalBidCPMUSD = 0
-			}
 
 				if impCtx.Video.MaxDuration != 0 {
 					bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
