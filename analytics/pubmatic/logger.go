@@ -356,9 +356,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			price := bid.Price
 			if ao.Response.Cur != models.USD {
-				price = bidCtx.EG // valid-bids + dropped-bids+ default-bids
-				if price == 0 {
-					price = bidExt.OriginalBidCPMUSD // non-bids
+				if bidCtx.EG != 0 { // valid-bids + dropped-bids+ default-bids
+					price = bidCtx.EG
+				} else if bidExt.OriginalBidCPMUSD != 0 { // valid non-bids
+					price = bidExt.OriginalBidCPMUSD
 				}
 			}
 
