@@ -117,6 +117,7 @@ func (m OpenWrap) handleEntrypointHook(
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
+		DisplayVersionID:          requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
@@ -136,8 +137,17 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
+		DCName:                    m.cfg.Server.DCName,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		TMax:                      m.cfg.Timeout.MaxTimeout,
+		CurrencyConversion: func(from, to string, value float64) (float64, error) {
+			rate, err := m.currencyConversion.GetRate(from, to)
+			if err == nil {
+				return value * rate, nil
+			}
+			return 0, err
+		},
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
