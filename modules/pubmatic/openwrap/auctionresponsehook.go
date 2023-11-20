@@ -133,7 +133,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if bidExt.Video == nil {
 					bidExt.Video = &models.ExtBidVideo{}
 				}
-
 				if impCtx.Video.MaxDuration != 0 {
 					bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
 				}
