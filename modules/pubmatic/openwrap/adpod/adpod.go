@@ -12,32 +12,21 @@ import (
 	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
-// func getAdpodConfigsFromExt(ext json.RawMessage) (models.AdPod, error) {
-// 	var adpodConfig models.AdPod
-// 	adpodBytes, _, _, err := jsonparser.Get(ext, "adpod")
-// 	if len(adpodBytes) > 0 && err == nil {
-// 		err := json.Unmarshal(adpodBytes, &adpodConfig)
-// 		return adpodConfig, err
-// 	}
-
-// 	return adpodConfig, fmt.Errorf("no adpod configs found")
-// }
-
 func setDefaultValues(adpodConfig *models.AdPod) {
 	if adpodConfig.MinAds == 0 {
-		adpodConfig.MinAds = 1
+		adpodConfig.MinAds = models.DefaultMinAds
 	}
 
 	if adpodConfig.MaxAds == 0 {
-		adpodConfig.MaxAds = 3
+		adpodConfig.MaxAds = models.DefaultMaxAds
 	}
 
 	if adpodConfig.AdvertiserExclusionPercent == nil {
-		adpodConfig.AdvertiserExclusionPercent = ptrutil.ToPtr(100)
+		adpodConfig.AdvertiserExclusionPercent = ptrutil.ToPtr(models.DefaultAdvertiserExclusionPercent)
 	}
 
 	if adpodConfig.IABCategoryExclusionPercent == nil {
-		adpodConfig.IABCategoryExclusionPercent = ptrutil.ToPtr(100)
+		adpodConfig.IABCategoryExclusionPercent = ptrutil.ToPtr(models.DefaultIABCategoryExclusionPercent)
 	}
 
 }
@@ -73,8 +62,8 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, "adpod")
-		if len(adpodBytes) > 0 && err == nil {
+		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
+		if err == nil && len(adpodBytes) > 0 {
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			if err != nil {
 				return nil, true, err
@@ -83,16 +72,10 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 		}
 	}
 
-	// Check in request extension (Removed support for accepting from request)
-	// if requestExtConfigs != nil {
-	// 	adpodConfig = &requestExtConfigs.AdPod
-	// 	return adpodConfig, nil
-	// }
-
 	// Check in adunit config
 	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, "adpod")
-		if len(adpodBytes) > 0 && err == nil {
+		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
+		if err == nil && len(adpodBytes) > 0 {
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			if err != nil {
 				return nil, true, err

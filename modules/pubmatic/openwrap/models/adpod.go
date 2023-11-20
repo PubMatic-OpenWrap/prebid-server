@@ -6,6 +6,17 @@ const (
 )
 
 const (
+	DefaultMinAds                      = 1
+	DefaultMaxAds                      = 3
+	DefaultAdvertiserExclusionPercent  = 100
+	DefaultIABCategoryExclusionPercent = 100
+)
+
+const (
+	Adpod = "adpod"
+)
+
+const (
 	// MinDuration represents index value where we can get minimum duration of given impression object
 	MinDuration = iota
 	// MaxDuration represents index value where we can get maximum duration of given impression object

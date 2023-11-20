@@ -32,22 +32,28 @@ const (
 var (
 	VASTVersionsStr   = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 	EmptyVASTResponse = []byte(`<VAST version="2.0"/>`)
+	//HeaderOpenWrapStatus Status of OW Request
+	HeaderOpenWrapStatus = "X-Ow-Status"
+	ERROR_CODE           = "ErrorCode"
+	ERROR_STRING         = "Error"
+	//ErrorFormat parsing error format
+	ErrorFormat = `{"` + ERROR_CODE + `":%v,"` + ERROR_STRING + `":"%s"}`
 )
 
-func formVastResponse(response []byte) []byte {
+func formVastResponse(response []byte) ([]byte, error) {
 	var bidResponse *openrtb2.BidResponse
 
 	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		return EmptyVASTResponse
+		return EmptyVASTResponse, errors.New("Failed to unmarshal the bid response")
 	}
 
 	vast, err := getVast(bidResponse)
 	if err != nil {
-		return EmptyVASTResponse
+		return EmptyVASTResponse, err
 	}
 
-	return []byte(vast)
+	return []byte(vast), nil
 }
 
 func getVast(bidResponse *openrtb2.BidResponse) (string, error) {

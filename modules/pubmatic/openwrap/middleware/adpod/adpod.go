@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"runtime/debug"
@@ -94,7 +95,10 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formVastResponse(adpodResponseWriter.Response)
+	finalResponse, err := formVastResponse(adpodResponseWriter.Response)
+	if err != nil {
+		w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(ErrorFormat, 4, "No Bid"))
+	}
 	w.Header().Set(ContentType, ApplicationXML)
 	if adpodResponseWriter.Code == 0 {
 		adpodResponseWriter.Code = http.StatusOK

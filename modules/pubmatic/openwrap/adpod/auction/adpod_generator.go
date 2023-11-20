@@ -44,9 +44,9 @@ type AdPodGenerator struct {
 // NewAdPodGenerator will generate adpod based on configuration
 func NewAdPodGenerator(buckets BidsBuckets, comb CombinationGenerator, adpod *models.AdPod) IAdPodGenerator {
 	return &AdPodGenerator{
-		buckets:  buckets,
-		comb:     comb,
-		adpod:    adpod,
+		buckets: buckets,
+		comb:    comb,
+		adpod:   adpod,
 		// met:      met,
 	}
 }
@@ -118,11 +118,11 @@ func (ag *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinat
 		select {
 		case hbc, ok := <-responseCh:
 
-			if false == ok {
+			if !ok {
 				isTimedOutORReceivedAllResponses = true
 				break
 			}
-			if nil != hbc {
+			if hbc != nil {
 				combinationCount++
 				totalTimeByCombGen += int64(hbc.timeTakenCombGen)
 				totalTimeByCompExcl += int64(hbc.timeTakenCompExcl)
