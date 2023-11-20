@@ -276,7 +276,7 @@ func getPubmaticErrorCode(standardNBR int) int {
 	case nbr.InvalidImpressionTagID:
 		return 605 // ErrMissingTagID
 
-	case nbr.InvalidProfileConfiguration, nbr.InvalidPlatform, nbr.AllSlotsDisabled, nbr.ServerSidePartnerNotConfigured, nbr.SlotNotMapped:
+	case nbr.InvalidProfileConfiguration, nbr.InvalidPlatform, nbr.AllSlotsDisabled, nbr.ServerSidePartnerNotConfigured:
 		return 6 // ErrInvalidConfiguration
 
 	case nbr.InternalError:
