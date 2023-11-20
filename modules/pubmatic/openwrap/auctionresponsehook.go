@@ -40,9 +40,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
-	if rctx.Endpoint == models.EndpointOWS2S {
-		return result, nil
-	}
 
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
@@ -281,6 +278,20 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
+	}
+
+	if rctx.Endpoint == models.EndpointWebS2S {
+		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
+			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			var err error
+			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+			if err != nil {
+				return ap, err
+			}
+			resetBidIdtoOriginal(ap.BidResponse)
+			return ap, err
+		}, hookstage.MutationUpdate, "response-body-with-webs2s-format")
+		return result, nil
 	}
 
 	result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {

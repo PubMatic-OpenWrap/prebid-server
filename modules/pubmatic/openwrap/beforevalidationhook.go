@@ -183,7 +183,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == models.EndpointOWS2S {
+		if rCtx.Endpoint == models.EndpointWebS2S {
 			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
@@ -902,6 +902,10 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 // if ssauction flag is not set and platform is dislay, then by default send all bids
 // if ssauction flag is not set and platform is in-app, then check if profile setting sendAllBids is set to 1
 func isSendAllBids(rctx models.RequestCtx) bool {
+	//for webs2s endpoint SendAllBids is always true
+	if rctx.Endpoint == models.EndpointWebS2S {
+		return true
+	}
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {
 		return true
