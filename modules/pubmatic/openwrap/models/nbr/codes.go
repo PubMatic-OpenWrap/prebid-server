@@ -15,5 +15,4 @@ const (
 	InternalError
 	AllSlotsDisabled
 	ServerSidePartnerNotConfigured
-	SlotNotMapped
 )

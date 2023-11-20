@@ -163,7 +163,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	isAdPodRequest := false
-	disabledSlots, candidatePartners, nonMappedPartners := 0, 0, 0
+	disabledSlots := 0
 	serviceSideBidderPresent := false
 
 	aliasgvlids := make(map[string]uint16)
@@ -290,8 +290,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				continue
 			}
 
-			candidatePartners++
-
 			var isRegex bool
 			var slot, kgpv string
 			var bidderParams json.RawMessage
@@ -305,16 +303,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			}
 
-			if err != nil || len(slot) == 0 || len(bidderParams) == 0 {
-				nonMappedPartners++
-				if len(slot) == 0 {
-					result.Errors = append(result.Errors, fmt.Sprintf("mappings not found for imp:%s partner: %s", imp.ID, prebidBidderCode))
-				} else {
-					result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
-				}
+			if err != nil || len(bidderParams) == 0 {
+				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
 				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
-				continue
+
+				if prebidBidderCode != string(openrtb_ext.BidderPubmatic) && prebidBidderCode != string(models.BidderPubMaticSecondaryAlias) {
+					continue
+				}
 			}
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
@@ -412,12 +408,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	if !serviceSideBidderPresent {
-		if candidatePartners != 0 && candidatePartners == nonMappedPartners {
-			result.NbrCode = nbr.SlotNotMapped
-			result.Errors = append(result.Errors, "slot not mapped")
-			return result, nil
-		}
-
 		result.NbrCode = nbr.ServerSidePartnerNotConfigured
 		if err != nil {
 			err = errors.New("server side partner not found: " + err.Error())
