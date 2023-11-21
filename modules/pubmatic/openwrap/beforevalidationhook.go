@@ -47,6 +47,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		result.Reject = false
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		return result, nil
+	}
+
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
