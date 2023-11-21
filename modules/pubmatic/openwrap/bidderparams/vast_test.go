@@ -422,7 +422,7 @@ func TestValidateVASTTag(t *testing.T) {
 				videoMinDuration: 25,
 				adpod:            &models.AdPod{},
 			},
-			wantErr: nil,
+			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:101, tag.duration:25, adpod.maxduration:0`),
 		},
 		{
 			name: `adpod_min_duration_check`,

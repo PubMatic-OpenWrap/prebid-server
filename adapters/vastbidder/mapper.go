@@ -34,6 +34,7 @@ var _defaultMapper = Mapper{
 	MacroFD:             &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroFD},
 	MacroTransactionID:  &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroTransactionID},
 	MacroPaymentIDChain: &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPaymentIDChain},
+	MacroSchain:         &macroCallBack{cached: true, escape: false, callback: IBidderMacro.MacroSchain},
 
 	//Regs
 	MacroCoppa: &macroCallBack{cached: true, callback: IBidderMacro.MacroCoppa},

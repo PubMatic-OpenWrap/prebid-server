@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
@@ -21,6 +22,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
@@ -29,10 +31,11 @@ const (
 )
 
 type OpenWrap struct {
-	cfg            config.Config
-	cache          cache.Cache
-	metricEngine   metrics.MetricsEngine
-	bidCacheClient pbc.Client
+	cfg                config.Config
+	cache              cache.Cache
+	metricEngine       metrics.MetricsEngine
+	bidCacheClient     pbc.Client
+	currencyConversion currency.Conversions
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -72,13 +75,18 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	// Creative cache client
 	bidCacheClient := bidcache.NewClient(cfg.BidCache, &metricEngine)
 
+	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
+	// Init TBF (tracking-beacon-first) feature related services
+	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
+
 	return OpenWrap{
-		cfg:            cfg,
-		cache:          owCache,
-		metricEngine:   &metricEngine,
-		bidCacheClient: bidCacheClient,
+		cfg:                cfg,
+		cache:              owCache,
+		metricEngine:       &metricEngine,
+		bidCacheClient:     bidCacheClient,
+		currencyConversion: moduleDeps.CurrencyConversion,
 	}, nil
 }
 
@@ -103,6 +111,6 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 }
 
 func patchConfig(cfg *config.Config) {
-	cfg.Server.HostName = getHostName()
+	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 }

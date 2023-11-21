@@ -337,6 +337,14 @@ const (
 	Device     = "device"
 	DeviceType = "deviceType"
 
+	//constant for native tracker
+	EventTrackers = "eventtrackers"
+	ImpTrackers   = "imptrackers"
+	Event         = "event"
+	Methods       = "methods"
+	EventValue    = "1"
+	MethodValue   = "1"
+
 	//constants for Universal Pixel
 	PixelTypeUrl  = "url"
 	PixelTypeJS   = "js"
@@ -348,6 +356,10 @@ const (
 	PwtDealTier           = "pwtdealtier"
 	DealTierLineItemSetup = "dealTierLineItemSetup"
 	DealIDLineItemSetup   = "dealIdLineItemSetup"
+
+	//floor types
+	SoftFloor = 0
+	HardFloor = 1
 )
 
 const (
@@ -388,8 +400,12 @@ var (
 	VASTErrorResponse = `<VAST version="2.0"><Ad><InLine><Extensions><Extension><OWStatus><Error code="%v">%v</Error></OWStatus></Extension></Extensions></InLine></Ad></VAST>`
 	//TrackerCallWrap
 	TrackerCallWrap = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${escapedUrl}"></div>`
+	//Tracker Format for Native
+	NativeTrackerMacro = `{"event":1,"method":1,"url":"${trackerUrl}"}`
 	//TrackerCallWrapOMActive for Open Measurement in In-App Banner
 	TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="${OMScript}"></script>`
+	//Universal Pixel Macro
+	UniversalPixelMacroForUrl = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${pixelUrl}"></div>`
 )
 
 // LogOnlyWinBidArr is an array containing Partners who only want winning bids to be logged
@@ -414,6 +430,9 @@ const (
 	EndpointJson    = "json"
 	EndpointORTB    = "ortb"
 	EndpointVAST    = "vast"
+	EndpointOWS2S   = "ows2s"
+	EndPointCTV     = "ctv"
+	EndpointHybrid  = "hybrid"
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"
@@ -464,7 +483,7 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetParterConfig"
+	PartnerConfigQuery             = "GetPartnerConfig"
 	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
 	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
 	AdunitConfigQuery              = "GetAdunitConfigQuery"
@@ -477,6 +496,15 @@ const (
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+)
+
+// constants for owlogger Integration Type
+const (
+	TypeTag    = "tag"
+	TypeInline = "inline"
+	TypeAmp    = "amp"
+	TypeSDK    = "sdk"
+	TypeS2S    = "s2s"
 )
 
 // constants to accept request-test value
@@ -493,4 +521,10 @@ const (
 
 const (
 	AdPodEnabled = 1
+)
+
+// constants for imp.Ext.Data fields
+const (
+	Pbadslot    = "pbadslot"
+	GamAdServer = "gam"
 )

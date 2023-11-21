@@ -182,19 +182,14 @@ func (fakeSyncer) GetSync([]usersync.SyncType, macros.UserSyncPrivacy) (usersync
 }
 
 func TestGetDevicePlatform(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-	defer ctrl.Finish()
-
 	type args struct {
 		rCtx       models.RequestCtx
 		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
-		name  string
-		args  args
-		setup func()
-		want  models.DevicePlatform
+		name string
+		args args
+		want models.DevicePlatform
 	}{
 		{
 			name: "Test_empty_platform",
@@ -332,49 +327,37 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_CTV",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:            "",
-					Platform:      "video",
-					PubIDStr:      "5890",
-					MetricsEngine: mockEngine,
+					UA:       "",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceTV, true, false),
 			},
 			want: models.DevicePlatformConnectedTv,
-			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
-			},
 		},
 		{
 			name: "Test_platform_video_with_deviceType_as_connected_device",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:            "",
-					Platform:      "video",
-					PubIDStr:      "5890",
-					MetricsEngine: mockEngine,
+					UA:       "",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceConnected, true, false),
 			},
 			want: models.DevicePlatformConnectedTv,
-			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
-			},
 		},
 		{
 			name: "Test_platform_video_with_deviceType_as_set_top_box",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:            "",
-					Platform:      "video",
-					PubIDStr:      "5890",
-					MetricsEngine: mockEngine,
+					UA:       "",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceSetTopBox, false, true),
 			},
 			want: models.DevicePlatformConnectedTv,
-			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
-			},
 		},
 		{
 			name: "Test_platform_video_with_nil_values",
@@ -458,15 +441,11 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_CTV_and_device_type",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:            "",
-					Platform:      "video",
-					PubIDStr:      "5890",
-					MetricsEngine: mockEngine,
+					UA:       "",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1", 3, false, true),
-			},
-			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Success).Times(1)
 			},
 			want: models.DevicePlatformConnectedTv,
 		},
@@ -485,24 +464,17 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_for_non_CTV_User_agent_with_device_type_7",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:            "",
-					Platform:      "video",
-					PubIDStr:      "5890",
-					MetricsEngine: mockEngine,
+					UA:       "",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)", 7, false, true),
 			},
 			want: models.DevicePlatformConnectedTv,
-			setup: func() {
-				mockEngine.EXPECT().RecordCtvUaAccuracy("5890", models.Failure).Times(1)
-			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
 			got := GetDevicePlatform(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, tt.want, got)
 		})
@@ -871,7 +843,7 @@ func TestGetHostName(t *testing.T) {
 				os.Setenv(models.ENV_VAR_POD_NAME, tt.args.podName)
 			}
 
-			got := getHostName()
+			got := GetHostName()
 			assert.Equal(t, tt.want, got)
 
 			resetEnvVarsForServerName()
@@ -898,7 +870,7 @@ func TestGetPubmaticErrorCode(t *testing.T) {
 		{
 			name: "ErrBadRequest",
 			args: args{
-				standardNBR: nbr.InvalidRequest,
+				standardNBR: nbr.InvalidRequestExt,
 			},
 			want: 18,
 		},
@@ -969,38 +941,6 @@ func TestGetPubmaticErrorCode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getPubmaticErrorCode(tt.args.standardNBR)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestIsCTV(t *testing.T) {
-	type args struct {
-		userAgent string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "CTV_request",
-			args: args{
-				userAgent: "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1",
-			},
-			want: true,
-		},
-		{
-			name: "Non_CTV_request",
-			args: args{
-				userAgent: "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us",
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isCTV(tt.args.userAgent)
 			assert.Equal(t, tt.want, got)
 		})
 	}

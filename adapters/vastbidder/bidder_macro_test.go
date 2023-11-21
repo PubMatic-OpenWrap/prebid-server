@@ -1475,7 +1475,7 @@ func TestBidderMacroKV(t *testing.T) {
 				"url": "http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 			}},
 			args: args{key: "kv"},
-			want: "age=22&url=http%253A%252F%252Fexample.com%253Fk1%253Dv1%2526k2%253Dv2",
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 		},
 		{
 			name:   "empty_KV_map",
@@ -1616,6 +1616,148 @@ func TestBidderMacroKVM(t *testing.T) {
 			}
 			got := tag.MacroKVM(tt.args.key)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestMacroSchain(t *testing.T) {
+
+	type fields struct {
+		Request *openrtb2.BidRequest
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "source_object_with_both_source.schain_and_source.ext.schain",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{},
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"name":"publisher name"
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "", // here we have given priority to source.schain object hence source.schain is not nil it return empty string
+		},
+		{
+			name: "nil_source.schain_object",
+			fields: fields{&openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: nil,
+					Ext: []byte(`{
+						"schain":{
+							"complete":0,
+							"nodes":[
+								{
+									"asi":"exchange2.com",
+									"sid":"abcd",
+									"hp":1
+								}
+							],
+							"ver":"1.0"
+						}
+					}`),
+				},
+			}},
+			args: args{key: "schain"},
+			want: "1.0,0!exchange2.com,abcd,1,,,",
+		},
+		{
+			name: "missing_schain_object",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"somechain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"ext":{"k1":"v1"}
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+		{
+			name:   "missing_both_source.schain_and_source.ext",
+			fields: fields{&openrtb2.BidRequest{Source: nil}},
+			args:   args{key: "schain"},
+			want:   "",
+		},
+		{
+			name: "source.schain_is_present",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{
+					Complete: 1,
+					Ver:      "1.0",
+					Nodes: []openrtb2.SupplyChainNode{
+						{
+							ASI:    "asi",
+							SID:    "sid",
+							RID:    "rid",
+							Name:   "name",
+							Domain: "domain",
+							HP:     openrtb2.Int8Ptr(1),
+						},
+					}},
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!asi,sid,1,rid,name,domain",
+		},
+		{
+			name: "unmarshaling_error",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":"1",
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"rid":"bid-request-1",
+								"name":"publisher%20name",
+								"domain":"publisher.com",
+								"hp":1
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				Request: tt.fields.Request,
+			}
+			got := tag.MacroSchain(tt.args.key)
+			assert.Equal(t, got, tt.want, tt.name)
 		})
 	}
 }
