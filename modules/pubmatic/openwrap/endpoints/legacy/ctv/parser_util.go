@@ -285,7 +285,7 @@ func SetValue(node JSONNode, child string, value *string) {
 	case JSONObjectArray:
 		childNode, ok := node[key.Name]
 		if !ok {
-			newNode := []JSONNode{JSONNode{}}
+			newNode := []JSONNode{}
 			node[key.Name] = newNode
 			SetValue(newNode[0], child[index+1:], value)
 		} else {
