@@ -285,10 +285,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 			var err error
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
-			if err != nil {
-				return ap, err
+			if err == nil {
+				resetBidIdtoOriginal(ap.BidResponse)
 			}
-			resetBidIdtoOriginal(ap.BidResponse)
 			return ap, err
 		}, hookstage.MutationUpdate, "response-body-with-webs2s-format")
 		return result, nil
