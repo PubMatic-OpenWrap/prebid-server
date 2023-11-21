@@ -3,7 +3,6 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -77,14 +76,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 	var winningAdpodBidIds map[string][]string
 	var errs []error
 	if rctx.IsCTVRequest {
-		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx, m.bidCacheClient)
+		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
 			}
 			result.Reject = true
 			result.NbrCode = nbr.InternalError
-			return result, errors.New("error in adpod auction")
 		}
 	}
 
@@ -221,11 +219,11 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			if rctx.IsCTVRequest {
-				if impCtx.AdpodConfig != nil {
-					bidExt.AdPod.IsAdpodBid = true
-				}
 				if bidExt.AdPod == nil {
 					bidExt.AdPod = &models.AdpodBidExt{}
+				}
+				if impCtx.AdpodConfig != nil {
+					bidExt.AdPod.IsAdpodBid = true
 				}
 				bidExt.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidExt, seatBid.Seat)
 				if rctx.Debug {
@@ -490,7 +488,6 @@ func GetTargettingForDebug(bidId, pubID, profileID, versionID, tagID string, ecp
 func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, impCtx models.ImpCtx, bidExt *models.BidExt, seat string) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 	targetingKeyValMap[models.PWT_PARTNERID] = seat
-	targetingKeyValMap[models.PWT_CACHEID] = impCtx.BidCacheIdMap[bid.ID]
 
 	if bidExt != nil {
 		if bidExt.Prebid != nil {

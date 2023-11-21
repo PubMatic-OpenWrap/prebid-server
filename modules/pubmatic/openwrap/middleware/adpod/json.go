@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	validator "github.com/asaskevich/govalidator"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -45,60 +45,37 @@ func formAdpodBidErrorResponse(id string, err string, ext interface{}) []byte {
 	return response
 }
 
-func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
-	params := r.URL.Query()
-	debug := params.Get(models.Debug)
-
-	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
-	if format != "" {
-		if format != models.ResponseFormatJSON && format != models.ResponseFormatRedirect {
-			return "", debug, NewError(634, "Invalid response format, must be 'json' or 'redirect'")
-		}
-	}
-
-	owRedirectURL := params.Get(models.OWRedirectURLKey)
-	if len(owRedirectURL) > 0 {
-		owRedirectURL = strings.TrimSpace(owRedirectURL)
-		if format == models.ResponseFormatRedirect && !isValidURL(owRedirectURL) {
-			return "", debug, NewError(633, "Invalid redirect URL")
-		}
-	}
-
-	return owRedirectURL, debug, nil
+type jsonResponse struct {
+	cacheClient *pbc.Client
+	redirectURL string
+	debug       string
 }
 
-func isValidURL(urlVal string) bool {
-	if !(strings.HasPrefix(urlVal, "http://") || strings.HasPrefix(urlVal, "https://")) {
-		return false
-	}
-	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
-}
-
-func formJSONResponse(response []byte, redirectURL, debug string) []byte {
+func (jr *jsonResponse) formJSONResponse(response []byte) []byte {
 	var bidResponse *openrtb2.BidResponse
 
 	err := json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		if len(redirectURL) > 0 && debug == "0" {
-			return []byte(redirectURL)
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL)
 		}
 		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", nil)
 	}
 
-	return getJsonResponse(bidResponse, redirectURL, debug)
+	return jr.getJsonResponse(bidResponse)
 }
 
-func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug string) []byte {
+func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byte {
 	if bidResponse == nil {
-		if len(redirectURL) > 0 && debug == "0" {
-			return []byte(redirectURL)
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL)
 		}
 		return formAdpodBidErrorResponse("", "empty bid response recieved", nil)
 	}
 
 	if bidResponse.SeatBid == nil {
-		if len(redirectURL) > 0 && debug == "0" {
-			return []byte(redirectURL)
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL)
 		}
 		return formAdpodBidErrorResponse("", "no seat bids in the response", bidResponse.Ext)
 	}
@@ -114,10 +91,10 @@ func getJsonResponse(bidResponse *openrtb2.BidResponse, redirectURL, debug strin
 			}
 		}
 	}
-	adPodBids := formAdpodBids(bidArrayMap)
+	adPodBids := formAdpodBids(bidArrayMap, jr.cacheClient)
 
-	if len(redirectURL) > 0 && debug == "0" {
-		return getRedirectResponse(adPodBids, redirectURL)
+	if len(jr.redirectURL) > 0 && jr.debug == "0" {
+		return getRedirectResponse(adPodBids, jr.redirectURL)
 	}
 
 	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
@@ -162,7 +139,7 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 	return []byte(rURL)
 }
 
-func formAdpodBids(bidsMap map[string][]openrtb2.Bid) []*adPodBid {
+func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
 		adpodBid := adPodBid{
@@ -170,10 +147,17 @@ func formAdpodBids(bidsMap map[string][]openrtb2.Bid) []*adPodBid {
 		}
 		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
 
+		cacheIds, err := cacheAllBids(cacheClient, bids)
+		if err != nil {
+			adpodBid.Error = err.Error()
+			adpodBids = append(adpodBids, &adpodBid)
+			continue
+		}
+
 		targetings := []map[string]string{}
 		for i := 0; i < len(bids); i++ {
 			slotNo := i + 1
-			targeting := createTargetting(bids[i], slotNo)
+			targeting := createTargetting(bids[i], slotNo, cacheIds[i])
 			if len(targeting) > 0 {
 				targetings = append(targetings, targeting)
 			}
@@ -192,8 +176,9 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 	return fmt.Sprintf(slotKeyFormat, slotNo, key)
 }
 
-func createTargetting(bid openrtb2.Bid, slotNo int) map[string]string {
+func createTargetting(bid openrtb2.Bid, slotNo int, cacheId string) map[string]string {
 	targetingKeyValMap := make(map[string]string)
+	targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_CACHEID)] = cacheId
 
 	if len(bid.Ext) > 0 {
 		bidExt := models.BidExt{}

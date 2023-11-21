@@ -100,7 +100,11 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 		if bidRequest != nil && bidRequest.Site != nil {
 			//Its web; now determine mobile or desktop
-			if isMobile(bidRequest.Device.DeviceType, userAgentString) {
+			var deviceType adcom1.DeviceType
+			if bidRequest.Device != nil {
+				deviceType = bidRequest.Device.DeviceType
+			}
+			if isMobile(deviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop

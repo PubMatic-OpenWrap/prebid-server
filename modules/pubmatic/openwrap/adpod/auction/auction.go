@@ -12,7 +12,6 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 type Bid struct {
@@ -33,7 +32,7 @@ type AdPodBid struct {
 	SeatName      string
 }
 
-func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx, creativeCacheClient pbc.Client) (map[string][]string, []error) {
+func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx) (map[string][]string, []error) {
 	var errs []error
 
 	if len(response.SeatBid) == 0 {
@@ -46,7 +45,7 @@ func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx model
 		return nil, errs
 	}
 
-	winningBidIds, err := GetAndCacheWinningBidsIds(adpodBids, rctx.Endpoint, rctx.ImpBidCtx, creativeCacheClient)
+	winningBidIds, err := GetWinningBidsIds(adpodBids)
 	if err != nil {
 		return nil, []error{err}
 	}

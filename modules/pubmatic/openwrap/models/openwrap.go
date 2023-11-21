@@ -137,7 +137,6 @@ type ImpCtx struct {
 	VideoAdUnitCtx    AdUnitCtx
 	AdpodConfig       *AdPod
 	ImpAdPodCfg       []*ImpAdPodConfig
-	BidCacheIdMap     map[string]string
 
 	//temp
 	BidderError    string

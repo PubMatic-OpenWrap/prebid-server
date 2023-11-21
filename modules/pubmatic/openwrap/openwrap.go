@@ -14,7 +14,6 @@ import (
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/bidcache"
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
@@ -23,7 +22,6 @@ import (
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -34,7 +32,6 @@ type OpenWrap struct {
 	cfg                config.Config
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
-	bidCacheClient     pbc.Client
 	currencyConversion currency.Conversions
 }
 
@@ -72,9 +69,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
-	// Creative cache client
-	bidCacheClient := bidcache.NewClient(cfg.BidCache, &metricEngine)
-
 	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
@@ -85,7 +79,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		cfg:                cfg,
 		cache:              owCache,
 		metricEngine:       &metricEngine,
-		bidCacheClient:     bidCacheClient,
 		currencyConversion: moduleDeps.CurrencyConversion,
 	}, nil
 }

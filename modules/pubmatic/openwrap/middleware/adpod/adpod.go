@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
 const (
@@ -48,24 +49,27 @@ func (aw *AdpodWriter) WriteHeader(statusCode int) {
 }
 
 type adpod struct {
-	handle httprouter.Handle
+	handle      httprouter.Handle
+	cacheClient *pbc.Client
 }
 
-func NewAdpodWrapperHandle(handleToWrap httprouter.Handle) *adpod {
-	return &adpod{handle: handleToWrap}
+func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, cacheClient *pbc.Client) *adpod {
+	return &adpod{handle: handleToWrap, cacheClient: cacheClient}
+}
+
+func panicHandler(r *http.Request) {
+	if recover := recover(); recover != nil {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
+			return
+		}
+		glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
+	}
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	defer func() {
-		if recover := recover(); recover != nil {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-				return
-			}
-			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-		}
-	}()
+	defer panicHandler(r)
 
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
@@ -81,16 +85,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	defer func() {
-		if recover := recover(); recover != nil {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-				return
-			}
-			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-		}
-	}()
+	defer panicHandler(r)
 
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
@@ -108,21 +103,17 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	defer func() {
-		if recover := recover(); recover != nil {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-				return
-			}
-			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-		}
-	}()
+	defer panicHandler(r)
 
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
 
-	finalResponse := formJSONResponse(adpodResponseWriter.Response, "", r.URL.Query().Get(models.Debug))
+	responseGenerator := jsonResponse{
+		cacheClient: a.cacheClient,
+		debug:       r.URL.Query().Get(models.Debug),
+	}
+	finalResponse := responseGenerator.formJSONResponse(adpodResponseWriter.Response)
+
 	w.Header().Set(ContentType, ApplicationJSON)
 	if adpodResponseWriter.Code == 0 {
 		adpodResponseWriter.Code = http.StatusOK
@@ -133,16 +124,7 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 // JsonGetEndpoint
 func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	defer func() {
-		if recover := recover(); recover != nil {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-				return
-			}
-			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
-		}
-	}()
+	defer panicHandler(r)
 
 	redirectURL, debug, err := getAndValidateRedirectURL(r)
 	if err != nil {
@@ -152,7 +134,13 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	adpodResponseWriter := &AdpodWriter{}
 	a.handle(adpodResponseWriter, r, p)
-	finalResponse := formJSONResponse(adpodResponseWriter.Response, redirectURL, debug)
+
+	responseGenerator := jsonResponse{
+		cacheClient: a.cacheClient,
+		redirectURL: redirectURL,
+		debug:       debug,
+	}
+	finalResponse := responseGenerator.formJSONResponse(adpodResponseWriter.Response)
 
 	if len(redirectURL) > 0 && debug == "0" {
 		http.Redirect(w, r, string(finalResponse), http.StatusFound)
