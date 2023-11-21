@@ -28,6 +28,10 @@ func handleEntrypointHook(
 	vastRequestContext := models.RequestCtx{
 		VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled),
 	}
+
+	if !vastRequestContext.VastUnwrapEnabled {
+		vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < config.StatTrafficPercentage
+	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext
 	return result, nil
