@@ -1158,7 +1158,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 		args             args
 		want             want
 		getMetricsEngine func() *mock_metrics.MockMetricsEngine
-		setup            func()
 	}{
 		{
 			name: "inject_tracker_in_respose_for_WebS2S_endpoint",
@@ -1212,18 +1211,68 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
 				return mockEngine
 			},
-			setup: func() {
-				mockCache.EXPECT().GetTBFTrafficForPublishers().Return(map[int]map[int]int{1: {2: 3}}, nil)
+		},
+		{
+			name: "inject_tracker_in_respose_and_reset_bidID_to_orignal_for_WebS2S_endpoint",
+			args: args{
+				ctx: nil,
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Endpoint: models.EndpointWebS2S,
+							Trackers: map[string]models.OWTracker{
+								"bid1": {
+									BidType: models.Video,
+								},
+							},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:  "12345:: 123422222225",
+										AdM: `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https:?adv=&af=banner&aps=0&au=&bc=&bidid=12345&di=-1&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=12345&pdvid=0&pid=0&plt=0&pn=&psz=0x0&pubid=0&purl=&sl=1&slot=&ss=1&tgid=0&tst=0\"></div>"},
+							},
+						},
+					},
+				},
+				err: nil,
+			},
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats(gomock.Any(), gomock.Any(), gomock.Any())
+				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(gomock.Any())
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
+				return mockEngine
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
 			o := OpenWrap{
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 			}
+			mockCache.EXPECT().GetTBFTrafficForPublishers().Return(map[int]map[int]int{1: {2: 3}}, nil).AnyTimes()
 			tbf.Init(1, mockCache)
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
