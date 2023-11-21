@@ -26,6 +26,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 ||
+		(payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}, nil
+	}
+
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 		Reject: true,
 	}
