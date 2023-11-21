@@ -26,12 +26,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	// return prebid validation error
-	if len(payload.BidRequest.Imp) == 0 ||
-		(payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
-		return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}, nil
-	}
-
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 		Reject: true,
 	}
@@ -52,6 +46,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
+
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		result.Reject = false
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		return result, nil
+	}
 
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
