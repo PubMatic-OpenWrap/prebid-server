@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -36,10 +37,14 @@ func getIncomingSlots(imp openrtb2.Imp) []string {
 func getDefaultImpBidCtx(request openrtb2.BidRequest) map[string]models.ImpCtx {
 	impBidCtx := make(map[string]models.ImpCtx)
 	for _, imp := range request.Imp {
-		incomingSlots := getIncomingSlots(imp)
+		impExt := &models.ImpExtension{}
+		json.Unmarshal(imp.Ext, impExt)
 
 		impBidCtx[imp.ID] = models.ImpCtx{
-			IncomingSlots: incomingSlots,
+			IncomingSlots:     getIncomingSlots(imp),
+			AdUnitName:        getAdunitName(imp.TagID, impExt),
+			SlotName:          getSlotName(imp.TagID, impExt),
+			IsRewardInventory: impExt.Reward,
 		}
 	}
 	return impBidCtx

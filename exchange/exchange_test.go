@@ -772,7 +772,7 @@ func TestAdapterCurrency(t *testing.T) {
 		categoriesFetcher: nilCategoryFetcher{},
 		bidIDGenerator:    &mockBidIDGenerator{false, false},
 		adapterMap: map[openrtb_ext.BidderName]AdaptedBidder{
-			openrtb_ext.BidderName("foo"): AdaptBidder(mockBidder, nil, &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderName("foo"), nil, ""),
+			openrtb_ext.BidderName("appnexus"): AdaptBidder(mockBidder, nil, &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderName("appnexus"), nil, ""),
 		},
 	}
 	e.requestSplitter = requestSplitter{
@@ -786,7 +786,7 @@ func TestAdapterCurrency(t *testing.T) {
 		Imp: []openrtb2.Imp{{
 			ID:     "some-impression-id",
 			Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}, {W: 300, H: 600}}},
-			Ext:    json.RawMessage(`{"prebid":{"bidder":{"foo":{"placementId":1}}}}`),
+			Ext:    json.RawMessage(`{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}`),
 		}},
 		Site: &openrtb2.Site{
 			Page: "prebid.org",
@@ -809,7 +809,7 @@ func TestAdapterCurrency(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "some-request-id", response.ID, "Response ID")
 	assert.Empty(t, response.SeatBid, "Response Bids")
-	assert.Contains(t, string(response.Ext), `"errors":{"foo":[{"code":5,"message":"The adapter failed to generate any bid requests, but also failed to generate an error explaining why"}]}`, "Response Ext")
+	assert.Contains(t, string(response.Ext), `"errors":{"appnexus":[{"code":5,"message":"The adapter failed to generate any bid requests, but also failed to generate an error explaining why"}]}`, "Response Ext")
 
 	// Test Currency Converter Properly Passed To Adapter
 	if assert.NotNil(t, mockBidder.lastExtraRequestInfo, "Currency Conversion Argument") {
@@ -2777,12 +2777,13 @@ func TestCategoryMapping(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          40.0000,
-								Cat:            cats4,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 40,
-								OriginalBidCur: "USD",
+								Price:             40.0000,
+								Cat:               cats4,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    40,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 40,
 
 								ID:   "bid_id4",
 								Type: openrtb_ext.BidTypeVideo,
@@ -2927,12 +2928,13 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          30.0000,
-								Cat:            cats3,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 30,
-								OriginalBidCur: "USD",
+								Price:             30.0000,
+								Cat:               cats3,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    30,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 30,
 
 								ID:   "bid_id3",
 								Type: openrtb_ext.BidTypeVideo,
@@ -3396,12 +3398,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3435,12 +3438,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3474,12 +3478,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3515,12 +3520,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
