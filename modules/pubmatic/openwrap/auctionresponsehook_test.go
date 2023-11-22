@@ -1140,7 +1140,11 @@ func TestResetBidIdtoOriginal(t *testing.T) {
 func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
-	defer ctrl.Finish()
+	tbf.Init(1, mockCache)
+	defer func() {
+		ctrl.Finish()
+		tbf.StopTBFReloaderService()
+	}()
 
 	type args struct {
 		ctx       context.Context
@@ -1273,7 +1277,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				cache:        mockCache,
 			}
 			mockCache.EXPECT().GetTBFTrafficForPublishers().Return(map[int]map[int]int{1: {2: 3}}, nil).AnyTimes()
-			tbf.Init(1, mockCache)
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1283,7 +1286,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				assert.Nil(t, err, tt.name)
 				assert.Equal(t, tt.want.bidResponse, result.BidResponse, tt.name)
 			}
-			go tbf.StopTBFReloaderService()
 		})
 	}
 }
