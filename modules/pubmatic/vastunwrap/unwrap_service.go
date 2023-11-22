@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
+func (m VastUnwrapModule) doUnwrapandUpdateBid(bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -23,10 +23,10 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))
 		}
 		respTime := time.Since(startTime)
-		m.MetricsEngine.RecordRequestTime(accountID, bidder, respTime)
-		m.MetricsEngine.RecordRequestStatus(accountID, bidder, respStatus)
+		m.MetricsEngine.RecordRequestTime(bidder, respTime)
+		m.MetricsEngine.RecordRequestStatus(bidder, respStatus)
 		if respStatus == "0" {
-			m.MetricsEngine.RecordWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
+			m.MetricsEngine.RecordWrapperCount(bidder, strconv.Itoa(int(wrapperCnt)))
 		}
 	}()
 	headers := http.Header{}
@@ -42,8 +42,8 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 	m.unwrapRequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(UnwrapCount), 10, 0)
-	if !isStatsEnabled && httpResp.Code == http.StatusOK {
-		respBody := httpResp.Body.Bytes()
+	respBody := httpResp.Body.Bytes()
+	if httpResp.Code == http.StatusOK {
 		bid.Bid.AdM = string(respBody)
 		return
 	}
