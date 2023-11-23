@@ -214,6 +214,11 @@ func TestLogIntegrationType(t *testing.T) {
 			endpoint:        "invalid",
 			integrationType: "",
 		},
+		{
+			name:            "ows2s",
+			endpoint:        models.EndpointWebS2S,
+			integrationType: models.TypeWebS2S,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
