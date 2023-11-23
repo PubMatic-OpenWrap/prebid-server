@@ -11,7 +11,7 @@ import (
 
 func TestGetCustomDimensionsFromRequestExt(t *testing.T) {
 	type args struct {
-		prebid *openrtb_ext.ExtRequestPrebid
+		prebid openrtb_ext.ExtRequestPrebid
 	}
 	tests := []struct {
 		name string
@@ -19,22 +19,29 @@ func TestGetCustomDimensionsFromRequestExt(t *testing.T) {
 		want map[string]CustomDimension
 	}{
 		{
-			name: "test",
+			name: "cds not present",
 			args: args{
-				prebid: &openrtb_ext.ExtRequestPrebid{
+				prebid: openrtb_ext.ExtRequestPrebid{},
+			},
+			want: nil,
+		},
+		{
+			name: "cds present",
+			args: args{
+				prebid: openrtb_ext.ExtRequestPrebid{
 					BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"ap":{"value":"NoGAM"}}}}`),
 				},
 			},
 			want: map[string]CustomDimension{
-				"traffic": CustomDimension{
+				"traffic": {
 					Value:     "email",
 					SendToGAM: ptrutil.ToPtr(true),
 				},
-				"author": CustomDimension{
+				"author": {
 					Value:     "henry",
 					SendToGAM: ptrutil.ToPtr(false),
 				},
-				"ap": CustomDimension{
+				"ap": {
 					Value: "NoGAM",
 				},
 			},
@@ -63,8 +70,8 @@ func TestParseCustomDimensionsToString(t *testing.T) {
 			name: "when valid custom dimensions maap, return a string ",
 			args: args{
 				cdsMap: map[string]CustomDimension{
-					"k1": CustomDimension{Value: "v1"},
-					"k2": CustomDimension{Value: "v2"},
+					"k1": {Value: "v1"},
+					"k2": {Value: "v2"},
 				},
 			},
 			want:  `k1=v1;k2=v2`,
@@ -108,15 +115,15 @@ func TestIsCustomDimensionsPresent(t *testing.T) {
 				},
 			},
 			want: map[string]CustomDimension{
-				"k1": CustomDimension{
+				"k1": {
 					Value:     "v1",
 					SendToGAM: ptrutil.ToPtr(false),
 				},
-				"k2": CustomDimension{
+				"k2": {
 					Value:     "v2",
 					SendToGAM: ptrutil.ToPtr(true),
 				},
-				"k3": CustomDimension{
+				"k3": {
 					Value: "v3",
 				},
 			},
