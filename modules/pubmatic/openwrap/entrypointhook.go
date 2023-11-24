@@ -1,0 +1,128 @@
+package openwrap
+
+import (
+	"context"
+	"strconv"
+	"time"
+
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
+	uuid "github.com/satori/go.uuid"
+)
+
+const (
+	OpenWrapAuction  = "/pbs/openrtb2/auction"
+	OpenWrapV25      = "/openrtb/2.5"
+	OpenWrapV25Video = "/openrtb/2.5/video"
+	OpenWrapAmp      = "/openrtb/amp"
+)
+
+func (m OpenWrap) handleEntrypointHook(
+	_ context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.EntrypointPayload,
+) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+	queryParams := payload.Request.URL.Query()
+	if queryParams.Get("sshb") != "1" {
+		return result, nil
+	}
+
+	var endpoint string
+	var err error
+	var requestExtWrapper models.RequestExtWrapper
+	switch payload.Request.URL.Path {
+	case hookexecution.EndpointAuction:
+		if !models.IsHybrid(payload.Body) { // new hybrid api should not execute module
+			return result, nil
+		}
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+	case OpenWrapAuction: // legacy hybrid api should not execute module
+		m.metricEngine.RecordPBSAuctionRequestsStats()
+		return result, nil
+	case OpenWrapV25:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+		endpoint = models.EndpointV25
+	case OpenWrapV25Video:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+		endpoint = models.EndpointVideo
+	case OpenWrapAmp:
+		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
+		endpoint = models.EndpointAMP
+	default:
+		// we should return from here
+	}
+
+	defer func() {
+		if result.Reject {
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+		}
+	}()
+
+	// init default for all modules
+	result.Reject = true
+
+	if err != nil {
+		result.NbrCode = nbr.InvalidRequest
+		result.Errors = append(result.Errors, "InvalidRequest")
+		return result, err
+	}
+
+	if requestExtWrapper.ProfileId == 0 {
+		result.NbrCode = nbr.InvalidProfileID
+		result.Errors = append(result.Errors, "ErrMissingProfileID")
+		return result, err
+	}
+
+	rCtx := models.RequestCtx{
+		StartTime:                 time.Now().Unix(),
+		Debug:                     queryParams.Get(models.Debug) == "1",
+		UA:                        payload.Request.Header.Get("User-Agent"),
+		ProfileID:                 requestExtWrapper.ProfileId,
+		DisplayID:                 requestExtWrapper.VersionId,
+		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
+		SupportDeals:              requestExtWrapper.SupportDeals,
+		ABTestConfig:              requestExtWrapper.ABTestConfig,
+		SSAuction:                 requestExtWrapper.SSAuctionFlag,
+		SummaryDisable:            requestExtWrapper.SumryDisableFlag,
+		LoggerImpressionID:        requestExtWrapper.LoggerImpressionID,
+		ClientConfigFlag:          requestExtWrapper.ClientConfigFlag,
+		SSAI:                      requestExtWrapper.SSAI,
+		IP:                        models.GetIP(payload.Request),
+		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
+		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
+		VideoErrorTrackerEndpoint: m.cfg.Tracker.VideoErrorTrackerEndpoint,
+		Aliases:                   make(map[string]string),
+		ImpBidCtx:                 make(map[string]models.ImpCtx),
+		PrebidBidderCode:          make(map[string]string),
+		BidderResponseTimeMillis:  make(map[string]int),
+		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
+		Endpoint:                  endpoint,
+		MetricsEngine:             m.metricEngine,
+		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
+		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+	}
+
+	// only http.ErrNoCookie is returned, we can ignore it
+	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
+	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
+	if originCookie, _ := payload.Request.Cookie("origin"); originCookie != nil {
+		rCtx.OriginCookie = originCookie.Value
+	}
+
+	if rCtx.LoggerImpressionID == "" {
+		rCtx.LoggerImpressionID = uuid.NewV4().String()
+	}
+
+	result.ModuleContext = make(hookstage.ModuleContext)
+	result.ModuleContext["rctx"] = rCtx
+
+	result.Reject = false
+	return result, nil
+}

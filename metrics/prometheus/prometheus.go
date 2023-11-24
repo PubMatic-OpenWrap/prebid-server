@@ -47,7 +47,6 @@ type Metrics struct {
 	storedVideoErrors            *prometheus.CounterVec
 	timeoutNotifications         *prometheus.CounterVec
 	dnsLookupTimer               prometheus.Histogram
-	tlsHandhakeTimer             prometheus.Histogram
 	privacyCCPA                  *prometheus.CounterVec
 	privacyCOPPA                 *prometheus.CounterVec
 	privacyLMT                   *prometheus.CounterVec
@@ -58,6 +57,8 @@ type Metrics struct {
 	adsCertRequests              *prometheus.CounterVec
 	adsCertSignTimer             prometheus.Histogram
 	bidderServerResponseTimer    prometheus.Histogram
+
+	requestsDuplicateBidIDCounter prometheus.Counter // total request having duplicate bid.id for given bidder
 
 	// Adapter Metrics
 	adapterBids                           *prometheus.CounterVec
@@ -76,9 +77,24 @@ type Metrics struct {
 	adapterBidResponseSecureMarkupError   *prometheus.CounterVec
 	adapterBidResponseSecureMarkupWarn    *prometheus.CounterVec
 
+	adapterDuplicateBidIDCounter *prometheus.CounterVec
+	adapterVideoBidDuration      *prometheus.HistogramVec
+	tlsHandhakeTimer             *prometheus.HistogramVec
+
 	// Syncer Metrics
 	syncerRequests *prometheus.CounterVec
 	syncerSets     *prometheus.CounterVec
+
+	// Rejected Bids
+	rejectedBids *prometheus.CounterVec
+	bids         *prometheus.CounterVec
+	vastVersion  *prometheus.CounterVec
+	//rejectedBids         *prometheus.CounterVec
+	accountRejectedBid   *prometheus.CounterVec
+	accountFloorsRequest *prometheus.CounterVec
+
+	//Dynamic Fetch Failure
+	dynamicFetchFailure *prometheus.CounterVec
 
 	// Account Metrics
 	accountRequests                       *prometheus.CounterVec
@@ -98,8 +114,23 @@ type Metrics struct {
 	moduleSuccessRejects  map[string]*prometheus.CounterVec
 	moduleExecutionErrors map[string]*prometheus.CounterVec
 	moduleTimeouts        map[string]*prometheus.CounterVec
+	// Ad Pod Metrics
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	podImpGenTimer *prometheus.HistogramVec
+
+	// podImpGenTimer indicates time taken by combination generator
+	// algorithm to generate combination based on bid response and ad pod request
+	podCombGenTimer *prometheus.HistogramVec
+
+	// podCompExclTimer indicates time taken by compititve exclusion
+	// algorithm to generate final pod response based on bid response and ad pod request
+	podCompExclTimer *prometheus.HistogramVec
 
 	metricsDisabled config.DisabledMetrics
+
+	httpCounter prometheus.Counter
 }
 
 const (
@@ -149,6 +180,14 @@ const (
 	requestFailed     = "failed"
 )
 
+// pod specific constants
+const (
+	podAlgorithm         = "algorithm"
+	podNoOfImpressions   = "no_of_impressions"
+	podTotalCombinations = "total_combinations"
+	podNoOfResponseBids  = "no_of_response_bids"
+)
+
 const (
 	sourceLabel   = "source"
 	sourceRequest = "request"
@@ -160,7 +199,7 @@ const (
 )
 
 // NewMetrics initializes a new Prometheus metrics instance with preloaded label values.
-func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMetrics, syncerKeys []string, moduleStageNames map[string][]string) *Metrics {
+func NewMetrics(cfg config.PrometheusMetrics, reg *prometheus.Registry, disabledMetrics config.DisabledMetrics, syncerKeys []string, moduleStageNames map[string][]string) *Metrics {
 	standardTimeBuckets := []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
 	cacheWriteTimeBuckets := []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1}
 	priceBuckets := []float64{250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000}
@@ -168,7 +207,9 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	overheadTimeBuckets := []float64{0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}
 
 	metrics := Metrics{}
-	reg := prometheus.NewRegistry()
+	if reg == nil {
+		reg = prometheus.NewRegistry()
+	}
 	metrics.metricsDisabled = disabledMetrics
 
 	metrics.connectionsClosed = newCounterWithoutLabels(cfg, reg,
@@ -309,10 +350,15 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Seconds to resolve DNS",
 		standardTimeBuckets)
 
-	metrics.tlsHandhakeTimer = newHistogram(cfg, reg,
-		"tls_handshake_time",
-		"Seconds to perform TLS Handshake",
-		standardTimeBuckets)
+	// metrics.tlsHandhakeTimer = newHistogram(cfg, reg,
+	// 	"tls_handshake_time",
+	// 	"Seconds to perform TLS Handshake",
+	// 	standardTimeBuckets)
+
+	metrics.bids = newCounter(cfg, reg,
+		"bids",
+		"Count of no of bids by publisher id, profile, bidder and deal",
+		[]string{pubIDLabel, profileLabel, bidderLabel, dealLabel})
 
 	metrics.privacyCCPA = newCounter(cfg, reg,
 		"privacy_ccpa",
@@ -396,6 +442,12 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		metrics.adapterConnectionWaitTime = newHistogramVec(cfg, reg,
 			"adapter_connection_wait",
 			"Seconds from when the connection was requested until it is either created or reused",
+			[]string{adapterLabel},
+			standardTimeBuckets)
+
+		metrics.tlsHandhakeTimer = newHistogramVec(cfg, reg,
+			"tls_handshake_time",
+			"Seconds to perform TLS Handshake",
 			[]string{adapterLabel},
 			standardTimeBuckets)
 	}
@@ -488,6 +540,31 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 		"Count of total requests to Prebid Server that have stored responses labled by account",
 		[]string{accountLabel})
 
+	metrics.accountRejectedBid = newCounter(cfg, reg,
+		"floors_account_rejected_bid_requests",
+		"Count of total requests to Prebid Server that have rejected bids due to floors enfocement labled by account",
+		[]string{accountLabel})
+
+	metrics.accountFloorsRequest = newCounter(cfg, reg,
+		"floors_account_requests",
+		"Count of total requests to Prebid Server that have non-zero imp.bidfloor labled by account",
+		[]string{accountLabel})
+
+	metrics.rejectedBids = newCounter(cfg, reg,
+		"rejected_bids",
+		"Count of rejected bids by publisher id, bidder and rejection reason code",
+		[]string{pubIDLabel, bidderLabel, codeLabel})
+
+	metrics.vastVersion = newCounter(cfg, reg,
+		"vast_version",
+		"Count of vast version by bidder and vast version",
+		[]string{adapterLabel, versionLabel})
+
+	metrics.dynamicFetchFailure = newCounter(cfg, reg,
+		"floors_account_fetch_err",
+		"Count of failures in case of dynamic fetch labeled by account",
+		[]string{codeLabel, accountLabel})
+
 	metrics.adsCertSignTimer = newHistogram(cfg, reg,
 		"ads_cert_sign_time",
 		"Seconds to generate an AdsCert header",
@@ -513,7 +590,46 @@ func NewMetrics(cfg config.PrometheusMetrics, disabledMetrics config.DisabledMet
 	metrics.Registerer = prometheus.WrapRegistererWithPrefix(metricsPrefix, reg)
 	metrics.Registerer.MustRegister(promCollector.NewGoCollector())
 
+	metrics.adapterDuplicateBidIDCounter = newCounter(cfg, reg,
+		"duplicate_bid_ids",
+		"Number of collisions observed for given adaptor",
+		[]string{adapterLabel})
+
+	metrics.requestsDuplicateBidIDCounter = newCounterWithoutLabels(cfg, reg,
+		"requests_having_duplicate_bid_ids",
+		"Count of number of request where bid collision is detected.")
+
+	// adpod specific metrics
+	metrics.podImpGenTimer = newHistogramVec(cfg, reg,
+		"impr_gen",
+		"Time taken by Ad Pod Impression Generator in seconds", []string{podAlgorithm, podNoOfImpressions},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		// 100 µS, 200 µS, 300 µS, 400 µS, 500 µS,  600 µS,
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCombGenTimer = newHistogramVec(cfg, reg,
+		"comb_gen",
+		"Time taken by Ad Pod Combination Generator in seconds", []string{podAlgorithm, podTotalCombinations},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.podCompExclTimer = newHistogramVec(cfg, reg,
+		"comp_excl",
+		"Time taken by Ad Pod Compititve Exclusion in seconds", []string{podAlgorithm, podNoOfResponseBids},
+		// 200 µS, 250 µS, 275 µS, 300 µS
+		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
+		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	metrics.adapterVideoBidDuration = newHistogramVec(cfg, reg,
+		"adapter_vidbid_dur",
+		"Video Ad durations returned by the bidder", []string{adapterLabel},
+		[]float64{4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120})
+
 	preloadLabelValues(&metrics, syncerKeys, moduleStageNames)
+
+	metrics.httpCounter = newHttpCounter(cfg, reg)
 
 	return &metrics
 }
@@ -571,6 +687,7 @@ func createModulesMetrics(cfg config.PrometheusMetrics, registry *prometheus.Reg
 			fmt.Sprintf("modules_%s_timeouts", module),
 			"Count of module timeouts labeled by stage name.",
 			[]string{stageLabel})
+
 	}
 }
 
@@ -687,6 +804,22 @@ func (m *Metrics) RecordStoredResponse(pubId string) {
 	}
 }
 
+func (m *Metrics) RecordRejectedBidsForAccount(pubId string) {
+	if pubId != metrics.PublisherUnknown {
+		m.accountRejectedBid.With(prometheus.Labels{
+			accountLabel: pubId,
+		}).Inc()
+	}
+}
+
+func (m *Metrics) RecordFloorsRequestForAccount(pubId string) {
+	if pubId != metrics.PublisherUnknown {
+		m.accountFloorsRequest.With(prometheus.Labels{
+			accountLabel: pubId,
+		}).Inc()
+	}
+}
+
 func (m *Metrics) RecordImps(labels metrics.ImpLabels) {
 	m.impressions.With(prometheus.Labels{
 		isBannerLabel: strconv.FormatBool(labels.BannerImps),
@@ -778,6 +911,23 @@ func (m *Metrics) RecordAdapterRequest(labels metrics.AdapterLabels) {
 	}
 }
 
+func (m *Metrics) RecordRejectedBidsForBidder(Adapter openrtb_ext.BidderName) {
+	if m.rejectedBids != nil {
+		m.rejectedBids.With(prometheus.Labels{
+			adapterLabel: string(Adapter),
+		}).Inc()
+	}
+}
+
+func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
+	if pubId != metrics.PublisherUnknown {
+		m.dynamicFetchFailure.With(prometheus.Labels{
+			accountLabel: pubId,
+			codeLabel:    code,
+		}).Inc()
+	}
+}
+
 // Keeps track of created and reused connections to adapter bidders and the time from the
 // connection request, to the connection creation, or reuse from the pool across all engines
 func (m *Metrics) RecordAdapterConnections(adapterName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration) {
@@ -805,8 +955,11 @@ func (m *Metrics) RecordDNSTime(dnsLookupTime time.Duration) {
 	m.dnsLookupTimer.Observe(dnsLookupTime.Seconds())
 }
 
-func (m *Metrics) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
-	m.tlsHandhakeTimer.Observe(tlsHandshakeTime.Seconds())
+func (m *Metrics) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
+	// m.tlsHandhakeTimer.Observe(tlsHandshakeTime.Seconds())
+	m.tlsHandhakeTimer.With(prometheus.Labels{
+		adapterLabel: string(adapterName),
+	}).Observe(tlsHandshakeTime.Seconds())
 }
 
 func (m *Metrics) RecordBidderServerResponseTime(bidderServerResponseTime time.Duration) {

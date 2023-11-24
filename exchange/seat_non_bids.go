@@ -33,6 +33,17 @@ func (snb *nonBids) addBid(bid *entities.PbsOrtbBid, nonBidReason int, seat stri
 				MType:          bid.Bid.MType,
 				OriginalBidCPM: bid.OriginalBidCPM,
 				OriginalBidCur: bid.OriginalBidCur,
+
+				//OW specific
+				ID:                bid.Bid.ID,
+				DealPriority:      bid.DealPriority,
+				DealTierSatisfied: bid.DealTierSatisfied,
+				Meta:              bid.BidMeta,
+				Targeting:         bid.BidTargets,
+				Type:              bid.BidType,
+				Video:             bid.BidVideo,
+				BidId:             bid.GeneratedBidID,
+				Floors:            bid.BidFloors,
 			}},
 		},
 	}

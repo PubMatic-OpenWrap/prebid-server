@@ -1,6 +1,8 @@
 package exchange
 
 import (
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/spotx"
+	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters"
 	ttx "github.com/prebid/prebid-server/v2/adapters/33across"
 	"github.com/prebid/prebid-server/v2/adapters/aax"
@@ -357,6 +359,8 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderSonobi:            sonobi.Builder,
 		openrtb_ext.BidderSovrn:             sovrn.Builder,
 		openrtb_ext.BidderSspBC:             sspBC.Builder,
+		openrtb_ext.BidderSpotX:             spotx.Builder,
+		openrtb_ext.BidderStreamkey:         adtelligent.Builder,
 		openrtb_ext.BidderSuntContent:       suntContent.Builder,
 		openrtb_ext.BidderStroeerCore:       stroeerCore.Builder,
 		openrtb_ext.BidderSynacormedia:      imds.Builder,
@@ -373,6 +377,8 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderUndertone:         undertone.Builder,
 		openrtb_ext.BidderUnicorn:           unicorn.Builder,
 		openrtb_ext.BidderUnruly:            unruly.Builder,
+		openrtb_ext.BidderVASTBidder:        vastbidder.Builder,
+		openrtb_ext.BidderValueImpression:   apacdex.Builder,
 		openrtb_ext.BidderVideoByte:         videobyte.Builder,
 		openrtb_ext.BidderVideoHeroes:       videoheroes.Builder,
 		openrtb_ext.BidderVidoomy:           vidoomy.Builder,

@@ -4732,7 +4732,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    validRequest(t, "site.json"),
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -4741,7 +4741,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    "{}",
 			expectedStatus: 400,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
