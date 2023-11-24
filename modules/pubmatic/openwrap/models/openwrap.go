@@ -139,8 +139,7 @@ type ImpCtx struct {
 	ImpAdPodCfg       []*ImpAdPodConfig
 
 	//temp
-	BidderError    string
-	IsAdPodRequest bool
+	BidderError string
 }
 
 type PartnerData struct {

@@ -2,16 +2,22 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/beevik/etree"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/endpoints/events"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
+	"github.com/rs/vast"
 )
 
 const (
@@ -36,29 +42,56 @@ var (
 	HeaderOpenWrapStatus = "X-Ow-Status"
 	ERROR_CODE           = "ErrorCode"
 	ERROR_STRING         = "Error"
+	NBR                  = "nbr"
 	//ErrorFormat parsing error format
 	ErrorFormat = `{"` + ERROR_CODE + `":%v,"` + ERROR_STRING + `":"%s"}`
+	NBRFormat   = `{"` + NBR + `":%v` + `}`
 )
 
-func formVastResponse(response []byte) ([]byte, error) {
-	var bidResponse *openrtb2.BidResponse
-
-	err := json.Unmarshal(response, &bidResponse)
-	if err != nil {
-		return EmptyVASTResponse, errors.New("Failed to unmarshal the bid response")
-	}
-
-	vast, err := getVast(bidResponse)
-	if err != nil {
-		return EmptyVASTResponse, err
-	}
-
-	return []byte(vast), nil
+type vastResponse struct {
+	debug              string
+	WrapperLoggerDebug string
 }
 
-func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
+func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[string]string, int) {
+	var statusCode = 200
+	var headers = map[string]string{
+		ContentType: ApplicationXML,
+	}
+
+	response, err := io.ReadAll(aw.Response)
+	if err != nil {
+		statusCode = 500
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
+		return EmptyVASTResponse, headers, statusCode
+	}
+
+	var bidResponse *openrtb2.BidResponse
+	err = json.Unmarshal(response, &bidResponse)
+	if err != nil {
+		statusCode = 500
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
+		return EmptyVASTResponse, headers, statusCode
+	}
+
+	if bidResponse.NBR != nil {
+		statusCode = 400
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *bidResponse.NBR)
+		return EmptyVASTResponse, headers, statusCode
+	}
+
+	vast, nbr := vr.getVast(bidResponse)
+	if nbr != nil {
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *nbr)
+		return EmptyVASTResponse, headers, statusCode
+	}
+
+	return []byte(vast), headers, statusCode
+}
+
+func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return "", errors.New("recieved invalid bidResponse")
+		return "", GetNoBidReasonCode(nbr.EmptySeatBid)
 	}
 
 	bidArray := make([]openrtb2.Bid, 0)
@@ -72,7 +105,11 @@ func getVast(bidResponse *openrtb2.BidResponse) (string, error) {
 
 	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
 	if len(creative) == 0 {
-		return "", errors.New("error while creating creative")
+		return "", GetNoBidReasonCode(nbr.InternalError)
+	}
+
+	if vr.debug == "1" || vr.WrapperLoggerDebug == "1" {
+		creative = string(addExtInfo([]byte(creative), bidResponse.Ext))
 	}
 
 	return creative, nil
@@ -132,7 +169,7 @@ func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid) (string, float64) {
 	vast.CreateAttr(VASTVersionAttribute, VASTVersionsStr[int(version)])
 	bidAdM, err := doc.WriteToString()
 	if err != nil {
-		fmt.Printf("ERROR, %v", err.Error())
+		glog.Error("Error while creating vast:", err)
 		return "", price
 	}
 	return bidAdM, price
@@ -171,4 +208,42 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 			}
 		}
 	}
+}
+
+func addExtInfo(vastBytes []byte, responseExt json.RawMessage) []byte {
+	var v vast.VAST
+	if err := xml.Unmarshal(vastBytes, &v); err != nil {
+		return vastBytes
+	}
+
+	if len(v.Ads) == 0 {
+		return vastBytes
+	}
+
+	owExtBytes := append([]byte("<Ext>"), append(responseExt, []byte("</Ext>")...)...)
+
+	owExt := vast.Extension{
+		Type: "OpenWrap",
+		Data: owExtBytes,
+	}
+
+	ad := v.Ads[0]
+	if ad.InLine != nil {
+		if ad.InLine.Extensions == nil {
+			ad.InLine.Extensions = &([]vast.Extension{})
+		}
+		*ad.InLine.Extensions = append(*ad.InLine.Extensions, owExt)
+	} else if ad.Wrapper != nil {
+		if ad.Wrapper.Extensions == nil {
+			ad.Wrapper.Extensions = []vast.Extension{}
+		}
+		ad.Wrapper.Extensions = append(ad.Wrapper.Extensions, owExt)
+	}
+
+	newVASTBytes, err := xml.Marshal(v)
+	if err != nil {
+		return vastBytes
+	}
+
+	return newVASTBytes
 }

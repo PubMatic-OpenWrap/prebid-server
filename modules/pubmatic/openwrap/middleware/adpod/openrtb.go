@@ -2,29 +2,49 @@ package middleware
 
 import (
 	"encoding/json"
+	"io"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 )
 
-func formOperRTBResponse(response []byte) []byte {
-	var bidResponse *openrtb2.BidResponse
+func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
+	var statusCode = 200
+	var headers = map[string]string{
+		ContentType: ApplicationJSON,
+	}
 
-	err := json.Unmarshal(response, &bidResponse)
+	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
-		return response
+		statusCode = 500
+		return formErrorBidResponse(nbr.InternalError), headers, statusCode
+	}
+
+	var bidResponse *openrtb2.BidResponse
+	err = json.Unmarshal(response, &bidResponse)
+	if err != nil {
+		statusCode = 500
+		return formErrorBidResponse(nbr.InternalError), headers, statusCode
+	}
+
+	if bidResponse.NBR != nil {
+		statusCode = 400
+		return response, headers, statusCode
 	}
 
 	// TODO: Do not merge the response, respond with 2.6 response
 	mergedBidResponse := mergeSeatBids(bidResponse)
 	data, err := json.Marshal(mergedBidResponse)
 	if err != nil {
-		return response
+		statusCode = 500
+		return formErrorBidResponse(nbr.InternalError), headers, statusCode
 	}
 
-	return data
+	return data, headers, statusCode
 }
 
 func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
@@ -50,9 +70,7 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 			}
 
 			impId, _ := models.GetImpressionID(bid.ImpID)
-			bids := bidArrayMap[impId]
-			bids = append(bids, bid)
-			bidArrayMap[impId] = bids
+			bidArrayMap[impId] = append(bidArrayMap[impId], bid)
 		}
 
 		if len(videoSeatBid.Bid) > 0 {
@@ -90,11 +108,19 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 		bid.ImpID = impId
 
 		seatBid := openrtb2.SeatBid{}
-		seatBid.Seat = "prebid_ctv"
+		seatBid.Seat = models.BidderOWPrebidCTV
 		seatBid.Bid = append(seatBid.Bid, bid)
 
 		seatBids = append(seatBids, seatBid)
 	}
 
 	return seatBids
+}
+
+func formErrorBidResponse(nbrCode int) []byte {
+	response := openrtb2.BidResponse{
+		NBR: GetNoBidReasonCode(nbrCode),
+	}
+	data, _ := json.Marshal(response)
+	return data
 }

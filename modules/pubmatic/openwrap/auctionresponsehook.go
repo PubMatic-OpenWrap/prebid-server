@@ -81,7 +81,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
 			}
-			result.Reject = true
 			result.NbrCode = nbr.InternalError
 		}
 	}

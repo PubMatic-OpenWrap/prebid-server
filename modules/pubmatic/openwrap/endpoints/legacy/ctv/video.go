@@ -1,6 +1,7 @@
 package ctv
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -31,5 +32,24 @@ func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {
 			return fmt.Errorf("video object is missing for ctv request")
 		}
 	}
+	return nil
+}
+
+func ValidateVideoImpressions(request *openrtb2.BidRequest) error {
+	if len(request.Imp) == 0 {
+		return errors.New("recieved request with no impressions")
+	}
+
+	var validImpCount int
+	for _, imp := range request.Imp {
+		if imp.Video != nil {
+			validImpCount++
+		}
+	}
+
+	if validImpCount == 0 {
+		return errors.New("video object is missing for ctv request")
+	}
+
 	return nil
 }

@@ -3,13 +3,17 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
@@ -22,10 +26,11 @@ var (
 )
 
 type adPodBid struct {
-	ID        string              `json:"id,omitempty"`
-	Targeting []map[string]string `json:"targeting,omitempty"`
-	Error     string              `json:"error,omitempty"`
-	Ext       interface{}         `json:"ext,omitempty"`
+	ID        string                `json:"id,omitempty"`
+	NBR       *openrtb3.NoBidReason `json:"nbr,omitempty"`
+	Targeting []map[string]string   `json:"targeting,omitempty"`
+	Error     string                `json:"error,omitempty"`
+	Ext       interface{}           `json:"ext,omitempty"`
 }
 
 type bidResponseAdpod struct {
@@ -34,10 +39,11 @@ type bidResponseAdpod struct {
 	RedirectURL *string     `json:"redirect_url,omitempty"`
 }
 
-func formAdpodBidErrorResponse(id string, err string, ext interface{}) []byte {
+func formJSONErrorResponse(id string, err string, nbr *openrtb3.NoBidReason, ext interface{}) []byte {
 	errResponse := adPodBid{
 		ID:    id,
 		Error: err,
+		NBR:   nbr,
 		Ext:   ext,
 	}
 
@@ -51,33 +57,52 @@ type jsonResponse struct {
 	debug       string
 }
 
-func (jr *jsonResponse) formJSONResponse(response []byte) []byte {
-	var bidResponse *openrtb2.BidResponse
-
-	err := json.Unmarshal(response, &bidResponse)
-	if err != nil {
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL)
-		}
-		return formAdpodBidErrorResponse("", "error in unmarshaling the auction response", nil)
+func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
+	var statusCode = 200
+	var headers = map[string]string{
+		ContentType: ApplicationJSON,
 	}
 
-	return jr.getJsonResponse(bidResponse)
+	response, err := io.ReadAll(adpodWriter.Response)
+	if err != nil {
+		statusCode = 500
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL), headers, statusCode
+		}
+		return formJSONErrorResponse("", "error in reading bid response", GetNoBidReasonCode(nbr.InternalError), nil), headers, statusCode
+	}
+
+	var bidResponse *openrtb2.BidResponse
+	err = json.Unmarshal(response, &bidResponse)
+	if err != nil {
+		statusCode = 500
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL), headers, statusCode
+		}
+		return formJSONErrorResponse("", "error in unmarshaling the auction response", GetNoBidReasonCode(nbr.InternalError), nil), headers, statusCode
+	}
+
+	if bidResponse.NBR != nil {
+		statusCode = 400
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL), headers, statusCode
+		}
+		return formJSONErrorResponse("", "error in unmarshaling the auction response", bidResponse.NBR, nil), headers, statusCode
+	}
+
+	return jr.getJsonResponse(bidResponse), headers, statusCode
 }
 
 func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byte {
-	if bidResponse == nil {
+	if bidResponse == nil || bidResponse.SeatBid == nil {
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL)
 		}
-		return formAdpodBidErrorResponse("", "empty bid response recieved", nil)
-	}
-
-	if bidResponse.SeatBid == nil {
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL)
+		var bidExt interface{}
+		if bidResponse != nil {
+			bidExt = bidResponse.Ext
 		}
-		return formAdpodBidErrorResponse("", "no seat bids in the response", bidResponse.Ext)
+		return formJSONErrorResponse("", "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt)
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)

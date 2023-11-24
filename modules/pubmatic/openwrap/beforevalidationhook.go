@@ -165,12 +165,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		IncludeWinners:    boolutil.BoolPtr(true),
 	}
 
-	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 
 	if rCtx.IsCTVRequest {
-		err := ctv.FilterNonVideoImpressions(payload.BidRequest)
+		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
 			result.NbrCode = nbr.InvalidVideoRequest
 			err = errors.New("video object is missing in the request : " + err.Error())
@@ -183,7 +182,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
-		var isAdPodImpression bool
 		imp := payload.BidRequest.Imp[i]
 
 		impExt := &models.ImpExtension{}
@@ -220,11 +218,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
 				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					isAdPodImpression = true
-					if !isAdPodRequest {
-						isAdPodRequest = true
-						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
-					}
+					rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
 				}
 			}
 		}
@@ -427,14 +421,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
 				AdpodConfig:       adpodConfig,
-				IsAdPodRequest:    isAdPodRequest,
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 			}
-		}
-
-		if isAdPodImpression {
-			bidderMeta[string(openrtb_ext.BidderOWPrebidCTV)] = models.PartnerData{}
 		}
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
@@ -510,6 +499,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
+
+		if rctx.IsCTVRequest {
+			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
+			if err != nil {
+				result.Errors = append(result.Errors, err.Error())
+			}
+		}
+
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 

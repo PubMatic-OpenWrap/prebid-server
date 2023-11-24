@@ -16,4 +16,5 @@ const (
 	AllSlotsDisabled
 	ServerSidePartnerNotConfigured
 	InvalidVideoRequest
+	EmptySeatBid
 )
