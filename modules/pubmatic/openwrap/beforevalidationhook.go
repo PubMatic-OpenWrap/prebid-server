@@ -21,7 +21,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/boolutil"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -161,9 +161,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
 	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
 		PriceGranularity:  &priceGranularity,
-		IncludeBidderKeys: boolutil.BoolPtr(true),
-		IncludeWinners:    boolutil.BoolPtr(true),
+		IncludeBidderKeys: ptrutil.ToPtr(true),
+		IncludeWinners:    ptrutil.ToPtr(true),
 	}
+	setIncludeBrandCategory(requestExt.Wrapper, &requestExt.Prebid, partnerConfigMap, rCtx.IsCTVRequest)
 
 	disabledSlots := 0
 	serviceSideBidderPresent := false
@@ -343,19 +344,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
-			// if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
-			// 	var bidderParamsMap map[string]interface{}
-			// 	err := json.Unmarshal(bidderParams, &bidderParamsMap)
-			// 	if err == nil {
-			// 		if bidderExt, ok := impExt.Bidder[bidderCode]; ok && bidderExt != nil && bidderExt.DealTier != nil {
-			// 			bidderParamsMap["dealtier"] = bidderExt.DealTier
-			// 		}
-			// 		newBidderParams, err := json.Marshal(bidderParamsMap)
-			// 		if err == nil {
-			// 			bidderParams = newBidderParams
-			// 		}
-			// 	}
-			// }
+			if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
+				var bidderParamsMap map[string]interface{}
+				err := json.Unmarshal(bidderParams, &bidderParamsMap)
+				if err == nil {
+					if bidderExt, ok := impExt.Bidder[bidderCode]; ok && bidderExt != nil && bidderExt.DealTier != nil {
+						bidderParamsMap[models.DEAL_TIER_KEY] = bidderExt.DealTier
+					}
+					newBidderParams, err := json.Marshal(bidderParamsMap)
+					if err == nil {
+						bidderParams = newBidderParams
+					}
+				}
+			}
 
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,

@@ -104,7 +104,7 @@ type RequestExtWrapper struct {
 	ClientConfigFlag     int    `json:"clientconfig,omitempty"`
 	LogInfoFlag          int    `json:"loginfo,omitempty"`
 	SupportDeals         bool   `json:"supportdeals,omitempty"`
-	IncludeBrandCategory int    `json:"includebrandcategory,omitempty"`
+	IncludeBrandCategory *int   `json:"includebrandcategory,omitempty"`
 	ABTestConfig         int    `json:"abtest,omitempty"`
 	LoggerImpressionID   string `json:"wiid,omitempty"`
 	SSAI                 string `json:"ssai,omitempty"`
