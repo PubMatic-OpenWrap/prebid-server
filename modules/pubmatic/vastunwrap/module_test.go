@@ -87,11 +87,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldRandomNumberGen := getRandomNumber
-			getRandomNumber = func() int { return 1 }
-			defer func() {
-				getRandomNumber = oldRandomNumberGen
-			}()
 			m := VastUnwrapModule{
 				Cfg:               tt.fields.cfg.Cfg,
 				Enabled:           tt.fields.cfg.Enabled,
