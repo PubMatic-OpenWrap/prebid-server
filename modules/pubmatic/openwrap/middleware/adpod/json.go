@@ -34,9 +34,8 @@ type adPodBid struct {
 }
 
 type bidResponseAdpod struct {
-	AdPodBids   []*adPodBid `json:"adpods,omitempty"`
-	Ext         interface{} `json:"ext,omitempty"`
-	RedirectURL *string     `json:"redirect_url,omitempty"`
+	AdPodBids []*adPodBid `json:"adpods,omitempty"`
+	Ext       interface{} `json:"ext,omitempty"`
 }
 
 func formJSONErrorResponse(id string, err string, nbr *openrtb3.NoBidReason, ext interface{}) []byte {
@@ -87,7 +86,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
-		return formJSONErrorResponse("", "error in unmarshaling the auction response", bidResponse.NBR, nil), headers, statusCode
+		return formJSONErrorResponse("", "invalid request", bidResponse.NBR, nil), headers, statusCode
 	}
 
 	return jr.getJsonResponse(bidResponse), headers, statusCode
