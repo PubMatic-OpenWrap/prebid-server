@@ -16,6 +16,8 @@ const (
 	ContentType     = "Content-Type"
 	ApplicationJSON = "application/json"
 	ApplicationXML  = "application/xml"
+	ContentOptions  = "X-Content-Type-Options"
+	NoSniff         = "nosniff"
 )
 
 type adpod struct {

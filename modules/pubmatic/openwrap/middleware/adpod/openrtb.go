@@ -15,20 +15,21 @@ import (
 func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
 	var statusCode = 200
 	var headers = map[string]string{
-		ContentType: ApplicationJSON,
+		ContentType:    ApplicationJSON,
+		ContentOptions: NoSniff,
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = 500
-		return formErrorBidResponse(nbr.InternalError), headers, statusCode
+		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = 500
-		return formErrorBidResponse(nbr.InternalError), headers, statusCode
+		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
@@ -41,7 +42,13 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 	data, err := json.Marshal(mergedBidResponse)
 	if err != nil {
 		statusCode = 500
-		return formErrorBidResponse(nbr.InternalError), headers, statusCode
+		var id string
+		var bidExt json.RawMessage
+		if bidResponse != nil {
+			id = bidResponse.ID
+			bidExt = bidResponse.Ext
+		}
+		return formErrorBidResponse(id, nbr.InternalError, bidExt), headers, statusCode
 	}
 
 	return data, headers, statusCode
@@ -117,9 +124,11 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 	return seatBids
 }
 
-func formErrorBidResponse(nbrCode int) []byte {
+func formErrorBidResponse(id string, nbrCode int, ext json.RawMessage) []byte {
 	response := openrtb2.BidResponse{
+		ID:  id,
 		NBR: GetNoBidReasonCode(nbrCode),
+		Ext: ext,
 	}
 	data, _ := json.Marshal(response)
 	return data

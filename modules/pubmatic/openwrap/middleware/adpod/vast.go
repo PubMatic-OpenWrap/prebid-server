@@ -56,7 +56,8 @@ type vastResponse struct {
 func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[string]string, int) {
 	var statusCode = 200
 	var headers = map[string]string{
-		ContentType: ApplicationXML,
+		ContentType:    ApplicationXML,
+		ContentOptions: NoSniff,
 	}
 
 	response, err := io.ReadAll(aw.Response)

@@ -38,18 +38,6 @@ type bidResponseAdpod struct {
 	Ext       interface{} `json:"ext,omitempty"`
 }
 
-func formJSONErrorResponse(id string, err string, nbr *openrtb3.NoBidReason, ext interface{}) []byte {
-	errResponse := adPodBid{
-		ID:    id,
-		Error: err,
-		NBR:   nbr,
-		Ext:   ext,
-	}
-
-	response, _ := json.Marshal(errResponse)
-	return response
-}
-
 type jsonResponse struct {
 	cacheClient *pbc.Client
 	redirectURL string
@@ -59,7 +47,8 @@ type jsonResponse struct {
 func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
 	var statusCode = 200
 	var headers = map[string]string{
-		ContentType: ApplicationJSON,
+		ContentType:    ApplicationJSON,
+		ContentOptions: NoSniff,
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)
@@ -86,7 +75,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
-		return formJSONErrorResponse("", "invalid request", bidResponse.NBR, nil), headers, statusCode
+		return formJSONErrorResponse(bidResponse.ID, "invalid request", bidResponse.NBR, bidResponse.Ext), headers, statusCode
 	}
 
 	return jr.getJsonResponse(bidResponse), headers, statusCode
@@ -97,11 +86,14 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL)
 		}
+
+		var id string
 		var bidExt interface{}
 		if bidResponse != nil {
+			id = bidResponse.ID
 			bidExt = bidResponse.Ext
 		}
-		return formJSONErrorResponse("", "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt)
+		return formJSONErrorResponse(id, "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt)
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)
@@ -246,5 +238,21 @@ func GetErrorResponse(err CustomError) []byte {
 		"ErrorCode": err.Code(),
 		"Error":     err.Error(),
 	})
+	return response
+}
+
+func formJSONErrorResponse(id string, err string, nbr *openrtb3.NoBidReason, ext interface{}) []byte {
+	adpodErrorBid := adPodBid{
+		ID:    id,
+		Error: err,
+		NBR:   nbr,
+	}
+
+	errResponse := bidResponseAdpod{
+		AdPodBids: []*adPodBid{&adpodErrorBid},
+		Ext:       ext,
+	}
+
+	response, _ := json.Marshal(errResponse)
 	return response
 }
