@@ -42,11 +42,12 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		return vastUnwrapModuleCfg, fmt.Errorf("Prometheus registry is nil")
 	}
 	return VastUnwrapModule{
-		Cfg:               vastUnwrapModuleCfg.Cfg,
-		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
-		Enabled:           vastUnwrapModuleCfg.Enabled,
-		MetricsEngine:     metricEngine,
-		unwrapRequest:     vastunwrap.UnwrapRequest,
+		Cfg:                   vastUnwrapModuleCfg.Cfg,
+		TrafficPercentage:     vastUnwrapModuleCfg.TrafficPercentage,
+		StatTrafficPercentage: vastUnwrapModuleCfg.StatTrafficPercentage,
+		Enabled:               vastUnwrapModuleCfg.Enabled,
+		MetricsEngine:         metricEngine,
+		unwrapRequest:         vastunwrap.UnwrapRequest,
 	}, nil
 }
 
