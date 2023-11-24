@@ -63,12 +63,12 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 
     //Retrieve AccountID and ZoneID from Request and Build endpoint Url
 	var accountID, zoneID string
-	val, ok := configValueMap[BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
+	val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
 	if ok {
 		accountID = val
 	}
 	
-	val, ok = configValueMap[BIDDERDETAILS_PREFIX + BD_ZONE_ID]
+	val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ZONE_ID]
 	if ok {
 		zoneID = val
 	} 
@@ -144,7 +144,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		adButlerReq.Params = make(map[string][]string)
 		if commerceExt.ComParams.Filtering.Category != nil && len(commerceExt.ComParams.Filtering.Category) > 0 {
 			//Retailer Specific Category  Name is present from Product Feed Template
-			val, ok = configValueMap[PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_CATEGORY]
+			val, ok = configValueMap[adapters.PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_CATEGORY]
 			if ok {
 				adButlerReq.Params[val] = commerceExt.ComParams.Filtering.Category
 			} else {
@@ -154,7 +154,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 
 		if commerceExt.ComParams.Filtering.Brand != nil && len(commerceExt.ComParams.Filtering.Brand) > 0 {
 		    //Retailer Specific Brand Name is present from Product Feed Template
-			val, ok = configValueMap[PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_BRAND]
+			val, ok = configValueMap[adapters.PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_BRAND]
 			if ok {
 				adButlerReq.Params[val] = commerceExt.ComParams.Filtering.Brand
 			} else {
@@ -200,7 +200,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	if request.Imp[0].BidFloor > 0 {
 		adButlerReq.FloorCPC = request.Imp[0].BidFloor
 	} else {
-		val, ok := configValueMap[AUCTIONDETAILS_PREFIX + AD_FLOOR_PRICE]
+		val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_FLOOR_PRICE]
 		if ok {
 			if floorPrice, err := strconv.ParseFloat(val, 64); err == nil {
 				adButlerReq.FloorCPC = floorPrice
@@ -236,4 +236,5 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	}}, nil
 	
 }
+
 

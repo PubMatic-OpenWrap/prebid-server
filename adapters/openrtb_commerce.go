@@ -10,6 +10,16 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+const (
+	BIDDERDETAILS_PREFIX          = "BD_"
+	AUCTIONDETAILS_PREFIX         = "AD_"
+	PRODUCTTEMPLATE_PREFIX        = "PT_"
+	AD_FLOOR_PRICE                = "floor_price"
+	AD_BIDDER_EXTEN_DETAILS       = "BidderExtendedDetails"
+	STRING_TRUE                   = "true"
+	STRING_FALSE                  = "false"
+)
+
 func EncodeURL(url string) string {
 	str := base64.StdEncoding.EncodeToString([]byte(url))
 	return str

@@ -81,6 +81,11 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 		len(adButlerResp.Bids) > 0) {
 		impID := internalRequest.Imp[0].ID
 		responseF := a.GetBidderResponse(internalRequest, &adButlerResp, impID)
+		if len(responseF.Bids) <= 0 {
+			return nil, []error{&errortypes.NoValidBid{
+				Message: "No Valid Bid For the given Request",
+			}}
+		}
 		return responseF, errors
 	}
 
@@ -104,12 +109,12 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			configValueMap[obj.Key] = obj.Value
 		}
 
-		val, ok := configValueMap[BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
+		val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
 		if ok {
 			adbutlerID = val
 		}
 
-		val, ok = configValueMap[BIDDERDETAILS_PREFIX+BD_ZONE_ID]
+		val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ZONE_ID]
 		if ok {
 			zoneID = val
 		}
@@ -126,8 +131,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		clickPrice := adButlerBid.CPCSpend
 
 		var productid string
+		productDetails := make(map[string]interface{})
+
 		//Retailer Specific ProductID is present from Product Feed Template
-		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_PRODUCTID]
+		val, ok := configValueMap[adapters.PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
 		if ok {
 			productid = adButlerBid.ProductData[val]
 			keyToRemove = val
@@ -137,13 +144,13 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			keyToRemove = DEFAULT_PRODUCTID
 		}
 
-		productDetails := make(map[string]interface{})
-		for key, value := range adButlerBid.ProductData {
-			productDetails[key] = value
-		}
-	
-		// Delete the "Product Id" key if present
-		if _, ok := productDetails[keyToRemove]; ok {
+		val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+		if ok && val == adapters.STRING_TRUE {
+			for key, value := range adButlerBid.ProductData {
+				productDetails[key] = value
+			}
+
+			// Delete the "Product Id" key if present
 			delete(productDetails, keyToRemove)
 		}
 
@@ -160,10 +167,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
 
 		bidExt := &openrtb_ext.ExtBidCommerce{
-			ProductId:     productid,
-			ClickUrl:      clickUrl,
-			ClickPrice:    clickPrice,
-			ConversionUrl: conversionUrl,
+			ProductId:      productid,
+			ClickUrl:       clickUrl,
+			ClickPrice:     clickPrice,
+			ConversionUrl:  conversionUrl,
 			ProductDetails: productDetails,
 		}
 
@@ -173,6 +180,10 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			Price: bidPrice,
 			CID:   campaignID,
 			IURL:  impressionUrl,
+		}
+
+		if !areMandatoryFieldsPresent(bidExt, bid) {
+			continue
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -186,12 +197,34 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			Bid:  bid,
 			Seat: openrtb_ext.BidderName(SEAT_ADBUTLER),
 		}
+
 		bidResponse.Bids = append(bidResponse.Bids, typedbid)
 	}
 	return bidResponse
 }
 
+func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2.Bid) bool {
+
+	if bid.Price == 0 || bid.IURL == "" {
+		return false
+	}
+	if bidExt.ProductId == "" || bidExt.ClickUrl == "" || bidExt.ClickPrice == 0 {
+		return false
+	}
+
+	return true
+}
+
 func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string {
+	/*
+		var hostname string
+			url, err := url.Parse(clickurl)
+		    if err == nil {
+				hostname = url.Hostname()
+			 }
+
+			conversionUrl := strings.Replace(CONVERSION_URL, CONV_HOSTNAME, hostname, 1)
+	*/
 	conversionUrl := strings.Replace(CONVERSION_URL, CONV_ADBUTLERID, adbutlerID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ZONEID, zoneID, 1)
 	conversionUrl = strings.Replace(conversionUrl, CONV_ADBUID, adbUID, 1)
