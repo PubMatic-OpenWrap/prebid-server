@@ -95,6 +95,7 @@ type RequestCtx struct {
 	CachePutMiss           int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
 	CurrencyConversion     func(from string, to string, value float64) (float64, error)
 	MatchedImpression      map[string]int
+	Method                 string
 
 	Errors []error
 }

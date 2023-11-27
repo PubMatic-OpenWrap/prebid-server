@@ -33,7 +33,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.RequestWrapper, rctx.ImpBidCtx)
+		imps, errs = impressions.GenerateImpressions(payload.RequestWrapper, rctx.ImpBidCtx, rctx.PubIDStr, m.metricEngine)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Warnings = append(result.Warnings, errs[i].Error())

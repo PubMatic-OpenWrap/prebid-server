@@ -46,6 +46,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
+			if rCtx.IsCTVRequest {
+				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(result.NbrCode), rCtx.PubIDStr)
+			}
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
@@ -62,6 +65,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
+	if rCtx.IsCTVRequest {
+		m.metricEngine.RecordCTVRequests(rCtx.Endpoint, getPlatformFromRequest(payload.BidRequest))
+	}
+
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPublisherID
@@ -74,6 +81,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+
+	if rCtx.IsCTVRequest {
+		m.metricEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	}
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -264,7 +275,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap)
+			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
 				result.NbrCode = nbr.InvalidVideoRequest
 				err = errors.New("failed to get adpod configurations: " + imp.ID)

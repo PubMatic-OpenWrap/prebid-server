@@ -6,6 +6,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -31,8 +32,8 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 
 }
 
-func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string) (*models.AdPod, error) {
-	adpodConfigs, ok, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig)
+func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, me metrics.MetricsEngine) (*models.AdPod, error) {
+	adpodConfigs, ok, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
 	if !ok {
 		return nil, nil
 	}
@@ -57,13 +58,14 @@ func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequ
 
 }
 
-func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig) (*models.AdPod, bool, error) {
+func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
 	var adpodConfig models.AdPod
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
 		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
 		if err == nil && len(adpodBytes) > 0 {
+			me.RecordCTVReqImpsWithReqConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			if err != nil {
 				return nil, true, err
@@ -76,6 +78,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
 		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
 		if err == nil && len(adpodBytes) > 0 {
+			me.RecordCTVReqImpsWithDbConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			if err != nil {
 				return nil, true, err

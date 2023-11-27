@@ -290,6 +290,9 @@ func isCTV(userAgent string) bool {
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
+	if request == nil {
+		return platform
+	}
 	if request.Site != nil {
 		return models.PLATFORM_DISPLAY
 	}

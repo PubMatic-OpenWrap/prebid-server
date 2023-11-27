@@ -145,6 +145,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
+		Method: payload.Request.Method,
 	}
 
 	// SSAuction will be always 1 for CTV request

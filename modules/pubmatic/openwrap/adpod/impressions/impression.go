@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -25,7 +26,7 @@ type ImpGenerator interface {
 	// Algorithm() int // returns algorithm used for computing number of impressions
 }
 
-func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx) ([]*openrtb_ext.ImpWrapper, []error) {
+func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx, pubId string, me metrics.MetricsEngine) ([]*openrtb_ext.ImpWrapper, []error) {
 	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 
@@ -41,6 +42,7 @@ func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]
 			continue
 		}
 
+		me.RecordAdPodGeneratedImpressionsCount(len(impAdpodConfig), pubId)
 		eachImpCtx.ImpAdPodCfg = impAdpodConfig
 		impCtx[impWrapper.ID] = eachImpCtx
 
