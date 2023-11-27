@@ -45,7 +45,7 @@ type jsonResponse struct {
 }
 
 func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
-	var statusCode = 200
+	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
 		ContentOptions: NoSniff,
@@ -53,7 +53,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
@@ -63,7 +63,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
@@ -71,7 +71,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 	}
 
 	if bidResponse.NBR != nil {
-		statusCode = 400
+		statusCode = http.StatusBadRequest
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}

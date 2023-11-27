@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
@@ -13,7 +14,7 @@ import (
 )
 
 func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
-	var statusCode = 200
+	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
 		ContentOptions: NoSniff,
@@ -21,19 +22,19 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
-		statusCode = 400
+		statusCode = http.StatusBadRequest
 		return response, headers, statusCode
 	}
 

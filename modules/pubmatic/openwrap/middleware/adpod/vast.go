@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -54,7 +55,7 @@ type vastResponse struct {
 }
 
 func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[string]string, int) {
-	var statusCode = 200
+	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationXML,
 		ContentOptions: NoSniff,
@@ -62,7 +63,7 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 
 	response, err := io.ReadAll(aw.Response)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
 		return EmptyVASTResponse, headers, statusCode
 	}
@@ -70,13 +71,13 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
-		statusCode = 500
+		statusCode = http.StatusInternalServerError
 		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
-		statusCode = 400
+		statusCode = http.StatusBadRequest
 		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *bidResponse.NBR)
 		return EmptyVASTResponse, headers, statusCode
 	}

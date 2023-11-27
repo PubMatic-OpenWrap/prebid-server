@@ -77,17 +77,17 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	case OpenWrapV25:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 		endpoint = models.EndpointV25
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case OpenWrapV25Video:
-		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 		endpoint = models.EndpointVideo
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 	case OpenWrapAmp:
-		requestExtWrapper, pubid, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 		endpoint = models.EndpointAMP
+		requestExtWrapper, pubid, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 	case OpenWrapOpenRTBVideo, OpenWrapVAST, OpenWrapJSON:
-		requestExtWrapper, err = ctv.ConvertRequestAndGetRequestExtWrapper(payload, &result)
 		endpoint = getEndpoint(payload.Request.URL.Path)
+		requestExtWrapper, err = ctv.GetRequestExtWrapper(payload, &result)
 	default:
 		// we should return from here
 	}

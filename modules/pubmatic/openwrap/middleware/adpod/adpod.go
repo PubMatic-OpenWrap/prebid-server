@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"runtime/debug"
@@ -8,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
@@ -33,6 +35,17 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	adpodResponseWriter := &utils.CustomWriter{}
 	defer panicHandler(r)
 
+	if r.Method == http.MethodGet {
+		err := enrichRequestBody(r)
+		if err != nil {
+			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest, nil)
+			w.Header().Set(ContentType, ApplicationJSON)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(errResponse)
+			return
+		}
+	}
+
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
 
@@ -50,6 +63,17 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.CustomWriter{}
 	defer panicHandler(r)
+
+	if r.Method == http.MethodGet {
+		err := enrichRequestBody(r)
+		if err != nil {
+			w.Header().Set(ContentType, ApplicationXML)
+			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(EmptyVASTResponse)
+			return
+		}
+	}
 
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
@@ -97,6 +121,19 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	redirectURL, debug, err := getAndValidateRedirectURL(r)
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, err)
+		return
+	}
+
+	enrichError := enrichRequestBody(r)
+	if enrichError != nil {
+		if len(redirectURL) > 0 && debug == "0" {
+			http.Redirect(w, r, string(redirectURL), http.StatusFound)
+			return
+		}
+		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil)
+		w.Header().Set(ContentType, ApplicationJSON)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(errResponse)
 		return
 	}
 

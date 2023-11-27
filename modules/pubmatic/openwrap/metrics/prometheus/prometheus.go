@@ -68,6 +68,10 @@ type Metrics struct {
 	sendLoggerData        *prometheus.HistogramVec
 	owRequestTime         *prometheus.HistogramVec
 
+	//CTV
+	ctvRequests           *prometheus.CounterVec
+	ctvHTTPMethodRequests *prometheus.CounterVec
+
 	prebidCacheWriteTimer *prometheus.HistogramVec
 }
 
@@ -482,8 +486,19 @@ func (m *Metrics) RecordCacheErrorRequests(endpoint string, publisherID string, 
 func (m *Metrics) RecordPublisherResponseEncodingErrorStats(publisherID string)                   {}
 
 // CTV_specific metrics
-func (m *Metrics) RecordCTVRequests(endpoint string, platform string)                              {}
-func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string)  {}
+func (m *Metrics) RecordCTVRequests(endpoint string, platform string) {
+	m.ctvRequests.With(prometheus.Labels{
+		endpointLabel: endpoint,
+		platformLabel: platform,
+	}).Inc()
+}
+func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string) {
+	m.ctvHTTPMethodRequests.With(prometheus.Labels{
+		endpointLabel: endpoint,
+		pubIDLabel:    publisherID,
+		methodLabel:   method,
+	}).Inc()
+}
 func (m *Metrics) RecordCTVInvalidReasonCount(errorCode int, publisherID string)                   {}
 func (m *Metrics) RecordCTVReqImpsWithDbConfigCount(publisherID string)                            {}
 func (m *Metrics) RecordCTVReqImpsWithReqConfigCount(publisherID string)                           {}
