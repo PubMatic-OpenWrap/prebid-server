@@ -7,8 +7,10 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
-func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device *openrtb2.Device) {
-	if device != nil || device.DeviceType != 0 {
+func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device **openrtb2.Device) {
+	if *device == nil {
+		*device = &openrtb2.Device{}
+	} else if (*device).DeviceType != 0 {
 		return
 	}
 
@@ -28,9 +30,5 @@ func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device *openrtb2.
 		return
 	}
 
-	if device == nil {
-		device = &openrtb2.Device{}
-	}
-
-	device.DeviceType = adcom1.DeviceType(adUnitCfg.Device.DeviceType)
+	(*device).DeviceType = adcom1.DeviceType(adUnitCfg.Device.DeviceType)
 }

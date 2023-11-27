@@ -1,8 +1,6 @@
 package exchange
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/spotx"
-	"github.com/PubMatic-OpenWrap/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters"
 	ttx "github.com/prebid/prebid-server/v2/adapters/33across"
 	"github.com/prebid/prebid-server/v2/adapters/aax"
@@ -160,6 +158,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/smilewanted"
 	"github.com/prebid/prebid-server/v2/adapters/sonobi"
 	"github.com/prebid/prebid-server/v2/adapters/sovrn"
+	"github.com/prebid/prebid-server/v2/adapters/spotx"
 	"github.com/prebid/prebid-server/v2/adapters/sspBC"
 	"github.com/prebid/prebid-server/v2/adapters/stroeerCore"
 	"github.com/prebid/prebid-server/v2/adapters/suntContent"
@@ -175,6 +174,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/undertone"
 	"github.com/prebid/prebid-server/v2/adapters/unicorn"
 	"github.com/prebid/prebid-server/v2/adapters/unruly"
+	"github.com/prebid/prebid-server/v2/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters/videobyte"
 	"github.com/prebid/prebid-server/v2/adapters/videoheroes"
 	"github.com/prebid/prebid-server/v2/adapters/vidoomy"

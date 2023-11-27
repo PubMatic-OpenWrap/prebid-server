@@ -48,7 +48,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 			fields: fields{cfg: VastUnwrapModule{Enabled: true, Cfg: unWrapCfg.VastUnWrapCfg{
 				HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-				StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
 				TrafficPercentage: 2}},
@@ -69,7 +69,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				cfg: VastUnwrapModule{Enabled: false, Cfg: unWrapCfg.VastUnWrapCfg{
 					HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 					APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-					StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+					StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 					ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
 					TrafficPercentage: 2}},
@@ -87,11 +87,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldRandomNumberGen := getRandomNumber
-			getRandomNumber = func() int { return 1 }
-			defer func() {
-				getRandomNumber = oldRandomNumberGen
-			}()
 			m := VastUnwrapModule{
 				Cfg:               tt.fields.cfg.Cfg,
 				Enabled:           tt.fields.cfg.Enabled,
@@ -136,7 +131,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				MaxWrapperSupport: 5,
 				HTTPConfig:        unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 				APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 1000, Debug: 1},
-				StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+				StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
 				TrafficPercentage: 2}},
@@ -179,7 +174,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			fields: fields{cfg: VastUnwrapModule{Enabled: false, Cfg: unWrapCfg.VastUnWrapCfg{
 				HTTPConfig:   unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 				APPConfig:    unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-				StatConfig:   unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
 				TrafficPercentage: 2}},
@@ -260,7 +255,7 @@ func TestBuilder(t *testing.T) {
 					MaxWrapperSupport: 5,
 					HTTPConfig:        unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+					StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
 			},
@@ -289,7 +284,7 @@ func TestBuilder(t *testing.T) {
 					MaxWrapperSupport: 5,
 					HTTPConfig:        unWrapCfg.HttpConfig{MaxIdleConns: 100, MaxIdleConnsPerHost: 1, IdleConnTimeout: 300},
 					APPConfig:         unWrapCfg.AppConfig{Host: "", Port: 0, UnwrapDefaultTimeout: 100, Debug: 1},
-					StatConfig:        unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1},
+					StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 					ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
 			},

@@ -21,7 +21,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockMetricsEngine := mock_stats.NewMockMetricsEngine(ctrl)
-	VastUnWrapModule := VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Host: "10.172.141.13", Port: 8080, RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine}
+	VastUnWrapModule := VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine}
 	type args struct {
 		module              VastUnwrapModule
 		payload             hookstage.RawBidderResponsePayload

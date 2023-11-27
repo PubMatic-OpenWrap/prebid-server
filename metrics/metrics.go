@@ -435,6 +435,7 @@ func SyncerSetUidStatuses() []SyncerSetUidStatus {
 // two groups should be consistent within themselves, but comparing numbers between groups
 // is generally not useful.
 type MetricsEngine interface {
+	OWMetricsEngine
 	RecordConnectionAccept(success bool)
 	RecordTMaxTimeout()
 	RecordConnectionClose(success bool)
@@ -523,12 +524,4 @@ type MetricsEngine interface {
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
 	RecordRejectedBids(pubid, bidder, code string)
-
-	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
-	RecordBids(pubid, profileid, bidder, deal string)
-
-	//RecordVastVersion record the count of vast version labelled by bidder and vast version
-	RecordVastVersion(coreBidder, vastVersion string)
-
-	RecordHttpCounter()
 }

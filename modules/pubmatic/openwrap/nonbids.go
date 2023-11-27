@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -61,5 +62,38 @@ func addSeatNonBidsInResponseExt(rctx models.RequestCtx, responseExt *openrtb_ex
 				Seat:   seat,
 				NonBid: nonBids,
 			})
+	}
+}
+
+// addLostToDealBidNonBRCode function sets the NonBR code of all lost-bids not satisfying dealTier to LossBidLostToDealBid
+func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
+	if !rctx.SupportDeals {
+		return
+	}
+
+	for impID := range rctx.ImpBidCtx {
+		winBid, ok := rctx.WinningBids[impID]
+		if !ok {
+			continue
+		}
+
+		for bidID, bidCtx := range rctx.ImpBidCtx[impID].BidCtx {
+			// do not update NonBR for winning bid
+			if winBid.ID == bidID {
+				continue
+			}
+
+			bidDealTierSatisfied := false
+			if bidCtx.BidExt.Prebid != nil {
+				bidDealTierSatisfied = bidCtx.BidExt.Prebid.DealTierSatisfied
+			}
+			// do not update NonBr if lost-bid satisfies dealTier
+			// because it can have NonBr reason as LossBidLostToHigherBid
+			if bidDealTierSatisfied {
+				continue
+			}
+			bidCtx.BidExt.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
+		}
 	}
 }

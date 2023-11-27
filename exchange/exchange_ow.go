@@ -11,6 +11,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
@@ -25,6 +26,21 @@ const (
 	owProfileId           = "owProfileId"
 	nodeal                = "nodeal"
 	vastVersionUndefined  = "undefined"
+)
+
+const (
+	VASTTypeWrapperEndTag = "</Wrapper>"
+	VASTTypeInLineEndTag  = "</InLine>"
+)
+
+// VASTTagType describes the allowed values for VASTTagType
+type VASTTagType string
+
+const (
+	WrapperVASTTagType VASTTagType = "Wrapper"
+	InLineVASTTagType  VASTTagType = "InLine"
+	URLVASTTagType     VASTTagType = "URL"
+	UnknownVASTTagType VASTTagType = "Unknown"
 )
 
 var (
@@ -172,6 +188,27 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
 		}
 	}
+}
+
+func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
+	for _, adapterBid := range adapterBids.Bids {
+		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
+			vastTagType := UnknownVASTTagType
+			if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeWrapperEndTag); index != -1 {
+				vastTagType = WrapperVASTTagType
+			} else if index := strings.LastIndex(adapterBid.Bid.AdM, VASTTypeInLineEndTag); index != -1 {
+				vastTagType = InLineVASTTagType
+			} else if IsUrl(adapterBid.Bid.AdM) {
+				vastTagType = URLVASTTagType
+			}
+			metricsEngine.RecordVASTTagType(string(bidder), string(vastTagType))
+		}
+	}
+}
+
+func IsUrl(adm string) bool {
+	url, err := url.Parse(adm)
+	return err == nil && url.Scheme != "" && url.Host != ""
 }
 
 // recordPartnerTimeout captures the partnertimeout if any at publisher profile level

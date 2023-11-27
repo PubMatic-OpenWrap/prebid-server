@@ -260,6 +260,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 			errs = append(errs, moreErrs...)
 
 			if bidResponse != nil {
+				recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
 				reject := hookExecutor.ExecuteRawBidderResponseStage(bidResponse, string(bidder.BidderName))
 				if reject != nil {
 					errs = append(errs, reject)
@@ -372,16 +373,11 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 						}
 
 						adjustmentFactor := 1.0
-						if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderName.String()))]; ok {
-							adjustmentFactor = givenAdjustment
-						} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderRequest.BidderName.String()))]; ok {
-							adjustmentFactor = givenAdjustment
-						}
 
 						if bidderName != bidderGroupM {
-							if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
+							if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderName.String()))]; ok {
 								adjustmentFactor = givenAdjustment
-							} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderRequest.BidderName.String()]; ok {
+							} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderRequest.BidderName.String()))]; ok {
 								adjustmentFactor = givenAdjustment
 							}
 						}

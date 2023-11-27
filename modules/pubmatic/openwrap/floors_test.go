@@ -5,9 +5,10 @@ import (
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
-func Test_setFloorsExt(t *testing.T) {
+func TestSetFloorsExt(t *testing.T) {
 	enable := true
 	disable := false
 
@@ -21,7 +22,7 @@ func Test_setFloorsExt(t *testing.T) {
 		want *models.RequestExt
 	}{
 		{
-			name: "JSON URL is present in db",
+			name: "Only JSON URL is present in db",
 			args: args{
 				requestExt: &models.RequestExt{},
 				configMap: map[int]map[string]string{
@@ -34,9 +35,6 @@ func Test_setFloorsExt(t *testing.T) {
 				ExtRequest: openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Floors: &openrtb_ext.PriceFloorRules{
-							Location: &openrtb_ext.PriceFloorEndpoint{
-								URL: "http://test.com/floor",
-							},
 							Enabled: &enable,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
 								EnforcePBS: &enable,
@@ -61,7 +59,10 @@ func Test_setFloorsExt(t *testing.T) {
 				ExtRequest: openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						Floors: &openrtb_ext.PriceFloorRules{
-							Enabled: &disable,
+							Enabled: &enable,
+							Enforcement: &openrtb_ext.PriceFloorEnforcement{
+								EnforcePBS: &enable,
+							},
 						},
 					},
 				},
@@ -213,9 +214,6 @@ func Test_setFloorsExt(t *testing.T) {
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							Floors: &openrtb_ext.PriceFloorRules{
 								Enabled: &enable,
-								Location: &openrtb_ext.PriceFloorEndpoint{
-									URL: "http://test.com/floor",
-								},
 								Enforcement: &openrtb_ext.PriceFloorEnforcement{
 									EnforcePBS: &enable,
 								},
@@ -354,6 +352,7 @@ func Test_setFloorsExt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setFloorsExt(tt.args.requestExt, tt.args.configMap)
+			assert.Equal(t, tt.want, tt.args.requestExt)
 		})
 	}
 }

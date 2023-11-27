@@ -105,7 +105,7 @@ func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
 	var sizeArr []string
 	// TODO: handle video
 	if imp.Banner != nil && imp.Banner.W != nil && imp.Banner.H != nil {
-		size := getSizeForPlatform(*imp.Banner.W, *imp.Banner.H, platform)
+		size := models.GetSizeForPlatform(*imp.Banner.W, *imp.Banner.H, platform)
 		if _, ok := sizes[size]; !ok {
 			sizeArr = append(sizeArr, size)
 			sizes[size] = true
@@ -123,7 +123,7 @@ func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
 	}
 
 	if imp.Video != nil {
-		size := getSizeForPlatform(imp.Video.W, imp.Video.H, models.PLATFORM_VIDEO)
+		size := models.GetSizeForPlatform(imp.Video.W, imp.Video.H, models.PLATFORM_VIDEO)
 		if _, ok := sizes[size]; !ok {
 			sizeArr = append(sizeArr, size)
 			sizes[size] = true

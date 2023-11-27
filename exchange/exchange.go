@@ -719,7 +719,6 @@ func (e *exchange) getAllBids(
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(bidderRequests))
 	chBids := make(chan *bidResponseWrapper, len(bidderRequests))
 	extraRespInfo := extraAuctionResponseInfo{}
-	bidIDsCollision := false
 
 	e.me.RecordOverheadTime(metrics.MakeBidderRequests, time.Since(pbsRequestStartTime))
 
@@ -815,15 +814,16 @@ func (e *exchange) getAllBids(
 		}
 		//but we need to add all bidders data to adapterExtra to have metrics and other metadata
 		adapterExtra[brw.bidder] = brw.adapterExtra
-
-		if !extraRespInfo.bidsFound && adapterBids[brw.bidder] != nil && len(adapterBids[brw.bidder].Bids) > 0 {
-			extraRespInfo.bidsFound = true
-			bidIDsCollision = recordAdaptorDuplicateBidIDs(e.me, adapterBids)
-		}
 	}
-	if bidIDsCollision {
-		// record this request count this request if bid collision is detected
-		e.me.RecordRequestHavingDuplicateBidID()
+	for _, adapterBid := range adapterBids {
+		if len(adapterBid.Bids) > 0 {
+			extraRespInfo.bidsFound = true
+			bidIDsCollision := recordAdaptorDuplicateBidIDs(e.me, adapterBids)
+			if bidIDsCollision {
+				e.me.RecordRequestHavingDuplicateBidID()
+			}
+			break
+		}
 	}
 
 	return adapterBids, adapterExtra, extraRespInfo

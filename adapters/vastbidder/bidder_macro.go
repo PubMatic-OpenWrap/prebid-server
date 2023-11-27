@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -177,16 +176,35 @@ func (tag *BidderMacro) GetHeaders() http.Header {
 	return http.Header{}
 }
 
-// GetValueFromKV returns the value from KV map wrt key
-func (tag *BidderMacro) GetValueFromKV(key string) string {
-	if tag.KV == nil {
-		return ""
+// GetValue returns the value for given key
+// isKeyFound will check the key is present or not
+func (tag *BidderMacro) GetValue(key string) (string, bool) {
+	macroKeys := strings.Split(key, ".")
+	isKeyFound := false
+
+	// This will check if key has prefix kv/kvm
+	// if prefix present it will always return isKeyFound as true as it will help to replace the key with empty string in VAST TAG
+	if (macroKeys[0] == MacroKV || macroKeys[0] == MacroKVM) && len(macroKeys) > 1 {
+		isKeyFound = true
+		if tag.KV == nil {
+			return "", isKeyFound
+		}
+		switch macroKeys[0] {
+		case MacroKV:
+			val := getValueFromMap(macroKeys[1:], tag.KV)
+			if dataMap, ok := val.(map[string]interface{}); ok {
+				return mapToQuery(dataMap), isKeyFound
+			}
+			return fmt.Sprintf("%v", val), isKeyFound
+		case MacroKVM:
+			val := getValueFromMap(macroKeys[1:], tag.KV)
+			if isMap(val) {
+				return getJSONString(val), isKeyFound
+			}
+			return fmt.Sprintf("%v", val), isKeyFound
+		}
 	}
-	key = strings.TrimPrefix(key, kvPrefix)
-	if value, found := tag.KV[key]; found {
-		return fmt.Sprintf("%v", value)
-	}
-	return ""
+	return "", isKeyFound
 }
 
 /********************* Request *********************/
@@ -264,6 +282,33 @@ func (tag *BidderMacro) MacroTransactionID(key string) string {
 func (tag *BidderMacro) MacroPaymentIDChain(key string) string {
 	if nil != tag.Request.Source {
 		return tag.Request.Source.PChain
+	}
+	return ""
+}
+
+// MacroSchain contains definition for Schain Parameter
+func (tag *BidderMacro) MacroSchain(key string) string {
+	if tag.Request.Source == nil {
+		return ""
+	}
+
+	if tag.Request.Source.SChain != nil {
+		return openrtb_ext.SerializeSupplyChain(tag.Request.Source.SChain)
+	}
+
+	if tag.Request.Source.Ext != nil {
+		schain, _, _, err := jsonparser.Get(tag.Request.Source.Ext, MacroSchain)
+
+		if err != nil {
+			return ""
+		}
+		var schainObj openrtb2.SupplyChain
+		err = json.Unmarshal(schain, &schainObj)
+
+		if err != nil {
+			return ""
+		}
+		return openrtb_ext.SerializeSupplyChain(&schainObj)
 	}
 	return ""
 }
@@ -1209,13 +1254,7 @@ func (tag *BidderMacro) MacroKV(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-
-	values := url.Values{}
-	for key, val := range tag.KV {
-		values.Add(key, fmt.Sprintf("%v", val))
-	}
-	return values.Encode()
-
+	return mapToQuery(tag.KV)
 }
 
 // MacroKVM replace the kvm macro
@@ -1223,11 +1262,7 @@ func (tag *BidderMacro) MacroKVM(key string) string {
 	if tag.KV == nil {
 		return ""
 	}
-	jsonBytes, err := json.Marshal(tag.KV)
-	if err != nil {
-		return ""
-	}
-	return string(jsonBytes)
+	return getJSONString(tag.KV)
 }
 
 /********************* Request Headers *********************/

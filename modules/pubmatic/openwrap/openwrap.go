@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
@@ -20,6 +21,7 @@ import (
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/tbf"
 )
 
 const (
@@ -27,9 +29,10 @@ const (
 )
 
 type OpenWrap struct {
-	cfg          config.Config
-	cache        cache.Cache
-	metricEngine metrics.MetricsEngine
+	cfg                config.Config
+	cache              cache.Cache
+	metricEngine       metrics.MetricsEngine
+	currencyConversion currency.Conversions
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -66,12 +69,17 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
+	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
+	// Init TBF (tracking-beacon-first) feature related services
+	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
+
 	return OpenWrap{
-		cfg:          cfg,
-		cache:        owCache,
-		metricEngine: &metricEngine,
+		cfg:                cfg,
+		cache:              owCache,
+		metricEngine:       &metricEngine,
+		currencyConversion: moduleDeps.CurrencyConversion,
 	}, nil
 }
 
@@ -96,6 +104,6 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 }
 
 func patchConfig(cfg *config.Config) {
-	cfg.Server.HostName = getHostName()
+	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 }

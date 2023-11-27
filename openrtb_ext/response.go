@@ -139,6 +139,7 @@ type NonBidObject struct {
 	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
 	BidId             string              `json:"bidid,omitempty"`
 	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
+	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
 }
 
 // ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext

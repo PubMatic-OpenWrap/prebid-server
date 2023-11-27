@@ -18,7 +18,7 @@ type IBidderMacro interface {
 	SetAdapterConfig(*config.Adapter)
 	GetURI() string
 	GetHeaders() http.Header
-	GetValueFromKV(string) string
+	GetValue(string) (string, bool)
 	//getAllHeaders returns default and custom heades
 	getAllHeaders() http.Header
 
@@ -37,6 +37,7 @@ type IBidderMacro interface {
 	MacroFD(string) string
 	MacroTransactionID(string) string
 	MacroPaymentIDChain(string) string
+	MacroSchain(string) string
 
 	//Regs
 	MacroCoppa(string) string

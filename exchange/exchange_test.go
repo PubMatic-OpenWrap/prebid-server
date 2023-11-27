@@ -102,16 +102,16 @@ func TestNewExchange(t *testing.T) {
 // and check whether the returned request successfully prints any '&' characters as it should
 // To do so, we:
 //  1. Write the endpoint adapter URL with an '&' character into a new config,Configuration struct
-//     as specified in https://github.com/prebid/prebid-server/issues/465
+//     as specified in https://github.com/prebid/prebid-server/v2/issues/465
 //  2. Initialize a new exchange with said configuration
 //  3. Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs including the
-//     sample request as specified in https://github.com/prebid/prebid-server/issues/465
+//     sample request as specified in https://github.com/prebid/prebid-server/v2/issues/465
 //  4. Build a BidResponse struct using exchange.buildBidResponse(ctx.Background(), liveA... )
 //  5. Assert we have no '&' characters in the response that exchange.buildBidResponse returns
 func TestCharacterEscape(t *testing.T) {
 
 	// 1) Adapter with a '& char in its endpoint property
-	//    https://github.com/prebid/prebid-server/issues/465
+	//    https://github.com/prebid/prebid-server/v2/issues/465
 	cfg := &config.Configuration{}
 	biddersInfo := config.BidderInfos{"appnexus": config.BidderInfo{Endpoint: "http://ib.adnxs.com/openrtb2?query1&query2"}} //Note the '&' character in there
 
@@ -146,7 +146,7 @@ func TestCharacterEscape(t *testing.T) {
 	adapterBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, 1)
 	adapterBids["appnexus"] = &entities.PbsOrtbSeatBid{Currency: "USD"}
 
-	//An openrtb2.BidRequest struct as specified in https://github.com/prebid/prebid-server/issues/465
+	//An openrtb2.BidRequest struct as specified in https://github.com/prebid/prebid-server/v2/issues/465
 	bidRequest := &openrtb2.BidRequest{
 		ID: "some-request-id",
 		Imp: []openrtb2.Imp{{
@@ -2783,12 +2783,13 @@ func TestCategoryMapping(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          40.0000,
-								Cat:            cats4,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 40,
-								OriginalBidCur: "USD",
+								Price:             40.0000,
+								Cat:               cats4,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    40,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 40,
 
 								ID:   "bid_id4",
 								Type: openrtb_ext.BidTypeVideo,
@@ -2933,12 +2934,13 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
-								Price:          30.0000,
-								Cat:            cats3,
-								W:              1,
-								H:              1,
-								OriginalBidCPM: 30,
-								OriginalBidCur: "USD",
+								Price:             30.0000,
+								Cat:               cats3,
+								W:                 1,
+								H:                 1,
+								OriginalBidCPM:    30,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 30,
 
 								ID:   "bid_id3",
 								Type: openrtb_ext.BidTypeVideo,
@@ -3402,12 +3404,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3441,12 +3444,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3480,12 +3484,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
@@ -3521,12 +3526,13 @@ func TestBidRejectionErrors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										Price:          10.0000,
-										Cat:            []string{"IAB1-1"},
-										W:              1,
-										H:              1,
-										OriginalBidCPM: 10,
-										OriginalBidCur: "USD",
+										Price:             10.0000,
+										Cat:               []string{"IAB1-1"},
+										W:                 1,
+										H:                 1,
+										OriginalBidCPM:    10,
+										OriginalBidCur:    "USD",
+										OriginalBidCPMUSD: 10,
 
 										ID:   "bid_id1",
 										Type: openrtb_ext.BidTypeVideo,
