@@ -1871,24 +1871,8 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		setup                func()
 		isRequestNotRejected bool
 		wantErr              bool
+		wantBidRequest       json.RawMessage
 	}{
-		{
-			name: "request_with_sshb=1",
-			args: args{
-				ctx: context.Background(),
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
-							Sshb: "1",
-						},
-					},
-				},
-				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-			},
-			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject: false,
-			},
-		},
 		{
 			name: "empty_module_context",
 			args: args{
@@ -1928,7 +1912,24 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
+			name: "request_with_sshb=1",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Sshb: "1",
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+		},
+		{
+			name: "module_should_not_reject_hybrid_requests_exit_module_without_executing_module",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
@@ -1977,7 +1978,18 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
 					ModuleContext: hookstage.ModuleContext{
-						"rctx": rctx,
+						"rctx": models.RequestCtx{
+							ProfileID:    1234,
+							DisplayID:    1,
+							SSAuction:    -1,
+							Platform:     "in-app",
+							Debug:        true,
+							UA:           "go-test",
+							IP:           "127.0.0.1",
+							UidCookie:    nil,
+							ProfileIDStr: "1234",
+							Endpoint:     models.EndpointV25,
+						},
 					},
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
@@ -1990,6 +2002,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+				mockEngine.EXPECT().RecordUidsCookieNotPresentErrorStats("5890", "1234")
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2497,6 +2510,12 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			fields: fields{
 				cache:        mockCache,
 				metricEngine: mockEngine,
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MaxTimeout: 1000,
+						MinTimeout: 400,
+					},
+				},
 			},
 			setup: func() {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
@@ -2524,8 +2543,13 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						models.TIMEOUT:             "200",
 					},
 					-1: {
-						models.DisplayVersionID: "1",
-						models.PLATFORM_KEY:     models.PLATFORM_APP,
+						models.AbTestEnabled:             "1",
+						AppendTest(models.TestGroupSize): "100",
+						models.TestType:                  models.TestTypeAuctionTimeout,
+						models.SSTimeoutKey:              "500",
+						AppendTest(models.SSTimeoutKey):  "600",
+						models.DisplayVersionID:          "1",
+						models.PLATFORM_KEY:              models.PLATFORM_APP,
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
@@ -2542,6 +2566,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				AnalyticsTags: hookanalytics.Analytics{},
 			},
 			wantErr:              false,
+			wantBidRequest:       json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"127.0.0.1"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"tmax":500,"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 			isRequestNotRejected: true,
 		},
 		{
@@ -2610,14 +2635,25 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			json.Unmarshal(tt.args.bidrequest, bidrequest)
 			tt.args.payload.BidRequest = bidrequest
 			got, err := m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			if err != nil {
+				assert.Equal(t, tt.wantErr, err != nil)
+				return
+			}
+
 			if tt.isRequestNotRejected {
 				assert.Equal(t, tt.want.Reject, got.Reject)
 				assert.Equal(t, tt.want.NbrCode, got.NbrCode)
 				assert.NotEmpty(t, tt.want.DebugMessages)
-				return
-			}
-			if (err != nil) != tt.wantErr {
-				assert.Equal(t, tt.wantErr, err != nil)
+
+				//check updated request
+				mutations := got.ChangeSet.Mutations()
+				assert.NotEmpty(t, mutations, tt.name)
+				for _, mut := range mutations {
+					result, err := mut.Apply(tt.args.payload)
+					assert.Nil(t, err, tt.name)
+					gotBidRequest, _ := json.Marshal(result.BidRequest)
+					assert.Equal(t, tt.wantBidRequest, json.RawMessage(gotBidRequest), tt.name)
+				}
 				return
 			}
 			assert.Equal(t, tt.want, got)
