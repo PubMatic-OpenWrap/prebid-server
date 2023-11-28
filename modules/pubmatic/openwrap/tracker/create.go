@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	cds "github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 )
@@ -50,6 +51,10 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
 	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
+	var cdsData string
+	if rctx.NewReqExt != nil {
+		cdsData = cds.ParseCustomDimensionsToString(cds.GetCustomDimensionsFromRequestExt(rctx.NewReqExt.Prebid.BidderParams))
+	}
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -69,6 +74,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorType:         floorsDetails.FloorType,
 				FloorSkippedFlag:  floorsDetails.Skipfloors,
 				FloorSource:       floorsDetails.FloorSource,
+				CustomDimensions:  cdsData,
 				LoggerData: models.LoggerData{
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,
@@ -261,6 +267,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	v.Set(models.TRKServerLogger, "1")
 	v.Set(models.TRKDealID, partner.DealID)
+	if tracker.CustomDimensions != "" {
+		v.Set(models.TRKCustomDimensions, tracker.CustomDimensions)
+	}
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform

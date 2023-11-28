@@ -152,6 +152,14 @@ func TestIsCustomDimensionsPresent(t *testing.T) {
 			want:  map[string]CustomDimension{},
 			want1: false,
 		},
+		{
+			name: "ext data is nil",
+			args: args{
+				ext: nil,
+			},
+			want:  map[string]CustomDimension{},
+			want1: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

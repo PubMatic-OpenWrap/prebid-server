@@ -123,7 +123,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.logFloorType(&rCtx.NewReqExt.Prebid)
 	}
 
-	// set the floor details from tracker
+	// set the floor details and cds from tracker
 	floorDetailsSet := false
 	for _, tracker := range rCtx.Trackers {
 		wlog.FloorType = tracker.Tracker.FloorType
@@ -134,8 +134,9 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		for i := range wlog.Slots {
 			wlog.Slots[i].FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
 		}
+		wlog.cds = tracker.Tracker.CustomDimensions
 		floorDetailsSet = true
-		break // For all trackers, floor-details are common so break the loop
+		break // For all trackers, floor-details and cds are common so break the loop
 	}
 
 	// if floor details not present in tracker then use response.ext

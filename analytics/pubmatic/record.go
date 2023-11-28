@@ -13,6 +13,7 @@ import (
 // WloggerRecord structure for wrapper analytics logger object
 type WloggerRecord struct {
 	record
+	cds string `json:"-"`
 }
 
 type record struct {

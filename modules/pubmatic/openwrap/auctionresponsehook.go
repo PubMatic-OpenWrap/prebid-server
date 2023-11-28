@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -110,6 +111,16 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			if bidExt.Prebid != nil {
 				bidExt.CreativeType = string(bidExt.Prebid.Type)
+				if bidExt.Prebid.Targeting == nil {
+					bidExt.Prebid.Targeting = make(map[string]string)
+				}
+				if cdsMap, ok := customdimensions.IsCustomDimensionsPresent(rctx.NewReqExt); ok {
+					for key, value := range cdsMap {
+						if value.SendToGAM == nil || value.SendToGAM != nil && *value.SendToGAM {
+							bidExt.Prebid.Targeting[key] = value.Value
+						}
+					}
+				}
 			}
 			if bidExt.CreativeType == "" {
 				bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
