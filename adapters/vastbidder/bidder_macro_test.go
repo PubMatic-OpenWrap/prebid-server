@@ -7,7 +7,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/v2/config"
 	"github.com/stretchr/testify/assert"
 )
 

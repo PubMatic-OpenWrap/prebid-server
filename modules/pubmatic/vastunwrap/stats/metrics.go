@@ -4,9 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/modules/moduledeps"
+	"github.com/prebid/prebid-server/v2/config"
+	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

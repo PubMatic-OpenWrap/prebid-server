@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 )
 
 // tbf structure holds the configuration of Tracking-Beacon-First feature

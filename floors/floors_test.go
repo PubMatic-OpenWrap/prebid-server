@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1019,7 +1020,7 @@ func TestResolveFloorsWithUseDataRate(t *testing.T) {
 }
 
 func printFloors(floors *openrtb_ext.PriceFloorRules) string {
-	fbytes, _ := json.Marshal(floors)
+	fbytes, _ := jsonutil.Marshal(floors)
 	return string(fbytes)
 }
 

@@ -9,8 +9,8 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	openrtb2 "github.com/prebid/openrtb/v19/openrtb2"
-	models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	adunitconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	adunitconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // MockCache is a mock of Cache interface.

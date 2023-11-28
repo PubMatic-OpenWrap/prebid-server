@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
-	mock_mhttp "github.com/prebid/prebid-server/analytics/pubmatic/mhttp/mock"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
+	mock_mhttp "github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp/mock"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 

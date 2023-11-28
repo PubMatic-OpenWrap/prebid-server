@@ -5,8 +5,8 @@ import (
 	"runtime/debug"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 )
 
 func getVastUnwrapperEnable(ctx context.Context, field string) bool {

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 )
 
 func TestHandleEntrypointHook(t *testing.T) {

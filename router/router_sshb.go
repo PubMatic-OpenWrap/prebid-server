@@ -6,23 +6,23 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/hooks"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/hooks"
 
-	analyticCfg "github.com/prebid/prebid-server/analytics/config"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/endpoints"
-	"github.com/prebid/prebid-server/endpoints/openrtb2"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/uuidutil"
+	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/endpoints"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/gdpr"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	pbc "github.com/prebid/prebid-server/v2/prebid_cache_client"
+	"github.com/prebid/prebid-server/v2/stored_requests"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -37,7 +37,7 @@ var (
 	g_storedReqFetcher    *stored_requests.Fetcher
 	g_storedRespFetcher   *stored_requests.Fetcher
 	g_metrics             metrics.MetricsEngine
-	g_analytics           *analytics.PBSAnalyticsModule
+	g_analytics           *analytics.Runner
 	g_disabledBidders     map[string]string
 	g_videoFetcher        *stored_requests.Fetcher
 	g_activeBidders       map[string]openrtb_ext.BidderName
@@ -59,11 +59,11 @@ func GetPrebidCacheURL() string {
 }
 
 // RegisterAnalyticsModule function registers the PBSAnalyticsModule
-func RegisterAnalyticsModule(anlt analytics.PBSAnalyticsModule) error {
+func RegisterAnalyticsModule(anlt analytics.Module) error {
 	if g_analytics == nil {
 		return fmt.Errorf("g_analytics is nil")
 	}
-	modules, err := analyticCfg.EnableAnalyticsModule(anlt, *g_analytics)
+	modules, err := analyticsBuild.EnableAnalyticsModule(anlt, *g_analytics)
 	if err != nil {
 		return err
 	}

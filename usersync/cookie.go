@@ -1,13 +1,13 @@
 package usersync
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 const uidCookieName = "uids"
@@ -227,7 +227,7 @@ type cookieJson struct {
 }
 
 func (cookie *Cookie) MarshalJSON() ([]byte, error) {
-	return json.Marshal(cookieJson{
+	return jsonutil.Marshal(cookieJson{
 		UIDs:   cookie.uids,
 		OptOut: cookie.optOut,
 	})
@@ -235,7 +235,7 @@ func (cookie *Cookie) MarshalJSON() ([]byte, error) {
 
 func (cookie *Cookie) UnmarshalJSON(b []byte) error {
 	var cookieContract cookieJson
-	if err := json.Unmarshal(b, &cookieContract); err != nil {
+	if err := jsonutil.Unmarshal(b, &cookieContract); err != nil {
 		return err
 	}
 

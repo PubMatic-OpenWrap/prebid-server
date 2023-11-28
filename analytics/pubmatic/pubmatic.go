@@ -5,12 +5,11 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
-
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 type RequestType string
@@ -85,7 +84,7 @@ func (ow HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent)
 }
 
 // Method to initialize the analytic module
-func NewHTTPLogger(cfg config.PubMaticWL) analytics.PBSAnalyticsModule {
+func NewHTTPLogger(cfg config.PubMaticWL) analytics.Module {
 	once.Do(func() {
 		mhttp.Init(cfg.MaxClients, cfg.MaxConnections, cfg.MaxCalls, cfg.RespTimeout)
 

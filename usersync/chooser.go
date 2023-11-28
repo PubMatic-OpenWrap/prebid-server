@@ -1,5 +1,11 @@
 package usersync
 
+import (
+	"strings"
+
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+)
+
 // Chooser determines which syncers are eligible for a given request.
 type Chooser interface {
 	// Choose considers bidders to sync, filters the bidders, and returns the result of the
@@ -15,9 +21,10 @@ func NewChooser(bidderSyncerLookup map[string]Syncer) Chooser {
 	}
 
 	return standardChooser{
-		bidderSyncerLookup: bidderSyncerLookup,
-		biddersAvailable:   bidders,
-		bidderChooser:      standardBidderChooser{shuffler: randomShuffler{}},
+		bidderSyncerLookup:       bidderSyncerLookup,
+		biddersAvailable:         bidders,
+		bidderChooser:            standardBidderChooser{shuffler: randomShuffler{}},
+		normalizeValidBidderName: openrtb_ext.NormalizeBidderName,
 	}
 }
 
@@ -88,6 +95,9 @@ const (
 
 	// StatusBlockedByPrivacy specifies a bidder sync url is not allowed by privacy activities
 	StatusBlockedByPrivacy
+
+	// StatusUnconfiguredBidder refers to a bidder who hasn't been configured to have a syncer key, but is known by Prebid Server
+	StatusUnconfiguredBidder
 )
 
 // Privacy determines which privacy policies will be enforced for a user sync request.
@@ -100,9 +110,11 @@ type Privacy interface {
 
 // standardChooser implements the user syncer algorithm per official Prebid specification.
 type standardChooser struct {
-	bidderSyncerLookup map[string]Syncer
-	biddersAvailable   []string
-	bidderChooser      bidderChooser
+	bidderSyncerLookup       map[string]Syncer
+	biddersAvailable         []string
+	bidderChooser            bidderChooser
+	normalizeValidBidderName func(name string) (openrtb_ext.BidderName, bool)
+	biddersKnown             map[string]struct{}
 }
 
 // Choose randomly selects user syncers which are permitted by the user's privacy settings and
@@ -136,13 +148,18 @@ func (c standardChooser) Choose(request Request, cookie *Cookie) Result {
 }
 
 func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}, syncTypeFilter SyncTypeFilter, privacy Privacy, cookie *Cookie) (Syncer, BidderEvaluation) {
-	bidderName := bidder
-	if bidderName == "indexExchange" {
-		bidderName = "ix"
-	}
-	syncer, exists := c.bidderSyncerLookup[bidderName]
+	bidderNormalized, exists := c.normalizeValidBidderName(bidder)
 	if !exists {
 		return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}
+	}
+
+	syncer, exists := c.bidderSyncerLookup[bidderNormalized.String()]
+	if !exists {
+		if _, ok := c.biddersKnown[bidder]; !ok {
+			return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}
+		} else {
+			return nil, BidderEvaluation{Status: StatusUnconfiguredBidder, Bidder: bidder}
+		}
 	}
 
 	_, seen := syncersSeen[syncer.Key()]
@@ -151,7 +168,7 @@ func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}
 	}
 	syncersSeen[syncer.Key()] = struct{}{}
 
-	if !syncer.SupportsType(syncTypeFilter.ForBidder(bidder)) {
+	if !syncer.SupportsType(syncTypeFilter.ForBidder(strings.ToLower(bidder))) {
 		return nil, BidderEvaluation{Status: StatusTypeNotSupported, Bidder: bidder, SyncerKey: syncer.Key()}
 	}
 
@@ -164,11 +181,11 @@ func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}
 		return nil, BidderEvaluation{Status: StatusBlockedByPrivacy, Bidder: bidder, SyncerKey: syncer.Key()}
 	}
 
-	if !privacy.GDPRAllowsBidderSync(bidder) {
+	if !privacy.GDPRAllowsBidderSync(bidderNormalized.String()) {
 		return nil, BidderEvaluation{Status: StatusBlockedByGDPR, Bidder: bidder, SyncerKey: syncer.Key()}
 	}
 
-	if !privacy.CCPAAllowsBidderSync(bidder) {
+	if !privacy.CCPAAllowsBidderSync(bidderNormalized.String()) {
 		return nil, BidderEvaluation{Status: StatusBlockedByCCPA, Bidder: bidder, SyncerKey: syncer.Key()}
 	}
 
