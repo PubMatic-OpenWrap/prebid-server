@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	_ "github.com/lib/pq"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"

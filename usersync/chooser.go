@@ -95,6 +95,9 @@ const (
 
 	// StatusBlockedByPrivacy specifies a bidder sync url is not allowed by privacy activities
 	StatusBlockedByPrivacy
+
+	// StatusUnconfiguredBidder refers to a bidder who hasn't been configured to have a syncer key, but is known by Prebid Server
+	StatusUnconfiguredBidder
 )
 
 // Privacy determines which privacy policies will be enforced for a user sync request.
@@ -111,6 +114,7 @@ type standardChooser struct {
 	biddersAvailable         []string
 	bidderChooser            bidderChooser
 	normalizeValidBidderName func(name string) (openrtb_ext.BidderName, bool)
+	biddersKnown             map[string]struct{}
 }
 
 // Choose randomly selects user syncers which are permitted by the user's privacy settings and
@@ -151,7 +155,11 @@ func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}
 
 	syncer, exists := c.bidderSyncerLookup[bidderNormalized.String()]
 	if !exists {
-		return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}
+		if _, ok := c.biddersKnown[bidder]; !ok {
+			return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}
+		} else {
+			return nil, BidderEvaluation{Status: StatusUnconfiguredBidder, Bidder: bidder}
+		}
 	}
 
 	_, seen := syncersSeen[syncer.Key()]
