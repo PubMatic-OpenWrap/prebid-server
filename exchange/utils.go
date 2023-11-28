@@ -59,6 +59,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 	requestExt *openrtb_ext.ExtRequest,
 	gdprDefaultValue gdpr.Signal, bidAdjustmentFactors map[string]float64,
 ) (allowedBidderRequests []BidderRequest, privacyLabels metrics.PrivacyLabels, errs []error) {
+
 	req := auctionReq.BidRequestWrapper
 	aliases, errs := parseAliases(req.BidRequest)
 	if len(errs) > 0 {
@@ -94,6 +95,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 			errs = append(errs, err)
 		}
 	}
+	updateContentObjectForBidder(allBidderRequests, requestExt)
 
 	if auctionReq.Account.PriceFloors.IsAdjustForBidAdjustmentEnabled() {
 		//Apply BidAdjustmentFactor to imp.BidFloor
@@ -411,6 +413,7 @@ func buildRequestExtForBidder(bidder string, requestExt json.RawMessage, request
 		prebid.MultiBid = buildRequestExtMultiBid(bidder, requestExtParsed.Prebid.MultiBid, alternateBidderCodes)
 		prebid.Sdk = requestExtParsed.Prebid.Sdk
 		prebid.Server = requestExtParsed.Prebid.Server
+		prebid.KeyVal = requestExtParsed.Prebid.KeyVal
 	}
 
 	// Marshal New Prebid Object
@@ -622,6 +625,11 @@ func createSanitizedImpExt(impExt, impExtPrebid map[string]json.RawMessage) (map
 			sanitizedImpPrebidExt[k] = v
 		}
 	}
+
+	// Dont send this to adapters
+	// if v, exists := impExtPrebid["floors"]; exists {
+	// 	sanitizedImpPrebidExt["floors"] = v
+	// }
 
 	// marshal sanitized imp[].ext.prebid
 	if len(sanitizedImpPrebidExt) > 0 {

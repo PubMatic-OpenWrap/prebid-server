@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/experiment/adscert"
+	"github.com/prebid/prebid-server/v2/floors"
 	"github.com/prebid/prebid-server/v2/hooks"
 	"github.com/prebid/prebid-server/v2/macros"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
@@ -95,6 +96,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		empty_fetcher.EmptyFetcher{},
 		&adscert.NilSigner{},
 		macros.NewStringIndexBasedReplacer(),
+		&floors.PriceFloorFetcher{},
 	)
 
 	endpoint, _ := NewEndpoint(

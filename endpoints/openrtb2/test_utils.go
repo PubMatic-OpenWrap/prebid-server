@@ -26,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/experiment/adscert"
+	"github.com/prebid/prebid-server/v2/floors"
 	"github.com/prebid/prebid-server/v2/gdpr"
 	"github.com/prebid/prebid-server/v2/hooks"
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
@@ -90,6 +91,7 @@ type testConfigValues struct {
 	CurrencyRates       map[string]map[string]float64 `json:"currencyRates"`
 	MockBidders         []mockBidderHandler           `json:"mockBidders"`
 	RealParamsValidator bool                          `json:"realParamsValidator"`
+	AssertBidExt        bool                          `json:"assertbidext"`
 }
 
 type brokenExchange struct{}
@@ -1204,6 +1206,7 @@ func buildTestExchange(testCfg *testConfigValues, adapterMap map[openrtb_ext.Bid
 		mockFetcher,
 		&adscert.NilSigner{},
 		macros.NewStringIndexBasedReplacer(),
+		&floors.PriceFloorFetcher{},
 	)
 
 	testExchange = &exchangeTestWrapper{
@@ -1408,6 +1411,7 @@ func (p *fakePermissions) AuctionActivitiesAllowed(ctx context.Context, bidderCo
 type mockPlanBuilder struct {
 	entrypointPlan               hooks.Plan[hookstage.Entrypoint]
 	rawAuctionPlan               hooks.Plan[hookstage.RawAuctionRequest]
+	beforeRequestValidation      hooks.Plan[hookstage.BeforeValidationRequest]
 	processedAuctionPlan         hooks.Plan[hookstage.ProcessedAuctionRequest]
 	bidderRequestPlan            hooks.Plan[hookstage.BidderRequest]
 	rawBidderResponsePlan        hooks.Plan[hookstage.RawBidderResponse]
@@ -1421,6 +1425,10 @@ func (m mockPlanBuilder) PlanForEntrypointStage(_ string) hooks.Plan[hookstage.E
 
 func (m mockPlanBuilder) PlanForRawAuctionStage(_ string, _ *config.Account) hooks.Plan[hookstage.RawAuctionRequest] {
 	return m.rawAuctionPlan
+}
+
+func (m mockPlanBuilder) PlanForValidationStage(_ string, _ *config.Account) hooks.Plan[hookstage.BeforeValidationRequest] {
+	return m.beforeRequestValidation
 }
 
 func (m mockPlanBuilder) PlanForProcessedAuctionStage(_ string, _ *config.Account) hooks.Plan[hookstage.ProcessedAuctionRequest] {
@@ -1477,6 +1485,14 @@ func (m mockRejectionHook) HandleRawAuctionHook(
 	_ hookstage.RawAuctionRequestPayload,
 ) (hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
 	return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
+}
+
+func (m mockRejectionHook) HandleBeforeValidationHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.BeforeValidationRequestPayload,
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{Reject: true, NbrCode: m.nbr}, m.err
 }
 
 func (m mockRejectionHook) HandleProcessedAuctionHook(
