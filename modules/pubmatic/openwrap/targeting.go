@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -95,6 +96,14 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 
 			if rctx.Platform == models.PLATFORM_APP {
 				addInAppTargettingKeys(newTargeting, seatBid.Seat, bidCtx.NetECPM, &bid, isWinningBid)
+			}
+			if cdsMap, ok := customdimensions.IsCustomDimensionsPresent(rctx.NewReqExt); ok {
+				for key, value := range cdsMap {
+					//append cds key-val if sendToGAM is true or not present
+					if value.SendToGAM == nil || (value.SendToGAM != nil && *value.SendToGAM) {
+						newTargeting[key] = value.Value
+					}
+				}
 			}
 			bidCtx.Prebid.Targeting = newTargeting
 

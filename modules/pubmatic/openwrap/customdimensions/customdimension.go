@@ -11,7 +11,7 @@ import (
 )
 
 type CustomDimension struct {
-	Value     string `json:"value"`
+	Value     string `json:"value,omitempty"`
 	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }
 

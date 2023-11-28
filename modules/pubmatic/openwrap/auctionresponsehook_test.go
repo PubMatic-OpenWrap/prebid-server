@@ -1068,6 +1068,166 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 	}
 }
 
+func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	type args struct {
+		ctx       context.Context
+		moduleCtx hookstage.ModuleInvocationContext
+		payload   hookstage.AuctionResponsePayload
+	}
+	type want struct {
+		impBidCtx map[string]models.ImpCtx
+	}
+	tests := []struct {
+		name             string
+		args             args
+		want             want
+		getMetricsEngine func() *mock_metrics.MockMetricsEngine
+	}{
+		{
+			name: "prebid targeting custom dimensions",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							NewReqExt: &models.RequestExt{
+								ExtRequest: openrtb_ext.ExtRequest{
+									Prebid: openrtb_ext.ExtRequestPrebid{
+										BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 5,
+										Ext:   json.RawMessage(`{}`),
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-2",
+										ImpID: "imp1",
+										Price: 20,
+										Ext:   json.RawMessage(`{"prebid":{"targeting":{}}}`),
+									},
+								},
+								Seat: "appnexus",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-3",
+										ImpID: "imp1",
+										Price: 10,
+										Ext:   json.RawMessage(`{"prebid":{"targeting":{"key":"val"}}}`),
+									},
+								},
+								Seat: "rubicon",
+							},
+						},
+					},
+				},
+			},
+			getMetricsEngine: func() (me *mock_metrics.MockMetricsEngine) {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "pubmatic")
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "appnexus")
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
+				return mockEngine
+			},
+			want: want{
+				impBidCtx: map[string]models.ImpCtx{
+					"imp1": {
+						BidCtx: map[string]models.BidCtx{
+							"bid-id-1": {
+								BidExt: models.BidExt{
+									Nbr:     GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									NetECPM: 5,
+									ExtBid: openrtb_ext.ExtBid{
+										Prebid: &openrtb_ext.ExtBidPrebid{
+											Targeting: map[string]string{
+												"age":     "23",
+												"traffic": "email",
+											},
+										},
+									},
+								},
+								EG: 5,
+								EN: 5,
+							},
+							"bid-id-2": {
+								BidExt: models.BidExt{
+									NetECPM: 20,
+									ExtBid: openrtb_ext.ExtBid{
+										Prebid: &openrtb_ext.ExtBidPrebid{
+											Targeting: map[string]string{
+												"age":     "23",
+												"traffic": "email",
+											},
+										},
+									},
+								},
+								EG: 20,
+								EN: 20,
+							},
+							"bid-id-3": {
+								BidExt: models.BidExt{
+									Nbr:     GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									NetECPM: 10,
+									ExtBid: openrtb_ext.ExtBid{
+										Prebid: &openrtb_ext.ExtBidPrebid{
+											Targeting: map[string]string{
+												"age":     "23",
+												"traffic": "email",
+											},
+										},
+									},
+								},
+								EG: 10,
+								EN: 10,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := OpenWrap{
+				metricEngine: tt.getMetricsEngine(),
+			}
+			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			mutations := hookResult.ChangeSet.Mutations()
+			assert.NotEmpty(t, mutations, tt.name)
+			rctxInterface := hookResult.AnalyticsTags.Activities[0].Results[0].Values["request-ctx"]
+			rctx := rctxInterface.(*models.RequestCtx)
+			assert.Equal(t, tt.want.impBidCtx, rctx.ImpBidCtx, tt.name)
+		})
+	}
+}
+
 func TestResetBidIdtoOriginal(t *testing.T) {
 	type args struct {
 		bidResponse *openrtb2.BidResponse
