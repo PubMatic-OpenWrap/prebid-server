@@ -258,7 +258,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
 
-		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
+		// ignore adunit config status for native as it is not supported for native
+		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
