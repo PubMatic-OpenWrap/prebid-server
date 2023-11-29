@@ -230,7 +230,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
 				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
+					m.metricEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
 				}
 			}
 		}
