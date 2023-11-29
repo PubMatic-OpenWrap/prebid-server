@@ -51,7 +51,7 @@ mockgencache:
 
 mockgenmetrics:
 	mkdir -p modules/pubmatic/openwrap/metrics/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/v2/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
 
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock
