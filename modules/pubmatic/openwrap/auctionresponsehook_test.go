@@ -1097,7 +1097,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 								"imp1": {},
 							},
 							PubIDStr: "5890",
-							NewReqExt: &models.RequestExt{
+							HBReqExt: models.RequestExt{
 								ExtRequest: openrtb_ext.ExtRequest{
 									Prebid: openrtb_ext.ExtRequestPrebid{
 										BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),

@@ -69,6 +69,7 @@ type RequestCtx struct {
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
 	NewReqExt          *RequestExt
+	HBReqExt           RequestExt
 	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 

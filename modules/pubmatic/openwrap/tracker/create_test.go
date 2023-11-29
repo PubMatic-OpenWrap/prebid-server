@@ -31,7 +31,7 @@ var rctx = models.RequestCtx{
 	MarketPlaceBidders: map[string]struct{}{
 		"pubmatic": {},
 	},
-	NewReqExt: &models.RequestExt{
+	HBReqExt: models.RequestExt{
 		ExtRequest: openrtb_ext.ExtRequest{
 			Prebid: openrtb_ext.ExtRequestPrebid{
 				BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"author":{"value":"henry","sendtoGAM":false}}}}`),
