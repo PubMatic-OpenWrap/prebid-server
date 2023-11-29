@@ -1,4 +1,4 @@
-module github.com/PubMatic-OpenWrap/prebid-server
+module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.20
 
