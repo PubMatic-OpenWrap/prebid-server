@@ -10,19 +10,19 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	ow_adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -550,6 +550,15 @@ func TestIsSendAllBids(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "sendallbids_always_true_for_webs2s_endpoint",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+				},
+			},
+			want: true,
+		},
 		{
 			name: "Don't_do_ssauction",
 			args: args{
@@ -2203,7 +2212,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 					ModuleContext: hookstage.ModuleContext{
 						"rctx": func() models.RequestCtx {
 							testRctx := rctx
-							testRctx.Endpoint = models.EndpointOWS2S
+							testRctx.Endpoint = models.EndpointWebS2S
 							return testRctx
 						}(),
 					},
@@ -2232,9 +2241,9 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(models.EndpointOWS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointOWS2S, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,

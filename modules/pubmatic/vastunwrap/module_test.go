@@ -12,13 +12,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/modules/moduledeps"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
-	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
+	mock_stats "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/stats/mock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
@@ -87,11 +87,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldRandomNumberGen := getRandomNumber
-			getRandomNumber = func() int { return 1 }
-			defer func() {
-				getRandomNumber = oldRandomNumberGen
-			}()
 			m := VastUnwrapModule{
 				Cfg:               tt.fields.cfg.Cfg,
 				Enabled:           tt.fields.cfg.Enabled,

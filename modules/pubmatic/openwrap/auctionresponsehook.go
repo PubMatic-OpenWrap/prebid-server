@@ -8,13 +8,13 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(
@@ -27,20 +27,17 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	// absence of rctx at this hook means the first hook failed!. Do nothing
 	if len(moduleCtx.ModuleContext) == 0 {
-		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAuctionResponseHook()")
 		return result, nil
 	}
 	rctx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
-		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAuctionResponseHook()")
 		return result, nil
 	}
 
 	//SSHB request should not execute module
 	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
-		return result, nil
-	}
-	if rctx.Endpoint == models.EndpointOWS2S {
 		return result, nil
 	}
 
@@ -281,6 +278,19 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
+	}
+
+	if rctx.Endpoint == models.EndpointWebS2S {
+		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
+			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			var err error
+			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+			if err == nil {
+				resetBidIdtoOriginal(ap.BidResponse)
+			}
+			return ap, err
+		}, hookstage.MutationUpdate, "response-body-with-webs2s-format")
+		return result, nil
 	}
 
 	result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {

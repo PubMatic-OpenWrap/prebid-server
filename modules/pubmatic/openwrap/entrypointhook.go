@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -59,7 +59,7 @@ func (m OpenWrap) handleEntrypointHook(
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
-			endpoint = models.EndpointOWS2S
+			endpoint = models.EndpointWebS2S
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 		case "inapp":
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -213,6 +213,11 @@ func TestLogIntegrationType(t *testing.T) {
 			name:            "invalid",
 			endpoint:        "invalid",
 			integrationType: "",
+		},
+		{
+			name:            "ows2s",
+			endpoint:        models.EndpointWebS2S,
+			integrationType: models.TypeWebS2S,
 		},
 	}
 	for _, tt := range tests {

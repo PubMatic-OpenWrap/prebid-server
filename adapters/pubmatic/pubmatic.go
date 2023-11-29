@@ -12,10 +12,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 const MAX_IMPRESSIONS_PUBMATIC = 30
@@ -390,6 +390,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	// If bidViewabilityScore param is populated, pass it to imp[i].ext
 	if pubmaticExt.BidViewabilityScore != nil {
 		extMap[bidViewability] = pubmaticExt.BidViewabilityScore
+	}
+
+	if bidderExt.AE != 0 {
+		extMap[ae] = bidderExt.AE
 	}
 
 	if bidderExt.AE != 0 {

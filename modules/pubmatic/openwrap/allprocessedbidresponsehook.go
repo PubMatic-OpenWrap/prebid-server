@@ -3,10 +3,10 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/exchange/entities"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // handleAllProcessedBidResponsesHook will create unique id for each bid in bid Response. This hook is introduced

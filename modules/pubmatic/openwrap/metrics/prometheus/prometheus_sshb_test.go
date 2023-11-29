@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
