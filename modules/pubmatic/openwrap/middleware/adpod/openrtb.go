@@ -23,14 +23,16 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
+		ext := addErrorInExtension(err.Error(), nil)
+		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		return formErrorBidResponse("", nbr.InternalError, nil), headers, statusCode
+		ext := addErrorInExtension(err.Error(), nil)
+		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
@@ -49,6 +51,7 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 			id = bidResponse.ID
 			bidExt = bidResponse.Ext
 		}
+		bidExt = addErrorInExtension(err.Error(), bidExt)
 		return formErrorBidResponse(id, nbr.InternalError, bidExt), headers, statusCode
 	}
 

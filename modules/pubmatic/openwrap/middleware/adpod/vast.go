@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
+	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
@@ -44,9 +46,10 @@ var (
 	ERROR_CODE           = "ErrorCode"
 	ERROR_STRING         = "Error"
 	NBR                  = "nbr"
+	ERROR                = "error"
 	//ErrorFormat parsing error format
 	ErrorFormat = `{"` + ERROR_CODE + `":%v,"` + ERROR_STRING + `":"%s"}`
-	NBRFormat   = `{"` + NBR + `":%v` + `}`
+	NBRFormat   = `{"` + NBR + `":%v,"` + ERROR + `":"%s"}`
 )
 
 type vastResponse struct {
@@ -64,7 +67,7 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 	response, err := io.ReadAll(aw.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError, err.Error())
 		return EmptyVASTResponse, headers, statusCode
 	}
 
@@ -72,28 +75,29 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError)
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError, err.Error())
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
 		statusCode = http.StatusBadRequest
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *bidResponse.NBR)
+		data, _, _, _ := jsonparser.Get(bidResponse.Ext, errorLocation...)
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *bidResponse.NBR, string(data))
 		return EmptyVASTResponse, headers, statusCode
 	}
 
-	vast, nbr := vr.getVast(bidResponse)
+	vast, nbr, err := vr.getVast(bidResponse)
 	if nbr != nil {
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *nbr)
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *nbr, err.Error())
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	return []byte(vast), headers, statusCode
 }
 
-func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason) {
+func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return "", GetNoBidReasonCode(nbr.EmptySeatBid)
+		return "", GetNoBidReasonCode(nbr.EmptySeatBid), errors.New("empty bid response")
 	}
 
 	bidArray := make([]openrtb2.Bid, 0)
@@ -107,14 +111,14 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 
 	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
 	if len(creative) == 0 {
-		return "", GetNoBidReasonCode(nbr.InternalError)
+		return "", GetNoBidReasonCode(nbr.InternalError), errors.New("empty creative")
 	}
 
 	if vr.debug == "1" || vr.WrapperLoggerDebug == "1" {
 		creative = string(addExtInfo([]byte(creative), bidResponse.Ext))
 	}
 
-	return creative, nil
+	return creative, nil, nil
 }
 
 // getAdPodBidCreative get commulative adpod bid details

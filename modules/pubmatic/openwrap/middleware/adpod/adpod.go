@@ -38,7 +38,8 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
-			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest, nil)
+			ext := addErrorInExtension(err.Error(), nil)
+			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest, ext)
 			w.Header().Set(ContentType, ApplicationJSON)
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(errResponse)
@@ -68,7 +69,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 		err := enrichRequestBody(r)
 		if err != nil {
 			w.Header().Set(ContentType, ApplicationXML)
-			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest))
+			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest, err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(EmptyVASTResponse)
 			return
