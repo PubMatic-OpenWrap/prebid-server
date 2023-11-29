@@ -2,6 +2,7 @@ package customdimensions
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -91,7 +92,9 @@ func TestParseCustomDimensionsToString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParseCustomDimensionsToString(tt.args.cdsMap)
-			assert.Equal(t, tt.want, got, tt.name)
+			expectedKeyVal := strings.Split(tt.want, ";")
+			actualKeyVal := strings.Split(got, ";")
+			assert.ElementsMatch(t, expectedKeyVal, actualKeyVal, tt.name)
 		})
 	}
 }

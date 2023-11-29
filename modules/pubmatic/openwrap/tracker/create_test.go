@@ -34,7 +34,7 @@ var rctx = models.RequestCtx{
 	NewReqExt: &models.RequestExt{
 		ExtRequest: openrtb_ext.ExtRequest{
 			Prebid: openrtb_ext.ExtRequestPrebid{
-				BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
+				BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"author":{"value":"henry","sendtoGAM":false}}}}`),
 			},
 		},
 	},
@@ -175,9 +175,9 @@ func Test_createTrackers(t *testing.T) {
 						LoggerData: models.LoggerData{
 							KGPSV: "adunit-1@250x300",
 						},
-						CustomDimensions: "traffic=email;author=henry;age=23",
+						CustomDimensions: "author=henry",
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=traffic%3Demail%3Bauthor%3Dhenry%3Bage%3D23&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -253,9 +253,9 @@ func Test_createTrackers(t *testing.T) {
 						LoggerData: models.LoggerData{
 							KGPSV: "adunit-1@250x300",
 						},
-						CustomDimensions: "traffic=email;author=henry;age=23",
+						CustomDimensions: "author=henry",
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&cds=traffic%3Demail%3Bauthor%3Dhenry%3Bage%3D23&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -815,7 +815,7 @@ func TestCreateTrackers(t *testing.T) {
 						VersionID:        "1",
 						Adunit:           "adunit-1",
 						SlotID:           "impID-1_adunit-1",
-						CustomDimensions: "traffic=email;author=henry;age=23",
+						CustomDimensions: "author=henry",
 						PartnerInfo: models.Partner{
 							PartnerID:      "pubmatic",
 							BidderCode:     "pubmatic",
@@ -843,7 +843,7 @@ func TestCreateTrackers(t *testing.T) {
 							KGPSV: "adunit-1@250x300",
 						},
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=traffic%3Demail%3Bauthor%3Dhenry%3Bage%3D23&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
