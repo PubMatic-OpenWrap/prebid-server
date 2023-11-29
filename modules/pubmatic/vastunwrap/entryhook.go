@@ -2,12 +2,17 @@ package vastunwrap
 
 import (
 	"context"
+	"math/rand"
 	"runtime/debug"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
+
+var getRandomNumber = func() int {
+	return rand.Intn(100)
+}
 
 func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	vastEnableUnwrapper, _ := ctx.Value(field).(string)
