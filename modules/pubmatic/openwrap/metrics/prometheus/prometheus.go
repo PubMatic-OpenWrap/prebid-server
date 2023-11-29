@@ -577,8 +577,8 @@ func (m *Metrics) RecordAdPodGeneratedImpressionsCount(impCount int, publisherID
 
 func (m *Metrics) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 	m.ctvReqCountWithAdPod.With(prometheus.Labels{
-		pubIdLabel:   publisherID,
-		profileLabel: profileID,
+		pubIdLabel:     publisherID,
+		profileIDLabel: profileID,
 	}).Inc()
 }
 
