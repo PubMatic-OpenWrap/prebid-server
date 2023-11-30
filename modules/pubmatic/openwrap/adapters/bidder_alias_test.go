@@ -3,7 +3,7 @@ package adapters
 import (
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )

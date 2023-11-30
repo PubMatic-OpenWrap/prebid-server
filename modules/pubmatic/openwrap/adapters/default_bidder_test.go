@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 type prepareBidParamJSONDefaultArgs struct {
