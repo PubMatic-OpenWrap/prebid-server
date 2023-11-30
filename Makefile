@@ -55,4 +55,4 @@ mockgenmetrics:
 
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
