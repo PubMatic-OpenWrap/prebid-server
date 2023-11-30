@@ -219,6 +219,23 @@ func (err *NoBidPrice) Severity() Severity {
 	return SeverityWarning
 }
 
+// NoValidBid should be used when responded bids doesn't contain mandatory fields
+type NoValidBid struct {
+	Message string
+}
+
+func (err *NoValidBid) Error() string {
+	return err.Message
+}
+
+func (err *NoValidBid) Code() int {
+	return NoValidBidErrorCode
+}
+
+func (err *NoValidBid) Severity() Severity {
+	return SeverityWarning
+}
+
 // AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
 type AdpodPrefiltering struct {
 	Message string
