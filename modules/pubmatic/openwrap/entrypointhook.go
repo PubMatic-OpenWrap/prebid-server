@@ -62,7 +62,7 @@ func (m OpenWrap) handleEntrypointHook(
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
-			endpoint = models.EndpointOWS2S
+			endpoint = models.EndpointWebS2S
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 		case "inapp":
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
@@ -97,7 +97,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestWrapperExtension
-		result.Errors = append(result.Errors, "InvalidRequest")
+		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 

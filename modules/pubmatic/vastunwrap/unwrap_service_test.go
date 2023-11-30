@@ -21,6 +21,7 @@ func TestDoUnwrap(t *testing.T) {
 	mockMetricsEngine := mock_stats.NewMockMetricsEngine(ctrl)
 	type args struct {
 		module               VastUnwrapModule
+		statsEnabled         bool
 		bid                  *adapters.TypedBid
 		userAgent            string
 		unwrapDefaultTimeout int
@@ -83,8 +84,8 @@ func TestDoUnwrap(t *testing.T) {
 				url:       "testURL",
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "2")
-				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "2")
+				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "2")
@@ -113,9 +114,9 @@ func TestDoUnwrap(t *testing.T) {
 				wantAdM:   true,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -145,8 +146,8 @@ func TestDoUnwrap(t *testing.T) {
 				wantAdM:   false,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "1")
@@ -167,7 +168,7 @@ func TestDoUnwrap(t *testing.T) {
 				MetricsEngine: mockMetricsEngine,
 				unwrapRequest: tt.unwrapRequest,
 			}
-			m.doUnwrapandUpdateBid(tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
+			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
 			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM {
 				assert.Equal(t, inlineXMLAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}

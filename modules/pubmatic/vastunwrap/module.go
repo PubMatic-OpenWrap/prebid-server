@@ -17,11 +17,12 @@ import (
 )
 
 type VastUnwrapModule struct {
-	Cfg               unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
-	TrafficPercentage int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
-	Enabled           bool                    `mapstructure:"enabled" json:"enabled"`
-	MetricsEngine     metrics.MetricsEngine
-	unwrapRequest     func(w http.ResponseWriter, r *http.Request)
+	Cfg                   unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
+	TrafficPercentage     int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
+	StatTrafficPercentage int                     `mapstructure:"stat_traffic_percentage" json:"stat_traffic_percentage"`
+	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
+	MetricsEngine         metrics.MetricsEngine
+	unwrapRequest         func(w http.ResponseWriter, r *http.Request)
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -42,11 +43,12 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		return vastUnwrapModuleCfg, fmt.Errorf("Prometheus registry is nil")
 	}
 	return VastUnwrapModule{
-		Cfg:               vastUnwrapModuleCfg.Cfg,
-		TrafficPercentage: vastUnwrapModuleCfg.TrafficPercentage,
-		Enabled:           vastUnwrapModuleCfg.Enabled,
-		MetricsEngine:     metricEngine,
-		unwrapRequest:     vastunwrap.UnwrapRequest,
+		Cfg:                   vastUnwrapModuleCfg.Cfg,
+		TrafficPercentage:     vastUnwrapModuleCfg.TrafficPercentage,
+		StatTrafficPercentage: vastUnwrapModuleCfg.StatTrafficPercentage,
+		Enabled:               vastUnwrapModuleCfg.Enabled,
+		MetricsEngine:         metricEngine,
+		unwrapRequest:         vastunwrap.UnwrapRequest,
 	}, nil
 }
 

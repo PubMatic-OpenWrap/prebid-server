@@ -53,6 +53,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		result.Reject = false
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		return result, nil
+	}
+
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
@@ -206,7 +214,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == models.EndpointOWS2S {
+		if rCtx.Endpoint == models.EndpointWebS2S {
 			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
@@ -290,7 +298,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
+		// ignore adunit config status for native as it is not supported for native
+		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
@@ -960,6 +969,10 @@ func (m OpenWrap) setTimeout(rCtx models.RequestCtx, req *openrtb2.BidRequest) i
 // if ssauction flag is not set and platform is dislay, then by default send all bids
 // if ssauction flag is not set and platform is in-app, then check if profile setting sendAllBids is set to 1
 func isSendAllBids(rctx models.RequestCtx) bool {
+	//for webs2s endpoint SendAllBids is always true
+	if rctx.Endpoint == models.EndpointWebS2S {
+		return true
+	}
 	//if ssauction is set to 0 in the request
 	if rctx.SSAuction == 0 {
 		return true
