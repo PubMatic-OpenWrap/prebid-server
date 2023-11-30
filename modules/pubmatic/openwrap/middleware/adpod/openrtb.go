@@ -13,7 +13,12 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 )
 
-func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
+type ortbResponse struct {
+	debug              string
+	WrapperLoggerDebug string
+}
+
+func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
@@ -23,7 +28,7 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		ext := addErrorInExtension(err.Error(), nil)
+		ext := addErrorInExtension(err.Error(), nil, or.debug)
 		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
 	}
 
@@ -31,7 +36,7 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		ext := addErrorInExtension(err.Error(), nil)
+		ext := addErrorInExtension(err.Error(), nil, or.debug)
 		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
 	}
 
@@ -51,7 +56,7 @@ func formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]st
 			id = bidResponse.ID
 			bidExt = bidResponse.Ext
 		}
-		bidExt = addErrorInExtension(err.Error(), bidExt)
+		bidExt = addErrorInExtension(err.Error(), bidExt, or.debug)
 		return formErrorBidResponse(id, nbr.InternalError, bidExt), headers, statusCode
 	}
 

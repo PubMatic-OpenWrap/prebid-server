@@ -43,7 +43,11 @@ func isValidURL(urlVal string) bool {
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }
 
-func addErrorInExtension(errMsg string, ext json.RawMessage) json.RawMessage {
+func addErrorInExtension(errMsg string, ext json.RawMessage, debug string) json.RawMessage {
+	if debug != "1" {
+		return ext
+	}
+
 	var responseExt map[string]interface{}
 	if ext != nil {
 		err := json.Unmarshal(ext, &responseExt)

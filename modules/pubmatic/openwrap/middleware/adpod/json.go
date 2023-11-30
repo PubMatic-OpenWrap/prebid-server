@@ -57,7 +57,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
-		return formJSONErrorResponse("", "error in reading response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil), headers, statusCode
+		return formJSONErrorResponse("", "error in reading response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
@@ -67,7 +67,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
-		return formJSONErrorResponse("", "error in unmarshaling the auction response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil), headers, statusCode
+		return formJSONErrorResponse("", "error in unmarshaling the auction response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
@@ -75,7 +75,7 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byt
 		if len(jr.redirectURL) > 0 && jr.debug == "0" {
 			return []byte(jr.redirectURL), headers, statusCode
 		}
-		return formJSONErrorResponse(bidResponse.ID, "", bidResponse.NBR, bidResponse.Ext), headers, statusCode
+		return formJSONErrorResponse(bidResponse.ID, "", bidResponse.NBR, bidResponse.Ext, jr.debug), headers, statusCode
 	}
 
 	return jr.getJsonResponse(bidResponse), headers, statusCode
@@ -93,7 +93,7 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byt
 			id = bidResponse.ID
 			bidExt = bidResponse.Ext
 		}
-		return formJSONErrorResponse(id, "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt)
+		return formJSONErrorResponse(id, "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt, jr.debug)
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)
@@ -241,7 +241,7 @@ func GetErrorResponse(err CustomError) []byte {
 	return response
 }
 
-func formJSONErrorResponse(id string, errMessage string, nbr *openrtb3.NoBidReason, ext json.RawMessage) []byte {
+func formJSONErrorResponse(id string, errMessage string, nbr *openrtb3.NoBidReason, ext json.RawMessage, debug string) []byte {
 	type errResponse struct {
 		Id  string                `json:"id"`
 		NBR *openrtb3.NoBidReason `json:"nbr,omitempty"`
@@ -249,7 +249,7 @@ func formJSONErrorResponse(id string, errMessage string, nbr *openrtb3.NoBidReas
 	}
 
 	if len(errMessage) > 0 {
-		ext = addErrorInExtension(errMessage, ext)
+		ext = addErrorInExtension(errMessage, ext, debug)
 	}
 
 	response := errResponse{

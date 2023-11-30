@@ -38,7 +38,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
-			ext := addErrorInExtension(err.Error(), nil)
+			ext := addErrorInExtension(err.Error(), nil, r.URL.Query().Get(models.Debug))
 			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest, ext)
 			w.Header().Set(ContentType, ApplicationJSON)
 			w.WriteHeader(http.StatusBadRequest)
@@ -50,7 +50,11 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
 
-	response, headers, statusCode := formOperRTBResponse(adpodResponseWriter)
+	responseGenerator := ortbResponse{
+		debug:              r.URL.Query().Get(models.Debug),
+		WrapperLoggerDebug: r.URL.Query().Get(models.WrapperLoggerDebug),
+	}
+	response, headers, statusCode := responseGenerator.formOperRTBResponse(adpodResponseWriter)
 
 	SetCORSHeaders(w, r)
 	for k, v := range headers {
@@ -131,7 +135,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 			http.Redirect(w, r, string(redirectURL), http.StatusFound)
 			return
 		}
-		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil)
+		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, debug)
 		w.Header().Set(ContentType, ApplicationJSON)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(errResponse)
