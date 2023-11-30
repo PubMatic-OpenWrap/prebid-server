@@ -49,6 +49,8 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20220901123055-6a90d3d48c11 h1:3ONgYXosVibmbsdp6m8cB989PM3FJvXsm9drUQ0PnSk=
+git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20220901123055-6a90d3d48c11/go.mod h1:GR3vbIOaHtY8w6U3nhWjQF1I0bu527aRwRqr83jufho=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231102070946-3c5a3bc1dff5 h1:nK2YP3aS8+5dwc5cMJ8IxI0Sh7yfd858LKmcvwfkOUo=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231102070946-3c5a3bc1dff5/go.mod h1:dgTumQ6/KYeLbpWq3HVOaqkZos6Q0QGwZmQmEIhQ3To=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
