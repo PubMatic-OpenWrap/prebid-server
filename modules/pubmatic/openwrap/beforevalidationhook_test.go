@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -95,7 +94,7 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 			},
 		}
 	}
-	testReq.Cur = []string{}
+	testReq.Cur = []string{"EUR"}
 	testReq.WLang = []string{"english", "hindi"}
 	testReq.Device = &openrtb2.Device{
 		DeviceType: 1,
@@ -300,7 +299,8 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		metricEngine metrics.MetricsEngine
 	}
 	type args struct {
-		rCtx models.RequestCtx
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name   string
@@ -308,6 +308,54 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 		args   args
 		want   int64
 	}{
+		{
+			name: "Highest_priority_to_request_tmax_parameter",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					TMax: 220,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 220,
+		},
+		{
+			name: "tmax_parameter_less_than_minTimeout",
+			args: args{
+				rCtx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"ssTimeout": "250",
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					TMax: 10,
+				},
+			},
+			fields: fields{
+				cfg: config.Config{
+					Timeout: config.Timeout{
+						MinTimeout: 200,
+						MaxTimeout: 300,
+					},
+				},
+			},
+			want: 200,
+		},
 		{
 			name: "ssTimeout_greater_than_minTimeout_and_less_than_maxTimeout",
 			args: args{
@@ -318,6 +366,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -339,6 +388,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -360,6 +410,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -381,6 +432,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -407,6 +459,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -434,6 +487,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -461,6 +515,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 						},
 					},
 				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			fields: fields{
 				cfg: config.Config{
@@ -480,7 +535,7 @@ func TestOpenWrap_setTimeout(t *testing.T) {
 				cache:        tt.fields.cache,
 				metricEngine: tt.fields.metricEngine,
 			}
-			got := m.setTimeout(tt.args.rCtx)
+			got := m.setTimeout(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -830,7 +885,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -893,7 +948,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			want: &openrtb2.BidRequest{
 				ID:   "testID",
 				Test: 1,
-				Cur:  []string{"USD"},
+				Cur:  []string{"EUR", "USD"},
 				TMax: 500,
 				Source: &openrtb2.Source{
 					TID: "testID",
@@ -960,11 +1015,15 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 		rCtx models.RequestCtx
 		imp  *openrtb2.Imp
 	}
+	type want struct {
+		rCtx models.RequestCtx
+		imp  *openrtb2.Imp
+	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   *openrtb2.Imp
+		want   want
 	}{
 		{
 			name: "imp.video_is_nil",
@@ -973,8 +1032,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: nil,
 				},
 			},
-			want: &openrtb2.Imp{
-				Video: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					Video: nil,
+				},
 			},
 		},
 		{
@@ -994,9 +1055,20 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: &openrtb2.Video{},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: &openrtb2.Video{},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: nil,
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1021,11 +1093,27 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video:       &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:          "testImp",
-				Video:       &openrtb2.Video{},
-				BidFloor:    2.0,
-				BidFloorCur: "USD",
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Video:       &openrtb2.Video{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1047,10 +1135,23 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: &openrtb2.Video{},
-				Exp:   10,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: &openrtb2.Video{},
+					Exp:   10,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Exp: ptrutil.ToPtr(10),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1075,11 +1176,24 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W: 200,
-					H: 300,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W: 200,
+						H: 300,
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: nil,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1107,9 +1221,24 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:    "testImp",
-				Video: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:    "testImp",
+					Video: nil,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1163,35 +1292,80 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video: &openrtb2.Video{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W:              640,
-					H:              480,
-					MinDuration:    10,
-					MaxDuration:    40,
-					Skip:           ptrutil.ToPtr(int8(1)),
-					SkipMin:        5,
-					SkipAfter:      10,
-					Plcmt:          1,
-					Placement:      1,
-					MinBitRate:     100,
-					MaxBitRate:     200,
-					MaxExtended:    50,
-					Linearity:      1,
-					Protocol:       1,
-					Sequence:       2,
-					BoxingAllowed:  1,
-					PlaybackEnd:    2,
-					MIMEs:          []string{"mimes"},
-					API:            []adcom1.APIFramework{1, 2},
-					Delivery:       []adcom1.DeliveryMethod{1, 2},
-					PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
-					BAttr:          []adcom1.CreativeAttribute{1, 2},
-					StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
-					Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
-					Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
-					CompanionType:  []adcom1.CompanionType{1, 2},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W:              640,
+						H:              480,
+						MinDuration:    10,
+						MaxDuration:    40,
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        5,
+						SkipAfter:      10,
+						Plcmt:          1,
+						Placement:      1,
+						MinBitRate:     100,
+						MaxBitRate:     200,
+						MaxExtended:    50,
+						Linearity:      1,
+						Protocol:       1,
+						Sequence:       2,
+						BoxingAllowed:  1,
+						PlaybackEnd:    2,
+						MIMEs:          []string{"mimes"},
+						API:            []adcom1.APIFramework{1, 2},
+						Delivery:       []adcom1.DeliveryMethod{1, 2},
+						PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
+						BAttr:          []adcom1.CreativeAttribute{1, 2},
+						StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
+						Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
+						Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
+						CompanionType:  []adcom1.CompanionType{1, 2},
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MinDuration:    10,
+												MaxDuration:    40,
+												Skip:           ptrutil.ToPtr(int8(1)),
+												SkipMin:        5,
+												SkipAfter:      10,
+												Plcmt:          1,
+												Placement:      1,
+												MinBitRate:     100,
+												MaxBitRate:     200,
+												MaxExtended:    50,
+												Linearity:      1,
+												Protocol:       1,
+												W:              640,
+												H:              480,
+												Sequence:       2,
+												BoxingAllowed:  1,
+												PlaybackEnd:    2,
+												MIMEs:          []string{"mimes"},
+												API:            []adcom1.APIFramework{1, 2},
+												Delivery:       []adcom1.DeliveryMethod{1, 2},
+												PlaybackMethod: []adcom1.PlaybackMethod{1, 2},
+												BAttr:          []adcom1.CreativeAttribute{1, 2},
+												StartDelay:     ptrutil.ToPtr(adcom1.StartDelay(2)),
+												Protocols:      []adcom1.MediaCreativeSubtype{1, 2},
+												Pos:            ptrutil.ToPtr(adcom1.PlacementPosition(1)),
+												CompanionType:  []adcom1.CompanionType{1, 2},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1233,16 +1407,40 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Video: &openrtb2.Video{
-					W:           640,
-					H:           480,
-					MinDuration: 20,
-					MaxDuration: 60,
-					Skip:        ptrutil.ToPtr(int8(2)),
-					SkipMin:     10,
-					SkipAfter:   20,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Video: &openrtb2.Video{
+						W:           640,
+						H:           480,
+						MinDuration: 20,
+						MaxDuration: 60,
+						Skip:        ptrutil.ToPtr(int8(2)),
+						SkipMin:     10,
+						SkipAfter:   20,
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MinDuration: 10,
+												MaxDuration: 40,
+												Skip:        ptrutil.ToPtr(int8(1)),
+												SkipMin:     5,
+												SkipAfter:   10,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1255,7 +1453,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				metricEngine: tt.fields.metricEngine,
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
-			assert.Equal(t, tt.args.imp, tt.want, "Imp video is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.rCtx, tt.want.rCtx, "rctx is not upadted as expected from adunit config")
 		})
 	}
 }
@@ -1270,11 +1469,15 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 		rCtx models.RequestCtx
 		imp  *openrtb2.Imp
 	}
+	type want struct {
+		rCtx models.RequestCtx
+		imp  *openrtb2.Imp
+	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   *openrtb2.Imp
+		want   want
 	}{
 		{
 			name: "imp.banner_is_nil",
@@ -1283,8 +1486,10 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: nil,
 				},
 			},
-			want: &openrtb2.Imp{
-				Banner: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					Banner: nil,
+				},
 			},
 		},
 		{
@@ -1304,9 +1509,20 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: &openrtb2.Banner{},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: &openrtb2.Banner{},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: nil,
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1331,11 +1547,27 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner:      &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:          "testImp",
-				Banner:      &openrtb2.Banner{},
-				BidFloor:    2.0,
-				BidFloorCur: "USD",
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Banner:      &openrtb2.Banner{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1357,10 +1589,23 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner: &openrtb2.Banner{},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: &openrtb2.Banner{},
-				Exp:    10,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: &openrtb2.Banner{},
+					Exp:    10,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Exp: ptrutil.ToPtr(10),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1385,11 +1630,24 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID: "testImp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](200),
-					H: ptrutil.ToPtr[int64](300),
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
+					},
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Banner: nil,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -1417,9 +1675,24 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.Imp{
-				ID:     "testImp",
-				Banner: nil,
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:     "testImp",
+					Banner: nil,
+				},
+				rCtx: models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Banner: &adunitconfig.Banner{
+										Enabled: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -1431,7 +1704,8 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 				metricEngine: tt.fields.metricEngine,
 			}
 			m.applyBannerAdUnitConfig(tt.args.rCtx, tt.args.imp)
-			assert.Equal(t, tt.args.imp, tt.want, "Imp banner is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp banner is not upadted as expected from adunit config")
+			assert.Equal(t, tt.args.rCtx, tt.want.rCtx, "rctx is not upadted as expected from adunit config")
 		})
 	}
 }
@@ -1590,10 +1864,28 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 		wantErr              bool
 	}{
 		{
+			name: "request_with_sshb=1",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Sshb: "1",
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+		},
+		{
 			name: "empty_module_context",
 			args: args{
-				ctx:       context.Background(),
-				moduleCtx: hookstage.ModuleInvocationContext{},
+				ctx:        context.Background(),
+				moduleCtx:  hookstage.ModuleInvocationContext{},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
 			fields: fields{
 				cache:        mockCache,
@@ -1614,6 +1906,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						"test_rctx": "test",
 					},
 				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
 			fields: fields{
 				cache:        mockCache,
@@ -1622,6 +1915,24 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        true,
 				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Endpoint: models.EndpointHybrid,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
 			},
 			wantErr: false,
 		},
@@ -1668,12 +1979,12 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequest))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequest)
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidRequest,
+				NbrCode: nbr.InvalidRequestExt,
 				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
 			},
 			wantErr: true,
@@ -1841,7 +2152,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "TagID_not_prsent_in_imp",
+			name: "TagID_not_present_in_imp",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
@@ -1876,6 +2187,54 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.InvalidImpressionTagID,
+				Errors:  []string{"tagid missing for imp: 123"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "TagID_not_present_in_imp_and_not_found_for_client_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": func() models.RequestCtx {
+							testRctx := rctx
+							testRctx.Endpoint = models.EndpointOWS2S
+							return testRctx
+						}(),
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointOWS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointOWS2S, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2124,7 +2483,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						},
 					},
 				},
-				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
 			fields: fields{
 				cache:        mockCache,
@@ -2176,6 +2535,56 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr:              false,
 			isRequestNotRejected: true,
 		},
+		{
+			name: "prebid-validation-errors-imp-missing",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							PubIDStr: "1234",
+							Endpoint: models.EndpointV25,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, 18)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
+			},
+			want:    hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{},
+			wantErr: false,
+		},
+		{
+			name: "prebid-validation-errors-site-and-app-missing",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							PubIDStr: "1234",
+							Endpoint: models.EndpointV25,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, 18)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
+			},
+			want:    hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2198,12 +2607,357 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				assert.NotEmpty(t, tt.want.DebugMessages)
 				return
 			}
-			fmt.Println(got.DebugMessages)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetSlotName(t *testing.T) {
+	type args struct {
+		tagId  string
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Slot_name_from_gpid",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+				},
+			},
+			want: "some-gpid",
+		},
+		{
+			name: "Slot_name_from_tagid",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+				},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "Slot_name_from_pbadslot",
+			args: args{
+				tagId: "",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "Slot_name_from_stored_request_id",
+			args: args{
+				tagId: "",
+				impExt: &models.ImpExtension{
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "stored-req-id",
+		},
+		{
+			name: "imp_ext_nil_slot_name_from_tag_id",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: nil,
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "empty_slot_name",
+			args: args{
+				tagId:  "",
+				impExt: &models.ImpExtension{},
+			},
+			want: "",
+		},
+		{
+			name: "all_level_information_is_present_slot_name_picked_by_preference",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+					},
+					Prebid: openrtb_ext.ExtImpPrebid{
+						StoredRequest: &openrtb_ext.ExtStoredRequest{
+							ID: "stored-req-id",
+						},
+					},
+				},
+			},
+			want: "some-gpid",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSlotName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetAdunitName(t *testing.T) {
+	type args struct {
+		tagId  string
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "adunit_from_adserver_slot",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
+			},
+			want: "gam-unit",
+		},
+		{
+			name: "adunit_from_pbadslot",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "adunit_from_pbadslot_when_gam_is_absent",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   "freewheel",
+							AdSlot: "freewheel-unit",
+						},
+					},
+				},
+			},
+			want: "some-pbadslot",
+		},
+		{
+			name: "adunit_from_TagId",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "",
+						},
+					},
+				},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: nil,
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "adunit_from_TagId_imp_ext_nil",
+			args: args{
+				tagId:  "some-tagid",
+				impExt: &models.ImpExtension{},
+			},
+			want: "some-tagid",
+		},
+		{
+			name: "all_level_information_is_present_adunit_name_picked_by_preference",
+			args: args{
+				tagId: "some-tagid",
+				impExt: &models.ImpExtension{
+					GpId: "some-gpid",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "some-pbadslot",
+						AdServer: &openrtb_ext.ExtImpDataAdServer{
+							Name:   models.GamAdServer,
+							AdSlot: "gam-unit",
+						},
+					},
+				},
+			},
+			want: "gam-unit",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAdunitName(tt.args.tagId, tt.args.impExt)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetTagID(t *testing.T) {
+	type args struct {
+		imp    openrtb2.Imp
+		impExt *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "tagId_not_found",
+			args: args{
+				imp:    openrtb2.Imp{},
+				impExt: &models.ImpExtension{},
+			},
+			want: "",
+		},
+		{
+			name: "tagId_present_in_gpid",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit1",
+				},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_set_by_publisher_on_page",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit1",
+				},
+				impExt: &models.ImpExtension{},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_present_in_pbadslot",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit1",
+					},
+				},
+			},
+			want: "/7578294/adunit1",
+		},
+		{
+			name: "tagId_present_in_pbadslot_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_pbadslot",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit123",
+				},
+				impExt: &models.ImpExtension{
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "tagId_present_in_imp.TagId_and_pbadslot_and_gpid",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/7578294/adunit123",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit12345",
+					},
+				},
+			},
+			want: "/7578294/adunit123",
+		},
+		{
+			name: "GpId_contains_'#'",
+			args: args{
+				imp: openrtb2.Imp{
+					TagID: "/7578294/adunit",
+				},
+				impExt: &models.ImpExtension{
+					GpId: "/43743431/DMDemo#Div1",
+					Data: openrtb_ext.ExtImpData{
+						PbAdslot: "/7578294/adunit12345",
+					},
+				},
+			},
+			want: "/43743431/DMDemo",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getTagID(tt.args.imp, tt.args.impExt); got != tt.want {
+				t.Errorf("getTagID() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

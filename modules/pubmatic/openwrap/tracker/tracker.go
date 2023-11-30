@@ -5,20 +5,28 @@ import (
 	"net/url"
 
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func GetTrackerInfo(rCtx models.RequestCtx) string {
+func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
+	floorsDetails := models.GetFloorsDetails(responseExt)
 	tracker := models.Tracker{
-		PubID:     rCtx.PubID,
-		ProfileID: fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID: fmt.Sprintf("%d", rCtx.DisplayID),
-		PageURL:   rCtx.PageURL,
-		Timestamp: rCtx.StartTime,
-		IID:       rCtx.LoggerImpressionID,
-		Platform:  int(rCtx.DevicePlatform),
+		PubID:             rCtx.PubID,
+		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+		PageURL:           rCtx.PageURL,
+		Timestamp:         rCtx.StartTime,
+		IID:               rCtx.LoggerImpressionID,
+		Platform:          int(rCtx.DevicePlatform),
+		Origin:            rCtx.Origin,
+		TestGroup:         rCtx.ABTestConfigApplied,
+		FloorModelVersion: floorsDetails.FloorModelVersion,
+		FloorType:         floorsDetails.FloorType,
+		FloorSkippedFlag:  floorsDetails.Skipfloors,
+		FloorSource:       floorsDetails.FloorSource,
 	}
 
-	constructedURLString := ConstructTrackerURL(rCtx, tracker)
+	constructedURLString := constructTrackerURL(rCtx, tracker)
 
 	trackerURL, err := url.Parse(constructedURLString)
 	if err != nil {

@@ -22,6 +22,7 @@ const (
 	MacroFD             = `fd`
 	MacroTransactionID  = `tid`
 	MacroPaymentIDChain = `pchain`
+	MacroSchain         = `schain`
 
 	//Regs
 	MacroCoppa = `coppa`
@@ -169,9 +170,8 @@ const (
 )
 
 const (
-	prebid   = "prebid"
-	keyval   = "keyval"
-	kvPrefix = "kv."
+	prebid = "prebid"
+	keyval = "keyval"
 )
 
 var ParamKeys = []string{"param1", "param2", "param3", "param4", "param5"}

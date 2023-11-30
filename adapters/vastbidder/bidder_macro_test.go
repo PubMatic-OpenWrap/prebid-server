@@ -1264,7 +1264,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 	}
 }
 
-func TestBidderGetValueFromKV(t *testing.T) {
+func TestBidderGetValue(t *testing.T) {
 	type fields struct {
 		KV map[string]interface{}
 	}
@@ -1272,41 +1272,157 @@ func TestBidderGetValueFromKV(t *testing.T) {
 		key string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
-		found  bool
+		name       string
+		fields     fields
+		args       args
+		want       string
+		isKeyFound bool // if key has the prefix kv/kvm then it should return thr isKeyFound true
 	}{
 		{
-			name: "Valid_Key",
+			name: "valid_Key",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  22,
 			}},
-			args: args{key: "kv.name"},
-			want: "test",
+			args:       args{key: "kv.name"},
+			want:       "test",
+			isKeyFound: true,
 		},
 		{
-			name: "Invalid_Key",
+			name: "invalid_Key",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  22,
 			}},
-			args: args{key: "kv.anykey"},
-			want: "",
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
 		},
 		{
-			name:   "Empty_KV_Map",
-			fields: fields{KV: nil},
-			args:   args{key: "kv.anykey"},
-			want:   "",
+			name:       "empty_kv_map",
+			fields:     fields{KV: nil},
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
 		},
 		{
-			name:   "KV_map_with_no_key_val_pair",
-			fields: fields{KV: map[string]interface{}{}},
-			args:   args{key: "kv.anykey"},
-			want:   "",
+			name:       "kv_map_with_no_key_val_pair",
+			fields:     fields{KV: map[string]interface{}{}},
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name: "key_with_value_as_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http://example.com?k1=v1&k2=v2",
+				},
+			}},
+			args:       args{key: "kvm.country.url"},
+			want:       "http://example.com?k1=v1&k2=v2",
+			isKeyFound: true,
+		},
+		{
+			name: "kvm_prefix_key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "kvm.country"},
+			want:       "{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+			isKeyFound: true,
+		},
+		{
+			name: "kv_prefix_key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http://example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "kv.country"},
+			want:       "metadata=k1%3Dv1%26k2%3Dv2&pincode=411041&state=MH&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			isKeyFound: true,
+		},
+		{
+			name: "key_without_kv_kvm_prefix",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "someprefix.kv"},
+			want:       "",
+			isKeyFound: false, // hence this key is not starting with kv/kvm prefix we return isKeyFound as false
+		},
+		{
+			name: "multi-level_key",
+			fields: fields{KV: map[string]interface{}{
+				"k1": map[string]interface{}{
+					"k2": map[string]interface{}{
+						"k3": map[string]interface{}{
+							"k4": map[string]interface{}{
+								"name": "test",
+							},
+						},
+					},
+				},
+			}},
+			args:       args{key: "kv.k1.k2.k3.k4.name"},
+			want:       "test",
+			isKeyFound: true,
+		},
+		{
+			name: "key_not_matched",
+			fields: fields{KV: map[string]interface{}{
+				"k1": map[string]interface{}{
+					"k2": map[string]interface{}{
+						"k3": map[string]interface{}{
+							"k4": map[string]interface{}{
+								"name": "test",
+							},
+						},
+					},
+				},
+			}},
+			args:       args{key: "kv.k1.k2.k3.name"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name: "key_wihtout_any_prefix",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:       args{key: "kv"},
+			want:       "",
+			isKeyFound: false,
 		},
 	}
 	for _, tt := range tests {
@@ -1314,8 +1430,9 @@ func TestBidderGetValueFromKV(t *testing.T) {
 			tag := &BidderMacro{
 				KV: tt.fields.KV,
 			}
-			value := tag.GetValueFromKV(tt.args.key)
+			value, isKeyFound := tag.GetValue(tt.args.key)
 			assert.Equal(t, tt.want, value, tt.name)
+			assert.Equal(t, tt.isKeyFound, isKeyFound)
 		})
 	}
 }
@@ -1334,7 +1451,7 @@ func TestBidderMacroKV(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "Valid_test",
+			name: "valid_test",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  "22",
@@ -1343,26 +1460,62 @@ func TestBidderMacroKV(t *testing.T) {
 			want: "age=22&name=test",
 		},
 		{
-			name: "Valid_test_with_url",
+			name: "valid_test_with_url",
 			fields: fields{KV: map[string]interface{}{
-				"name": "test",
-				"age":  "22",
-				"url":  "http://example.com?k1=v1&k2=v2",
+				"age": "22",
+				"url": "http://example.com?k1=v1&k2=v2",
 			}},
 			args: args{key: "kv"},
-			want: "age=22&name=test&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
 		},
 		{
-			name:   "Empty_KV_map",
+			name: "valid_test_with_encoded_url",
+			fields: fields{KV: map[string]interface{}{
+				"age": "22",
+				"url": "http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			}},
+			args: args{key: "kv"},
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+		},
+		{
+			name:   "empty_KV_map",
 			fields: fields{KV: nil},
 			args:   args{key: "kv"},
 			want:   "",
 		},
 		{
-			name:   "KV_map_with_no_key_val_pair",
+			name:   "kv_map_with_no_key_val_pair",
 			fields: fields{KV: map[string]interface{}{}},
 			args:   args{key: "kv"},
 			want:   "",
+		},
+		{
+			name: "key_with_value_as_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+				},
+			}},
+			args: args{key: "kv"},
+			want: "age=22&country=pincode%3D411041%26state%3DMH",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": 223,
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kv"},
+			want: "age=22&country=metadata%3Dk1%253D223%2526k2%253Dv2%26pincode%3D411041%26state%3DMH",
 		},
 	}
 	for _, tt := range tests {
@@ -1371,6 +1524,7 @@ func TestBidderMacroKV(t *testing.T) {
 				KV: tt.fields.KV,
 			}
 			got := tag.MacroKV(tt.args.key)
+
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -1390,7 +1544,7 @@ func TestBidderMacroKVM(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "Valid_test",
+			name: "valid_test",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  "22",
@@ -1399,13 +1553,13 @@ func TestBidderMacroKVM(t *testing.T) {
 			want: "{\"age\":\"22\",\"name\":\"test\"}",
 		},
 		{
-			name:   "Empty_KV_map",
+			name:   "empty_kv_map",
 			fields: fields{KV: nil},
 			args:   args{key: "kvm"},
 			want:   "",
 		},
 		{
-			name: "Value_as_int_data_type",
+			name: "value_as_int_data_type",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  22,
@@ -1414,19 +1568,45 @@ func TestBidderMacroKVM(t *testing.T) {
 			want: "{\"age\":22,\"name\":\"test\"}",
 		},
 		{
-			name:   "KV_map_with_no_key_val_pair",
+			name:   "kv_map_with_no_key_val_pair",
 			fields: fields{KV: map[string]interface{}{}},
 			args:   args{key: "kvm"},
 			want:   "{}",
 		},
 		{
-			name: "Marshal_error",
+			name: "marshal_error",
 			fields: fields{KV: map[string]interface{}{
 				"name": "test",
 				"age":  make(chan int),
 			}},
 			args: args{key: "kvm"},
 			want: "",
+		},
+		{
+			name: "test_with_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"url":  "http://example.com?k1=v1&k2=v2",
+			}},
+			args: args{key: "kvm"},
+			want: "{\"name\":\"test\",\"url\":\"http://example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":22,\"country\":{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"},\"name\":\"test\"}",
 		},
 	}
 	for _, tt := range tests {
@@ -1436,6 +1616,148 @@ func TestBidderMacroKVM(t *testing.T) {
 			}
 			got := tag.MacroKVM(tt.args.key)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestMacroSchain(t *testing.T) {
+
+	type fields struct {
+		Request *openrtb2.BidRequest
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "source_object_with_both_source.schain_and_source.ext.schain",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{},
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"name":"publisher name"
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "", // here we have given priority to source.schain object hence source.schain is not nil it return empty string
+		},
+		{
+			name: "nil_source.schain_object",
+			fields: fields{&openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: nil,
+					Ext: []byte(`{
+						"schain":{
+							"complete":0,
+							"nodes":[
+								{
+									"asi":"exchange2.com",
+									"sid":"abcd",
+									"hp":1
+								}
+							],
+							"ver":"1.0"
+						}
+					}`),
+				},
+			}},
+			args: args{key: "schain"},
+			want: "1.0,0!exchange2.com,abcd,1,,,",
+		},
+		{
+			name: "missing_schain_object",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"somechain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"ext":{"k1":"v1"}
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+		{
+			name:   "missing_both_source.schain_and_source.ext",
+			fields: fields{&openrtb2.BidRequest{Source: nil}},
+			args:   args{key: "schain"},
+			want:   "",
+		},
+		{
+			name: "source.schain_is_present",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{
+					Complete: 1,
+					Ver:      "1.0",
+					Nodes: []openrtb2.SupplyChainNode{
+						{
+							ASI:    "asi",
+							SID:    "sid",
+							RID:    "rid",
+							Name:   "name",
+							Domain: "domain",
+							HP:     openrtb2.Int8Ptr(1),
+						},
+					}},
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!asi,sid,1,rid,name,domain",
+		},
+		{
+			name: "unmarshaling_error",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":"1",
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"rid":"bid-request-1",
+								"name":"publisher%20name",
+								"domain":"publisher.com",
+								"hp":1
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				Request: tt.fields.Request,
+			}
+			got := tag.MacroSchain(tt.args.key)
+			assert.Equal(t, got, tt.want, tt.name)
 		})
 	}
 }

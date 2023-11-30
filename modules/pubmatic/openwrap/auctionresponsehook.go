@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -33,12 +35,19 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	//SSHB request should not execute module
+	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
+		return result, nil
+	}
+	if rctx.Endpoint == models.EndpointOWS2S {
+		return result, nil
+	}
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rctx
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
-
-	RecordPublisherPartnerNoCookieStats(rctx)
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{
@@ -60,6 +69,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// 	return result, nil
 	// }
 
+	anyDealTierSatisfyingBid := false
 	winningBids := make(map[string]models.OwBid, 0)
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -71,86 +81,94 @@ func (m OpenWrap) handleAuctionResponseHook(
 				result.Errors = append(result.Errors, "invalid impCtx.ID for bid"+bid.ImpID)
 				continue
 			}
+
 			partnerID := 0
 			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 				partnerID = bidderMeta.PartnerID
 			}
 
-			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			price := bid.Price
-
+			var eg, en float64
 			bidExt := &models.BidExt{}
-			if len(bid.Ext) != 0 { //NYC_TODO: most of the fields should be filled even if unmarshal fails
+
+			if len(bid.Ext) != 0 {
 				err := json.Unmarshal(bid.Ext, bidExt)
 				if err != nil {
 					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+bid.ID)
 					// continue
 				}
+			}
 
-				// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
-				if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
-					bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
-					bidExt.Prebid.Video = nil
+			// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
+			if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
+				bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
+				bidExt.Prebid.Video = nil
+			}
+
+			if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
+				n, err := strconv.Atoi(v)
+				if err == nil {
+					bidExt.RefreshInterval = n
 				}
+			}
 
-				if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
-					n, err := strconv.Atoi(v)
-					if err == nil {
-						bidExt.RefreshInterval = n
-					}
+			if bidExt.Prebid != nil {
+				bidExt.CreativeType = string(bidExt.Prebid.Type)
+			}
+			if bidExt.CreativeType == "" {
+				bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
+			}
+
+			// set response netecpm and logger/tracker en
+			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
+			bidExt.NetECPM = models.GetNetEcpm(bid.Price, revShare)
+			eg = bid.Price
+			en = bidExt.NetECPM
+			if payload.BidResponse.Cur != "USD" {
+				eg = bidExt.OriginalBidCPMUSD
+				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				bidExt.OriginalBidCPMUSD = 0
+			}
+
+			if impCtx.Video != nil && impCtx.Type == "video" && bidExt.CreativeType == "video" {
+				if bidExt.Video == nil {
+					bidExt.Video = &models.ExtBidVideo{}
 				}
-
-				if bidExt.Prebid != nil {
-					bidExt.CreativeType = string(bidExt.Prebid.Type)
+				if impCtx.Video.MaxDuration != 0 {
+					bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
 				}
-				if bidExt.CreativeType == "" {
-					bidExt.CreativeType = models.GetAdFormat(bid.AdM)
+				if impCtx.Video.MinDuration != 0 {
+					bidExt.Video.MinDuration = impCtx.Video.MinDuration
 				}
-
-				if payload.BidResponse.Cur != "USD" {
-					price = bidExt.OriginalBidCPMUSD
+				if impCtx.Video.Skip != nil {
+					bidExt.Video.Skip = impCtx.Video.Skip
 				}
-
-				bidExt.NetECPM = models.GetNetEcpm(price, revShare)
-
-				if impCtx.Video != nil && impCtx.Type == "video" && bidExt.CreativeType == "video" {
-					if bidExt.Video == nil {
-						bidExt.Video = &models.ExtBidVideo{}
+				if impCtx.Video.SkipAfter != 0 {
+					bidExt.Video.SkipAfter = impCtx.Video.SkipAfter
+				}
+				if impCtx.Video.SkipMin != 0 {
+					bidExt.Video.SkipMin = impCtx.Video.SkipMin
+				}
+				bidExt.Video.BAttr = impCtx.Video.BAttr
+				bidExt.Video.PlaybackMethod = impCtx.Video.PlaybackMethod
+				if rctx.ClientConfigFlag == 1 {
+					bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "video")
+				}
+			} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
+				cc := adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "banner")
+				if len(cc) != 0 {
+					if bidExt.Banner == nil {
+						bidExt.Banner = &models.ExtBidBanner{}
 					}
-					if impCtx.Video.MaxDuration != 0 {
-						bidExt.Video.MaxDuration = impCtx.Video.MaxDuration
-					}
-					if impCtx.Video.MinDuration != 0 {
-						bidExt.Video.MinDuration = impCtx.Video.MinDuration
-					}
-					if impCtx.Video.Skip != nil {
-						bidExt.Video.Skip = impCtx.Video.Skip
-					}
-					if impCtx.Video.SkipAfter != 0 {
-						bidExt.Video.SkipAfter = impCtx.Video.SkipAfter
-					}
-					if impCtx.Video.SkipMin != 0 {
-						bidExt.Video.SkipMin = impCtx.Video.SkipMin
-					}
-					bidExt.Video.BAttr = impCtx.Video.BAttr
-					bidExt.Video.PlaybackMethod = impCtx.Video.PlaybackMethod
-					if rctx.ClientConfigFlag == 1 {
-						bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "video")
-					}
-				} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
-					cc := adunitconfig.GetClientConfigForMediaType(rctx, bid.ImpID, "banner")
-					if len(cc) != 0 {
-						if bidExt.Banner == nil {
-							bidExt.Banner = &models.ExtBidBanner{}
-						}
-						bidExt.Banner.ClientConfig = cc
-					}
+					bidExt.Banner.ClientConfig = cc
 				}
 			}
 
 			bidDealTierSatisfied := false
 			if bidExt.Prebid != nil {
 				bidDealTierSatisfied = bidExt.Prebid.DealTierSatisfied
+				if bidDealTierSatisfied {
+					anyDealTierSatisfyingBid = true // found at least one bid which satisfies dealTier
+				}
 			}
 
 			owbid := models.OwBid{
@@ -158,9 +176,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 				NetEcpm:              bidExt.NetECPM,
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
-			wbid, ok := winningBids[bid.ImpID]
-			if !ok || isNewWinningBid(owbid, wbid, rctx.SupportDeals) {
+			wbid, oldWinBidFound := winningBids[bid.ImpID]
+			if !oldWinBidFound || isNewWinningBid(&owbid, &wbid, rctx.SupportDeals) {
 				winningBids[bid.ImpID] = owbid
+			}
+
+			// update NonBr codes for current bid
+			if owbid.Nbr != nil {
+				bidExt.Nbr = owbid.Nbr
+			}
+
+			// if current bid is winner then update NonBr code for earlier winning bid
+			if winningBids[bid.ImpID].ID == owbid.ID && oldWinBidFound {
+				winBidCtx := rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID]
+				winBidCtx.BidExt.Nbr = wbid.Nbr
+				rctx.ImpBidCtx[bid.ImpID].BidCtx[wbid.ID] = winBidCtx
 			}
 
 			// cache for bid details for logger and tracker
@@ -169,6 +199,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 			impCtx.BidCtx[bid.ID] = models.BidCtx{
 				BidExt: *bidExt,
+				EG:     eg,
+				EN:     en,
 			}
 			rctx.ImpBidCtx[bid.ImpID] = impCtx
 		}
@@ -177,6 +209,23 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.WinningBids = winningBids
 	if len(winningBids) == 0 {
 		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
+	}
+
+	/*
+		At this point of time,
+		1. For price-based auction (request with supportDeals = false),
+				all rejected bids will have NonBR code as LossLostToHigherBid which is expected.
+		2. For request with supportDeals = true :
+			2.1) If all bids are non-deal-bids (bidExt.Prebid.DealTierSatisfied = false)
+					then NonBR code for them will be LossLostToHigherBid which is expected.
+			2.2) If one of the bid is deal-bid (bidExt.Prebid.DealTierSatisfied = true)
+				expectation:
+					all rejected non-deal bids should have NonBR code as LossLostToDealBid
+					all rejected deal-bids should have NonBR code as LossLostToHigherBid
+				addLostToDealBidNonBRCode function will make sure that above expectation are met.
+	*/
+	if anyDealTierSatisfyingBid {
+		addLostToDealBidNonBRCode(&rctx)
 	}
 
 	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
@@ -195,7 +244,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	rctx.DefaultBids = m.addDefaultBids(rctx, payload.BidResponse, &responseExt)
+	rctx.ResponseExt = responseExt
+	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 
@@ -205,7 +255,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	// TODO: PBS-Core should pass the hostcookie for module to usersync.ParseCookieFromRequest()
-	if matchedImpression := getMatchedImpression(rctx); matchedImpression != nil {
+	rctx.MatchedImpression = getMatchedImpression(rctx)
+	matchedImpression, err := json.Marshal(rctx.MatchedImpression)
+	if err == nil {
 		responseExt.OwMatchedImpression = matchedImpression
 	}
 
@@ -216,20 +268,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if rctx.LogInfoFlag == 1 {
 		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
 			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
-			Tracker: tracker.GetTrackerInfo(rctx),
+			Tracker: tracker.GetTrackerInfo(rctx, responseExt),
 		}
 	}
 
+	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
 	if rctx.ReturnAllBidStatus {
-		// prepare seat-non-bids and add them in the response-ext
 		rctx.SeatNonBids = prepareSeatNonBids(rctx)
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
-
-	var err error
-	rctx.ResponseExt, err = json.Marshal(responseExt)
-	if err != nil {
-		result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
 	}
 
 	if rctx.Debug {
@@ -250,9 +296,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
+		var responseExtjson json.RawMessage
+		responseExtjson, err = json.Marshal(responseExt)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to marshal response.ext err: "+err.Error())
+		}
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
+		ap.BidResponse.Ext = responseExtjson
 
-		ap.BidResponse.Ext = rctx.ResponseExt
+		resetBidIdtoOriginal(ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
@@ -324,19 +376,26 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 }
 
 // isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
-func isNewWinningBid(bid, wbid models.OwBid, preferDeals bool) bool {
+func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
 			return true
 		}
 	}
 	//both have deal or both do not have deal
-	return bid.NetEcpm > wbid.NetEcpm
+	if bid.NetEcpm > wbid.NetEcpm {
+		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		return true
+	}
+	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	return false
 }
 
 func getPlatformName(platform string) string {
@@ -344,4 +403,12 @@ func getPlatformName(platform string) string {
 		return models.PlatformAppTargetingKey
 	}
 	return platform
+}
+
+func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
+	for i, seatBid := range bidResponse.SeatBid {
+		for j, bid := range seatBid.Bid {
+			bidResponse.SeatBid[i].Bid[j].ID = utils.GetOriginalBidId(bid.ID)
+		}
+	}
 }
