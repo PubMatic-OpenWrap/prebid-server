@@ -92,6 +92,7 @@ func parseBidderParams(schemaDirectory string) error {
 				}
 				parameter.Required = propertyDef.Required
 			} else {
+				//TODO : do we need log here
 			}
 		}
 
@@ -99,6 +100,7 @@ func parseBidderParams(schemaDirectory string) error {
 			if parameters[propertyName] != nil {
 				parameters[propertyName].Required = true
 			} else {
+				//TODO : do we need log here
 			}
 		}
 
