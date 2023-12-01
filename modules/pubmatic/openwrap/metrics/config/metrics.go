@@ -445,3 +445,10 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 		thisME.RecordOWServerPanic(endpoint, methodName, nodeName, podName)
 	}
 }
+
+// RecordGeoDBFailure record geodb failures
+func (me *MultiMetricsEngine) RecordGeoDBFailure(dcName, nodeName, podName string, value float64) {
+	for _, thisME := range *me {
+		thisME.RecordGeoDBFailure(dcName, nodeName, podName, value)
+	}
+}
