@@ -10,13 +10,13 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
+var getRandomNumber = func() int {
+	return rand.Intn(100)
+}
+
 func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	vastEnableUnwrapper, _ := ctx.Value(field).(string)
 	return vastEnableUnwrapper == "1"
-}
-
-var getRandomNumber = func() int {
-	return rand.Intn(100)
 }
 
 func handleEntrypointHook(
@@ -31,7 +31,11 @@ func handleEntrypointHook(
 	}()
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
 	vastRequestContext := models.RequestCtx{
-		VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled) && getRandomNumber() < config.TrafficPercentage,
+		VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled),
+	}
+
+	if !vastRequestContext.VastUnwrapEnabled {
+		vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < config.StatTrafficPercentage
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext

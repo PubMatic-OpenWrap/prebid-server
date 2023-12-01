@@ -87,11 +87,6 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldRandomNumberGen := getRandomNumber
-			getRandomNumber = func() int { return 1 }
-			defer func() {
-				getRandomNumber = oldRandomNumberGen
-			}()
 			m := VastUnwrapModule{
 				Cfg:               tt.fields.cfg.Cfg,
 				Enabled:           tt.fields.cfg.Enabled,
@@ -161,9 +156,9 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				wantAdM: true,
 			},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordRequestStatus("pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordWrapperCount("pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordRequestTime("pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")
