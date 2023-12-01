@@ -60,7 +60,7 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 	err := doc.ReadFromString(vastXML)
 	if nil != err {
 		err = fmt.Errorf("account:[%s] bidder:[%s] err:[vast_xml_parsing_failed:%s] vast:[%s] ", accountID, requestingBidder, err.Error(), vastXML)
-		glog.V(3).Infof(err.Error())
+		glog.Error(err.Error())
 		return []byte(vastXML), false, err // false indicates events trackers are not injected
 	}
 
