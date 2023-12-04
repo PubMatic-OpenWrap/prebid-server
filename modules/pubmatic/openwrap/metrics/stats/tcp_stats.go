@@ -339,4 +339,4 @@ func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                   
 func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
 func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
 func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
-func (st *StatsTCP) RecordGeoDBFailure(dcName, nodeName, podName string, value float64)             {}
+func (st *StatsTCP) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64)          {}

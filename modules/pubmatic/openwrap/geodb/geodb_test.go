@@ -8,7 +8,7 @@ import (
 
 func TestGeoDBLookupFailureCases(t *testing.T) {
 	// initialise with invalid path
-	err := InitNetacuityClient("/invalid/path")
+	err := InitGeoDBClient("/invalid/path")
 	assert.Errorf(t, err, "InitNetacuityClient should return an error")
 
 	info, err := GeoLookUp{}.LookUp("10.10.10.10")

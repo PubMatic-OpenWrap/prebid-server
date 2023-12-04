@@ -14,7 +14,7 @@ func (geo GeoLookUp) LookUp(ip string) (*netacuity.GeoInfo, error) {
 	return netacuity.LookUp(ip)
 }
 
-// InitNetacuityClient initialises the netacuity client
-func InitNetacuityClient(dbPath string) error {
+// InitGeoDBClient initialises the geoDB client
+func InitGeoDBClient(dbPath string) error {
 	return netacuity.InitNetacuityClient(dbPath)
 }

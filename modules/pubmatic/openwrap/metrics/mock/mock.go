@@ -214,16 +214,16 @@ func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDBQueryFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordDBQueryFailure), arg0, arg1, arg2)
 }
 
-// RecordGeoDBFailure mocks base method
-func (m *MockMetricsEngine) RecordGeoDBFailure(arg0, arg1, arg2 string, arg3 float64) {
+// RecordGeoDBInitStatus mocks base method
+func (m *MockMetricsEngine) RecordGeoDBInitStatus(arg0, arg1, arg2 string, arg3 float64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordGeoDBFailure", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "RecordGeoDBInitStatus", arg0, arg1, arg2, arg3)
 }
 
-// RecordGeoDBFailure indicates an expected call of RecordGeoDBFailure
-func (mr *MockMetricsEngineMockRecorder) RecordGeoDBFailure(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// RecordGeoDBInitStatus indicates an expected call of RecordGeoDBInitStatus
+func (mr *MockMetricsEngineMockRecorder) RecordGeoDBInitStatus(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoDBFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoDBFailure), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoDBInitStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoDBInitStatus), arg0, arg1, arg2, arg3)
 }
 
 // RecordGetProfileDataTime mocks base method

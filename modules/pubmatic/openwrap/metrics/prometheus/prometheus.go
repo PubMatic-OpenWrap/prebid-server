@@ -52,8 +52,8 @@ type Metrics struct {
 
 	dbQueryError *prometheus.CounterVec
 
-	loggerFailure      *prometheus.CounterVec
-	geoDBFailureStatus *prometheus.GaugeVec
+	loggerFailure   *prometheus.CounterVec
+	geoDBInitStatus *prometheus.GaugeVec
 
 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
 
@@ -250,8 +250,8 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, profileIDLabel},
 	)
 
-	metrics.geoDBFailureStatus = newGauge(cfg, promRegistry,
-		"geodb_fail",
+	metrics.geoDBInitStatus = newGauge(cfg, promRegistry,
+		"geodb_status",
 		"An indicator to identify the GeoDB database's state of failure. 1 indicates failure and 0 indicates healthy.",
 		[]string{dcNameLabel, nodeNameLabel, podNameLabel})
 
@@ -469,9 +469,9 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 	}).Inc()
 }
 
-// RecordGeoDBFailure to record status of geodb failure
-func (m *Metrics) RecordGeoDBFailure(dcName, nodeName, podName string, value float64) {
-	m.geoDBFailureStatus.With(prometheus.Labels{
+// RecordGeoDBInitStatus to record status of geodb failure
+func (m *Metrics) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
+	m.geoDBInitStatus.With(prometheus.Labels{
 		dcNameLabel:   dcName,
 		nodeNameLabel: nodeName,
 		podNameLabel:  podName,

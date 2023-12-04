@@ -446,9 +446,9 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 	}
 }
 
-// RecordGeoDBFailure record geodb failures
-func (me *MultiMetricsEngine) RecordGeoDBFailure(dcName, nodeName, podName string, value float64) {
+// RecordGeoDBInitStatus record geodb failures
+func (me *MultiMetricsEngine) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
 	for _, thisME := range *me {
-		thisME.RecordGeoDBFailure(dcName, nodeName, podName, value)
+		thisME.RecordGeoDBInitStatus(dcName, nodeName, podName, value)
 	}
 }
