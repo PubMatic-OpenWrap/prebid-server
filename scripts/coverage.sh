@@ -71,6 +71,10 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
         fi
 
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/geodb$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
+        fi
+
         go test ${cover} "$pkg"
     done
 

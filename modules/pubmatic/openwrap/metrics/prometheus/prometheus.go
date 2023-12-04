@@ -469,7 +469,7 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 	}).Inc()
 }
 
-// RecordGeoDBInitStatus to record status of geodb failure
+// RecordGeoDBInitStatus to record status of geodb initialisation status
 func (m *Metrics) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
 	m.geoDBInitStatus.With(prometheus.Labels{
 		dcNameLabel:   dcName,
