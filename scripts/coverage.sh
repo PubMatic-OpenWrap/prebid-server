@@ -15,6 +15,24 @@ workdir=.cover
 profile="$workdir/cover.out"
 mode=count
 
+setup_netacuity() {
+    echo "create netacuity dir"
+    mkdir -p /usr/local/net_acuity_client/lib/
+    mkdir -p /usr/local/net_acuity_client/include/
+
+    echo "find in /go/pkg/mod"
+    find /go/pkg/mod -type d -iname 'go-netacuity-client@*'
+
+    echo "find in ~/go/pkg/mod"
+    find ~/go/pkg/mod -type d -iname 'go-netacuity-client@*'
+    echo "calling make on go-netacuity-client library"
+    make -C `find ~/go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+
+    echo "print /usr/local/net_acuity_client"
+    ls -ll /usr/local/net_acuity_client/*
+    echo "removing setup_netacuity"
+}
+
 generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
@@ -86,6 +104,7 @@ show_cover_report() {
     go tool cover -${1}="$profile"
 }
 
+setup_netacuity
 generate_cover_data $(go list ./... | grep -v /vendor/)
 #show_cover_report func
 case "$1" in
