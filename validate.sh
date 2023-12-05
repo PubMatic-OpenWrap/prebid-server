@@ -17,6 +17,15 @@ while true; do
   esac
 done
 
+ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
+netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+echo "netacuityDir=$netacuityDir"
+includeDir=`find $netacuityDir -type d -iname include`
+includeDir=`realpath $includeDir`
+echo "includeDir=$includeDir"
+export CGO_CFLAGS="-I $includeDir"
+echo "CGO_CFLAGS=$CGO_CFLAGS"
+
 ./scripts/format.sh -f $AUTOFMT
 
 # Run the actual tests. Make sure there's enough coverage too, if the flags call for it.
