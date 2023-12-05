@@ -15,37 +15,20 @@ workdir=.cover
 profile="$workdir/cover.out"
 mode=count
 
-setup_netacuity() {
-    echo "create netacuity dir"
-    mkdir -p /usr/local/net_acuity_client/lib/
-    mkdir -p /usr/local/net_acuity_client/include/
-
-    echo "find in /go/pkg/mod"
-    find /go/pkg/mod -type d -iname 'go-netacuity-client@*'
-
-    echo "find in ~/go/pkg/mod"
-    find ~/go/pkg/mod -type d -iname 'go-netacuity-client@*'
-    echo "calling make on go-netacuity-client library"
-    make -C `find ~/go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-
-    echo "print /usr/local/net_acuity_client"
-    ls -ll /usr/local/net_acuity_client/*
-    echo "removing setup_netacuity"
+set_cflag_for_netacuity() {
+    netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+    echo "netacuityDir=$netacuityDir"
+    includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
+    echo "includeDir=$includeDir"
+    export CGO_CFLAGS="-I $includeDir"
+    echo "CGO_CFLAGS=$CGO_CFLAGS"
 }
 
 generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
 
-     #go mod download all
-    # ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
-    # netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-    # echo "netacuityDir=$netacuityDir"
-    # includeDir=`find $netacuityDir -type d -iname include`
-    # includeDir=`realpath $includeDir`
-    # echo "includeDir=$includeDir"
-    # export CGO_CFLAGS="-I $includeDir"
-    # echo "CGO_CFLAGS=$CGO_CFLAGS"
+    set_cflag_for_netacuity
 
     for pkg in "$@"; do
         f="$workdir/$(echo $pkg | tr / -).cover"
@@ -103,16 +86,6 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
         fi
 
-        # #go mod download all
-        # ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
-        # netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-        # echo "netacuityDir=$netacuityDir"
-        # includeDir=`find $netacuityDir -type d -iname include`
-        # includeDir=`realpath $includeDir`
-        # echo "includeDir=$includeDir"
-        # export CGO_CFLAGS="-I $includeDir"
-        # echo "CGO_CFLAGS=$CGO_CFLAGS"
-        
         go test  ${cover} "$pkg"
         #go test -tag exclude_feature ${cover} "$pkg"
     done
@@ -126,7 +99,6 @@ show_cover_report() {
 }
 
 generate_cover_data $(go list ./... | grep -v /vendor/)
-#generate_cover_data $(go list ./... | grep modules)
 #show_cover_report func
 case "$1" in
 "")
