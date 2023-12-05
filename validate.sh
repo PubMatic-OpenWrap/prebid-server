@@ -19,6 +19,13 @@ done
 
 echo "validate.sh pwd="
 echo `pwd`
+
+ls /home/runner/
+ls /home/runner/go/
+ls /home/runner/go/pkg/
+ls /home/runner/go/pkg/mod/
+
+exit
 ./scripts/format.sh -f $AUTOFMT
 
 
