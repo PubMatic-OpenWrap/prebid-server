@@ -91,16 +91,12 @@ func parseBidderParams(schemaDirectory string) error {
 					parameter.DefaultValue = propertyDef.DefaultValue
 				}
 				parameter.Required = propertyDef.Required
-			} else {
-				//TODO : do we need log here
 			}
 		}
 
 		for _, propertyName := range jsonSchema.Required {
 			if parameters[propertyName] != nil {
 				parameters[propertyName].Required = true
-			} else {
-				//TODO : do we need log here
 			}
 		}
 
