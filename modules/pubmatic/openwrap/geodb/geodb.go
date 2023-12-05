@@ -1,5 +1,5 @@
-//go:build !exclude_feature
-// +build !exclude_feature
+//go:build exclude_feature
+// +build exclude_feature
 
 package geodb
 
