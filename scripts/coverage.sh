@@ -95,6 +95,12 @@ generate_cover_data() {
 
         go mod download all
         ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
+        netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+        echo "netacuityDir=$netacuityDir"
+        includeDir=`find $netacuityDir -type d -iname include`
+        export CGO_CFLAGS="-I $includeDir"
+        echo "CGO_CFLAGS=$CGO_CFLAGS"
+        
         go test  ${cover} "$pkg"
         #go test -tag exclude_feature ${cover} "$pkg"
     done
@@ -108,6 +114,7 @@ show_cover_report() {
 }
 
 generate_cover_data $(go list ./... | grep -v /vendor/)
+#generate_cover_data $(go list ./... | grep modules)
 #show_cover_report func
 case "$1" in
 "")
