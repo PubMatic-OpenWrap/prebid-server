@@ -17,8 +17,10 @@ while true; do
   esac
 done
 
-echo "validate.sh GOPATH=$GOPATH"
+echo "validate.sh pwd="
+echo `pwd`
 ./scripts/format.sh -f $AUTOFMT
+
 
 # Run the actual tests. Make sure there's enough coverage too, if the flags call for it.
 if $COVERAGE; then

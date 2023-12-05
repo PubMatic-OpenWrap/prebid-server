@@ -28,8 +28,9 @@ generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
 
-    echo "cover.sh GOPATH=$GOPATH"
-    set_cflag_for_netacuity
+    echo "cover.sh pwd="
+    echo `pwd`
+    #set_cflag_for_netacuity
 
     for pkg in "$@"; do
         f="$workdir/$(echo $pkg | tr / -).cover"
