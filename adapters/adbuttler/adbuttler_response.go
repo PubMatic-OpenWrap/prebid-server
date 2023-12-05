@@ -134,7 +134,9 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		productDetails := make(map[string]interface{})
 
 		//Retailer Specific ProductID is present from Product Feed Template
+
 		val, ok := configValueMap[adapters.PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
+
 		if ok {
 			productid = adButlerBid.ProductData[val]
 			keyToRemove = val
@@ -153,6 +155,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			// Delete the "Product Id" key if present
 			delete(productDetails, keyToRemove)
 		}
+
 
 		var impressionUrl, clickUrl, conversionUrl string
 		for _, beacon := range adButlerBid.Beacons {
@@ -232,4 +235,3 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
-
