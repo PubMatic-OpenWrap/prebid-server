@@ -19,7 +19,7 @@ done
 
 echo "validate.sh pwd="
 echo `pwd`
-
+go mod tidy
 ls /home/runner/
 ls /home/runner/go/
 ls /home/runner/go/pkg/
