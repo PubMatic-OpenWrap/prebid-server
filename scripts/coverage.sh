@@ -93,7 +93,8 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
         fi
 
-        go test -tags exclude_feature ${cover} "$pkg"
+         go test  ${cover} "$pkg"
+        #go test -tag exclude_feature ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"

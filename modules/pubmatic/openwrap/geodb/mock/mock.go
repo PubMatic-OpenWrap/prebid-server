@@ -3,9 +3,6 @@
 
 // Package mock_geodb is a generated GoMock package.
 
-//go:build exclude_feature
-// +build exclude_feature
-
 package mock_geodb
 
 import (
