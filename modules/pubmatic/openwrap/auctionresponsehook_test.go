@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1096,8 +1097,20 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
-							PubIDStr:     "5890",
-							BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
+							PubIDStr: "5890",
+							CustomDimensions: map[string]models.CustomDimension{
+								"traffic": {
+									Value:     "email",
+									SendToGAM: ptrutil.ToPtr(true),
+								},
+								"author": {
+									Value:     "hemry",
+									SendToGAM: ptrutil.ToPtr(false),
+								},
+								"age": {
+									Value: "23",
+								},
+							},
 						},
 					},
 				},

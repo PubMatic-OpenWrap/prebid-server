@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,33 +15,33 @@ func TestGetCustomDimensions(t *testing.T) {
 		bidderParams json.RawMessage
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  map[string]CustomDimension
-		want1 bool
+		name    string
+		args    args
+		want    map[string]models.CustomDimension
+		wantErr bool
 	}{
 		{
 			name: "bidderParams not present",
 			args: args{
 				bidderParams: json.RawMessage{},
 			},
-			want:  map[string]CustomDimension{},
-			want1: false,
+			want:    map[string]models.CustomDimension{},
+			wantErr: true,
 		},
 		{
 			name: "cds not present in bidderParams",
 			args: args{
 				bidderParams: json.RawMessage(`{}`),
 			},
-			want:  map[string]CustomDimension{},
-			want1: false,
+			want:    map[string]models.CustomDimension{},
+			wantErr: true,
 		},
 		{
 			name: "cds present",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
 			},
-			want: map[string]CustomDimension{
+			want: map[string]models.CustomDimension{
 				"traffic": {
 					Value:     "email",
 					SendToGAM: ptrutil.ToPtr(true),
@@ -53,21 +54,24 @@ func TestGetCustomDimensions(t *testing.T) {
 					Value: "23",
 				},
 			},
-			want1: true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetCustomDimensions(tt.args.bidderParams)
+			got, err := GetCustomDimensions(tt.args.bidderParams)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetCustomDimensions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 			assert.Equal(t, tt.want, got, tt.name)
-			assert.Equal(t, tt.want1, got1, tt.name)
 		})
 	}
 }
 
 func TestParseCustomDimensionsToString(t *testing.T) {
 	type args struct {
-		cdsMap map[string]CustomDimension
+		cdsMap map[string]models.CustomDimension
 	}
 	tests := []struct {
 		name  string
@@ -78,7 +82,7 @@ func TestParseCustomDimensionsToString(t *testing.T) {
 		{
 			name: "valid custom dimensions map",
 			args: args{
-				cdsMap: map[string]CustomDimension{
+				cdsMap: map[string]models.CustomDimension{
 					"k1": {Value: "v1"},
 					"k2": {Value: "v2"},
 				},
@@ -88,14 +92,14 @@ func TestParseCustomDimensionsToString(t *testing.T) {
 		{
 			name: "empty custom dimensions map",
 			args: args{
-				cdsMap: map[string]CustomDimension{},
+				cdsMap: map[string]models.CustomDimension{},
 			},
 			want: ``,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ParseCustomDimensionsToString(tt.args.cdsMap)
+			got := ConvertCustomDimensionsToString(tt.args.cdsMap)
 			expectedKeyVal := strings.Split(tt.want, ";")
 			actualKeyVal := strings.Split(got, ";")
 			assert.ElementsMatch(t, expectedKeyVal, actualKeyVal, tt.name)

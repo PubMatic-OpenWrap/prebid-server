@@ -51,7 +51,6 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 
 func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
 	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
-	cdsData, _ := cds.GetCustomDimensions(rctx.BidderParams)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			tracker := models.Tracker{
@@ -71,7 +70,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorType:         floorsDetails.FloorType,
 				FloorSkippedFlag:  floorsDetails.Skipfloors,
 				FloorSource:       floorsDetails.FloorSource,
-				CustomDimensions:  cds.ParseCustomDimensionsToString(cdsData),
+				CustomDimensions:  cds.ConvertCustomDimensionsToString(rctx.CustomDimensions),
 				LoggerData: models.LoggerData{
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,

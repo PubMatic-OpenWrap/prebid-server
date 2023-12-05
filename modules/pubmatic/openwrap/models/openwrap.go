@@ -96,7 +96,7 @@ type RequestCtx struct {
 	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
 	CurrencyConversion func(from string, to string, value float64) (float64, error)
 	MatchedImpression  map[string]int
-	BidderParams       json.RawMessage
+	CustomDimensions   map[string]CustomDimension
 }
 
 type OwBid struct {
@@ -172,4 +172,9 @@ type AdUnitCtx struct {
 	AppliedSlotAdUnitConfig  *adunitconfig.AdConfig
 	UsingDefaultConfig       bool
 	AllowedConnectionTypes   []int
+}
+
+type CustomDimension struct {
+	Value     string `json:"value,omitempty"`
+	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }

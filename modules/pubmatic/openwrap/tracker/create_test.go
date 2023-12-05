@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
 	"testing"
@@ -31,7 +30,7 @@ var rctx = models.RequestCtx{
 	MarketPlaceBidders: map[string]struct{}{
 		"pubmatic": {},
 	},
-	BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"author":{"value":"henry","sendtoGAM":false}}}}`),
+	CustomDimensions: map[string]models.CustomDimension{"author": {Value: "henry"}},
 	ImpBidCtx: map[string]models.ImpCtx{
 		"impID-1": {
 			TagID:      "adunit-1",
