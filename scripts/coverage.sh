@@ -15,15 +15,6 @@ workdir=.cover
 profile="$workdir/cover.out"
 mode=count
 
-set_cflag_for_netacuity() {
-    netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-    echo "netacuityDir=$netacuityDir"
-    includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
-    echo "includeDir=$includeDir"
-    export CGO_CFLAGS="-I $includeDir"
-    echo "CGO_CFLAGS=$CGO_CFLAGS"
-}
-
 generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"

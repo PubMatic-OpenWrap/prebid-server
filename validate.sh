@@ -17,15 +17,19 @@ while true; do
   esac
 done
 
-echo "validate.sh pwd="
-echo `pwd`
-go mod tidy
-ls /home/runner/
-ls /home/runner/go/
-ls /home/runner/go/pkg/
-ls /home/runner/go/pkg/mod/
 
-exit
+set_cflag_for_netacuity() {
+    go mod tidy
+    netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+    echo "netacuityDir=$netacuityDir"
+    includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
+    echo "includeDir=$includeDir"
+    export CGO_CFLAGS="-I $includeDir"
+    echo "CGO_CFLAGS=$CGO_CFLAGS"
+}
+
+
+set_cflag_for_netacuity
 ./scripts/format.sh -f $AUTOFMT
 
 
