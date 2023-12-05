@@ -98,6 +98,8 @@ generate_cover_data() {
         netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
         echo "netacuityDir=$netacuityDir"
         includeDir=`find $netacuityDir -type d -iname include`
+        includeDir=`realpath $includeDir`
+        echo "includeDir=$includeDir"
         export CGO_CFLAGS="-I $includeDir"
         echo "CGO_CFLAGS=$CGO_CFLAGS"
         
