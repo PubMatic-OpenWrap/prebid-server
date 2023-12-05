@@ -93,7 +93,9 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
         fi
 
-         go test  ${cover} "$pkg"
+        go mod download all
+        ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
+        go test  ${cover} "$pkg"
         #go test -tag exclude_feature ${cover} "$pkg"
     done
 
