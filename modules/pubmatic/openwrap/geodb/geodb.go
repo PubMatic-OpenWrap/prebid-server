@@ -1,3 +1,6 @@
+//go:build !exclude_feature
+// +build !exclude_feature
+
 package geodb
 
 import "git.pubmatic.com/PubMatic/go-netacuity-client"

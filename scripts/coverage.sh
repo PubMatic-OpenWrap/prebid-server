@@ -93,7 +93,7 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
         fi
 
-        go test ${cover} "$pkg"
+        go test -tags exclude_feature ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"
@@ -104,7 +104,6 @@ show_cover_report() {
     go tool cover -${1}="$profile"
 }
 
-setup_netacuity
 generate_cover_data $(go list ./... | grep -v /vendor/)
 #show_cover_report func
 case "$1" in
