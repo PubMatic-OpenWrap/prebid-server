@@ -25,16 +25,14 @@ func TestGetCustomDimensions(t *testing.T) {
 			args: args{
 				bidderParams: json.RawMessage{},
 			},
-			want:    map[string]models.CustomDimension{},
-			wantErr: true,
+			want: map[string]models.CustomDimension{},
 		},
 		{
 			name: "cds not present in bidderParams",
 			args: args{
 				bidderParams: json.RawMessage(`{}`),
 			},
-			want:    map[string]models.CustomDimension{},
-			wantErr: true,
+			want: map[string]models.CustomDimension{},
 		},
 		{
 			name: "cds present",
@@ -54,22 +52,17 @@ func TestGetCustomDimensions(t *testing.T) {
 					Value: "23",
 				},
 			},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCustomDimensions(tt.args.bidderParams)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCustomDimensions() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := GetCustomDimensions(tt.args.bidderParams)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func TestParseCustomDimensionsToString(t *testing.T) {
+func TestConvertCustomDimensionsToString(t *testing.T) {
 	type args struct {
 		cdsMap map[string]models.CustomDimension
 	}

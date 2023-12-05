@@ -2,7 +2,6 @@ package customdimensions
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,18 +11,17 @@ import (
 )
 
 // returns customDimension map if req.ext.prebid.bidderparams.pubmatic have cds
-func GetCustomDimensions(bidderParams json.RawMessage) (map[string]models.CustomDimension, error) {
+func GetCustomDimensions(bidderParams json.RawMessage) map[string]models.CustomDimension {
 	cds := make(map[string]models.CustomDimension, 0)
 	if len(bidderParams) == 0 {
-		return cds, errors.New("empty bidderParams")
+		return cds
 	}
 	if cdsContent, _, _, err := jsonparser.Get([]byte(bidderParams), models.BidderPubMatic, models.CustomDimensions); err == nil {
-		reqCustomDimension := make(map[string]models.CustomDimension, 0)
-		if err := json.Unmarshal(cdsContent, &reqCustomDimension); err == nil {
-			return reqCustomDimension, nil
+		if err := json.Unmarshal(cdsContent, &cds); err == nil {
+			return cds
 		}
 	}
-	return cds, errors.New("custom dimensions not found")
+	return cds
 }
 
 // ConvertCustomDimensionsToString will convert to key-val string
