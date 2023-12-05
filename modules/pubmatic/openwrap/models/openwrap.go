@@ -69,7 +69,6 @@ type RequestCtx struct {
 	ImpBidCtx          map[string]ImpCtx
 	Aliases            map[string]string
 	NewReqExt          *RequestExt
-	HBReqExt           RequestExt
 	ResponseExt        openrtb_ext.ExtBidResponse
 	MarketPlaceBidders map[string]struct{}
 
@@ -97,6 +96,7 @@ type RequestCtx struct {
 	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
 	CurrencyConversion func(from string, to string, value float64) (float64, error)
 	MatchedImpression  map[string]int
+	BidderParams       json.RawMessage
 }
 
 type OwBid struct {

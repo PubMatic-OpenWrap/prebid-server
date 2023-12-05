@@ -93,9 +93,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.NewReqExt = requestExt
-	if requestExt != nil {
-		rCtx.HBReqExt = *requestExt
-	}
+	rCtx.BidderParams = requestExt.Prebid.BidderParams
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests

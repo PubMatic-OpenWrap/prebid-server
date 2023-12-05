@@ -31,13 +31,7 @@ var rctx = models.RequestCtx{
 	MarketPlaceBidders: map[string]struct{}{
 		"pubmatic": {},
 	},
-	HBReqExt: models.RequestExt{
-		ExtRequest: openrtb_ext.ExtRequest{
-			Prebid: openrtb_ext.ExtRequestPrebid{
-				BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"author":{"value":"henry","sendtoGAM":false}}}}`),
-			},
-		},
-	},
+	BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"author":{"value":"henry","sendtoGAM":false}}}}`),
 	ImpBidCtx: map[string]models.ImpCtx{
 		"impID-1": {
 			TagID:      "adunit-1",

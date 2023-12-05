@@ -1096,14 +1096,8 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
-							PubIDStr: "5890",
-							HBReqExt: models.RequestExt{
-								ExtRequest: openrtb_ext.ExtRequest{
-									Prebid: openrtb_ext.ExtRequestPrebid{
-										BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
-									},
-								},
-							},
+							PubIDStr:     "5890",
+							BidderParams: json.RawMessage(`{"pubmatic":{"cds":{"traffic":{"value":"email","sendtoGAM":true},"author":{"value":"henry","sendtoGAM":false},"age":{"value":"23"}}}}`),
 						},
 					},
 				},

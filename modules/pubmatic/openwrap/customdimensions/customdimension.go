@@ -16,17 +16,18 @@ type CustomDimension struct {
 }
 
 // returns customDimension map if req.ext.prebid.bidderparams.pubmatic have cds
-func GetCustomDimensionsFromRequestExt(bidderParams json.RawMessage) map[string]CustomDimension {
+func GetCustomDimensions(bidderParams json.RawMessage) (map[string]CustomDimension, bool) {
+	cds := make(map[string]CustomDimension, 0)
 	if len(bidderParams) == 0 {
-		return nil
+		return cds, false
 	}
 	if cdsContent, _, _, parseErr := jsonparser.Get([]byte(bidderParams), models.BidderPubMatic, models.CustomDimensions); parseErr == nil {
 		reqCustomDimension := make(map[string]CustomDimension, 0)
 		if err := json.Unmarshal(cdsContent, &reqCustomDimension); err == nil {
-			return reqCustomDimension
+			return reqCustomDimension, true
 		}
 	}
-	return nil
+	return cds, false
 }
 
 // Will parse validated cds and parse/convert to string
@@ -40,20 +41,4 @@ func ParseCustomDimensionsToString(cds map[string]CustomDimension) string {
 		cdsSlc = append(cdsSlc, ele)
 	}
 	return strings.Join(cdsSlc, ";")
-}
-
-// returns if custom dimensions present in req.ext and map of customDimensiosn with attributes value and sendtoGAM
-func IsCustomDimensionsPresent(ext interface{}) (map[string]CustomDimension, bool) {
-	cds := make(map[string]CustomDimension, 0)
-	extData, err := json.Marshal(ext)
-	if err == nil {
-		reqExt, err := models.GetRequestExt(extData)
-		if err != nil {
-			return cds, false
-		}
-		if cds := GetCustomDimensionsFromRequestExt(reqExt.Prebid.BidderParams); cds != nil {
-			return cds, true
-		}
-	}
-	return cds, false
 }
