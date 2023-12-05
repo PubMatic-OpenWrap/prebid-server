@@ -75,25 +75,33 @@ func (a *CriteoRetailAdapter) MakeBids(internalRequest *openrtb2.BidRequest, ext
 		configValueMap[obj.Key] = obj.Value
 		configTypeMap[obj.Key] = obj.Type
 	}
-	
-	pubMaticTracking := false
-	val, ok := configValueMap[AUCTIONDETAILS_PREFIX + PUBMATIC_TRACKING]
-	if ok {
-		if val == "true" {
-			pubMaticTracking = true
-		}
-	}
 
 	impID := internalRequest.Imp[0].ID
-	bidderResponse := a.getBidderResponse(internalRequest, &criteoResponse, impID, pubMaticTracking)
+	bidderResponse := a.getBidderResponse(internalRequest, &criteoResponse, impID, configValueMap)
 	return bidderResponse, nil
 }
 
-func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, criteoResponse *CriteoResponse, requestImpID string, pubMaticTracking bool) *adapters.BidderResponse {
+func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, criteoResponse *CriteoResponse, requestImpID string, configValueMap map[string]string) *adapters.BidderResponse {
 
 	noOfBids := countSponsoredProducts(criteoResponse)
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfBids)
 	index := 1
+
+
+	pubMaticTracking := false
+	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + PUBMATIC_TRACKING]
+	if ok {
+		if val == adapters.STRING_TRUE {
+			pubMaticTracking = true
+		}
+	}
+	bidderExtendedDetails := false
+	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+	if ok {
+		if val == adapters.STRING_TRUE {
+			bidderExtendedDetails = true
+		}
+	}
 	for _, placementMap := range criteoResponse.Placements {
 		for _, placements := range placementMap {
 			for _, placement := range placements {
@@ -117,15 +125,18 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 
 						// Add ProductDetails to bidExtension
 						productDetails := make(map[string]interface{})
-						for key, value := range productMap {
-							productDetails[key] = value
-						}
+						if bidderExtendedDetails {
+				
+							for key, value := range productMap {
+								productDetails[key] = value
+							}
 
-						delete(productDetails, PRODUCT_ID)
-						delete(productDetails, BID_PRICE)
-						delete(productDetails, CLICK_PRICE)
-						delete(productDetails, VIEW_BEACON)
-						delete(productDetails, CLICK_BEACON)
+							delete(productDetails, PRODUCT_ID)
+							delete(productDetails, BID_PRICE)
+							delete(productDetails, CLICK_PRICE)
+							delete(productDetails, VIEW_BEACON)
+							delete(productDetails, CLICK_BEACON)
+						}
 
 						bidExt := &openrtb_ext.ExtBidCommerce{
 							ProductId:      productID,
@@ -189,5 +200,6 @@ func countSponsoredProducts(adResponse *CriteoResponse) int {
 
 	return count
 }
+
 
 

@@ -109,12 +109,12 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			configValueMap[obj.Key] = obj.Value
 		}
 
-		val, ok := configValueMap[BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
+		val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
 		if ok {
 			adbutlerID = val
 		}
 
-		val, ok = configValueMap[BIDDERDETAILS_PREFIX+BD_ZONE_ID]
+		val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ZONE_ID]
 		if ok {
 			zoneID = val
 		}
@@ -131,8 +131,12 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		clickPrice := adButlerBid.CPCSpend
 
 		var productid string
+		productDetails := make(map[string]interface{})
+
 		//Retailer Specific ProductID is present from Product Feed Template
-		val, ok := configValueMap[PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
+
+		val, ok := configValueMap[adapters.PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_PRODUCTID]
+
 		if ok {
 			productid = adButlerBid.ProductData[val]
 			keyToRemove = val
@@ -142,13 +146,16 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			keyToRemove = DEFAULT_PRODUCTID
 		}
 
-		productDetails := make(map[string]interface{})
-		for key, value := range adButlerBid.ProductData {
-			productDetails[key] = value
+		val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+		if ok && val == adapters.STRING_TRUE {
+			for key, value := range adButlerBid.ProductData {
+				productDetails[key] = value
+			}
+
+			// Delete the "Product Id" key if present
+			delete(productDetails, keyToRemove)
 		}
 
-		// Delete the "Product Id" key if present
-		delete(productDetails, keyToRemove)
 
 		var impressionUrl, clickUrl, conversionUrl string
 		for _, beacon := range adButlerBid.Beacons {
