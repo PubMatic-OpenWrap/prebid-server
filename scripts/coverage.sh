@@ -37,6 +37,16 @@ generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
 
+     #go mod download all
+    ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
+    netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+    echo "netacuityDir=$netacuityDir"
+    includeDir=`find $netacuityDir -type d -iname include`
+    includeDir=`realpath $includeDir`
+    echo "includeDir=$includeDir"
+    export CGO_CFLAGS="-I $includeDir"
+    echo "CGO_CFLAGS=$CGO_CFLAGS"
+
     for pkg in "$@"; do
         f="$workdir/$(echo $pkg | tr / -).cover"
         cover=""
@@ -93,15 +103,15 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
         fi
 
-        go mod download all
-        ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
-        netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-        echo "netacuityDir=$netacuityDir"
-        includeDir=`find $netacuityDir -type d -iname include`
-        includeDir=`realpath $includeDir`
-        echo "includeDir=$includeDir"
-        export CGO_CFLAGS="-I $includeDir"
-        echo "CGO_CFLAGS=$CGO_CFLAGS"
+        # #go mod download all
+        # ls -ll ../../../go/pkg/mod/git.pubmatic.com/!pub!matic/*/*
+        # netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+        # echo "netacuityDir=$netacuityDir"
+        # includeDir=`find $netacuityDir -type d -iname include`
+        # includeDir=`realpath $includeDir`
+        # echo "includeDir=$includeDir"
+        # export CGO_CFLAGS="-I $includeDir"
+        # echo "CGO_CFLAGS=$CGO_CFLAGS"
         
         go test  ${cover} "$pkg"
         #go test -tag exclude_feature ${cover} "$pkg"
