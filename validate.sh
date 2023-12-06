@@ -18,14 +18,10 @@ while true; do
 done
 
 # Locate netacuity directory and use the location to set the CGO_CFLAG
-NETACUITY_DIR=`./scripts/setup_netacuity.sh`
-if [[ "$NETACUITY_DIR" == "" ]]; then
-  echo -e "Fail to set the CGO_CFLAG for go-netacuity-client repository"
-  exit 1
-else 
-  echo "NETACUITY_DIR=$NETACUITY_DIR"
-  export CGO_CFLAGS="-I $NETACUITY_DIR"
-fi
+NETACUITY_DIR="./modules/pubmatic/openwrap/geodb/netacuity"
+NETACUITY_DIR=`realpath $NETACUITY_DIR`
+echo "NETACUITY_DIR=$NETACUITY_DIR"
+export CGO_CFLAGS="-I $NETACUITY_DIR"
 
 
 ./scripts/format.sh -f $AUTOFMT
