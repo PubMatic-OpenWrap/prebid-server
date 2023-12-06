@@ -18,7 +18,7 @@ while true; do
 done
 
 # Locate netacuity directory and use the location to set the CGO_CFLAG
-NETACUITY_DIR="./modules/pubmatic/openwrap/geodb/netacuity"
+NETACUITY_DIR="./modules/pubmatic/openwrap/geodb/netacuity/include"
 NETACUITY_DIR=`realpath $NETACUITY_DIR`
 export CGO_CFLAGS="-I $NETACUITY_DIR"
 
