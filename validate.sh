@@ -16,7 +16,7 @@ while true; do
      * ) break ;;
   esac
 done
-e
+
 # Setup netacuity directory and use the location to set the CGO_CFLAG
 NETACUITY_DIR=`./scripts/setup_netacuity.sh`
 if [[ "$?" -ne "0" ]]; then
