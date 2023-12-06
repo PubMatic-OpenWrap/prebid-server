@@ -27,27 +27,26 @@ set_cflag_for_netacuity() {
 
     netacuityDir=""
     for dir in "${directories[@]}"; do
-        echo "dir=[$dir]"
-        if [ ! "$dir" ];then
-            continue
-        fi
-        netacuityDir=`find "$dir" -type d -iname 'go-netacuity-client@*'`
-        echo "netacuityDir=[$netacuityDir]"
-        if [ ! "$netacuityDir" ];then
-            break
+        if [ -d "$dir" ]; then
+          netacuityDir=`find "$dir" -type d -iname 'go-netacuity-client@*'`
+          echo "netacuityDir=[$netacuityDir]"
+          if [ "$netacuityDir" != "" ];then
+              break
+          fi  
         fi
     done
 
     #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
     #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
     echo "netacuityDir=[$netacuityDir]"
-    includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
-    echo "includeDir=[$includeDir]"
 
-    if [ ! "$includeDir" ];then 
-        export CGO_CFLAGS="-I $includeDir"
-        echo "CGO_CFLAGS=$CGO_CFLAGS"
-    fi    
+    if [ -d "$netacuityDir" ]; then
+        includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
+        echo "includeDir=[$includeDir]"
+        if [ -d "$includeDir" ]; then
+            export CGO_CFLAGS="-I $includeDir"
+        fi 
+    fi 
     echo "CGO_CFLAGS=$CGO_CFLAGS"
 }
 
