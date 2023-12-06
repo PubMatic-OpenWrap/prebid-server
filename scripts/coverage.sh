@@ -19,10 +19,6 @@ generate_cover_data() {
     rm -rf "$workdir"
     mkdir "$workdir"
 
-    echo "cover.sh pwd="
-    echo `pwd`
-    #set_cflag_for_netacuity
-
     for pkg in "$@"; do
         f="$workdir/$(echo $pkg | tr / -).cover"
         cover=""
@@ -75,12 +71,7 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
         fi
 
-        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/geodb$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
-        fi
-
-        go test  ${cover} "$pkg"
-        #go test -tag exclude_feature ${cover} "$pkg"
+        go test ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"

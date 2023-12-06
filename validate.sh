@@ -18,13 +18,33 @@ while true; do
 done
 
 
-set_cflag_for_netacuity() {
+set_cflag_for_netacuity() {    
+    # download mod dependencies
     go mod tidy
-    netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-    echo "netacuityDir=$netacuityDir"
+    
+    # List of directories to search for go-netacuity-client pkg
+    directories=("$GOPATH" "vendor" "../../../go/pkg/mod")
+
+    netacuityDir=""
+    for dir in "${directories[@]}"; do
+        echo "dir=[$dir]"
+        netacuityDir=`find "$dir" -type d -iname 'go-netacuity-client@*'`
+        echo "netacuityDir=[$netacuityDir]"
+        if [ ! "$netacuityDir" ];then
+            break
+        fi
+    done
+
+    #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+    #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
+    echo "netacuityDir=[$netacuityDir]"
     includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
-    echo "includeDir=$includeDir"
-    export CGO_CFLAGS="-I $includeDir"
+    echo "includeDir=[$includeDir]"
+
+    if [ ! "$includeDir" ];then 
+        export CGO_CFLAGS="-I $includeDir"
+        echo "CGO_CFLAGS=$CGO_CFLAGS"
+    fi    
     echo "CGO_CFLAGS=$CGO_CFLAGS"
 }
 

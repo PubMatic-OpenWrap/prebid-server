@@ -11,15 +11,22 @@ type NetAcuity struct{}
 func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	data, err := netacuity.LookUp(ip)
 	if err != nil {
-		return &geodb.GeoInfo{}, err
+		return nil, err
 	}
 	return &geodb.GeoInfo{
 		CountryCode:    data.CountryCode,
 		ISOCountryCode: data.ISOCountryCode,
+		RegionCode:     data.RegionCode,
+		City:           data.City,
+		PostalCode:     data.PostalCode,
+		DmaCode:        data.DmaCode,
+		Latitude:       data.Latitude,
+		Longitude:      data.Longitude,
+		AreaCode:       data.AreaCode,
 	}, nil
 }
 
-// InitGeoDBClient initialises the geoDB client
+// InitGeoDBClient initialises the NetAcuity client
 func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
 	return netacuity.InitNetacuityClient(dbPath)
 }
