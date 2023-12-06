@@ -17,4 +17,5 @@ const (
 	ServerSidePartnerNotConfigured
 	InvalidVideoRequest
 	EmptySeatBid
+	InvalidAdpodConfig
 )

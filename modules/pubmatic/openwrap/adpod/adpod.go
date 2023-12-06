@@ -34,10 +34,7 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 
 func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, me metrics.MetricsEngine) (*models.AdPod, error) {
 	adpodConfigs, ok, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
-	if !ok {
-		return nil, nil
-	}
-	if err != nil {
+	if !ok || err != nil {
 		return nil, err
 	}
 
@@ -59,7 +56,7 @@ func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequ
 }
 
 func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
-	var adpodConfig models.AdPod
+	var adpodConfig *models.AdPod
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
@@ -67,10 +64,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithReqConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
-			if err != nil {
-				return nil, true, err
-			}
-			return &adpodConfig, true, err
+			return adpodConfig, true, err
 		}
 	}
 
@@ -80,10 +74,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithDbConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
-			if err != nil {
-				return nil, true, err
-			}
-			return &adpodConfig, true, err
+			return adpodConfig, true, err
 		}
 	}
 

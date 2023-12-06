@@ -78,10 +78,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
-	if err != nil {
+	if pubID == 0 || err != nil {
 		result.NbrCode = nbr.InvalidPublisherID
-		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-		return result, fmt.Errorf("invalid publisher id : %v", err)
+		if err != nil {
+			result.DebugMessages = append(result.DebugMessages, err.Error())
+		}
+		return result, errors.New("ErrorInvalidPublisherID")
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
@@ -103,8 +105,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestExt
 		err = errors.New("failed to get request ext: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
-		return result, err
+		result.DebugMessages = append(result.DebugMessages, err.Error())
+		return result, errors.New("InvalidRequestExt")
 	}
 	rCtx.NewReqExt = requestExt
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
@@ -119,14 +121,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = nbr.InvalidProfileConfiguration
 		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
+			result.DebugMessages = append(result.DebugMessages, err.Error())
 		} else {
-			err = errors.New("failed to get profile data: received empty data")
+			result.DebugMessages = append(result.DebugMessages, "received empty profile data")
 		}
-		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, errors.New("ErrorProfileData")
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
@@ -136,11 +137,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
-		err = errors.New("failed to get platform data")
-		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, errors.New("ErrorInvalidPlatform")
 	}
 	rCtx.Platform = platform
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
@@ -159,18 +158,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 	if allPartnersThrottledFlag {
 		result.NbrCode = nbr.AllPartnerThrottled
-		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, errors.New("AllAdaptersThrottled")
 	}
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPriceGranularityConfig
 		err = errors.New("failed to price granularity details: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
+		result.DebugMessages = append(result.DebugMessages, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, errors.New("InvalidPriceGranularityConfig")
 	}
 
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
@@ -192,10 +190,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
 			result.NbrCode = nbr.InvalidVideoRequest
-			err = errors.New("video object is missing in the request : " + err.Error())
-			result.Errors = append(result.Errors, err.Error())
+			result.DebugMessages = append(result.DebugMessages, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-			return result, err
+			return result, errors.New("InvalidVideoRequest")
 		}
 	}
 
@@ -285,16 +282,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
-				result.NbrCode = nbr.InvalidVideoRequest
-				err = errors.New("failed to get adpod configurations: " + imp.ID)
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
+				result.NbrCode = nbr.InvalidAdpodConfig
+				result.DebugMessages = append(result.DebugMessages, "failed to get adpod configurations: "+imp.ID+" reason: "+err.Error())
+				return result, errors.New("InvalidAdpodConfig")
 			}
 			if err := adpod.Validate(adpodConfig); err != nil {
-				result.NbrCode = nbr.InvalidVideoRequest
-				err = errors.New("invalid adpod configurations: " + imp.ID + " reason: " + err.Error())
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
+				result.NbrCode = nbr.InvalidAdpodConfig
+				result.DebugMessages = append(result.DebugMessages, "invalid adpod configurations: "+imp.ID+" reason: "+err.Error())
+				return result, errors.New("InvalidAdpodConfig")
 			}
 		}
 
@@ -458,12 +453,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled
 		if err != nil {
-			err = errors.New("All slots disabled: " + err.Error())
+			err = errors.New("all slots disabled: " + err.Error())
 		} else {
-			err = errors.New("All slots disabled")
+			err = errors.New("all slots disabled")
 		}
-		result.Errors = append(result.Errors, err.Error())
-		return result, nil
+		result.DebugMessages = append(result.DebugMessages, err.Error())
+		return result, errors.New("AllSlotsDisabled")
 	}
 
 	if !serviceSideBidderPresent {
@@ -473,8 +468,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		} else {
 			err = errors.New("server side partner not found")
 		}
-		result.Errors = append(result.Errors, err.Error())
-		return result, nil
+		result.DebugMessages = append(result.DebugMessages, err.Error())
+		return result, errors.New("ServerSidePartnerNotConfigured")
 	}
 
 	if cto := setContentTransparencyObject(rCtx, requestExt); cto != nil {
