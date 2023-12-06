@@ -16,42 +16,17 @@ while true; do
      * ) break ;;
   esac
 done
+e
+# Setup netacuity directory and use the location to set the CGO_CFLAG
+NETACUITY_DIR=`./scripts/setup_netacuity.sh`
+if [[ "$?" -ne "0" ]]; then
+  echo "NETACUITY_DIR=$NETACUITY_DIR"
+  echo -e "Fail to set the CGO_CFLAG for go-netacuity-client repository"
+  exit 1
+fi
+echo "NETACUITY_DIR=$NETACUITY_DIR"
+export CGO_CFLAGS="-I $NETACUITY_DIR"
 
-
-set_cflag_for_netacuity() {    
-    # download mod dependencies
-    go mod tidy
-    
-    # List of directories to search for go-netacuity-client pkg
-    directories=("$GOPATH" "vendor" "../../../go/pkg/mod")
-
-    netacuityDir=""
-    for dir in "${directories[@]}"; do
-        if [ -d "$dir" ]; then
-          netacuityDir=`find "$dir" -type d -iname 'go-netacuity-client@*'`
-          echo "netacuityDir=[$netacuityDir]"
-          if [ "$netacuityDir" != "" ];then
-              break
-          fi  
-        fi
-    done
-
-    #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-    #netacuityDir=`find ../../../go/pkg/mod -type d -iname 'go-netacuity-client@*'`
-    echo "netacuityDir=[$netacuityDir]"
-
-    if [ -d "$netacuityDir" ]; then
-        includeDir=`find $netacuityDir -type d -iname include | xargs realpath`
-        echo "includeDir=[$includeDir]"
-        if [ -d "$includeDir" ]; then
-            export CGO_CFLAGS="-I $includeDir"
-        fi 
-    fi 
-    echo "CGO_CFLAGS=$CGO_CFLAGS"
-}
-
-
-set_cflag_for_netacuity
 ./scripts/format.sh -f $AUTOFMT
 
 
@@ -67,7 +42,6 @@ fi
 #   1. To speed things up (for large -count values)
 #   2. Because some tests open up files on the filesystem, and some operating systems limit the number of open files for a single process.
 if [ "$RACE" -ne "0" ]; then
-  echo "time to run go race"
   go test -race $(go list ./... | grep -v /vendor/) -run ^TestRace.*$ -count $RACE
 fi
 
