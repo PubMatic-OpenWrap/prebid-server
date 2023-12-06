@@ -21,11 +21,9 @@ func Alias() map[string]string {
 //ResolveOWBidder it resolves hardcoded bidder alias names
 
 func ResolveOWBidder(bidderName string) string {
-
 	var coreBidderName string
 
 	switch bidderName {
-
 	case models.BidderAdGenerationAlias:
 		coreBidderName = string(openrtb_ext.BidderAdgeneration)
 	case models.BidderDistrictmDMXAlias:
@@ -38,8 +36,6 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderAdkernel)
 	default:
 		coreBidderName = bidderName
-
 	}
-
 	return coreBidderName
 }

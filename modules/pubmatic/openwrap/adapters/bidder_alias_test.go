@@ -9,7 +9,6 @@ import (
 )
 
 func TestAlias(t *testing.T) {
-
 	expected := map[string]string{
 		models.BidderAdGenerationAlias:      string(openrtb_ext.BidderAdgeneration),
 		models.BidderDistrictmDMXAlias:      string(openrtb_ext.BidderDmx),
