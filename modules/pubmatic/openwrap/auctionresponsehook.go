@@ -66,9 +66,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		},
 	}
 
-	if payload.BidResponse.NBR != nil {
-		return result, nil
-	}
+	// if payload.BidResponse.NBR != nil {
+	// 	return result, nil
+	// }
 
 	var winningAdpodBidIds map[string][]string
 	var errs []error
