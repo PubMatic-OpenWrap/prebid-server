@@ -17,15 +17,16 @@ while true; do
   esac
 done
 
-# Setup netacuity directory and use the location to set the CGO_CFLAG
+# Locate netacuity directory and use the location to set the CGO_CFLAG
 NETACUITY_DIR=`./scripts/setup_netacuity.sh`
-if [[ "$?" -ne "0" ]]; then
-  echo "NETACUITY_DIR=$NETACUITY_DIR"
+if [[ "$NETACUITY_DIR" == "" ]]; then
   echo -e "Fail to set the CGO_CFLAG for go-netacuity-client repository"
   exit 1
+else 
+  echo "NETACUITY_DIR=$NETACUITY_DIR"
+  export CGO_CFLAGS="-I $NETACUITY_DIR"
 fi
-echo "NETACUITY_DIR=$NETACUITY_DIR"
-export CGO_CFLAGS="-I $NETACUITY_DIR"
+
 
 ./scripts/format.sh -f $AUTOFMT
 

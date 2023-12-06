@@ -7,22 +7,24 @@ import (
 
 type NetAcuity struct{}
 
+var lookupFunc = func(ip string) (*netacuity.GeoInfo, error) { return netacuity.LookUp(ip) }
+
 // LookUp function performs the ip-to-geo lookup
 func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
-	data, err := netacuity.LookUp(ip)
+	geoInfo, err := lookupFunc(ip)
 	if err != nil {
 		return nil, err
 	}
 	return &geodb.GeoInfo{
-		CountryCode:    data.CountryCode,
-		ISOCountryCode: data.ISOCountryCode,
-		RegionCode:     data.RegionCode,
-		City:           data.City,
-		PostalCode:     data.PostalCode,
-		DmaCode:        data.DmaCode,
-		Latitude:       data.Latitude,
-		Longitude:      data.Longitude,
-		AreaCode:       data.AreaCode,
+		CountryCode:    geoInfo.CountryCode,
+		ISOCountryCode: geoInfo.ISOCountryCode,
+		RegionCode:     geoInfo.RegionCode,
+		City:           geoInfo.City,
+		PostalCode:     geoInfo.PostalCode,
+		DmaCode:        geoInfo.DmaCode,
+		Latitude:       geoInfo.Latitude,
+		Longitude:      geoInfo.Longitude,
+		AreaCode:       geoInfo.AreaCode,
 	}, nil
 }
 
