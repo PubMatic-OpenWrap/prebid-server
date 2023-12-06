@@ -28,6 +28,9 @@ set_cflag_for_netacuity() {
     netacuityDir=""
     for dir in "${directories[@]}"; do
         echo "dir=[$dir]"
+        if [ ! "$dir" ];then
+            continue
+        fi
         netacuityDir=`find "$dir" -type d -iname 'go-netacuity-client@*'`
         echo "netacuityDir=[$netacuityDir]"
         if [ ! "$netacuityDir" ];then
