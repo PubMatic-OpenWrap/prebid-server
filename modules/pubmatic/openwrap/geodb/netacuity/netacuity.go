@@ -7,11 +7,9 @@ import (
 
 type NetAcuity struct{}
 
-var lookupFunc = func(ip string) (*netacuity.GeoInfo, error) { return netacuity.LookUp(ip) }
-
 // LookUp function performs the ip-to-geo lookup
 func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
-	geoInfo, err := lookupFunc(ip)
+	geoInfo, err := netacuity.LookUp(ip)
 	if err != nil {
 		return nil, err
 	}
