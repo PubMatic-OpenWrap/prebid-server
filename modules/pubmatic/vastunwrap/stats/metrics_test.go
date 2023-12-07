@@ -41,6 +41,16 @@ func TestRecordRequestTime(t *testing.T) {
 	result := getHistogramFromHistogramVec(m.requestTime, "bidder", "pubmatic")
 	assertHistogram(t, result, 1, 250)
 }
+
+func TestRecordRespTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordUnwrapRespTime("1234", "1", time.Millisecond*100)
+
+	result := getHistogramFromHistogramVec(m.wrapRespTime, "pub_id", "1234")
+	assertHistogram(t, result, 1, 100)
+}
+
 func TestRecordRequestStatus(t *testing.T) {
 	m := createMetricsForTesting()
 

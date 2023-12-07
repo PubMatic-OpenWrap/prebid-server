@@ -97,6 +97,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -171,6 +172,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -221,6 +223,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1").AnyTimes()
 				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")

@@ -23,6 +23,7 @@ type MetricsEngine interface {
 	RecordRequestStatus(accountId, bidder, status string)
 	RecordWrapperCount(accountId, bidder string, wrapper_count string)
 	RecordRequestTime(accountId, bidder string, readTime time.Duration)
+	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
 }
 
 // Metrics defines the datatype which will implement MetricsEngine
@@ -31,6 +32,7 @@ type Metrics struct {
 	requests     *prometheus.CounterVec
 	wrapperCount *prometheus.CounterVec
 	requestTime  *prometheus.HistogramVec
+	wrapRespTime *prometheus.HistogramVec
 }
 
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
@@ -56,6 +58,10 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) (*Metrics, error) {
 	metrics.requestTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_request_time",
 		"Time taken to serve the vast unwrap request in Milliseconds", []string{pubIdLabel, bidderLabel},
+		[]float64{50, 100, 200, 300, 500})
+	metrics.wrapRespTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
+		"vastunwrap_resp_time",
+		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
 		[]float64{50, 100, 200, 300, 500})
 	return &metrics, nil
 }
@@ -109,4 +115,12 @@ func (m *Metrics) RecordRequestTime(accountId, bidder string, requestTime time.D
 		pubIdLabel:  accountId,
 		bidderLabel: bidder,
 	}).Observe(float64(requestTime.Milliseconds()))
+}
+
+// RecordUnwrapRespTime records time takent to complete vast unwrap per wrapper count level
+func (m *Metrics) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
+	m.wrapRespTime.With(prometheus.Labels{
+		pubIdLabel:        accountId,
+		wrapperCountLabel: wraperCnt,
+	}).Observe(float64(respTime.Milliseconds()))
 }
