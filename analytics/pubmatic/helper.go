@@ -29,9 +29,6 @@ func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) st
 	if gdprEnabled == 1 {
 		v.Set(models.WLGDPR, strconv.Itoa(gdprEnabled))
 	}
-	if wlog.cds != "" {
-		v.Set(models.CustomDimensions, wlog.cds)
-	}
 	queryString := v.Encode()
 
 	finalLoggerURL := loggerURL + "?" + queryString

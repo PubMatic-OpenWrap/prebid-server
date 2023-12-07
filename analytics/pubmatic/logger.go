@@ -134,7 +134,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		for i := range wlog.Slots {
 			wlog.Slots[i].FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
 		}
-		wlog.cds = tracker.Tracker.CustomDimensions
+		wlog.CustomDimensions = tracker.Tracker.CustomDimensions
 		floorDetailsSet = true
 		break // For all trackers, floor-details and cds are common so break the loop
 	}
