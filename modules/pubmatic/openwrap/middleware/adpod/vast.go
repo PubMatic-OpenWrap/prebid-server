@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
-	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
@@ -48,14 +47,21 @@ var (
 	NBR                  = "nbr"
 	ERROR                = "error"
 	//ErrorFormat parsing error format
-	ErrorFormat    = `{"` + ERROR_CODE + `":%v,"` + ERROR_STRING + `":"%s"}`
-	NBRFormat      = `{"` + NBR + `":%v,"` + ERROR + `":%s}`
-	NBRFormatQuote = `{"` + NBR + `":%v,"` + ERROR + `":"%v"}`
+	ErrorFormat        = `{"` + ERROR_CODE + `":%v,"` + ERROR_STRING + `":"%s"}`
+	NBRFormatWithError = `{"` + NBR + `":%v,"` + ERROR + `":%s}`
+	NBRFormatQuote     = `{"` + NBR + `":%v,"` + ERROR + `":"%v"}`
+	NBRFormat          = `{"` + NBR + `":%v}`
 )
 
 type vastResponse struct {
 	debug              string
 	WrapperLoggerDebug string
+}
+
+func (vr *vastResponse) addOwStatusHeader(headers map[string]string, nbr int) {
+	if vr.debug == "1" {
+		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr)
+	}
 }
 
 func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[string]string, int) {
@@ -68,7 +74,7 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 	response, err := io.ReadAll(aw.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError, err.Error())
+		vr.addOwStatusHeader(headers, nbr.InternalError)
 		return EmptyVASTResponse, headers, statusCode
 	}
 
@@ -76,20 +82,19 @@ func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[st
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr.InternalError, err.Error())
+		vr.addOwStatusHeader(headers, nbr.InternalError)
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
 		statusCode = http.StatusBadRequest
-		data, _, _, _ := jsonparser.Get(bidResponse.Ext, errorLocation...)
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *bidResponse.NBR, strconv.Quote(string(data)))
+		vr.addOwStatusHeader(headers, int(*bidResponse.NBR))
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	vast, nbr, err := vr.getVast(bidResponse)
 	if nbr != nil {
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, *nbr, err.Error())
+		vr.addOwStatusHeader(headers, int(*nbr))
 		return EmptyVASTResponse, headers, statusCode
 	}
 

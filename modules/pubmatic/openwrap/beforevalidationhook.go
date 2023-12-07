@@ -81,7 +81,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil {
 		result.NbrCode = nbr.InvalidPublisherID
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-		return result, fmt.Errorf("invalid publisher id : %v", err)
+		return result, nil
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
@@ -102,9 +102,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestExt
-		err = errors.New("failed to get request ext: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
-		return result, err
+		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
+		return result, nil
 	}
 	rCtx.NewReqExt = requestExt
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
@@ -126,7 +125,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, err.Error())
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, nil
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
@@ -136,11 +135,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
-		err = errors.New("failed to get platform data")
-		result.Errors = append(result.Errors, err.Error())
+		result.Errors = append(result.Errors, "failed to get platform data")
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, nil
 	}
 	rCtx.Platform = platform
 	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
@@ -161,16 +159,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, nil
 	}
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPriceGranularityConfig
-		err = errors.New("failed to price granularity details: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
+		result.Errors = append(result.Errors, "failed to price granularity details: "+err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, nil
 	}
 
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
@@ -192,10 +189,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
 			result.NbrCode = nbr.InvalidVideoRequest
-			err = errors.New("video object is missing in the request : " + err.Error())
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-			return result, err
+			return result, nil
 		}
 	}
 
@@ -285,16 +281,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
-				result.NbrCode = nbr.InvalidVideoRequest
-				err = errors.New("failed to get adpod configurations: " + imp.ID)
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
+				result.NbrCode = nbr.InvalidAdpodConfig
+				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
+				return result, nil
 			}
 			if err := adpod.Validate(adpodConfig); err != nil {
-				result.NbrCode = nbr.InvalidVideoRequest
-				err = errors.New("invalid adpod configurations: " + imp.ID + " reason: " + err.Error())
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
+				result.NbrCode = nbr.InvalidAdpodConfig
+				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
+				return result, nil
 			}
 		}
 
@@ -458,9 +452,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled
 		if err != nil {
-			err = errors.New("All slots disabled: " + err.Error())
+			err = errors.New("all slots disabled: " + err.Error())
 		} else {
-			err = errors.New("All slots disabled")
+			err = errors.New("all slots disabled")
 		}
 		result.Errors = append(result.Errors, err.Error())
 		return result, nil

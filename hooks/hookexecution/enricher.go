@@ -170,8 +170,8 @@ func prepareModulesOutcome(modulesOutcome *ModulesOutcome, groups []GroupOutcome
 				group.InvocationResults[i].DebugMessages = nil
 			}
 
-			modulesOutcome.Errors = fillMessages(modulesOutcome.Errors, hookOutcome.Errors, hookOutcome.HookID)
 			if isDebugEnabled {
+				modulesOutcome.Errors = fillMessages(modulesOutcome.Errors, hookOutcome.Errors, hookOutcome.HookID)
 				modulesOutcome.Warnings = fillMessages(modulesOutcome.Warnings, hookOutcome.Warnings, hookOutcome.HookID)
 			}
 		}

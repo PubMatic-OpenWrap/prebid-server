@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
-	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
@@ -74,7 +73,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 		err := enrichRequestBody(r)
 		if err != nil {
 			w.Header().Set(ContentType, ApplicationXML)
-			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest, strconv.Quote(err.Error())))
+			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(EmptyVASTResponse)
 			return

@@ -48,7 +48,7 @@ func ValidateVideoImpressions(request *openrtb2.BidRequest) error {
 	}
 
 	if validImpCount == 0 {
-		return errors.New("video object is missing for ctv request")
+		return errors.New("video object is missing in the request")
 	}
 
 	return nil
