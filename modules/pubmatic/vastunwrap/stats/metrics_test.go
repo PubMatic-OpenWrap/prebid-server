@@ -47,7 +47,7 @@ func TestRecordRespTime(t *testing.T) {
 
 	m.RecordUnwrapRespTime("1234", "1", time.Millisecond*100)
 
-	result := getHistogramFromHistogramVec(m.wrapRespTime, "pub_id", "1234")
+	result := getHistogramFromHistogramVec(m.unwrapRespTime, "pub_id", "1234")
 	assertHistogram(t, result, 1, 100)
 }
 
