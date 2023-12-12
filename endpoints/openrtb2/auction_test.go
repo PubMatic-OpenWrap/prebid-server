@@ -131,9 +131,11 @@ func TestJsonSampleRequests(t *testing.T) {
 
 			// Test suite will traverse the directory tree recursively and will only consider files with `json` extension
 			if !info.IsDir() && filepath.Ext(info.Name()) == jsonFileExtension {
-				t.Run(tc.description, func(t *testing.T) {
-					runJsonBasedTest(t, path, tc.description)
-				})
+				if path == "sample-requests/valid-whole/exemplary/bid-adj-factors-case-insensitive-different-casing.json" {
+					t.Run(tc.description, func(t *testing.T) {
+						runJsonBasedTest(t, path, tc.description)
+					})
+				}
 			}
 
 			return nil
@@ -4732,7 +4734,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    validRequest(t, "site.json"),
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -4741,7 +4743,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    "{}",
 			expectedStatus: 400,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -153,7 +154,7 @@ func (f *PriceFloorFetcher) Fetch(config config.AccountPriceFloors) (*openrtb_ex
 }
 
 func (f *PriceFloorFetcher) worker(fetchConfig fetchInfo) {
-	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch)
+	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch, f.metricEngine)
 	if floorData != nil {
 		// Reset retry count when data is successfully fetched
 		fetchConfig.retryCount = 0
@@ -230,9 +231,10 @@ func (f *PriceFloorFetcher) Fetcher() {
 	}
 }
 
-func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
+func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
 	floorResp, maxAge, err := f.fetchFloorRulesFromURL(config)
 	if floorResp == nil || err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "1")
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", config.URL, err.Error())
 		return nil, 0
 	}
@@ -244,11 +246,13 @@ func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch) (*
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "2")
 		glog.Errorf("Recieved invalid price floor json from URL: %s", config.URL)
 		return nil, 0
 	}
 
 	if err := validateRules(config, &priceFloors); err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "3")
 		glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", config.URL, err.Error())
 		return nil, 0
 	}
@@ -307,6 +311,10 @@ func validateRules(config config.AccountFloorFetch, priceFloors *openrtb_ext.Pri
 
 	if priceFloors.Data.SkipRate < 0 || priceFloors.Data.SkipRate > 100 {
 		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
+	}
+
+	if priceFloors.Data.UseFetchDataRate != nil && (*priceFloors.Data.UseFetchDataRate < dataRateMin || *priceFloors.Data.UseFetchDataRate > dataRateMax) {
+		return fmt.Errorf("useFetchDataRate should be greater than or equal to %d and less than or equal to %d", dataRateMin, dataRateMax)
 	}
 
 	for _, modelGroup := range priceFloors.Data.ModelGroups {

@@ -17,7 +17,7 @@ func TestGetPriceBucketString(t *testing.T) {
 	high, _ := openrtb_ext.NewPriceGranularityFromLegacyID("high")
 	auto, _ := openrtb_ext.NewPriceGranularityFromLegacyID("auto")
 	dense, _ := openrtb_ext.NewPriceGranularityFromLegacyID("dense")
-
+	testPG, _ := openrtb_ext.NewPriceGranularityFromLegacyID("testpg")
 	custom1 := openrtb_ext.PriceGranularity{
 		Precision: ptrutil.ToPtr(2),
 		Ranges: []openrtb_ext.GranularityRange{
@@ -72,6 +72,7 @@ func TestGetPriceBucketString(t *testing.T) {
 				{"dense", targetData{priceGranularity: dense}, "1.87"},
 				{"custom1", targetData{priceGranularity: custom1}, "1.86"},
 				{"custom2", targetData{priceGranularity: custom2}, "1.50"},
+				{"testpg", targetData{priceGranularity: testPG}, "50.00"},
 			},
 		},
 		{
@@ -85,6 +86,7 @@ func TestGetPriceBucketString(t *testing.T) {
 				{"dense", targetData{priceGranularity: dense}, "5.70"},
 				{"custom1", targetData{priceGranularity: custom1}, "5.70"},
 				{"custom2", targetData{priceGranularity: custom2}, "5.10"},
+				{"testpg", targetData{priceGranularity: testPG}, "50.00"},
 			},
 		},
 		{
@@ -188,6 +190,13 @@ func TestGetPriceBucketString(t *testing.T) {
 			groupDesc: "Large Cpm, return bucket Max",
 			bid:       openrtb2.Bid{Price: math.MaxFloat64},
 			testCases: []aTest{{"low", targetData{priceGranularity: low}, "5.00"}},
+		},
+		{
+			groupDesc: "cpm above max test price granularity value",
+			bid:       openrtb2.Bid{Price: 60},
+			testCases: []aTest{
+				{"testpg", targetData{priceGranularity: testPG}, "50.00"},
+			},
 		},
 	}
 
