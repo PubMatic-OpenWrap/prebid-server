@@ -64,7 +64,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		extBidResponse.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
 	}
 
-	// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505
+	// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/pull/2505
 	// if seatNonBids := updateSeatNoBid(rCtx, ao); len(seatNonBids) != 0 {
 	// 	if extBidResponse.Prebid == nil {
 	// 		extBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
@@ -79,7 +79,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
 }
 
-// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505
+// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/pull/2505
 // TODO: Move this to module once it gets []analytics.RejectedBid as param (submit it in vanilla)
 // func updateSeatNoBid(rCtx *models.RequestCtx, ao analytics.AuctionObject) []openrtb_ext.SeatNonBid {
 // 	seatNonBids := make([]openrtb_ext.SeatNonBid, 0, len(ao.RejectedBids))

@@ -408,7 +408,6 @@ func TestRecordDNSTime(t *testing.T) {
 
 func TestRecordTLSHandshakeTime(t *testing.T) {
 	type testIn struct {
-		adapterName           openrtb_ext.BidderName
 		tLSHandshakeDuration  time.Duration
 		adapterMetricsEnabled bool
 	}

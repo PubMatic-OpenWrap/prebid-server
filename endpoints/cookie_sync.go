@@ -508,6 +508,9 @@ func getDebugMessage(status usersync.Status) string {
 	return ""
 }
 
+type CookieSyncReq cookieSyncRequest
+type CookieSyncResp cookieSyncResponse
+
 type cookieSyncRequest struct {
 	Bidders         []string                         `json:"bidders"`
 	GDPR            *int                             `json:"gdpr"`

@@ -397,10 +397,6 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[ae] = bidderExt.AE
 	}
 
-	if bidderExt.AE != 0 {
-		extMap[ae] = bidderExt.AE
-	}
-
 	imp.Ext = nil
 	if len(extMap) > 0 {
 		ext, err := json.Marshal(extMap)
