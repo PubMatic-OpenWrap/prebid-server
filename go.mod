@@ -1,4 +1,4 @@
-module github.com/PubMatic-OpenWrap/prebid-server
+module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.20
 
@@ -27,7 +27,7 @@ require (
 	github.com/prebid/go-gdpr v1.12.0
 	github.com/prebid/go-gpp v0.1.1
 	github.com/prebid/openrtb/v19 v19.0.0
-	github.com/prebid/prebid-server v0.0.0-00010101000000-000000000000
+	github.com/prebid/prebid-server/v2 v2.0.2
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
@@ -50,6 +50,7 @@ require (
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang/mock v1.6.0
+	github.com/json-iterator/go v1.1.12
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
@@ -66,6 +67,8 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -79,7 +82,6 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
@@ -88,7 +90,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/prebid/prebid-server => ./
+replace github.com/prebid/prebid-server/v2 => ./
 
 replace github.com/prebid/openrtb/v19 => github.com/PubMatic-OpenWrap/prebid-openrtb/v19 v19.0.0-20230517094918-56ce40c97ced
 
