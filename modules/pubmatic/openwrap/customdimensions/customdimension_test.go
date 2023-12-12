@@ -67,13 +67,12 @@ func TestConvertCustomDimensionsToString(t *testing.T) {
 		cdsMap map[string]models.CustomDimension
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want2 string
+		name string
+		args args
+		want string
 	}{
 		{
-			name: "valid custom dimensions map",
+			name: "valid custom dimensions map multiple keys",
 			args: args{
 				cdsMap: map[string]models.CustomDimension{
 					"k1": {Value: "v1"},
@@ -81,6 +80,15 @@ func TestConvertCustomDimensionsToString(t *testing.T) {
 				},
 			},
 			want: `k1=v1;k2=v2`,
+		},
+		{
+			name: "valid custom dimensions map single key",
+			args: args{
+				cdsMap: map[string]models.CustomDimension{
+					"k1": {Value: "v1"},
+				},
+			},
+			want: `k1=v1`,
 		},
 		{
 			name: "empty custom dimensions map",

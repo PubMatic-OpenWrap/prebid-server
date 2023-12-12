@@ -4077,7 +4077,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 			},
 		},
 		{
-			name: "set floor details from responseExt if tracker details are absent",
+			name: "set floor details from responseExt and cds from rtcx if tracker details are absent",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
@@ -4100,6 +4100,11 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 						"imp-1": {
 							AdUnitName: "au",
 							SlotName:   "sn",
+						},
+					},
+					CustomDimensions: map[string]models.CustomDimension{
+						"author": {
+							Value: "robertshinde",
 						},
 					},
 					ResponseExt: openrtb_ext.ExtBidResponse{
@@ -4127,7 +4132,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider","cds":"author=robertshinde"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
