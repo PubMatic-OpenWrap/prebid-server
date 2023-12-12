@@ -36,7 +36,7 @@ func createMetricsForTesting() *Metrics {
 func TestRecordRequestTime(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordRequestTime("pubmatic", time.Millisecond*250)
+	m.RecordRequestTime("1234", "pubmatic", time.Millisecond*250)
 
 	result := getHistogramFromHistogramVec(m.requestTime, "bidder", "pubmatic")
 	assertHistogram(t, result, 1, 250)
@@ -44,9 +44,10 @@ func TestRecordRequestTime(t *testing.T) {
 func TestRecordRequestStatus(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordRequestStatus("pubmatic", "0")
+	m.RecordRequestStatus("1234", "pubmatic", "0")
 
 	assertCounterVecValue(t, "Record_Request_Status", "Record_Request_Status_Success", m.requests, float64(1), prometheus.Labels{
+		"pub_id": "1234",
 		"bidder": "pubmatic",
 		"status": "0",
 	})
@@ -55,9 +56,10 @@ func TestRecordRequestStatus(t *testing.T) {
 func TestRecordWrapperCount(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordWrapperCount("pubmatic", "1")
+	m.RecordWrapperCount("1234", "pubmatic", "1")
 
 	assertCounterVecValue(t, "Record_Wrapper_Count", "Record_Wrapper_Count", m.wrapperCount, float64(1), prometheus.Labels{
+		"pub_id":        "1234",
 		"bidder":        "pubmatic",
 		"wrapper_count": "1",
 	})

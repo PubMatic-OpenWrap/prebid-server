@@ -100,7 +100,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestWrapperExtension
-		result.Errors = append(result.Errors, "InvalidRequest")
+		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 

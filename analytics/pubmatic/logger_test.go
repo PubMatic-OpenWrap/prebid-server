@@ -3956,7 +3956,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 		})
 	}
 }
-func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
+func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 	cfg := ow.cfg
 	uuidFunc := getUUID
 	defer func() {
@@ -4007,6 +4007,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 									FloorProvider:    "provider",
 									FloorFetchStatus: ptrutil.ToPtr(3),
 								},
+								CustomDimensions: "traffic=media;age=23",
 							},
 						},
 					},
@@ -4015,7 +4016,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider"}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4059,6 +4060,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 									FloorProvider:    "provider",
 									FloorFetchStatus: ptrutil.ToPtr(3),
 								},
+								CustomDimensions: "traffic=media;age=23",
 							},
 						},
 					},
@@ -4067,7 +4069,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4075,7 +4077,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 			},
 		},
 		{
-			name: "set floor details from responseExt if tracker details are absent",
+			name: "set floor details from responseExt and cds from rtcx if tracker details are absent",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
@@ -4098,6 +4100,11 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 						"imp-1": {
 							AdUnitName: "au",
 							SlotName:   "sn",
+						},
+					},
+					CustomDimensions: map[string]models.CustomDimension{
+						"author": {
+							Value: "robertshinde",
 						},
 					},
 					ResponseExt: openrtb_ext.ExtBidResponse{
@@ -4125,7 +4132,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetails(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider","cds":"author=robertshinde"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},

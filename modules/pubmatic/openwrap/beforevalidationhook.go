@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -93,6 +94,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.NewReqExt = requestExt
+	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
@@ -258,7 +260,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
 
-		if !isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx) {
+		// ignore adunit config status for native as it is not supported for native
+		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz

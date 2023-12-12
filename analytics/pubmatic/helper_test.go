@@ -53,30 +53,32 @@ func TestPrepareLoggerURL(t *testing.T) {
 			args: args{
 				wlog: &WloggerRecord{
 					record: record{
-						PubID:     10,
-						ProfileID: "1",
-						VersionID: "0",
+						PubID:            10,
+						ProfileID:        "1",
+						VersionID:        "0",
+						CustomDimensions: "age=23;traffic=media",
 					},
 				},
 				loggerURL:   "http://t.pubmatic.com/wl",
 				gdprEnabled: 0,
 			},
-			owlogger: `http://t.pubmatic.com/wl?json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0}&pubid=10`,
+			owlogger: `http://t.pubmatic.com/wl?json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0,"cds":"age=23;traffic=media"}&pubid=10`,
 		},
 		{
 			name: "private endpoint",
 			args: args{
 				wlog: &WloggerRecord{
 					record: record{
-						PubID:     5,
-						ProfileID: "5",
-						VersionID: "1",
+						PubID:            5,
+						ProfileID:        "5",
+						VersionID:        "1",
+						CustomDimensions: "age=23;traffic=media",
 					},
 				},
 				loggerURL:   "http://10.172.141.11/wl",
 				gdprEnabled: 0,
 			},
-			owlogger: `http://10.172.141.11/wl?json={"pubid":5,"pid":"5","pdvid":"1","dvc":{},"ft":0}&pubid=5`,
+			owlogger: `http://10.172.141.11/wl?json={"pubid":5,"pid":"5","pdvid":"1","dvc":{},"ft":0,"cds":"age=23;traffic=media"}&pubid=5`,
 		},
 	}
 	for _, tt := range tests {

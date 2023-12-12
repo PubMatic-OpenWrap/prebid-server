@@ -60,7 +60,7 @@ func recordAdaptorDuplicateBidIDs(metricsEngine metrics.MetricsEngine, adapterBi
 			if collisions, ok := bidIDColisionMap[thisBid.Bid.ID]; ok {
 				bidIDCollisionFound = true
 				bidIDColisionMap[thisBid.Bid.ID]++
-				glog.Warningf("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.Bid.ID, collisions, thisBid.Bid.ImpID, string(bidder))
+				glog.V(3).Infof("Bid.id %v :: %v collision(s) [imp.id = %v] for bidder '%v'", thisBid.Bid.ID, collisions, thisBid.Bid.ImpID, string(bidder))
 				metricsEngine.RecordAdapterDuplicateBidID(string(bidder), 1)
 			} else {
 				bidIDColisionMap[thisBid.Bid.ID] = 1
