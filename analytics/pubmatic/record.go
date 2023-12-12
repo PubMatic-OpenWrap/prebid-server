@@ -47,6 +47,7 @@ type record struct {
 	FloorFetchStatus  *int   `json:"ffs,omitempty"`
 	FloorProvider     string `json:"fp,omitempty"`
 	PDC               string `json:"pdc,omitempty"`
+	CustomDimensions  string `json:"cds,omitempty"`
 }
 
 // Device struct for storing device information
