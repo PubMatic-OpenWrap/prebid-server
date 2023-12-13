@@ -62,7 +62,7 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) (*Metrics, error) {
 	metrics.unwrapRespTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_resp_time",
 		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
-		[]float64{50, 100, 200})
+		[]float64{50, 100, 150, 200})
 	return &metrics, nil
 }
 
