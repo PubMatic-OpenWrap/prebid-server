@@ -78,7 +78,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
-	if err != nil {
+	if pubID == 0 || err != nil {
 		result.NbrCode = nbr.InvalidPublisherID
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
 		return result, nil
@@ -277,6 +277,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
 
+		// ignore adunit config status for native as it is not supported for native
+		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx) {
+			disabledSlots++
+
+			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
+				IncomingSlots:     incomingSlots,
+				AdUnitName:        adUnitName,
+				SlotName:          slotName,
+				IsRewardInventory: reward,
+			}
+			continue
+		}
+
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
@@ -290,19 +303,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				return result, nil
 			}
-		}
-
-		// ignore adunit config status for native as it is not supported for native
-		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
-			disabledSlots++
-
-			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
-				IncomingSlots:     incomingSlots,
-				AdUnitName:        adUnitName,
-				SlotName:          slotName,
-				IsRewardInventory: reward,
-			}
-			continue
 		}
 
 		bidderMeta := make(map[string]models.PartnerData)
@@ -989,20 +989,25 @@ func getValidLanguage(language string) string {
 	return language
 }
 
-func isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
+func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
 	videoEnabled := true
-	if videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
-		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled {
+	if imp.Video == nil || (videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
+		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled) {
 		videoEnabled = false
 	}
 
 	bannerEnabled := true
-	if bannerAdUnitCtx.AppliedSlotAdUnitConfig != nil && bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner != nil &&
-		bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled != nil && !*bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled {
+	if imp.Banner == nil || (bannerAdUnitCtx.AppliedSlotAdUnitConfig != nil && bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner != nil &&
+		bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled != nil && !*bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled) {
 		bannerEnabled = false
 	}
 
-	return videoEnabled || bannerEnabled
+	nativeEnabled := true
+	if imp.Native == nil {
+		nativeEnabled = false
+	}
+
+	return videoEnabled || bannerEnabled || nativeEnabled
 }
 
 func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {

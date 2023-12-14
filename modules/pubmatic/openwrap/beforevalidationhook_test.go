@@ -292,7 +292,7 @@ func TestUpdateAliasGVLIds(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_setTimeout(t *testing.T) {
+func TestOpenWrapSetTimeout(t *testing.T) {
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -657,6 +657,7 @@ func TestGetValidLanguage(t *testing.T) {
 
 func TestIsSlotEnabled(t *testing.T) {
 	type args struct {
+		imp             openrtb2.Imp
 		videoAdUnitCtx  models.AdUnitCtx
 		bannerAdUnitCtx models.AdUnitCtx
 	}
@@ -666,7 +667,7 @@ func TestIsSlotEnabled(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Video_enabled_in_Video_adunit_context",
+			name: "Video_enabled_in_Video_adunit_context but video impression is not present in request",
 			args: args{
 				videoAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
@@ -676,29 +677,15 @@ func TestIsSlotEnabled(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want: false,
 		},
 		{
-			name: "Banner_enabled_in_banner_adunit_context",
+			name: "Video_enabled_in_Video_adunit_context, video impression is present in request",
 			args: args{
-				bannerAdUnitCtx: models.AdUnitCtx{
-					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-						Banner: &adunitconfig.Banner{
-							Enabled: ptrutil.ToPtr(true),
-						},
-					},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "both_banner_and_video_enabled_in_adunit_context",
-			args: args{
-				bannerAdUnitCtx: models.AdUnitCtx{
-					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-						Banner: &adunitconfig.Banner{
-							Enabled: ptrutil.ToPtr(true),
-						},
+				imp: openrtb2.Imp{
+					Video: &openrtb2.Video{
+						W: 1280,
+						H: 1310,
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
@@ -712,8 +699,68 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "both_banner_and_video_disabled_in_adunit_context",
+			name: "Banner_enabled_in_banner_adunit_context but banner impression is not present in request",
 			args: args{
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Banner_enabled_in_banner_adunit_context, banner impression is present in request",
+			args: args{
+				imp: openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](10),
+						H: ptrutil.ToPtr[int64](12),
+					},
+				},
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "both_banner_and_video_enabled_in_adunit_context and banner and video impressions present in the request",
+			args: args{
+				imp: openrtb2.Imp{
+					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
+				},
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "both_banner_and_video_disabled_in_adunit_context and request has both banner and video impressions",
+			args: args{
+				imp: openrtb2.Imp{
+					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
+				},
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 						Banner: &adunitconfig.Banner{
@@ -731,10 +778,69 @@ func TestIsSlotEnabled(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "both_banner_and_video_enabled_in_adunit_context and banner and video impressions is not present in the request",
+			args: args{
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Banner is enabled in adunit and request has video impressions",
+			args: args{
+				imp: openrtb2.Imp{
+					Video: &openrtb2.Video{},
+				},
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(true),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Native impression is present in request",
+			args: args{
+				imp: openrtb2.Imp{
+					Native: &openrtb2.Native{},
+				},
+				bannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{
+							Enabled: ptrutil.ToPtr(false),
+						},
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(false),
+						},
+					},
+				},
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isSlotEnabled(tt.args.videoAdUnitCtx, tt.args.bannerAdUnitCtx)
+			got := isSlotEnabled(tt.args.imp, tt.args.videoAdUnitCtx, tt.args.bannerAdUnitCtx)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -853,7 +959,7 @@ func TestGetPubID(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_applyProfileChanges(t *testing.T) {
+func TestOpenWrapApplyProfileChanges(t *testing.T) {
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -1014,7 +1120,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
+func TestOpenWrapApplyVideoAdUnitConfig(t *testing.T) {
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -1468,7 +1574,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
+func TestOpenWrapApplyBannerAdUnitConfig(t *testing.T) {
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -1846,7 +1952,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
+func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
@@ -1969,7 +2075,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				NbrCode: nbr.InvalidPublisherID,
 				Errors:  []string{"ErrInvalidPublisherID"},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "Invalid_request_ext",
@@ -1996,7 +2102,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				NbrCode: nbr.InvalidRequestExt,
 				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "Error_in_getting_profile_data",
@@ -2040,7 +2146,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				NbrCode: nbr.InvalidProfileConfiguration,
 				Errors:  []string{"failed to get profile data: test"},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "got_empty_profileData_from_DB",
@@ -2071,7 +2177,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				NbrCode: nbr.InvalidProfileConfiguration,
 				Errors:  []string{"failed to get profile data: received empty data"},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "platform_is_not_present_in_request_then_reject_the_request",
@@ -2114,7 +2220,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				NbrCode: nbr.InvalidPlatform,
 				Errors:  []string{"failed to get platform data"},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "All_partners_throttled",
@@ -2380,7 +2486,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
 				NbrCode: nbr.AllSlotsDisabled,
-				Errors:  []string{"All slots disabled"},
+				Errors:  []string{"all slots disabled"},
 			},
 			wantErr: false,
 		},
