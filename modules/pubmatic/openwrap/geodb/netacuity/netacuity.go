@@ -1,3 +1,9 @@
+//go:build linux
+// +build linux
+
+// Package netacuity offers methods for initializing a GeoIP database client and
+// to perform the ip-to-geo lookup functionality.
+// Build constraint flag makes sure that this file compiles only for linux platform
 package netacuity
 
 import (
