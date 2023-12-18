@@ -79,7 +79,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.Device.Platform = GetDevicePlatform(rCtx, payload.BidRequest)
+	populateDeviceExt(payload.BidRequest, &rCtx.Device)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -131,7 +132,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.Platform = platform
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.Device.Platform = GetDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
@@ -838,7 +839,7 @@ func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
 		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
-		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DevicePlatform),
+		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.Device.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
 	}
 

@@ -50,11 +50,15 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			Timeout:           int(rCtx.TMax),
 			PDC:               rCtx.DCName,
 			CachePutMiss:      rCtx.CachePutMiss,
+			Device: Device{
+				Platform: rCtx.Device.Platform,
+				IFAType:  rCtx.Device.IFAType,
+				ATTS:     rCtx.Device.ATTS,
+			},
 		},
 	}
 
 	wlog.logIntegrationType(rCtx.Endpoint)
-	wlog.logDeviceObject(rCtx, ao.RequestWrapper.BidRequest)
 
 	if ao.RequestWrapper.User != nil {
 		extUser := openrtb_ext.ExtUser{}

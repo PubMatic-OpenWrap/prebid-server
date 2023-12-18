@@ -41,7 +41,6 @@ func TestInitAndReloader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt.runBefore()
-		tbfConfigs.serviceStop = make(chan struct{})
 		Init(tt.args.defaultExpiry, tt.args.cache)
 		time.Sleep(2 * time.Second)
 		StopTBFReloaderService()

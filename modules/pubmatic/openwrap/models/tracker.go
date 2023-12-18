@@ -37,6 +37,7 @@ type Tracker struct {
 	FloorSource       *int
 	FloorType         int
 	CustomDimensions  string
+	ATTS              *int
 	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
 	ImpID  string `json:"-"`

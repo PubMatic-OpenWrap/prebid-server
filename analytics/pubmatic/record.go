@@ -2,7 +2,6 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
@@ -39,21 +38,22 @@ type record struct {
 	AdPodPercentage   *AdPodPercentage `json:"aps,omitempty"`
 	Content           *Content         `json:"ct,omitempty"`
 	TestConfigApplied int              `json:"tgid,omitempty"`
-	//Geo             GeoRecord    `json:"geo,omitempty"`
-	FloorModelVersion string `json:"fmv,omitempty"`
-	FloorSource       *int   `json:"fsrc,omitempty"`
-	FloorType         int    `json:"ft"`
-	IntegrationType   string `json:"it,omitempty"`
-	FloorFetchStatus  *int   `json:"ffs,omitempty"`
-	FloorProvider     string `json:"fp,omitempty"`
-	PDC               string `json:"pdc,omitempty"`
-	CustomDimensions  string `json:"cds,omitempty"`
+	FloorModelVersion string           `json:"fmv,omitempty"`
+	FloorSource       *int             `json:"fsrc,omitempty"`
+	FloorType         int              `json:"ft"`
+	IntegrationType   string           `json:"it,omitempty"`
+	FloorFetchStatus  *int             `json:"ffs,omitempty"`
+	FloorProvider     string           `json:"fp,omitempty"`
+	PDC               string           `json:"pdc,omitempty"`
+	CustomDimensions  string           `json:"cds,omitempty"`
+	//Geo             GeoRecord    	`json:"geo,omitempty"`
 }
 
 // Device struct for storing device information
 type Device struct {
 	Platform models.DevicePlatform `json:"plt,omitempty"`
 	IFAType  *models.DeviceIFAType `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
+	ATTS     *int                  `json:"atts,omitempty"` //device.ext.atts
 }
 
 /*
@@ -171,32 +171,6 @@ var FetchStatusMap = map[string]int{
 	openrtb_ext.FetchError:      2,
 	openrtb_ext.FetchInprogress: 3,
 	openrtb_ext.FetchTimeout:    4,
-}
-
-// logDeviceObject is used to add device specific parameters like platform and ifa_type in logger
-func (wlog *WloggerRecord) logDeviceObject(rctx *models.RequestCtx, ortbBidRequest *openrtb2.BidRequest) {
-	dvc := Device{
-		Platform: rctx.DevicePlatform,
-	}
-
-	if ortbBidRequest != nil && ortbBidRequest.Device != nil && ortbBidRequest.Device.Ext != nil {
-		ext := make(map[string]interface{})
-		err := json.Unmarshal(ortbBidRequest.Device.Ext, &ext)
-		if err != nil {
-			return
-		}
-
-		//use ext object for logging any other extension parameters
-		//log device.ext.ifa_type parameter to ifty in logger record
-		if value, ok := ext["ifa_type"].(string); ok {
-			//ifa_type checking is valid parameter and log its respective id
-			ifaType := models.DeviceIFATypeID[strings.ToLower(value)]
-			dvc.IFAType = &ifaType
-		}
-	}
-
-	//settind device object
-	wlog.Device = dvc
 }
 
 // SetIntegrationType sets the integration type in WloggerRecord
