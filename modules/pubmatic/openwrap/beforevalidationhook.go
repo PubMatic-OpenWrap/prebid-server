@@ -271,6 +271,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 			continue
 		}
 
+		filteredBidders, allBiddersDropped := GetFilteredBidders(rCtx, payload.BidRequest, m.cache, rCtx.PartnerConfigMap)
+		if allBiddersDropped {
+			result.NbrCode = nbr.AllBidderDropped
+			result.Errors = append(result.Errors, "All bidders dropped due to bidder filtering")
+			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			return result, err
+		}
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
@@ -293,6 +300,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
 			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+
+			if _, ok := filteredBidders[bidderCode]; !ok {
+				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering failure: "+bidderCode)
+				continue
+			}
 
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)

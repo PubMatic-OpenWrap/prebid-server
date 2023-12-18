@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"bytes"
+
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
@@ -17,7 +19,7 @@ type Cache interface {
 	GetFSCThresholdPerDSP() (map[int]int, error)
 
 	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
-
+	GetBidderFilterConditions(rCtx models.RequestCtx) map[string]*bytes.Reader
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 }

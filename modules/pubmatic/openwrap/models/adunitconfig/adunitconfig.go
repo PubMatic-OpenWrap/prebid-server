@@ -81,4 +81,14 @@ type AdConfig struct {
 	Transparency   *Transparency    `json:"transparency,omitempty"`
 	Regex          *bool            `json:"regex,omitempty"`
 	UniversalPixel []UniversalPixel `json:"universalpixel,omitempty"`
+	BidderFilter   *BidderFilter    `json:"bidder-filter,omitempty"`
+}
+
+type BidderFilter struct {
+	FilterConfig []FilterConfig `json:"filter-config,omitempty"`
+}
+
+type FilterConfig struct {
+	Bidders           []string        `json:"bidders,omitempty"`
+	BiddingConditions json.RawMessage `json:"bidding-conditions,omitempty"`
 }
