@@ -355,6 +355,10 @@ const (
 	SoftFloor = 0
 	HardFloor = 1
 
+	//GeoDB status
+	GeoDBFail    = 1
+	GeoDBSuccess = 0
+
 	CustomDimensions = "cds"
 )
 
