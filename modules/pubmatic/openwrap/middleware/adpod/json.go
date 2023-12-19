@@ -44,11 +44,18 @@ type jsonResponse struct {
 	debug       string
 }
 
-func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
+func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
 		ContentOptions: NoSniff,
+	}
+
+	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
+		if len(jr.redirectURL) > 0 && jr.debug == "0" {
+			return []byte(jr.redirectURL), headers, statusCode
+		}
+		return formJSONErrorResponse("", adpodWriter.Response.String(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, jr.debug), headers, adpodWriter.Code
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)

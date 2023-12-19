@@ -64,14 +64,19 @@ func (vr *vastResponse) addOwStatusHeader(headers map[string]string, nbr int) {
 	}
 }
 
-func (vr *vastResponse) formVastResponse(aw *utils.CustomWriter) ([]byte, map[string]string, int) {
+func (vr *vastResponse) formVastResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationXML,
 		ContentOptions: NoSniff,
 	}
 
-	response, err := io.ReadAll(aw.Response)
+	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
+		vr.addOwStatusHeader(headers, nbr.InvalidVideoRequest)
+		return EmptyVASTResponse, headers, adpodWriter.Code
+	}
+
+	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
 		vr.addOwStatusHeader(headers, nbr.InternalError)
