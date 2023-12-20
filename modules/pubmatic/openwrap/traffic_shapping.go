@@ -1,13 +1,12 @@
 package openwrap
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/diegoholiveira/jsonlogic/v3"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -264,37 +263,36 @@ var countryAlpha3ToAlpha2Code = map[string]string{
 	"ZWE": "ZW",
 }
 
-func GetFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, cache cache.Cache, partnerConfigMap map[int]map[string]string) (map[string]bool, bool) {
+func GetFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, c cache.Cache) (map[string]bool, bool) {
 	filteredBidders := map[string]bool{}
-	biddingConditionPerBidder := cache.GetBidderFilterConditions(rCtx)
-	if len(biddingConditionPerBidder) == 0 {
+	key := fmt.Sprintf("bidderfilter_%d_%d_%d", rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
+	bf, ok := c.Get(key)
+	if !ok {
 		return filteredBidders, false
 	}
-
+	bidderFilter := bf.(map[string]interface{})
 	data := generateEvaluationData(bidRequest)
-	allPartnersDroppedFlag := true
-	for _, partnerConfig := range partnerConfigMap {
+	allPartnersFilteredFlag := true
+	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 			continue
 		}
 
-		biddingCondition, ok := biddingConditionPerBidder[partnerConfig[models.BidderCode]]
-		if !ok || evaluateBiddingCondition(data, biddingCondition) {
-			allPartnersDroppedFlag = false
+		biddingCondition, ok := bidderFilter[partnerConfig[models.BidderCode]]
+		if ok && !evaluateBiddingCondition(data, biddingCondition) {
 			filteredBidders[partnerConfig[models.BidderCode]] = true
+			continue
 		}
+		allPartnersFilteredFlag = false
 	}
 
-	return filteredBidders, allPartnersDroppedFlag
+	return filteredBidders, allPartnersFilteredFlag
 }
 
-func generateEvaluationData(BidRequest *openrtb2.BidRequest) *bytes.Reader {
-	jsonStr := bytes.Buffer{}
-	jsonStr.WriteByte('{')
-	country := getCountryFromRequest(BidRequest)
-	fmt.Fprintf(&jsonStr, `"%s":"%v"`, "country", country)
-	jsonStr.WriteByte('}')
-	return bytes.NewReader(jsonStr.Bytes())
+func generateEvaluationData(BidRequest *openrtb2.BidRequest) map[string]interface{} {
+	data := map[string]interface{}{}
+	data["country"] = getCountryFromRequest(BidRequest)
+	return data
 }
 
 func getCountryFromRequest(bidRequest *openrtb2.BidRequest) string {
@@ -310,12 +308,11 @@ func getCountryFromRequest(bidRequest *openrtb2.BidRequest) string {
 	return ""
 }
 
-func evaluateBiddingCondition(data, logic *bytes.Reader) bool {
-	var result bytes.Buffer
-	err := jsonlogic.Apply(logic, data, &result)
+func evaluateBiddingCondition(data, rules interface{}) bool {
+	output, err := jsonlogic.ApplyInterface(rules, data)
 	if err != nil {
-		fmt.Errorf("Error evaluating bidding-conditions | Error: %v for Logic %v and Data: %v", err, logic, data)
+		glog.Errorf("Error evaluating bidding condition for rules: %v | data: %v | Error: %v", rules, data, err)
 		return false
 	}
-	return strings.TrimRight(result.String(), "\r\n") == "true"
+	return output == true
 }

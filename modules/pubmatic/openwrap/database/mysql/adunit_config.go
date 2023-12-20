@@ -53,6 +53,5 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	if _, ok := adunitConfig.Config["default"]; !ok {
 		adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
 	}
-
 	return adunitConfig, err
 }

@@ -85,10 +85,10 @@ type AdConfig struct {
 }
 
 type BidderFilter struct {
-	FilterConfig []FilterConfig `json:"filter-config,omitempty"`
+	Filters []Filter `json:"filter-config,omitempty"`
 }
 
-type FilterConfig struct {
-	Bidders           []string        `json:"bidders,omitempty"`
-	BiddingConditions json.RawMessage `json:"bidding-conditions,omitempty"`
+type Filter struct {
+	Bidders           []string    `json:"bidders,omitempty"`
+	BiddingConditions interface{} `json:"bidding-conditions,omitempty"`
 }

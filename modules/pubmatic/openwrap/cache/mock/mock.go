@@ -5,7 +5,6 @@
 package mock_cache
 
 import (
-	bytes "bytes"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -64,20 +63,6 @@ func (m *MockCache) GetAdunitConfigFromCache(request *openrtb2.BidRequest, pubID
 func (mr *MockCacheMockRecorder) GetAdunitConfigFromCache(request, pubID, profileID, displayVersion interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfigFromCache", reflect.TypeOf((*MockCache)(nil).GetAdunitConfigFromCache), request, pubID, profileID, displayVersion)
-}
-
-// GetBidderFilterConditions mocks base method.
-func (m *MockCache) GetBidderFilterConditions(rCtx models.RequestCtx) map[string]*bytes.Reader {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBidderFilterConditions", rCtx)
-	ret0, _ := ret[0].(map[string]*bytes.Reader)
-	return ret0
-}
-
-// GetBidderFilterConditions indicates an expected call of GetBidderFilterConditions.
-func (mr *MockCacheMockRecorder) GetBidderFilterConditions(rCtx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBidderFilterConditions", reflect.TypeOf((*MockCache)(nil).GetBidderFilterConditions), rCtx)
 }
 
 // GetFSCDisabledPublishers mocks base method.
