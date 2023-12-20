@@ -20,17 +20,19 @@ const (
 
 // MetricsEngine is a generic interface to record metrics into the desired backend
 type MetricsEngine interface {
-	RecordRequestStatus(bidder, status string)
-	RecordWrapperCount(bidder string, wrapper_count string)
-	RecordRequestTime(bidder string, readTime time.Duration)
+	RecordRequestStatus(accountId, bidder, status string)
+	RecordWrapperCount(accountId, bidder string, wrapper_count string)
+	RecordRequestTime(accountId, bidder string, readTime time.Duration)
+	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
 }
 
 // Metrics defines the datatype which will implement MetricsEngine
 type Metrics struct {
-	Registry     *prometheus.Registry
-	requests     *prometheus.CounterVec
-	wrapperCount *prometheus.CounterVec
-	requestTime  *prometheus.HistogramVec
+	Registry       *prometheus.Registry
+	requests       *prometheus.CounterVec
+	wrapperCount   *prometheus.CounterVec
+	requestTime    *prometheus.HistogramVec
+	unwrapRespTime *prometheus.HistogramVec
 }
 
 // NewMetricsEngine reads the configuration and returns the appropriate metrics engine
@@ -48,15 +50,19 @@ func NewMetricsEngine(cfg moduledeps.ModuleDeps) (*Metrics, error) {
 	metrics.requests = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
-		[]string{bidderLabel, statusLabel})
+		[]string{pubIdLabel, bidderLabel, statusLabel})
 	metrics.wrapperCount = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_wrapper_count",
 		"Count of vast unwrap levels labeled by bidder",
-		[]string{bidderLabel, wrapperCountLabel})
+		[]string{pubIdLabel, bidderLabel, wrapperCountLabel})
 	metrics.requestTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
 		"vastunwrap_request_time",
-		"Time taken to serve the vast unwrap request in Milliseconds", []string{bidderLabel},
+		"Time taken to serve the vast unwrap request in Milliseconds", []string{pubIdLabel, bidderLabel},
 		[]float64{50, 100, 200, 300, 500})
+	metrics.unwrapRespTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
+		"vastunwrap_resp_time",
+		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
+		[]float64{50, 100, 150, 200})
 	return &metrics, nil
 }
 
@@ -86,24 +92,35 @@ func newHistogramVec(cfg config.PrometheusMetrics, registry *prometheus.Registry
 }
 
 // RecordRequest record counter with vast unwrap status
-func (m *Metrics) RecordRequestStatus(bidder, status string) {
+func (m *Metrics) RecordRequestStatus(accountId, bidder, status string) {
 	m.requests.With(prometheus.Labels{
+		pubIdLabel:  accountId,
 		bidderLabel: bidder,
 		statusLabel: status,
 	}).Inc()
 }
 
 // RecordWrapperCount record counter of wrapper levels
-func (m *Metrics) RecordWrapperCount(bidder, wrapper_count string) {
+func (m *Metrics) RecordWrapperCount(accountId, bidder, wrapper_count string) {
 	m.wrapperCount.With(prometheus.Labels{
+		pubIdLabel:        accountId,
 		bidderLabel:       bidder,
 		wrapperCountLabel: wrapper_count,
 	}).Inc()
 }
 
 // RecordRequestReadTime records time takent to complete vast unwrap
-func (m *Metrics) RecordRequestTime(bidder string, requestTime time.Duration) {
+func (m *Metrics) RecordRequestTime(accountId, bidder string, requestTime time.Duration) {
 	m.requestTime.With(prometheus.Labels{
+		pubIdLabel:  accountId,
 		bidderLabel: bidder,
 	}).Observe(float64(requestTime.Milliseconds()))
+}
+
+// RecordUnwrapRespTime records time takent to complete vast unwrap per wrapper count level
+func (m *Metrics) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
+	m.unwrapRespTime.With(prometheus.Labels{
+		pubIdLabel:        accountId,
+		wrapperCountLabel: wraperCnt,
+	}).Observe(float64(respTime.Milliseconds()))
 }

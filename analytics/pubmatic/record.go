@@ -47,6 +47,7 @@ type record struct {
 	FloorFetchStatus  *int   `json:"ffs,omitempty"`
 	FloorProvider     string `json:"fp,omitempty"`
 	PDC               string `json:"pdc,omitempty"`
+	CustomDimensions  string `json:"cds,omitempty"`
 }
 
 // Device struct for storing device information
@@ -211,6 +212,8 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 		wlog.IntegrationType = models.TypeInline
 	case models.EndpointORTB:
 		wlog.IntegrationType = models.TypeS2S
+	case models.EndpointWebS2S:
+		wlog.IntegrationType = models.TypeWebS2S
 	}
 }
 
