@@ -90,15 +90,8 @@ var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 
 var once sync.Once
 var metric *Metrics
 
-// NewMetrics initializes a new Prometheus metrics instance.
+// NewMetrics registers the OW module specific metrics in the prometheus registry passed as an argument.
 func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
-	once.Do(func() {
-		metric = newMetrics(cfg, promRegistry)
-	})
-	return metric
-}
-
-func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
 
 	// general metrics
@@ -249,7 +242,10 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, profileIDLabel},
 	)
 
-	newSSHBMetrics(&metrics, cfg, promRegistry)
+	// TODO -remove this code once complete Header-bidding repo gets removed completely
+	if cfg.Namespace == "hb" {
+		newSSHBMetrics(&metrics, cfg, promRegistry)
+	}
 
 	return &metrics
 }

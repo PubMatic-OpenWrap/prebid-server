@@ -68,6 +68,7 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Count of total requests to header-bidding server labeled by type and status.",
 		[]string{requestTypeLabel, requestStatusLabel})
 
+	// todo - make it common across all MEs
 	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
 		"sshb_logger_data_send_time",
 		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
