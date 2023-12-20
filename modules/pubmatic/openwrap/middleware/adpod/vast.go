@@ -122,7 +122,8 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 
 	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
 	if len(creative) == 0 {
-		return "", GetNoBidReasonCode(nbr.InternalError), errors.New("empty creative")
+		nbr := openrtb3.NoBidReason(openrtb3.NoBidGeneralError)
+		return "", &nbr, errors.New("No Bid")
 	}
 
 	if vr.debug == "1" || vr.WrapperLoggerDebug == "1" {

@@ -382,8 +382,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				IsRegex:          isRegex,                                                  // regex pattern
 			}
 
-			for _, bidder := range matchedSlotKeysVAST {
-				bidderMeta[bidder].VASTTagFlags[bidder] = false
+			if len(matchedSlotKeysVAST) > 0 {
+				meta := bidderMeta[bidderCode]
+				meta.VASTTagFlags = make(map[string]bool)
+				bidderMeta[bidderCode] = meta
+			}
+
+			for _, key := range matchedSlotKeysVAST {
+				bidderMeta[bidderCode].VASTTagFlags[key] = false
 			}
 
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {

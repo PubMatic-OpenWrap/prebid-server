@@ -106,9 +106,12 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byt
 	bidArrayMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
+			impId, _ := models.GetImpressionID(bid.ImpID)
+			bids, ok := bidArrayMap[impId]
+			if !ok {
+				bidArrayMap[impId] = make([]openrtb2.Bid, 0)
+			}
 			if bid.Price > 0 {
-				impId, _ := models.GetImpressionID(bid.ImpID)
-				bids := bidArrayMap[impId]
 				bids = append(bids, bid)
 				bidArrayMap[impId] = bids
 			}
@@ -165,15 +168,20 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) []*adPodBid {
 	var adpodBids []*adPodBid
 	for impId, bids := range bidsMap {
-		adpodBid := adPodBid{
+		adpodBid := &adPodBid{
 			ID: impId,
+		}
+		if len(bids) == 0 {
+			adpodBid.NBR = GetNoBidReasonCode(int(openrtb3.NoBidGeneralError))
+			adpodBids = append(adpodBids, adpodBid)
+			continue
 		}
 		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
 
 		cacheIds, err := cacheAllBids(cacheClient, bids)
 		if err != nil {
 			adpodBid.Error = err.Error()
-			adpodBids = append(adpodBids, &adpodBid)
+			adpodBids = append(adpodBids, adpodBid)
 			continue
 		}
 
@@ -189,7 +197,7 @@ func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) [
 		if len(targetings) > 0 {
 			adpodBid.Targeting = targetings
 		}
-		adpodBids = append(adpodBids, &adpodBid)
+		adpodBids = append(adpodBids, adpodBid)
 	}
 
 	return adpodBids
@@ -216,9 +224,6 @@ func createTargetting(bid openrtb2.Bid, slotNo int, cacheId string) map[string]s
 
 		if bidExt.AdPod.Debug.Targeting != nil {
 			for k, v := range bidExt.AdPod.Debug.Targeting {
-				targetingKeyValMap[k] = v
-			}
-			for k, v := range bidExt.Prebid.Targeting {
 				targetingKeyValMap[k] = v
 			}
 		}

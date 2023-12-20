@@ -214,19 +214,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
-			if rctx.IsCTVRequest {
-				if bidExt.AdPod == nil {
-					bidExt.AdPod = &models.AdpodBidExt{}
-				}
-				if impCtx.AdpodConfig != nil {
-					bidExt.AdPod.IsAdpodBid = true
-				}
-				bidExt.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidExt, seatBid.Seat)
-				if rctx.Debug {
-					bidExt.AdPod.Debug.Targeting = GetTargettingForDebug(bid.ID, rctx.PubIDStr, rctx.ProfileIDStr, fmt.Sprint(rctx.DisplayID), impCtx.TagID, bidExt.NetECPM)
-				}
-			}
-
 			// update NonBr codes for current bid
 			if owbid.Nbr != nil {
 				bidExt.Nbr = owbid.Nbr
@@ -473,59 +460,66 @@ func CheckWinningBidId(bidId string, wbidIds []string) bool {
 	return false
 }
 
-func GetTargettingForDebug(bidId, pubID, profileID, versionID, tagID string, ecpm float64) map[string]string {
+func GetTargettingForDebug(rctx models.RequestCtx, bidID, tagID string, bidCtx models.BidCtx) map[string]string {
 	targeting := make(map[string]string)
 
-	targeting[models.PwtBidID] = utils.GetOriginalBidId(bidId)
+	targeting[models.PwtBidID] = utils.GetOriginalBidId(bidID)
 	targeting[models.PWT_CACHE_PATH] = models.AMP_CACHE_PATH
-	targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", ecpm)
-	targeting[models.PWT_PUBID] = pubID
+	targeting[models.PWT_ECPM] = fmt.Sprintf("%.2f", bidCtx.NetECPM)
+	targeting[models.PWT_PUBID] = rctx.PubIDStr
 	targeting[models.PWT_SLOTID] = tagID
-	targeting[models.PWT_PROFILEID] = profileID
+	targeting[models.PWT_PROFILEID] = rctx.ProfileIDStr
 
 	if targeting[models.PWT_ECPM] == "" {
 		targeting[models.PWT_ECPM] = "0"
 	}
 
+	versionID := fmt.Sprint(rctx.DisplayID)
 	if versionID != "0" {
 		targeting[models.PWT_VERSIONID] = versionID
+	}
+
+	for k, v := range bidCtx.Prebid.Targeting {
+		targeting[k] = v
+	}
+
+	if !rctx.SupportDeals {
+		delete(targeting, models.PwtPbCatDur)
 	}
 
 	return targeting
 }
 
-func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, impCtx models.ImpCtx, bidExt *models.BidExt, seat string) map[string]string {
+func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, impCtx models.ImpCtx, bidCtx models.BidCtx, seat string) map[string]string {
 	targetingKeyValMap := make(map[string]string)
 	targetingKeyValMap[models.PWT_PARTNERID] = seat
 
-	if bidExt != nil {
-		if bidExt.Prebid != nil {
-			if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
-				targetingKeyValMap[models.PWT_DURATION] = strconv.Itoa(bidExt.Prebid.Video.Duration)
-			}
+	if bidCtx.Prebid != nil {
+		if bidCtx.Prebid.Video != nil && bidCtx.Prebid.Video.Duration > 0 {
+			targetingKeyValMap[models.PWT_DURATION] = strconv.Itoa(bidCtx.Prebid.Video.Duration)
+		}
 
-			prefix, _, _, err := jsonparser.Get(impCtx.NewExt, "prebid", "bidder", seat, "dealtier", "prefix")
-			if bidExt.Prebid.DealTierSatisfied && partnerConfig[models.DealTierLineItemSetup] == "1" && err == nil && len(prefix) > 0 {
-				targetingKeyValMap[models.PwtDealTier] = fmt.Sprintf("%s%d", string(prefix), bidExt.Prebid.DealPriority)
-			} else if len(bid.DealID) > 0 && partnerConfig[models.DealIDLineItemSetup] == "1" {
-				targetingKeyValMap[models.PWT_DEALID] = bid.DealID
-			} else {
-				priceBucket, ok := bidExt.Prebid.Targeting[string(openrtb_ext.HbpbConstantKey)]
-				if ok {
-					targetingKeyValMap[models.PwtPb] = priceBucket
-				}
-			}
-
-			catDur, ok := bidExt.Prebid.Targeting[models.PwtPbCatDur]
+		prefix, _, _, err := jsonparser.Get(impCtx.NewExt, "prebid", "bidder", seat, "dealtier", "prefix")
+		if bidCtx.Prebid.DealTierSatisfied && partnerConfig[models.DealTierLineItemSetup] == "1" && err == nil && len(prefix) > 0 {
+			targetingKeyValMap[models.PwtDealTier] = fmt.Sprintf("%s%d", string(prefix), bidCtx.Prebid.DealPriority)
+		} else if len(bid.DealID) > 0 && partnerConfig[models.DealIDLineItemSetup] == "1" {
+			targetingKeyValMap[models.PWT_DEALID] = bid.DealID
+		} else {
+			priceBucket, ok := bidCtx.Prebid.Targeting[models.PwtPb]
 			if ok {
-				cat, dur := getCatAndDurFromPwtCatDur(catDur)
-				if len(cat) > 0 {
-					targetingKeyValMap[models.PwtCat] = cat
-				}
+				targetingKeyValMap[models.PwtPb] = priceBucket
+			}
+		}
 
-				if len(dur) > 0 && targetingKeyValMap[models.PWT_DURATION] == "" {
-					targetingKeyValMap[models.PWT_DURATION] = dur
-				}
+		catDur, ok := bidCtx.Prebid.Targeting[models.PwtPbCatDur]
+		if ok {
+			cat, dur := getCatAndDurFromPwtCatDur(catDur)
+			if len(cat) > 0 {
+				targetingKeyValMap[models.PwtCat] = cat
+			}
+
+			if len(dur) > 0 && targetingKeyValMap[models.PWT_DURATION] == "" {
+				targetingKeyValMap[models.PWT_DURATION] = dur
 			}
 		}
 	}

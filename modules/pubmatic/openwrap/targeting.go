@@ -101,6 +101,19 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			}
 			bidCtx.Prebid.Targeting = newTargeting
 
+			if rctx.IsCTVRequest {
+				if bidCtx.AdPod == nil {
+					bidCtx.AdPod = &models.AdpodBidExt{}
+				}
+				if impCtx.AdpodConfig != nil {
+					bidCtx.AdPod.IsAdpodBid = true
+				}
+				bidCtx.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidCtx, seatBid.Seat)
+				if rctx.Debug {
+					bidCtx.AdPod.Debug.Targeting = GetTargettingForDebug(rctx, bid.ID, impCtx.TagID, bidCtx)
+				}
+			}
+
 			if isWinningBid {
 				if rctx.SendAllBids {
 					bidCtx.Winner = 1
