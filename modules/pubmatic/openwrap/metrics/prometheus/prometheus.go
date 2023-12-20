@@ -243,7 +243,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	)
 
 	// TODO -remove this code once complete Header-bidding repo gets removed completely
-	if cfg.Namespace == "hb" {
+	if cfg.Subsystem == "hb" {
 		newSSHBMetrics(&metrics, cfg, promRegistry)
 	}
 
