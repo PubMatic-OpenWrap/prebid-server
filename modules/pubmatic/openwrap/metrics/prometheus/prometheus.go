@@ -242,6 +242,11 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, profileIDLabel},
 	)
 
+	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
+		"logger_data_send_time",
+		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
+		standardTimeBuckets)
+
 	// TODO -remove this code once complete Header-bidding repo gets removed completely
 	if cfg.Subsystem == "hb" {
 		newSSHBMetrics(&metrics, cfg, promRegistry)
@@ -445,6 +450,14 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 		pubIDLabel:     publisher,
 		profileIDLabel: profile,
 	}).Inc()
+}
+
+// RecordSendLoggerDataTime records the time taken by server to send owlogger to analytics endpoint
+func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime time.Duration) {
+	m.sendLoggerData.With(prometheus.Labels{
+		endpointLabel:  endpoint,
+		profileIDLabel: profileID,
+	}).Observe(float64(sendTime.Seconds()))
 }
 
 // TODO - really need ?

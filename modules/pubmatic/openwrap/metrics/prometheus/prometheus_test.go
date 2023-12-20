@@ -16,8 +16,8 @@ import (
 func createMetricsForTesting() *Metrics {
 	return NewMetrics(&config.PrometheusMetrics{
 		Port:      8080,
-		Namespace: "prebid",
-		Subsystem: "server",
+		Namespace: "ow",
+		Subsystem: "hb",
 	}, prometheus.NewRegistry())
 }
 
