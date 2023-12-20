@@ -61,7 +61,7 @@ func (m OpenWrap) handleEntrypointHook(
 		case "pbjs":
 			endpoint = models.EndpointOWS2S
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		case "inapp":
+		case "owsdk":
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 			endpoint = models.EndpointV25
 		default:

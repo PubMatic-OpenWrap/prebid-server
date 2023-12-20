@@ -216,7 +216,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "Valid /openrtb2/auction?source=pbjs request(ows2s)",
+			name: "Valid /openrtb2/auction?source=pbjs request(webs2s)",
 			fields: fields{
 				cfg:   config.Config{},
 				cache: nil,
@@ -275,7 +275,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "Valid /openrtb2/auction?source=pbjs request(ows2s) debug set from request body instead of queryparam",
+			name: "Valid /openrtb2/auction?source=pbjs request(webs2s) debug set from request body instead of queryparam",
 			fields: fields{
 				cfg:   config.Config{},
 				cache: nil,
@@ -334,7 +334,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "/openrtb2/auction?source=pbjs request(ows2s) without profileid",
+			name: "/openrtb2/auction?source=pbjs request(webs2s) without profileid",
 			fields: fields{
 				cfg:   config.Config{},
 				cache: nil,
@@ -367,7 +367,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "/openrtb2/auction without source=pbjs/inapp. new hybrid endpoint should not execute module",
+			name: "/openrtb2/auction with source!=(pbjs or owsdk). new hybrid endpoint should not execute module",
 			fields: fields{
 				cfg:   config.Config{},
 				cache: nil,
@@ -429,7 +429,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "valid /openrtb2/auction?source=inapp request directly on port 8000",
+			name: "valid /openrtb2/auction?source=owsdk request directly on port 8000",
 			fields: fields{
 				cfg: config.Config{
 					Tracker: config.Tracker{
@@ -444,7 +444,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				miCtx: hookstage.ModuleInvocationContext{},
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
-						r, err := http.NewRequest("POST", "http://localhost/openrtb2/auction?source=inapp&debug=1", nil)
+						r, err := http.NewRequest("POST", "http://localhost/openrtb2/auction?source=owsdk&debug=1", nil)
 						if err != nil {
 							panic(err)
 						}
