@@ -361,7 +361,7 @@ func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
 	case "_AU_@_DIV_@_W_x_H_":
 		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
 	case "_AU_@_SRC_@_VASTTAG_":
-		return fmt.Sprintf("%s@%s@_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
+		return fmt.Sprintf("%s@%s@", tagid, src)
 	default:
 		// TODO: check if we need to fallback to old generic flow (below)
 		// Add this cases in a map and read it from yaml file
