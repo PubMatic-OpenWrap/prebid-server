@@ -12,7 +12,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
+	adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
@@ -2770,7 +2770,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			ow_adapters.InitBidders(tt.fields.cfg)
+			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
 				cfg:          tt.fields.cfg,
 				cache:        tt.fields.cache,

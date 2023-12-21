@@ -354,6 +354,8 @@ const (
 	//floor types
 	SoftFloor = 0
 	HardFloor = 1
+
+	CustomDimensions = "cds"
 )
 
 const (
