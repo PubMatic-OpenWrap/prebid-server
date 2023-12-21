@@ -392,7 +392,7 @@ func TestGetFilteredBidders(t *testing.T) {
 			bidRequest: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
 					Geo: &openrtb2.Geo{
-						Country: "IN",
+						Country: "IND",
 					},
 				},
 			},
