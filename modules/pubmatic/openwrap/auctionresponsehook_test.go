@@ -1418,10 +1418,8 @@ func TestResetBidIdtoOriginal(t *testing.T) {
 func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
-	tbf.Init(1, mockCache)
-	defer func() {
-		ctrl.Finish()
-	}()
+	tbf.SetAndResetTBFConfig(mockCache, nil)
+	defer ctrl.Finish()
 
 	type args struct {
 		ctx       context.Context
@@ -1553,7 +1551,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 			}
-			mockCache.EXPECT().GetTBFTrafficForPublishers().Return(map[int]map[int]int{1: {2: 3}}, nil).AnyTimes()
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
 			mutations := hookResult.ChangeSet.Mutations()
