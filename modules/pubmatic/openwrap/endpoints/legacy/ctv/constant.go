@@ -55,6 +55,8 @@ const (
 	ORTBSourceTID = "src.tid"
 	//ORTBSourcePChain get api parameter src.pchain
 	ORTBSourcePChain = "src.pchain"
+	//ORTBSourcesChain get api parameter src.pchain
+	ORTBSourceSChain = "src.schain"
 
 	// Regs level parameters
 

@@ -520,8 +520,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil {
 				result.Errors = append(result.Errors, err.Error())
 			}
-		}
 
+			if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
+				err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
+				if err != nil {
+					result.Errors = append(result.Errors, err.Error())
+					ep.BidRequest.Source.SChain = nil
+				}
+			}
+		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
@@ -559,13 +566,31 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
 	}
+	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
+	// if rctx.Platform == models.PLATFORM_APP || rctx.Platform == models.PLATFORM_VIDEO {
+	// 	// sChainObj := getSChainObj(rctx.PartnerConfigMap)
+	// 	// if sChainObj != nil {
+	// 	// 	setSchainInSourceObject(bidRequest.Source, sChainObj)
+	// 	// }
+	// 	// var sChainObj []byte
+	// 	// if bidRequest.Source.SChain == nil {
+	// 	// 	sChainObj = getSChainObj(rctx.PartnerConfigMap)
+	// 	// } else {
+	// 	// 	sChainObj = bidRequest.Source.SChain
+	// 	// 	source.SChain = nil
+	// 	// }
 
-	if rctx.Platform == models.PLATFORM_APP || rctx.Platform == models.PLATFORM_VIDEO {
-		sChainObj := getSChainObj(rctx.PartnerConfigMap)
-		if sChainObj != nil {
-			setSchainInSourceObject(bidRequest.Source, sChainObj)
-		}
-	}
+	// 	// if sChainObj != nil {
+	// 	// 	// Temporary change till all bidder start using openrtb 2.6 source.schain
+	// 	// 	sourceExt, ok := source.Ext.(map[string]any)
+	// 	// 	if !ok {
+	// 	// 		sourceExt = map[string]any{}
+	// 	// 	}
+
+	// 	// 	sourceExt[constant.SChainKey] = sChainObj
+	// 	// 	source.Ext = sourceExt
+	// 	// }
+	// }
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)

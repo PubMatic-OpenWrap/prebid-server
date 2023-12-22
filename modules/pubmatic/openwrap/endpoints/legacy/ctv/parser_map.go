@@ -39,6 +39,7 @@ var ortbMapper = &ParserMap{
 		ORTBSourceFD:     Parser.ORTBSourceFD,
 		ORTBSourceTID:    Parser.ORTBSourceTID,
 		ORTBSourcePChain: Parser.ORTBSourcePChain,
+		ORTBSourceSChain: Parser.ORTBSourceSChain,
 
 		//Site
 		ORTBSiteID:            Parser.ORTBSiteID,
@@ -362,6 +363,7 @@ type Parser interface {
 	ORTBSourceFD() error
 	ORTBSourceTID() error
 	ORTBSourcePChain() error
+	ORTBSourceSChain() error
 
 	//Site
 	ORTBSiteID() error

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -203,6 +204,42 @@ func (o *OpenRTB) ORTBSourcePChain() (err error) {
 		o.ortb.Source = &openrtb2.Source{}
 	}
 	o.ortb.Source.PChain = val
+	return
+}
+
+// ORTBSourceSChain will read and set ortb Source.Ext.SChain parameter
+func (o *OpenRTB) ORTBSourceSChain() (err error) {
+
+	sChainString, ok := o.values.GetString(ORTBSourceSChain)
+	if !ok {
+		return nil
+	}
+
+	var sChain *openrtb2.SupplyChain
+
+	sChain, err = openrtb.DeserializeSupplyChain(sChainString)
+
+	//sChain, err = openrtb.DeserializeSupplyChain(*sChainString)
+	if err != nil {
+		pubId := ""
+		if v, ok := o.values.GetString(ORTBAppPublisherID); ok {
+			pubId = v
+		} else if v, ok := o.values.GetString(ORTBSitePublisherID); ok {
+			pubId = v
+		}
+
+		//logger.Error(errorcodes.ErrDeserializationFailed, constant.ORTBSourceSChain, err.Error(), pubId, *sChainString)
+		fmt.Errorf("error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] payload:[%s]", ORTBSourceSChain, err, pubId, sChainString)
+
+		return nil
+	}
+
+	if o.ortb.Source == nil {
+		o.ortb.Source = &openrtb2.Source{}
+	}
+
+	o.ortb.Source.SChain = sChain
+
 	return
 }
 

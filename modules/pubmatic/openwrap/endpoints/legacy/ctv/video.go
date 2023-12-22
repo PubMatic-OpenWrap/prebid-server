@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 	"github.com/prebid/openrtb/v19/openrtb2"
 )
 
@@ -51,5 +52,40 @@ func ValidateVideoImpressions(request *openrtb2.BidRequest) error {
 		return errors.New("video object is missing in the request")
 	}
 
+	return nil
+}
+
+func IsValidSchain(schain *openrtb2.SupplyChain) error {
+
+	if schain.Ver != openrtb.SChainVersion1 {
+		return fmt.Errorf("invalid schain version, version should be %s", openrtb.SChainVersion1)
+	}
+
+	if (int(schain.Complete) != openrtb.SChainCompleteYes) && (schain.Complete != openrtb.SChainCompleteNo) {
+		return errors.New("invalid schain.complete value should be 0 or 1")
+	}
+
+	if len(schain.Nodes) == 0 {
+		return errors.New("invalid schain node fields, Node can't be empty")
+	}
+
+	for _, schainNode := range schain.Nodes {
+		if schainNode.ASI == "" {
+			return errors.New("invalid schain node fields, ASI can't be empty")
+		}
+
+		if schainNode.SID == "" {
+			return errors.New("invalid schain node fields, SID can't be empty")
+		}
+
+		if len([]rune(schainNode.SID)) > openrtb.SIDLength {
+			return errors.New("invalid schain node fields, sid can have maximum 64 characters")
+		}
+
+		// for schain version 1.0 hp must be 1
+		if schainNode.HP == nil || *schainNode.HP != openrtb.HPOne {
+			return errors.New("invalid schain node fields, HP must be one")
+		}
+	}
 	return nil
 }
