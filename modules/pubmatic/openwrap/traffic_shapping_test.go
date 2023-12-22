@@ -217,7 +217,6 @@ func TestEvaluateBiddingCondition(t *testing.T) {
 }
 
 func TestGetFilteredBidders(t *testing.T) {
-	// Define test cases
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -228,7 +227,7 @@ func TestGetFilteredBidders(t *testing.T) {
 		requestCtx     models.RequestCtx
 		bidRequest     *openrtb2.BidRequest
 		cache          cache.Cache
-		expectedResult map[string]bool
+		expectedResult map[string]struct{}
 		expectedFlag   bool
 		setup          func()
 	}{
@@ -243,7 +242,21 @@ func TestGetFilteredBidders(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 			},
-			expectedResult: map[string]bool{},
+			expectedResult: map[string]struct{}{},
+			expectedFlag:   false,
+		},
+		{
+			name: "Invalid data in cache",
+			requestCtx: models.RequestCtx{
+				PubID:     1,
+				ProfileID: 2,
+				DisplayID: 3,
+			},
+			bidRequest: &openrtb2.BidRequest{},
+			setup: func() {
+				mockCache.EXPECT().Get(gomock.Any()).Return("abc", false)
+			},
+			expectedResult: map[string]struct{}{},
 			expectedFlag:   false,
 		},
 		{
@@ -324,8 +337,8 @@ func TestGetFilteredBidders(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: map[string]bool{
-				"partner1": true,
+			expectedResult: map[string]struct{}{
+				"partner1": struct{}{},
 			},
 			expectedFlag: false,
 		},
@@ -396,14 +409,14 @@ func TestGetFilteredBidders(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: map[string]bool{},
+			expectedResult: map[string]struct{}{},
 			expectedFlag:   false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setup()
-			result, flag := GetFilteredBidders(tc.requestCtx, tc.bidRequest, mockCache)
+			result, flag := getFilteredBidders(tc.requestCtx, tc.bidRequest, mockCache)
 			assert.Equal(t, tc.expectedResult, result)
 			assert.Equal(t, tc.expectedFlag, flag)
 		})

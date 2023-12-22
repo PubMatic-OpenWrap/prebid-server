@@ -10,6 +10,10 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
+const (
+	keycountry = "country"
+)
+
 var countryAlpha3ToAlpha2Code = map[string]string{
 	"AFG": "AF",
 	"ALA": "AX",
@@ -263,14 +267,17 @@ var countryAlpha3ToAlpha2Code = map[string]string{
 	"ZWE": "ZW",
 }
 
-func GetFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, c cache.Cache) (map[string]bool, bool) {
-	filteredBidders := map[string]bool{}
+func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, c cache.Cache) (map[string]struct{}, bool) {
+	filteredBidders := map[string]struct{}{}
 	key := fmt.Sprintf("bidderfilter_%d_%d_%d", rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 	bf, ok := c.Get(key)
 	if !ok {
 		return filteredBidders, false
 	}
-	bidderFilter := bf.(map[string]interface{})
+	bidderFilter, ok := bf.(map[string]interface{})
+	if !ok {
+		return filteredBidders, false
+	}
 	data := generateEvaluationData(bidRequest)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
@@ -280,7 +287,7 @@ func GetFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 
 		biddingCondition, ok := bidderFilter[partnerConfig[models.BidderCode]]
 		if ok && !evaluateBiddingCondition(data, biddingCondition) {
-			filteredBidders[partnerConfig[models.BidderCode]] = true
+			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
 			continue
 		}
 		allPartnersFilteredFlag = false
@@ -291,7 +298,7 @@ func GetFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 
 func generateEvaluationData(BidRequest *openrtb2.BidRequest) map[string]interface{} {
 	data := map[string]interface{}{}
-	data["country"] = getCountryFromRequest(BidRequest)
+	data[keycountry] = getCountryFromRequest(BidRequest)
 	return data
 }
 

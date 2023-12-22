@@ -143,19 +143,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
-	filteredBidders, allPartnersFilteredFlag := GetFilteredBidders(rCtx, payload.BidRequest, m.cache)
-	if allPartnersFilteredFlag {
-		result.NbrCode = nbr.AllPartnersFiltered
-		result.Errors = append(result.Errors, "All partners filtered")
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
-	}
-
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 	if allPartnersThrottledFlag {
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		return result, err
+	}
+
+	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+	if allPartnersFilteredFlag {
+		result.NbrCode = nbr.AllPartnersFiltered
+		result.Errors = append(result.Errors, "All partners filtered")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}

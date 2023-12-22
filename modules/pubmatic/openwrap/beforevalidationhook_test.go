@@ -2117,63 +2117,6 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "All_partners_filtered",
-			args: args{
-				ctx: context.Background(),
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": rctx,
-					},
-				},
-				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"in"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-			},
-			fields: fields{
-				cache:        mockCache,
-				metricEngine: mockEngine,
-			},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
-					"appnexus": map[string]interface{}{
-						"in": []interface{}{
-							map[string]interface{}{
-								"var": "country",
-							},
-							[]interface{}{
-								"JP",
-								"KR",
-							},
-						},
-					},
-				}, true)
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					2: {
-						models.PARTNER_ID:          "2",
-						models.PREBID_PARTNER_NAME: "appnexus",
-						models.BidderCode:          "appnexus",
-						models.SERVER_SIDE_FLAG:    "1",
-						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-						models.TIMEOUT:             "200",
-						models.THROTTLE:            "0",
-					},
-					-1: {
-						models.DisplayVersionID: "1",
-						models.PLATFORM_KEY:     models.PLATFORM_APP,
-					},
-				}, nil)
-				//prometheus metrics
-				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnersFiltered))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnersFiltered)
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
-			},
-			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject:  true,
-				NbrCode: nbr.AllPartnersFiltered,
-				Errors:  []string{"All partners filtered"},
-			},
-			wantErr: false,
-		},
-		{
 			name: "All_partners_throttled",
 			args: args{
 				ctx: context.Background(),
@@ -2189,7 +2132,6 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -2215,6 +2157,63 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				Reject:  true,
 				NbrCode: nbr.AllPartnerThrottled,
 				Errors:  []string{"All adapters throttled"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "All_partners_filtered",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"in"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+						models.THROTTLE:            "70",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
+					"appnexus": map[string]interface{}{
+						"in": []interface{}{
+							map[string]interface{}{
+								"var": "country",
+							},
+							[]interface{}{
+								"JP",
+								"KR",
+							},
+						},
+					},
+				}, true)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnersFiltered))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnersFiltered)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: nbr.AllPartnersFiltered,
+				Errors:  []string{"All partners filtered"},
 			},
 			wantErr: false,
 		},
