@@ -338,7 +338,7 @@ func TestGetFilteredBidders(t *testing.T) {
 				},
 			},
 			expectedResult: map[string]struct{}{
-				"partner1": struct{}{},
+				"partner1": {},
 			},
 			expectedFlag: false,
 		},
