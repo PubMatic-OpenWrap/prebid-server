@@ -477,7 +477,7 @@ func TestGetDevicePlatform(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetDevicePlatform(tt.args.rCtx, tt.args.bidRequest)
+			got := getDevicePlatform(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, tt.want, got)
 		})
 	}

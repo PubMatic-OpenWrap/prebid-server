@@ -79,7 +79,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.Device.Platform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceExt(payload.BidRequest, &rCtx.Device)
 
 	if rCtx.UidCookie == nil {
@@ -132,7 +132,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.Platform = platform
-	rCtx.Device.Platform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
