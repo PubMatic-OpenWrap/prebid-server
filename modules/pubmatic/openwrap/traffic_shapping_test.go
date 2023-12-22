@@ -265,6 +265,9 @@ func TestGetFilteredBidders(t *testing.T) {
 				PubID:     1,
 				ProfileID: 2,
 				DisplayID: 3,
+				AdapterThrottleMap: map[string]struct{}{
+					"partner3": {},
+				},
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
 						models.SERVER_SIDE_FLAG: "1",
@@ -273,6 +276,10 @@ func TestGetFilteredBidders(t *testing.T) {
 					2: {
 						models.SERVER_SIDE_FLAG: "1",
 						models.BidderCode:       "partner2",
+					},
+					3: {
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner3",
 					},
 				},
 			},

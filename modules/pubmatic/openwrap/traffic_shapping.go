@@ -285,6 +285,10 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 			continue
 		}
 
+		if _, ok := rCtx.AdapterThrottleMap[partnerConfig[models.BidderCode]]; ok {
+			continue
+		}
+
 		biddingCondition, ok := bidderFilter[partnerConfig[models.BidderCode]]
 		if ok && !evaluateBiddingCondition(data, biddingCondition) {
 			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
