@@ -1421,7 +1421,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	tbf.Init(1, mockCache)
 	defer func() {
 		ctrl.Finish()
-		tbf.StopTBFReloaderService()
 	}()
 
 	type args struct {
