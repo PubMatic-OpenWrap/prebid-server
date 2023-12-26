@@ -3,10 +3,10 @@ package openwrap
 import (
 	"fmt"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
