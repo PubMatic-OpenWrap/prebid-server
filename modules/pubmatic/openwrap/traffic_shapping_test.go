@@ -377,7 +377,7 @@ func TestGetFilteredBidders(t *testing.T) {
 											"var": "country",
 										},
 										[]interface{}{
-											"IN",
+											"IND",
 											"KOR",
 										},
 									},
