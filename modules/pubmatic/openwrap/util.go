@@ -299,3 +299,16 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
 	return &nbr
 }
+
+func getBidAdjustmentValue(revShare float64) float64 {
+	return (1 - revShare/100)
+}
+
+func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
+
+	if revShare == 100 {
+		return 0
+	}
+	originalBidPrice := netEcpm / (1 - revShare/100)
+	return toFixed(originalBidPrice, constant.BID_PRECISION)
+}

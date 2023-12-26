@@ -115,14 +115,20 @@ func (m OpenWrap) handleAuctionResponseHook(
 				bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
 			}
 
+			// originalBidCpm = gross price in original currency
+			// bidPrice = net in request currency
+			// originalBidCCPMUSD = net in USD
+
 			// set response netecpm and logger/tracker en
 			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			bidExt.NetECPM = models.GetNetEcpm(bid.Price, revShare)
-			eg = bid.Price
+			bidExt.NetECPM = bid.Price
+
+			eg = models.GetGrossEcpmFromNetEcpm(bid.Price, revShare)
 			en = bidExt.NetECPM
+			bidExt.GrossECPM = eg
 			if payload.BidResponse.Cur != "USD" {
-				eg = bidExt.OriginalBidCPMUSD
-				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				eg = models.GetGrossEcpmFromNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				en = bidExt.OriginalBidCPMUSD
 				bidExt.OriginalBidCPMUSD = 0
 			}
 

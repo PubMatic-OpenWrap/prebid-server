@@ -16,14 +16,14 @@ type BidExt struct {
 	RefreshInterval int    `json:"refreshInterval,omitempty"`
 	CreativeType    string `json:"crtype,omitempty"`
 	// AdPod           ExtBidPrebidAdPod `json:"adpod,omitempty"`
-	Summary     []Summary       `json:"summary,omitempty"`
-	SKAdnetwork json.RawMessage `json:"skadn,omitempty"`
-	Video       *ExtBidVideo    `json:"video,omitempty"`
-	Banner      *ExtBidBanner   `json:"banner,omitempty"`
-	DspId       int             `json:"dspid,omitempty"`
-	Winner      int             `json:"winner,omitempty"`
-	NetECPM     float64         `json:"netecpm,omitempty"`
-
+	Summary           []Summary                  `json:"summary,omitempty"`
+	SKAdnetwork       json.RawMessage            `json:"skadn,omitempty"`
+	Video             *ExtBidVideo               `json:"video,omitempty"`
+	Banner            *ExtBidBanner              `json:"banner,omitempty"`
+	DspId             int                        `json:"dspid,omitempty"`
+	Winner            int                        `json:"winner,omitempty"`
+	NetECPM           float64                    `json:"netecpm,omitempty"`
+	GrossECPM         float64                    `json:"_,omitempty"`
 	OriginalBidCPM    float64                    `json:"origbidcpm,omitempty"`
 	OriginalBidCur    string                     `json:"origbidcur,omitempty"`
 	OriginalBidCPMUSD float64                    `json:"origbidcpmusd,omitempty"`

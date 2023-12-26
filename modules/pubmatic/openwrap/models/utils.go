@@ -137,6 +137,15 @@ func GetRevenueShare(partnerConfig map[string]string) float64 {
 	return revShare
 }
 
+func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
+
+	if revShare == 100 {
+		return 0
+	}
+	originalBidPrice := netEcpm / (1 - revShare/100)
+	return toFixed(originalBidPrice, BID_PRECISION)
+}
+
 func GetNetEcpm(price float64, revShare float64) float64 {
 	if revShare == 0 {
 		return toFixed(price, BID_PRECISION)

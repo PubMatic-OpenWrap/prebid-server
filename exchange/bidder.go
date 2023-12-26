@@ -382,6 +382,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 								adjustmentFactor = givenAdjustment
 							}
 						}
+
 						originalBidCpm := 0.0
 						currencyAfterAdjustments := ""
 						originalBidCPMUSD := 0.0

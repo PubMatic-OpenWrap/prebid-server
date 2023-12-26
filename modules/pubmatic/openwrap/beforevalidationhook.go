@@ -175,7 +175,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
-
+	bidAdjustmentFactors := map[string]float64{}
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
@@ -353,6 +353,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
+			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			bidAdjustmentFactors[bidderCode] = getBidAdjustmentValue(revShare)
+
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
 
@@ -454,6 +457,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
+	if len(bidAdjustmentFactors) > 0 {
+		requestExt.Prebid.BidAdjustmentFactors = bidAdjustmentFactors
+	}
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
