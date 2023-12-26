@@ -308,11 +308,13 @@ func generateEvaluationData(BidRequest *openrtb2.BidRequest) map[string]interfac
 
 func getCountryFromRequest(bidRequest *openrtb2.BidRequest) string {
 	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
-		return countryAlpha3ToAlpha2Code[bidRequest.Device.Geo.Country]
+		//return countryAlpha3ToAlpha2Code[bidRequest.Device.Geo.Country]
+		return bidRequest.Device.Geo.Country
 	}
 
 	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
-		return countryAlpha3ToAlpha2Code[bidRequest.User.Geo.Country]
+		//return countryAlpha3ToAlpha2Code[bidRequest.User.Geo.Country]
+		return bidRequest.User.Geo.Country
 	}
 
 	// return country using  netacuity
