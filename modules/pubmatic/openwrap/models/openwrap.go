@@ -73,6 +73,7 @@ type RequestCtx struct {
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
+	AdapterFilteredMap map[string]struct{}
 
 	AdUnitConfig *adunitconfig.AdUnitConfig
 

@@ -15,4 +15,5 @@ const (
 	InternalError
 	AllSlotsDisabled
 	ServerSidePartnerNotConfigured
+	AllPartnersFiltered
 )
