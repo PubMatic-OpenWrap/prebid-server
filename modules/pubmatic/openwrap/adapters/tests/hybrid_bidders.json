@@ -348,5 +348,19 @@
                 }
             }
         }
+    },
+    {
+        "name": "mediafuse_client_json",
+        "args": {
+            "adapterName": "mediafuse",
+            "requestJSON": {
+                "placementId": "9880618"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 9880618
+            }
+        }
     }
 ]

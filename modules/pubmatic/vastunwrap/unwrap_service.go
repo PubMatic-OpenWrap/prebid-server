@@ -27,6 +27,7 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 		m.MetricsEngine.RecordRequestStatus(accountID, bidder, respStatus)
 		if respStatus == "0" {
 			m.MetricsEngine.RecordWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
+			m.MetricsEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
 		}
 	}()
 	headers := http.Header{}
