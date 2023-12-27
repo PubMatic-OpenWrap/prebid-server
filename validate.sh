@@ -17,7 +17,12 @@ while true; do
   esac
 done
 
+# Locate netacuity directory and use the location to set the CGO_CFLAG
+NETACUITY_DIR=`realpath ./modules/pubmatic/openwrap/geodb/netacuity/include`
+export CGO_CFLAGS="-I $NETACUITY_DIR"
+
 ./scripts/format.sh -f $AUTOFMT
+
 
 # Run the actual tests. Make sure there's enough coverage too, if the flags call for it.
 if $COVERAGE; then

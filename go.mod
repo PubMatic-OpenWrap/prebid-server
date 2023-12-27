@@ -47,6 +47,7 @@ require (
 )
 
 require (
+	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20231217064436-a2dc927dc6bc
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang/mock v1.6.0
@@ -81,7 +82,6 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
