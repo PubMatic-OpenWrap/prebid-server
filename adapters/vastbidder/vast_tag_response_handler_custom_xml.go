@@ -18,7 +18,7 @@ import (
 var vastXPath *xmlparser.XPath
 
 func init() {
-	//vastXPath = xmlparser.GetXPath(nil)
+	vastXPath = xmlparser.GetXPath(nil)
 }
 
 func (handler *VASTTagResponseHandler) getBidResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {

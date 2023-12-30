@@ -1,5 +1,12 @@
 package vastbidder
 
+import (
+	"errors"
+	"regexp"
+
+	"github.com/prebid/prebid-server/errortypes"
+)
+
 const (
 	intBase = 10
 	comma   = `,`
@@ -174,4 +181,24 @@ const (
 	keyval = "keyval"
 )
 
+var (
+	errNon2xxResponseStatus   error = errors.New(`got non 2xx response status`)
+	errInvalidImpressionIndex error = errors.New(`validation failed invalid impression index`)
+	errInvalidVASTIndex       error = errors.New(`validation failed invalid vast tag index`)
+	errEmptyVideoCreative     error = errors.New("empty video creative")
+	errEmptyVideoDuration     error = errors.New("empty video duration")
+	errInvalidVideoDuration   error = errors.New("invalid video duration")
+	errMissingVASTElement     error = errors.New("missing VAST element in video creative")
+	errInvalidVASTVersion     error = errors.New("invalid vast version")
+	errMissingAdElement       error = errors.New("missing Ad/Wrapper or Ad/InLine element in video creative")
+	errMissingBidPrice        error = &errortypes.NoBidPrice{Message: "Bid Price Not Present"}
+)
+
+const (
+	vastVersion2x int = 2
+	vastVersion3x int = 3
+	vastVersion4x int = 4
+)
+
 var ParamKeys = []string{"param1", "param2", "param3", "param4", "param5"}
+var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)

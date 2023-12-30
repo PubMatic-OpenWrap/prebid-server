@@ -57,6 +57,7 @@ require (
 
 require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 // indirect
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20231129132054-db03580cfec3 // indirect
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

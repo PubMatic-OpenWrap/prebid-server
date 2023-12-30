@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -17,36 +16,25 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-var durationRegExp = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]?\d):([0-5]?\d)(\.(\d{1,3}))?$`)
-
-// IVASTTagResponseHandler to parse VAST Tag
-type IVASTTagResponseHandler interface {
-	ITagResponseHandler
-	GetStaticPrice(ext json.RawMessage) float64
-}
-
 // VASTTagResponseHandler to parse VAST Tag
 type VASTTagResponseHandler struct {
-	IVASTTagResponseHandler
 	ImpBidderExt *openrtb_ext.ExtImpVASTBidder
 	VASTTag      *openrtb_ext.ExtImpVASTBidderTag
 }
 
 // NewVASTTagResponseHandler returns new object
 func NewVASTTagResponseHandler() *VASTTagResponseHandler {
-	obj := &VASTTagResponseHandler{}
-	obj.IVASTTagResponseHandler = obj
-	return obj
+	return &VASTTagResponseHandler{}
 }
 
 // Validate will return bids
 func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) []error {
 	if response.StatusCode != http.StatusOK {
-		return []error{errors.New(`validation failed`)}
+		return []error{errNon2xxResponseStatus}
 	}
 
 	if len(internalRequest.Imp) < externalRequest.Params.ImpIndex {
-		return []error{errors.New(`validation failed invalid impression index`)}
+		return []error{errInvalidImpressionIndex}
 	}
 
 	impExt, err := readImpExt(internalRequest.Imp[externalRequest.Params.ImpIndex].Ext)
@@ -55,7 +43,7 @@ func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidReq
 	}
 
 	if len(impExt.Tags) < externalRequest.Params.VASTTagIndex {
-		return []error{errors.New(`validation failed invalid vast tag index`)}
+		return []error{errInvalidVASTIndex}
 	}
 
 	//Initialise Extensions
@@ -66,7 +54,7 @@ func (handler *VASTTagResponseHandler) Validate(internalRequest *openrtb2.BidReq
 
 // MakeBids will return bids
 func (handler *VASTTagResponseHandler) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	if err := handler.IVASTTagResponseHandler.Validate(internalRequest, externalRequest, response); len(err) > 0 {
+	if err := handler.Validate(internalRequest, externalRequest, response); len(err) > 0 {
 		return nil, err[:]
 	}
 
@@ -237,13 +225,6 @@ func getAdvertisers(vastVer string, ad *etree.Element) []string {
 	return advertisers
 }
 
-func getStaticPricingDetails(vastTag *openrtb_ext.ExtImpVASTBidderTag) (float64, string) {
-	if nil == vastTag {
-		return 0.0, ""
-	}
-	return vastTag.Price, "USD"
-}
-
 func getPricingDetails(version string, ad *etree.Element) (float64, string) {
 	var currency string
 	var node *etree.Element
@@ -271,7 +252,26 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
 	return priceValue, currency
 }
 
-// getDuration extracts the duration of the bid from input creative of Linear type.
+func getDuration(creative *etree.Element) (int, error) {
+	if nil == creative {
+		return 0, errEmptyVideoCreative
+	}
+	node := creative.FindElement("./Linear/Duration")
+	if nil == node {
+		return 0, errEmptyVideoDuration
+	}
+	return getCreativeDuration(node.Text())
+}
+
+// getCreativeID looks for ID inside input creative tag
+func getCreativeID(creative *etree.Element) string {
+	if nil == creative {
+		return ""
+	}
+	return creative.SelectAttrValue("id", "")
+}
+
+// getCreativeDuration extracts the duration of the bid from input creative of Linear type.
 // The lookup may vary from vast version provided in the input
 // returns duration in seconds or error if failed to obtained the duration.
 // If multple Linear tags are present, onlyfirst one will be used
@@ -293,30 +293,25 @@ func getPricingDetails(version string, ad *etree.Element) (float64, string) {
 // 2.https://iabtechlab.com/wp-content/uploads/2018/11/VAST4.1-final-Nov-8-2018.pdf
 // 3.https://iabtechlab.com/wp-content/uploads/2016/05/VAST4.0_Updated_April_2016.pdf
 // 4.https://iabtechlab.com/wp-content/uploads/2016/04/VASTv3_0.pdf
-func getDuration(creative *etree.Element) (int, error) {
-	if nil == creative {
-		return 0, errors.New("Invalid Creative")
-	}
-	node := creative.FindElement("./Linear/Duration")
-	if nil == node {
-		return 0, errors.New("Invalid Duration")
-	}
-	duration := node.Text()
+func getCreativeDuration(duration string) (int, error) {
 	// check if milliseconds is provided
 	match := durationRegExp.FindStringSubmatch(duration)
 	if nil == match {
-		return 0, errors.New("Invalid Duration")
+		return 0, errInvalidVideoDuration
 	}
+
 	repl := "${1}h${2}m${3}s"
 	ms := match[5]
-	if "" != ms {
+	if len(ms) > 0 {
 		repl += "${5}ms"
 	}
+
 	duration = durationRegExp.ReplaceAllString(duration, repl)
 	dur, err := time.ParseDuration(duration)
 	if err != nil {
 		return 0, err
 	}
+
 	return int(dur.Seconds()), nil
 }
 
@@ -327,10 +322,21 @@ func getStaticDuration(vastTag *openrtb_ext.ExtImpVASTBidderTag) int {
 	return vastTag.Duration
 }
 
-// getCreativeID looks for ID inside input creative tag
-func getCreativeID(creative *etree.Element) string {
-	if nil == creative {
-		return ""
+func getStaticPricingDetails(vastTag *openrtb_ext.ExtImpVASTBidderTag) (float64, string) {
+	if nil == vastTag {
+		return 0.0, ""
 	}
-	return creative.SelectAttrValue("id", "")
+	return vastTag.Price, "USD"
+}
+
+func parseVASTVersion(version string) (float64, error) {
+	if version == "" {
+		//return default value
+		return 2.0, nil
+	}
+	value, err := strconv.ParseFloat(version, 64)
+	if err != nil {
+		return 0, errInvalidVASTVersion
+	}
+	return value, nil
 }

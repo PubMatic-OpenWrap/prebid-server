@@ -63,12 +63,7 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 
 // MakeBids makes bids
 func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	//response validation can be done here independently
-	//handler, err := GetResponseHandler(a.bidderConfig.ResponseType)
-	handler, err := GetResponseHandler(VASTTagHandlerType)
-	if nil != err {
-		return nil, []error{err}
-	}
+	handler := NewVASTTagResponseHandler()
 	return handler.MakeBids(internalRequest, externalRequest, response)
 }
 
