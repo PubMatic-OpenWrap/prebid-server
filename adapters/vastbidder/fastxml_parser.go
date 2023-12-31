@@ -39,7 +39,7 @@ func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
 	}
 
 	//validate vast version
-	versionStr := p.reader.GetAttributeValue(vast, "version")
+	versionStr := p.reader.SelectAttrValue(vast, "version")
 	p.vastVersion, err = parseVASTVersion(versionStr)
 	if err != nil {
 		return err
@@ -69,12 +69,12 @@ func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
 		return 0.0, ""
 	}
 
-	priceValue, err := strconv.ParseFloat(strings.TrimSpace(p.reader.GetText(node, true)), 64)
+	priceValue, err := strconv.ParseFloat(strings.TrimSpace(p.reader.Text(node, true)), 64)
 	if nil != err {
 		return 0.0, ""
 	}
 
-	if currency = p.reader.GetAttributeValue(node, "currency"); currency == "" {
+	if currency = p.reader.SelectAttrValue(node, "currency"); currency == "" {
 		currency = "USD"
 	}
 
@@ -85,10 +85,10 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 	switch int(p.vastVersion) {
 	case vastVersion2x, vastVersion3x:
 		for _, ext := range p.reader.FindElements(p.adElement, "Extensions", "Extension") {
-			if p.reader.GetAttributeValue(ext, "type") == "advertiser" {
+			if p.reader.SelectAttrValue(ext, "type") == "advertiser" {
 				ele := p.reader.FindElement(ext, "Advertiser")
 				if ele != nil {
-					if value := strings.TrimSpace(p.reader.GetText(ele, true)); len(value) > 0 {
+					if value := strings.TrimSpace(p.reader.Text(ele, true)); len(value) > 0 {
 						advertisers = append(advertisers, value)
 					}
 				}
@@ -97,7 +97,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 
 	case vastVersion4x:
 		if ele := p.reader.FindElement(p.adElement, "Advertiser"); ele != nil {
-			if value := strings.TrimSpace(p.reader.GetText(ele, true)); len(value) > 0 {
+			if value := strings.TrimSpace(p.reader.Text(ele, true)); len(value) > 0 {
 				advertisers = append(advertisers, value)
 			}
 		}
@@ -111,7 +111,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 
 func (p *fastXMLParser) GetCreativeID() string {
 	if p.crID == "" && p.creativeElement != nil {
-		p.crID = p.reader.GetAttributeValue(p.creativeElement, "id")
+		p.crID = p.reader.SelectAttrValue(p.creativeElement, "id")
 	}
 
 	if p.crID == "" {
@@ -129,7 +129,7 @@ func (p *fastXMLParser) GetDuration() (int, error) {
 	if node == nil {
 		return 0, errEmptyVideoDuration
 	}
-	return parseDuration(strings.TrimSpace(p.reader.GetText(node, true)))
+	return parseDuration(strings.TrimSpace(p.reader.Text(node, true)))
 }
 
 func (p *fastXMLParser) getAdElement(vast *fastxml.Element) *fastxml.Element {
