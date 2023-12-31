@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/util/xmlparser"
 )
 
@@ -238,3 +238,214 @@ func getPricingDetails1(reader *xmlparser.XMLReader, ad *xmlparser.Element, vers
 
 	return priceValue, currency
 }
+
+/*
+func (handler *VASTTagResponseHandler) vastTagToBidderResponse(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	var errs []error
+
+	doc := etree.NewDocument()
+
+	//Read Document
+	if err := doc.ReadFromBytes(response.Body); err != nil {
+		errs = append(errs, err)
+		return nil, errs[:]
+	}
+
+	//Check VAST Tag
+	vast := doc.Element.FindElement(`./VAST`)
+	if vast == nil {
+		errs = append(errs, errors.New("VAST Tag Not Found"))
+		return nil, errs[:]
+	}
+
+	//Check VAST/Ad Tag
+	adElement := getAdElement(vast)
+	if nil == adElement {
+		errs = append(errs, errors.New("VAST/Ad Tag Not Found"))
+		return nil, errs[:]
+	}
+
+	typedBid := &adapters.TypedBid{
+		Bid:     &openrtb2.Bid{},
+		BidType: openrtb_ext.BidTypeVideo,
+		BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+			VASTTagID: handler.VASTTag.TagID,
+		},
+	}
+
+	creatives := adElement.FindElements("Creatives/Creative")
+	if nil != creatives {
+		for _, creative := range creatives {
+			// get creative id
+			typedBid.Bid.CrID = getCreativeID(creative)
+
+			// get duration from vast creative
+			dur, err := getDuration(creative)
+			if nil != err {
+				// get duration from input bidder vast tag
+				dur = getStaticDuration(handler.VASTTag)
+			}
+			if dur > 0 {
+				typedBid.BidVideo.Duration = int(dur) // prebid expects int value
+			}
+		}
+	}
+
+	bidResponse := &adapters.BidderResponse{
+		Bids:     []*adapters.TypedBid{typedBid},
+		Currency: `USD`, //TODO: Need to check how to get currency value
+	}
+
+	//GetVersion
+	version := vast.SelectAttrValue(`version`, `2.0`)
+
+	//if bid.price is not set in ParseExtension
+	if typedBid.Bid.Price <= 0 {
+		price, currency := getPricingDetails(version, adElement)
+		if price <= 0 {
+			price, currency = getStaticPricingDetails(handler.VASTTag)
+			if price <= 0 {
+				errs = append(errs, &errortypes.NoBidPrice{Message: "Bid Price Not Present"})
+				return nil, errs[:]
+			}
+		}
+		typedBid.Bid.Price = price
+		if len(currency) > 0 {
+			bidResponse.Currency = currency
+		}
+	}
+
+	typedBid.Bid.ADomain = getAdvertisers(version, adElement)
+
+	//if bid.id is not set in ParseExtension
+	if len(typedBid.Bid.ID) == 0 {
+		typedBid.Bid.ID = GetRandomID()
+	}
+
+	//if bid.impid is not set in ParseExtension
+	if len(typedBid.Bid.ImpID) == 0 {
+		typedBid.Bid.ImpID = internalRequest.Imp[externalRequest.Params.ImpIndex].ID
+	}
+
+	//if bid.adm is not set in ParseExtension
+	if len(typedBid.Bid.AdM) == 0 {
+		typedBid.Bid.AdM = string(response.Body)
+	}
+
+	//if bid.CrID is not set in ParseExtension
+	if len(typedBid.Bid.CrID) == 0 {
+		typedBid.Bid.CrID = "cr_" + GetRandomID()
+	}
+
+	// set vastTagId in bid.Ext
+	bidExt := openrtb_ext.ExtBid{
+		Prebid: &openrtb_ext.ExtBidPrebid{
+			Video: typedBid.BidVideo,
+			Type:  typedBid.BidType,
+		},
+	}
+
+	bidExtBytes, err := json.Marshal(bidExt)
+	if err == nil {
+		typedBid.Bid.Ext = bidExtBytes
+	}
+
+	return bidResponse, nil
+}
+
+func getAdElement(vast *etree.Element) *etree.Element {
+	if ad := vast.FindElement(`./Ad/Wrapper`); nil != ad {
+		return ad
+	}
+	if ad := vast.FindElement(`./Ad/InLine`); nil != ad {
+		return ad
+	}
+	return nil
+}
+
+func getAdvertisers(vastVer string, ad *etree.Element) []string {
+	version, err := strconv.ParseFloat(vastVer, 64)
+	if err != nil {
+		version = 2.0
+	}
+
+	advertisers := make([]string, 0)
+
+	switch int(version) {
+	case 2, 3:
+		for _, ext := range ad.FindElements(`./Extensions/Extension/`) {
+			for _, attr := range ext.Attr {
+				if attr.Key == "type" && attr.Value == "advertiser" {
+					for _, ele := range ext.ChildElements() {
+						if ele.Tag == "Advertiser" {
+							if strings.TrimSpace(ele.Text()) != "" {
+								advertisers = append(advertisers, ele.Text())
+							}
+						}
+					}
+				}
+			}
+		}
+	case 4:
+		if ad.FindElement("./Advertiser") != nil {
+			adv := strings.TrimSpace(ad.FindElement("./Advertiser").Text())
+			if adv != "" {
+				advertisers = append(advertisers, adv)
+			}
+		}
+	default:
+		glog.V(3).Infof("Handle getAdvertisers for VAST version %d", int(version))
+	}
+
+	if len(advertisers) == 0 {
+		return nil
+	}
+	return advertisers
+}
+
+func getPricingDetails(version string, ad *etree.Element) (float64, string) {
+	var currency string
+	var node *etree.Element
+
+	if version == `2.0` {
+		node = ad.FindElement(`./Extensions/Extension/Price`)
+	} else {
+		node = ad.FindElement(`./Pricing`)
+	}
+
+	if node == nil {
+		return 0.0, currency
+	}
+
+	priceValue, err := strconv.ParseFloat(node.Text(), 64)
+	if nil != err {
+		return 0.0, currency
+	}
+
+	currencyNode := node.SelectAttr(`currency`)
+	if nil != currencyNode {
+		currency = currencyNode.Value
+	}
+
+	return priceValue, currency
+}
+
+func getDuration(creative *etree.Element) (int, error) {
+	if nil == creative {
+		return 0, errEmptyVideoCreative
+	}
+	node := creative.FindElement("./Linear/Duration")
+	if nil == node {
+		return 0, errEmptyVideoDuration
+	}
+	return getCreativeDuration(node.Text())
+}
+
+// getCreativeID looks for ID inside input creative tag
+func getCreativeID(creative *etree.Element) string {
+	if nil == creative {
+		return ""
+	}
+	return creative.SelectAttrValue("id", "")
+}
+*/

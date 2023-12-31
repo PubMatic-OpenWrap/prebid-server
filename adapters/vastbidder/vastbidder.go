@@ -63,8 +63,13 @@ func (a *TagBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 
 // MakeBids makes bids
 func (a *TagBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	handler := NewVASTTagResponseHandler()
-	return handler.MakeBids(internalRequest, externalRequest, response)
+	handler := newResponseHandler(internalRequest, externalRequest, response)
+
+	if err := handler.Validate(); len(err) > 0 {
+		return nil, err[:]
+	}
+
+	return handler.MakeBids()
 }
 
 // NewTagBidder is an constructor for TagBidder
