@@ -140,37 +140,14 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	}
 
 	//Add Category Params from AdRequest
-	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering != nil {
+	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering != nil && len(commerceExt.ComParams.Filtering) > 0{
 		adButlerReq.Params = make(map[string][]string)
-		if commerceExt.ComParams.Filtering.Category != nil && len(commerceExt.ComParams.Filtering.Category) > 0 {
-			//Retailer Specific Category  Name is present from Product Feed Template
-			val, ok = configValueMap[adapters.PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_CATEGORY]
-			if ok {
-				adButlerReq.Params[val] = commerceExt.ComParams.Filtering.Category
-			} else {
-				adButlerReq.Params[DEFAULT_CATEGORY] = commerceExt.ComParams.Filtering.Category
-			}
-		}
-
-		if commerceExt.ComParams.Filtering.Brand != nil && len(commerceExt.ComParams.Filtering.Brand) > 0 {
-		    //Retailer Specific Brand Name is present from Product Feed Template
-			val, ok = configValueMap[adapters.PRODUCTTEMPLATE_PREFIX + PD_TEMPLATE_BRAND]
-			if ok {
-				adButlerReq.Params[val] = commerceExt.ComParams.Filtering.Brand
-			} else {
-				adButlerReq.Params[DEFAULT_BRAND] = commerceExt.ComParams.Filtering.Brand
-			}
-		}
-
-		if commerceExt.ComParams.Filtering.SubCategory != nil {
-			for _,subCategory := range commerceExt.ComParams.Filtering.SubCategory {
-				key := subCategory.Name
-				value := subCategory.Value
-				adButlerReq.Params[key] = value
-			}
+		for _,category := range commerceExt.ComParams.Filtering {
+			key := category.Name
+			value := category.Value
+			adButlerReq.Params[key] = value
 		}
 	}
-	
 
 	//Assign Search Term if present along with searchType
 	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering == nil && commerceExt.ComParams.SearchTerm != "" {
@@ -236,5 +213,6 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	}}, nil
 	
 }
+
 
 
