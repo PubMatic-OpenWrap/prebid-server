@@ -1156,6 +1156,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.koddi.commerceparams.conversionurl", "https://{{.Host}}.koddi.io/event-collection/beacon/conversion")
 	v.SetDefault("adapters.adbuttler.endpoint",  "https://servedbyadbutler.com/adserve/;ID={{.AccountID}};setID={{.ZoneID}};type=pdb_query")
 	v.SetDefault("adapters.criteoretail.endpoint",  "https://d.us.criteo.com/delivery/adserving")
+	v.SetDefault("adapters.citrus.endpoint",  "https://baseurl.citrus.com/v1/ads/generate")
 	v.SetDefault("max_request_size", 1024*256)
 	v.SetDefault("analytics.file.filename", "")
 	v.SetDefault("analytics.pubstack.endpoint", "https://s2s.pbstck.com/v1")
@@ -1411,4 +1412,5 @@ func isValidCookieSize(maxCookieSize int) error {
 	}
 	return nil
 }
+
 
