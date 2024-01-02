@@ -51,6 +51,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/bmtm"
 	"github.com/prebid/prebid-server/adapters/boldwin"
 	"github.com/prebid/prebid-server/adapters/brightroll"
+	"github.com/prebid/prebid-server/adapters/citrus"
 	"github.com/prebid/prebid-server/adapters/coinzilla"
 	"github.com/prebid/prebid-server/adapters/colossus"
 	"github.com/prebid/prebid-server/adapters/compass"
@@ -325,7 +326,9 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderKoddi:             koddi.Builder,
 		openrtb_ext.BidderAdButtler:         adbuttler.Builder,
 		openrtb_ext.BidderCriteoRetail:      criteoretail.Builder,
+		openrtb_ext.BidderCitrus:            citrus.Builder,
 
 	}
 }
+
 

@@ -1,11 +1,5 @@
 package openrtb_ext
 
-// ExtImpFilteringSubCategory - Impression Filtering SubCategory Extension
-type ExtImpFilteringSubCategory struct {
-	Name  string   `json:"name,omitempty"`
-	Value []string `json:"value,omitempty"`
-}
-
 // ExtImpPreferred - Impression Preferred Extension
 type ExtImpPreferred struct {
 	ProductID string  `json:"pid,omitempty"`
@@ -14,9 +8,8 @@ type ExtImpPreferred struct {
 
 // ExtImpFiltering - Impression Filtering Extension
 type ExtImpFiltering struct {
-	Category    []string                      `json:"category,omitempty"`
-	Brand       []string                      `json:"brand,omitempty"`
-	SubCategory []*ExtImpFilteringSubCategory `json:"subcategory,omitempty"`
+	Name  string   `json:"name,omitempty"`
+	Value []string `json:"value,omitempty"`
 }
 
 // ExtImpTargeting - Impression Targeting Extension
@@ -38,7 +31,7 @@ type CommerceParams struct {
 	SearchTerm     string             `json:"search_term,omitempty"`
 	SearchType     string             `json:"search_type,omitempty"`
 	Preferred      []*ExtImpPreferred `json:"preferred,omitempty"`
-	Filtering      *ExtImpFiltering   `json:"filtering,omitempty"`
+	Filtering      []*ExtImpFiltering   `json:"filtering,omitempty"`
 	Targeting      []*ExtImpTargeting `json:"targeting,omitempty"`
 }
 
@@ -77,5 +70,4 @@ type ExtBidCommerce struct {
 	Rate             float64              `json:"rate,omitempty"`
 	ProductDetails   map[string]interface{}  `json:"productdetails,omitempty"`
 }
-
 

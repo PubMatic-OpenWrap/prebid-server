@@ -21,8 +21,8 @@ const (
 	REGION                        = "target_region"
 	CITY                          = "target_city"
 	DEVICE                        = "target_device"
-	DEFAULT_CATEGORY              = "Category"
-	DEFAULT_BRAND                 = "Brand Name"
+	//DEFAULT_CATEGORY              = "Category"
+	//DEFAULT_BRAND                 = "Brand Name"
 	DEFAULT_PRODUCTID             = "Product Id"
 	RESPONSE_SUCCESS              = "success"
 	RESPONSE_NOADS                = "NO_ADS"
@@ -37,8 +37,8 @@ const (
 	CONV_ADBUID                   = "conv_adbUID"
 	CONV_IDENTIFIER               = "conv_Identifier"
 	CONVERSION_URL                = `tps_ID=conv_adbutlerID&tps_setID=conv_zoneID&tps_adb_uid=conv_adbUID&tps_identifier=conv_Identifier`
-	PD_TEMPLATE_BRAND             = "brandName"
-	PD_TEMPLATE_CATEGORY          = "categories"
+	//PD_TEMPLATE_BRAND             = "brandName"
+	//PD_TEMPLATE_CATEGORY          = "categories"
 	PD_TEMPLATE_PRODUCTID         = "productId"
 	DATATYE_NUMBER                = 1
 	DATATYE_STRING                = 2
@@ -47,5 +47,4 @@ const (
 	DATATYE_TIME                  = 5
 	DATATYE_DATETIME              = 6
 )
-
 
