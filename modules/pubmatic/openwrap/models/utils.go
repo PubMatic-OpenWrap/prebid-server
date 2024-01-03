@@ -297,9 +297,10 @@ func GetSizeForPlatform(width, height int64, platform string) string {
 	return s
 }
 
-func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
+func GetKGPSV(bid openrtb2.Bid, bidExt *BidExt, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
 	kgpv := bidderMeta.KGPV
 	kgpsv := bidderMeta.MatchedSlot
+	kgp := bidderMeta.KGP
 	isRegex := bidderMeta.IsRegex
 	// 1. nobid
 	if IsDefaultBid(&bid) {
@@ -309,6 +310,8 @@ func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId s
 		} else if !isRegex {
 			kgpv = kgpsv
 		}
+	} else if kgp == ADUNIT_SOURCE_VASTTAG_KGP {
+		kgpv, kgpsv = getVASTBidderKGPVFromBidResponse(kgpv, bidExt)
 	} else if !isRegex {
 		if kgpv != "" { // unmapped pubmatic's slot
 			kgpsv = kgpv
@@ -441,4 +444,14 @@ func GetFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (floorDetails Floo
 		}
 	}
 	return floorDetails
+}
+
+func getVASTBidderKGPVFromBidResponse(slotKey string, bidExt *BidExt) (string, string) {
+	if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && len(bidExt.Prebid.Video.VASTTagID) > 0 {
+		tagID := bidExt.Prebid.Video.VASTTagID
+		if index := strings.LastIndex(tagID, "@"); index > 0 {
+			return tagID, tagID[:index+1]
+		}
+	}
+	return slotKey, slotKey
 }

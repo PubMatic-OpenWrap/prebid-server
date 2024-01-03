@@ -83,11 +83,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 	// parent bidder could in one of the above and we need them by prebid's bidderCode and not seat(could be alias)
 	slots := make([]SlotRecord, 0)
-	for _, imp := range ao.RequestWrapper.Imp {
-		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
-		if !ok {
-			continue
-		}
+	for impId, impCtx := range rCtx.ImpBidCtx {
 		reward := 0
 		if impCtx.IsRewardInventory != nil {
 			reward = int(*impCtx.IsRewardInventory)
@@ -95,8 +91,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 		// to keep existing response intact
 		partnerData := make([]PartnerRecord, 0)
-		if ipr[imp.ID] != nil {
-			partnerData = ipr[imp.ID]
+		if ipr[impId] != nil {
+			partnerData = ipr[impId]
 		}
 
 		slots = append(slots, SlotRecord{
@@ -372,7 +368,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			kgpv = tracker.Tracker.PartnerInfo.KGPV
 			kgpsv = tracker.Tracker.LoggerData.KGPSV
 			if kgpv == "" || kgpsv == "" {
-				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
+				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, &bidExt, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
 			}
 
 			price := bid.Price
@@ -486,9 +482,13 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			// Adpod parameters
 			if impCtx.AdpodConfig != nil {
 				pr.AdPodSequenceNumber = &sequence
+
 				if len(bid.Cat) > 0 {
 					pr.Cat = append(pr.Cat, bid.Cat...)
 				}
+
+				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
+				pr.NoBidReason = &aprc
 			}
 
 			ipr[impId] = append(ipr[impId], pr)

@@ -132,7 +132,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					partnerID = bidderMeta.PrebidBidderCode
 					kgp = bidderMeta.KGP
-					kgpv, kgpsv = models.GetKGPSV(bid, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
+					kgpv, kgpsv = models.GetKGPSV(bid, &bidCtx.BidExt, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
 				}
 				// --------------------------------------------------------------------------------------------------
 

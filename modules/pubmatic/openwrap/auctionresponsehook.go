@@ -219,6 +219,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 				bidExt.Nbr = owbid.Nbr
 			}
 
+			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
+				bidExt.Nbr = auction.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
+			}
+
 			if !rctx.IsCTVRequest {
 				// if current bid is winner then update NonBr code for earlier winning bid
 				if winningBids.IsWinningBid(impId, owbid.ID) && oldWinBidFound {
