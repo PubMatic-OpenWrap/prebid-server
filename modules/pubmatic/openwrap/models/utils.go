@@ -305,7 +305,9 @@ func GetKGPSV(bid openrtb2.Bid, bidExt *BidExt, bidderMeta PartnerData, adformat
 	// 1. nobid
 	if IsDefaultBid(&bid) {
 		//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
-		if !isRegex && kgpv != "" { // unmapped pubmatic's slot
+		if kgp == ADUNIT_SOURCE_VASTTAG_KGP {
+			kgpv, kgpsv = getVASTBidderKGPVFromBidResponse(kgpv, bidExt)
+		} else if !isRegex && kgpv != "" { // unmapped pubmatic's slot
 			kgpsv = kgpv
 		} else if !isRegex {
 			kgpv = kgpsv

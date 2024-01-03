@@ -40,11 +40,15 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	// bids per bidders per impression that did not respond
 	defaultBids := make(map[string]map[string][]openrtb2.Bid, 0)
 	for impID, impCtx := range rctx.ImpBidCtx {
-		for bidder := range impCtx.Bidders {
+		for bidder, meta := range impCtx.Bidders {
 			if bidders, ok := seatBids[impID]; ok { // bid found for impID
 				if _, ok := bidders[bidder]; ok { // bid found for seat
 					continue
 				}
+			}
+
+			if meta.PrebidBidderCode == models.BidderVASTBidder {
+				continue
 			}
 
 			if defaultBids[impID] == nil {
@@ -70,6 +74,56 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 
 			// record error stats for each bidder
 			m.recordErrorStats(*rctx, bidResponseExt, bidder)
+		}
+	}
+
+	// VastTags for a VastBidder that did not respond
+	for impID, impCtx := range rctx.ImpBidCtx {
+		for bidder, meta := range impCtx.Bidders {
+			if meta.PrebidBidderCode != models.BidderVASTBidder {
+				continue
+			}
+
+			var noBidVastTags []string
+			for tag, status := range meta.VASTTagFlags {
+				if !status {
+					noBidVastTags = append(noBidVastTags, tag)
+				}
+			}
+
+			if len(noBidVastTags) == 0 {
+				continue
+			}
+
+			if defaultBids[impID] == nil {
+				defaultBids[impID] = make(map[string][]openrtb2.Bid)
+			}
+
+			for i := range noBidVastTags {
+				uuid := uuid.NewV4().String()
+				bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
+				bidExtJson, _ := json.Marshal(bidExt)
+
+				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
+					ID:    uuid,
+					ImpID: impID,
+					Ext:   bidExtJson,
+				})
+
+				// create bidCtx because we need it for owlogger
+				rctx.ImpBidCtx[impID].BidCtx[uuid] = models.BidCtx{
+					BidExt: models.BidExt{
+						Nbr: bidExt.Nbr,
+						ExtBid: openrtb_ext.ExtBid{
+							Prebid: &openrtb_ext.ExtBidPrebid{
+								Video: &openrtb_ext.ExtBidPrebidVideo{
+									VASTTagID: noBidVastTags[i],
+								},
+							},
+						},
+					},
+				}
+			}
 		}
 	}
 
@@ -136,7 +190,6 @@ func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBid
 }
 
 func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
-
 	bidExt := models.BidExt{
 		NetECPM: 0,
 		Nbr:     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
@@ -163,6 +216,38 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 	}
 	return &bidExt
 }
+
+// TODO : Check if we need this?
+// func newDefaultVastTagBidExt(rctx models.RequestCtx, impID, bidder, vastTag string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
+// 	bidExt := models.BidExt{
+// 		ExtBid: openrtb_ext.ExtBid{
+// 			Prebid: &openrtb_ext.ExtBidPrebid{
+// 				Video: &openrtb_ext.ExtBidPrebidVideo{
+// 					VASTTagID: vastTag,
+// 				},
+// 			},
+// 		},
+// 		NetECPM: 0,
+// 		Nbr:     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
+// 	}
+
+// 	if rctx.ClientConfigFlag == 1 {
+// 		if cc := adunitconfig.GetClientConfigForMediaType(rctx, impID, "video"); cc != nil {
+// 			bidExt.Video = &models.ExtBidVideo{
+// 				ClientConfig: cc,
+// 			}
+// 		}
+// 	}
+
+// 	if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
+// 		n, err := strconv.Atoi(v)
+// 		if err == nil {
+// 			bidExt.RefreshInterval = n
+// 		}
+// 	}
+
+// 	return &bidExt
+// }
 
 func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
 	// update nobids in final response

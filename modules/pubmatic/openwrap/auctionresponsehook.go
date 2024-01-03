@@ -100,7 +100,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			partnerID := 0
-			if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
+			bidderMeta, ok := impCtx.Bidders[seatBid.Seat]
+			if ok {
 				partnerID = bidderMeta.PartnerID
 			}
 
@@ -119,6 +120,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
 				bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
 				bidExt.Prebid.Video = nil
+			}
+
+			// Update VastTagFlags for the bids
+			if len(bidderMeta.VASTTagFlags) > 0 {
+				if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && len(bidExt.Prebid.Video.VASTTagID) > 0 {
+					bidderMeta.VASTTagFlags[bidExt.Prebid.Video.VASTTagID] = true
+					impCtx.Bidders[seatBid.Seat] = bidderMeta
+				}
 			}
 
 			if v, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID]["refreshInterval"]; ok {
@@ -221,9 +230,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
 				bidExt.Nbr = auction.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
-			}
-
-			if !rctx.IsCTVRequest {
+			} else {
 				// if current bid is winner then update NonBr code for earlier winning bid
 				if winningBids.IsWinningBid(impId, owbid.ID) && oldWinBidFound {
 					winBidCtx := rctx.ImpBidCtx[impId].BidCtx[wbid.ID]
