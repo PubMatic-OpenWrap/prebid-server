@@ -27,7 +27,7 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	if !ok {
 		return filteredBidders, false
 	}
-	data := generateEvaluationData(bidRequest, rCtx)
+	data := generateEvaluationData(rCtx, bidRequest)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
@@ -49,7 +49,7 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	return filteredBidders, allPartnersFilteredFlag
 }
 
-func generateEvaluationData(BidRequest *openrtb2.BidRequest, rCtx models.RequestCtx) map[string]interface{} {
+func generateEvaluationData(rCtx models.RequestCtx, BidRequest *openrtb2.BidRequest) map[string]interface{} {
 	data := map[string]interface{}{}
 	data[keycountry] = getCountryFromRequest(rCtx, BidRequest)
 	return data
@@ -63,21 +63,21 @@ func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidReque
 		return bidRequest.User.Geo.Country
 	}
 
-	ip := ""
-	if rCtx.IP != "" {
-		ip = rCtx.IP
-	}
-	if ip == "" && bidRequest.Device != nil && bidRequest.Device.IP != "" {
+	ip := rCtx.IP
+	if ip == "" && bidRequest.Device != nil {
 		ip = bidRequest.Device.IP
-	}
-	if ip == "" && bidRequest.Device != nil && bidRequest.Device.IPv6 != "" {
-		ip = bidRequest.Device.IPv6
+		if ip == "" {
+			ip = bidRequest.Device.IPv6
+		}
 	}
 
 	if ip != "" {
-		if country, err := getCountryFromIP(ip, rCtx.GeoLooker); err == nil {
-			return country
+		country, err := getCountryFromIP(ip, rCtx.GeoInfoFetcher)
+		if err != nil {
+			glog.Errorf("Error while fetching country from IP [%s] | Error[%s]", ip, err)
+			return ""
 		}
+		return country
 	}
 	return ""
 }
@@ -91,12 +91,11 @@ func evaluateBiddingCondition(data, rules interface{}) bool {
 	return output == true
 }
 
-func getCountryFromIP(ip string, geoLooker geodb.Geography) (string, error) {
-
-	if geoLooker == nil {
+func getCountryFromIP(ip string, geoInfoFetcher geodb.Geography) (string, error) {
+	if geoInfoFetcher == nil {
 		return "", errors.New("geoDB instance is missing")
 	}
-	geoData, err := geoLooker.LookUp(ip)
+	geoData, err := geoInfoFetcher.LookUp(ip)
 	if err != nil {
 		return "", err
 	}

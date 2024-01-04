@@ -35,7 +35,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
-	geoDBLookuper      geodb.Geography
+	geoInfoFetcher     geodb.Geography
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -71,7 +71,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
-	//nt :=
+
 	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
@@ -83,7 +83,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		cache:              owCache,
 		metricEngine:       &metricEngine,
 		currencyConversion: moduleDeps.CurrencyConversion,
-		geoDBLookuper:      netacuity.NetAcuity{},
+		geoInfoFetcher:     netacuity.NetAcuity{},
 	}, nil
 }
 

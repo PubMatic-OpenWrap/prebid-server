@@ -148,7 +148,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
-		GeoLooker: m.geoDBLookuper,
+		GeoInfoFetcher: m.geoInfoFetcher,
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

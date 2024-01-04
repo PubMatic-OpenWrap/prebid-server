@@ -99,7 +99,7 @@ type RequestCtx struct {
 	CurrencyConversion func(from string, to string, value float64) (float64, error) `json:"-"`
 	MatchedImpression  map[string]int
 	CustomDimensions   map[string]CustomDimension
-	GeoLooker          geodb.Geography
+	GeoInfoFetcher     geodb.Geography
 }
 
 type OwBid struct {

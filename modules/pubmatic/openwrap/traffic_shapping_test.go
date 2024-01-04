@@ -481,8 +481,8 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "detecting_country_from_request_ip",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP:        "101.143.255.255",
-					GeoLooker: mockGeoDb,
+					IP:             "101.143.255.255",
+					GeoInfoFetcher: mockGeoDb,
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
@@ -497,7 +497,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "detecting_country_from_device_ip",
 			args: args{
 				rCtx: models.RequestCtx{
-					GeoLooker: mockGeoDb,
+					GeoInfoFetcher: mockGeoDb,
 				},
 				bidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{IP: "100.43.128.0"},
@@ -514,7 +514,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "detecting_country_from_device_ipv6",
 			args: args{
 				rCtx: models.RequestCtx{
-					GeoLooker: mockGeoDb,
+					GeoInfoFetcher: mockGeoDb,
 				},
 				bidRequest: &openrtb2.BidRequest{
 					Device: &openrtb2.Device{IPv6: "1.179.71.255"},
@@ -531,8 +531,8 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "both_ip_and_country_are_missing_in_request",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP:        "",
-					GeoLooker: mockGeoDb,
+					IP:             "",
+					GeoInfoFetcher: mockGeoDb,
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
@@ -559,8 +559,8 @@ func TestGetCountryFromIP(t *testing.T) {
 	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
 
 	type args struct {
-		ip        string
-		geoLooker geodb.Geography
+		ip             string
+		geoInfoFetcher geodb.Geography
 	}
 	tests := []struct {
 		name  string
@@ -572,8 +572,8 @@ func TestGetCountryFromIP(t *testing.T) {
 		{
 			name: "valid_ip",
 			args: args{
-				ip:        "1.179.71.255",
-				geoLooker: mockGeoDb,
+				ip:             "1.179.71.255",
+				geoInfoFetcher: mockGeoDb,
 			},
 			setup: func() {
 				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
@@ -586,18 +586,32 @@ func TestGetCountryFromIP(t *testing.T) {
 		{
 			name: "geoDB_instance_missing",
 			args: args{
-				ip:        "1.179.71.255",
-				geoLooker: nil,
+				ip:             "1.179.71.255",
+				geoInfoFetcher: nil,
 			},
 			setup: func() {},
 			want:  "",
 			err:   errors.New("geoDB instance is missing"),
 		},
+		{
+			name: "invalid_ip",
+			args: args{
+				ip:             "1.179.71.255.123",
+				geoInfoFetcher: mockGeoDb,
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("1.179.71.255.123").Return(&geodb.GeoInfo{
+					CountryCode: "", ISOCountryCode: "", RegionCode: "", City: "", PostalCode: "", DmaCode: 0, Latitude: 0, Longitude: 0, AreaCode: "", AlphaThreeCountryCode: "",
+				}, nil)
+			},
+			want: "",
+			err:  nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			got, err := getCountryFromIP(tt.args.ip, tt.args.geoLooker)
+			got, err := getCountryFromIP(tt.args.ip, tt.args.geoInfoFetcher)
 			assert.Equal(t, got, tt.want)
 			assert.Equal(t, err, tt.err)
 
