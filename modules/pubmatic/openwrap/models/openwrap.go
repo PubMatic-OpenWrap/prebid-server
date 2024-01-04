@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -98,6 +99,7 @@ type RequestCtx struct {
 	CurrencyConversion func(from string, to string, value float64) (float64, error) `json:"-"`
 	MatchedImpression  map[string]int
 	CustomDimensions   map[string]CustomDimension
+	GeoLooker          geodb.Geography
 }
 
 type OwBid struct {

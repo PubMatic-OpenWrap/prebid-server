@@ -18,6 +18,8 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb/netacuity"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -33,6 +35,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
+	geoDBLookuper      geodb.Geography
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -68,7 +71,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
-
+	//nt :=
 	// Init FSC and related services
 	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
@@ -80,6 +83,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		cache:              owCache,
 		metricEngine:       &metricEngine,
 		currencyConversion: moduleDeps.CurrencyConversion,
+		geoDBLookuper:      netacuity.NetAcuity{},
 	}, nil
 }
 

@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -8,6 +9,8 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
+	mock_geodb "github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -426,6 +429,178 @@ func TestGetFilteredBidders(t *testing.T) {
 			result, flag := getFilteredBidders(tc.requestCtx, tc.bidRequest, mockCache)
 			assert.Equal(t, tc.expectedResult, result)
 			assert.Equal(t, tc.expectedFlag, flag)
+		})
+	}
+}
+
+func TestGetCountryFromRequest(t *testing.T) {
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
+
+	type args struct {
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
+	}
+	tests := []struct {
+		name  string
+		args  args
+		setup func()
+		want  string
+	}{
+		{
+			name: "country_present_in_device_object",
+			args: args{
+				rCtx: models.RequestCtx{},
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Geo: &openrtb2.Geo{Country: "IND"},
+					},
+				},
+			},
+			setup: func() {},
+			want:  "IND",
+		},
+		{
+			name: "contry_present_in_user_object",
+			args: args{
+				rCtx: models.RequestCtx{},
+				bidRequest: &openrtb2.BidRequest{
+					User: &openrtb2.User{
+						Geo: &openrtb2.Geo{
+							Country: "JPN",
+						},
+					},
+				},
+			},
+			setup: func() {},
+			want:  "JPN",
+		},
+		{
+			name: "detecting_country_from_request_ip",
+			args: args{
+				rCtx: models.RequestCtx{
+					IP:        "101.143.255.255",
+					GeoLooker: mockGeoDb,
+				},
+				bidRequest: &openrtb2.BidRequest{},
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("101.143.255.255").Return(&geodb.GeoInfo{
+					CountryCode: "jp", ISOCountryCode: "JP", RegionCode: "13", City: "tokyo", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "JPN",
+				}, nil)
+			},
+			want: "JPN",
+		},
+		{
+			name: "detecting_country_from_device_ip",
+			args: args{
+				rCtx: models.RequestCtx{
+					GeoLooker: mockGeoDb,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{IP: "100.43.128.0"},
+				},
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("100.43.128.0").Return(&geodb.GeoInfo{
+					CountryCode: "us", ISOCountryCode: "US", RegionCode: "13", City: "abc", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "USA",
+				}, nil)
+			},
+			want: "USA",
+		},
+		{
+			name: "detecting_country_from_device_ipv6",
+			args: args{
+				rCtx: models.RequestCtx{
+					GeoLooker: mockGeoDb,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{IPv6: "1.179.71.255"},
+				},
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
+					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
+				}, nil)
+			},
+			want: "AUS",
+		},
+		{
+			name: "both_ip_and_country_are_missing_in_request",
+			args: args{
+				rCtx: models.RequestCtx{
+					IP:        "",
+					GeoLooker: mockGeoDb,
+				},
+				bidRequest: &openrtb2.BidRequest{},
+			},
+			setup: func() {
+
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup()
+			got := getCountryFromRequest(tt.args.rCtx, tt.args.bidRequest)
+			assert.Equal(t, got, tt.want)
+
+		})
+	}
+}
+
+func TestGetCountryFromIP(t *testing.T) {
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
+
+	type args struct {
+		ip        string
+		geoLooker geodb.Geography
+	}
+	tests := []struct {
+		name  string
+		args  args
+		setup func()
+		want  string
+		err   error
+	}{
+		{
+			name: "valid_ip",
+			args: args{
+				ip:        "1.179.71.255",
+				geoLooker: mockGeoDb,
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
+					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
+				}, nil)
+			},
+			want: "AUS",
+			err:  nil,
+		},
+		{
+			name: "geoDB_instance_missing",
+			args: args{
+				ip:        "1.179.71.255",
+				geoLooker: nil,
+			},
+			setup: func() {},
+			want:  "",
+			err:   errors.New("geoDB instance is missing"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup()
+			got, err := getCountryFromIP(tt.args.ip, tt.args.geoLooker)
+			assert.Equal(t, got, tt.want)
+			assert.Equal(t, err, tt.err)
+
 		})
 	}
 }

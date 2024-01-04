@@ -1,13 +1,14 @@
 package openwrap
 
 import (
+	"errors"
 	"fmt"
 
-	"git.pubmatic.com/PubMatic/go-netacuity-client"
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -50,31 +51,34 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 
 func generateEvaluationData(BidRequest *openrtb2.BidRequest, rCtx models.RequestCtx) map[string]interface{} {
 	data := map[string]interface{}{}
-	data[keycountry] = getCountryFromRequest(BidRequest, rCtx)
+	data[keycountry] = getCountryFromRequest(rCtx, BidRequest)
 	return data
 }
 
-func getCountryFromRequest(bidRequest *openrtb2.BidRequest, rCtx models.RequestCtx) string {
+func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
 	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
 		return bidRequest.Device.Geo.Country
 	}
-
 	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
 		return bidRequest.User.Geo.Country
 	}
 
+	ip := ""
 	if rCtx.IP != "" {
-		if country, err := getCountryFromIP(rCtx.IP); err != nil {
+		ip = rCtx.IP
+	}
+	if ip == "" && bidRequest.Device != nil && bidRequest.Device.IP != "" {
+		ip = bidRequest.Device.IP
+	}
+	if ip == "" && bidRequest.Device != nil && bidRequest.Device.IPv6 != "" {
+		ip = bidRequest.Device.IPv6
+	}
+
+	if ip != "" {
+		if country, err := getCountryFromIP(ip, rCtx.GeoLooker); err == nil {
 			return country
 		}
 	}
-
-	if bidRequest.Device.IP != "" {
-		if country, err := getCountryFromIP(bidRequest.Device.IP); err != nil {
-			return country
-		}
-	}
-
 	return ""
 }
 
@@ -87,10 +91,14 @@ func evaluateBiddingCondition(data, rules interface{}) bool {
 	return output == true
 }
 
-func getCountryFromIP(ip string) (string, error) {
-	geoData, err := netacuity.LookUp(ip)
+func getCountryFromIP(ip string, geoLooker geodb.Geography) (string, error) {
+
+	if geoLooker == nil {
+		return "", errors.New("geoDB instance is missing")
+	}
+	geoData, err := geoLooker.LookUp(ip)
 	if err != nil {
 		return "", err
 	}
-	return geoData.CountryCode, nil
+	return geoData.AlphaThreeCountryCode, nil
 }
