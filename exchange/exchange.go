@@ -235,8 +235,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	if r == nil {
 		return nil, nil
 	}
+	// reqExt, _ := r.BidRequestWrapper.GetRequestExt()
 
 	var floorErrs []error
+
 	err := r.HookExecutor.ExecuteProcessedAuctionStage(r.BidRequestWrapper)
 	if err != nil {
 		return nil, err
@@ -349,6 +351,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	// If we need to cache bids, then it will take some time to call prebid cache.
 	// We should reduce the amount of time the bidders have, to compensate.
 	auctionCtx, cancel := e.makeAuctionContext(ctx, cacheInstructions.cacheBids)
+	auctionCtx = context.Background()
 	defer cancel()
 
 	var (

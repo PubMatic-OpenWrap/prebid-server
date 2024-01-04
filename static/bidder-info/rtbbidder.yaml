@@ -1,0 +1,10 @@
+endpoint: "http://example.com"
+maintainer:
+  email: "UOEDev@pubmatic.com"
+capabilities:
+  app:
+    mediaTypes:
+      - banner
+  site:
+    mediaTypes:
+      - banner

@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -1683,6 +1684,9 @@ func TestReadFullYamlBidderConfig(t *testing.T) {
 	bidderInf := BidderInfo{}
 	err := yaml.Unmarshal([]byte(fullBidderYAMLConfig), &bidderInf)
 	actualBidderInfo, err := applyBidderInfoConfigOverrides(BidderInfos{bidder: bidderInf}, BidderInfos{bidder: {Syncer: &Syncer{Supports: []string{"iframe"}}}}, mockNormalizeBidderName)
+
+	infoS, err := yaml.Marshal(bidderInf)
+	fmt.Println(string(infoS))
 
 	assert.NoError(t, err, "Error wasn't expected")
 

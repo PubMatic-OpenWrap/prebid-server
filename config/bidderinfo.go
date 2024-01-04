@@ -255,9 +255,9 @@ func processBidderInfos(reader InfoReader, normalizeBidderName func(string) (ope
 				}
 
 				//required for CoreBidderNames function to also return aliasBiddernames
-				if err := openrtb_ext.SetAliasBidderName(bidderName[0], openrtb_ext.BidderName(info.AliasOf)); err != nil {
-					return nil, err
-				}
+				// if err := openrtb_ext.SetAliasBidderName(bidderName[0], openrtb_ext.BidderName(info.AliasOf)); err != nil {
+				// 	return nil, err
+				// }
 
 				normalizedBidderName, bidderNameExists := normalizeBidderName(bidderName[0])
 				if !bidderNameExists {
@@ -393,7 +393,7 @@ var testEndpointTemplateParams = macros.EndpointTemplateParams{
 	ZoneID:      "anyZoneID",
 	SourceId:    "anySourceID",
 	AdUnit:      "anyAdUnit",
-	MediaType:   "MediaType",
+	// MediaType:   "MediaType",
 }
 
 // validateAdapterEndpoint makes sure that an adapter has a valid endpoint

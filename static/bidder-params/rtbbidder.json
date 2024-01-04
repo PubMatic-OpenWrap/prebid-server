@@ -1,0 +1,14 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "RTB Bidder Base Adapter",
+    "description": "A schema which validates params accepted by the RTB bidders",
+    "type": "object",
+    "properties": {
+        "placementId": {
+            "type": "string",
+            "description": "Placement ID"
+          }
+    },
+    "required1": ["placementId"]
+
+}

@@ -143,6 +143,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/rhythmone"
 	"github.com/prebid/prebid-server/adapters/richaudience"
 	"github.com/prebid/prebid-server/adapters/rise"
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
 	"github.com/prebid/prebid-server/adapters/rtbhouse"
 	"github.com/prebid/prebid-server/adapters/rubicon"
 	salunamedia "github.com/prebid/prebid-server/adapters/sa_lunamedia"
@@ -408,5 +409,6 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderYieldone:          yieldone.Builder,
 		openrtb_ext.BidderZeroClickFraud:    zeroclickfraud.Builder,
 		openrtb_ext.BidderZetaGlobalSsp:     zeta_global_ssp.Builder,
+		openrtb_ext.BidderRTBBidder:         rtbbidder.Builder,
 	}
 }
