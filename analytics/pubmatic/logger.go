@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/analytics"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -123,9 +124,10 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.logFloorType(&rCtx.NewReqExt.Prebid)
 	}
 
-	// set the floor details from tracker
-	floorDetailsSet := false
+	// set the floor details and cds from tracker
+	cdsAndfloorDetailsSet := false
 	for _, tracker := range rCtx.Trackers {
+		wlog.CustomDimensions = tracker.Tracker.CustomDimensions
 		wlog.FloorType = tracker.Tracker.FloorType
 		wlog.FloorModelVersion = tracker.Tracker.FloorModelVersion
 		wlog.FloorSource = tracker.Tracker.FloorSource
@@ -134,13 +136,14 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		for i := range wlog.Slots {
 			wlog.Slots[i].FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
 		}
-		floorDetailsSet = true
-		break // For all trackers, floor-details are common so break the loop
+		cdsAndfloorDetailsSet = true
+		break // For all trackers, floor-details and cds are common so break the loop
 	}
 
 	// if floor details not present in tracker then use response.ext
 	// this wil happen only if no valid bid is present in response.seatbid
-	if !floorDetailsSet {
+	if !cdsAndfloorDetailsSet {
+		wlog.CustomDimensions = customdimensions.ConvertCustomDimensionsToString(rCtx.CustomDimensions)
 		if rCtx.ResponseExt.Prebid != nil {
 			// wlog.SetFloorDetails(rCtx.ResponseExt.Prebid.Floors)
 			floorDetails := models.GetFloorsDetails(rCtx.ResponseExt)
