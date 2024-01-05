@@ -47,7 +47,7 @@ require (
 )
 
 require (
-	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20231217064436-a2dc927dc6bc
+	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang/mock v1.6.0
@@ -55,13 +55,14 @@ require (
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
 
+require github.com/yudai/pp v2.0.1+incompatible // indirect
+
 require (
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/diegoholiveira/jsonlogic v2.3.1+incompatible
-	github.com/diegoholiveira/jsonlogic/v3 v3.4.0 // indirect
+	github.com/diegoholiveira/jsonlogic/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

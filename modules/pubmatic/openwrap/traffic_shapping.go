@@ -1,12 +1,14 @@
 package openwrap
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -25,7 +27,7 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	if !ok {
 		return filteredBidders, false
 	}
-	data := generateEvaluationData(bidRequest)
+	data := generateEvaluationData(rCtx, bidRequest)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
@@ -47,22 +49,41 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	return filteredBidders, allPartnersFilteredFlag
 }
 
-func generateEvaluationData(BidRequest *openrtb2.BidRequest) map[string]interface{} {
+func generateEvaluationData(rCtx models.RequestCtx, BidRequest *openrtb2.BidRequest) map[string]interface{} {
 	data := map[string]interface{}{}
-	data[keycountry] = getCountryFromRequest(BidRequest)
+	data[keycountry] = getCountryFromRequest(rCtx, BidRequest)
 	return data
 }
 
-func getCountryFromRequest(bidRequest *openrtb2.BidRequest) string {
+func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
 	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
 		return bidRequest.Device.Geo.Country
 	}
-
 	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
 		return bidRequest.User.Geo.Country
 	}
 
-	// return country using  netacuity
+	ip := ""
+	if bidRequest.Device != nil {
+		if bidRequest.Device.IP != "" {
+			ip = bidRequest.Device.IP
+		} else {
+			ip = bidRequest.Device.IPv6
+		}
+	}
+
+	if ip == "" {
+		ip = rCtx.IP
+	}
+
+	if ip != "" {
+		country, err := getCountryFromIP(rCtx.GeoInfoFetcher, ip)
+		if err != nil {
+			glog.Errorf("type:[geo_fetch_failed] ip:[%v] error:[%v]", ip, err)
+			return ""
+		}
+		return country
+	}
 	return ""
 }
 
@@ -73,4 +94,15 @@ func evaluateBiddingCondition(data, rules interface{}) bool {
 		return false
 	}
 	return output == true
+}
+
+func getCountryFromIP(geoInfoFetcher geodb.Geography, ip string) (string, error) {
+	if geoInfoFetcher == nil {
+		return "", errors.New("geoDB instance is missing")
+	}
+	geoData, err := geoInfoFetcher.LookUp(ip)
+	if err != nil {
+		return "", err
+	}
+	return geoData.AlphaThreeCountryCode, nil
 }

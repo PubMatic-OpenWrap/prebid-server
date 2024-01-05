@@ -2,15 +2,16 @@
 package geodb
 
 type GeoInfo struct {
-	CountryCode    string
-	ISOCountryCode string
-	RegionCode     string
-	City           string
-	PostalCode     string
-	DmaCode        int
-	Latitude       float64
-	Longitude      float64
-	AreaCode       string
+	CountryCode           string
+	ISOCountryCode        string
+	RegionCode            string
+	City                  string
+	PostalCode            string
+	DmaCode               int
+	Latitude              float64
+	Longitude             float64
+	AreaCode              string
+	AlphaThreeCountryCode string
 }
 
 // Geography interface defines methods for initializing a GeoIP database client and performing
