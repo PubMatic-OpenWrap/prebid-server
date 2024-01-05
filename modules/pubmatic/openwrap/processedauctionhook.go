@@ -25,6 +25,18 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		return result, nil
 	}
 
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rctx.Sshb == "1" {
+		result.Reject = false
+		return result, nil
+	}
+
+	if rctx.Endpoint == models.EndpointHybrid {
+		//TODO: Add bidder params fix
+		result.Reject = false
+		return result, nil
+	}
+
 	ip := rctx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
