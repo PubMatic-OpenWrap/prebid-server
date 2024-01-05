@@ -478,20 +478,22 @@ func TestGetCountryFromRequest(t *testing.T) {
 			want:  "JPN",
 		},
 		{
-			name: "detecting_country_from_request_ip",
+			name: "contry_present_in_both_device_and_user_object",
 			args: args{
-				rCtx: models.RequestCtx{
-					IP:             "101.143.255.255",
-					GeoInfoFetcher: mockGeoDb,
+				rCtx: models.RequestCtx{},
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Geo: &openrtb2.Geo{Country: "IND"},
+					},
+					User: &openrtb2.User{
+						Geo: &openrtb2.Geo{
+							Country: "JPN",
+						},
+					},
 				},
-				bidRequest: &openrtb2.BidRequest{},
 			},
-			setup: func() {
-				mockGeoDb.EXPECT().LookUp("101.143.255.255").Return(&geodb.GeoInfo{
-					CountryCode: "jp", ISOCountryCode: "JP", RegionCode: "13", City: "tokyo", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "JPN",
-				}, nil)
-			},
-			want: "JPN",
+			setup: func() {},
+			want:  "IND",
 		},
 		{
 			name: "detecting_country_from_device_ip",
@@ -526,6 +528,22 @@ func TestGetCountryFromRequest(t *testing.T) {
 				}, nil)
 			},
 			want: "AUS",
+		},
+		{
+			name: "detecting_country_from_request_ip",
+			args: args{
+				rCtx: models.RequestCtx{
+					IP:             "101.143.255.255",
+					GeoInfoFetcher: mockGeoDb,
+				},
+				bidRequest: &openrtb2.BidRequest{},
+			},
+			setup: func() {
+				mockGeoDb.EXPECT().LookUp("101.143.255.255").Return(&geodb.GeoInfo{
+					CountryCode: "jp", ISOCountryCode: "JP", RegionCode: "13", City: "tokyo", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "JPN",
+				}, nil)
+			},
+			want: "JPN",
 		},
 		{
 			name: "both_ip_and_country_are_missing_in_request",
@@ -611,7 +629,7 @@ func TestGetCountryFromIP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			got, err := getCountryFromIP(tt.args.ip, tt.args.geoInfoFetcher)
+			got, err := getCountryFromIP(tt.args.geoInfoFetcher, tt.args.ip)
 			assert.Equal(t, got, tt.want)
 			assert.Equal(t, err, tt.err)
 

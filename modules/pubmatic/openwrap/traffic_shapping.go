@@ -63,18 +63,23 @@ func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidReque
 		return bidRequest.User.Geo.Country
 	}
 
-	ip := rCtx.IP
-	if ip == "" && bidRequest.Device != nil {
-		ip = bidRequest.Device.IP
-		if ip == "" {
+	ip := ""
+	if bidRequest.Device != nil {
+		if bidRequest.Device.IP != "" {
+			ip = bidRequest.Device.IP
+		} else {
 			ip = bidRequest.Device.IPv6
 		}
 	}
 
+	if ip == "" {
+		ip = rCtx.IP
+	}
+
 	if ip != "" {
-		country, err := getCountryFromIP(ip, rCtx.GeoInfoFetcher)
+		country, err := getCountryFromIP(rCtx.GeoInfoFetcher, ip)
 		if err != nil {
-			glog.Errorf("Error while fetching country from IP [%s] | Error[%s]", ip, err)
+			glog.Errorf("type:[geo_fetch_failed] ip:[%v] error:[%v]", ip, err)
 			return ""
 		}
 		return country
@@ -91,7 +96,7 @@ func evaluateBiddingCondition(data, rules interface{}) bool {
 	return output == true
 }
 
-func getCountryFromIP(ip string, geoInfoFetcher geodb.Geography) (string, error) {
+func getCountryFromIP(geoInfoFetcher geodb.Geography, ip string) (string, error) {
 	if geoInfoFetcher == nil {
 		return "", errors.New("geoDB instance is missing")
 	}
