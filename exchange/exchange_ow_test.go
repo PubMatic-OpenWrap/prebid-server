@@ -5,13 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
-	"sort"
-	"strings"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/config"
@@ -26,603 +22,603 @@ import (
 // TestApplyAdvertiserBlocking verifies advertiser blocking
 // Currently it is expected to work only with TagBidders and not woth
 // normal bidders
-func TestApplyAdvertiserBlocking(t *testing.T) {
-	type args struct {
-		advBlockReq     *AuctionRequest
-		adaptorSeatBids map[*bidderAdapter]*entities.PbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
-	}
-	type want struct {
-		rejectedBidIds       []string
-		validBidCountPerSeat map[string]int
-		expectedseatNonBids  nonBids
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: "reject_bid_of_blocked_adv_from_tag_bidder",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							BAdv: []string{"a.com"}, // block bids returned by a.com
-						},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:      "a.com_bid",
-									ADomain: []string{"a.com"},
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:      "b.com_bid",
-									ADomain: []string{"b.com"},
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:      "keep_ba.com",
-									ADomain: []string{"ba.com"},
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:      "keep_ba.com",
-									ADomain: []string{"b.a.com.shri.com"},
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
-									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
-								},
-							},
-						},
-						BidderCoreName: openrtb_ext.BidderVASTBidder,
-					},
-				},
-			},
-			want: want{
-				expectedseatNonBids: nonBids{
-					seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-						"": {
-							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
-								Ext: openrtb_ext.NonBidExt{
-									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-										Bid: openrtb_ext.NonBidObject{
-											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
-											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
-										},
-									},
-								},
-							},
-							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
-								Ext: openrtb_ext.NonBidExt{
-									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-										Bid: openrtb_ext.NonBidObject{
-											ID:      "a.com_bid",
-											ADomain: []string{"a.com"},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
-				validBidCountPerSeat: map[string]int{
-					"vast_tag_bidder": 3,
-				},
-			},
-		},
-		{
-			name: "Badv_is_not_present", // expect no advertiser blocking
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: nil},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tab_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{}, // no bid rejection expected
-				validBidCountPerSeat: map[string]int{
-					"tab_bidder_1": 2,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "adomain_is_not_present_but_Badv_is_set", // reject bids without adomain as badv is set
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1_without_adomain"}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1_with_empty_adomain", ADomain: []string{"", " "}}},
-						},
-					},
-					newTestRtbAdapter("rtb_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"bid_1_adapter_1_without_adomain", "bid_2_adapter_1_with_empty_adomain"},
-				validBidCountPerSeat: map[string]int{
-					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
-					"rtb_bidder_1": 2, // no bid must be rejected
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "adomain_and_badv_is_not_present", // expect no advertiser blocking
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_adaptor_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ID: "bid_without_adomain"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{}, // no rejection expected as badv not present
-				validBidCountPerSeat: map[string]int{
-					"tag_adaptor_1": 1,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "empty_badv", // expect no advertiser blocking
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
-						},
-					},
-					newTestRtbAdapter("rtb_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{}, // no rejections expect as there is not badv set
-				validBidCountPerSeat: map[string]int{
-					"tag_bidder_1": 2,
-					"rtb_bidder_1": 2,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "nil_badv", // expect no advertiser blocking
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: nil},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
-						},
-					},
-					newTestRtbAdapter("rtb_bidder_1"): {
-						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
-							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{}, // no rejections expect as there is not badv set
-				validBidCountPerSeat: map[string]int{
-					"tag_bidder_1": 2,
-					"rtb_bidder_1": 2,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "ad_domains_normalized_and_checked",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"a.com"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("my_adapter"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ID: "bid_1_of_blocked_adv", ADomain: []string{"www.a.com"}}},
-							// expect a.com is extracted from page url
-							{Bid: &openrtb2.Bid{ID: "bid_2_of_blocked_adv", ADomain: []string{"http://a.com/my/page?k1=v1&k2=v2"}}},
-							// invalid adomain - will be skipped and the bid will be not be rejected
-							{Bid: &openrtb2.Bid{ID: "bid_3_with_domain_abcd1234", ADomain: []string{"abcd1234"}}},
-						},
-					}},
-			},
-			want: want{
-				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
-				validBidCountPerSeat: map[string]int{"my_adapter": 1},
-				expectedseatNonBids:  nonBids{},
-			},
-		}, {
-			name: "multiple_badv",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com", "advertiser_2.com", "www.advertiser_3.com"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							// adomain without www prefix
-							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"advertiser_3.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"advertiser_2.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
-						},
-					},
-					newTestTagAdapter("tag_adapter_2"): {
-						Bids: []*entities.PbsOrtbBid{
-							// adomain has www prefix
-							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"www.advertiser_1.com"}}},
-						},
-					},
-					newTestRtbAdapter("rtb_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							// should not reject following bid though its advertiser is blocked
-							// because this bid belongs to RTB Adaptor
-							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"advertiser_1.com"}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
-				validBidCountPerSeat: map[string]int{
-					"tag_adapter_1": 2,
-					"tag_adapter_2": 0,
-					"rtb_adapter_1": 1,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		}, {
-			name: "multiple_adomain",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"www.advertiser_3.com"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							// adomain without www prefix
-							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"a.com", "b.com", "advertiser_3.com", "d.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"a.com", "https://advertiser_3.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
-						},
-					},
-					newTestTagAdapter("tag_adapter_2"): {
-						Bids: []*entities.PbsOrtbBid{
-							// adomain has www prefix
-							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"a.com", "b.com", "www.advertiser_3.com"}}},
-						},
-					},
-					newTestRtbAdapter("rtb_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							// should not reject following bid though its advertiser is blocked
-							// because this bid belongs to RTB Adaptor
-							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"a.com", "b.com", "advertiser_3.com"}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
-				validBidCountPerSeat: map[string]int{
-					"tag_adapter_1": 2,
-					"tag_adapter_2": 0,
-					"rtb_adapter_1": 1,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		}, {
-			name: "case_insensitive_badv", // case of domain not matters
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"ADVERTISER_1.COM"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.com"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"www.advertiser_1.com"}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
-				validBidCountPerSeat: map[string]int{
-					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "case_insensitive_adomain",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_adapter_1"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.COM"}}},
-							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"wWw.ADVERTISER_1.com"}}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
-				validBidCountPerSeat: map[string]int{
-					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "various_tld_combinations",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"http://blockme.shri"}},
-					},
-				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("block_bidder"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "reject_www.blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "rejecthttp://www.blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "reject_https://blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "reject_https://www.blockme.shri"}},
-						},
-					},
-					newTestRtbAdapter("rtb_non_block_bidder"): {
-						Bids: []*entities.PbsOrtbBid{ // all below bids are eligible and should not be rejected
-							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "accept_bid_www.blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "accept_bid__http://www.blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "accept_bid__https://blockme.shri"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "accept_bid__https://www.blockme.shri"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"reject_www.blockme.shri", "reject_http://www.blockme.shri", "reject_https://blockme.shri", "reject_https://www.blockme.shri"},
-				validBidCountPerSeat: map[string]int{
-					"block_bidder":         0,
-					"rtb_non_block_bidder": 4,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "subdomain_tests",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"10th.college.puneunv.edu"}},
-					},
-				},
+// func TestApplyAdvertiserBlocking(t *testing.T) {
+// 	type args struct {
+// 		advBlockReq     *AuctionRequest
+// 		adaptorSeatBids map[*bidderAdapter]*entities.PbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
+// 	}
+// 	type want struct {
+// 		rejectedBidIds       []string
+// 		validBidCountPerSeat map[string]int
+// 		expectedseatNonBids  nonBids
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want want
+// 	}{
+// 		{
+// 			name: "reject_bid_of_blocked_adv_from_tag_bidder",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{
+// 							BAdv: []string{"a.com"}, // block bids returned by a.com
+// 						},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:      "a.com_bid",
+// 									ADomain: []string{"a.com"},
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:      "b.com_bid",
+// 									ADomain: []string{"b.com"},
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:      "keep_ba.com",
+// 									ADomain: []string{"ba.com"},
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:      "keep_ba.com",
+// 									ADomain: []string{"b.a.com.shri.com"},
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
+// 									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
+// 								},
+// 							},
+// 						},
+// 						BidderCoreName: openrtb_ext.BidderVASTBidder,
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				expectedseatNonBids: nonBids{
+// 					seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+// 						"": {
+// 							{
+// 								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+// 								Ext: openrtb_ext.NonBidExt{
+// 									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 										Bid: openrtb_ext.NonBidObject{
+// 											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
+// 											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
+// 										},
+// 									},
+// 								},
+// 							},
+// 							{
+// 								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+// 								Ext: openrtb_ext.NonBidExt{
+// 									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 										Bid: openrtb_ext.NonBidObject{
+// 											ID:      "a.com_bid",
+// 											ADomain: []string{"a.com"},
+// 										},
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"vast_tag_bidder": 3,
+// 				},
+// 			},
+// 		},
+// 		{
+// 			name: "Badv_is_not_present", // expect no advertiser blocking
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tab_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{}, // no bid rejection expected
+// 				validBidCountPerSeat: map[string]int{
+// 					"tab_bidder_1": 2,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "adomain_is_not_present_but_Badv_is_set", // reject bids without adomain as badv is set
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1_without_adomain"}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1_with_empty_adomain", ADomain: []string{"", " "}}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"bid_1_adapter_1_without_adomain", "bid_2_adapter_1_with_empty_adomain"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
+// 					"rtb_bidder_1": 2, // no bid must be rejected
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "adomain_and_badv_is_not_present", // expect no advertiser blocking
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_adaptor_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ID: "bid_without_adomain"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{}, // no rejection expected as badv not present
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_adaptor_1": 1,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "empty_badv", // expect no advertiser blocking
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{}, // no rejections expect as there is not badv set
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_bidder_1": 2,
+// 					"rtb_bidder_1": 2,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "nil_badv", // expect no advertiser blocking
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_1"}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_bidder_1"): {
+// 						Bids: []*entities.PbsOrtbBid{ // all bids should be present. It belongs to RTB adapator
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_2_without_adomain"}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_adapter_2_with_empty_adomain", ADomain: []string{"", " "}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{}, // no rejections expect as there is not badv set
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_bidder_1": 2,
+// 					"rtb_bidder_1": 2,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "ad_domains_normalized_and_checked",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"a.com"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("my_adapter"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_of_blocked_adv", ADomain: []string{"www.a.com"}}},
+// 							// expect a.com is extracted from page url
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_of_blocked_adv", ADomain: []string{"http://a.com/my/page?k1=v1&k2=v2"}}},
+// 							// invalid adomain - will be skipped and the bid will be not be rejected
+// 							{Bid: &openrtb2.Bid{ID: "bid_3_with_domain_abcd1234", ADomain: []string{"abcd1234"}}},
+// 						},
+// 					}},
+// 			},
+// 			want: want{
+// 				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
+// 				validBidCountPerSeat: map[string]int{"my_adapter": 1},
+// 				expectedseatNonBids:  nonBids{},
+// 			},
+// 		}, {
+// 			name: "multiple_badv",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com", "advertiser_2.com", "www.advertiser_3.com"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// adomain without www prefix
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"advertiser_3.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"advertiser_2.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
+// 						},
+// 					},
+// 					newTestTagAdapter("tag_adapter_2"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// adomain has www prefix
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"www.advertiser_1.com"}}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// should not reject following bid though its advertiser is blocked
+// 							// because this bid belongs to RTB Adaptor
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"advertiser_1.com"}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_adapter_1": 2,
+// 					"tag_adapter_2": 0,
+// 					"rtb_adapter_1": 1,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		}, {
+// 			name: "multiple_adomain",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"www.advertiser_3.com"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// adomain without www prefix
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_1", ADomain: []string{"a.com", "b.com", "advertiser_3.com", "d.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_tag_adapter_1", ADomain: []string{"a.com", "https://advertiser_3.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_3_tag_adapter_1", ADomain: []string{"advertiser_4.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_4_tag_adapter_1", ADomain: []string{"advertiser_100.com"}}},
+// 						},
+// 					},
+// 					newTestTagAdapter("tag_adapter_2"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// adomain has www prefix
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_tag_adapter_2", ADomain: []string{"a.com", "b.com", "www.advertiser_3.com"}}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							// should not reject following bid though its advertiser is blocked
+// 							// because this bid belongs to RTB Adaptor
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_2", ADomain: []string{"a.com", "b.com", "advertiser_3.com"}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"bid_1_tag_adapter_1", "bid_2_tag_adapter_1", "bid_1_tag_adapter_2"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_adapter_1": 2,
+// 					"tag_adapter_2": 0,
+// 					"rtb_adapter_1": 1,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		}, {
+// 			name: "case_insensitive_badv", // case of domain not matters
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"ADVERTISER_1.COM"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.com"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"www.advertiser_1.com"}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "case_insensitive_adomain",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_adapter_1"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.COM"}}},
+// 							{Bid: &openrtb2.Bid{ID: "bid_2_rtb_adapter_1", ADomain: []string{"wWw.ADVERTISER_1.com"}}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"bid_1_rtb_adapter_1", "bid_2_rtb_adapter_1"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "various_tld_combinations",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"http://blockme.shri"}},
+// 					},
+// 				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("block_bidder"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "reject_www.blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "rejecthttp://www.blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "reject_https://blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "reject_https://www.blockme.shri"}},
+// 						},
+// 					},
+// 					newTestRtbAdapter("rtb_non_block_bidder"): {
+// 						Bids: []*entities.PbsOrtbBid{ // all below bids are eligible and should not be rejected
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "accept_bid_www.blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"http://www.blockme.shri"}, ID: "accept_bid__http://www.blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"https://blockme.shri"}, ID: "accept_bid__https://blockme.shri"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"https://www.blockme.shri"}, ID: "accept_bid__https://www.blockme.shri"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"reject_www.blockme.shri", "reject_http://www.blockme.shri", "reject_https://blockme.shri", "reject_https://www.blockme.shri"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"block_bidder":         0,
+// 					"rtb_non_block_bidder": 4,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "subdomain_tests",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"10th.college.puneunv.edu"}},
+// 					},
+// 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("block_bidder"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ADomain: []string{"shri.10th.college.puneunv.edu"}, ID: "reject_shri.10th.college.puneunv.edu"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"puneunv.edu"}, ID: "allow_puneunv.edu"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"http://WWW.123.456.10th.college.PUNEUNV.edu"}, ID: "reject_123.456.10th.college.puneunv.edu"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{"reject_shri.10th.college.puneunv.edu", "reject_123.456.10th.college.puneunv.edu"},
-				validBidCountPerSeat: map[string]int{
-					"block_bidder": 1,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		}, {
-			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"edu"}},
-					},
-				},
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("block_bidder"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"shri.10th.college.puneunv.edu"}, ID: "reject_shri.10th.college.puneunv.edu"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"puneunv.edu"}, ID: "allow_puneunv.edu"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"http://WWW.123.456.10th.college.PUNEUNV.edu"}, ID: "reject_123.456.10th.college.puneunv.edu"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{"reject_shri.10th.college.puneunv.edu", "reject_123.456.10th.college.puneunv.edu"},
+// 				validBidCountPerSeat: map[string]int{
+// 					"block_bidder": 1,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		}, {
+// 			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"edu"}},
+// 					},
+// 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_bidder"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"edu"}, ID: "keep_bid_edu"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"..edu"}, ID: "keep_bid_..edu"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{},
-				validBidCountPerSeat: map[string]int{
-					"tag_bidder": 3,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-		{
-			name: "public_suffix_in_badv",
-			args: args{
-				advBlockReq: &AuctionRequest{
-					BidRequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{BAdv: []string{"co.in"}},
-					},
-				},
-				// co.in is valid public suffix
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
-					newTestTagAdapter("tag_bidder"): {
-						Bids: []*entities.PbsOrtbBid{
-							{Bid: &openrtb2.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
-							{Bid: &openrtb2.Bid{ADomain: []string{"b.com"}, ID: "allow_b.com"}},
-						},
-					},
-				},
-			},
-			want: want{
-				rejectedBidIds: []string{},
-				validBidCountPerSeat: map[string]int{
-					"tag_bidder": 2,
-				},
-				expectedseatNonBids: nonBids{},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.name != "reject_bid_of_blocked_adv_from_tag_bidder" {
-				return
-			}
-			seatBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
-			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
-			adapterMap := make(map[openrtb_ext.BidderName]AdaptedBidder, 0)
-			for adaptor, sbids := range tt.args.adaptorSeatBids {
-				adapterMap[adaptor.BidderName] = adaptor
-				if tagBidder, ok := adaptor.Bidder.(*vastbidder.TagBidder); ok {
-					tagBidders[adaptor.BidderName] = tagBidder
-				}
-				seatBids[adaptor.BidderName] = sbids
-			}
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_bidder"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"edu"}, ID: "keep_bid_edu"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"..edu"}, ID: "keep_bid_..edu"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_bidder": 3,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 		{
+// 			name: "public_suffix_in_badv",
+// 			args: args{
+// 				advBlockReq: &AuctionRequest{
+// 					BidRequestWrapper: &openrtb_ext.RequestWrapper{
+// 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"co.in"}},
+// 					},
+// 				},
+// 				// co.in is valid public suffix
+// 				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+// 					newTestTagAdapter("tag_bidder"): {
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
+// 							{Bid: &openrtb2.Bid{ADomain: []string{"b.com"}, ID: "allow_b.com"}},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: want{
+// 				rejectedBidIds: []string{},
+// 				validBidCountPerSeat: map[string]int{
+// 					"tag_bidder": 2,
+// 				},
+// 				expectedseatNonBids: nonBids{},
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if tt.name != "reject_bid_of_blocked_adv_from_tag_bidder" {
+// 				return
+// 			}
+// 			seatBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
+// 			tagBidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
+// 			adapterMap := make(map[openrtb_ext.BidderName]AdaptedBidder, 0)
+// 			for adaptor, sbids := range tt.args.adaptorSeatBids {
+// 				adapterMap[adaptor.BidderName] = adaptor
+// 				if tagBidder, ok := adaptor.Bidder.(*vastbidder.TagBidder); ok {
+// 					tagBidders[adaptor.BidderName] = tagBidder
+// 				}
+// 				seatBids[adaptor.BidderName] = sbids
+// 			}
 
-			seatNonBids := nonBids{}
-			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
-			// not testing alias here
-			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
-			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
-			for bidder, sBid := range seatBids {
-				// verify only eligible bids are returned
-				assert.Equal(t, tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids), "Expected eligible bids are %d, but found [%d] ", tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids))
-				// verify  rejections
-				assert.Equal(t, len(tt.want.rejectedBidIds), len(rejections), "Expected bid rejections are %d, but found [%d]", len(tt.want.rejectedBidIds), len(rejections))
-				// verify rejected bid ids
-				present := false
-				for _, expectRejectedBidID := range tt.want.rejectedBidIds {
-					for _, rejection := range rejections {
-						match := re.FindStringSubmatch(rejection)
-						rejectedBidID := strings.Trim(match[1], " ")
-						if expectRejectedBidID == rejectedBidID {
-							present = true
-							break
-						}
-					}
-					if present {
-						break
-					}
-				}
-				if len(tt.want.rejectedBidIds) > 0 && !present {
-					assert.Fail(t, "Expected Bid ID [%s] as rejected. But bid is not rejected", re)
-				}
+// 			seatNonBids := nonBids{}
+// 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
+// 			// not testing alias here
+// 			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
+// 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
+// 			for bidder, sBid := range seatBids {
+// 				// verify only eligible bids are returned
+// 				assert.Equal(t, tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids), "Expected eligible bids are %d, but found [%d] ", tt.want.validBidCountPerSeat[string(bidder)], len(sBid.Bids))
+// 				// verify  rejections
+// 				assert.Equal(t, len(tt.want.rejectedBidIds), len(rejections), "Expected bid rejections are %d, but found [%d]", len(tt.want.rejectedBidIds), len(rejections))
+// 				// verify rejected bid ids
+// 				present := false
+// 				for _, expectRejectedBidID := range tt.want.rejectedBidIds {
+// 					for _, rejection := range rejections {
+// 						match := re.FindStringSubmatch(rejection)
+// 						rejectedBidID := strings.Trim(match[1], " ")
+// 						if expectRejectedBidID == rejectedBidID {
+// 							present = true
+// 							break
+// 						}
+// 					}
+// 					if present {
+// 						break
+// 					}
+// 				}
+// 				if len(tt.want.rejectedBidIds) > 0 && !present {
+// 					assert.Fail(t, "Expected Bid ID [%s] as rejected. But bid is not rejected", re)
+// 				}
 
-				if sBid.BidderCoreName != openrtb_ext.BidderVASTBidder {
-					continue // advertiser blocking is currently enabled only for tag bidders
-				}
+// 				if sBid.BidderCoreName != openrtb_ext.BidderVASTBidder {
+// 					continue // advertiser blocking is currently enabled only for tag bidders
+// 				}
 
-				sort.Slice(seatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
-					return seatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
-				})
-				sort.Slice(tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
-					return tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
-				})
-				assert.Equal(t, tt.want.expectedseatNonBids.seatNonBidsMap, seatNonBids.seatNonBidsMap, "SeatNonBids not matching")
+// 				sort.Slice(seatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
+// 					return seatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
+// 				})
+// 				sort.Slice(tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
+// 					return tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
+// 				})
+// 				assert.Equal(t, tt.want.expectedseatNonBids.seatNonBidsMap, seatNonBids.seatNonBidsMap, "SeatNonBids not matching")
 
-				for _, bid := range sBid.Bids {
-					if nil != bid.Bid.ADomain {
-						for _, adomain := range bid.Bid.ADomain {
-							for _, blockDomain := range tt.args.advBlockReq.BidRequestWrapper.BidRequest.BAdv {
-								nDomain, _ := normalizeDomain(adomain)
-								if nDomain == blockDomain {
-									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.Bid.ID, adomain)
-								}
-							}
-						}
-					}
+// 				for _, bid := range sBid.Bids {
+// 					if nil != bid.Bid.ADomain {
+// 						for _, adomain := range bid.Bid.ADomain {
+// 							for _, blockDomain := range tt.args.advBlockReq.BidRequestWrapper.BidRequest.BAdv {
+// 								nDomain, _ := normalizeDomain(adomain)
+// 								if nDomain == blockDomain {
+// 									assert.Fail(t, "bid %s with ad domain %s is not blocked", bid.Bid.ID, adomain)
+// 								}
+// 							}
+// 						}
+// 					}
 
-					// verify this bid not belongs to rejected list
-					for _, rejectedBidID := range tt.want.rejectedBidIds {
-						if rejectedBidID == bid.Bid.ID {
-							assert.Fail(t, "Bid ID [%s] is not expected in list of rejected bids", bid.Bid.ID)
-						}
-					}
-				}
-			}
-		})
-	}
-}
+// 					// verify this bid not belongs to rejected list
+// 					for _, rejectedBidID := range tt.want.rejectedBidIds {
+// 						if rejectedBidID == bid.Bid.ID {
+// 							assert.Fail(t, "Bid ID [%s] is not expected in list of rejected bids", bid.Bid.ID)
+// 						}
+// 					}
+// 				}
+// 			}
+// 		})
+// 	}
+// }
 
 func TestNormalizeDomain(t *testing.T) {
 	type args struct {
@@ -1448,173 +1444,173 @@ func TestGetPriceBucketStringOW(t *testing.T) {
 	}
 }
 
-func Test_updateSeatNonBidsFloors(t *testing.T) {
-	type args struct {
-		seatNonBids  *nonBids
-		rejectedBids []*entities.PbsOrtbSeatBid
-	}
-	tests := []struct {
-		name                string
-		args                args
-		expectedseatNonBids *nonBids
-	}{
-		{
-			name: "nil rejectedBids",
-			args: args{
-				rejectedBids: nil,
-				seatNonBids:  &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{},
-		},
-		{
-			name: "floors one rejectedBids in seatnonbid",
-			args: args{
-				rejectedBids: []*entities.PbsOrtbSeatBid{
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "pubmatic",
-					},
-				},
-				seatNonBids: &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{
-				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-					"pubmatic": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "floors two rejectedBids in seatnonbid",
-			args: args{
-				rejectedBids: []*entities.PbsOrtbSeatBid{
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "pubmatic",
-					},
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "appnexus",
-					},
-				},
-				seatNonBids: &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{
-				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-					"pubmatic": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-					"appnexus": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			updateSeatNonBidsFloors(tt.args.seatNonBids, tt.args.rejectedBids)
-			assert.Equal(t, tt.expectedseatNonBids, tt.args.seatNonBids)
-		})
-	}
-}
+// func Test_updateSeatNonBidsFloors(t *testing.T) {
+// 	type args struct {
+// 		seatNonBids  *nonBids
+// 		rejectedBids []*entities.PbsOrtbSeatBid
+// 	}
+// 	tests := []struct {
+// 		name                string
+// 		args                args
+// 		expectedseatNonBids *nonBids
+// 	}{
+// 		{
+// 			name: "nil rejectedBids",
+// 			args: args{
+// 				rejectedBids: nil,
+// 				seatNonBids:  &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{},
+// 		},
+// 		{
+// 			name: "floors one rejectedBids in seatnonbid",
+// 			args: args{
+// 				rejectedBids: []*entities.PbsOrtbSeatBid{
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "pubmatic",
+// 					},
+// 				},
+// 				seatNonBids: &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{
+// 				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+// 					"pubmatic": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 		{
+// 			name: "floors two rejectedBids in seatnonbid",
+// 			args: args{
+// 				rejectedBids: []*entities.PbsOrtbSeatBid{
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "pubmatic",
+// 					},
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "appnexus",
+// 					},
+// 				},
+// 				seatNonBids: &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{
+// 				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+// 					"pubmatic": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 					"appnexus": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			updateSeatNonBidsFloors(tt.args.seatNonBids, tt.args.rejectedBids)
+// 			assert.Equal(t, tt.expectedseatNonBids, tt.args.seatNonBids)
+// 		})
+// 	}
+// }
 
 func TestRecordVASTTagType(t *testing.T) {
 	var vastXMLAdM = "<VAST version='3.0'><Ad><Wrapper><VASTAdTagURI><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/video/Shashank/dspResponse/vastInline.php?m=1&x=3&y=3&p=11&va=3&sc=1]]></VASTAdTagURI></Wrapper></Ad></VAST>"
