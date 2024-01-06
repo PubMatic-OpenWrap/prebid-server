@@ -28,7 +28,7 @@ export CGO_CFLAGS="-I $NETACUITY_DIR"
 if $COVERAGE; then
   ./scripts/check_coverage.sh
 else
-   go test -tags=ignoreNetacuity -timeout 120s ./modules/...
+   go test -tags=ignoreNetacuity -timeout 120s $(go list ./... | grep -v /vendor/)
 fi
 
 # Then run the race condition tests. These only run on tests named TestRace.* for two reasons.
