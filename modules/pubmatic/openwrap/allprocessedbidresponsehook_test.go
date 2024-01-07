@@ -120,7 +120,7 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
 				Reject:        false,
 				ChangeSet:     hookstage.ChangeSet[hookstage.AllProcessedBidResponsesPayload]{},
-				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+				DebugMessages: []string{"error: request-ctx not found in handleAllProcessedBidResponsesHook()"},
 				AnalyticsTags: hookanalytics.Analytics{},
 			},
 			wantErr: false,
