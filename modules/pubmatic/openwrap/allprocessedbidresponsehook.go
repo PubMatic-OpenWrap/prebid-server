@@ -35,13 +35,11 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
-		result.Reject = false
 		return result, nil
 	}
 
 	if rCtx.Endpoint == models.EndpointHybrid {
 		//TODO: Add bidder params fix
-		result.Reject = false
 		return result, nil
 	}
 
