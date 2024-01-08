@@ -15,6 +15,7 @@ import (
 type RTBBidder struct {
 	RequestMode RequestMode
 	Uri         string
+	syncher     Syncer
 }
 
 type RequestMode int
@@ -90,10 +91,29 @@ func (r *RTBBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalReque
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
-	bidder := &RTBBidder{
-		Uri: config.Endpoint,
-	}
-	return bidder, nil
+	// if singleTonbidder != nil {
+	// 	return singleTonbidder, nil
+	// }
+	// syncher := Syncer{}
+	// singleTonbidder := &RTBBidder{
+	// 	Uri:     config.Endpoint,
+	// 	syncher: syncher,
+	// }
+	// syncher.sync()
+	// return singleTonbidder, nil
+	// singleTonbidder.Uri = config.Endpoint
+	singleTonbidder.syncher.sync()
+	return singleTonbidder, nil
+}
+
+func getInstance() *RTBBidder {
+	return singleTonbidder
+}
+
+var singleTonbidder *RTBBidder = &RTBBidder{
+	syncher: Syncer{
+		syncPath: "/../rtb",
+	},
 }
 
 func getTypeBids(bidResponse openrtb2.BidResponse) []*adapters.TypedBid {

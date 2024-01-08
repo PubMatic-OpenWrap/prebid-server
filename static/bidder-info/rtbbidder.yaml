@@ -1,10 +1,11 @@
-endpoint: "http://example.com"
+endpoint: "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/getbid"
 maintainer:
   email: "UOEDev@pubmatic.com"
 capabilities:
   app:
     mediaTypes:
-      - banner
+      - video
   site:
     mediaTypes:
-      - banner
+      - video
+extra_info: '{"key1" : "value1"}'

@@ -523,28 +523,6 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		return
 	}
 
-	/* rtbidder: temporary provision */
-	aliasRTBBidder := "owtoolsrtbbidder"
-	coreRTBBidder := "rtbbidder"
-
-	reqExt, _ := req.GetRequestExt()
-	prebid := reqExt.GetPrebid()
-	prebid.Aliases[aliasRTBBidder] = coreRTBBidder
-
-	imps := req.GetImp()
-	for _, imp := range imps {
-		impExt, _ := imp.GetImpExt()
-		prebid := impExt.GetPrebid()
-		prebid.Bidder[aliasRTBBidder] = []byte(`{
-			"uri": "https://core-dev-va2-mgmt.pubmatic.com/master/s/getbid",
-			"requestmode" : "1"
-		}`)
-		impExt.SetPrebid(prebid)
-	}
-	req.SetImp(imps)
-	req.RebuildRequest()
-	/* rtbidder: temporary provision */
-
 	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(req.BidRequest)
 	if rejectErr != nil {
 		errs = append(errs, rejectErr)

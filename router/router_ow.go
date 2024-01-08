@@ -35,3 +35,7 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 		w.WriteHeader(http.StatusOK)
 	})
 }
+
+func get() {
+
+}

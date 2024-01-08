@@ -1,0 +1,39 @@
+aliasOf: ""
+disabled: false
+endpoint: https://myrtbbidder.com
+extra_info: extra-info
+maintainer:
+    email: some-email@domain.com
+capabilities:
+    app:
+        mediaTypes: 
+            - video
+modifyingVastXmlAllowed: true
+debug:
+    allow: true
+gvlVendorID: 42
+userSync:
+    key: foo
+    supports: []
+    iframe:
+        url: https://foo.com/sync?mode=iframe&r={{.RedirectURL}}
+        redirectUrl: https://redirect/setuid/iframe
+        externalUrl: https://iframe.host
+        userMacro: UID
+    redirect: null
+    externalUrl: ""
+    supportCors: null
+experiment:
+    adsCert:
+        enabled: true
+usersync_url: user-url
+xapi:
+    username: uname
+    password: pwd
+    tracker: tracker
+platform_id: "123"
+app_secret: app-secret
+endpointCompression: GZIP
+openrtb:
+    version: "2.6"
+    gpp-supported: true

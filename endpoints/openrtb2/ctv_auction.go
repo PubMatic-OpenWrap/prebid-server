@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -150,12 +151,41 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	//Parse ORTB Request and do Standard Validation
 	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecutor)
+
+	/* rtbidder: temporary provision */
+	aliasRTBBidder := "myrtbbidder"
+	coreRTBBidder := "myrtbbidder"
+	req := reqWrapper
+	reqExt, _ := req.GetRequestExt()
+	prebid := reqExt.GetPrebid()
+	prebid.Aliases[aliasRTBBidder] = coreRTBBidder
+
+	imps := req.GetImp()
+	for _, imp := range imps {
+		impExt, _ := imp.GetImpExt()
+		prebid := impExt.GetPrebid()
+		prebid.Bidder[aliasRTBBidder] = []byte(`{
+		"uri": "https://core-dev-va2-mgmt.pubmatic.com/master/s/getbid",
+		"requestmode" : "1"
+	}`)
+		impExt.SetPrebid(prebid)
+	}
+	reqExt.SetPrebid(prebid)
+	req.SetImp(imps)
+	req.RebuildRequest()
+	reqBytes, _ := json.Marshal(req.BidRequest)
+	r.Body = ioutil.NopCloser(strings.NewReader(string(reqBytes)))
+	/* rtbidder: temporary provision */
+
+	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecutor)
+
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
 	if reqWrapper.RebuildRequestExt() != nil {
 		return
 	}
+
 	request = reqWrapper.BidRequest
 
 	util.JLogf("Original BidRequest", request) //TODO: REMOVE LOG

@@ -1,8 +1,11 @@
 package openrtb_ext
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestFetchRTBBidders(t *testing.T) {
+func TestSyncRTBBidders(t *testing.T) {
 
 	tests := []struct {
 		name    string
@@ -12,9 +15,10 @@ func TestFetchRTBBidders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := FetchRTBBidders(); (err != nil) != tt.wantErr {
+			if err := SyncRTBBidders(); (err != nil) != tt.wantErr {
 				t.Errorf("FetchRTBBidders() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			fmt.Println(CoreBidderNames())
 		})
 	}
 }
