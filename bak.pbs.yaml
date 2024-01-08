@@ -1,0 +1,336 @@
+#port: 8001 off until both are running
+hooks:
+  enabled: true
+  modules:
+    pubmatic:
+      openwrap:
+        enabled: false
+        Database:
+          Host: 10.172.128.27
+          Port: 3306
+          User: kdbuser
+          Pass: KdBuSeR12!
+          Database: giym
+          IdleConnection: 50
+          MaxConnection: 400
+          ConnMaxLifetime: 18000
+          MaxDbContextTimeout: 2000
+          Queries:
+            GetParterConfig:                    SELECT /*+ MAX_EXECUTION_TIME(%d) */ IFNULL(wcm.partner_id, -1) as partnerId, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wp.prebid_partner_name END AS prebidPartnerName, CASE WHEN (wcm.partner_id is NULL) THEN "ALL" ELSE wpp.bidder_code END AS bidderCode, CASE WHEN (wcm.partner_id is NULL) THEN 0 ELSE wpp.is_alias END AS isAlias, CASE WHEN (wcm.partner_id is NULL) THEN -1 ELSE entity_type_id END AS entityTypeID, test_config as testConfig, key_name AS keyName, value FROM wrapper_config_map wcm JOIN wrapper_key_master wkm ON wkm.id=wcm.config_id AND entity_type_id = 3 AND entity_id = %d AND wcm.is_active=1 LEFT JOIN wrapper_publisher_partner wpp ON wcm.partner_id=wpp.id LEFT JOIN wrapper_partner wp ON wpp.partner_id = wp.id UNION SELECT distinct(wppvt.partner_id) AS partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 as isAlias, -1 as entityTypeID, 0 as testConfig, 'kgp' AS keyName, key_gen_pattern AS value FROM wrapper_mapping_template JOIN wrapper_profile_partner_version_template wppvt ON version_id = %d AND template_id=id UNION SELECT partner_id as partnerId, "-" AS prebidPartnerName, "-" AS bidderCode, 0 AS isAlias, entity_type_id AS entityTypeID, test_config as testConfig, (SELECT key_name FROM wrapper_key_master WHERE id=config_id) AS keyName, value FROM wrapper_config_map wcm WHERE entity_type_id=1 AND partner_id is NOT NULL AND EXISTS (SELECT partner_id FROM wrapper_config_map WHERE partner_id=wcm.partner_id AND is_active=1 AND entity_type_id = 3 AND entity_id = %d LIMIT 1) ORDER BY partnerId, keyName, entityTypeId
+            DisplayVersionInnerQuery:           "SELECT wv.id as versionId, display_version AS displayVersionId FROM wrapper_version wv JOIN wrapper_profile wp ON profile_id=wp.id WHERE profile_id=? and display_version=? AND pub_id=?"
+            LiveVersionInnerQuery:              "SELECT wv.id as versionId, display_version as displayVersionId FROM wrapper_version wv JOIN wrapper_status ws on profile_id=? AND version_id=id and status IN ('LIVE','LIVE_PENDING') JOIN wrapper_profile wp ON profile_id=wp.id AND pub_id=?"
+            GetWrapperSlotMappingsQuery:        "SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm join wrapper_version wv on wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION and wpsm.partner_id in (#PARTNER_IDS) and wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id"
+            GetWrapperLiveVersionSlotMappings:  "SELECT wpsm.partner_id as PartnerId, wpp.partner_id as AdapterId, wpsm.version_id as VersionId, wpsm.slotname as SlotName, wpsm.json_mapping as MappingJson, wpsm.order_id as OrderId FROM wrapper_partner_slot_mapping wpsm JOIN wrapper_version wv ON wv.id = wpsm.version_id AND wv.profile_id = #PROFILE_ID AND wpsm.partner_id IN ( #PARTNER_IDS ) AND wpsm.is_active = 1 join wrapper_publisher_partner wpp on wpp.id = wpsm.partner_id JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ( 'LIVE', 'LIVE_PENDING' ) JOIN wrapper_profile wpr ON wpr.id = wv.profile_id order by wpsm.order_id"
+            GetPMSlotToMappings:                "SELECT CONCAT(slot_name,'@',pm_size) AS slot_name, pm_size, pm_site_id, ad_tag_id, ga_id, floor FROM giym.publisher_slot_to_tag_mapping WHERE pub_id = ? AND profile_id = 0 AND version_id = 0 AND status IN ('LIVE', 'NEW') ORDER BY BINARY slot_name LIMIT ?"
+            GetAdunitConfigQuery:               "SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID AND wv.display_version = #DISPLAY_VERSION"
+            GetAdunitConfigForLiveVersion:      "SELECT cf.config_json AS adunitConfig FROM wrapper_media_config cf JOIN wrapper_version wv ON cf.version_id = wv.id AND cf.is_active=1 AND wv.profile_id = #PROFILE_ID JOIN wrapper_status ws ON wv.id = ws.version_id and ws.status IN ('LIVE','LIVE_PENDING')"
+            GetSlotNameHash:                    SELECT name, hash FROM wrapper_publisher_slot WHERE pub_id = %d
+            GetPublisherVASTTagsQuery:          SELECT wvt.id AS id, wvt.partner_id AS partnerId, wvt.url AS url, wvt.duration AS duration, IFNULL(wvt.price,0.0) AS price FROM wrapper_publisher_partner_vast_tag wvt WHERE wvt.pub_id = %d AND wvt.deleted = 0 AND wvt.status="live" ORDER BY wvt.partner_id
+            GetAllFscDisabledPublishersQuery:   SELECT pub_id from wrapper_publisher_feature_mapping where feature_id=(SELECT id FROM wrapper_feature WHERE feature_name="fsc") AND is_enabled = 0
+            GetAllDspFscPcntQuery:              SELECT dsp_id,value from wrapper_feature_dsp_mapping WHERE key_id=(SELECT id FROM wrapper_key_master WHERE key_name = "fsc_pcnt")
+            GetTBFRateQuery:                    SELECT pub_id,value from wrapper_publisher_feature_mapping WHERE is_enabled = 1 AND feature_id=(SELECT id FROM wrapper_feature WHERE feature_name="track_beacon_first")
+        Timeout:
+            MaxTimeout: 5000
+            MinTimeout: 200
+        Cache:
+          CacheDefaultExpiry: 3600 # in second
+          VASTTagCacheExpiry: 1800 # in second
+          CacheConTimeout: 1000        
+        Stats:
+          Endpoint: http://10.172.141.15:8282/
+          DefaultHostName: N:P
+          UseHostName: false
+          PublishInterval: 3
+          PublishThreshold: 11000
+          Retries: 3
+          DialTimeout: 2
+          KeepAliveDuration: 15
+          MaxIdleConnections: 2
+          MaxIdleConnectionsPerHost: 1   
+          ResponseHeaderTimeout: 30
+          MaxChannelLength: 1000
+          PoolMaxWorkers: 10
+          PoolMaxCapacity: 1000
+        Tracker:
+          Endpoint: //t.pubmatic.com/wt
+          VideoErrorTrackerEndpoint: //127.0.0.1:8080/wt
+        Pixelview:
+          OMScript: https://ads.pubmatic.com/AdServer/js/owpubomverification.js
+      vastunwrap:
+          enabled: true
+          traffic_percentage: 5
+          stat_traffic_percentage: 2
+          vastunwrap_cfg:
+            max_wrapper_support: 5
+            http_config:
+              max_idle_conns: 0
+              max_idle_conns_per_host: 100
+              idle_conn_timeout: 60
+            app_config:
+              unwrap_default_timeout: 200
+              debug: 0
+            stat_config:
+              endpoint: http://10.172.141.15:8282/
+              referesh_interval_in_sec: 180
+            server_config:
+              dc_name: SV3
+            log_config:
+              debug_log_file:   /var/log/ssheaderbidding/vastunwrap_debug.log 
+              error_log_file: /var/log/ssheaderbidding/vastunwrap_error.log
+  host_execution_plan:
+    endpoints:
+      /openrtb2/auction:
+        stages:
+          entrypoint:
+            groups:
+              - timeout: 500000
+                hook_sequence:
+                  - module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.setup_request_ctx
+          before_validation_request:
+            groups:
+              - timeout: 500000
+                hook_sequence:
+                  - module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.patch_profile_meta
+          processed_auction_request:
+            groups:
+              - timeout: 500000
+                hook_sequence:
+                  - module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.update_request_ip
+          auction_response:
+            groups:
+              - timeout: 500000
+                hook_sequence:
+                  - module_code: pubmatic.openwrap
+                    hook_impl_code: pubmatic.openwrap.custom_auction
+      /openrtb/video:
+        stages:
+          entrypoint:
+            groups:
+              - timeout: 50
+                hook_sequence:
+                  module_code: pubmatic.vastunwrap
+                  hook_impl_code: pubmatic.vastunwrap.setup_request_ctx
+          raw_bidder_response:
+            groups:
+              - timeout: 150
+                hook_sequence:
+                  module_code: pubmatic.vastunwrap
+                  hook_impl_code: pubmatic.vastunwrap.process_bidder_resp     
+external_url: https://ow.pubmatic.com
+tracker_url: https://127.0.0.1:8080/wt?operId=8&e=[EVENT_ID]&p=[PBS-ACCOUNT]&pid=[PROFILE_ID]&v=[PROFILE_VERSION]&ts=[UNIX_TIMESTAMP]&pn=[PBS-BIDDER]&adv=[ADVERTISER_NAME]&sURL=[DOMAIN]&pfi=[PLATFORM]&af=[ADTYPE]&iid=[WRAPPER_IMPRESSION_ID]&pseq=[PODSEQUENCE]&adcnt=[ADCOUNT]&cb=[CACHEBUSTING]&au=[AD_UNIT]&bidid=[PBS-BIDID]&origbidid=[PBS-ORIG_BIDID]&bc=[BIDDER_CODE]&ssai=[SSAI]
+adapters:
+  appnexus:
+    endpoint: http://10.172.162.187:8011/openrtb2
+  pubmatic:
+    endpoint: http://10.172.141.11:3141/translator?source=ow-server
+  ix:
+    disabled: false
+    endpoint: http://pubmatic-us-west.lb.indexww.com/transbidder?p=186523
+    usersync:
+      redirect:
+        url: https://ssum.casalemedia.com/usermatchredir?s=186523&gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&cb={{.RedirectURL}}
+  dmx:
+    endpoint: https://dmx-direct.districtm.io/b/v2
+    usersync:
+      redirect:
+        url: https://dmx.districtm.io/s/v1/img/s/10007?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&redirect={{.RedirectURL}}
+        redirect_url: http://ow.pubmatic.com/setuid?bidder=datablocks&gdpr=${gdpr}&gdpr_consent=${gdpr_consent}&uid=${uid}
+  spotx:
+    endpoint: https://search.spotxchange.com/vast/2.00/{channel_id}?VPI=MP4&app[bundle]={bundle}&app[name]={appname}&app[cat]={cat}&app[domain]={domain}&app[privacypolicy]={privacypolicy}&app[storeurl]={storeurl_ESC}&app[ver]={appver}&cb={cachebuster}&device[devicetype]={devicetype}&device[ifa]={ifa}&device[make]={make}&device[model]={model}&device[dnt]={dnt}&player_height={playerheight}&player_width={playerwidth}&ip_addr={ip}&device[ua]={useragent_ESC}
+  rubicon:
+    disabled: false
+    endpoint: http://exapi-us-west.rubiconproject.com/a/api/exchange.json?tk_sdc=us-west
+    usersync:
+      default: redirect
+      redirect: 
+        url: https://pixel.rubiconproject.com/exchange/sync.php?p=pbs-pubmatic
+    XAPI:
+      Username: prebid_server_pubmatic
+      Password: 3HV6AVT2WS
+      tracker: pbs-pub
+  smartadserver:
+    endpoint: https://ssb-us.smartadserver.com
+  unruly:
+    endpoint: http://openwrap.west-s2s.1rx.io/rmp/openwrap/0/vo?z=1r
+    usersync:
+      default: iframe
+      iframe:
+        url: https://sync.1rx.io/usersync2/rmpssp?sub=openwrap&gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&rurl={{.RedirectURL}}%24UID
+        userMacro: [RX_UUID]
+  pangle:
+    disabled: false
+    endpoint: https://api16-access-sg.pangle.io/api/ad/union/openrtb/get_ads/staging/
+  grid:
+    endpoint: http://grid-usw.bidswitch.net/sp_bid?sp=prebid
+  advangelists:
+    endpoint: http://nep.advangelists.com/xp/get?pubid={{.PublisherID}}
+  gamoshi:
+    endpoint: https://rtb.gamoshi.io
+  outbrain:
+    endpoint: http://b1h.zemanta.com/api/bidder/prebid/bid/
+    usersync_url: https://b1h.zemanta.com/usersync/prebid?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&cb={{.RedirectURL}}
+  stroeercore:
+    disabled : false
+  vastbidder:
+    endpoint: https://test.com
+  yahoossp:
+    disabled: true
+  vrtcal:
+    endpoint: http://rtb.vrtcal.com/bidder_prebid.vap?ssp=1812
+
+cache:
+  host: 10.172.141.14:2424
+  scheme: http
+  query: uuid
+
+host_cookie:
+  domain: ow.pubmatic.com
+
+# If we change the base image to a non-linux based one, we would also need to update the path for "certificates_file" in the property below
+certificates_file: /etc/ssl/cert.pem_temp
+
+metrics:
+  prometheus:
+    port: 8002
+    namespace: ow
+    subsystem: pbs
+    timeout_ms: 300
+    AuthorizationToken: BByn90EN0aEzR6HG71CSPZQSR92SiWIrRWD90ymvKzoTO69bcWyPppeFc4NrL3Aa
+  disabled_metrics:
+    adapter_connections_metrics: false
+
+http_client:
+  max_connections_per_host: 512
+  max_idle_connections: 0
+  max_idle_connections_per_host: 100
+  idle_connection_timeout_seconds: 60
+  tls_handshake_timeout: 10
+  response_header_timeout: 5
+  dial_timeout: 100
+  dial_keepalive: 30
+
+gdpr:
+  enabled: true
+  default_value: 0
+  host_vendor_id: 0
+  timeouts_ms:
+    init_vendorlist_fetches: 60000
+    active_vendorlist_fetch: 60000
+
+vendor_list_scheduler:
+  enabled: true
+  interval: 4h
+  timeout: 1m
+
+price_floors:
+    enabled: false
+
+account_defaults:
+  price_floors:
+    enabled: true
+    enforce_deal_floors:  true
+    enforce_floors_rate:  100
+    adjust_for_bid_adjustment:  true
+    use_dynamic_data: true
+    max_rules:  1000
+    max_schema_dims: 3
+    fetch:
+      enabled: true
+      timeout_ms: 1000
+      max_file_size_kb: 100
+      max_rules: 1000
+      max_age_sec: 86400
+      period_sec: 3600
+
+generate_bid_id: true    # To generate unique bidID in seated[].bid[].ext.prebid.bidid
+
+currency_converter:
+  fetch_url: https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json
+  fetch_interval_seconds: 1800 # fetch currency rates every 30 minutes
+  stale_rates_seconds: 0 #checks if loaded third party conversion rates are stale. 0 or less is disabled.
+
+analytics:
+  pubmatic:
+    Enabled: true
+    Endpoint: http://10.172.155.55:32504/wl
+    PublicEndpoint: http://t.pubmatic.com/wl
+    MaxClients: 500
+    MaxConnections: 1024
+    MaxCalls: 100
+    RespTimeout: 150
+    http_client:
+      max_connections_per_host: 512
+      max_idle_connections: 0
+      max_idle_connections_per_host: 100
+      idle_connection_timeout_seconds: 60
+      tls_handshake_timeout: 10
+      response_header_timeout: 5
+      dial_timeout: 100
+      dial_keepalive: 30
+
+features:
+  MultiCurrency: true
+  BidCountMetricEnabledPubs: ["159854","5890"]
+  PBSOpenWrapModule:
+    InAppTraffic: 0
+
+OpenWrap:
+  Server:
+    ServerPort: 8001
+    AdminPort: 8003
+    ServerName: ow22001
+    DCName: SV3
+
+  Log:
+    LogPath: /var/log/ssheaderbidding/
+    LogLevel: 2 #DEBUG: 1, INFO: 2, WARN: 3, ERROR: 4, CRITICAL: 5, FATAL: 6
+    MaxLogSize: 2000000000   #size in byte
+    LogRotationTime: 60  # time is in minutes
+    MaxLogFiles: 10   # Number of log files to be kept at log path
+    DefaultTimeInMins: 10   # time in minutes to updated new log level
+    AuthToken: 98a23b4235c45 # Key to verify Authorization while updating log level
+
+  Logger:
+    Enabled: true
+    Endpoint: http://10.172.155.55:32504/wl
+    PublicEndpoint: http://t.pubmatic.com/wl
+    MaxClients: 500
+    MaxConnections: 1024
+    MaxCalls: 100
+    RespTimeout: 150
+  
+  Lurl:
+    Enabled:  true
+    Endpoint: http://10.172.155.14:32561/lurl
+    BatchSize:  100
+    BatchTime: 30
+    ChanSize: 50000
+    MaxIdleConns: 100
+    Timeout: 10
+    IdleConnTimeout: 1
+    DialTimeout: 1
+    MaxWorkers: 100
+    MaxCapacity: 1000
+
+  Timeout:
+    MaxTimeout: 5000
+    MinTimeout: 200
+    PrebidDelta: 10
+    HBTimeout: 250
+  
+  Tracker:
+    Endpoint: //t.pubmatic.com/wt
+    VideoErrorTrackerEndpoint: //127.0.0.1:8080/wt
+  
+  Pixelview:
+    OMScript: https://ads.pubmatic.com/AdServer/js/owpubomverification.js
+  
+  Wakanda:
+    SCP:
+      User: qateam
+      Password: Xag3Batre-
+      ServerIP: 10.172.141.14
+      Destination: /var/www/html/wakanda/owlogs
