@@ -56,7 +56,7 @@ func Main() {
 }
 
 const configFileName = "pbs.yaml"
-const InfoDirectory = "./static/bidder-info"
+const infoDirectory = "./static/bidder-info"
 
 func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {
 	v := viper.New()

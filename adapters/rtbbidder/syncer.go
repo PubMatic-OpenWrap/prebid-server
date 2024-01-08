@@ -5,9 +5,6 @@ import (
 	"strings"
 	"time"
 
-	main_ow "github.com/PubMatic-OpenWrap/prebid-server"
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -75,12 +72,7 @@ func (s *Syncer) syncBiddersParameters(paramsValidator *OpenWrapbidderParamValid
 }
 
 func (s *Syncer) syncBiddersInfos() bool {
-	rtbBidderInfos, errs := config.LoadBidderInfoFromDisk(main_ow.InfoDirectory + s.syncPath)
-	if errs == nil {
-		for name, info := range rtbBidderInfos {
-			config.LoadBidderInfo()
-		}
-	}
+	// rtbBidderInfos, errs := config.LoadBidderInfoFromDisk(main_ow.InfoDirectory + s.syncPath)
 	return false
 }
 
