@@ -71,9 +71,14 @@ func (s *Syncer) syncBiddersParameters(paramsValidator *OpenWrapbidderParamValid
 	return false
 }
 
-func (s *Syncer) syncBiddersInfos() bool {
+func syncBiddersInfos(s *Syncer) bool {
 	// rtbBidderInfos, errs := config.LoadBidderInfoFromDisk(main_ow.InfoDirectory + s.syncPath)
+	fmt.Printf("Synching Bidder Info")
 	return false
+}
+
+func (r *RTBBidder) SyncBidderInfos() {
+	syncBiddersInfos(&r.syncher)
 }
 
 func startScheduler(ticker *time.Ticker, quit chan struct{}, tasks []func() bool) {

@@ -102,7 +102,6 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	// syncher.sync()
 	// return singleTonbidder, nil
 	// singleTonbidder.Uri = config.Endpoint
-	singleTonbidder.syncher.sync()
 	return singleTonbidder, nil
 }
 
@@ -110,10 +109,19 @@ func getInstance() *RTBBidder {
 	return singleTonbidder
 }
 
+func GetSyncer() *Syncer {
+	return &singleTonbidder.syncher
+}
+
 var singleTonbidder *RTBBidder = &RTBBidder{
 	syncher: Syncer{
 		syncPath: "/../rtb",
 	},
+}
+
+func init() {
+	singleTonbidder.syncher.syncCoreBidders()
+	singleTonbidder.syncher.sync()
 }
 
 func getTypeBids(bidResponse openrtb2.BidResponse) []*adapters.TypedBid {
