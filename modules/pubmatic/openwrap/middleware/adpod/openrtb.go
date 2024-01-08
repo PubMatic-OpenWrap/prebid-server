@@ -18,11 +18,15 @@ type ortbResponse struct {
 	WrapperLoggerDebug string
 }
 
-func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.CustomWriter) ([]byte, map[string]string, int) {
+func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
 		ContentOptions: NoSniff,
+	}
+
+	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
+		return adpodWriter.Response.Bytes(), headers, adpodWriter.Code
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)

@@ -52,6 +52,11 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
+			impId := bid.ImpID
+			if rctx.IsCTVRequest {
+				impId, _ = models.GetImpressionID(bid.ImpID)
+			}
+
 			tracker := models.Tracker{
 				PubID:             rctx.PubID,
 				ProfileID:         fmt.Sprintf("%d", rctx.ProfileID),
@@ -61,7 +66,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				IID:               rctx.LoggerImpressionID,
 				Platform:          int(rctx.DevicePlatform),
 				SSAI:              rctx.SSAI,
-				ImpID:             bid.ImpID,
+				ImpID:             impId,
 				Origin:            rctx.Origin,
 				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
 				TestGroup:         rctx.ABTestConfigApplied,
@@ -83,7 +88,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				eg, en                                         float64
 			)
 
-			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
+			if impCtx, ok := rctx.ImpBidCtx[impId]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					matchedSlot = bidderMeta.MatchedSlot
 					partnerID = bidderMeta.PrebidBidderCode
@@ -127,7 +132,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					partnerID = bidderMeta.PrebidBidderCode
 					kgp = bidderMeta.KGP
-					kgpv, kgpsv = models.GetKGPSV(bid, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
+					kgpv, kgpsv = models.GetKGPSV(bid, &bidCtx.BidExt, bidderMeta, adformat, impCtx.TagID, impCtx.Div, rctx.Source)
 				}
 				// --------------------------------------------------------------------------------------------------
 
@@ -139,10 +144,14 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if impCtx.IsRewardInventory != nil {
 					isRewardInventory = int(*impCtx.IsRewardInventory)
 				}
+
+				if impCtx.AdpodConfig != nil {
+					tracker.AdPodSlot = models.AdPodEnabled
+				}
 			}
 
 			if seatBid.Seat == "pubmatic" {
-				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
+				pmMkt[impId] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,

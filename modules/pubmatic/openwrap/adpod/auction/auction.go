@@ -45,7 +45,10 @@ func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx model
 		return nil, errs
 	}
 
-	winningBidIds, err := GetWinningBidsIds(adpodBids)
+	// Record APRC for bids
+	collectAPRC(impAdpodBidsMap, rctx.ImpBidCtx)
+
+	winningBidIds, err := GetWinningBidsIds(adpodBids, rctx.ImpBidCtx)
 	if err != nil {
 		return nil, []error{err}
 	}

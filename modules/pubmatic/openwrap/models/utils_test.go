@@ -1187,6 +1187,7 @@ func Test_getFloorsDetails(t *testing.T) {
 func TestGetKGPSV(t *testing.T) {
 	type args struct {
 		bid        openrtb2.Bid
+		bidExt     *BidExt
 		bidderMeta PartnerData
 		adformat   string
 		tagId      string
@@ -1321,7 +1322,7 @@ func TestGetKGPSV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
+			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidExt, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
 			if got != tt.kgpv {
 				t.Errorf("GetKGPSV() got = %v, want %v", got, tt.kgpv)
 			}

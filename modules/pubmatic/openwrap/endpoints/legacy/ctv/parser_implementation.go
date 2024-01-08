@@ -72,7 +72,20 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 	if len(errs) > 0 {
 		return o.ortb, fmt.Errorf("%v", errs)
 	}
+
+	o.formORTBRequest()
 	return o.ortb, nil
+}
+
+// formORTBRequest this will generate bidrequestID or impressionID if not present
+func (o *OpenRTB) formORTBRequest() {
+	if len(o.ortb.ID) == 0 {
+		o.ortb.ID = uuid.NewV4().String()
+	}
+
+	if len(o.ortb.Imp[0].ID) == 0 {
+		o.ortb.Imp[0].ID = uuid.NewV4().String()
+	}
 }
 
 /*********************** BidRequest ***********************/

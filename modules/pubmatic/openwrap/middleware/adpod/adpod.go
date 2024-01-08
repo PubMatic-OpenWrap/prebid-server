@@ -32,7 +32,7 @@ func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, cacheClient *pbc.Clie
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.CustomWriter{}
+	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer panicHandler(r)
 
 	if r.Method == http.MethodGet {
@@ -66,7 +66,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.CustomWriter{}
+	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer panicHandler(r)
 
 	if r.Method == http.MethodGet {
@@ -98,7 +98,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.CustomWriter{}
+	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer panicHandler(r)
 
 	// Invoke prebid auction enpoint
@@ -120,7 +120,7 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 // JsonGetEndpoint
 func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.CustomWriter{}
+	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer panicHandler(r)
 
 	redirectURL, debug, err := getAndValidateRedirectURL(r)
