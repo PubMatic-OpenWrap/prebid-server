@@ -3024,8 +3024,8 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						NetECPM:     90,
-						GrossECPM:   100,
+						NetECPM:     100,
+						GrossECPM:   111.11,
 						OriginalCPM: 100,
 						OriginalCur: "USD",
 						PartnerID:   "pubmatic",
@@ -3078,7 +3078,7 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						NetECPM:     1.77,
+						NetECPM:     1.76829,
 						GrossECPM:   1.77,
 						OriginalCPM: 125.77,
 						OriginalCur: "INR",
@@ -3134,7 +3134,7 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 				"imp1": {
 					{
 						GrossECPM:   125.17,
-						NetECPM:     125.17,
+						NetECPM:     125.16829,
 						OriginalCPM: 125.17,
 						OriginalCur: "INR",
 						PartnerID:   "pubmatic",
@@ -3198,8 +3198,8 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						NetECPM:     90,
-						GrossECPM:   100,
+						NetECPM:     100,
+						GrossECPM:   111.11,
 						OriginalCPM: 200,
 						OriginalCur: "INR",
 						PartnerID:   "pubmatic",

@@ -27,7 +27,10 @@ var (
 	ctvRegex                    *regexp.Regexp
 )
 
-const test = "_test"
+const (
+	BID_PRECISION = 2
+	test          = "_test"
+)
 
 func init() {
 	widthRegEx = regexp.MustCompile(models.MACRO_WIDTH)
