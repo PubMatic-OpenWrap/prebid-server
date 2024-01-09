@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -23,6 +24,17 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	// absence of rctx at this hook means the first hook failed!. Do nothing
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAllProcessedBidResponsesHook()")
+		return result, nil
+	}
+
+	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
+		return result, nil
+	}
+
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rCtx.Sshb == "1" || rCtx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
 
