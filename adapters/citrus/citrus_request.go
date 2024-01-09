@@ -11,6 +11,7 @@ import (
 type CitrusRequest struct {
 	CustomerID      string     `json:"customerId"`
 	SessionID       string     `json:"sessionId"`
+	CatalogID       string     `json:"catalogId"`   
 	Placement       string     `json:"placement"`
 	SearchTerm      string     `json:"searchTerm"`
 	ProductFilters  [][]string `json:"productFilters"`
@@ -39,7 +40,7 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	}
 
     //Retrieve AuthKey from Request and Build endpoint Url
-	var authKey, customerID string
+	var authKey, customerID, catalogID string
 	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_AUTH_KEY]
 	if ok {
 		authKey = val
@@ -48,8 +49,13 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	if ok {
 		customerID = val
 	}
+	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_CATALOG_ID]
+	if ok {
+		catalogID = val
+	}
 	
 	citrusReq.CustomerID = customerID
+	citrusReq.CatalogID = catalogID
 	citrusReq.SessionID = request.User.ID
 	citrusReq.MaxNumberOfAds = commerceExt.ComParams.SlotsRequested
 	citrusReq.SearchTerm = commerceExt.ComParams.SearchTerm
@@ -92,4 +98,5 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 		Headers: headers,
 	}}, nil
 }
+
 
