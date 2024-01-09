@@ -1,6 +1,8 @@
 package ctv
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -374,4 +376,37 @@ func GetInt(v *string) *int {
 		}
 	}
 	return nil
+}
+
+// GetQueryParams Read the Key and  Parse to Map
+func (values *URLValues) GetQueryParams(key string) (map[string]interface{}, error) {
+	if v := values.Get(key); len(v) > 0 {
+		pairs := strings.Split(v, "&")
+		queryParams := make(map[string]interface{})
+
+		for _, pair := range pairs {
+			kv := strings.SplitN(pair, "=", 2)
+			if len(kv) == 2 {
+				key := kv[0]
+				value := kv[1]
+				queryParams[key] = value
+			} else {
+				return nil, errors.New("Error parsing query param pair")
+			}
+		}
+		return queryParams, nil
+	}
+	return nil, nil
+}
+
+// GetJSON Read Key and Parsed it map
+func (values *URLValues) GetJSON(key string) (map[string]interface{}, error) {
+	if v := values.Get(key); len(v) > 0 {
+		parsedData := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(v), &parsedData); err != nil {
+			return nil, err
+		}
+		return parsedData, nil
+	}
+	return nil, nil
 }

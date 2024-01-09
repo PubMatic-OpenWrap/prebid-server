@@ -280,6 +280,8 @@ var ortbMapper = &ParserMap{
 		ORTBSupportDeals:         Parser.ORTBSupportDeals,
 		ORTBIncludeBrandCategory: Parser.ORTBIncludeBrandCategory,
 		ORTBSSAI:                 Parser.ORTBSSAI,
+		ORTBKeyValues:            Parser.ORTBKeyValues,
+		ORTBKeyValuesMap:         Parser.ORTBKeyValuesMap,
 
 		//VideoExtension
 		ORTBImpVideoExtOffset:                           Parser.ORTBImpVideoExtOffset,
@@ -607,6 +609,8 @@ type Parser interface {
 	ORTBSupportDeals() error
 	ORTBIncludeBrandCategory() error
 	ORTBSSAI() error
+	ORTBKeyValues() error
+	ORTBKeyValuesMap() error
 
 	//VideoExtension
 	ORTBImpVideoExtOffset() error

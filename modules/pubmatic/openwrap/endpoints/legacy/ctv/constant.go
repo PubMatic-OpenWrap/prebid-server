@@ -643,6 +643,8 @@ const (
 	//ORTBExtProfileId get api parameter profileid
 	ORTBExtProfileId = "profileid"
 	ORTBExtSsai      = "ssai"
+	//ORTBExtKV get api parameter kv
+	ORTBExtKV = "kv"
 	//ORTBExtVersionId get api parameter versionid
 	ORTBExtVersionId = "versionid"
 	//ORTBExtSSAuctionFlag get api parameter ssauction
@@ -657,6 +659,10 @@ const (
 	ORTBExtIncludeBrandCategory = "includebrandcategory"
 	// ORTBSSAI get the api parameter req.ext.wrapper.ssai
 	ORTBSSAI = "req.ext.wrapper.ssai"
+	//ORTBKeyValues get the api parameter req.ext.wrapper.kv
+	ORTBKeyValues = "req.ext.wrapper.kv"
+	//ORTBKeyValuesMap get the api parameter req.ext.wrapper.kvm
+	ORTBKeyValuesMap = "req.ext.wrapper.kvm"
 	//ORTBExtGDPR get api parameter gdpr
 	ORTBExtGDPR = "gdpr"
 	//ORTBExtUSPrivacy get api parameter us_privacy
