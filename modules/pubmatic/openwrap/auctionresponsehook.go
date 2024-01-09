@@ -117,7 +117,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			// set response netecpm and logger/tracker en
 			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			bidExt.NetECPM = bid.Price
+			bidExt.NetECPM = models.ToFixed(bid.Price, models.BID_PRECISION)
 			eg = models.GetGrossEcpmFromNetEcpm(bid.Price, revShare)
 			en = bidExt.NetECPM
 			if payload.BidResponse.Cur != "USD" {

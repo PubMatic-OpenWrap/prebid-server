@@ -402,7 +402,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if pr.NetECPM == 0 {
-				pr.NetECPM = price
+				pr.NetECPM = models.ToFixed(price, models.BID_PRECISION)
 			}
 
 			if pr.GrossECPM == 0 {

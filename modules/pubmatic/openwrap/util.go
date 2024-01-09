@@ -28,8 +28,7 @@ var (
 )
 
 const (
-	BID_PRECISION = 2
-	test          = "_test"
+	test = "_test"
 )
 
 func init() {
