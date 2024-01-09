@@ -2,7 +2,7 @@ package adbuttler
 
 const (
 	BD_ZONE_ID                    = "catalogZone"
-	BD_ACCOUNT_ID                 = "accountID"
+	BD_ACCOUNT_ID                 = "retailer"
 	SEARCHTYPE_DEFAULT            = "exact"
 	SEARCHTYPE_EXACT              = "exact"
 	SEARCHTYPE_BROAD              = "broad"
