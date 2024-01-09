@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -202,6 +203,8 @@ func GetIP(in *http.Request) string {
 	//2. HTTP_X_CLUSTER_CLIENT_IP
 	//3. HTTP_SOURCE_IP
 	//4. REMOTE_ADDR
+	glog.Info("logging... request header OTT-908:")
+	glog.Info(RlnClientIP+"="+in.Header.Get(RlnClientIP), SourceIP+"="+in.Header.Get(SourceIP), ClusterClientIP+"="+in.Header.Get(ClusterClientIP), XForwarded+"="+in.Header.Get(XForwarded), RemoteAddr+"="+in.Header.Get(RemoteAddr), "in.remote"+"="+in.Header.Get(in.RemoteAddr))
 	ip := in.Header.Get(RlnClientIP)
 	if ip == "" {
 		ip = in.Header.Get(SourceIP)
