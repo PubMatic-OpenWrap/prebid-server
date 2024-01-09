@@ -1568,7 +1568,6 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
-	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	tbf.SetAndResetTBFConfig(mockCache, nil)
 	defer ctrl.Finish()
 
@@ -1587,7 +1586,7 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 		args     args
 		want     want
 		doMutate bool
-		setup    func()
+		setup    func() *mock_metrics.MockMetricsEngine
 	}{
 		{
 			name: "empty moduleContext",
@@ -1681,9 +1680,11 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 				},
 			},
 			doMutate: true,
-			setup: func() {
+			setup: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				return mockEngine
 			},
 			want: want{
 				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
@@ -1735,7 +1736,6 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 									"rev_share":             "0.5",
 								},
 							},
-							MetricsEngine: mockEngine,
 						},
 					},
 				},
@@ -1760,11 +1760,13 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 					},
 				},
 			},
-			setup: func() {
+			setup: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("web", "5890", "pubmatic")
 				mockEngine.EXPECT().RecordPartnerResponseTimeStats("5890", "pubmatic", 8)
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
 				mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
+				return mockEngine
 			},
 			doMutate: true,
 			want: want{
@@ -1826,7 +1828,6 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 									"rev_share":             "0.5",
 								},
 							},
-							MetricsEngine: mockEngine,
 						},
 					},
 				},
@@ -1851,11 +1852,13 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 					},
 				},
 			},
-			setup: func() {
+			setup: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("web", "5890", "pubmatic")
 				mockEngine.EXPECT().RecordPartnerResponseTimeStats("5890", "pubmatic", 8)
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
 				mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
+				return mockEngine
 			},
 			doMutate: true,
 			want: want{
@@ -1867,12 +1870,21 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var mockEngine *mock_metrics.MockMetricsEngine
 			if tt.setup != nil {
-				tt.setup()
+				mockEngine = tt.setup()
 			}
 			m := OpenWrap{
 				cache:        mockCache,
 				metricEngine: mockEngine,
+			}
+			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
+			if ok {
+				rCtx, ok := moduleCtx.(models.RequestCtx)
+				if ok {
+					rCtx.MetricsEngine = mockEngine
+					tt.args.moduleCtx.ModuleContext["rctx"] = rCtx
+				}
 			}
 			hookResult, err := m.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
