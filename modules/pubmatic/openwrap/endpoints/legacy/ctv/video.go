@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 )
 
 func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {

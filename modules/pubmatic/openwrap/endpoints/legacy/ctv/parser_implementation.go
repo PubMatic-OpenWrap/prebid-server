@@ -7,10 +7,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
 	v26 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
 	uuid "github.com/satori/go.uuid"
 )

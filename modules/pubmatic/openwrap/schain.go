@@ -3,8 +3,8 @@ package openwrap
 import (
 	"encoding/json"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/constant"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/constant"
 )
 
 // SupplyChainConfig reads profile level supply chain object from database
