@@ -166,9 +166,11 @@ func TestGetVASTEventMacros(t *testing.T) {
 					ProfileID:          1234,
 					DisplayID:          1234,
 					StartTime:          1234,
-					DevicePlatform:     1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "",
+					Device: models.DeviceCtx{
+						Platform: 1234,
+					},
 				},
 			},
 			want: map[string]string{
@@ -186,9 +188,11 @@ func TestGetVASTEventMacros(t *testing.T) {
 					ProfileID:          1234,
 					DisplayID:          1234,
 					StartTime:          1234,
-					DevicePlatform:     1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "1234",
+					Device: models.DeviceCtx{
+						Platform: 1234,
+					},
 				},
 			},
 			want: map[string]string{

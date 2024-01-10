@@ -3513,8 +3513,10 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileAppAndroid,
-					PubID:          5890,
+					PubID: 5890,
+					Device: models.DeviceCtx{
+						Platform: models.DevicePlatformMobileAppAndroid,
+					},
 				},
 				logInfo:    true,
 				forRespExt: true,
@@ -3532,23 +3534,48 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Device: &openrtb2.Device{
-								Ext: json.RawMessage(`{"ifa_type":"sspid"}`),
-							},
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileAppAndroid,
-					PubID:          5890,
+					PubID: 5890,
+					Device: models.DeviceCtx{
+						Platform: models.DevicePlatformMobileAppAndroid,
+						IFAType:  ptrutil.ToPtr(8),
+					},
 				},
 				logInfo:    true,
 				forRespExt: true,
 			},
 			want: want{
 				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "log_device.ext.atts",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					Device: models.DeviceCtx{
+						ATTS: ptrutil.ToPtr(1),
+					},
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"atts":1},"ft":0}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
