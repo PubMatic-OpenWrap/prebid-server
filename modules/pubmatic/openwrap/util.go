@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"encoding/json"
 	"os"
 	"regexp"
 	"strings"
@@ -45,10 +46,10 @@ func init() {
 	ctvRegex = regexp.MustCompile(models.ConnectedDeviceUARegexPattern)
 }
 
-//	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform, rCtx.PubIDStr, m.metricEngine)
+//	rCtx.DevicePlatform = getDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform, rCtx.PubIDStr, m.metricEngine)
 //
-// GetDevicePlatform determines the device from which request has been generated
-func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
+// getDevicePlatform determines the device from which request has been generated
+func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
 	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
 		userAgentString = bidRequest.Device.UA
@@ -294,6 +295,32 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
+}
+
+func populateDeviceExt(request *openrtb2.BidRequest, dvc *models.DeviceCtx) {
+	if request == nil || request.Device == nil || request.Device.Ext == nil {
+		return
+	}
+
+	ext := make(map[string]interface{})
+	err := json.Unmarshal(request.Device.Ext, &ext)
+	if err != nil {
+		return
+	}
+
+	//use ext object for logging any other extension parameters
+	//log device.ext.ifa_type parameter to ifty in logger record
+	if value, ok := ext[models.DeviceExtIFAType].(string); ok {
+		//ifa_type checking is valid parameter and log its respective id
+		ifaType := models.DeviceIFATypeID[strings.ToLower(value)]
+		dvc.IFAType = &ifaType
+	}
+
+	//log device.ext.atts parameter in logger
+	if value, ok := ext[models.DeviceExtATTS].(float64); ok {
+		atts := int(value)
+		dvc.ATTS = &atts
+	}
 }
 
 func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {

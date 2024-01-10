@@ -20,10 +20,12 @@ var rctx = models.RequestCtx{
 	DisplayVersionID:    1,
 	PageURL:             "abc.com",
 	LoggerImpressionID:  "loggerIID",
-	DevicePlatform:      5,
 	SSAI:                "mediatailor",
 	Origin:              "publisher.com",
 	ABTestConfigApplied: 1,
+	Device: models.DeviceCtx{
+		Platform: 5,
+	},
 	PrebidBidderCode: map[string]string{
 		"pubmatic": "pubmatic",
 	},
