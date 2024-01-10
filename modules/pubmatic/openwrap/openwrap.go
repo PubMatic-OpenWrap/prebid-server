@@ -58,7 +58,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 
 	// NYC_TODO: remove this dependency
-	if err := ow_adapters.InitBidders(cfg); err != nil {
+	if err := ow_adapters.InitBidders("./static/bidder-params"); err != nil {
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 

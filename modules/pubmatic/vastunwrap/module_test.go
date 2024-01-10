@@ -159,6 +159,8 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
 				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+
 			},
 			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Add("unwrap-status", "0")
