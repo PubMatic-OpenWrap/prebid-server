@@ -385,13 +385,18 @@ func (values *URLValues) GetQueryParams(key string) (map[string]interface{}, err
 		queryParams := make(map[string]interface{})
 
 		for _, pair := range pairs {
-			kv := strings.SplitN(pair, "=", 2)
-			if len(kv) == 2 {
-				key := kv[0]
-				value := kv[1]
-				queryParams[key] = value
+			keyValue := strings.SplitN(pair, "=", 2)
+			key := keyValue[0]
+			if len(keyValue) == 2 {
+				value := keyValue[1]
+				var jsonValue interface{}
+				if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
+					queryParams[key] = jsonValue
+				} else {
+					queryParams[key] = value
+				}
 			} else {
-				return nil, errors.New("Error parsing query param pair")
+				return nil, errors.New("error while parsing the query param")
 			}
 		}
 		return queryParams, nil
