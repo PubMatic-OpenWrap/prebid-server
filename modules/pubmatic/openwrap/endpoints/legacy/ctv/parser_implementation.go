@@ -10,8 +10,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb"
+
 	v26 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -222,17 +223,12 @@ func (o *OpenRTB) ORTBSourcePChain() (err error) {
 
 // ORTBSourceSChain will read and set ortb Source.Ext.SChain parameter
 func (o *OpenRTB) ORTBSourceSChain() (err error) {
-
 	sChainString, ok := o.values.GetString(ORTBSourceSChain)
 	if !ok {
 		return nil
 	}
-
 	var sChain *openrtb2.SupplyChain
-
-	sChain, err = openrtb.DeserializeSupplyChain(sChainString)
-
-	//sChain, err = openrtb.DeserializeSupplyChain(*sChainString)
+	sChain, err = openrtb_ext.DeserializeSupplyChain(sChainString)
 	if err != nil {
 		pubId := ""
 		if v, ok := o.values.GetString(ORTBAppPublisherID); ok {
@@ -240,10 +236,7 @@ func (o *OpenRTB) ORTBSourceSChain() (err error) {
 		} else if v, ok := o.values.GetString(ORTBSitePublisherID); ok {
 			pubId = v
 		}
-
-		//logger.Error(errorcodes.ErrDeserializationFailed, constant.ORTBSourceSChain, err.Error(), pubId, *sChainString)
-		fmt.Errorf("error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] payload:[%s]", ORTBSourceSChain, err, pubId, sChainString)
-
+		glog.Errorf(ErrDeserializationFailed, ORTBSourceSChain, err, pubId, sChainString)
 		return nil
 	}
 
