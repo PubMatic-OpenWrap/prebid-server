@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {
@@ -51,5 +52,41 @@ func ValidateVideoImpressions(request *openrtb2.BidRequest) error {
 		return errors.New("video object is missing in the request")
 	}
 
+	return nil
+}
+
+// IsValidSchain validated the schain object
+func IsValidSchain(schain *openrtb2.SupplyChain) error {
+
+	if schain.Ver != openrtb_ext.SChainVersion1 {
+		return fmt.Errorf("invalid schain version, version should be %s", openrtb_ext.SChainVersion1)
+	}
+
+	if (int(schain.Complete) != openrtb_ext.SChainCompleteYes) && (schain.Complete != openrtb_ext.SChainCompleteNo) {
+		return errors.New("invalid schain.complete value should be 0 or 1")
+	}
+
+	if len(schain.Nodes) == 0 {
+		return errors.New("invalid schain node fields, Node can't be empty")
+	}
+
+	for _, schainNode := range schain.Nodes {
+		if schainNode.ASI == "" {
+			return errors.New("invalid schain node fields, ASI can't be empty")
+		}
+
+		if schainNode.SID == "" {
+			return errors.New("invalid schain node fields, SID can't be empty")
+		}
+
+		if len([]rune(schainNode.SID)) > openrtb_ext.SIDLength {
+			return errors.New("invalid schain node fields, sid can have maximum 64 characters")
+		}
+
+		// for schain version 1.0 hp must be 1
+		if schainNode.HP == nil || *schainNode.HP != openrtb_ext.HPOne {
+			return errors.New("invalid schain node fields, HP must be one")
+		}
+	}
 	return nil
 }

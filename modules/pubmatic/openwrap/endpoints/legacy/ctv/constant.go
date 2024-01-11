@@ -55,6 +55,8 @@ const (
 	ORTBSourceTID = "src.tid"
 	//ORTBSourcePChain get api parameter src.pchain
 	ORTBSourcePChain = "src.pchain"
+	//ORTBSourcesChain get api parameter src.pchain
+	ORTBSourceSChain = "src.schain"
 
 	// Regs level parameters
 
@@ -722,8 +724,10 @@ const (
 )
 
 const (
-	ErrJSONMarshalFailed    = `error:[json_marshal_failed] object:[%s] message:[%s]`
-	ErrJSONUnmarshalFailed  = `error:[json_unmarshal_failed] object:[%s] message:[%s] payload:[%s]`
-	ErrTypeCastFailed       = `error:[type_cast_failed] key:[%s] type:[%s] value:[%v]`
-	ErrHTTPNewRequestFailed = `error:[setup_new_request_failed] method:[%s] endpoint:[%s] message:[%s]`
+	ErrJSONMarshalFailed      = `error:[json_marshal_failed] object:[%s] message:[%s]`
+	ErrJSONUnmarshalFailed    = `error:[json_unmarshal_failed] object:[%s] message:[%s] payload:[%s]`
+	ErrTypeCastFailed         = `error:[type_cast_failed] key:[%s] type:[%s] value:[%v]`
+	ErrHTTPNewRequestFailed   = `error:[setup_new_request_failed] method:[%s] endpoint:[%s] message:[%s]`
+	ErrDeserializationFailed  = `error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] payload:[%s]`
+	ErrSchainValidationFailed = `error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] profileid:[%d] payload:[%s]`
 )

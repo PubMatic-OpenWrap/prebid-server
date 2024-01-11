@@ -10,7 +10,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+
 	v26 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -216,6 +218,34 @@ func (o *OpenRTB) ORTBSourcePChain() (err error) {
 		o.ortb.Source = &openrtb2.Source{}
 	}
 	o.ortb.Source.PChain = val
+	return
+}
+
+// ORTBSourceSChain will read and set ortb Source.Ext.SChain parameter
+func (o *OpenRTB) ORTBSourceSChain() (err error) {
+	sChainString, ok := o.values.GetString(ORTBSourceSChain)
+	if !ok {
+		return nil
+	}
+	var sChain *openrtb2.SupplyChain
+	sChain, err = openrtb_ext.DeserializeSupplyChain(sChainString)
+	if err != nil {
+		pubId := ""
+		if v, ok := o.values.GetString(ORTBAppPublisherID); ok {
+			pubId = v
+		} else if v, ok := o.values.GetString(ORTBSitePublisherID); ok {
+			pubId = v
+		}
+		glog.Errorf(ErrDeserializationFailed, ORTBSourceSChain, err, pubId, sChainString)
+		return nil
+	}
+
+	if o.ortb.Source == nil {
+		o.ortb.Source = &openrtb2.Source{}
+	}
+
+	o.ortb.Source.SChain = sChain
+
 	return
 }
 
