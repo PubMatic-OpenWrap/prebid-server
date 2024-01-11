@@ -22,7 +22,7 @@ func PrepareBidParamJSONForPartner(width *int64, height *int64, fieldMap map[str
 	}
 
 	//get callback function and execute it
-	callback := getBuilder(params.AdapterName)
+	callback := GetBuilder(params.AdapterName)
 	return callback(params)
 }
 
@@ -600,5 +600,42 @@ func builderBoldwin(params BidderParameters) (json.RawMessage, error) {
 	}
 
 	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderColossus(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderParamColossusTagID, BidderParamColossusgroupID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderNextmillennium(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+
+	anyOf := []string{"placement_id", "group_id"}
+	for _, param := range anyOf {
+		if val, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `{"%s":"%s"}`, param, val)
+			break
+		}
+	}
+
+	if jsonStr.Len() == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, anyOf)
+	}
+
 	return jsonStr.Bytes(), nil
 }

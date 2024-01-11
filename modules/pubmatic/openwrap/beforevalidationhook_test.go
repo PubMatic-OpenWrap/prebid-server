@@ -12,7 +12,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
+	adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
@@ -166,9 +166,11 @@ func TestGetVASTEventMacros(t *testing.T) {
 					ProfileID:          1234,
 					DisplayID:          1234,
 					StartTime:          1234,
-					DevicePlatform:     1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "",
+					Device: models.DeviceCtx{
+						Platform: 1234,
+					},
 				},
 			},
 			want: map[string]string{
@@ -186,9 +188,11 @@ func TestGetVASTEventMacros(t *testing.T) {
 					ProfileID:          1234,
 					DisplayID:          1234,
 					StartTime:          1234,
-					DevicePlatform:     1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "1234",
+					Device: models.DeviceCtx{
+						Platform: 1234,
+					},
 				},
 			},
 			want: map[string]string{
@@ -2811,7 +2815,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			ow_adapters.InitBidders(tt.fields.cfg)
+			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
 				cfg:          tt.fields.cfg,
 				cache:        tt.fields.cache,

@@ -20,16 +20,19 @@ var rctx = models.RequestCtx{
 	DisplayVersionID:    1,
 	PageURL:             "abc.com",
 	LoggerImpressionID:  "loggerIID",
-	DevicePlatform:      5,
 	SSAI:                "mediatailor",
 	Origin:              "publisher.com",
 	ABTestConfigApplied: 1,
+	Device: models.DeviceCtx{
+		Platform: 5,
+	},
 	PrebidBidderCode: map[string]string{
 		"pubmatic": "pubmatic",
 	},
 	MarketPlaceBidders: map[string]struct{}{
 		"pubmatic": {},
 	},
+	CustomDimensions: map[string]models.CustomDimension{"author": {Value: "henry"}},
 	ImpBidCtx: map[string]models.ImpCtx{
 		"impID-1": {
 			TagID:      "adunit-1",
@@ -167,8 +170,9 @@ func Test_createTrackers(t *testing.T) {
 						LoggerData: models.LoggerData{
 							KGPSV: "adunit-1@250x300",
 						},
+						CustomDimensions: "author=henry",
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -244,8 +248,9 @@ func Test_createTrackers(t *testing.T) {
 						LoggerData: models.LoggerData{
 							KGPSV: "adunit-1@250x300",
 						},
+						CustomDimensions: "author=henry",
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic2&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode2&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -356,6 +361,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					RewardedInventory: 1,
 					Secure:            1,
 					SSAI:              "mediatailor",
+					CustomDimensions:  "traffic=media;age=23",
 					PartnerInfo: models.Partner{
 						PartnerID:      "AppNexus",
 						BidderCode:     "AppNexus1",
@@ -375,7 +381,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_secure_enable_in_tracker",
@@ -402,6 +408,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					FloorType:         1,
 					RewardedInventory: 1,
 					Secure:            1,
+					CustomDimensions:  "traffic=media;age=23",
 					PartnerInfo: models.Partner{
 						PartnerID:      "AppNexus",
 						BidderCode:     "AppNexus1",
@@ -421,7 +428,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_RewardInventory_in_tracker",
@@ -447,6 +454,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					FloorSource:       ptrutil.ToPtr(1),
 					FloorType:         1,
 					RewardedInventory: 1,
+					CustomDimensions:  "traffic=media;age=23",
 					PartnerInfo: models.Partner{
 						PartnerID:      "AppNexus",
 						BidderCode:     "AppNexus1",
@@ -466,7 +474,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_floors_details_in_tracker",
@@ -491,6 +499,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					FloorModelVersion: "test version",
 					FloorSource:       ptrutil.ToPtr(1),
 					FloorType:         1,
+					CustomDimensions:  "traffic=media;age=23",
 					PartnerInfo: models.Partner{
 						PartnerID:      "AppNexus",
 						BidderCode:     "AppNexus1",
@@ -510,7 +519,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 	}
 	for _, tt := range tests {
@@ -793,14 +802,15 @@ func TestCreateTrackers(t *testing.T) {
 			want: map[string]models.OWTracker{
 				"bidID-1": {
 					Tracker: models.Tracker{
-						PubID:     5890,
-						PageURL:   "abc.com",
-						Timestamp: startTime,
-						IID:       "loggerIID",
-						ProfileID: "1234",
-						VersionID: "1",
-						Adunit:    "adunit-1",
-						SlotID:    "impID-1_adunit-1",
+						PubID:            5890,
+						PageURL:          "abc.com",
+						Timestamp:        startTime,
+						IID:              "loggerIID",
+						ProfileID:        "1234",
+						VersionID:        "1",
+						Adunit:           "adunit-1",
+						SlotID:           "impID-1_adunit-1",
+						CustomDimensions: "author=henry",
 						PartnerInfo: models.Partner{
 							PartnerID:      "pubmatic",
 							BidderCode:     "pubmatic",
@@ -828,7 +838,7 @@ func TestCreateTrackers(t *testing.T) {
 							KGPSV: "adunit-1@250x300",
 						},
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=pubmatic&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",

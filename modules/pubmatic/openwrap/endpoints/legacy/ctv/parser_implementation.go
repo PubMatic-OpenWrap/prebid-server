@@ -3222,6 +3222,68 @@ func (o *OpenRTB) ORTBSSAI() (err error) {
 	return
 }
 
+// ORTBKeyValues read and set keyval parameter
+func (o *OpenRTB) ORTBKeyValues() (err error) {
+	val, err := o.values.GetQueryParams(ORTBKeyValues)
+	if val == nil {
+		return
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		err = json.Unmarshal(o.ortb.Ext, &reqExt)
+		if err != nil {
+			return
+		}
+	}
+
+	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
+	if !ok {
+		wrapperExt = map[string]interface{}{}
+	}
+	wrapperExt[ORTBExtKV] = val
+
+	reqExt[ORTBExtWrapper] = wrapperExt
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+	o.ortb.Ext = data
+
+	return nil
+}
+
+// ORTBKeyValuesMap read and set keyval parameter
+func (o *OpenRTB) ORTBKeyValuesMap() (err error) {
+	val, err := o.values.GetJSON(ORTBKeyValuesMap)
+	if val == nil {
+		return
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		err = json.Unmarshal(o.ortb.Ext, &reqExt)
+		if err != nil {
+			return
+		}
+	}
+
+	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
+	if !ok {
+		wrapperExt = map[string]interface{}{}
+	}
+	wrapperExt[ORTBExtKV] = val
+
+	reqExt[ORTBExtWrapper] = wrapperExt
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+	o.ortb.Ext = data
+
+	return nil
+}
+
 /*********************** User.Ext.Consent ***********************/
 
 // ORTBUserExtConsent will read and set ortb User.Ext.Consent parameter

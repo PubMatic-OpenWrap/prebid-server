@@ -57,6 +57,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordWrapperCount(arg0, arg1, arg2 int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordWrapperCount), arg0, arg1, arg2)
 }
 
+// RecordUnwrapRespTime mocks base method
+func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRespTime", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRespTime indicates an expected call of RecordRequestStatus
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRespTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRespTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRespTime), arg0, arg1, arg2)
+}
+
 // RecordRequestTime mocks base method
 func (m *MockMetricsEngine) RecordRequestTime(arg0, arg1 string, arg2 time.Duration) {
 	m.ctrl.T.Helper()

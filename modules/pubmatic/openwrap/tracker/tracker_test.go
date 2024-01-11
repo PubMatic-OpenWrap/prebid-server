@@ -32,9 +32,11 @@ func TestGetTrackerInfo(t *testing.T) {
 					PageURL:             "www.test.com",
 					LoggerImpressionID:  "iid123",
 					StartTime:           startTime,
-					DevicePlatform:      models.DevicePlatformMobileAppAndroid,
 					Origin:              "www.publisher.com",
 					ABTestConfigApplied: 1,
+					Device: models.DeviceCtx{
+						Platform: models.DevicePlatformMobileAppAndroid,
+					},
 				},
 				responseExt: openrtb_ext.ExtBidResponse{},
 			},
@@ -51,9 +53,11 @@ func TestGetTrackerInfo(t *testing.T) {
 					PageURL:             "www.test.com",
 					LoggerImpressionID:  "iid123",
 					StartTime:           startTime,
-					DevicePlatform:      models.DevicePlatformMobileAppAndroid,
 					Origin:              "www.publisher.com",
 					ABTestConfigApplied: 1,
+					Device: models.DeviceCtx{
+						Platform: models.DevicePlatformMobileAppAndroid,
+					},
 				},
 				responseExt: openrtb_ext.ExtBidResponse{
 					Prebid: &openrtb_ext.ExtResponsePrebid{

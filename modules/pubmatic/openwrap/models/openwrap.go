@@ -55,9 +55,9 @@ type RequestCtx struct {
 	Trace bool
 
 	//tracker
-	PageURL        string
-	StartTime      int64
-	DevicePlatform DevicePlatform
+	PageURL   string
+	StartTime int64
+	Device    DeviceCtx
 
 	//trackers per bid
 	Trackers map[string]OWTracker
@@ -96,8 +96,13 @@ type RequestCtx struct {
 	CurrencyConversion     func(from string, to string, value float64) (float64, error)
 	MatchedImpression      map[string]int
 	Method                 string
+	Errors                 []error
+	CustomDimensions       map[string]CustomDimension
+}
 
-	Errors []error
+type CustomDimension struct {
+	Value     string `json:"value,omitempty"`
+	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }
 
 type OwBid struct {
@@ -113,6 +118,13 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 	}
 	v := r.PartnerConfigMap[VersionLevelConfigID][key]
 	return v
+}
+
+// DeviceCtx to cache device specific parameters
+type DeviceCtx struct {
+	Platform DevicePlatform
+	IFAType  *int
+	ATTS     *int
 }
 
 type ImpCtx struct {
