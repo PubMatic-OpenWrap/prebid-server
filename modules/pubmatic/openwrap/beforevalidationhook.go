@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -521,6 +522,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var err error
+		if rctx.IsCTVRequest && ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
+			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
+			if err != nil {
+				schainBytes, _ := json.Marshal(ep.BidRequest.Source.SChain)
+				glog.Errorf(ctv.ErrSchainValidationFailed, SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
+				ep.BidRequest.Source.SChain = nil
+			}
+		}
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
@@ -530,14 +539,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
 			if err != nil {
 				result.Errors = append(result.Errors, err.Error())
-			}
-
-			if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
-				err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
-				if err != nil {
-					result.Errors = append(result.Errors, err.Error())
-					ep.BidRequest.Source.SChain = nil
-				}
 			}
 		}
 		return ep, err
@@ -577,31 +578,8 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
 	}
+
 	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
-	// if rctx.Platform == models.PLATFORM_APP || rctx.Platform == models.PLATFORM_VIDEO {
-	// 	// sChainObj := getSChainObj(rctx.PartnerConfigMap)
-	// 	// if sChainObj != nil {
-	// 	// 	setSchainInSourceObject(bidRequest.Source, sChainObj)
-	// 	// }
-	// 	// var sChainObj []byte
-	// 	// if bidRequest.Source.SChain == nil {
-	// 	// 	sChainObj = getSChainObj(rctx.PartnerConfigMap)
-	// 	// } else {
-	// 	// 	sChainObj = bidRequest.Source.SChain
-	// 	// 	source.SChain = nil
-	// 	// }
-
-	// 	// if sChainObj != nil {
-	// 	// 	// Temporary change till all bidder start using openrtb 2.6 source.schain
-	// 	// 	sourceExt, ok := source.Ext.(map[string]any)
-	// 	// 	if !ok {
-	// 	// 		sourceExt = map[string]any{}
-	// 	// 	}
-
-	// 	// 	sourceExt[constant.SChainKey] = sChainObj
-	// 	// 	source.Ext = sourceExt
-	// 	// }
-	// }
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
