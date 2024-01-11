@@ -2734,6 +2734,159 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 	}
 }
 
+func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
+	type fields struct {
+		cfg          config.Config
+		cache        cache.Cache
+		metricEngine metrics.MetricsEngine
+	}
+	type args struct {
+		ctx        context.Context
+		moduleCtx  hookstage.ModuleInvocationContext
+		payload    hookstage.BeforeValidationRequestPayload
+		bidrequest json.RawMessage
+	}
+	type want struct {
+		rctx  *models.RequestCtx
+		error bool
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+		setup  func()
+	}{
+		{
+			name: "bidRequest.Device.UA_is_present",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					UA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
+				},
+				error: true,
+			},
+		},
+		{
+			name: "bidRequest.Device.UA_is_absent",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					UA:    "go-test",
+					PubID: 1,
+				},
+				error: true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			adapters.InitBidders("./static/bidder-params/")
+			m := OpenWrap{
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+			}
+			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
+			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
+
+			_, err := m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			assert.Equal(t, tt.want.error, err != nil, "mismatched error received from handleBeforeValidationHook")
+			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+			assert.Equal(t, tt.want.rctx == nil, iRctx == nil, "mismatched rctx received from handleBeforeValidationHook")
+			gotRctx := iRctx.(models.RequestCtx)
+			assert.Equal(t, tt.want.rctx.UA, gotRctx.UA, "mismatched rctx.UA received from handleBeforeValidationHook")
+		})
+	}
+}
+
+func TestGetUserAgentFromRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		request *openrtb2.BidRequest
+		wantUA  string
+	}{
+		{
+			name:    "bidrequest_nil",
+			request: nil,
+			wantUA:  "",
+		},
+		{
+			name: "device_nil",
+			request: &openrtb2.BidRequest{
+				Device: nil,
+			},
+			wantUA: "",
+		},
+		{
+			name: "ua_empty",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA: "",
+				},
+			},
+			wantUA: "",
+		},
+		{
+			name: "valid_ua",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
+				},
+			},
+			wantUA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ua := getUserAgent(tt.request)
+			assert.Equal(t, tt.wantUA, ua, "mismatched UA")
+		})
+	}
+}
+
 func TestGetSlotName(t *testing.T) {
 	type args struct {
 		tagId  string
