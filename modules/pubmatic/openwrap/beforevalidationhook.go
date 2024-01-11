@@ -340,16 +340,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderMeta[bidder].VASTTagFlags[bidder] = false
 			}
 
+			isAlias := false
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
 				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
 					rCtx.Aliases[bidderCode] = adapters.ResolveOWBidder(prebidPartnerName)
+					isAlias = true
 				}
 			}
 			if alias, ok := IsAlias(bidderCode); ok {
 				rCtx.Aliases[bidderCode] = alias
+				isAlias = true
 			}
 
-			if partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
+			if isAlias || partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 

@@ -25,6 +25,7 @@ var ignoreKeys = map[string]bool{
 	models.THROTTLE:             true,
 	models.BidderCode:           true,
 	models.IsAlias:              true,
+	models.VENDORID:             true,
 }
 
 func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
