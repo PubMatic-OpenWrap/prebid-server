@@ -53,10 +53,6 @@ func init() {
 // getDevicePlatform determines the device from which request has been generated
 func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
-		userAgentString = bidRequest.Device.UA
-		rCtx.UA = userAgentString
-	}
 
 	switch rCtx.Platform {
 	case models.PLATFORM_AMP:
@@ -286,6 +282,15 @@ func getPubmaticErrorCode(standardNBR int) int {
 
 func isCTV(userAgent string) bool {
 	return ctvRegex.Match([]byte(userAgent))
+}
+
+// getUserAgent returns value of bidRequest.Device.UA if present else returns empty string
+func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
+	userAgent := defaultUA
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) > 0 {
+		userAgent = bidRequest.Device.UA
+	}
+	return userAgent
 }
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
