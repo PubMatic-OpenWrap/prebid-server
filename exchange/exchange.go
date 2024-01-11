@@ -770,6 +770,7 @@ func (e *exchange) getAllBids(
 				bidderRequestStartTime: start,
 				responseDebugAllowed:   responseDebugAllowed,
 			}
+			//bidderRequest.BidderCoreName = "magnite"
 			seatBids, extraBidderRespInfo, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest, conversions, &reqInfo, e.adsCertSigner, bidReqOptions, alternateBidderCodes, hookExecutor, bidAdjustmentRules)
 			brw.bidderResponseStartTime = extraBidderRespInfo.respProcessingStartTime
 
