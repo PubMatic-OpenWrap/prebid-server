@@ -143,19 +143,14 @@ func GetRevenueShare(partnerConfig map[string]string) float64 {
 
 func GetNetEcpm(price float64, revShare float64) float64 {
 	if revShare == 0 {
-		return toFixed(price, BID_PRECISION)
+		return ToFixed(price, BID_PRECISION)
 	}
 	price = price * (1 - revShare/100)
-	return toFixed(price, BID_PRECISION)
+	return ToFixed(price, BID_PRECISION)
 }
 
 func GetGrossEcpm(price float64) float64 {
-	return toFixed(price, BID_PRECISION)
-}
-
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
+	return ToFixed(price, BID_PRECISION)
 }
 
 func round(num float64) int {
@@ -456,4 +451,22 @@ func getVASTBidderKGPVFromBidResponse(slotKey string, bidExt *BidExt) (string, s
 		}
 	}
 	return slotKey, slotKey
+}
+
+func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
+
+	if revShare == 100 {
+		return 0
+	}
+	originalBidPrice := netEcpm / (1 - revShare/100)
+	return ToFixed(originalBidPrice, BID_PRECISION)
+}
+
+func GetBidAdjustmentValue(revShare float64) float64 {
+	return (1 - revShare/100)
+}
+
+func ToFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }

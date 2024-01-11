@@ -190,6 +190,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	disabledSlots := 0
 	serviceSideBidderPresent := false
+	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
 
 	if rCtx.IsCTVRequest {
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
@@ -411,6 +412,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
+			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
 
