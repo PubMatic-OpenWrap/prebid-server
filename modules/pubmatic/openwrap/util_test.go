@@ -574,6 +574,68 @@ func TestIsMobile(t *testing.T) {
 	}
 }
 
+func Test_getUserAgent(t *testing.T) {
+	type args struct {
+		request   *openrtb2.BidRequest
+		defaultUA string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		wantUA string
+	}{
+		{
+			name: "request_is_nil",
+			args: args{
+				request:   nil,
+				defaultUA: "default-ua",
+			},
+
+			wantUA: "default-ua",
+		},
+		{
+			name: "req.device_is_nil",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Device: nil,
+				},
+				defaultUA: "default-ua",
+			},
+			wantUA: "default-ua",
+		},
+		{
+			name: "req.device.ua_empty",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						UA: "",
+					},
+				},
+				defaultUA: "default-ua",
+			},
+			wantUA: "default-ua",
+		},
+		{
+			name: "req.device.ua_valid",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						UA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
+					},
+				},
+				defaultUA: "default-ua",
+			},
+			wantUA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ua := getUserAgent(tt.args.request, tt.args.defaultUA)
+			assert.Equal(t, tt.wantUA, ua, "mismatched UA")
+		})
+	}
+}
+
 func TestIsIos(t *testing.T) {
 	type args struct {
 		os              string

@@ -283,8 +283,8 @@ func isCTV(userAgent string) bool {
 }
 
 // getUserAgent returns value of bidRequest.Device.UA if present else returns empty string
-func getUserAgent(bidRequest *openrtb2.BidRequest) string {
-	var userAgent string
+func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
+	userAgent := defaultUA
 	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) > 0 {
 		userAgent = bidRequest.Device.UA
 	}

@@ -2842,51 +2842,6 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	}
 }
 
-func TestGetUserAgentFromRequest(t *testing.T) {
-	tests := []struct {
-		name    string
-		request *openrtb2.BidRequest
-		wantUA  string
-	}{
-		{
-			name:    "bidrequest_nil",
-			request: nil,
-			wantUA:  "",
-		},
-		{
-			name: "device_nil",
-			request: &openrtb2.BidRequest{
-				Device: nil,
-			},
-			wantUA: "",
-		},
-		{
-			name: "ua_empty",
-			request: &openrtb2.BidRequest{
-				Device: &openrtb2.Device{
-					UA: "",
-				},
-			},
-			wantUA: "",
-		},
-		{
-			name: "valid_ua",
-			request: &openrtb2.BidRequest{
-				Device: &openrtb2.Device{
-					UA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
-				},
-			},
-			wantUA: "Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ua := getUserAgent(tt.request)
-			assert.Equal(t, tt.wantUA, ua, "mismatched UA")
-		})
-	}
-}
-
 func TestGetSlotName(t *testing.T) {
 	type args struct {
 		tagId  string
