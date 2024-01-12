@@ -354,3 +354,102 @@ func TestSetMetaDataObject(t *testing.T) {
 		})
 	}
 }
+
+func TestLogDeviceObject(t *testing.T) {
+	type args struct {
+		dvc *models.DeviceCtx
+	}
+	tests := []struct {
+		name string
+		args args
+		want Device
+	}{
+		{
+			name: `empty`,
+			args: args{
+				dvc: nil,
+			},
+			want: Device{},
+		},
+		{
+			name: `missing_ifatype`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform: models.DevicePlatformDesktop,
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+			},
+		},
+		{
+			name: `missing_ext`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `missing_device_ext`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext:       &models.ExtDevice{},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `missing_atts`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext: &models.ExtDevice{
+						ExtDevice: openrtb_ext.ExtDevice{},
+					},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `valid`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext: &models.ExtDevice{
+						ExtDevice: openrtb_ext.ExtDevice{
+							ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
+						},
+					},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+				ATTS:     ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{}
+			wlog.logDeviceObject(tt.args.dvc)
+			assert.Equal(t, tt.want, wlog.Device)
+		})
+	}
+}

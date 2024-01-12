@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"os"
 	"regexp"
 	"strings"
@@ -295,32 +294,6 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
-}
-
-func populateDeviceExt(request *openrtb2.BidRequest, dvc *models.DeviceCtx) {
-	if request == nil || request.Device == nil || request.Device.Ext == nil {
-		return
-	}
-
-	ext := make(map[string]interface{})
-	err := json.Unmarshal(request.Device.Ext, &ext)
-	if err != nil {
-		return
-	}
-
-	//use ext object for logging any other extension parameters
-	//log device.ext.ifa_type parameter to ifty in logger record
-	if value, ok := ext[models.DeviceExtIFAType].(string); ok {
-		//ifa_type checking is valid parameter and log its respective id
-		ifaType := models.DeviceIFATypeID[strings.ToLower(value)]
-		dvc.IFAType = &ifaType
-	}
-
-	//log device.ext.atts parameter in logger
-	if value, ok := ext[models.DeviceExtATTS].(float64); ok {
-		atts := int(value)
-		dvc.ATTS = &atts
-	}
 }
 
 func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
