@@ -3514,7 +3514,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					PubID: 5890,
-					Device: models.DeviceCtx{
+					DeviceCtx: models.DeviceCtx{
 						Platform: models.DevicePlatformMobileAppAndroid,
 					},
 				},
@@ -3540,9 +3540,9 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					PubID: 5890,
-					Device: models.DeviceCtx{
-						Platform: models.DevicePlatformMobileAppAndroid,
-						IFAType:  ptrutil.ToPtr(8),
+					DeviceCtx: models.DeviceCtx{
+						Platform:  models.DevicePlatformMobileAppAndroid,
+						IFATypeID: ptrutil.ToPtr(8),
 					},
 				},
 				logInfo:    true,
@@ -3567,8 +3567,12 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					PubID: 5890,
-					Device: models.DeviceCtx{
-						ATTS: ptrutil.ToPtr(1),
+					DeviceCtx: models.DeviceCtx{
+						Ext: &models.ExtDevice{
+							ExtDevice: openrtb_ext.ExtDevice{
+								ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
+							},
+						},
 					},
 				},
 				logInfo:    true,
