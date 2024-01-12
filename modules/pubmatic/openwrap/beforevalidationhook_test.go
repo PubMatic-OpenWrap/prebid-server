@@ -168,7 +168,7 @@ func TestGetVASTEventMacros(t *testing.T) {
 					StartTime:          1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "",
-					Device: models.DeviceCtx{
+					DeviceCtx: models.DeviceCtx{
 						Platform: 1234,
 					},
 				},
@@ -190,7 +190,7 @@ func TestGetVASTEventMacros(t *testing.T) {
 					StartTime:          1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "1234",
-					Device: models.DeviceCtx{
+					DeviceCtx: models.DeviceCtx{
 						Platform: 1234,
 					},
 				},
