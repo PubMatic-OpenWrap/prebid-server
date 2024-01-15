@@ -80,8 +80,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
-	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
-	populateDeviceExt(payload.BidRequest, &rCtx.Device)
+	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -133,7 +133,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.Platform = platform
-	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
@@ -524,7 +524,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
-	validateDevice(bidRequest.Device)
+	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 
 	if bidRequest.User == nil {
 		bidRequest.User = &openrtb2.User{}
@@ -840,7 +840,7 @@ func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
 		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
-		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.Device.Platform),
+		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DeviceCtx.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
 	}
 

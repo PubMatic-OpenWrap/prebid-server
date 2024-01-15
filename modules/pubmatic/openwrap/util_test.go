@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"testing"
@@ -15,7 +14,6 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1006,164 +1004,6 @@ func TestGetPubmaticErrorCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getPubmaticErrorCode(tt.args.standardNBR)
 			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestPopulateDeviceExt(t *testing.T) {
-	type args struct {
-		ortbBidRequest *openrtb2.BidRequest
-	}
-
-	type want struct {
-		device models.DeviceCtx
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: `Nil request`,
-			args: args{},
-			want: want{
-				device: models.DeviceCtx{},
-			},
-		},
-		{
-			name: `Invalid device ext`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`invalid ext`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{},
-			},
-		},
-		{
-			name: `IFA Type key absent`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"anykey":"anyval"}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{},
-			},
-		},
-		{
-			name: `Invalid data type for ifa_type key`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": 123}`)},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{},
-			},
-		},
-		{
-			name: `ifa_type missing in DeviceIFATypeID mapping`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "anything"}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{
-					IFAType: ptrutil.ToPtr(0),
-				},
-			},
-		},
-		{
-			name: `Case insensitive ifa_type`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "DpId"}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{
-					IFAType: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-				},
-			},
-		},
-		{
-			name: `Valid ifa_type`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "sessionid"}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{
-					IFAType: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-				},
-			},
-		},
-		{
-			name: `invalid device.ext.atts`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"atts": "invalid_value"}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{},
-			},
-		},
-		{
-			name: `valid device.ext.atts`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"atts": 1}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{
-					ATTS: ptrutil.ToPtr(1),
-				},
-			},
-		},
-		{
-			name: `all valid ext parameters`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "sessionid","atts": 1}`),
-					},
-				},
-			},
-			want: want{
-				device: models.DeviceCtx{
-					IFAType: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-					ATTS:    ptrutil.ToPtr(1),
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dvc := models.DeviceCtx{}
-			populateDeviceExt(tt.args.ortbBidRequest, &dvc)
-			assert.Equal(t, tt.want.device, dvc)
 		})
 	}
 }

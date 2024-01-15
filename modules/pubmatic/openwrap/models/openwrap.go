@@ -57,7 +57,7 @@ type RequestCtx struct {
 	//tracker
 	PageURL   string
 	StartTime int64
-	Device    DeviceCtx
+	DeviceCtx DeviceCtx
 
 	//trackers per bid
 	Trackers map[string]OWTracker
@@ -116,9 +116,10 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 
 // DeviceCtx to cache device specific parameters
 type DeviceCtx struct {
-	Platform DevicePlatform
-	IFAType  *int
-	ATTS     *int
+	DeviceIFA string
+	IFATypeID *DeviceIFAType
+	Platform  DevicePlatform
+	Ext       *ExtDevice
 }
 
 type ImpCtx struct {
