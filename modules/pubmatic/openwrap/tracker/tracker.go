@@ -17,14 +17,17 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 		PageURL:           rCtx.PageURL,
 		Timestamp:         rCtx.StartTime,
 		IID:               rCtx.LoggerImpressionID,
-		Platform:          int(rCtx.Device.Platform),
+		Platform:          int(rCtx.DeviceCtx.Platform),
 		Origin:            rCtx.Origin,
 		TestGroup:         rCtx.ABTestConfigApplied,
 		FloorModelVersion: floorsDetails.FloorModelVersion,
 		FloorType:         floorsDetails.FloorType,
 		FloorSkippedFlag:  floorsDetails.Skipfloors,
 		FloorSource:       floorsDetails.FloorSource,
-		ATTS:              rCtx.Device.ATTS,
+	}
+
+	if rCtx.DeviceCtx.Ext != nil {
+		tracker.ATTS = rCtx.DeviceCtx.Ext.ATTS
 	}
 
 	constructedURLString := constructTrackerURL(rCtx, tracker)
