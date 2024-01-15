@@ -729,5 +729,5 @@ const (
 	ErrTypeCastFailed         = `error:[type_cast_failed] key:[%s] type:[%s] value:[%v]`
 	ErrHTTPNewRequestFailed   = `error:[setup_new_request_failed] method:[%s] endpoint:[%s] message:[%s]`
 	ErrDeserializationFailed  = `error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] payload:[%s]`
-	ErrSchainValidationFailed = `error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] profileid:[%d] payload:[%s]`
+	ErrSchainValidationFailed = `error:[schain_validation_failed] object:[%s] message:[%s] pubid:[%s] profileid:[%s] payload:[%s]`
 )
