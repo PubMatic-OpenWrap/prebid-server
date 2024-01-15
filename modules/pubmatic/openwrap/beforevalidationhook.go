@@ -79,6 +79,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
+  rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
