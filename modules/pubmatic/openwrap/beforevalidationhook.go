@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -78,7 +79,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	populateDeviceExt(payload.BidRequest, &rCtx.Device)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -93,6 +96,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.NewReqExt = requestExt
+	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
@@ -129,7 +133,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.Platform = platform
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.Device.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
@@ -836,7 +840,7 @@ func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
 		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
-		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DevicePlatform),
+		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.Device.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
 	}
 

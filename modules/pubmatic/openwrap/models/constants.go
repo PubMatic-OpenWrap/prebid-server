@@ -334,8 +334,10 @@ const (
 	DataTypeArrayOfFloats   = 6
 	DataTypeArrayOfStrings  = 7
 
-	Device     = "device"
-	DeviceType = "deviceType"
+	Device           = "device"
+	DeviceType       = "deviceType"
+	DeviceExtIFAType = "ifa_type"
+	DeviceExtATTS    = "atts"
 
 	//constant for native tracker
 	EventTrackers = "eventtrackers"
@@ -354,6 +356,8 @@ const (
 	//floor types
 	SoftFloor = 0
 	HardFloor = 1
+
+	CustomDimensions = "cds"
 )
 
 const (

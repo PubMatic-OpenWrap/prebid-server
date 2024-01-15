@@ -55,9 +55,9 @@ type RequestCtx struct {
 	Trace bool
 
 	//tracker
-	PageURL        string
-	StartTime      int64
-	DevicePlatform DevicePlatform
+	PageURL   string
+	StartTime int64
+	Device    DeviceCtx
 
 	//trackers per bid
 	Trackers map[string]OWTracker
@@ -93,9 +93,10 @@ type RequestCtx struct {
 	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
 
 	DCName             string
-	CachePutMiss       int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	CurrencyConversion func(from string, to string, value float64) (float64, error)
+	CachePutMiss       int                                                          // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion func(from string, to string, value float64) (float64, error) `json:"-"`
 	MatchedImpression  map[string]int
+	CustomDimensions   map[string]CustomDimension
 }
 
 type OwBid struct {
@@ -111,6 +112,13 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 	}
 	v := r.PartnerConfigMap[VersionLevelConfigID][key]
 	return v
+}
+
+// DeviceCtx to cache device specific parameters
+type DeviceCtx struct {
+	Platform DevicePlatform
+	IFAType  *int
+	ATTS     *int
 }
 
 type ImpCtx struct {
@@ -171,4 +179,9 @@ type AdUnitCtx struct {
 	AppliedSlotAdUnitConfig  *adunitconfig.AdConfig
 	UsingDefaultConfig       bool
 	AllowedConnectionTypes   []int
+}
+
+type CustomDimension struct {
+	Value     string `json:"value,omitempty"`
+	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }
