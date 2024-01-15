@@ -539,7 +539,7 @@ func TestGenerateSlotName(t *testing.T) {
 				div:   "Div1",
 				src:   "test.com",
 			},
-			want: "/15671365/Test_Adunit@test.com@_VASTTAG_",
+			want: "/15671365/Test_Adunit@test.com@",
 		},
 		{
 			name: "empty_kgp",
