@@ -34,13 +34,18 @@ func TestGetTrackerInfo(t *testing.T) {
 					StartTime:           startTime,
 					Origin:              "www.publisher.com",
 					ABTestConfigApplied: 1,
-					Device: models.DeviceCtx{
+					DeviceCtx: models.DeviceCtx{
 						Platform: models.DevicePlatformMobileAppAndroid,
+						Ext: &models.ExtDevice{
+							ExtDevice: openrtb_ext.ExtDevice{
+								ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
+							},
+						},
 					},
 				},
 				responseExt: openrtb_ext.ExtBidResponse{},
 			},
-			want: "localhost:8080/wt?adv=&af=&aps=0&au=%24%7BADUNIT%7D&bc=%24%7BBIDDER_CODE%7D&bidid=%24%7BBID_ID%7D&di=&eg=%24%7BG_ECPM%7D&en=%24%7BN_ECPM%7D&ft=0&iid=iid123&kgpv=%24%7BKGPV%7D&orig=www.publisher.com&origbidid=%24%7BORIGBID_ID%7D&pdvid=0&pid=1&plt=5&pn=%24%7BPARTNER_NAME%7D&psz=&pubid=123&purl=www.test.com&rwrd=%24%7BREWARDED%7D&sl=1&slot=%24%7BSLOT_ID%7D&ss=0&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+			want: "localhost:8080/wt?adv=&af=&aps=0&atts=1&au=%24%7BADUNIT%7D&bc=%24%7BBIDDER_CODE%7D&bidid=%24%7BBID_ID%7D&di=&eg=%24%7BG_ECPM%7D&en=%24%7BN_ECPM%7D&ft=0&iid=iid123&kgpv=%24%7BKGPV%7D&orig=www.publisher.com&origbidid=%24%7BORIGBID_ID%7D&pdvid=0&pid=1&plt=5&pn=%24%7BPARTNER_NAME%7D&psz=&pubid=123&purl=www.test.com&rwrd=%24%7BREWARDED%7D&sl=1&slot=%24%7BSLOT_ID%7D&ss=0&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 		},
 		{
 			name: "all_tracker_info_with_floors",
@@ -55,7 +60,7 @@ func TestGetTrackerInfo(t *testing.T) {
 					StartTime:           startTime,
 					Origin:              "www.publisher.com",
 					ABTestConfigApplied: 1,
-					Device: models.DeviceCtx{
+					DeviceCtx: models.DeviceCtx{
 						Platform: models.DevicePlatformMobileAppAndroid,
 					},
 				},

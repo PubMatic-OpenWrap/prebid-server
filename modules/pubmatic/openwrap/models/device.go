@@ -57,7 +57,7 @@ const (
 )
 
 type ExtDevice struct {
-	*openrtb_ext.ExtDevice
+	openrtb_ext.ExtDevice
 	SessionID string `json:"session_id,omitempty"`
 	IDFV      string `json:"idfv,omitempty"`
 }
