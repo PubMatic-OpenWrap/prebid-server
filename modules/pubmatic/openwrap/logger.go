@@ -24,7 +24,7 @@ func getIncomingSlots(imp openrtb2.Imp) []string {
 	}
 
 	if imp.Video != nil {
-		sizes[fmt.Sprintf("%dx%dv", imp.Video.W, imp.Video.H)] = struct{}{}
+		sizes[fmt.Sprintf("%dx%d", imp.Video.W, imp.Video.H)] = struct{}{}
 	}
 
 	var s []string
