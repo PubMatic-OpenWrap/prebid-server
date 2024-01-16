@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
 	"github.com/prebid/prebid-server/privacy"
 
 	"github.com/buger/jsonparser"
@@ -149,8 +151,30 @@ type endpointDeps struct {
 	tmaxAdjustments           *exchange.TmaxAdjustmentsPreprocessed
 }
 
+// rtbbidder.GetSyncer().BidderInfos --> contains bidderInfos added at runtime
+// we will assign rtbbidder.Builder for each bidder return by rtbbidder.GetSyncer().BidderInfos
+func syncBidderMap(bidderMap map[string]openrtb_ext.BidderName) (map[string]openrtb_ext.BidderName, map[openrtb_ext.BidderName]adapters.Builder) {
+	activeBidders := exchange.GetActiveBidders(rtbbidder.GetSyncer().BidderInfos)
+	adapterBuilders := make(map[openrtb_ext.BidderName]adapters.Builder, 0)
+	for bidder, bidderName := range activeBidders {
+		bidderMap[bidder] = bidderName
+		adapterBuilders[bidderName] = rtbbidder.Builder
+	}
+	return bidderMap, adapterBuilders
+}
+
 func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	deps.metricsEngine.RecordHttpCounter()
+
+	/* append rtbbidders in existing deps.bidderMap */
+	/* will need mutex here to syncBidderMap and to sync ex.AddAdapters*/
+
+	// TODO - currently we have used the http.DefaultClient ?? how to use the router.GeneralHttpClient
+
+	adapterBuilders := make(map[openrtb_ext.BidderName]adapters.Builder, 0)
+	deps.bidderMap, adapterBuilders = syncBidderMap(deps.bidderMap)
+	tempMap, _ := exchange.BuildAdapters(http.DefaultClient, deps.cfg, rtbbidder.GetSyncer().BidderInfos, deps.metricsEngine, adapterBuilders)
+	deps.ex.AddAdapters(tempMap)
 
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.

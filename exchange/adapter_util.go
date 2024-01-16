@@ -10,10 +10,11 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.BidderInfos, me metrics.MetricsEngine) (map[openrtb_ext.BidderName]AdaptedBidder, []error) {
+// BuildAdapters is same function as that of BuildAdapters which takes builders as an extra parameter
+func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.BidderInfos, me metrics.MetricsEngine,
+	builders map[openrtb_ext.BidderName]adapters.Builder) (map[openrtb_ext.BidderName]AdaptedBidder, []error) {
 	server := config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter}
-	bidders, errs := buildBidders(infos, newAdapterBuilders(), server)
-
+	bidders, errs := buildBidders(infos, builders, server)
 	if len(errs) > 0 {
 		return nil, errs
 	}
@@ -28,6 +29,26 @@ func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.
 	return exchangeBidders, nil
 }
 
+/*
+	func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.BidderInfos, me metrics.MetricsEngine) (map[openrtb_ext.BidderName]AdaptedBidder, []error) {
+		server := config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter}
+		bidders, errs := buildBidders(infos, NewAdapterBuilders(), server)
+
+		// bidders["myrtbbidder"] = rtbbidder.Builder
+		if len(errs) > 0 {
+			return nil, errs
+		}
+
+		exchangeBidders := make(map[openrtb_ext.BidderName]AdaptedBidder, len(bidders))
+		for bidderName, bidder := range bidders {
+			info := infos[string(bidderName)]
+			exchangeBidder := AdaptBidder(bidder, client, cfg, me, bidderName, info.Debug, info.EndpointCompression)
+			exchangeBidder = addValidatedBidderMiddleware(exchangeBidder)
+			exchangeBidders[bidderName] = exchangeBidder
+		}
+		return exchangeBidders, nil
+	}
+*/
 func buildBidders(infos config.BidderInfos, builders map[openrtb_ext.BidderName]adapters.Builder, server config.Server) (map[openrtb_ext.BidderName]adapters.Bidder, []error) {
 	bidders := make(map[openrtb_ext.BidderName]adapters.Bidder)
 	var errs []error
@@ -52,8 +73,11 @@ func buildBidders(infos config.BidderInfos, builders map[openrtb_ext.BidderName]
 
 		builder, builderFound := builders[bidderName]
 		if !builderFound {
-			errs = append(errs, fmt.Errorf("%v: builder not registered", bidder))
-			continue
+
+			if !builderFound {
+				errs = append(errs, fmt.Errorf("%v: builder not registered", bidder))
+				continue
+			}
 		}
 
 		if info.IsEnabled() {
@@ -76,6 +100,7 @@ func setAliasBuilder(info config.BidderInfo, builders map[openrtb_ext.BidderName
 		return fmt.Errorf("unknown parent bidder: %v for alias: %v", info.AliasOf, bidderName)
 	}
 
+	// time.Sleep(5 * time.Second)
 	builder, builderFound := builders[parentBidderName]
 	if !builderFound {
 		return fmt.Errorf("%v: parent builder not registered", parentBidderName)

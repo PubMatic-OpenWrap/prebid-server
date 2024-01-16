@@ -197,7 +197,7 @@ import (
 // Adapter registration is kept in this separate file for ease of use and to aid
 // in resolving merge conflicts.
 
-func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
+func NewAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 	return map[openrtb_ext.BidderName]adapters.Builder{
 		openrtb_ext.Bidder33Across:          ttx.Builder,
 		openrtb_ext.BidderAax:               aax.Builder,
@@ -410,5 +410,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderZeroClickFraud:    zeroclickfraud.Builder,
 		openrtb_ext.BidderZetaGlobalSsp:     zeta_global_ssp.Builder,
 		openrtb_ext.BidderRTBBidder:         rtbbidder.Builder,
+		// "myrtbbidder":                       rtbbidder.Builder,
+		// "ashish":                            rtbbidder.Builder,
 	}
 }

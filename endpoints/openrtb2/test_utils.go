@@ -1174,6 +1174,9 @@ type exchangeTestWrapper struct {
 	actualValidatedBidReq *openrtb2.BidRequest
 }
 
+func (te *exchangeTestWrapper) AddAdapters(adapters map[openrtb_ext.BidderName]exchange.AdaptedBidder) {
+}
+
 func (te *exchangeTestWrapper) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
 
 	// rebuild/resync the request in the request wrapper.

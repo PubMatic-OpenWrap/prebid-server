@@ -240,7 +240,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	cacheClient := pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, r.MetricsEngine)
 
-	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine)
+	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine, exchange.NewAdapterBuilders())
 
 	paramsValidator, err = rtbbidder.NewOpenWrapBidderParamsValidator(schemaDirectory, paramsValidator)
 	if err != nil {
@@ -248,21 +248,26 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	}
 
 	// if _, ok := adapters[openrtb_ext.BidderRTBBidder]; ok {
-	// bidder := rtbbidder.GetInstance()
-	// bidder.Syncher.BuildAndSyncRTBAdapters(func() bool {
-	// 	rtbAdaptors, rtbAdaptorsErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine)
-	// 	if len(rtbAdaptorsErrs) > 0 {
-	// 		adaptersErrs = append(adaptersErrs, rtbAdaptorsErrs...)
-	// 	} else {
-	// 		for rtbBidder, rtbAdaptor := range rtbAdaptors {
-	// 			// do not override existing bidders
-	// 			if _, contains := adapters[openrtb_ext.BidderName(rtbBidder)]; !contains {
-	// 				adapters[openrtb_ext.BidderName(rtbBidder)] = rtbAdaptor
-	// 			}
-	// 		}
-	// 	}
-	// 	return true
-	// })
+	// 	// bidder := rtbbidder.GetInstance()
+	// 	rtbbidder.GetSyncer().BuildAndSyncRTBAdapters(func() bool {
+	// 		// bidderInfos, err := config.LoadBidderInfoFromDisk("/home/test/go/src/Ashish/workspace/prebid-server/static/rtb")
+	// 		// if err != nil {
+	// 		// 	glog.Exitf("Unable to load bidder configurations: %v", err)
+	// 		// }
+	// 		// rtbAdaptors, rtbAdaptorsErrs := exchange.BuildAdapters(generalHttpClient, cfg, bidderInfos, r.MetricsEngine)
+	// 		// if len(rtbAdaptorsErrs) > 0 {
+	// 		// 	adaptersErrs = append(adaptersErrs, rtbAdaptorsErrs...)
+	// 		// } else {
+	// 		// 	for rtbBidder, rtbAdaptor := range rtbAdaptors {
+	// 		// 		// do not override existing bidders
+	// 		// 		if _, contains := adapters[openrtb_ext.BidderName(rtbBidder)]; !contains {
+	// 		// 			adapters[openrtb_ext.BidderName(rtbBidder)] = rtbAdaptor
+	// 		// 		}
+	// 		// 	}
+	// 		// }
+
+	// 		return true
+	// 	})
 	// }
 	if len(adaptersErrs) > 0 {
 		errs := errortypes.NewAggregateError("Failed to initialize adapters", adaptersErrs)

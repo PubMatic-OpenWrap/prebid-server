@@ -52,6 +52,7 @@ type extCacheInstructions struct {
 type Exchange interface {
 	// HoldAuction executes an OpenRTB v2.5 Auction.
 	HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*AuctionResponse, error)
+	AddAdapters(adapters map[openrtb_ext.BidderName]AdaptedBidder)
 }
 
 // IdFetcher can find the user's ID for a specific Bidder.
@@ -180,6 +181,12 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 
 		trakerURL:         cfg.TrackerURL,
 		priceFloorFetcher: floorFetcher,
+	}
+}
+
+func (e *exchange) AddAdapters(adapters map[openrtb_ext.BidderName]AdaptedBidder) {
+	for k, v := range adapters {
+		e.adapterMap[k] = v
 	}
 }
 
@@ -748,6 +755,7 @@ func (e *exchange) getAllBids(
 				tmaxAdjustments:        tmaxAdjustments,
 				bidderRequestStartTime: start,
 			}
+			/* below line panics for rtbbidder if the magnite/myrtbbidder is missing in adapterMap */
 			seatBids, extraBidderRespInfo, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest, conversions, &reqInfo, e.adsCertSigner, bidReqOptions, alternateBidderCodes, hookExecutor, bidAdjustmentRules)
 			brw.bidderResponseStartTime = extraBidderRespInfo.respProcessingStartTime
 

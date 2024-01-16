@@ -1,7 +1,7 @@
-endpoint: "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/getbid?rtype=xml&dur=10&price=5" #"http://10.172.141.11:3141/translator?source=ow-server"
+endpoint: "http://ashish.com/bidder"
 maintainer:
-  email: "header-bidding@pubmatic.com"
-gvlVendorID: 76
+  email: "ashish@pubmatic.com"
+gvlVendorID: 760
 capabilities:
   app:
     mediaTypes:
