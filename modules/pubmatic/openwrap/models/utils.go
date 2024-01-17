@@ -286,9 +286,6 @@ func DecodeImpressionID(id string) (string, int) {
 
 func GetSizeForPlatform(width, height int64, platform string) string {
 	s := fmt.Sprintf("%dx%d", width, height)
-	if platform == PLATFORM_VIDEO {
-		s = s + VideoSizeSuffix
-	}
 	return s
 }
 
