@@ -16,6 +16,9 @@ const (
 	PRODUCTTEMPLATE_PREFIX        = "PT_"
 	AD_FLOOR_PRICE                = "floor_price"
 	AD_BIDDER_EXTEN_DETAILS       = "BidderExtendedDetails"
+	PUBMATIC_TRACKING             = "PubMaticTracking"
+	IMP_KEY                       = "tps_impurl="
+	CLICK_KEY                     = "tps_clkurl="
 	STRING_TRUE                   = "true"
 	STRING_FALSE                  = "false"
 )
@@ -133,4 +136,5 @@ func GenerateUniqueBidIDComm() string {
 	id := uuid.New()
 	return id.String()
 }
+
 

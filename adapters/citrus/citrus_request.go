@@ -9,7 +9,6 @@ import (
 )
 
 type CitrusRequest struct {
-	CustomerID      string     `json:"customerId"`
 	SessionID       string     `json:"sessionId"`
 	CatalogID       string     `json:"catalogId"`   
 	Placement       string     `json:"placement"`
@@ -40,21 +39,16 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	}
 
     //Retrieve AuthKey from Request and Build endpoint Url
-	var authKey, customerID, catalogID string
+	var authKey, catalogID string
 	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_AUTH_KEY]
 	if ok {
 		authKey = val
-	}
-	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_CUSTOMER_ID]
-	if ok {
-		customerID = val
 	}
 	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_CATALOG_ID]
 	if ok {
 		catalogID = val
 	}
 	
-	citrusReq.CustomerID = customerID
 	citrusReq.CatalogID = catalogID
 	citrusReq.SessionID = request.User.ID
 	citrusReq.MaxNumberOfAds = commerceExt.ComParams.SlotsRequested
@@ -98,5 +92,6 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 		Headers: headers,
 	}}, nil
 }
+
 
 
