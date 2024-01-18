@@ -1,5 +1,5 @@
-//go:build linux
-// +build linux
+//go:build linux && !ignoreNetacuity
+// +build linux,!ignoreNetacuity
 
 // Package netacuity offers methods for initializing a GeoIP database client and
 // to perform the ip-to-geo lookup functionality.

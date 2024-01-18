@@ -71,7 +71,7 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
         fi
 
-        go test ${cover} "$pkg"
+        go test -tags=ignoreNetacuity ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"
