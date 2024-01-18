@@ -177,6 +177,12 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		RequestStatus: metrics.RequestStatusOK,
 	}
 	defer func() {
+		// if AuctionObject.Response is nil then collect nonbids from all stage outcomes and set it in the AuctionObject.
+		// Nil AuctionObject.Response indicates the occurrence of a fatal error.
+		if ao.Response == nil {
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		deps.metricsEngine.RecordRequest(labels)
 		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
@@ -187,8 +193,6 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	req, impExtInfoMap, storedAuctionResponses, storedBidResponses, bidderImpReplaceImp, account, errL := deps.parseRequest(r, &labels, hookExecutor)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &labels) {
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		return
 	}
 
@@ -229,8 +233,6 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	if err != nil {
 		errL = append(errL, err)
 		writeError(errL, w, &labels)
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		return
 	}
 	secGPC := r.Header.Get("Sec-GPC")
@@ -267,13 +269,11 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
-		seatNonBid.MergeNonBids(auctionResponse.SeatNonBid)
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
 	ao.Response = response
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		if errortypes.ReadCode(err) == errortypes.BadInputErrorCode {
 			writeError([]error{err}, w, &labels)
 			return
@@ -354,7 +354,7 @@ func getNonBidsFromStageOutcomes(stageOutcomes []hookexecution.StageOutcome) ope
 		for _, groups := range stageOutcome.Groups {
 			for _, result := range groups.InvocationResults {
 				if result.Status == hookexecution.StatusSuccess {
-					seatNonBid.MergeNonBids(result.SeatNonBid)
+					seatNonBid.Append(result.SeatNonBid)
 				}
 			}
 		}
@@ -375,7 +375,7 @@ func sendAuctionResponse(
 	hookExecutor.ExecuteAuctionResponseStage(response)
 
 	stageOutcomes := hookExecutor.GetOutcomes()
-	seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(stageOutcomes))
+	seatNonBid.Append(getNonBidsFromStageOutcomes(stageOutcomes))
 	ao.SeatNonBid = seatNonBid.Get()
 
 	if response != nil {
@@ -2495,4 +2495,32 @@ func validateStoredBidRespAndImpExtBidders(bidderExts map[string]json.RawMessage
 
 func generateStoredBidResponseValidationError(impID string) error {
 	return fmt.Errorf("request validation failed. Stored bid responses are specified for imp %s. Bidders specified in imp.ext should match with bidders specified in imp.ext.prebid.storedbidresponse", impID)
+}
+
+// setSeatNonBid populates bidresponse.ext.prebid.seatnonbid
+func setSeatNonBid(finalExtBidResponse *openrtb_ext.ExtBidResponse, seatNonBid []openrtb_ext.SeatNonBid) bool {
+	if finalExtBidResponse == nil || len(seatNonBid) == 0 {
+		return false
+	}
+	if finalExtBidResponse.Prebid == nil {
+		finalExtBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
+	}
+	finalExtBidResponse.Prebid.SeatNonBid = seatNonBid
+	return true
+}
+
+// returnAllBidStatus function returns the value of bidrequest.ext.prebid.returnallbidstatus flag
+func returnAllBidStatus(request *openrtb_ext.RequestWrapper) bool {
+	if request == nil {
+		return false
+	}
+	reqExt, err := request.GetRequestExt()
+	if err != nil {
+		return false
+	}
+	prebid := reqExt.GetPrebid()
+	if prebid == nil {
+		return false
+	}
+	return prebid.ReturnAllBidStatus
 }

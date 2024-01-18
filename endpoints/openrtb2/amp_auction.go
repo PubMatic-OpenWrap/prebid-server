@@ -136,6 +136,12 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 
 	defer func() {
+		// if AmpObject.AuctionResponse is nil then collect nonbids from all stage outcomes and set it in the AmpObject.SeatNonBid
+		// Nil AmpObject.AuctionResponse indicates the occurrence of a fatal error.
+		if ao.AuctionResponse == nil {
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		deps.metricsEngine.RecordRequest(labels)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAmpObject(&ao)
@@ -172,8 +178,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
 		}
 		labels.RequestStatus = metrics.RequestStatusBadInput
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		return
 	}
 
@@ -227,8 +231,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
 		}
 		ao.Errors = append(ao.Errors, acctIDErrs...)
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		return
 	}
 
@@ -266,7 +268,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
-		seatNonBid.MergeNonBids(auctionResponse.SeatNonBid)
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 
 	}
 	ao.AuctionResponse = response
@@ -277,8 +279,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		glog.Errorf("/openrtb2/amp Critical error: %v", err)
 		ao.Status = http.StatusInternalServerError
 		ao.Errors = append(ao.Errors, err)
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
 		return
 	}
 
@@ -290,8 +290,12 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		glog.Errorf("/openrtb2/amp Critical error: %v", err)
 		ao.Status = http.StatusInternalServerError
 		ao.Errors = append(ao.Errors, err)
-		seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-		ao.SeatNonBid = seatNonBid.Get()
+		if ao.AuctionResponse != nil {
+			// this check ensures that we collect nonBids from stageOutcomes only once.
+			// there could be a case where ao.AuctionResponse nil and reqWrapper.RebuildRequest returns error
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		return
 	}
 
@@ -358,7 +362,7 @@ func sendAmpResponse(
 						glog.Errorf("/openrtb2/amp Critical error unpacking targets: %v", err)
 						ao.Errors = append(ao.Errors, fmt.Errorf("Critical error while unpacking AMP targets: %v", err))
 						ao.Status = http.StatusInternalServerError
-						seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+						seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
 						ao.SeatNonBid = seatNonBid.Get()
 						return labels, ao
 					}
@@ -471,7 +475,8 @@ func getExtBidResponse(
 		}
 	}
 
-	seatNonBid.MergeNonBids(getNonBidsFromStageOutcomes(stageOutcomes))
+	// collect seatNonBid from all stage-outcomes and set in the response.ext.prebid
+	seatNonBid.Append(getNonBidsFromStageOutcomes(stageOutcomes))
 	ao.SeatNonBid = seatNonBid.Get()
 	if returnAllBidStatus(reqWrapper) {
 		setSeatNonBid(&extBidResponse, ao.SeatNonBid)
@@ -854,32 +859,4 @@ func setTrace(req *openrtb2.BidRequest, value string) error {
 	req.Ext = ext
 
 	return nil
-}
-
-// setSeatNonBid populates bidresponse.ext.prebid.seatnonbid
-func setSeatNonBid(finalExtBidResponse *openrtb_ext.ExtBidResponse, seatNonBid []openrtb_ext.SeatNonBid) bool {
-	if finalExtBidResponse == nil || len(seatNonBid) == 0 {
-		return false
-	}
-	if finalExtBidResponse.Prebid == nil {
-		finalExtBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
-	}
-	finalExtBidResponse.Prebid.SeatNonBid = seatNonBid
-	return true
-}
-
-// returnAllBidStatus function returns the value of bidrequest.ext.prebid.returnallbidstatus flag
-func returnAllBidStatus(request *openrtb_ext.RequestWrapper) bool {
-	if request == nil {
-		return false
-	}
-	reqExt, err := request.GetRequestExt()
-	if err != nil {
-		return false
-	}
-	prebid := reqExt.GetPrebid()
-	if prebid == nil || !prebid.ReturnAllBidStatus {
-		return false
-	}
-	return true
 }

@@ -331,7 +331,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
-		seatNonBid.MergeNonBids(auctionResponse.SeatNonBid)
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
 	vo.Response = response
 	vo.SeatNonBid = seatNonBid.Get()
