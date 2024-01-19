@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/privacy"
 
 	"github.com/prebid/prebid-server/adapters"
@@ -667,12 +668,12 @@ func updateHbPbCatDur(bid *entities.PbsOrtbBid, dealTier openrtb_ext.DealTier, b
 		prefixTier := fmt.Sprintf("%s%d_", dealTier.Prefix, bid.DealPriority)
 		bid.DealTierSatisfied = true
 
-		if oldCatDur, ok := bidCategory[bid.Bid.ID]; ok {
+		if oldCatDur, ok := bidCategory[utils.GetOriginalBidId(bid.Bid.ID)]; ok {
 			oldCatDurSplit := strings.SplitAfterN(oldCatDur, "_", 2)
 			oldCatDurSplit[0] = prefixTier
 
 			newCatDur := strings.Join(oldCatDurSplit, "")
-			bidCategory[bid.Bid.ID] = newCatDur
+			bidCategory[utils.GetOriginalBidId(bid.Bid.ID)] = newCatDur
 		}
 	}
 }

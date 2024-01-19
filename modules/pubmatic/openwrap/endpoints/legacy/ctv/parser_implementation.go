@@ -4498,7 +4498,7 @@ func (o *OpenRTB) ORTBUserData() (err error) {
 
 func (o *OpenRTB) ORTBExtPrebidFloorsEnforceFloorDeals() (err error) {
 	enforcementString, ok := o.values.GetString(ORTBExtPrebidFloorsEnforcement)
-	if ok {
+	if !ok {
 		return
 	}
 
@@ -4524,7 +4524,14 @@ func (o *OpenRTB) ORTBExtPrebidFloorsEnforceFloorDeals() (err error) {
 	if err != nil {
 		return err
 	}
-	floors[ORTBExtFloorEnforcement] = decodedString
+
+	var enforcement map[string]interface{}
+	err = json.Unmarshal([]byte(decodedString), &enforcement)
+	if err != nil {
+		return err
+	}
+
+	floors[ORTBExtFloorEnforcement] = enforcement
 	prebidExt[ORTBExtPrebidFloors] = floors
 	reqExt[ORTBExtPrebid] = prebidExt
 
