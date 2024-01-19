@@ -9,7 +9,6 @@ import (
 )
 
 type CitrusRequest struct {
-	CustomerID      string     `json:"customerId"`
 	SessionID       string     `json:"sessionId"`
 	CatalogID       string     `json:"catalogId"`   
 	Placement       string     `json:"placement"`
@@ -40,21 +39,16 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	}
 
     //Retrieve AuthKey from Request and Build endpoint Url
-	var authKey, customerID, catalogID string
+	var authKey, catalogID string
 	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_AUTH_KEY]
 	if ok {
 		authKey = val
-	}
-	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_CUSTOMER_ID]
-	if ok {
-		customerID = val
 	}
 	val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + AD_CATALOG_ID]
 	if ok {
 		catalogID = val
 	}
 	
-	citrusReq.CustomerID = customerID
 	citrusReq.CatalogID = catalogID
 	citrusReq.SessionID = request.User.ID
 	citrusReq.MaxNumberOfAds = commerceExt.ComParams.SlotsRequested
@@ -77,8 +71,10 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	
 	// Add other fields as needed
 	citrusReq.DynamicFields = make(map[string]interface{})
-	for key, value := range bidderParams {
-		citrusReq.DynamicFields[key] = value
+	if bidderParams != nil {
+		for key, value := range bidderParams {
+			citrusReq.DynamicFields[key] = value
+		}
 	}
 	
 	reqJSON, err := json.Marshal(citrusReq)
@@ -86,17 +82,35 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 		return nil, []error{err}
 	}
 
-
+	if len(citrusReq.DynamicFields) > 0 {
+		dynamicFieldsJSON, err := json.Marshal(citrusReq.DynamicFields)
+		if err != nil {
+			return nil, []error{err}
+		}
+		reqJSON = append(reqJSON[:len(reqJSON)-1], byte(',')) // remove the closing brace
+		reqJSON = append(reqJSON, dynamicFieldsJSON[1:]...)   // remove the opening brace of unknownFieldsJSON
+	}
+	
 	headers := http.Header{}
+	headers.Add("accept", "application/json")
 	headers.Add("Content-Type", "application/json")
-	headers.Add("Authorization", AUTH_PREFIX + authKey)
+	headers.Add("Authorization", AUTH_PREFIX + authKey )
 
-	return []*adapters.RequestData{{
-		Method:  "POST",
-		Uri:     a.endpoint,
-		Body:    reqJSON,
-		Headers: headers,
-	}}, nil
+	if commerceExt.ComParams.TestRequest {
+		return []*adapters.RequestData{{
+			Method:  "POST",
+			Uri:     adapters.MOCKURL,
+			Body:    reqJSON,
+			Headers: headers,
+		}}, nil
+	
+	} else {
+		return []*adapters.RequestData{{
+			Method:  "POST",
+			Uri:     a.endpoint,
+			Body:    reqJSON,
+			Headers: headers,
+		}}, nil
+	}
 }
-
 

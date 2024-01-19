@@ -74,12 +74,21 @@ func (a *CriteoRetailAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo
 	criteoQueryString := values.Encode()
 	requestURL := a.endpoint + "?" + criteoQueryString
 
-	return []*adapters.RequestData{{
-		Method:  "GET",
-		Uri:     requestURL,
-		Headers: http.Header{},
-	}}, nil
+	if commerceExt.ComParams.TestRequest {
+		return []*adapters.RequestData{{
+			Method:  "POST",
+			Uri:     adapters.MOCKURL,
+			Body:    nil,
+			Headers: http.Header{},
+		}}, nil
+	
+	} else {
+		return []*adapters.RequestData{{
+			Method:  "GET",
+			Uri:     requestURL,
+			Headers: http.Header{},
+		}}, nil
+	}
+
 }
-
-
 

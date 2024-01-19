@@ -83,13 +83,13 @@ func (a *CriteoRetailAdapter) MakeBids(internalRequest *openrtb2.BidRequest, ext
 
 func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, criteoResponse *CriteoResponse, requestImpID string, configValueMap map[string]string) *adapters.BidderResponse {
 
-	noOfBids := countSponsoredProducts(criteoResponse)
+	noOfBids := a.countSponsoredProducts(criteoResponse)
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfBids)
 	index := 1
 
 
 	pubMaticTracking := false
-	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + PUBMATIC_TRACKING]
+	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.PUBMATIC_TRACKING]
 	if ok {
 		if val == adapters.STRING_TRUE {
 			pubMaticTracking = true
@@ -115,8 +115,8 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 
 						var impressionURL,clickURL string
 						if pubMaticTracking {
-							impressionURL = IMP_KEY + adapters.EncodeURL(productMap[VIEW_BEACON].(string))
-							clickURL = CLICK_KEY + adapters.EncodeURL(productMap[CLICK_BEACON].(string))
+							impressionURL = adapters.IMP_KEY + adapters.EncodeURL(productMap[VIEW_BEACON].(string))
+							clickURL = adapters.CLICK_KEY + adapters.EncodeURL(productMap[CLICK_BEACON].(string))
 						} else {
 							impressionURL = productMap[VIEW_BEACON].(string)
 							clickURL = productMap[CLICK_BEACON].(string)
@@ -184,7 +184,7 @@ func newcriteoretailResponseFromBytes(bytes []byte) (CriteoResponse, error) {
 	return bidResponse, nil
 }
 
-func countSponsoredProducts(adResponse *CriteoResponse) int {
+func (a *CriteoRetailAdapter) countSponsoredProducts(adResponse *CriteoResponse) int {
 	count := 0
 
 	// Iterate through placements
@@ -200,6 +200,4 @@ func countSponsoredProducts(adResponse *CriteoResponse) int {
 
 	return count
 }
-
-
 
