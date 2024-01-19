@@ -1,13 +1,13 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
@@ -50,10 +50,6 @@ func init() {
 // getDevicePlatform determines the device from which request has been generated
 func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
-		userAgentString = bidRequest.Device.UA
-		rCtx.UA = userAgentString
-	}
 
 	switch rCtx.Platform {
 	case models.PLATFORM_AMP:
@@ -289,6 +285,15 @@ func isCTV(userAgent string) bool {
 	return ctvRegex.Match([]byte(userAgent))
 }
 
+// getUserAgent returns value of bidRequest.Device.UA if present else returns empty string
+func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
+	userAgent := defaultUA
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) > 0 {
+		userAgent = bidRequest.Device.UA
+	}
+	return userAgent
+}
+
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
 	if request == nil {
@@ -303,28 +308,6 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	return platform
 }
 
-func populateDeviceExt(request *openrtb2.BidRequest, dvc *models.DeviceCtx) {
-	if request == nil || request.Device == nil || request.Device.Ext == nil {
-		return
-	}
-
-	ext := make(map[string]interface{})
-	err := json.Unmarshal(request.Device.Ext, &ext)
-	if err != nil {
-		return
-	}
-
-	//use ext object for logging any other extension parameters
-	//log device.ext.ifa_type parameter to ifty in logger record
-	if value, ok := ext[models.DeviceExtIFAType].(string); ok {
-		//ifa_type checking is valid parameter and log its respective id
-		ifaType := models.DeviceIFATypeID[strings.ToLower(value)]
-		dvc.IFAType = &ifaType
-	}
-
-	//log device.ext.atts parameter in logger
-	if value, ok := ext[models.DeviceExtATTS].(float64); ok {
-		atts := int(value)
-		dvc.ATTS = &atts
-	}
+func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
+	return &nbr
 }
