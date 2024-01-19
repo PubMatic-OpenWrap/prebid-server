@@ -5,4 +5,5 @@ type RequestCtx struct {
 	VastUnwrapEnabled                      bool
 	PubID, ProfileID, DisplayID, VersionID int
 	Endpoint                               string
+	VastUnwrapStatsEnabled                 bool
 }

@@ -30,27 +30,40 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	vastRequestContext.PubID = pubId
 	vastUnwrapEnabled := openwrap.GetVastUnwrapEnable(vastRequestContext)
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled && getRandomNumber() < m.TrafficPercentage
+	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
 
-	if !vastRequestContext.VastUnwrapEnabled {
+	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
 		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
 		return result, nil
 	}
 	defer func() {
 		miCtx.ModuleContext[RequestContext] = vastRequestContext
 	}()
-	wg := new(sync.WaitGroup)
-	for _, bid := range payload.Bids {
-		if string(bid.BidType) == MediaTypeVideo {
-			wg.Add(1)
-			go func(bid *adapters.TypedBid) {
-				defer wg.Done()
-				m.doUnwrapandUpdateBid(bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
-			}(bid)
+
+	// Below code collects stats only
+	if vastRequestContext.VastUnwrapStatsEnabled {
+		for _, bid := range payload.Bids {
+			if string(bid.BidType) == MediaTypeVideo {
+				go func(bid *adapters.TypedBid) {
+					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+				}(bid)
+			}
 		}
+	} else {
+		wg := new(sync.WaitGroup)
+		for _, bid := range payload.Bids {
+			if string(bid.BidType) == MediaTypeVideo {
+				wg.Add(1)
+				go func(bid *adapters.TypedBid) {
+					defer wg.Done()
+					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+				}(bid)
+			}
+		}
+		wg.Wait()
+		changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
+		changeSet.RawBidderResponse().Bids().Update(payload.Bids)
+		result.ChangeSet = changeSet
 	}
-	wg.Wait()
-	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-	changeSet.RawBidderResponse().Bids().Update(payload.Bids)
-	result.ChangeSet = changeSet
 	return result, nil
 }

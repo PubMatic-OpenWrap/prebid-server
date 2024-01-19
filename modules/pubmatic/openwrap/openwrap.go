@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"sync"
+
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
@@ -29,9 +31,10 @@ const (
 )
 
 type OpenWrap struct {
-	cfg          config.Config
-	cache        cache.Cache
-	metricEngine metrics.MetricsEngine
+	cfg                config.Config
+	cache              cache.Cache
+	metricEngine       metrics.MetricsEngine
+	currencyConversion currency.Conversions
 }
 
 var ow *OpenWrap
@@ -60,7 +63,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 
 	// NYC_TODO: remove this dependency
-	if err := ow_adapters.InitBidders(cfg); err != nil {
+	if err := ow_adapters.InitBidders("./static/bidder-params"); err != nil {
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 
@@ -79,9 +82,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	once.Do(func() {
 		ow = &OpenWrap{
-			cfg:          cfg,
-			cache:        owCache,
-			metricEngine: &metricEngine,
+			cfg:                cfg,
+			cache:              owCache,
+			metricEngine:       &metricEngine,
+			currencyConversion: moduleDeps.CurrencyConversion,
 		}
 	})
 	return *ow, nil
@@ -108,6 +112,6 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 }
 
 func patchConfig(cfg *config.Config) {
-	cfg.Server.HostName = getHostName()
+	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 }

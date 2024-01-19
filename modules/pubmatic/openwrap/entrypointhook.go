@@ -59,9 +59,9 @@ func (m OpenWrap) handleEntrypointHook(
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
-			endpoint = models.EndpointOWS2S
+			endpoint = models.EndpointWebS2S
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		case "inapp":
+		case "owsdk":
 			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 			endpoint = models.EndpointV25
 		default:
@@ -100,7 +100,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestWrapperExtension
-		result.Errors = append(result.Errors, "InvalidRequest")
+		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 
@@ -117,6 +117,7 @@ func (m OpenWrap) handleEntrypointHook(
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
+		DisplayVersionID:          requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
@@ -136,8 +137,17 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
+		DCName:                    m.cfg.Server.DCName,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		TMax:                      m.cfg.Timeout.MaxTimeout,
+		CurrencyConversion: func(from, to string, value float64) (float64, error) {
+			rate, err := m.currencyConversion.GetRate(from, to)
+			if err == nil {
+				return value * rate, nil
+			}
+			return 0, err
+		},
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

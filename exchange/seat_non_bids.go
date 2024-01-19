@@ -44,6 +44,7 @@ func (snb *nonBids) addBid(bid *entities.PbsOrtbBid, nonBidReason int, seat stri
 				Video:             bid.BidVideo,
 				BidId:             bid.GeneratedBidID,
 				Floors:            bid.BidFloors,
+				OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
 			}},
 		},
 	}

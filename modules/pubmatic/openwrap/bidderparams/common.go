@@ -72,7 +72,7 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 	var slots []string
 	for _, format := range hw {
 		// TODO fix the param sequence. make it consistent. HxW
-		slot := GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
+		slot := models.GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
 		if slot != "" {
 			slots = append(slots, slot)
 			// NYC_TODO: break at i=0 for pubmatic?
@@ -81,43 +81,6 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 
 	// NYC_TODO wh is returned temporarily
 	return slots, slotMap, slotMappingInfo, hw
-}
-
-// Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml
-// mysql> SELECT DISTINCT key_gen_pattern FROM wrapper_mapping_template;
-// +----------------------+
-// | key_gen_pattern      |
-// +----------------------+
-// | _AU_@_W_x_H_         |
-// | _DIV_@_W_x_H_        |
-// | _W_x_H_@_W_x_H_      |
-// | _DIV_                |
-// | _AU_@_DIV_@_W_x_H_   |
-// | _AU_@_SRC_@_VASTTAG_ |
-// +----------------------+
-// 6 rows in set (0.21 sec)
-func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
-	// func (H, W, Div), no need to validate, will always be non-nil
-	switch kgp {
-	case "_AU_": // adunitconfig
-		return tagid
-	case "_DIV_":
-		return div
-	case "_AU_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
-	case "_DIV_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", div, w, h)
-	case "_W_x_H_@_W_x_H_":
-		return fmt.Sprintf("%dx%d@%dx%d", w, h, w, h)
-	case "_AU_@_DIV_@_W_x_H_":
-		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
-	case "_AU_@_SRC_@_VASTTAG_":
-		return fmt.Sprintf("%s@%s@_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
-	default:
-		// TODO: check if we need to fallback to old generic flow (below)
-		// Add this cases in a map and read it from yaml file
-	}
-	return ""
 }
 
 /*

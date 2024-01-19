@@ -52,6 +52,8 @@ type Metrics struct {
 
 	dbQueryError *prometheus.CounterVec
 
+	loggerFailure *prometheus.CounterVec
+
 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
 
 	// sshb temporary
@@ -239,6 +241,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"db_query_failed",
 		"Count failed db calls at profile, version level",
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
+	)
+
+	metrics.loggerFailure = newCounter(cfg, promRegistry,
+		"logger_send_failed",
+		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
+		[]string{pubIDLabel, profileIDLabel},
 	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
@@ -435,8 +443,13 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 	}).Inc()
 }
 
-// TODO- record logger failure using prebid-core's metric-engine
-func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {}
+// RecordPublisherWrapperLoggerFailure to record count of owlogger failures
+func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
+	m.loggerFailure.With(prometheus.Labels{
+		pubIDLabel:     publisher,
+		profileIDLabel: profile,
+	}).Inc()
+}
 
 // TODO - really need ?
 func (m *Metrics) RecordPBSAuctionRequestsStats() {}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
@@ -44,14 +45,11 @@ func init() {
 	ctvRegex = regexp.MustCompile(models.ConnectedDeviceUARegexPattern)
 }
 
-//	rCtx.DevicePlatform = GetDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform, rCtx.PubIDStr, m.metricEngine)
+//	rCtx.DevicePlatform = getDevicePlatform(rCtx.UA, payload.BidRequest, rCtx.Platform, rCtx.PubIDStr, m.metricEngine)
 //
-// GetDevicePlatform determines the device from which request has been generated
-func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
+// getDevicePlatform determines the device from which request has been generated
+func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
 	userAgentString := rCtx.UA
-	if userAgentString == "" && bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) != 0 {
-		userAgentString = bidRequest.Device.UA
-	}
 
 	switch rCtx.Platform {
 	case models.PLATFORM_AMP:
@@ -86,18 +84,10 @@ func GetDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			deviceType = bidRequest.Device.DeviceType
 		}
 		isCtv := isCTV(userAgentString)
-		regexStatus := models.Failure
 
 		if deviceType != 0 {
 			if deviceType == adcom1.DeviceTV || deviceType == adcom1.DeviceConnected || deviceType == adcom1.DeviceSetTopBox {
-				if isCtv {
-					regexStatus = models.Success
-				}
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 				return models.DevicePlatformConnectedTv
-			}
-			if isCtv {
-				rCtx.MetricsEngine.RecordCtvUaAccuracy(rCtx.PubIDStr, regexStatus)
 			}
 		}
 
@@ -212,7 +202,7 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 }
 
 // getHostName Generates server name from node and pod name in K8S  environment
-func getHostName() string {
+func GetHostName() string {
 	var (
 		nodeName string
 		podName  string
@@ -289,4 +279,28 @@ func getPubmaticErrorCode(standardNBR int) int {
 
 func isCTV(userAgent string) bool {
 	return ctvRegex.Match([]byte(userAgent))
+}
+
+// getUserAgent returns value of bidRequest.Device.UA if present else returns empty string
+func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
+	userAgent := defaultUA
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.UA) > 0 {
+		userAgent = bidRequest.Device.UA
+	}
+	return userAgent
+}
+
+func getPlatformFromRequest(request *openrtb2.BidRequest) string {
+	var platform string
+	if request.Site != nil {
+		return models.PLATFORM_DISPLAY
+	}
+	if request.App != nil {
+		return models.PLATFORM_APP
+	}
+	return platform
+}
+
+func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
+	return &nbr
 }

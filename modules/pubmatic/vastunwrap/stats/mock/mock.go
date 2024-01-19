@@ -34,37 +34,49 @@ func (m *MockMetricsEngine) EXPECT() *MockMetricsEngineMockRecorder {
 }
 
 // RecordRequestStatus mocks base method
-func (m *MockMetricsEngine) RecordRequestStatus(arg0, arg1 string) {
+func (m *MockMetricsEngine) RecordRequestStatus(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordRequestStatus", arg0, arg1)
+	m.ctrl.Call(m, "RecordRequestStatus", arg0, arg1, arg2)
 }
 
 // RecordRequestStatus indicates an expected call of RecordRequestStatus
-func (mr *MockMetricsEngineMockRecorder) RecordRequestStatus(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordRequestStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestStatus), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestStatus), arg0, arg1, arg2)
 }
 
 // RecordWrapperCount mocks base method
-func (m *MockMetricsEngine) RecordWrapperCount(arg0, arg1 string) {
+func (m *MockMetricsEngine) RecordWrapperCount(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordWrapperCount", arg0, arg1)
+	m.ctrl.Call(m, "RecordWrapperCount", arg0, arg1, arg2)
 }
 
 // RecordWrapperCount indicates an expected call of RecordRequestStatus
-func (mr *MockMetricsEngineMockRecorder) RecordWrapperCount(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordWrapperCount(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordWrapperCount), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordWrapperCount), arg0, arg1, arg2)
+}
+
+// RecordUnwrapRespTime mocks base method
+func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRespTime", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRespTime indicates an expected call of RecordRequestStatus
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRespTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRespTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRespTime), arg0, arg1, arg2)
 }
 
 // RecordRequestTime mocks base method
-func (m *MockMetricsEngine) RecordRequestTime(arg0 string, arg1 time.Duration) {
+func (m *MockMetricsEngine) RecordRequestTime(arg0, arg1 string, arg2 time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordRequestTime", arg0, arg1)
+	m.ctrl.Call(m, "RecordRequestTime", arg0, arg1, arg2)
 }
 
 // RecordRequestTime indicates an expected call of RecordRequestTime
-func (mr *MockMetricsEngineMockRecorder) RecordRequestTime(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestTime), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestTime), arg0, arg1, arg2)
 }

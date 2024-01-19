@@ -33,6 +33,7 @@ func handleEntrypointHook(
 		// DisplayID: versionId,
 		Endpoint: payload.Request.URL.Path,
 	}
+
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext
 	return result, nil

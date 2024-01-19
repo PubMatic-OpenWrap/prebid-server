@@ -78,7 +78,9 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			if !ok {
 				continue
 			}
-
+			if bidCtx.Prebid == nil {
+				bidCtx.Prebid = new(openrtb_ext.ExtBidPrebid)
+			}
 			newTargeting := make(map[string]string)
 			for key, value := range bidCtx.Prebid.Targeting {
 				if allowTargetingKey(key) {
@@ -93,6 +95,12 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 
 			if rctx.Platform == models.PLATFORM_APP {
 				addInAppTargettingKeys(newTargeting, seatBid.Seat, bidCtx.NetECPM, &bid, isWinningBid)
+			}
+			for key, value := range rctx.CustomDimensions {
+				//append cds key-val if sendToGAM is true or not present
+				if value.SendToGAM == nil || (value.SendToGAM != nil && *value.SendToGAM) {
+					newTargeting[key] = value.Value
+				}
 			}
 			bidCtx.Prebid.Targeting = newTargeting
 
