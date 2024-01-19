@@ -63,14 +63,11 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 	
 	for i := 1; i <= requestCount; i++ {
 		productid := GetRandomProductID()
-		bidPrice := GetRandomBidPrice()
-		clickPrice := GetRandomClickPrice(bidPrice)
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := ImpID + "_" + strconv.Itoa(i)
 
 		bidExt := &openrtb_ext.ExtBidCommerce{
 			ProductId:  productid,
-			ClickPrice: clickPrice,
 			ClickUrl: CLICK_URL,
 			ProductDetails: mockProductDetails,
 		}
@@ -78,7 +75,6 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 		bid := &openrtb2.Bid{
 			ID:    bidID,
 			ImpID: impID,
-			Price: bidPrice,
 			IURL: IMP_URL,
 		}
 
@@ -91,7 +87,7 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 
 		typedbid := &adapters.TypedBid{
 			Bid:  bid,
-			Seat: openrtb_ext.BidderName(SEAT_CRITEORETAIL),
+			Seat: openrtb_ext.BidderName(SEAT_CITRUS),
 		}
 		typedArray = append(typedArray, typedbid)
 	}

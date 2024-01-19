@@ -19,6 +19,7 @@ const (
 	PUBMATIC_TRACKING             = "PubMaticTracking"
 	IMP_KEY                       = "tps_impurl="
 	CLICK_KEY                     = "tps_clkurl="
+	MOCKURL                       = "http://127.0.0.1:8001/MockResponse"
 	STRING_TRUE                   = "true"
 	STRING_FALSE                  = "false"
 )
@@ -136,5 +137,4 @@ func GenerateUniqueBidIDComm() string {
 	id := uuid.New()
 	return id.String()
 }
-
 

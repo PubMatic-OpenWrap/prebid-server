@@ -28,7 +28,6 @@ func (a *CitrusAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalR
 	}
 
 	if commerceExt.ComParams.TestRequest {
-
 		dummyResponse := a.GetMockResponse(internalRequest)
 		return dummyResponse, nil
 	}
@@ -173,4 +172,5 @@ func countSponsoredProducts(adResponse *CitrusResponse) int {
 	}
 	return count
 }
+
 

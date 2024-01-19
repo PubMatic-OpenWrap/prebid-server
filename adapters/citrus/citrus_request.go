@@ -96,11 +96,21 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	headers.Add("Content-Type", "application/json")
 	headers.Add("Authorization", AUTH_PREFIX + authKey )
 
-	return []*adapters.RequestData{{
-		Method:  "POST",
-		Uri:     a.endpoint,
-		Body:    reqJSON,
-		Headers: headers,
-	}}, nil
+	if commerceExt.ComParams.TestRequest {
+		return []*adapters.RequestData{{
+			Method:  "POST",
+			Uri:     adapters.MOCKURL,
+			Body:    reqJSON,
+			Headers: headers,
+		}}, nil
+	
+	} else {
+		return []*adapters.RequestData{{
+			Method:  "POST",
+			Uri:     a.endpoint,
+			Body:    reqJSON,
+			Headers: headers,
+		}}, nil
+	}
 }
 
