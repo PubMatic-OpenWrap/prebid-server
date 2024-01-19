@@ -1,0 +1,483 @@
+curl --location --request POST 'http://127.0.0.1:8000/openrtb2/auction?debug=1' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "id": "95d6643c-3da6-40a2-b9ca-12279393ffbf",
+    "at": 1,
+    "test": 1,
+    "cur": [
+        "USD"
+    ],
+    "imp": [
+        {
+            "id": "imp176227948",
+            "clickbrowser": 0,
+            "displaymanager": "PubMatic_OpenBid_SDK",
+            "displaymanagerver": "1.4.0",
+            "tagid": "/43743431/DMDemo",
+            "secure": 0,
+            "video": {
+                "w": 320,
+                "h": 480,
+                "pos": 7,
+                "companionad": [
+                    {
+                        "pos": 7,
+                        "format": [
+                            {
+                                "w": 320,
+                                "h": 480
+                            }
+                        ],
+                        "api": [
+                            5,
+                            6,
+                            7
+                        ]
+                    }
+                ],
+                "mimes": [
+                    "video/3gpp",
+                    "video/mp4",
+                    "video/webm"
+                ],
+                "maxbitrate": 600,
+                "protocols": [
+                    2,
+                    3,
+                    5,
+                    6,
+                    7,
+                    8
+                ],
+                "linearity": 1,
+                "boxingallowed": 1,
+                "playbackmethod": [
+                    1
+                ],
+                "delivery": [
+                    2
+                ],
+                "companiontype": [
+                    1,
+                    2,
+                    3
+                ],
+                "placement": 5,
+                "playbackend": 1,
+                "startdelay": 0,
+                "api": [
+                    5,
+                    6,
+                    7
+                ]
+            },
+            "ext": {
+                "prebid": {
+                    "bidder": {
+                        "myrtbbidder": {
+                            "adUnitID": "123"
+                        },
+                        "ashish": {
+                            "xyz": "1"
+                        },
+                        "pubmatic": {
+                            "publisherID": "123"
+                        },
+                        "any-bidder": {
+                             "adUnitID": "123"
+                        }						
+                    }
+                }
+            },
+            "instl": 1
+        }
+    ],
+    "app": {
+        "name": "OpenWrapperSample",
+        "bundle": "com.pubmatic.openbid.app",
+        "storeurl": "https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5&videobid=10",
+        "ver": "1.0",
+        "publisher": {
+            "id": "5890"
+        },
+        "keywords":"{ \"expect\": { \"imp176227948\": { \"price\": 4.00, \"wrapperCount\": 6, \"dur\":20 }}}"
+    },
+    "device": {
+        "geo": {
+            "type": 1,
+            "lat": 37.421998333333335,
+            "lon": -122.08400000000002
+        },
+        "pxratio": 2.625,
+        "mccmnc": "310-260",
+        "lmt": 0,
+        "ifa": "07c387f2-e030-428f-8336-42f682150759",
+        "connectiontype": 6,
+        "carrier": "Android",
+        "js": 1,
+        "ua": "Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
+        "make": "Google",
+        "model": "Android SDK built for x86",
+        "os": "Android",
+        "osv": "9",
+        "h": 1794,
+        "w": 1080,
+        "language": "en",
+        "devicetype": 4
+    },
+    "source": {
+        "ext": {
+            "omidpn": "PubMatic",
+            "omidpv": "1.2.11-Pubmatic"
+        }
+    },
+    "user": {},
+    "ext": {
+        "wrapper": {
+            "ssauction": 0,
+            "sumry_disable": 0,
+            "profileid": 12573,
+            "versionid": 1,
+            "clientconfig": 1
+        },
+        "prebid": {
+            "aliases": {
+                "any-bidder": "myrtbbidder"
+            },
+            "bidderparams": {
+                
+                "ashish": "shinde"
+            }
+        }
+    }
+}'
+
+--------------------------------------------------------------------------------------
+    Response 
+--------------------------------------------------------------------------------------
+
+{
+    "id": "95d6643c-3da6-40a2-b9ca-12279393ffbf",
+    "seatbid": [
+        {
+            "bid": [
+                {
+                    "id": "bid_0_imp176227948",
+                    "impid": "imp176227948",
+                    "price": 4,
+                    "adm": "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/VastUnwrap_559c00be8-e209-405b-a6dd-103b9e58a779.xml",
+                    "crid": "d06b3e66-5c31-4047-bd97-4d6f80d129b7",
+                    "dur": 20,
+                    "ext": {
+                        "BidType": 1,
+                        "appnexus": {},
+                        "duration": {
+                            "duration": 20
+                        },
+                        "origbidcpm": 4,
+                        "origbidcur": "USD",
+                        "prebid": {
+                            "bidid": "51db771a-a8e7-4ce2-8d53-42c18f967ef2",
+                            "meta": {
+                                "adaptercode": "myrtbbidder"
+                            }
+                        }
+                    }
+                }
+            ],
+            "seat": "myrtbbidder"
+        },
+        {
+            "bid": [
+                {
+                    "id": "bid_0_imp176227948",
+                    "impid": "imp176227948",
+                    "price": 4,
+                    "adm": "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/VastUnwrap_5be3de6f6-55e2-41ae-abd4-042da73257c9.xml",
+                    "crid": "da98cb36-3172-42dc-a906-bfe5479b3613",
+                    "dur": 20,
+                    "ext": {
+                        "BidType": 1,
+                        "appnexus": {},
+                        "duration": {
+                            "duration": 20
+                        },
+                        "origbidcpm": 4,
+                        "origbidcur": "USD",
+                        "prebid": {
+                            "bidid": "dccaf18a-0abc-4027-9a93-7a9dbd12f079",
+                            "meta": {
+                                "adaptercode": "any-bidder"
+                            }
+                        }
+                    }
+                }
+            ],
+            "seat": "any-bidder"
+        }
+    ],
+    "cur": "USD",
+    "ext": {
+        "debug": {
+            "httpcalls": {
+                "any-bidder": [
+                    {
+                        "uri": "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/getbid?rtype=json&dur=10&price=5",
+                        "requestbody":"{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"imp\":[{\"id\":\"imp176227948\",\"video\":{\"mimes\":[\"video/3gpp\",\"video/mp4\",\"video/webm\"],\"startdelay\":0,\"protocols\":[2,3,5,6,7,8],\"w\":320,\"h\":480,\"placement\":5,\"linearity\":1,\"maxbitrate\":600,\"boxingallowed\":1,\"playbackmethod\":[1],\"playbackend\":1,\"delivery\":[2],\"pos\":7,\"companionad\":[{\"format\":[{\"w\":320,\"h\":480}],\"pos\":7,\"api\":[5,6,7]}],\"api\":[5,6,7],\"companiontype\":[1,2,3]},\"displaymanager\":\"PubMatic_OpenBid_SDK\",\"displaymanagerver\":\"1.4.0\",\"instl\":1,\"tagid\":\"/43743431/DMDemo\",\"secure\":0,\"ext\":{\"bidder\":{\"adUnitID\":\"123\"},\"tid\":\"2a9f47ce-b56d-47ea-87b8-4d7b7dabf688\"}}],\"app\":{\"name\":\"OpenWrapperSample\",\"bundle\":\"com.pubmatic.openbid.app\",\"storeurl\":\"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5\&videobid=10\",\"ver\":\"1.0\",\"publisher\":{\"id\":\"5890\"},\"keywords\":\"{ \\\"expect\\\": { \\\"imp176227948\\\": { \\\"price\\\": 4.00, \\\"wrapperCount\\\": 6, \\\"dur\\\":20 }}}\"},\"device\":{\"geo\":{\"lat\":37.421998333333335,\"lon\":-122.08400000000002,\"type\":1},\"lmt\":0,\"ua\":\"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36\",\"devicetype\":4,\"make\":\"Google\",\"model\":\"Android SDK built for x86\",\"os\":\"Android\",\"osv\":\"9\",\"h\":1794,\"w\":1080,\"pxratio\":2.625,\"js\":1,\"language\":\"en\",\"carrier\":\"Android\",\"mccmnc\":\"310-260\",\"connectiontype\":6,\"ifa\":\"07c387f2-e030-428f-8336-42f682150759\"},\"user\":{},\"test\":1,\"at\":1,\"cur\":[\"USD\"],\"source\":{\"tid\":\"dbb08f8f-2962-4a6c-b63d-cb6ef5b59bc3\",\"ext\":{\"omidpn\":\"PubMatic\",\"omidpv\":\"1.2.11-Pubmatic\"}},\"ext\":{\"prebid\":{\"channel\":{\"name\":\"app\",\"version\":\"\"},\"server\":{\"externalurl\":\"//ow.pubmatic.com\",\"gvlid\":0,\"datacenter\":\"\"}},\"wrapper\":{\"ssauction\":0,\"sumry_disable\":0,\"profileid\":12573,\"versionid\":1,\"clientconfig\":1}}}",
+                        "requestheaders": {
+                            "X-Prebid": [
+                                "owpbs-go/unknown,app/unknown"
+                            ]
+                        },
+                        "responsebody": "{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"seatbid\":[{\"bid\":[{\"id\":\"bid_0_imp176227948\",\"impid\":\"imp176227948\",\"price\":4,\"adm\":\"http://core-dev-va2-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/VastUnwrap_5be3de6f6-55e2-41ae-abd4-042da73257c9.xml\",\"crid\":\"da98cb36-3172-42dc-a906-bfe5479b3613\",\"dur\":20,\"ext\":{\"duration\":{\"duration\":20},\"appnexus\":{},\"BidType\":1}}],\"seat\":\"pubmatic\"}],\"bidid\":\"c1404fc1-8206-4ebb-a75f-5028b329e237\",\"cur\":\"USD\"}",
+                        "status": 200
+                    }
+                ],
+                "ashish": [
+                    {
+                        "uri": "http://ashish.com/bidder",
+                        "requestbody":"{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"imp\":[{\"id\":\"imp176227948\",\"video\":{\"mimes\":[\"video/3gpp\",\"video/mp4\",\"video/webm\"],\"startdelay\":0,\"protocols\":[2,3,5,6,7,8],\"w\":320,\"h\":480,\"placement\":5,\"linearity\":1,\"maxbitrate\":600,\"boxingallowed\":1,\"playbackmethod\":[1],\"playbackend\":1,\"delivery\":[2],\"pos\":7,\"companionad\":[{\"format\":[{\"w\":320,\"h\":480}],\"pos\":7,\"api\":[5,6,7]}],\"api\":[5,6,7],\"companiontype\":[1,2,3]},\"displaymanager\":\"PubMatic_OpenBid_SDK\",\"displaymanagerver\":\"1.4.0\",\"instl\":1,\"tagid\":\"/43743431/DMDemo\",\"secure\":0,\"ext\":{\"bidder\":{\"xyz\":\"1\"},\"tid\":\"2a9f47ce-b56d-47ea-87b8-4d7b7dabf688\"}}],\"app\":{\"name\":\"OpenWrapperSample\",\"bundle\":\"com.pubmatic.openbid.app\",\"storeurl\":\"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5\&videobid=10\",\"ver\":\"1.0\",\"publisher\":{\"id\":\"5890\"},\"keywords\":\"{ \\\"expect\\\": { \\\"imp176227948\\\": { \\\"price\\\": 4.00, \\\"wrapperCount\\\": 6, \\\"dur\\\":20 }}}\"},\"device\":{\"geo\":{\"lat\":37.421998333333335,\"lon\":-122.08400000000002,\"type\":1},\"lmt\":0,\"ua\":\"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36\",\"devicetype\":4,\"make\":\"Google\",\"model\":\"Android SDK built for x86\",\"os\":\"Android\",\"osv\":\"9\",\"h\":1794,\"w\":1080,\"pxratio\":2.625,\"js\":1,\"language\":\"en\",\"carrier\":\"Android\",\"mccmnc\":\"310-260\",\"connectiontype\":6,\"ifa\":\"07c387f2-e030-428f-8336-42f682150759\"},\"user\":{},\"test\":1,\"at\":1,\"cur\":[\"USD\"],\"source\":{\"tid\":\"dbb08f8f-2962-4a6c-b63d-cb6ef5b59bc3\",\"ext\":{\"omidpn\":\"PubMatic\",\"omidpv\":\"1.2.11-Pubmatic\"}},\"ext\":{\"prebid\":{\"bidderparams\":\"shinde\",\"channel\":{\"name\":\"app\",\"version\":\"\"},\"server\":{\"externalurl\":\"//ow.pubmatic.com\",\"gvlid\":0,\"datacenter\":\"\"}},\"wrapper\":{\"ssauction\":0,\"sumry_disable\":0,\"profileid\":12573,\"versionid\":1,\"clientconfig\":1}}}",
+                        "requestheaders": {
+                            "X-Prebid": [
+                                "owpbs-go/unknown,app/unknown"
+                            ]
+                        },
+                        "responsebody": "",
+                        "status": 0
+                    }
+                ],
+                "myrtbbidder": [
+                    {
+                        "uri": "http://core-dev-va2-mgmt.pubmatic.com/master/owtools/getbid?rtype=json&dur=10&price=5",
+                        "requestbody":"{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"imp\":[{\"id\":\"imp176227948\",\"video\":{\"mimes\":[\"video/3gpp\",\"video/mp4\",\"video/webm\"],\"startdelay\":0,\"protocols\":[2,3,5,6,7,8],\"w\":320,\"h\":480,\"placement\":5,\"linearity\":1,\"maxbitrate\":600,\"boxingallowed\":1,\"playbackmethod\":[1],\"playbackend\":1,\"delivery\":[2],\"pos\":7,\"companionad\":[{\"format\":[{\"w\":320,\"h\":480}],\"pos\":7,\"api\":[5,6,7]}],\"api\":[5,6,7],\"companiontype\":[1,2,3]},\"displaymanager\":\"PubMatic_OpenBid_SDK\",\"displaymanagerver\":\"1.4.0\",\"instl\":1,\"tagid\":\"/43743431/DMDemo\",\"secure\":0,\"ext\":{\"bidder\":{\"adUnitID\":\"123\"},\"tid\":\"2a9f47ce-b56d-47ea-87b8-4d7b7dabf688\"}}],\"app\":{\"name\":\"OpenWrapperSample\",\"bundle\":\"com.pubmatic.openbid.app\",\"storeurl\":\"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5\&videobid=10\",\"ver\":\"1.0\",\"publisher\":{\"id\":\"5890\"},\"keywords\":\"{ \\\"expect\\\": { \\\"imp176227948\\\": { \\\"price\\\": 4.00, \\\"wrapperCount\\\": 6, \\\"dur\\\":20 }}}\"},\"device\":{\"geo\":{\"lat\":37.421998333333335,\"lon\":-122.08400000000002,\"type\":1},\"lmt\":0,\"ua\":\"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36\",\"devicetype\":4,\"make\":\"Google\",\"model\":\"Android SDK built for x86\",\"os\":\"Android\",\"osv\":\"9\",\"h\":1794,\"w\":1080,\"pxratio\":2.625,\"js\":1,\"language\":\"en\",\"carrier\":\"Android\",\"mccmnc\":\"310-260\",\"connectiontype\":6,\"ifa\":\"07c387f2-e030-428f-8336-42f682150759\"},\"user\":{},\"test\":1,\"at\":1,\"cur\":[\"USD\"],\"source\":{\"tid\":\"dbb08f8f-2962-4a6c-b63d-cb6ef5b59bc3\",\"ext\":{\"omidpn\":\"PubMatic\",\"omidpv\":\"1.2.11-Pubmatic\"}},\"ext\":{\"prebid\":{\"channel\":{\"name\":\"app\",\"version\":\"\"},\"server\":{\"externalurl\":\"//ow.pubmatic.com\",\"gvlid\":0,\"datacenter\":\"\"}},\"wrapper\":{\"ssauction\":0,\"sumry_disable\":0,\"profileid\":12573,\"versionid\":1,\"clientconfig\":1}}}",
+                        "requestheaders": {
+                            "X-Prebid": [
+                                "owpbs-go/unknown,app/unknown"
+                            ]
+                        },
+                        "responsebody": "{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"seatbid\":[{\"bid\":[{\"id\":\"bid_0_imp176227948\",\"impid\":\"imp176227948\",\"price\":4,\"adm\":\"http://core-dev-va2-mgmt.pubmatic.com/master/owtools/vasttaggen/videos/VastUnwrap_559c00be8-e209-405b-a6dd-103b9e58a779.xml\",\"crid\":\"d06b3e66-5c31-4047-bd97-4d6f80d129b7\",\"dur\":20,\"ext\":{\"duration\":{\"duration\":20},\"appnexus\":{},\"BidType\":1}}],\"seat\":\"pubmatic\"}],\"bidid\":\"73435e40-f7ae-47ef-a1e5-afc86e9b205a\",\"cur\":\"USD\"}",
+                        "status": 200
+                    }
+                ],
+                "pubmatic": [
+                    {
+                        "uri": "http://10.172.141.11:3141/translator?source=ow-server",
+                        "requestbody":"{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"imp\":[{\"id\":\"imp176227948\",\"video\":{\"mimes\":[\"video/3gpp\",\"video/mp4\",\"video/webm\"],\"startdelay\":0,\"protocols\":[2,3,5,6,7,8],\"w\":320,\"h\":480,\"placement\":5,\"linearity\":1,\"maxbitrate\":600,\"boxingallowed\":1,\"playbackmethod\":[1],\"playbackend\":1,\"delivery\":[2],\"pos\":7,\"companionad\":[{\"format\":[{\"w\":320,\"h\":480}],\"pos\":7,\"api\":[5,6,7]}],\"api\":[5,6,7],\"companiontype\":[1,2,3]},\"displaymanager\":\"PubMatic_OpenBid_SDK\",\"displaymanagerver\":\"1.4.0\",\"instl\":1,\"tagid\":\"/43743431/DMDemo\",\"secure\":0}],\"app\":{\"name\":\"OpenWrapperSample\",\"bundle\":\"com.pubmatic.openbid.app\",\"storeurl\":\"https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5\&videobid=10\",\"ver\":\"1.0\",\"publisher\":{\"id\":\"123\"},\"keywords\":\"{ \\\"expect\\\": { \\\"imp176227948\\\": { \\\"price\\\": 4.00, \\\"wrapperCount\\\": 6, \\\"dur\\\":20 }}}\"},\"device\":{\"geo\":{\"lat\":37.421998333333335,\"lon\":-122.08400000000002,\"type\":1},\"lmt\":0,\"ua\":\"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36\",\"devicetype\":4,\"make\":\"Google\",\"model\":\"Android SDK built for x86\",\"os\":\"Android\",\"osv\":\"9\",\"h\":1794,\"w\":1080,\"pxratio\":2.625,\"js\":1,\"language\":\"en\",\"carrier\":\"Android\",\"mccmnc\":\"310-260\",\"connectiontype\":6,\"ifa\":\"07c387f2-e030-428f-8336-42f682150759\"},\"user\":{},\"test\":1,\"at\":1,\"cur\":[\"USD\"],\"source\":{\"tid\":\"dbb08f8f-2962-4a6c-b63d-cb6ef5b59bc3\",\"ext\":{\"omidpn\":\"PubMatic\",\"omidpv\":\"1.2.11-Pubmatic\"}},\"ext\":{\"prebid\":{\"channel\":{\"name\":\"app\",\"version\":\"\"},\"server\":{\"externalurl\":\"//ow.pubmatic.com\",\"gvlid\":0,\"datacenter\":\"\"}}}}",
+                        "requestheaders": {
+                            "Accept": [
+                                "application/json"
+                            ],
+                            "Content-Type": [
+                                "application/json;charset=utf-8"
+                            ],
+                            "X-Prebid": [
+                                "owpbs-go/unknown,app/unknown"
+                            ]
+                        },
+                        "responsebody": "",
+                        "status": 0
+                    }
+                ]
+            },
+            "resolvedrequest": {
+                "id": "95d6643c-3da6-40a2-b9ca-12279393ffbf",
+                "imp": [
+                    {
+                        "id": "imp176227948",
+                        "video": {
+                            "mimes": [
+                                "video/3gpp",
+                                "video/mp4",
+                                "video/webm"
+                            ],
+                            "startdelay": 0,
+                            "protocols": [
+                                2,
+                                3,
+                                5,
+                                6,
+                                7,
+                                8
+                            ],
+                            "w": 320,
+                            "h": 480,
+                            "placement": 5,
+                            "linearity": 1,
+                            "maxbitrate": 600,
+                            "boxingallowed": 1,
+                            "playbackmethod": [
+                                1
+                            ],
+                            "playbackend": 1,
+                            "delivery": [
+                                2
+                            ],
+                            "pos": 7,
+                            "companionad": [
+                                {
+                                    "format": [
+                                        {
+                                            "w": 320,
+                                            "h": 480
+                                        }
+                                    ],
+                                    "pos": 7,
+                                    "api": [
+                                        5,
+                                        6,
+                                        7
+                                    ]
+                                }
+                            ],
+                            "api": [
+                                5,
+                                6,
+                                7
+                            ],
+                            "companiontype": [
+                                1,
+                                2,
+                                3
+                            ]
+                        },
+                        "displaymanager": "PubMatic_OpenBid_SDK",
+                        "displaymanagerver": "1.4.0",
+                        "instl": 1,
+                        "tagid": "/43743431/DMDemo",
+                        "secure": 0,
+                        "ext": {
+                            "prebid": {
+                                "bidder": {
+                                    "myrtbbidder": {
+                                        "adUnitID": "123"
+                                    },
+                                    "ashish": {
+                                        "xyz": "1"
+                                    },
+                                    "pubmatic": {
+                                        "publisherID": "123"
+                                    },
+                                    "any-bidder": {
+                                        "adUnitID": "123"
+                                    }
+                                }
+                            },
+                            "tid": "2a9f47ce-b56d-47ea-87b8-4d7b7dabf688"
+                        }
+                    }
+                ],
+                "app": {
+                    "name": "OpenWrapperSample",
+                    "bundle": "com.pubmatic.openbid.app",
+                    "storeurl": "https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?appnexus_video_fixedbid=5&videobid=10",
+                    "ver": "1.0",
+                    "publisher": {
+                        "id": "5890"
+                    },
+                    "keywords": "{ \"expect\": { \"imp176227948\": { \"price\": 4.00, \"wrapperCount\": 6, \"dur\":20 }}}"
+                },
+                "device": {
+                    "geo": {
+                        "lat": 37.421998333333335,
+                        "lon": -122.08400000000002,
+                        "type": 1
+                    },
+                    "lmt": 0,
+                    "ua": "Mozilla/5.0 (Linux; Android 9; Android SDK built for x86 Build/PSR1.180720.075; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
+                    "devicetype": 4,
+                    "make": "Google",
+                    "model": "Android SDK built for x86",
+                    "os": "Android",
+                    "osv": "9",
+                    "h": 1794,
+                    "w": 1080,
+                    "pxratio": 2.625,
+                    "js": 1,
+                    "language": "en",
+                    "carrier": "Android",
+                    "mccmnc": "310-260",
+                    "connectiontype": 6,
+                    "ifa": "07c387f2-e030-428f-8336-42f682150759"
+                },
+                "user": {},
+                "test": 1,
+                "at": 1,
+                "cur": [
+                    "USD"
+                ],
+                "source": {
+                    "tid": "dbb08f8f-2962-4a6c-b63d-cb6ef5b59bc3",
+                    "ext": {
+                        "omidpn": "PubMatic",
+                        "omidpv": "1.2.11-Pubmatic"
+                    }
+                },
+                "ext": {
+                    "prebid": {
+                        "aliases": {
+                            "any-bidder": "myrtbbidder"
+                        },
+                        "bidderparams": {
+                            "ashish": "shinde"
+                        },
+                        "channel": {
+                            "name": "app",
+                            "version": ""
+                        },
+                        "floors": {
+                            "fetchstatus": "none",
+                            "location": "noData"
+                        },
+                        "server": {
+                            "externalurl": "//ow.pubmatic.com",
+                            "gvlid": 0,
+                            "datacenter": ""
+                        }
+                    },
+                    "wrapper": {
+                        "ssauction": 0,
+                        "sumry_disable": 0,
+                        "profileid": 12573,
+                        "versionid": 1,
+                        "clientconfig": 1
+                    }
+                }
+            }
+        },
+        "errors": {
+            "ashish": [
+                {
+                    "code": 4,
+                    "message": "Server responded with failure status: 403. Set request.test = 1 for debugging info."
+                }
+            ],
+            "pubmatic": [
+                {
+                    "code": 4,
+                    "message": "Server responded with failure status: 503. Set request.test = 1 for debugging info."
+                }
+            ]
+        },
+        "warnings": {
+            "general": [
+                {
+                    "code": 13,
+                    "message": "request.imp[0].ext.prebid.bidder.pubmatic failed validation.\n(root): publisherId is required"
+                }
+            ]
+        },
+        "responsetimemillis": {
+            "any-bidder": 718,
+            "ashish": 964,
+            "myrtbbidder": 718,
+            "pubmatic": 718
+        },
+        "prebid": {
+            "auctiontimestamp": 1705405210277,
+            "floors": {
+                "fetchstatus": "none",
+                "location": "noData"
+            }
+        }
+    }
+}
