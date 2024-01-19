@@ -15,8 +15,6 @@ import (
 
 type CitrusResponse struct {
 	Ads         []map[string]interface{} `json:"ads"`
-	Banners     []int `json:"banners"`
-	Products    []int `json:"products"`
 	MemoryToken string `json:"memoryToken"`
 }
 
@@ -29,6 +27,12 @@ func (a *CitrusAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalR
 		return nil, errors
 	}
 
+	if commerceExt.ComParams.TestRequest {
+
+		dummyResponse := a.GetMockResponse(internalRequest)
+		return dummyResponse, nil
+	}
+	
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
 	}
@@ -102,7 +106,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 		// Add ProductDetails to bidExtension
 		productDetails := make(map[string]interface{})
-		if bidderExtendedDetails {
+		if !bidderExtendedDetails {
 			for key, value := range ad {
 				productDetails[key] = value
 			}
@@ -141,7 +145,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 }
 
 func getTrackingURL(baseURL, bidTrackingID string, pubMaticTracking bool) string {
-	if pubMaticTracking {
+	if !pubMaticTracking {
 		return adapters.IMP_KEY + adapters.EncodeURL(baseURL + bidTrackingID)
 	}
 	return baseURL + bidTrackingID

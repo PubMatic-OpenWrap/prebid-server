@@ -71,8 +71,10 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 	
 	// Add other fields as needed
 	citrusReq.DynamicFields = make(map[string]interface{})
-	for key, value := range bidderParams {
-		citrusReq.DynamicFields[key] = value
+	if bidderParams != nil {
+		for key, value := range bidderParams {
+			citrusReq.DynamicFields[key] = value
+		}
 	}
 	
 	reqJSON, err := json.Marshal(citrusReq)
@@ -80,10 +82,19 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 		return nil, []error{err}
 	}
 
-
+	if len(citrusReq.DynamicFields) > 0 {
+		dynamicFieldsJSON, err := json.Marshal(citrusReq.DynamicFields)
+		if err != nil {
+			return nil, []error{err}
+		}
+		reqJSON = append(reqJSON[:len(reqJSON)-1], byte(',')) // remove the closing brace
+		reqJSON = append(reqJSON, dynamicFieldsJSON[1:]...)   // remove the opening brace of unknownFieldsJSON
+	}
+	
 	headers := http.Header{}
+	headers.Add("accept", "application/json")
 	headers.Add("Content-Type", "application/json")
-	headers.Add("Authorization", AUTH_PREFIX + authKey)
+	headers.Add("Authorization", AUTH_PREFIX + authKey )
 
 	return []*adapters.RequestData{{
 		Method:  "POST",
@@ -92,6 +103,4 @@ func (a *CitrusAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adap
 		Headers: headers,
 	}}, nil
 }
-
-
 
