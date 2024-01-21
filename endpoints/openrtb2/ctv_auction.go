@@ -118,7 +118,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var response *openrtb2.BidResponse
 	var err error
 	var errL []error
-	seatNonBid := &openrtb_ext.NonBidsWrapper{}
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,
@@ -256,7 +256,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	// }
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
-		seatNonBid.MergeNonBids(auctionResponse.SeatNonBid)
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
 	ao.SeatNonBid = seatNonBid.Get()
 	util.JLogf("BidResponse", response) //TODO: REMOVE LOG

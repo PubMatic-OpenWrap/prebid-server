@@ -116,7 +116,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// We can respect timeouts more accurately if we note the *real* start time, and use it
 	// to compute the auction timeout.
 	start := time.Now()
-	seatNonBid := &openrtb_ext.NonBidsWrapper{}
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAmp, deps.metricsEngine)
 
@@ -168,7 +168,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// Process reject after parsing amp request, so we can use reqWrapper.
 	// There is no body for AMP requests, so we pass a nil body and ignore the return value.
 	if rejectErr != nil {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, seatNonBid)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, *seatNonBid)
 		return
 	}
 
@@ -300,11 +300,11 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 
 	if isRejectErr {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL, seatNonBid)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL, *seatNonBid)
 		return
 	}
 
-	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL, seatNonBid)
+	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL, *seatNonBid)
 }
 
 func rejectAmpRequest(
@@ -316,7 +316,7 @@ func rejectAmpRequest(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
-	seatNonBid *openrtb_ext.NonBidsWrapper,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
 	ao.AuctionResponse = response
@@ -334,7 +334,7 @@ func sendAmpResponse(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
-	seatNonBid *openrtb_ext.NonBidsWrapper,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
@@ -418,7 +418,7 @@ func getExtBidResponse(
 	account *config.Account,
 	ao analytics.AmpObject,
 	errs []error,
-	seatNonBid *openrtb_ext.NonBidsWrapper,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (analytics.AmpObject, openrtb_ext.ExtBidResponse) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {

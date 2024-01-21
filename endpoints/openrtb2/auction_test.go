@@ -5676,7 +5676,7 @@ func TestSendAuctionResponse(t *testing.T) {
 				test.auctionObject.RequestWrapper.RebuildRequest()
 			}
 
-			_, ao := sendAuctionResponse(writer, test.hookExecutor, test.response, test.request, account, labels, test.auctionObject, &openrtb_ext.NonBidsWrapper{})
+			_, ao := sendAuctionResponse(writer, test.hookExecutor, test.response, test.request, account, labels, test.auctionObject, &openrtb_ext.NonBidCollection{})
 
 			assert.Equal(t, test.expectedAuctionObject.Errors, ao.Errors, "Invalid errors.")
 			assert.Equal(t, test.expectedAuctionObject.Status, ao.Status, "Invalid HTTP response status.")
@@ -5995,7 +5995,7 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 	tests := []struct {
 		name            string
 		stageOutcomes   []hookexecution.StageOutcome
-		expectedNonBids openrtb_ext.NonBidsWrapper
+		expectedNonBids openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "nil groups",
@@ -6196,7 +6196,7 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status:     hookexecution.StatusSuccess,
-									SeatNonBid: openrtb_ext.NonBidsWrapper{},
+									SeatNonBid: openrtb_ext.NonBidCollection{},
 								},
 							},
 						},
@@ -6204,14 +6204,14 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status:     hookexecution.StatusSuccess,
-									SeatNonBid: openrtb_ext.NonBidsWrapper{},
+									SeatNonBid: openrtb_ext.NonBidCollection{},
 								},
 							},
 						},
 					},
 				},
 			},
-			expectedNonBids: openrtb_ext.NonBidsWrapper{},
+			expectedNonBids: openrtb_ext.NonBidCollection{},
 		},
 	}
 	for _, tt := range tests {
@@ -6222,9 +6222,9 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 	}
 }
 
-// getNonBids is utility function which forms NonBidsWrapper from NonBidParams input
-func getNonBids(bidParams []openrtb_ext.NonBidParams) openrtb_ext.NonBidsWrapper {
-	nonBids := openrtb_ext.NonBidsWrapper{}
+// getNonBids is utility function which forms NonBidCollection from NonBidParams input
+func getNonBids(bidParams []openrtb_ext.NonBidParams) openrtb_ext.NonBidCollection {
+	nonBids := openrtb_ext.NonBidCollection{}
 	for _, val := range bidParams {
 		nonBids.AddBid(val)
 	}
@@ -6234,7 +6234,7 @@ func getNonBids(bidParams []openrtb_ext.NonBidParams) openrtb_ext.NonBidsWrapper
 func TestSeatNonBidInAuction(t *testing.T) {
 	type args struct {
 		bidRequest                openrtb2.BidRequest
-		seatNonBidFromHoldAuction openrtb_ext.NonBidsWrapper
+		seatNonBidFromHoldAuction openrtb_ext.NonBidCollection
 		errorFromHoldAuction      error
 		rejectRawAuctionHook      bool
 		errorFromHook             error
