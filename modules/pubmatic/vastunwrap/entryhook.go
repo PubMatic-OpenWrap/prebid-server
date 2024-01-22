@@ -29,9 +29,9 @@ func handleEntrypointHook(
 	profileId, versionId := getValueFromContext(payload.Request.Context())
 	vastRequestContext := models.RequestCtx{
 		ProfileID: profileId,
-		VersionID: versionId,
-		// DisplayID: versionId,
-		Endpoint: payload.Request.URL.Path,
+		// VersionID: versionId,
+		DisplayID: versionId,
+		Endpoint:  payload.Request.URL.Path,
 	}
 
 	result.ModuleContext = make(hookstage.ModuleContext)

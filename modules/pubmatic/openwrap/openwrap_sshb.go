@@ -47,11 +47,12 @@ func GetVastUnwrapEnable(rctx vastmodels.RequestCtx) bool {
 	rCtx.PubID = rctx.PubID
 	rCtx.ProfileID = rctx.ProfileID
 	rCtx.DisplayID = rctx.DisplayID
-	rCtx.VersionID = rctx.VersionID
+	// rCtx.VersionID = rctx.VersionID
 	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
-	if err == nil {
-		rCtx.PartnerConfigMap = partnerConfigMap
+	if err != nil || len(partnerConfigMap) == 0 {
+		return false
 	}
+	rCtx.PartnerConfigMap = partnerConfigMap
 	if models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1" {
 		return true
 	}
