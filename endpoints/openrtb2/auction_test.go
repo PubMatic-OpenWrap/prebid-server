@@ -5540,11 +5540,12 @@ func TestSendAuctionResponse(t *testing.T) {
 								Status:   hookexecution.StatusSuccess,
 								Action:   hookexecution.ActionNone,
 								Warnings: []string{"warning message"},
-								SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-									{
-										Bid:          &openrtb2.Bid{ImpID: "imp1"},
-										Seat:         "pubmatic",
-										NonBidReason: int(exchange.ResponseRejectedCategoryMappingInvalid),
+								SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+									"pubmatic": {
+										{
+											Bid:          &openrtb2.Bid{ImpID: "imp1"},
+											NonBidReason: int(exchange.ResponseRejectedCategoryMappingInvalid),
+										},
 									},
 								}),
 							},
@@ -6004,7 +6005,7 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					Groups: nil,
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{}),
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{}),
 		},
 		{
 			name: "nil and empty invocation results",
@@ -6020,7 +6021,7 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					},
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{}),
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{}),
 		},
 		{
 			name: "single nonbid with failure hookoutcome status",
@@ -6031,11 +6032,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusExecutionFailure,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp1"},
-											Seat:         "pubmatic",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6044,7 +6046,7 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					},
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{}),
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{}),
 		},
 		{
 			name: "single nonbid with success hookoutcome status",
@@ -6055,11 +6057,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusSuccess,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp1"},
-											Seat:         "pubmatic",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6068,11 +6071,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					},
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{
-				{
-					Bid:          &openrtb2.Bid{ImpID: "imp1"},
-					Seat:         "pubmatic",
-					NonBidReason: 100,
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: 100,
+					},
 				},
 			}),
 		},
@@ -6086,11 +6090,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusSuccess,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp1"},
-											Seat:         "pubmatic",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6105,11 +6110,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusSuccess,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp1"},
-											Seat:         "appnexus",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"appnexus": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6118,16 +6124,18 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					},
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{
-				{
-					Bid:          &openrtb2.Bid{ImpID: "imp1"},
-					Seat:         "appnexus",
-					NonBidReason: 100,
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"appnexus": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: 100,
+					},
 				},
-				{
-					Bid:          &openrtb2.Bid{ImpID: "imp1"},
-					Seat:         "pubmatic",
-					NonBidReason: 100,
+				"pubmatic": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: 100,
+					},
 				},
 			}),
 		},
@@ -6141,11 +6149,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusSuccess,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp1"},
-											Seat:         "pubmatic",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6160,11 +6169,12 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 							InvocationResults: []hookexecution.HookOutcome{
 								{
 									Status: hookexecution.StatusSuccess,
-									SeatNonBid: getNonBids([]openrtb_ext.NonBidParams{
-										{
-											Bid:          &openrtb2.Bid{ImpID: "imp2"},
-											Seat:         "pubmatic",
-											NonBidReason: 100,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp2"},
+												NonBidReason: 100,
+											},
 										},
 									}),
 								},
@@ -6173,16 +6183,16 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 					},
 				},
 			},
-			expectedNonBids: getNonBids([]openrtb_ext.NonBidParams{
-				{
-					Bid:          &openrtb2.Bid{ImpID: "imp1"},
-					Seat:         "pubmatic",
-					NonBidReason: 100,
-				},
-				{
-					Bid:          &openrtb2.Bid{ImpID: "imp2"},
-					Seat:         "pubmatic",
-					NonBidReason: 100,
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: 100,
+					},
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp2"},
+						NonBidReason: 100,
+					},
 				},
 			}),
 		},
@@ -6223,10 +6233,13 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 }
 
 // getNonBids is utility function which forms NonBidCollection from NonBidParams input
-func getNonBids(bidParams []openrtb_ext.NonBidParams) openrtb_ext.NonBidCollection {
+func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.NonBidCollection {
 	nonBids := openrtb_ext.NonBidCollection{}
-	for _, val := range bidParams {
-		nonBids.AddBid(val)
+	for bidder, bidParams := range bidParamsMap {
+		for _, bidParam := range bidParams {
+			nonBid := openrtb_ext.NewNonBid(bidParam)
+			nonBids.AddBid(nonBid, bidder)
+		}
 	}
 	return nonBids
 }
@@ -6325,11 +6338,12 @@ func TestSeatNonBidInAuction(t *testing.T) {
 		{
 			description: "auctionObject should contain seatNonBid from both holdAuction and hookOutcomes",
 			args: args{
-				seatNonBidFromHoldAuction: getNonBids([]openrtb_ext.NonBidParams{
-					{
-						Seat:         "appnexus",
-						Bid:          &openrtb2.Bid{ImpID: "imp"},
-						NonBidReason: 100,
+				seatNonBidFromHoldAuction: getNonBids(map[string][]openrtb_ext.NonBidParams{
+					"appnexus": {
+						{
+							Bid:          &openrtb2.Bid{ImpID: "imp"},
+							NonBidReason: 100,
+						},
 					},
 				}),
 				bidRequest: openrtb2.BidRequest{
