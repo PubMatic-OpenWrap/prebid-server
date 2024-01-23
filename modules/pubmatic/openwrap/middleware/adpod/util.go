@@ -17,6 +17,9 @@ var (
 func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
 	params := r.URL.Query()
 	debug := params.Get(models.Debug)
+	if len(debug) == 0 {
+		debug = "0"
+	}
 
 	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
 	if format != "" {
