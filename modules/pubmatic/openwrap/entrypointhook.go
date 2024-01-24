@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -145,7 +146,9 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
-		Method: payload.Request.Method,
+		Method:         payload.Request.Method,
+		ResponseFormat: strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
+		RedirectURL:    queryParams.Get(models.OWRedirectURLKey),
 	}
 
 	// SSAuction will be always 1 for CTV request
