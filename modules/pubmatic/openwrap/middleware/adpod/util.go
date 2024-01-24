@@ -7,11 +7,11 @@ import (
 
 	validator "github.com/asaskevich/govalidator"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 )
 
 var (
 	middlewareLocation = []string{"prebid", "modules", "errors", "pubmatic.openwrap", "pubmatic.openwrap.middleware"}
-	errorLocation      = []string{"prebid", "modules", "errors", "pubmatic.openwrap"}
 )
 
 func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
@@ -24,7 +24,7 @@ func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
 	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
 	if format != "" {
 		if format != models.ResponseFormatJSON && format != models.ResponseFormatRedirect {
-			return "", debug, NewError(634, "Invalid response format, must be 'json' or 'redirect'")
+			return "", debug, NewError(nbr.InvalidResponseFormat, "Invalid response format, must be 'json' or 'redirect'")
 		}
 	}
 
@@ -32,7 +32,7 @@ func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
 	if len(owRedirectURL) > 0 {
 		owRedirectURL = strings.TrimSpace(owRedirectURL)
 		if format == models.ResponseFormatRedirect && !isValidURL(owRedirectURL) {
-			return "", debug, NewError(633, "Invalid redirect URL")
+			return "", debug, NewError(nbr.InvalidRedirectURL, "Invalid redirect URL")
 		}
 	}
 

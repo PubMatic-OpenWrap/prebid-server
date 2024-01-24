@@ -98,6 +98,8 @@ type RequestCtx struct {
 	Method                 string
 	Errors                 []error
 	CustomDimensions       map[string]CustomDimension
+	RedirectURL            string
+	ResponseFormat         string
 }
 
 type CustomDimension struct {

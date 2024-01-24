@@ -123,19 +123,9 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer panicHandler(r)
 
-	redirectURL, debug, err := getAndValidateRedirectURL(r)
-	if err != nil {
-		writeErrorResponse(w, http.StatusBadRequest, err)
-		return
-	}
-
 	enrichError := enrichRequestBody(r)
 	if enrichError != nil {
-		if len(redirectURL) > 0 && debug == "0" {
-			http.Redirect(w, r, string(redirectURL), http.StatusFound)
-			return
-		}
-		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, debug)
+		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, r.URL.Query().Get(models.Debug))
 		w.Header().Set(ContentType, ApplicationJSON)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(errResponse)
@@ -147,17 +137,16 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	responseGenerator := jsonResponse{
 		cacheClient: a.cacheClient,
-		redirectURL: redirectURL,
-		debug:       debug,
+		debug:       r.URL.Query().Get(models.Debug),
 	}
 	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter)
 
-	if len(redirectURL) > 0 && debug == "0" {
+	SetCORSHeaders(w, r)
+	if statusCode == http.StatusFound {
 		http.Redirect(w, r, string(response), http.StatusFound)
 		return
 	}
 
-	SetCORSHeaders(w, r)
 	for k, v := range headers {
 		w.Header().Set(k, v)
 	}

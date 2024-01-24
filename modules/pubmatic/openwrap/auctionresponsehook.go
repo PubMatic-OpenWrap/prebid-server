@@ -290,6 +290,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
+		if len(rctx.ResponseFormat) > 0 && len(rctx.RedirectURL) > 0 {
+			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
+				ResponseFormat: rctx.ResponseFormat,
+				RedirectURL:    rctx.RedirectURL,
+			}
+		}
+	}
+
 	rctx.ResponseExt = responseExt
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
 

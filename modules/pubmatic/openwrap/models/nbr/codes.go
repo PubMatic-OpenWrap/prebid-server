@@ -18,4 +18,7 @@ const (
 	InvalidVideoRequest
 	EmptySeatBid
 	InvalidAdpodConfig
+	InvalidRedirectURL
+	InvalidResponseFormat
+	MissingOWRedirectURL
 )

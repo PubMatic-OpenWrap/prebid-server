@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
@@ -131,6 +132,35 @@ func (m OpenWrap) handleBeforeValidationHook(
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, nil
+	}
+
+	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
+		if len(rCtx.ResponseFormat) > 0 {
+			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
+				result.NbrCode = nbr.InvalidResponseFormat
+				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+				return result, nil
+			}
+		}
+
+		if len(rCtx.RedirectURL) == 0 {
+			rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
+		}
+
+		if len(rCtx.RedirectURL) > 0 {
+			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
+			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
+				result.NbrCode = nbr.InvalidRedirectURL
+				result.Errors = append(result.Errors, "Invalid redirect URL")
+				return result, nil
+			}
+		}
+
+		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
+			result.NbrCode = nbr.MissingOWRedirectURL
+			result.Errors = append(result.Errors, "owRedirectURL is missing")
+			return result, nil
+		}
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
@@ -400,16 +430,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderMeta[bidderCode].VASTTagFlags[key] = false
 			}
 
+			isAlias := false
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
 				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
 					rCtx.Aliases[bidderCode] = adapters.ResolveOWBidder(prebidPartnerName)
+					isAlias = true
 				}
 			}
 			if alias, ok := IsAlias(bidderCode); ok {
 				rCtx.Aliases[bidderCode] = alias
+				isAlias = true
 			}
 
-			if partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
+			if isAlias || partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
@@ -1048,4 +1081,11 @@ func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 		return imp.TagID
 	}
 	return impExt.Data.PbAdslot
+}
+
+func isValidURL(urlVal string) bool {
+	if !(strings.HasPrefix(urlVal, "http://") || strings.HasPrefix(urlVal, "https://")) {
+		return false
+	}
+	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }

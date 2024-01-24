@@ -300,6 +300,8 @@ const (
 	SoftFloorType      = "soft"
 	HardFloorType      = "hard"
 
+	OwRedirectURL = "owRedirectURL"
+
 	//include brand categories values
 	IncludeNoCategory            = 0
 	IncludeIABBranchCategory     = 1

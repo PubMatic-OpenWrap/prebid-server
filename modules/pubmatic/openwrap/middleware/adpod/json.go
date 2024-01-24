@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	pbc "github.com/prebid/prebid-server/prebid_cache_client"
 )
 
@@ -40,7 +41,6 @@ type bidResponseAdpod struct {
 
 type jsonResponse struct {
 	cacheClient *pbc.Client
-	redirectURL string
 	debug       string
 }
 
@@ -52,18 +52,12 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWr
 	}
 
 	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL), headers, statusCode
-		}
 		return formJSONErrorResponse("", adpodWriter.Response.String(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, jr.debug), headers, adpodWriter.Code
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL), headers, statusCode
-		}
 		return formJSONErrorResponse("", "error in reading response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
 	}
 
@@ -71,36 +65,44 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWr
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL), headers, statusCode
-		}
 		return formJSONErrorResponse("", "error in unmarshaling the auction response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
 		statusCode = http.StatusBadRequest
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL), headers, statusCode
-		}
 		return formJSONErrorResponse(bidResponse.ID, "", bidResponse.NBR, bidResponse.Ext, jr.debug), headers, statusCode
 	}
 
-	return jr.getJsonResponse(bidResponse), headers, statusCode
+	var finalResponse []byte
+	finalResponse, statusCode = jr.getJsonResponse(bidResponse)
+
+	return finalResponse, headers, statusCode
 }
 
-func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byte {
-	if bidResponse == nil || bidResponse.SeatBid == nil {
-		if len(jr.redirectURL) > 0 && jr.debug == "0" {
-			return []byte(jr.redirectURL)
-		}
+func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) ([]byte, int) {
+	if bidResponse == nil {
+		return formJSONErrorResponse("", "empty bid response recieved", GetNoBidReasonCode(int(openrtb3.NoBidGeneralError)), nil, jr.debug), http.StatusOK
+	}
 
-		var id string
-		var bidExt json.RawMessage
-		if bidResponse != nil {
-			id = bidResponse.ID
-			bidExt = bidResponse.Ext
+	var reqExt openrtb_ext.ExtBidResponse
+	err := json.Unmarshal(bidResponse.Ext, &reqExt)
+	if err != nil {
+		return formJSONErrorResponse("", "error in unmarshaling request extension, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), http.StatusInternalServerError
+	}
+
+	var responseFormat, redirectURL string
+	if reqExt.Wrapper != nil {
+		responseFormat = reqExt.Wrapper.ResponseFormat
+		redirectURL = reqExt.Wrapper.RedirectURL
+		reqExt.Wrapper = nil
+	}
+	bidResponse.Ext, _ = json.Marshal(reqExt)
+
+	if bidResponse.SeatBid == nil {
+		if len(redirectURL) > 0 && responseFormat == models.ResponseFormatRedirect && jr.debug != "1" {
+			return []byte(redirectURL), http.StatusFound
 		}
-		return formJSONErrorResponse(id, "empty bid response recieved", GetNoBidReasonCode(nbr.EmptySeatBid), bidExt, jr.debug)
+		return formJSONErrorResponse("", "No Bid", GetNoBidReasonCode(int(openrtb3.NoBidGeneralError)), bidResponse.Ext, jr.debug), http.StatusOK
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)
@@ -119,14 +121,14 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) []byt
 	}
 	adPodBids := formAdpodBids(bidArrayMap, jr.cacheClient)
 
-	if len(jr.redirectURL) > 0 && jr.debug == "0" {
-		return getRedirectResponse(adPodBids, jr.redirectURL)
+	if len(redirectURL) > 0 && responseFormat == models.ResponseFormatRedirect && jr.debug != "1" {
+		return getRedirectResponse(adPodBids, redirectURL), http.StatusFound
 	}
 
 	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
 	response, _ := json.Marshal(adpodResponse)
 
-	return response
+	return response, http.StatusOK
 }
 
 func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
@@ -153,7 +155,9 @@ func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
 		sNo := i + 1
 		for _, tk := range redirectTargetingKeys {
 			targetingKey := prepareSlotLevelKey(sNo, tk)
-			custParams.Set(targetingKey, target[targetingKey])
+			if value, ok := target[targetingKey]; ok {
+				custParams.Set(targetingKey, value)
+			}
 		}
 	}
 
