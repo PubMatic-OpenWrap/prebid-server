@@ -10,50 +10,49 @@ import (
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/errortypes"
 )
 
-type AdButlerRequest struct { 
-	SearchString      string                  `json:"search,omitempty"`
-	SearchType        string                  `json:"search_type,omitempty"`
-	Params            map[string][]string     `json:"params,omitempty"`
-	Identifiers       []string                `json:"identifiers,omitempty"`
-	Target            map[string]interface{}  `json:"_abdk_json,omitempty"`
-	Limit             int                     `json:"limit,omitempty"`
-	Source            string                  `json:"source,omitempty"`
-	UserID            string                  `json:"adb_uid,omitempty"`
-	IP                string                  `json:"ip,omitempty"`
-	UserAgent         string                  `json:"ua,omitempty"`
-	Referrer          string                  `json:"referrer,omitempty"`
-	FloorCPC          float64                 `json:"bid_floor_cpc,omitempty"`
-	IsTestRequest     bool                    `json:"test_request,omitempty"`
-	
+type AdButlerRequest struct {
+	SearchString  string                 `json:"search,omitempty"`
+	SearchType    string                 `json:"search_type,omitempty"`
+	Params        map[string][]string    `json:"params,omitempty"`
+	Identifiers   []string               `json:"identifiers,omitempty"`
+	Target        map[string]interface{} `json:"_abdk_json,omitempty"`
+	Limit         int                    `json:"limit,omitempty"`
+	Source        string                 `json:"source,omitempty"`
+	UserID        string                 `json:"adb_uid,omitempty"`
+	IP            string                 `json:"ip,omitempty"`
+	UserAgent     string                 `json:"ua,omitempty"`
+	Referrer      string                 `json:"referrer,omitempty"`
+	FloorCPC      float64                `json:"bid_floor_cpc,omitempty"`
+	IsTestRequest bool                   `json:"test_request,omitempty"`
 }
 
 func isLowercaseNumbersDashes(s string) bool {
-    // Define a regular expression pattern to match lowercase letters, numbers, and dashes
-    pattern := "^[a-z0-9-]+$"
-    re := regexp.MustCompile(pattern)
+	// Define a regular expression pattern to match lowercase letters, numbers, and dashes
+	pattern := "^[a-z0-9-]+$"
+	re := regexp.MustCompile(pattern)
 
-    // Use the MatchString function to check if the string matches the pattern
-    return re.MatchString(s)
+	// Use the MatchString function to check if the string matches the pattern
+	return re.MatchString(s)
 }
-
 
 func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 
-    commerceExt, siteExt, _,errors := adapters.ValidateCommRequest(request)
+	commerceExt, siteExt, _, errors := adapters.ValidateCommRequest(request)
 	if len(errors) > 0 {
 		return nil, errors
 	}
 
-    var configValueMap = make(map[string]string)
-    var configTypeMap = make(map[string]int)
-	for _,obj := range commerceExt.Bidder.CustomConfig {
+	var configValueMap = make(map[string]string)
+	var configTypeMap = make(map[string]int)
+	for _, obj := range commerceExt.Bidder.CustomConfig {
 		configValueMap[obj.Key] = obj.Value
 		configTypeMap[obj.Key] = obj.Type
 	}
 
-	var adButlerReq AdButlerRequest 
+	var adButlerReq AdButlerRequest
 	//Assign Page Source if Present
 	if siteExt != nil {
 		if isLowercaseNumbersDashes(siteExt.Page) {
@@ -61,28 +60,28 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		}
 	}
 
-    //Retrieve AccountID and ZoneID from Request and Build endpoint Url
+	//Retrieve AccountID and ZoneID from Request and Build endpoint Url
 	var accountID, zoneID string
-	val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
+	val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
 	if ok {
 		accountID = val
 	}
-	
-	val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ZONE_ID]
+
+	val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ZONE_ID]
 	if ok {
 		zoneID = val
-	} 
-		
+	}
+
 	endPoint, err := a.buildEndpointURL(accountID, zoneID)
 	if err != nil {
 		return nil, []error{err}
 	}
-		
+
 	adButlerReq.Target = make(map[string]interface{})
 	//Add User Targeting
 	if request.User != nil {
-		if(request.User.Yob > 0) {
-			now := time.Now()	
+		if request.User.Yob > 0 {
+			now := time.Now()
 			age := int64(now.Year()) - request.User.Yob
 			adButlerReq.Target[USER_AGE] = age
 		}
@@ -95,7 +94,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 			} else if strings.EqualFold(request.User.Gender, "O") {
 				adButlerReq.Target[USER_GENDER] = GENDER_OTHER
 			}
-		}	
+		}
 	}
 
 	//Add Geo Targeting
@@ -125,24 +124,44 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	}
 
 	//Add Page Source Targeting
-	if adButlerReq.Source != ""  {
+	if adButlerReq.Source != "" {
 		adButlerReq.Target[PAGE_SOURCE] = adButlerReq.Source
 	}
 
 	//Add Dynamic Targeting from AdRequest
-	for _,targetObj := range commerceExt.ComParams.Targeting {
+	for _, targetObj := range commerceExt.ComParams.Targeting {
 		key := targetObj.Name
 		adButlerReq.Target[key] = targetObj.Value
 	}
 	//Add Identifiers from AdRequest
-	for _,prefObj := range commerceExt.ComParams.Preferred {
+	for _, prefObj := range commerceExt.ComParams.Preferred {
 		adButlerReq.Identifiers = append(adButlerReq.Identifiers, prefObj.ProductID)
 	}
 
+	if commerceExt.ComParams.Filtering != nil {
+		subcategoryMap := make(map[string]bool)
+		if value, ok := configValueMap[adapters.PRODUCTTEMPLATE_PREFIX+PD_TEMPLATE_SUBCATEGORY]; ok {
+			subcategories := strings.Split(value, ProductTemplate_Separator)
+			for _, subcategory := range subcategories {
+				subcategoryMap[subcategory] = true
+			}
+			for _, category := range commerceExt.ComParams.Filtering {
+				key := category.Name
+				if _, ok := subcategoryMap[key]; !ok {
+					errors = append(errors, &errortypes.BadInput{
+						Message: "Invalid Subcategory : " + key,
+					})
+					return nil, errors
+				}
+			}
+		}
+	}
+
 	//Add Category Params from AdRequest
-	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering != nil && len(commerceExt.ComParams.Filtering) > 0{
+	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering != nil && len(commerceExt.ComParams.Filtering) > 0 {
+
 		adButlerReq.Params = make(map[string][]string)
-		for _,category := range commerceExt.ComParams.Filtering {
+		for _, category := range commerceExt.ComParams.Filtering {
 			key := category.Name
 			value := category.Value
 			adButlerReq.Params[key] = value
@@ -153,8 +172,8 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	if len(adButlerReq.Identifiers) <= 0 && commerceExt.ComParams.Filtering == nil && commerceExt.ComParams.SearchTerm != "" {
 		adButlerReq.SearchString = commerceExt.ComParams.SearchTerm
 		if commerceExt.ComParams.SearchType == SEARCHTYPE_EXACT ||
-		    commerceExt.ComParams.SearchType == SEARCHTYPE_BROAD {
-				adButlerReq.SearchType = commerceExt.ComParams.SearchType
+			commerceExt.ComParams.SearchType == SEARCHTYPE_BROAD {
+			adButlerReq.SearchType = commerceExt.ComParams.SearchType
 		} else {
 			val, ok := configValueMap[SEARCHTYPE]
 			if ok {
@@ -177,7 +196,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 	if request.Imp[0].BidFloor > 0 {
 		adButlerReq.FloorCPC = request.Imp[0].BidFloor
 	} else {
-		val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_FLOOR_PRICE]
+		val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX+adapters.AD_FLOOR_PRICE]
 		if ok {
 			if floorPrice, err := strconv.ParseFloat(val, 64); err == nil {
 				adButlerReq.FloorCPC = floorPrice
@@ -211,8 +230,5 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		Body:    reqJSON,
 		Headers: headers,
 	}}, nil
-	
+
 }
-
-
-
