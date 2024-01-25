@@ -1,11 +1,12 @@
 package impressions
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 
-	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -61,8 +62,18 @@ func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]
 			video.MaxExtended = 0
 
 			// Remove adpod Extension
-			video.Ext = jsonparser.Delete(video.Ext, "adpod")
-			video.Ext = jsonparser.Delete(video.Ext, "offset")
+			var videoExt map[string]interface{}
+			err := json.Unmarshal(video.Ext, &videoExt)
+			if err != nil {
+				glog.Warningf("error while unmarshalling video extension for impression: %s", impAdpodConfig[i].ImpID)
+			}
+			delete(videoExt, "adpod")
+			delete(videoExt, "offset")
+			if len(videoExt) == 0 {
+				video.Ext = nil
+			} else {
+				video.Ext, _ = json.Marshal(videoExt)
+			}
 
 			newImp := *impWrapper.Imp
 			newImp.ID = impAdpodConfig[i].ImpID
