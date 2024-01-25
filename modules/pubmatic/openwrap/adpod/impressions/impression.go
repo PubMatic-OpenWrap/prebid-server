@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -58,6 +59,10 @@ func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]
 			video.MaxDuration = impAdpodConfig[i].MaxDuration
 			video.Sequence = impAdpodConfig[i].SequenceNumber
 			video.MaxExtended = 0
+
+			// Remove adpod Extension
+			video.Ext = jsonparser.Delete(video.Ext, "adpod")
+			video.Ext = jsonparser.Delete(video.Ext, "offset")
 
 			newImp := *impWrapper.Imp
 			newImp.ID = impAdpodConfig[i].ImpID
