@@ -153,6 +153,25 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+
+	var seatNonBids openrtb_ext.NonBidCollection
+	if len(filteredBidders) > 0 {
+
+		for bidderName, _ := range filteredBidders {
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+				Bid:          &openrtb2.Bid{ImpID: payload.BidRequest.Imp[0].ID},
+				NonBidReason: 505,
+			})
+			seatNonBids.AddBid(nonBid, bidderName)
+		}
+	}
+
+	nonBids := seatNonBids.GetNonBids()
+	if nonBids != nil {
+		for key, val := range nonBids {
+			rCtx.SeatNonBids[key] = append(rCtx.SeatNonBids[key], val...)
+		}
+	}
 	if allPartnersFilteredFlag {
 		result.NbrCode = nbr.AllPartnersFiltered
 		result.Errors = append(result.Errors, "All partners filtered")

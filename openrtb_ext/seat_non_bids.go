@@ -78,3 +78,11 @@ func (snb *NonBidCollection) Get() []SeatNonBid {
 	}
 	return seatNonBid
 }
+
+func (snb *NonBidCollection) GetNonBids() map[string][]NonBid {
+	if snb != nil {
+		return nil
+	}
+
+	return snb.seatNonBidsMap
+}

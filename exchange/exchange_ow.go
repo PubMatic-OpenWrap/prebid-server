@@ -140,8 +140,12 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
 						// seatNonBids.addBid(bid, int(openrtb3.LossBidAdvertiserBlocking), seatBid.Seat)
-						seatNonBids.AddBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidAdvertiserBlocking),
-							Seat: string(bidderName), OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
+						nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidCategoryMapping),
+							OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
+						seatNonBids.AddBid(nonBid, string(bidderName))
+
+						// seatNonBids.AddBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidAdvertiserBlocking),
+						// 	Seat: string(bidderName), OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -231,7 +235,10 @@ func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejected
 				rejectionReason = openrtb3.LossBidBelowDealFloor
 			}
 			// seatNonBids.addBid(pbsRejBid, int(rejectionReason), pbsRejSeatBid.Seat)
-			seatNonBids.AddBid(openrtb_ext.NonBidParams{Bid: pbsRejBid.Bid, NonBidReason: int(rejectionReason), Seat: pbsRejSeatBid.Seat})
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: pbsRejBid.Bid, NonBidReason: int(rejectionReason),
+				OriginalBidCPM: pbsRejBid.OriginalBidCPM, OriginalBidCur: pbsRejBid.OriginalBidCur})
+			seatNonBids.AddBid(nonBid, string(pbsRejSeatBid.Seat))
+			// seatNonBids.AddBid(openrtb_ext.NonBidParams{Bid: pbsRejBid.Bid, NonBidReason: int(rejectionReason), Seat: pbsRejSeatBid.Seat})
 		}
 	}
 }

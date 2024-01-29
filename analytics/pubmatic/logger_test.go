@@ -114,9 +114,9 @@ func TestConvertNonBidToBid(t *testing.T) {
 			nonBid: openrtb_ext.NonBid{
 				StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
 				ImpId:      "imp1",
-				Ext: openrtb_ext.NonBidExt{
-					Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-						Bid: openrtb_ext.NonBidObject{
+				Ext: openrtb_ext.ExtNonBid{
+					Prebid: openrtb_ext.ExtNonBidPrebid{
+						Bid: openrtb_ext.ExtNonBidPrebidBid{
 							Price:             10,
 							ADomain:           []string{"abc.com"},
 							DealID:            "d1",
@@ -1059,9 +1059,9 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												ID: "bid-id-2",
 											},
 										},
@@ -1576,7 +1576,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int((openrtb3.LossBidBelowAuctionFloor)),
-									Ext: openrtb_ext.NonBidExt{
+									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
 												Price: 10,
