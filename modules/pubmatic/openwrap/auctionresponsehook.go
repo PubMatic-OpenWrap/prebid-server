@@ -521,7 +521,7 @@ func GetTargettingForAdpod(bid openrtb2.Bid, partnerConfig map[string]string, im
 
 		prefix, _, _, err := jsonparser.Get(impCtx.NewExt, "prebid", "bidder", seat, "dealtier", "prefix")
 		if bidCtx.Prebid.DealTierSatisfied && partnerConfig[models.DealTierLineItemSetup] == "1" && err == nil && len(prefix) > 0 {
-			targetingKeyValMap[models.PwtDealTier] = fmt.Sprintf("%s%d", string(prefix), bidCtx.Prebid.DealPriority)
+			targetingKeyValMap[models.PwtDT] = fmt.Sprintf("%s%d", string(prefix), bidCtx.Prebid.DealPriority)
 		} else if len(bid.DealID) > 0 && partnerConfig[models.DealIDLineItemSetup] == "1" {
 			targetingKeyValMap[models.PWT_DEALID] = bid.DealID
 		} else {

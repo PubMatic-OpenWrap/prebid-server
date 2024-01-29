@@ -140,6 +140,7 @@ const (
 	PwtPb          = "pwtpb"
 	PwtCat         = "pwtcat"
 	PwtPbCatDur    = "pwtpb_cat_dur"
+	PwtDT          = "pwtdt"
 
 	//constants for query params in AMP request
 	PUBID_KEY         = "pubId"
