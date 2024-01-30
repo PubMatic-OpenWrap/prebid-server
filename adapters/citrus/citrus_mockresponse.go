@@ -9,7 +9,7 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
-var mockProductDetails = map[string]interface{}{
+var MockProductDetails = map[string]interface{}{
     "discount": map[string]interface{}{
         "amount":          23.45,
         "minPrice":        21.00,
@@ -21,14 +21,25 @@ var mockProductDetails = map[string]interface{}{
 
 const (
 	MAX_COUNT   = 9
-	IMP_URL  = TRACKING_IMPURL + "id=display_QqHaKRrKlFm1Wxr9c_DXJN4HSE3NzMzNjM2"
-	CLICK_URL  = TRACKING_CLKURL + "id=display_QqHaKRrKlFm1Wxr9c_DXJN4HSE3NzMzNjM2"
+	TRACKINGID  =  "display_QqHaKRrKlFm1Wxr9c_DXJN4HSE3NzMzNjM2"
 )
 func (a *CitrusAdapter) GetMockResponse(internalRequest *openrtb2.BidRequest) *adapters.BidderResponse {
 	requestCount := GetRequestSlotCount(internalRequest)
 	impiD := internalRequest.Imp[0].ID
 
-	responseF := GetMockBids(requestCount, impiD)
+	commerceExt, err := adapters.GetImpressionExtComm(&(internalRequest.Imp[0]))
+	if err != nil {
+		return nil
+	}
+
+	var configValueMap = make(map[string]string)
+        var configTypeMap = make(map[string]int)
+	for _,obj := range commerceExt.Bidder.CustomConfig {
+		configValueMap[obj.Key] = obj.Value
+		configTypeMap[obj.Key] = obj.Type
+	}
+
+	responseF := GetMockBids(requestCount, impiD, configValueMap )
 	return responseF
 }
 
@@ -51,28 +62,43 @@ func GetRandomProductID() string {
 	return t
 }
 
-func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
+func GetMockBids(requestCount int, ImpID string, configValueMap map[string]string ) *adapters.BidderResponse {
 	var typedArray []*adapters.TypedBid
 
 	if requestCount > MAX_COUNT {
 		requestCount = MAX_COUNT
 	}
 	
+	bidderExtendedDetails := false
+	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+	if ok {
+		if val == adapters.STRING_TRUE {
+			bidderExtendedDetails = true
+		}
+	}
+
 	for i := 1; i <= requestCount; i++ {
 		productid := GetRandomProductID()
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := ImpID + "_" + strconv.Itoa(i)
 
+		impressionURL := TRACKING_IMPURL + TRACKINGID + "_" + strconv.Itoa(i)
+		clickURL := TRACKING_CLKURL + TRACKINGID + "_" + strconv.Itoa(i)
+
+		mockProductDetails := make(map[string]interface{})
+		if bidderExtendedDetails {
+			mockProductDetails = MockProductDetails
+		}
 		bidExt := &openrtb_ext.ExtBidCommerce{
 			ProductId:  productid,
-			ClickUrl: CLICK_URL,
+			ClickUrl: clickURL,
 			ProductDetails: mockProductDetails,
 		}
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
 			ImpID: impID,
-			IURL: IMP_URL,
+			IURL: impressionURL,
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -94,5 +120,4 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 	}
 	return responseF
 }
-
 

@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-var mockProductDetails = map[string]interface{}{
+var MockProductDetails = map[string]interface{}{
     "ProductName": "Comet Professional Multi Purpose Disinfecting - Sanitizing Liquid Bathroom Cleaner Spray, 32 fl oz. (19214)",
     "Image": "https://www.staples-3p.com/s7/is/image/Staples/7246D7B1-E4B9-4AA7-9261723D16E5023B_sc7?$std$",
     "ProductPage": "//b.va.us.criteo.com/rm?dest=https%3a%2f%2fwww.staples.com%2fcomet-sanitizing-bathroom-cleaner-32-oz%2fproduct_24442430%3fcid%3dBNR%3a24442430%26ci_src%3d17588969%26ci_sku%3d24442430%26KPID%3d24442430&sig=1-4QbIhl7enF8z5Znj9uK8DV4gv_b2ZKe2Lh5HS3-bdpk&rm_e=YwVUlwDHD1yRccXhY_Ge0ja0KIBxHmS8Afyav-5cSdx0QvY4RquAAXx_8LEJg4urqqOpSIf06OGnwvoRI2oQbLyeSkU-r4ssFHxwbZJBEQDNB8ba9rr-NE9n9Ba2-hUZoUEGeOueYCRUznfSVOsfaYFyIxiM9DG2D_YpIOyLi0OXr6M-x7Os8_l01yD-Ckf9SG-8b_dPTfo_Jvlp2wHRWRbz_JexsXMrF1nDg7Gg6cYrZs3fMPF2wbGgNN9ijxC2zGQ2SiWy0kiEOofJAjp8F6Bxa445dQnGhLJNdlmZMeMrzIVSLb4elmaQvlcCVHF14PG_kabsptpJsPc7W8x7ONQgkwKL1gfXgU4IDjCRMZoVckV0RZY8v3t8a_QlkF9BHss4t5TtH4u4_tRgqdwKVBhl9OV5fSEsMJ1P-ir3ddIceuzyZX8WXSbxOebRf4i15xls9t6s9-zIxSFiVr_AT_HwU5SnIeVPlCES7CBUSxy-_NqnSRTTGdqCvVi_ElReUyghh7w7_TwwOUm4qMeAd-cEhhBQMPQHRXDElAVOIHyhWp7R1u-GzgSWfF93jxdR0Z7kN2bvhvPzi5Cqf3QSxA&ev=4",
@@ -31,7 +31,20 @@ func (a *CriteoRetailAdapter) GetMockResponse(internalRequest *openrtb2.BidReque
 	requestCount := GetRequestSlotCount(internalRequest)
 	impiD := internalRequest.Imp[0].ID
 
-	responseF := GetMockBids(requestCount, impiD)
+	commerceExt, err := adapters.GetImpressionExtComm(&(internalRequest.Imp[0]))
+	if err != nil {
+		return nil
+	}
+
+	var configValueMap = make(map[string]string)
+        var configTypeMap = make(map[string]int)
+	for _,obj := range commerceExt.Bidder.CustomConfig {
+		configValueMap[obj.Key] = obj.Value
+		configTypeMap[obj.Key] = obj.Type
+	}
+
+
+	responseF := GetMockBids(requestCount, impiD, configValueMap)
 	return responseF
 }
 
@@ -69,23 +82,33 @@ func GetRandomClickPrice(max float64) float64 {
 	return truncated
 }
 
-func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
+func GetMockBids(requestCount int, ImpID string, configValueMap map[string]string ) *adapters.BidderResponse {
 	var typedArray []*adapters.TypedBid
 
 	if requestCount > MAX_COUNT {
 		requestCount = MAX_COUNT
 	}
+
+	bidderExtendedDetails := false
+	val, ok := configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+	if ok {
+		if val == adapters.STRING_TRUE {
+			bidderExtendedDetails = true
+		}
+	}
 	
 	for i := 1; i <= requestCount; i++ {
 		productid := GetRandomProductID()
-		bidPrice := GetRandomBidPrice()
-		clickPrice := GetRandomClickPrice(bidPrice)
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := ImpID + "_" + strconv.Itoa(i)
 
+		mockProductDetails := make(map[string]interface{})
+		if bidderExtendedDetails {
+			mockProductDetails = MockProductDetails
+		}
+		
 		bidExt := &openrtb_ext.ExtBidCommerce{
 			ProductId:  productid,
-			ClickPrice: clickPrice,
 			ClickUrl: CLICK_URL,
 			ProductDetails: mockProductDetails,
 		}
@@ -93,7 +116,6 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 		bid := &openrtb2.Bid{
 			ID:    bidID,
 			ImpID: impID,
-			Price: bidPrice,
 			IURL: IMP_URL,
 		}
 
@@ -116,6 +138,4 @@ func GetMockBids(requestCount int, ImpID string) *adapters.BidderResponse {
 	}
 	return responseF
 }
-
-
 
