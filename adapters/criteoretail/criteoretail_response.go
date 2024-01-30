@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -109,8 +108,6 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 					for _, productMap := range placement.Products {
 						bidID := adapters.GenerateUniqueBidIDComm()
 						impID := requestImpID + "_" + strconv.Itoa(index)
-						bidPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[BID_PRICE].(string)), 64)
-						clickPrice, _ := strconv.ParseFloat(strings.TrimSpace(productMap[CLICK_PRICE].(string)), 64)
 						productID := productMap[PRODUCT_ID].(string)
 
 						var impressionURL,clickURL string
@@ -132,8 +129,6 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 							}
 
 							delete(productDetails, PRODUCT_ID)
-							delete(productDetails, BID_PRICE)
-							delete(productDetails, CLICK_PRICE)
 							delete(productDetails, VIEW_BEACON)
 							delete(productDetails, CLICK_BEACON)
 						}
@@ -141,14 +136,12 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 						bidExt := &openrtb_ext.ExtBidCommerce{
 							ProductId:      productID,
 							ClickUrl:       clickURL,
-							ClickPrice:     clickPrice,
 							ProductDetails: productDetails,
 						}
 
 						bid := &openrtb2.Bid{
 							ID:    bidID,
 							ImpID: impID,
-							Price: bidPrice,
 							IURL:  impressionURL,
 						}
 

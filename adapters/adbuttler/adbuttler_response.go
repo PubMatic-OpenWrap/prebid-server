@@ -146,8 +146,15 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			keyToRemove = DEFAULT_PRODUCTID
 		}
 
+		bidderExtendedDetails := false
 		val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
-		if ok && val == adapters.STRING_TRUE {
+		if ok {
+			if val == adapters.STRING_TRUE {
+				bidderExtendedDetails = true
+			}
+		}
+	
+		if bidderExtendedDetails {
 			for key, value := range adButlerBid.ProductData {
 				productDetails[key] = value
 			}
@@ -168,7 +175,6 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		}
 
 		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
-
 		bidExt := &openrtb_ext.ExtBidCommerce{
 			ProductId:      productid,
 			ClickUrl:       clickUrl,
@@ -235,3 +241,4 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
+

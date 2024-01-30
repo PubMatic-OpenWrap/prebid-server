@@ -105,7 +105,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 		// Add ProductDetails to bidExtension
 		productDetails := make(map[string]interface{})
-		if !bidderExtendedDetails {
+		if bidderExtendedDetails {
 			for key, value := range ad {
 				productDetails[key] = value
 			}
@@ -172,5 +172,4 @@ func countSponsoredProducts(adResponse *CitrusResponse) int {
 	}
 	return count
 }
-
 
