@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
@@ -114,7 +113,6 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 		cfg   config.Cache
 	}
 	type args struct {
-		request        *openrtb2.BidRequest
 		pubID          int
 		profileID      int
 		displayVersion int
@@ -137,9 +135,6 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 				},
 			},
 			args: args{
-				request: &openrtb2.BidRequest{
-					Test: 0,
-				},
 				pubID:          testPubID,
 				profileID:      testProfileID,
 				displayVersion: testVersionID,
@@ -182,7 +177,7 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 			}
 			c.db = tt.setup(ctrl)
 
-			got, err := c.GetAdpodConfigs(tt.args.request, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			got, err := c.GetAdpodConfigs(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cache.GetAdpodConfigs() error = %v, wantErr %v", err, tt.wantErr)
 				return

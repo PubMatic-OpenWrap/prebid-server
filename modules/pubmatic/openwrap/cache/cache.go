@@ -13,7 +13,7 @@ type Cache interface {
 	GetMappingsFromCacheV25(rctx models.RequestCtx, partnerID int) map[string]models.SlotMapping
 	GetSlotToHashValueMapFromCacheV25(rctx models.RequestCtx, partnerID int) models.SlotMappingInfo
 	GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags
-	GetAdpodConfigs(request *openrtb2.BidRequest, pubID int, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
+	GetAdpodConfigs(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 
 	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
