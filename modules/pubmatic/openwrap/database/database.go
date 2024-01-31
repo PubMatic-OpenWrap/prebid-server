@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adpodconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
@@ -15,4 +16,5 @@ type Database interface {
 	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
 	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
+	GetAdpodConfigs(profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 }

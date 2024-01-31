@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	openrtb2 "github.com/prebid/openrtb/v19/openrtb2"
 	models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	adpodconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adpodconfig"
 	adunitconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
@@ -49,6 +50,21 @@ func (m *MockCache) Get(arg0 string) (interface{}, bool) {
 func (mr *MockCacheMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), arg0)
+}
+
+// GetAdpodConfigs mocks base method.
+func (m *MockCache) GetAdpodConfigs(arg0 *openrtb2.BidRequest, arg1, arg2, arg3 int) (*adpodconfig.AdpodConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAdpodConfigs", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*adpodconfig.AdpodConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAdpodConfigs indicates an expected call of GetAdpodConfigs.
+func (mr *MockCacheMockRecorder) GetAdpodConfigs(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdpodConfigs", reflect.TypeOf((*MockCache)(nil).GetAdpodConfigs), arg0, arg1, arg2, arg3)
 }
 
 // GetAdunitConfigFromCache mocks base method.

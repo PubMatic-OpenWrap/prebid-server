@@ -494,3 +494,10 @@ const (
 	Pbadslot    = "pbadslot"
 	GamAdServer = "gam"
 )
+
+// constants for adpod type
+const (
+	Dynamic    = "dynamic"
+	Structured = "structured"
+	Hybrid     = "hybrid"
+)

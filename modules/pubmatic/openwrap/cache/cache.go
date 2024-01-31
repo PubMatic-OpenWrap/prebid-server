@@ -3,6 +3,7 @@ package cache
 import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adpodconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
@@ -12,6 +13,7 @@ type Cache interface {
 	GetMappingsFromCacheV25(rctx models.RequestCtx, partnerID int) map[string]models.SlotMapping
 	GetSlotToHashValueMapFromCacheV25(rctx models.RequestCtx, partnerID int) models.SlotMappingInfo
 	GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags
+	GetAdpodConfigs(request *openrtb2.BidRequest, pubID int, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 
 	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
