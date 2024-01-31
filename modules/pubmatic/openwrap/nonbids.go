@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -9,27 +10,27 @@ import (
 
 // prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
 // currently, this function prepares and returns nonbids for partner-throttle and slot-not-mapped errors
-func prepareSeatNonBids(rctx models.RequestCtx) map[string][]openrtb_ext.NonBid {
+// prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
+// currently, this function prepares and returns nonbids for partner-throttle and slot-not-mapped errors
+func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 
-	seatNonBids := make(map[string][]openrtb_ext.NonBid, 0)
+	var seatNonBid openrtb_ext.NonBidCollection
 	for impID, impCtx := range rctx.ImpBidCtx {
 		// seat-non-bid for partner-throttled error
 		for bidder := range rctx.AdapterThrottleMap {
-			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
-				ImpId:      impID,
-				StatusCode: int(exchange.RequestBlockedPartnerThrottle),
-			})
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(exchange.RequestBlockedPartnerThrottle)})
+			seatNonBid.AddBid(nonBid, bidder)
+
 		}
+
 		// seat-non-bid for slot-not-mapped error
 		// Note : Throttled partner will not be a part of impCtx.NonMapped
 		for bidder := range impCtx.NonMapped {
-			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
-				ImpId:      impID,
-				StatusCode: int(exchange.RequestBlockedSlotNotMapped),
-			})
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(exchange.RequestBlockedSlotNotMapped)})
+			seatNonBid.AddBid(nonBid, bidder)
 		}
 	}
-	return seatNonBids
+	return seatNonBid
 }
 
 // addSeatNonBidsInResponseExt adds the rctx.SeatNonBids in the response-ext

@@ -153,11 +153,25 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+
 	if allPartnersFilteredFlag {
 		result.NbrCode = nbr.AllPartnersFiltered
 		result.Errors = append(result.Errors, "All partners filtered")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
+	}
+
+	var seatNonBids openrtb_ext.NonBidCollection
+	if len(filteredBidders) > 0 {
+		for bidderName, _ := range filteredBidders {
+			for _, impCtx := range rCtx.ImpBidCtx {
+				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+					Bid:          &openrtb2.Bid{ImpID: impCtx.ImpID},
+					NonBidReason: 505,
+				})
+				seatNonBids.AddBid(nonBid, bidderName)
+			}
+		}
 	}
 
 	priceGranularity, err := computePriceGranularity(rCtx)
@@ -489,6 +503,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
 	result.Reject = false
+	result.SeatNonBid = seatNonBids
 	return result, nil
 }
 

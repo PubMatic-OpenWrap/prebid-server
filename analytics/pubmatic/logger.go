@@ -30,6 +30,11 @@ var getUUID = func() string {
 	return uuid.NewV4().String()
 }
 
+var blockListedNBR = map[openrtb3.NonBidStatusCode]struct{}{
+	504: {},
+	505: {},
+}
+
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
 	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
@@ -377,6 +382,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			nbr := bid.Nbr // only for seat-non-bids this will present at bid level
 			if nbr == nil {
 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
+			}
+
+			if nbr != nil {
+				if _, ok := blockListedNBR[*nbr]; ok {
+					continue
+				}
 			}
 
 			pr := PartnerRecord{

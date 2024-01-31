@@ -31,10 +31,12 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+			allPartnersFilteredFlag = false
 			continue
 		}
 
 		if _, ok := rCtx.AdapterThrottleMap[partnerConfig[models.BidderCode]]; ok {
+			allPartnersFilteredFlag = false
 			continue
 		}
 
