@@ -156,6 +156,7 @@ type ExtraRequestInfo struct {
 	PbsEntryPoint              metrics.RequestType
 	GlobalPrivacyControlHeader string
 	CurrencyConversions        currency.Conversions
+	Adapter                    config.Adapter // required for rtbbidder (so that it can get the endpoint)
 }
 
 func NewExtraRequestInfo(c currency.Conversions) ExtraRequestInfo {

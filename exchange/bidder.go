@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
+
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/bidadjustment"
 	"github.com/prebid/prebid-server/config/util"
@@ -155,6 +157,15 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 		// As well as for the time needed by PBS to prepare the auction response
 		if bidRequestOptions.tmaxAdjustments != nil && bidRequestOptions.tmaxAdjustments.IsEnforced {
 			bidderRequest.BidRequest.TMax = getBidderTmax(&bidderTmaxCtx{ctx}, bidderRequest.BidRequest.TMax, *bidRequestOptions.tmaxAdjustments)
+		}
+		if bidderRequest.BidderCoreName == "rtbbidder" {
+			myBidder := bidderRequest.BidderName // magnite , magnite-1
+			if value, ok := rtbbidder.GetSyncer().AliasMap[string(myBidder)]; ok {
+				myBidder = openrtb_ext.BidderName(value) // magnite-1 --> magnite
+			}
+			bidder.Bidder = rtbbidder.GetSyncer().InfoAwareBidders[string(myBidder)]
+			bidderInfo := rtbbidder.GetSyncer().BidderInfos
+			reqInfo.Adapter = buildAdapterInfo(bidderInfo[string(myBidder)])
 		}
 		reqData, errs = bidder.Bidder.MakeRequests(bidderRequest.BidRequest, reqInfo)
 

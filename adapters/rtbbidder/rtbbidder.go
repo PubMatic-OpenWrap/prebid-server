@@ -50,7 +50,7 @@ func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 			if err == nil {
 				requestData = append(requestData, &adapters.RequestData{
 					Method: "POST",
-					Uri:    paramsMap["uri"],
+					Uri:    reqInfo.Adapter.Endpoint,
 					Body:   body,
 				})
 			}
@@ -60,7 +60,7 @@ func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 			if err == nil {
 				requestData = append(requestData, &adapters.RequestData{
 					Method: "POST",
-					Uri:    bidderUrl,
+					Uri:    reqInfo.Adapter.Endpoint,
 					Body:   body,
 				})
 			}
@@ -91,17 +91,11 @@ func (r *RTBBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalReque
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
-	// if singleTonbidder != nil {
-	// 	return singleTonbidder, nil
-	// }
-	// syncher := Syncer{}
-	// singleTonbidder := &RTBBidder{
-	// 	Uri:     config.Endpoint,
-	// 	syncher: syncher,
-	// }
-	// syncher.sync()
-	// return singleTonbidder, nil
-	// singleTonbidder.Uri = config.Endpoint
+	syncher := Syncer{}
+	singleTonbidder := &RTBBidder{
+		Uri:     config.Endpoint,
+		syncher: syncher,
+	}
 	return singleTonbidder, nil
 }
 
@@ -115,7 +109,15 @@ func GetSyncer() *Syncer {
 
 var singleTonbidder *RTBBidder = &RTBBidder{
 	syncher: Syncer{
-		syncPath: "/../rtb",
+		syncPath:         "/../rtb",
+		syncedBiddersMap: make(map[string]struct{}),
+		InfoAwareBidders: make(map[string]adapters.Bidder),
+		// assume- we will get this 'AliasMap' from database query execution
+		AliasMap: map[string]string{
+			"magnite-1":     "magnite",
+			"myrtbbidder-1": "myrtbbidder",
+			"ashish-1":      "ashish",
+		},
 	},
 }
 

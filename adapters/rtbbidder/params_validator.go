@@ -27,6 +27,7 @@ func NewOpenWrapBidderParamsValidator(schemaDirectory string, bidderParamsValida
 		prebidValidator: bidderParamsValidator,
 		schemaDirectory: schemaDirectory + rtbBidder.syncher.syncPath,
 	}
+	owBidderParamsValidator.rtbValidator, _ = openrtb_ext.NewBidderParamsValidator(owBidderParamsValidator.schemaDirectory)
 	if rtbBidder == nil {
 		return nil, errors.New("rtbbidder instance is not initialized")
 	}
@@ -61,17 +62,18 @@ func (owv *OpenWrapbidderParamValidator) LoadSchema() []string {
 func (owv *OpenWrapbidderParamValidator) Schema(name openrtb_ext.BidderName) string {
 	schema := owv.prebidValidator.Schema(name)
 	if schema == "" {
-		owv.rtbValidator.Schema(name)
+		schema = owv.rtbValidator.Schema(name)
 	}
 	return schema
 }
 
 // Validate implements BidderParamValidator.
 func (owValidator *OpenWrapbidderParamValidator) Validate(name openrtb_ext.BidderName, ext json.RawMessage) error {
-	if name == openrtb_ext.BidderRTBBidder {
-		// syncer := rtbbidder.GetInstance().Syncher
+	rtbBidder := getInstance()
+	if _, ok := rtbBidder.syncher.syncedBiddersMap[string(name)]; ok || name == openrtb_ext.BidderRTBBidder {
 		fmt.Printf("Validator bidder params for %s", name)
-		return nil
+		return owValidator.rtbValidator.Validate(name, ext)
 	}
+
 	return owValidator.prebidValidator.Validate(name, ext)
 }

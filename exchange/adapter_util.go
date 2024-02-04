@@ -23,6 +23,7 @@ func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.
 		info := infos[string(bidderName)]
 		exchangeBidder := AdaptBidder(bidder, client, cfg, me, bidderName, info.Debug, info.EndpointCompression)
 		exchangeBidder = addValidatedBidderMiddleware(exchangeBidder)
+		// exchangeBidder = addRTBBidderMiddleware(exchangeBidder)
 		exchangeBidders[bidderName] = exchangeBidder
 	}
 	return exchangeBidders, nil

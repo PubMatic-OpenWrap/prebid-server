@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
+
 	"github.com/prebid/prebid-server/privacy"
 
 	"github.com/buger/jsonparser"
@@ -1530,9 +1532,22 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 		coreBidder, _ := openrtb_ext.NormalizeBidderName(bidder)
 		if tmp, isAlias := aliases[bidder]; isAlias {
 			coreBidder = openrtb_ext.BidderName(tmp)
+			// if bidder is "magnite-1" then coreBidder="rtbbidder"
+			// if bidder is "magnite" then coreBidder="rtbbidder"
 		}
 
 		if coreBidderNormalized, isValid := deps.bidderMap[coreBidder.String()]; isValid {
+			if coreBidder == "rtbbidder" {
+				// this will need 1 mutex-lock
+				aliasRTBBidder := rtbbidder.GetSyncer().AliasMap[bidder]
+				if aliasRTBBidder == "" {
+					aliasRTBBidder = bidder
+				}
+				coreBidderNormalized = openrtb_ext.BidderName(aliasRTBBidder)
+				// if bidder is "magnite-1" then coreBidderNormalized="magnite"
+				// if bidder is "magnite" then coreBidderNormalized="magnite"
+			}
+
 			if err := deps.paramsValidator.Validate(coreBidderNormalized, ext); err != nil {
 				msg := fmt.Sprintf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)
 

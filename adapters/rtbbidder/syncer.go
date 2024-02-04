@@ -1,17 +1,28 @@
 package rtbbidder
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 type Syncer struct {
-	syncedBidders []string
-	tasks         []func() bool
-	syncPath      string
+	syncedBidders    []string
+	syncedBiddersMap map[string]struct{}
+	BidderInfos      config.BidderInfos
+	InfoAwareBidders map[string]adapters.Bidder
+
+	tasks        []func() bool
+	syncPath     string
+	syncInfoPath string
+	AliasMap     map[string]string
 }
 
 type steps int
@@ -19,6 +30,7 @@ type steps int
 const (
 	SYNC_CORE_BIDDERS steps = iota
 	SYNC_BIDDER_PARAMS
+	SYNC_BIDDER_INFO
 )
 
 func (s *Syncer) sync() {
@@ -27,6 +39,7 @@ func (s *Syncer) sync() {
 	schedule := time.NewTicker(5 * time.Second)
 	quit := make(chan struct{})
 	s.tasks[SYNC_CORE_BIDDERS] = s.syncCoreBidders // core bidders task
+	s.tasks[SYNC_BIDDER_INFO] = syncBiddersInfos() // core bidders task
 	startScheduler(schedule, quit, s.tasks)
 }
 
@@ -34,15 +47,31 @@ func (s *Syncer) sync() {
 // and uppdates the prebid coreBidderNames
 func (s *Syncer) syncCoreBidders() bool {
 	// list of rtb bidders from wrapper_partner
-	var rtbBidders []openrtb_ext.BidderName
-	rtbBidders = append(rtbBidders, openrtb_ext.BidderName("myrtbbidder"))
+	var rtbBidders []openrtb_ext.BidderName = make([]openrtb_ext.BidderName, 0)
+	/* temporary code to get list of bidders from text file, to be replaced with database-query output */
+	file, err := os.Open("./corebidder.txt")
+	if err != nil {
+		fmt.Printf("fail to read corebidder.txt-", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		rtbBidders = append(rtbBidders, openrtb_ext.BidderName(scanner.Text()))
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("scanner-error: %v", err)
+	}
+	/* ----------------*/
 	syncDone := false
 	var newRTBBidders []openrtb_ext.BidderName
 	for _, rtbBidder := range rtbBidders {
-		if !contains(s.syncedBidders, string(rtbBidder)) {
+		if _, present := s.syncedBiddersMap[string(rtbBidder)]; !present {
 			openrtb_ext.SetAliasBidderName(string(rtbBidder), rtbBidder)
 			s.syncedBidders = append(s.syncedBidders, string(rtbBidder))
 			newRTBBidders = append(newRTBBidders, rtbBidder)
+			s.syncedBiddersMap[string(rtbBidder)] = struct{}{}
 			syncDone = true
 		}
 	}
@@ -71,14 +100,26 @@ func (s *Syncer) syncBiddersParameters(paramsValidator *OpenWrapbidderParamValid
 	return false
 }
 
-func syncBiddersInfos(s *Syncer) bool {
-	// rtbBidderInfos, errs := config.LoadBidderInfoFromDisk(main_ow.InfoDirectory + s.syncPath)
-	fmt.Printf("Synching Bidder Info")
-	return false
+// syncBiddersInfos will load bidderInfos from /static/bidder_info_rtb/
+func syncBiddersInfos() func() bool {
+	return func() bool {
+		fmt.Printf("Synching Bidder Info")
+		rtbBidderInfos, errs := config.LoadBidderInfoFromDisk("./static/bidder_info_rtb/")
+		fmt.Printf("syncBiddersInfos [%v] - err-[%v]", rtbBidderInfos, errs)
+		if errs == nil {
+			// will need mutex here since auction pkg refers the same
+			GetSyncer().BidderInfos = rtbBidderInfos
+
+			for bidder, info := range rtbBidderInfos {
+				GetSyncer().InfoAwareBidders[bidder] = adapters.BuildInfoAwareBidder(getInstance(), info)
+			}
+		}
+		return true
+	}
 }
 
 func (r *RTBBidder) SyncBidderInfos() {
-	syncBiddersInfos(&r.syncher)
+	syncBiddersInfos()
 }
 
 func startScheduler(ticker *time.Ticker, quit chan struct{}, tasks []func() bool) {
@@ -86,6 +127,7 @@ func startScheduler(ticker *time.Ticker, quit chan struct{}, tasks []func() bool
 		for {
 			select {
 			case <-ticker.C:
+				tasks := GetSyncer().tasks
 				for _, task := range tasks {
 					if task != nil {
 						task()
