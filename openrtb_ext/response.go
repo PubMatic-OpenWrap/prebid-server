@@ -130,7 +130,7 @@ type ExtNonBidPrebidBid struct {
 	OriginalBidCur string  `json:"origbidcur,omitempty"`
 
 	//OW specific fields
-	ID                string              `json:"id"`
+	ID                string              `json:"id,omitempty"` // need to check
 	DealPriority      int                 `json:"dealpriority,omitempty"`
 	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
 	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`

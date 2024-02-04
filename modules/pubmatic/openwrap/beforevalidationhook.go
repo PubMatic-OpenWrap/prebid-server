@@ -161,19 +161,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 
-	var seatNonBids openrtb_ext.NonBidCollection
-	if len(filteredBidders) > 0 {
-		for bidderName, _ := range filteredBidders {
-			for _, impCtx := range rCtx.ImpBidCtx {
-				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:          &openrtb2.Bid{ImpID: impCtx.ImpID},
-					NonBidReason: 505,
-				})
-				seatNonBids.AddBid(nonBid, bidderName)
-			}
-		}
-	}
-
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = nbr.InvalidPriceGranularityConfig
@@ -433,6 +420,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
+
+	var seatNonBids openrtb_ext.NonBidCollection
+	for bidderName, _ := range filteredBidders {
+		for _, impCtx := range rCtx.ImpBidCtx {
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+				Bid:          &openrtb2.Bid{ImpID: impCtx.ImpID},
+				NonBidReason: 505,
+			})
+			seatNonBids.AddBid(nonBid, bidderName)
+		}
+	}
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled

@@ -139,8 +139,6 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						// seatNonBids.addBid(bid, int(openrtb3.LossBidAdvertiserBlocking), seatBid.Seat)
-
 						nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidAdvertiserBlocking), OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
 						seatNonBids.AddBid(nonBid, string(bidderName))
 						// reject the bid. bid belongs to blocked advertisers list

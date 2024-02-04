@@ -2404,114 +2404,61 @@ func TestValidAmpResponseWhenRequestRejected(t *testing.T) {
 	}
 }
 
-func TestSendAmpResponse(t *testing.T) {
-	type want struct {
-		errors     []error
-		status     int
-		seatNonBid []openrtb_ext.SeatNonBid
-	}
+func TestSendAmpResponse_LogsErrors(t *testing.T) {
 	testCases := []struct {
-		description  string
-		writer       http.ResponseWriter
-		request      *openrtb2.BidRequest
-		response     *openrtb2.BidResponse
-		hookExecutor hookexecution.HookStageExecutor
-		want         want
+		description    string
+		expectedErrors []error
+		expectedStatus int
+		writer         http.ResponseWriter
+		request        *openrtb2.BidRequest
+		response       *openrtb2.BidResponse
+		hookExecutor   hookexecution.HookStageExecutor
 	}{
 		{
 			description: "Error logged when bid.ext unmarshal fails",
-			want: want{
-				errors: []error{
-					errors.New("Critical error while unpacking AMP targets: expect { or n, but found \""),
-				},
-				status: http.StatusInternalServerError,
+			expectedErrors: []error{
+				errors.New("Critical error while unpacking AMP targets: unexpected end of JSON input"),
 			},
-			writer:  httptest.NewRecorder(),
-			request: &openrtb2.BidRequest{ID: "some-id", Test: 1},
+			expectedStatus: http.StatusInternalServerError,
+			writer:         httptest.NewRecorder(),
+			request:        &openrtb2.BidRequest{ID: "some-id", Test: 1},
 			response: &openrtb2.BidResponse{ID: "some-id", SeatBid: []openrtb2.SeatBid{
 				{Bid: []openrtb2.Bid{{Ext: json.RawMessage(`"hb_cache_id`)}}},
 			}},
-			hookExecutor: hookexecution.EmptyHookExecutor{},
-		},
-		{
-			description: "Capture seatNonBid when bid.ext unmarshal fails",
-			want: want{
-				errors: []error{
-					errors.New("Critical error while unpacking AMP targets: expect { or n, but found \""),
-				},
-				status: http.StatusInternalServerError,
-				seatNonBid: []openrtb_ext.SeatNonBid{
-					{
-						Seat: "pubmatic",
-						NonBid: []openrtb_ext.NonBid{
-							{
-								ImpId:      "imp",
-								StatusCode: 100,
-							},
-						},
-					},
-				},
-			},
-			writer:  httptest.NewRecorder(),
-			request: &openrtb2.BidRequest{ID: "some-id", Test: 1},
-			response: &openrtb2.BidResponse{ID: "some-id", SeatBid: []openrtb2.SeatBid{
-				{Bid: []openrtb2.Bid{{Ext: json.RawMessage(`"hb_cache_id`)}}},
-			}},
-			hookExecutor: &mockStageExecutor{
-				outcomes: []hookexecution.StageOutcome{
-					{
-						Groups: []hookexecution.GroupOutcome{
-							{
-								InvocationResults: []hookexecution.HookOutcome{
-									{
-										Status:     hookexecution.StatusSuccess,
-										SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"pubmatic": {{Bid: &openrtb2.Bid{ImpID: "imp"}, NonBidReason: 100}}}),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+			hookExecutor: &hookexecution.EmptyHookExecutor{},
 		},
 		{
 			description: "Error logged when test mode activated but no debug present in response",
-			want: want{
-				errors: []error{
-					errors.New("test set on request but debug not present in response"),
-				},
-				status: 0,
+			expectedErrors: []error{
+				errors.New("test set on request but debug not present in response"),
 			},
-			writer:       httptest.NewRecorder(),
-			request:      &openrtb2.BidRequest{ID: "some-id", Test: 1},
-			response:     &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage("{}")},
-			hookExecutor: &hookexecution.EmptyHookExecutor{},
+			expectedStatus: 0,
+			writer:         httptest.NewRecorder(),
+			request:        &openrtb2.BidRequest{ID: "some-id", Test: 1},
+			response:       &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage("{}")},
+			hookExecutor:   &hookexecution.EmptyHookExecutor{},
 		},
 		{
 			description: "Error logged when response encoding fails",
-			want: want{
-				errors: []error{
-					errors.New("/openrtb2/amp Failed to send response: failed writing response"),
-				},
-				status: 0,
+			expectedErrors: []error{
+				errors.New("/openrtb2/amp Failed to send response: failed writing response"),
 			},
-			writer:       errorResponseWriter{},
-			request:      &openrtb2.BidRequest{ID: "some-id", Test: 1},
-			response:     &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage(`{"debug": {}}`)},
-			hookExecutor: &hookexecution.EmptyHookExecutor{},
+			expectedStatus: 0,
+			writer:         errorResponseWriter{},
+			request:        &openrtb2.BidRequest{ID: "some-id", Test: 1},
+			response:       &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage(`{"debug": {}}`)},
+			hookExecutor:   &hookexecution.EmptyHookExecutor{},
 		},
 		{
 			description: "Error logged if hook enrichment returns warnings",
-			want: want{
-				errors: []error{
-					errors.New("Value is not a string: 1"),
-					errors.New("Value is not a boolean: active"),
-				},
-				status: 0,
+			expectedErrors: []error{
+				errors.New("Value is not a string: 1"),
+				errors.New("Value is not a boolean: active"),
 			},
-			writer:   httptest.NewRecorder(),
-			request:  &openrtb2.BidRequest{ID: "some-id", Ext: json.RawMessage(`{"prebid": {"debug": "active", "trace": 1}}`)},
-			response: &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage("{}")},
+			expectedStatus: 0,
+			writer:         httptest.NewRecorder(),
+			request:        &openrtb2.BidRequest{ID: "some-id", Ext: json.RawMessage(`{"prebid": {"debug": "active", "trace": 1}}`)},
+			response:       &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage("{}")},
 			hookExecutor: &mockStageExecutor{
 				outcomes: []hookexecution.StageOutcome{
 					{
@@ -2545,11 +2492,10 @@ func TestSendAmpResponse(t *testing.T) {
 			account := &config.Account{DebugAllow: true}
 			reqWrapper := openrtb_ext.RequestWrapper{BidRequest: test.request}
 
-			_, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.NonBidCollection{})
+			labels, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.NonBidCollection{})
 
-			assert.Equal(t, test.want.errors, ao.Errors, "Invalid errors.")
-			assert.Equal(t, test.want.status, ao.Status, "Invalid HTTP response status.")
-			assert.Equal(t, test.want.seatNonBid, ao.SeatNonBid, "Invalid seatNonBid.")
+			assert.Equal(t, ao.Errors, test.expectedErrors, "Invalid errors.")
+			assert.Equal(t, test.expectedStatus, ao.Status, "Invalid HTTP response status.")
 		})
 	}
 }

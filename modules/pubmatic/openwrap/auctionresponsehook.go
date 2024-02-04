@@ -269,13 +269,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
-	var seatNonBids openrtb_ext.NonBidCollection
-	if rctx.ReturnAllBidStatus {
-		seatNonBids = prepareSeatNonBids(rctx)
-		//addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
-
+	seatNonBids := prepareSeatNonBids(rctx)
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))

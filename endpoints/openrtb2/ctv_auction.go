@@ -249,11 +249,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
-	// ao.SeatNonBid = auctionResponse.GetSeatNonBid()
-	// err = setSeatNonBidRaw(ao.RequestWrapper, auctionResponse)
-	// if err != nil {
-	// 	glog.Errorf("Error setting seat non-bid: %v", err)
-	// }
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
 		seatNonBid.Append(auctionResponse.SeatNonBid)

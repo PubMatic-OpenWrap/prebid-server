@@ -980,7 +980,7 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBid *openrtb_ext.NonBidCollection) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBids *openrtb_ext.NonBidCollection) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	res := make(map[string]string)
 
@@ -1053,7 +1053,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					rejections = updateRejections(rejections, bidID, "Bid did not contain a category")
 					nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(ResponseRejectedCategoryMappingInvalid),
 						OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
-					seatNonBid.AddBid(nonBid, string(bidderName))
+					seatNonBids.AddBid(nonBid, string(bidderName))
 					continue
 				}
 				if translateCategories {
@@ -1065,7 +1065,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						bidsToRemove = append(bidsToRemove, bidInd)
 						nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidCategoryMapping),
 							OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
-						seatNonBid.AddBid(nonBid, string(bidderName))
+						seatNonBids.AddBid(nonBid, string(seatBid.Seat))
 
 						reason := fmt.Sprintf("Category mapping file for primary ad server: '%s', publisher: '%s' not found", primaryAdServer, publisher)
 						rejections = updateRejections(rejections, bidID, reason)
@@ -1086,8 +1086,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				bidsToRemove = append(bidsToRemove, bidInd)
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(ResponseRejectedCategoryMappingInvalid),
 					OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
-				seatNonBid.AddBid(nonBid, string(bidderName))
-				// seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
+				seatNonBids.AddBid(nonBid, string(seatBid.Seat))
 				rejections = updateRejections(rejections, bidID, err.Error())
 				continue
 			}
@@ -1139,10 +1138,9 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						if dupe.bidderName == bidderName {
 							// An older bid from the current bidder
 							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
-							// seatNonBids.addBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
 							nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(ResponseRejectedCategoryMappingInvalid),
 								OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
-							seatNonBid.AddBid(nonBid, string(bidderName))
+							seatNonBids.AddBid(nonBid, string(seatBid.Seat))
 							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
 						} else {
 							// An older bid from a different seatBid we've already finished with
@@ -1165,8 +1163,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						bidsToRemove = append(bidsToRemove, bidInd)
 						nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(ResponseRejectedCategoryMappingInvalid),
 							OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
-						seatNonBid.AddBid(nonBid, string(bidderName))
-						// seatNonBids.AddBid(bid, int(openrtb3.LossBidCategoryMapping), string(seatBid.Seat))
+						seatNonBids.AddBid(nonBid, string(seatBid.Seat))
 						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
 						continue
 					}
@@ -1195,7 +1192,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 	for _, seatBidInd := range seatBidsToRemove {
 		seatBids[seatBidInd].Bids = nil
 	}
-
+	//fmt.Print(seatNonBids.Get())
 	return res, seatBids, rejections, nil
 }
 
