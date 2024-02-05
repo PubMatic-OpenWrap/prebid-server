@@ -2729,6 +2729,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
+				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
