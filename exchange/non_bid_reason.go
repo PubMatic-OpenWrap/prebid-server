@@ -12,6 +12,7 @@ const (
 	// vendor specific NonBidReasons (500+)
 	RequestBlockedSlotNotMapped   NonBidReason = 503
 	RequestBlockedPartnerThrottle NonBidReason = 504
+	RequestBlockedPartnerFiltered NonBidReason = 505
 )
 
 // Ptr returns pointer to own value.

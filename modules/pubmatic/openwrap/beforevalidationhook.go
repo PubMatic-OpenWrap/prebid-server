@@ -11,6 +11,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -426,7 +427,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for _, impCtx := range rCtx.ImpBidCtx {
 			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 				Bid:          &openrtb2.Bid{ImpID: impCtx.ImpID},
-				NonBidReason: 505,
+				NonBidReason: int(exchange.RequestBlockedPartnerFiltered),
 			})
 			seatNonBids.AddBid(nonBid, bidderName)
 		}
