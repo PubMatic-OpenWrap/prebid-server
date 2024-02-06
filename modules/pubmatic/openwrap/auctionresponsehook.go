@@ -116,6 +116,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
+			if rctx.IsTestRequest == 1 && bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 && rctx.ImpBidCtx[bid.ImpID].Video != nil {
+				bidExt.Prebid.Video.Duration = int(rctx.ImpBidCtx[bid.ImpID].Video.MaxDuration)
+			}
 			// NYC_TODO: fix this in PBS-Core or ExecuteAllProcessedBidResponsesStage
 			if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 &&
 				bidExt.Prebid.Video.PrimaryCategory == "" && bidExt.Prebid.Video.VASTTagID == "" {
