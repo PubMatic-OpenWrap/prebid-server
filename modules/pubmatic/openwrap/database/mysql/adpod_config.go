@@ -28,6 +28,7 @@ func (db *mySqlDB) GetAdpodConfigs(profileID, displayVersion int) (*adpodconfig.
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var config *adpodconfig.AdpodConfig
 	for rows.Next() {

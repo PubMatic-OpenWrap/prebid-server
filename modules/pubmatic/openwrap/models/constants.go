@@ -462,6 +462,7 @@ const (
 	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
 	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
 	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
+	GetAdpodConfig                 = "GetAdpodConfig"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
