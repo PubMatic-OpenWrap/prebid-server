@@ -28,6 +28,8 @@ const (
 // oRTB 2.6
 func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	fmt.Println("Making RTB Requests")
+	bidderInfo := GetSyncer().BidderInfos[reqInfo.BidderName]
+
 	requestData := make([]*adapters.RequestData, 0)
 	var errs []error
 	var bidderUrl string = ""
@@ -37,6 +39,7 @@ func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 		if err := json.Unmarshal(imp.Ext, &impExt); err != nil {
 			errs = append(errs, err)
 		}
+		fmt.Println(string(imp.Ext))
 		paramsMap := map[string]string{}
 		json.Unmarshal(impExt.Bidder, &paramsMap)
 		if bidderUrl == "" {
@@ -50,7 +53,7 @@ func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 			if err == nil {
 				requestData = append(requestData, &adapters.RequestData{
 					Method: "POST",
-					Uri:    reqInfo.Adapter.Endpoint,
+					Uri:    bidderInfo.Endpoint,
 					Body:   body,
 				})
 			}
@@ -60,7 +63,7 @@ func (r *RTBBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters
 			if err == nil {
 				requestData = append(requestData, &adapters.RequestData{
 					Method: "POST",
-					Uri:    reqInfo.Adapter.Endpoint,
+					Uri:    bidderInfo.Endpoint,
 					Body:   body,
 				})
 			}

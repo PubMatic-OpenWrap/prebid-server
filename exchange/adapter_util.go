@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
+
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
@@ -21,6 +23,9 @@ func BuildAdapters(client *http.Client, cfg *config.Configuration, infos config.
 	exchangeBidders := make(map[openrtb_ext.BidderName]AdaptedBidder, len(bidders))
 	for bidderName, bidder := range bidders {
 		info := infos[string(bidderName)]
+		if bidderName == "rtbbidder" {
+			bidder = rtbbidder.BuildRTBAwareBidder(bidder, info)
+		}
 		exchangeBidder := AdaptBidder(bidder, client, cfg, me, bidderName, info.Debug, info.EndpointCompression)
 		exchangeBidder = addValidatedBidderMiddleware(exchangeBidder)
 		// exchangeBidder = addRTBBidderMiddleware(exchangeBidder)

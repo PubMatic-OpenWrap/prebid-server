@@ -737,6 +737,7 @@ func (e *exchange) getAllBids(
 			start := time.Now()
 
 			reqInfo := adapters.NewExtraRequestInfo(conversions)
+			reqInfo.BidderName = string(bidderRequest.BidderName) // RTBBidder -> magnite, magnite-1
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			reqInfo.GlobalPrivacyControlHeader = globalPrivacyControlHeader
 
