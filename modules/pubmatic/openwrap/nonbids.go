@@ -4,6 +4,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/exchange"
+	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -97,4 +98,18 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
 		}
 	}
+}
+
+func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidationRequestPayload) openrtb_ext.NonBidCollection {
+	var seatNonBids openrtb_ext.NonBidCollection
+	for bidderName, _ := range Bidders {
+		for _, imp := range payload.BidRequest.Imp {
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+				Bid:          &openrtb2.Bid{ImpID: imp.ID},
+				NonBidReason: int(exchange.RequestBlockedPartnerFiltered),
+			})
+			seatNonBids.AddBid(nonBid, bidderName)
+		}
+	}
+	return seatNonBids
 }

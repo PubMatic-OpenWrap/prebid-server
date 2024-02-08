@@ -2778,9 +2778,12 @@ func TestCategoryMapping(t *testing.T) {
 					W:     1,
 					H:     1,
 				},
-				NonBidReason:   int(openrtb3.LossBidCategoryMapping),
-				OriginalBidCPM: 40,
-				OriginalBidCur: "USD",
+				NonBidReason:      int(openrtb3.LossBidCategoryMapping),
+				OriginalBidCPM:    40,
+				OriginalBidCur:    "USD",
+				BidType:           "video",
+				BidVideo:          &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "", VASTTagID: ""},
+				OriginalBidCPMUSD: 40,
 			},
 		},
 	})
@@ -2918,9 +2921,12 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 					W:     1,
 					H:     1,
 				},
-				NonBidReason:   int(openrtb3.LossBidCategoryMapping),
-				OriginalBidCPM: 30,
-				OriginalBidCur: "USD",
+				NonBidReason:      int(openrtb3.LossBidCategoryMapping),
+				OriginalBidCPM:    30,
+				OriginalBidCur:    "USD",
+				BidType:           "video",
+				BidVideo:          &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "", VASTTagID: ""},
+				OriginalBidCPMUSD: 30,
 			},
 		},
 	})
@@ -3286,10 +3292,17 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedSeatNonBid: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:            &openrtb2.Bid{ImpID: "imp_id1", Price: 10, W: 1, H: 1, Cat: []string{}},
+					Bid:            &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10, W: 1, H: 1, Cat: []string{}},
 					NonBidReason:   303,
 					OriginalBidCPM: 10,
 					OriginalBidCur: "USD",
+					BidType:        "video",
+					BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+						Duration:        30,
+						PrimaryCategory: "",
+						VASTTagID:       "",
+					},
+					OriginalBidCPMUSD: 10,
 				})
 				seatNonBid.AddBid(nonBid, "appnexus")
 				return seatNonBid
@@ -3312,6 +3325,13 @@ func TestBidRejectionErrors(t *testing.T) {
 					NonBidReason:   303,
 					OriginalBidCPM: 10,
 					OriginalBidCur: "USD",
+					BidType:        "video",
+					BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+						Duration:        30,
+						PrimaryCategory: "",
+						VASTTagID:       "",
+					},
+					OriginalBidCPMUSD: 10,
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid
@@ -3334,6 +3354,13 @@ func TestBidRejectionErrors(t *testing.T) {
 					NonBidReason:   303,
 					OriginalBidCPM: 10,
 					OriginalBidCur: "USD",
+					BidType:        "video",
+					BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+						Duration:        70,
+						PrimaryCategory: "",
+						VASTTagID:       "",
+					},
+					OriginalBidCPMUSD: 10,
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid
@@ -3358,6 +3385,13 @@ func TestBidRejectionErrors(t *testing.T) {
 					NonBidReason:   303,
 					OriginalBidCPM: 10,
 					OriginalBidCur: "USD",
+					BidType:        "video",
+					BidVideo: &openrtb_ext.ExtBidPrebidVideo{
+						Duration:        30,
+						PrimaryCategory: "",
+						VASTTagID:       "",
+					},
+					OriginalBidCPMUSD: 10,
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid

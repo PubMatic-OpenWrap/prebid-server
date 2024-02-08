@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
@@ -30,9 +31,9 @@ var getUUID = func() string {
 	return uuid.NewV4().String()
 }
 
-var blockListedNBR = map[openrtb3.NonBidStatusCode]struct{}{
-	504: {},
-	505: {},
+var blockListedNBR = map[exchange.NonBidReason]struct{}{
+	exchange.RequestBlockedPartnerThrottle: {},
+	exchange.RequestBlockedPartnerFiltered: {},
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
@@ -386,7 +387,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if nbr != nil {
-				if _, ok := blockListedNBR[*nbr]; ok {
+				if _, ok := blockListedNBR[exchange.NonBidReason(*nbr)]; ok {
 					continue
 				}
 			}

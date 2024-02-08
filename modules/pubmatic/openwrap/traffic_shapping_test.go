@@ -422,29 +422,6 @@ func TestGetFilteredBidders(t *testing.T) {
 			expectedResult: map[string]struct{}{},
 			expectedFlag:   false,
 		},
-		{
-			name: "All bidder Throttle",
-			requestCtx: models.RequestCtx{
-				PubID:     123,
-				ProfileID: 11,
-				AdapterThrottleMap: map[string]struct{}{
-					"bidder1": {},
-					"bidder2": {},
-				},
-			},
-			bidRequest: &openrtb2.BidRequest{
-				Device: &openrtb2.Device{
-					Geo: &openrtb2.Geo{
-						Country: "IND",
-					},
-				},
-			},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
-			},
-			expectedResult: map[string]struct{}{},
-			expectedFlag:   false,
-		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -9,10 +9,21 @@ type NonBidCollection struct {
 
 // NonBidParams contains the fields that are required to form the nonBid object
 type NonBidParams struct {
-	Bid            *openrtb2.Bid
-	NonBidReason   int
-	OriginalBidCPM float64
-	OriginalBidCur string
+	Bid               *openrtb2.Bid
+	NonBidReason      int
+	OriginalBidCPM    float64
+	OriginalBidCur    string
+	DealPriority      int
+	DealTierSatisfied bool
+	GeneratedBidID    string
+	TargetBidderCode  string
+	OriginalBidCPMUSD float64
+	BidMeta           *ExtBidPrebidMeta
+	BidType           BidType
+	BidTargets        map[string]string
+	BidVideo          *ExtBidPrebidVideo
+	BidEvents         *ExtBidPrebidEvents
+	BidFloors         *ExtBidPrebidFloors
 }
 
 // NewNonBid creates the NonBid object from NonBidParams and return it
@@ -36,6 +47,18 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 				MType:          bidParams.Bid.MType,
 				OriginalBidCPM: bidParams.OriginalBidCPM,
 				OriginalBidCur: bidParams.OriginalBidCur,
+
+				//OW specific
+				ID:                bidParams.Bid.ID,
+				DealPriority:      bidParams.DealPriority,
+				DealTierSatisfied: bidParams.DealTierSatisfied,
+				Meta:              bidParams.BidMeta,
+				Targeting:         bidParams.BidTargets,
+				Type:              bidParams.BidType,
+				Video:             bidParams.BidVideo,
+				BidId:             bidParams.GeneratedBidID,
+				Floors:            bidParams.BidFloors,
+				OriginalBidCPMUSD: bidParams.OriginalBidCPMUSD,
 			}},
 		},
 	}
@@ -69,6 +92,8 @@ func (snb *NonBidCollection) Get() []SeatNonBid {
 	if snb == nil {
 		return nil
 	}
+
+	// seatNonBid := make([]SeatNonBid, len(snb.seatNonBidsMap))
 	var seatNonBid []SeatNonBid
 	for seat, nonBids := range snb.seatNonBidsMap {
 		seatNonBid = append(seatNonBid, SeatNonBid{

@@ -139,7 +139,24 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: bid.Bid, NonBidReason: int(openrtb3.LossBidAdvertiserBlocking), OriginalBidCPM: bid.OriginalBidCPM, OriginalBidCur: bid.OriginalBidCur})
+						nonBidParams := openrtb_ext.NonBidParams{
+							Bid:               bid.Bid,
+							NonBidReason:      int(openrtb3.LossBidAdvertiserBlocking),
+							OriginalBidCPM:    bid.OriginalBidCPM,
+							OriginalBidCur:    bid.OriginalBidCur,
+							DealPriority:      bid.DealPriority,
+							DealTierSatisfied: bid.DealTierSatisfied,
+							GeneratedBidID:    bid.GeneratedBidID,
+							TargetBidderCode:  bid.TargetBidderCode,
+							OriginalBidCPMUSD: bid.OriginalBidCPM,
+							BidMeta:           bid.BidMeta,
+							BidType:           bid.BidType,
+							BidTargets:        bid.BidTargets,
+							BidVideo:          bid.BidVideo,
+							BidEvents:         bid.BidEvents,
+							BidFloors:         bid.BidFloors,
+						}
+						nonBid := openrtb_ext.NewNonBid(nonBidParams)
 						seatNonBids.AddBid(nonBid, string(bidderName))
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
@@ -229,9 +246,24 @@ func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejected
 			if pbsRejBid.Bid.DealID != "" {
 				rejectionReason = openrtb3.LossBidBelowDealFloor
 			}
-			// seatNonBids.addBid(pbsRejBid, int(rejectionReason), pbsRejSeatBid.Seat)
-			// seatNonBids.AddBid(openrtb_ext.NonBidParams{Bid: pbsRejBid.Bid, NonBidReason: int(rejectionReason)})
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: pbsRejBid.Bid, NonBidReason: int(rejectionReason)})
+			nonBidParams := openrtb_ext.NonBidParams{
+				Bid:               pbsRejBid.Bid,
+				NonBidReason:      int(rejectionReason),
+				OriginalBidCPM:    pbsRejBid.OriginalBidCPM,
+				OriginalBidCur:    pbsRejBid.OriginalBidCur,
+				DealPriority:      pbsRejBid.DealPriority,
+				DealTierSatisfied: pbsRejBid.DealTierSatisfied,
+				GeneratedBidID:    pbsRejBid.GeneratedBidID,
+				TargetBidderCode:  pbsRejBid.TargetBidderCode,
+				OriginalBidCPMUSD: pbsRejBid.OriginalBidCPM,
+				BidMeta:           pbsRejBid.BidMeta,
+				BidType:           pbsRejBid.BidType,
+				BidTargets:        pbsRejBid.BidTargets,
+				BidVideo:          pbsRejBid.BidVideo,
+				BidEvents:         pbsRejBid.BidEvents,
+				BidFloors:         pbsRejBid.BidFloors,
+			}
+			nonBid := openrtb_ext.NewNonBid(nonBidParams)
 			seatNonBids.AddBid(nonBid, pbsRejSeatBid.Seat)
 
 		}

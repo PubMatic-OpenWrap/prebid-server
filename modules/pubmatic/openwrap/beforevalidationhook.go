@@ -11,7 +11,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -148,6 +147,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+
 	if allPartnersThrottledFlag {
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
@@ -157,7 +157,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
 
+	seatNonBids := getSeatNonBid(filteredBidders, payload)
+
 	if allPartnersFilteredFlag {
+		result.SeatNonBid = seatNonBids
 		result.NbrCode = nbr.AllPartnersFiltered
 		result.Errors = append(result.Errors, "All partners filtered")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
@@ -426,17 +429,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
-
-	var seatNonBids openrtb_ext.NonBidCollection
-	for bidderName, _ := range filteredBidders {
-		for _, impCtx := range rCtx.ImpBidCtx {
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-				Bid:          &openrtb2.Bid{ImpID: impCtx.ImpID},
-				NonBidReason: int(exchange.RequestBlockedPartnerFiltered),
-			})
-			seatNonBids.AddBid(nonBid, bidderName)
-		}
-	}
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = nbr.AllSlotsDisabled
