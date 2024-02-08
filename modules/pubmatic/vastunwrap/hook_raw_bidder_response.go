@@ -36,9 +36,6 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
 		return result, nil
 	}
-	defer func() {
-		miCtx.ModuleContext[RequestContext] = vastRequestContext
-	}()
 
 	// Below code collects stats only
 	if vastRequestContext.VastUnwrapStatsEnabled {
