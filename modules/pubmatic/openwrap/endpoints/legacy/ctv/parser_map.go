@@ -308,6 +308,8 @@ var ortbMapper = &ParserMap{
 		//ReqPrebidExt
 		ORTBRequestExtPrebidTransparencyContent: Parser.ORTBRequestExtPrebidTransparencyContent,
 		ORTBExtPrebidFloorsEnforcement:          Parser.ORTBExtPrebidFloorsEnforceFloorDeals,
+		ORTBExtPrebidReturnAllBidStatus:         Parser.ORTBExtPrebidReturnAllBidStatus,
+		ORTBExtPrebidBidderParamsPubmaticCDS:    Parser.ORTBExtPrebidBidderParamsPubmaticCDS,
 	},
 	ExtMapping: ExtParserMap{
 		//Extensions
@@ -638,6 +640,8 @@ type Parser interface {
 	//ReqPrebidExt
 	ORTBRequestExtPrebidTransparencyContent() error
 	ORTBExtPrebidFloorsEnforceFloorDeals() error
+	ORTBExtPrebidReturnAllBidStatus() error
+	ORTBExtPrebidBidderParamsPubmaticCDS() error
 
 	//ORTB Extensions
 	ORTBBidRequestExt(string, *string) error

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	impressionIDSeparator = `_`
+	ImpressionIDSeparator = `::`
 )
 
 var videoRegex *regexp.Regexp
@@ -276,7 +276,7 @@ func GetImpressionID(id string) (string, int) {
 }
 
 func DecodeImpressionID(id string) (string, int) {
-	index := strings.LastIndex(id, impressionIDSeparator)
+	index := strings.LastIndex(id, ImpressionIDSeparator)
 	if index == -1 {
 		return id, 0
 	}

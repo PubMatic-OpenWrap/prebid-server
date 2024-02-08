@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 
 	v26 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -4541,6 +4542,99 @@ func (o *OpenRTB) ORTBExtPrebidFloorsEnforceFloorDeals() (err error) {
 	}
 
 	o.ortb.Ext = data
+	return
+}
+
+// ORTBExtPrebidReturnAllBidStatus sets returnallbidstatus
+func (o *OpenRTB) ORTBExtPrebidReturnAllBidStatus() (err error) {
+	returnAllbidStatus, ok := o.values.GetString(ORTBExtPrebidReturnAllBidStatus)
+	if !ok {
+		return
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		err = json.Unmarshal(o.ortb.Ext, &reqExt)
+		if err != nil {
+			return
+		}
+	}
+
+	prebidExt, ok := reqExt[ORTBExtPrebid].(map[string]interface{})
+	if !ok {
+		prebidExt = map[string]interface{}{}
+	}
+
+	if returnAllbidStatus == "1" {
+		prebidExt[ReturnAllBidStatus] = true
+	} else {
+		prebidExt[ReturnAllBidStatus] = false
+	}
+
+	reqExt[ORTBExtPrebid] = prebidExt
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Ext = data
+
+	return nil
+}
+
+// ORTBExtPrebidBidderParamsPubmaticCDS sets cds in req.ext.prebid.bidderparams.pubmatic
+func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
+	cdsData, ok := o.values.GetString(ORTBExtPrebidBidderParamsPubmaticCDS)
+	if !ok {
+		return
+	}
+
+	decodedString, err := url.QueryUnescape(cdsData)
+	if err != nil {
+		return err
+	}
+
+	var cds map[string]interface{}
+	err = json.Unmarshal([]byte(decodedString), &cds)
+	if err != nil {
+		return err
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		err = json.Unmarshal(o.ortb.Ext, &reqExt)
+		if err != nil {
+			return
+		}
+	}
+
+	prebidExt, ok := reqExt[ORTBExtPrebid].(map[string]interface{})
+	if !ok {
+		prebidExt = map[string]interface{}{}
+	}
+
+	bidderParams, ok := prebidExt[ORTBExtPrebidBidderParams].(map[string]interface{})
+	if !ok {
+		prebidExt[ORTBExtPrebidBidderParams] = map[string]interface{}{}
+	}
+
+	pubmaticBidderParams, ok := bidderParams[models.BidderPubMatic].(map[string]interface{})
+	if !ok {
+		pubmaticBidderParams[models.CustomDimensions] = map[string]interface{}{}
+	}
+	pubmaticBidderParams[models.CustomDimensions] = cds
+
+	bidderParams[models.BidderPubMatic] = pubmaticBidderParams
+	prebidExt[ORTBExtPrebidBidderParams] = bidderParams
+	reqExt[ORTBExtPrebid] = prebidExt
+
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Ext = data
+
 	return
 }
 
