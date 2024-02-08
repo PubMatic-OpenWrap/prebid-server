@@ -13,6 +13,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
+	openwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
 )
 
@@ -23,6 +25,7 @@ type VastUnwrapModule struct {
 	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine         metrics.MetricsEngine
 	unwrapRequest         func(w http.ResponseWriter, r *http.Request)
+	getVastUnwrapEnable   func(rctx models.RequestCtx) bool
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -49,6 +52,7 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		Enabled:               vastUnwrapModuleCfg.Enabled,
 		MetricsEngine:         metricEngine,
 		unwrapRequest:         vastunwrap.UnwrapRequest,
+		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnable,
 	}, nil
 }
 

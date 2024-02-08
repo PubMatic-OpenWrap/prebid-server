@@ -47,7 +47,6 @@ func GetVastUnwrapEnable(rctx vastmodels.RequestCtx) bool {
 	rCtx.PubID = rctx.PubID
 	rCtx.ProfileID = rctx.ProfileID
 	rCtx.DisplayID = rctx.DisplayID
-	// rCtx.VersionID = rctx.VersionID
 	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
 	if err != nil || len(partnerConfigMap) == 0 {
 		return false

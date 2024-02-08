@@ -6,4 +6,5 @@ type RequestCtx struct {
 	PubID, ProfileID, DisplayID, VersionID int
 	Endpoint                               string
 	VastUnwrapStatsEnabled                 bool
+	Redirect                               bool
 }
