@@ -17,9 +17,8 @@ import (
 // Right now this value is set to 5, based on passed data observations
 // Observed that typically video impression contains contains minimum and maximum duration in multiples of  5
 const (
-	multipleOf            = 5
-	impressionIDSeparator = `_`
-	impressionIDFormat    = `%v` + impressionIDSeparator + `%v`
+	multipleOf         = 5
+	impressionIDFormat = `%v` + models.ImpressionIDSeparator + `%v`
 )
 
 // ImpGenerator ...

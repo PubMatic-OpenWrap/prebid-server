@@ -11,7 +11,8 @@ const (
 
 const (
 	// USD denotes currency USD
-	USD = "USD"
+	USD   = "USD"
+	Debug = "debug"
 )
 
 const (
@@ -21,706 +22,382 @@ const (
 
 const (
 	// BidRequest level parameters
-
-	//ORTBBidRequestID get api parameter req.id
-	ORTBBidRequestID = "req.id"
-	//ORTBBidRequestTest get api parameter req.test
-	ORTBBidRequestTest = "req.test"
-	//ORTBBidRequestAt get api parameter req.at
-	ORTBBidRequestAt = "req.at"
-	//ORTBBidRequestTmax get api parameter req.tmax
-	ORTBBidRequestTmax = "req.tmax"
-	//ORTBBidRequestWseat get api parameter req.wseat
-	ORTBBidRequestWseat = "req.wseat"
-	//ORTBBidRequestWlang get api parameter req.wlang
-	ORTBBidRequestWlang = "req.wlang"
-	//ORTBBidRequestBseat get api parameter req.bseat
-	ORTBBidRequestBseat = "req.bseat"
-	//ORTBBidRequestAllImps get api parameter req.allimps
-	ORTBBidRequestAllImps = "req.allimps"
-	//ORTBBidRequestCur get api parameter req.cur
-	ORTBBidRequestCur = "req.cur"
-	//ORTBBidRequestBcat get api parameter req.bcat
-	ORTBBidRequestBcat = "req.bcat"
-	//ORTBBidRequestBadv get api parameter req.badv
-	ORTBBidRequestBadv = "req.badv"
-	//ORTBBidRequestBapp get api parameter req.bapp
-	ORTBBidRequestBapp = "req.bapp"
+	ORTBBidRequestID      = "req.id"      //ORTBBidRequestID get api parameter req.id
+	ORTBBidRequestTest    = "req.test"    //ORTBBidRequestTest get api parameter req.test
+	ORTBBidRequestAt      = "req.at"      //ORTBBidRequestAt get api parameter req.at
+	ORTBBidRequestTmax    = "req.tmax"    //ORTBBidRequestTmax get api parameter req.tmax
+	ORTBBidRequestWseat   = "req.wseat"   //ORTBBidRequestWseat get api parameter req.wseat
+	ORTBBidRequestWlang   = "req.wlang"   //ORTBBidRequestWlang get api parameter req.wlang
+	ORTBBidRequestBseat   = "req.bseat"   //ORTBBidRequestBseat get api parameter req.bseat
+	ORTBBidRequestAllImps = "req.allimps" //ORTBBidRequestAllImps get api parameter req.allimps
+	ORTBBidRequestCur     = "req.cur"     //ORTBBidRequestCur get api parameter req.cur
+	ORTBBidRequestBcat    = "req.bcat"    //ORTBBidRequestBcat get api parameter req.bcat
+	ORTBBidRequestBadv    = "req.badv"    //ORTBBidRequestBadv get api parameter req.badv
+	ORTBBidRequestBapp    = "req.bapp"    //ORTBBidRequestBapp get api parameter req.bapp
 
 	// Source level parameters
-
-	//ORTBSourceFD get api parameter src.fd
-	ORTBSourceFD = "src.fd"
-	//ORTBSourceTID get api parameter src.tid
-	ORTBSourceTID = "src.tid"
-	//ORTBSourcePChain get api parameter src.pchain
-	ORTBSourcePChain = "src.pchain"
-	//ORTBSourcesChain get api parameter src.pchain
-	ORTBSourceSChain = "src.schain"
+	ORTBSourceFD     = "src.fd"     //ORTBSourceFD get api parameter src.fd
+	ORTBSourceTID    = "src.tid"    //ORTBSourceTID get api parameter src.tid
+	ORTBSourcePChain = "src.pchain" //ORTBSourcePChain get api parameter src.pchain
+	ORTBSourceSChain = "src.schain" //ORTBSourceSChain get api parameter src.ext.schain
 
 	// Regs level parameters
-
-	//ORTBRegsCoppa get api parameter regs.coppa
-	ORTBRegsCoppa = "regs.coppa"
-	// ORTB get api parameter for gpp and gpp_sid in regs
-	ORTBRegsGpp    = "regs.gpp"
-	ORTBRegsGppSid = "regs.gpp_sid"
+	ORTBRegsCoppa  = "regs.coppa"   //ORTBRegsCoppa get api parameter regs.coppa
+	ORTBRegsGpp    = "regs.gpp"     // ORTB get api parameter for gpp in regs
+	ORTBRegsGppSid = "regs.gpp_sid" // ORTB get api parameter for gpp_sid in regs
 
 	// Imp level parameters
-
-	//ORTBImpID get api parameter imp.id
-	ORTBImpID = "imp.id"
-	//ORTBImpDisplayManager get api parameter imp.displaymanager
-	ORTBImpDisplayManager = "imp.displaymanager"
-	//ORTBImpDisplayManagerVer get api parameter imp.displaymanagerver
-	ORTBImpDisplayManagerVer = "imp.displaymanagerver"
-	//ORTBImpInstl get api parameter imp.instl
-	ORTBImpInstl = "imp.instl"
-	//ORTBImpTagID get api parameter imp.tagid
-	ORTBImpTagID = "imp.tagid"
-	//ORTBImpBidFloor get api parameter imp.bidfloor
-	ORTBImpBidFloor = "imp.bidfloor"
-	//ORTBImpBidFloorCur get api parameter imp.bidfloorcur
-	ORTBImpBidFloorCur = "imp.bidfloorcur"
-	//ORTBImpClickBrowser get api parameter imp.clickbrowser
-	ORTBImpClickBrowser = "imp.clickbrowser"
-	//ORTBImpSecure get api parameter imp.secure
-	ORTBImpSecure = "imp.secure"
-	//ORTBImpIframeBuster get api parameter imp.iframebuster
-	ORTBImpIframeBuster = "imp.iframebuster"
-	//ORTBImpExp get api parameter imp.exp
-	ORTBImpExp = "imp.exp"
-	//ORTBImpPmp get api parameter imp.pmp
-	ORTBImpPmp = "imp.pmp"
-	//ORTBImpExtBidder get api parameter imp.ext
-	ORTBImpExtBidder = "imp.ext.bidder"
-	//ORTBImpExtPrebid get api parameter imp.ext.prebid
-	ORTBImpExtPrebid = "imp.ext.prebid"
+	ORTBImpID                = "imp.id"                //ORTBImpID get api parameter imp.id
+	ORTBImpDisplayManager    = "imp.displaymanager"    //ORTBImpDisplayManager get api parameter imp.displaymanager
+	ORTBImpDisplayManagerVer = "imp.displaymanagerver" //ORTBImpDisplayManagerVer get api parameter imp.displaymanagerver
+	ORTBImpInstl             = "imp.instl"             //ORTBImpInstl get api parameter imp.instl
+	ORTBImpTagID             = "imp.tagid"             //ORTBImpTagID get api parameter imp.tagid
+	ORTBImpBidFloor          = "imp.bidfloor"          //ORTBImpBidFloor get api parameter imp.bidfloor
+	ORTBImpBidFloorCur       = "imp.bidfloorcur"       //ORTBImpBidFloorCur get api parameter imp.bidfloorcur
+	ORTBImpClickBrowser      = "imp.clickbrowser"      //ORTBImpClickBrowser get api parameter imp.clickbrowser
+	ORTBImpSecure            = "imp.secure"            //ORTBImpSecure get api parameter imp.secure
+	ORTBImpIframeBuster      = "imp.iframebuster"      //ORTBImpIframeBuster get api parameter imp.iframebuster
+	ORTBImpExp               = "imp.exp"               //ORTBImpExp get api parameter imp.exp
+	ORTBImpPmp               = "imp.pmp"               //ORTBImpPmp get api parameter imp.pmp
+	ORTBImpExtBidder         = "imp.ext.bidder"        //ORTBImpExtBidder get api parameter imp.ext
+	ORTBImpExtPrebid         = "imp.ext.prebid"        //ORTBImpExtPrebid get api parameter imp.ext.prebid
 
 	// Metric level parameters
-
 	//ORTBMetricType   = "type" //// get api parameter  = "ty
-
 	//ORTBMetricValue  = "value" //// get api parameter = "val
-
 	//ORTBMetricVendor = "vendor" //// get api parameter  "vend
 
 	// Banner level parameters
-
 	//ORTBBannerSize     = "banner.bsize" //// get api parameter    = "banner.bsi
-
 	//ORTBBannerWMax     = "banner.wmax" //// get api parameter    = "banner.wm
-
 	//ORTBBannerHMax     = "banner.hmax" //// get api parameter    = "banner.hm
-
 	//ORTBBannerWMin     = "banner.wmin" //// get api parameter    = "banner.wm
-
 	//ORTBBannerHMin     = "banner.hmin" //// get api parameter    = "banner.hm
-
 	//ORTBBannerBType    = "banner.btype" //// get api parameter   = "banner.bty
-
 	//ORTBBannerBAttr    = "banner.battr" //// get api parameter   = "banner.bat
-
 	//ORTBBannerPos      = "banner.pos" //// get api parameter     = "banner.p
-
 	//ORTBBannerMimes    = "banner.mimes" //// get api parameter   = "banner.mim
-
 	//ORTBBannerTopFrame = "banner.topframe" //// get api parameter  "banner.topfra
-
 	//ORTBBannerExpdir   = "banner.expdir" //// get api parameter  = "banner.expd
-
 	//ORTBBannerAPI      = "banner.api" //// get api parameter     = "banner.a
-
 	//ORTBBannerID       = "banner.id" //// get api parameter      = "banner.
-
 	//ORTBBannerVcm      = "banner.vcm" //// get api parameter     = "banner.v
 
 	// Native level parameters
-
 	//ORTBNativeRequest = "native.request" //// get api parameter  "native.reque
-
 	//ORTBNativeVer     = "native.ver" //// get api parameter    = "native.v
-
 	//ORTBNativeAPI     = "native.api" //// get api parameter    = "native.a
-
 	//ORTBNativeBAttr   = "native.battr" //// get api parameter  = "native.bat
 
 	// Video level parameters
 
-	//ORTBImpVideoMimes get api parameter imp.vid.mimes
-	ORTBImpVideoMimes = "imp.vid.mimes"
-	//ORTBImpVideoMinDuration get api parameter imp.vid.minduration
-	ORTBImpVideoMinDuration = "imp.vid.minduration"
-	//ORTBImpVideoMaxDuration get api parameter imp.vid.maxduration
-	ORTBImpVideoMaxDuration = "imp.vid.maxduration"
-	//ORTBImpVideoProtocols get api parameter imp.vid.protocols
-	ORTBImpVideoProtocols = "imp.vid.protocols"
-	//ORTBImpVideoPlayerWidth get api parameter imp.vid.w
-	ORTBImpVideoPlayerWidth = "imp.vid.w"
-	//ORTBImpVideoPlayerHeight get api parameter imp.vid.h
-	ORTBImpVideoPlayerHeight = "imp.vid.h"
-	//ORTBImpVideoStartDelay get api parameter imp.vid.startdelay
-	ORTBImpVideoStartDelay = "imp.vid.startdelay"
-	//ORTBImpVideoPlacement get api parameter imp.vid.placement
-	ORTBImpVideoPlacement = "imp.vid.placement"
-	// ORTBImpVideoPlacement get api parameter imp.vid.plcmt
-	ORTBImpVideoPlcmt = "imp.vid.plcmt"
-	//ORTBImpVideoLinearity get api parameter imp.vid.linearity
-	ORTBImpVideoLinearity = "imp.vid.linearity"
-	//ORTBImpVideoSkip get api parameter imp.vid.skip
-	ORTBImpVideoSkip = "imp.vid.skip"
-	//ORTBImpVideoSkipMin get api parameter imp.vid.skipmin
-	ORTBImpVideoSkipMin = "imp.vid.skipmin"
-	//ORTBImpVideoSkipAfter get api parameter imp.vid.skipafter
-	ORTBImpVideoSkipAfter = "imp.vid.skipafter"
-	//ORTBImpVideoSequence get api parameter imp.vid.sequence
-	ORTBImpVideoSequence = "imp.vid.sequence"
-	//ORTBImpVideoBAttr get api parameter imp.vid.battr
-	ORTBImpVideoBAttr = "imp.vid.battr"
-	//ORTBImpVideoMaxExtended get api parameter imp.vid.maxextended
-	ORTBImpVideoMaxExtended = "imp.vid.maxextended"
-	//ORTBImpVideoMinBitrate get api parameter imp.vid.minbitrate
-	ORTBImpVideoMinBitrate = "imp.vid.minbitrate"
-	//ORTBImpVideoMaxBitrate get api parameter imp.vid.maxbitrate
-	ORTBImpVideoMaxBitrate = "imp.vid.maxbitrate"
-	//ORTBImpVideoBoxingAllowed get api parameter imp.vid.boxingallowed
-	ORTBImpVideoBoxingAllowed = "imp.vid.boxingallowed"
-	//ORTBImpVideoPlaybackMethod get api parameter imp.vid.playbackmethod
-	ORTBImpVideoPlaybackMethod = "imp.vid.playbackmethod"
-	//ORTBImpVideoDelivery get api parameter imp.vid.delivery
-	ORTBImpVideoDelivery = "imp.vid.delivery"
-	//ORTBImpVideoPos get api parameter imp.vid.pos
-	ORTBImpVideoPos = "imp.vid.pos"
-	//ORTBImpVideoAPI get api parameter imp.vid.api
-	ORTBImpVideoAPI = "imp.vid.api"
-	//ORTBImpVideoCompanionType get api parameter imp.vid.companiontype
-	ORTBImpVideoCompanionType = "imp.vid.companiontype"
+	ORTBImpVideoMimes          = "imp.vid.mimes"          //ORTBImpVideoMimes get api parameter imp.vid.mimes
+	ORTBImpVideoMinDuration    = "imp.vid.minduration"    //ORTBImpVideoMinDuration get api parameter imp.vid.minduration
+	ORTBImpVideoMaxDuration    = "imp.vid.maxduration"    //ORTBImpVideoMaxDuration get api parameter imp.vid.maxduration
+	ORTBImpVideoProtocols      = "imp.vid.protocols"      //ORTBImpVideoProtocols get api parameter imp.vid.protocols
+	ORTBImpVideoPlayerWidth    = "imp.vid.w"              //ORTBImpVideoPlayerWidth get api parameter imp.vid.w
+	ORTBImpVideoPlayerHeight   = "imp.vid.h"              //ORTBImpVideoPlayerHeight get api parameter imp.vid.h
+	ORTBImpVideoStartDelay     = "imp.vid.startdelay"     //ORTBImpVideoStartDelay get api parameter imp.vid.startdelay
+	ORTBImpVideoPlacement      = "imp.vid.placement"      //ORTBImpVideoPlacement get api parameter imp.vid.placement
+	ORTBImpVideoPlcmt          = "imp.vid.plcmt"          //ORTBImpVideoPlacement get api parameter imp.vid.plcmt
+	ORTBImpVideoLinearity      = "imp.vid.linearity"      //ORTBImpVideoLinearity get api parameter imp.vid.linearity
+	ORTBImpVideoSkip           = "imp.vid.skip"           //ORTBImpVideoSkip get api parameter imp.vid.skip
+	ORTBImpVideoSkipMin        = "imp.vid.skipmin"        //ORTBImpVideoSkipMin get api parameter imp.vid.skipmin
+	ORTBImpVideoSkipAfter      = "imp.vid.skipafter"      //ORTBImpVideoSkipAfter get api parameter imp.vid.skipafter
+	ORTBImpVideoSequence       = "imp.vid.sequence"       //ORTBImpVideoSequence get api parameter imp.vid.sequence
+	ORTBImpVideoBAttr          = "imp.vid.battr"          //ORTBImpVideoBAttr get api parameter imp.vid.battr
+	ORTBImpVideoMaxExtended    = "imp.vid.maxextended"    //ORTBImpVideoMaxExtended get api parameter imp.vid.maxextended
+	ORTBImpVideoMinBitrate     = "imp.vid.minbitrate"     //ORTBImpVideoMinBitrate get api parameter imp.vid.minbitrate
+	ORTBImpVideoMaxBitrate     = "imp.vid.maxbitrate"     //ORTBImpVideoMaxBitrate get api parameter imp.vid.maxbitrate
+	ORTBImpVideoBoxingAllowed  = "imp.vid.boxingallowed"  //ORTBImpVideoBoxingAllowed get api parameter imp.vid.boxingallowed
+	ORTBImpVideoPlaybackMethod = "imp.vid.playbackmethod" //ORTBImpVideoPlaybackMethod get api parameter imp.vid.playbackmethod
+	ORTBImpVideoDelivery       = "imp.vid.delivery"       //ORTBImpVideoDelivery get api parameter imp.vid.delivery
+	ORTBImpVideoPos            = "imp.vid.pos"            //ORTBImpVideoPos get api parameter imp.vid.pos
+	ORTBImpVideoAPI            = "imp.vid.api"            //ORTBImpVideoAPI get api parameter imp.vid.api
+	ORTBImpVideoCompanionType  = "imp.vid.companiontype"  //ORTBImpVideoCompanionType get api parameter imp.vid.companiontype
 
 	// Site level parameters
-
-	//ORTBSiteID get api parameter site.id
-	ORTBSiteID = "site.id"
-	//ORTBSiteName get api parameter site.name
-	ORTBSiteName = "site.name"
-	//ORTBSiteDomain get api parameter site.domain
-	ORTBSiteDomain = "site.domain"
-	//ORTBSitePage get api parameter site.page
-	ORTBSitePage = "site.page"
-	//ORTBSiteRef get api parameter site.ref
-	ORTBSiteRef = "site.ref"
-	//ORTBSiteSearch get api parameter site.search
-	ORTBSiteSearch = "site.search"
-	//ORTBSiteMobile get api parameter site.mobile
-	ORTBSiteMobile = "site.mobile"
-	//ORTBSiteCat get api parameter site.cat
-	ORTBSiteCat = "site.cat"
-	//ORTBSiteSectionCat get api parameter site.sectioncat
-	ORTBSiteSectionCat = "site.sectioncat"
-	//ORTBSitePageCat get api parameter site.pagecat
-	ORTBSitePageCat = "site.pagecat"
-	//ORTBSitePrivacyPolicy get api parameter site.privacypolicy
-	ORTBSitePrivacyPolicy = "site.privacypolicy"
-	//ORTBSiteKeywords get api parameter site.keywords
-	ORTBSiteKeywords = "site.keywords"
+	ORTBSiteID            = "site.id"            //ORTBSiteID get api parameter site.id
+	ORTBSiteName          = "site.name"          //ORTBSiteName get api parameter site.name
+	ORTBSiteDomain        = "site.domain"        //ORTBSiteDomain get api parameter site.domain
+	ORTBSitePage          = "site.page"          //ORTBSitePage get api parameter site.page
+	ORTBSiteRef           = "site.ref"           //ORTBSiteRef get api parameter site.ref
+	ORTBSiteSearch        = "site.search"        //ORTBSiteSearch get api parameter site.search
+	ORTBSiteMobile        = "site.mobile"        //ORTBSiteMobile get api parameter site.mobile
+	ORTBSiteCat           = "site.cat"           //ORTBSiteCat get api parameter site.cat
+	ORTBSiteSectionCat    = "site.sectioncat"    //ORTBSiteSectionCat get api parameter site.sectioncat
+	ORTBSitePageCat       = "site.pagecat"       //ORTBSitePageCat get api parameter site.pagecat
+	ORTBSitePrivacyPolicy = "site.privacypolicy" //ORTBSitePrivacyPolicy get api parameter site.privacypolicy
+	ORTBSiteKeywords      = "site.keywords"      //ORTBSiteKeywords get api parameter site.keywords
 
 	// App level parameters
 
-	//ORTBAppID get api parameter app.id
-	ORTBAppID = "app.id"
-	//ORTBAppName get api parameter app.name
-	ORTBAppName = "app.name"
-	//ORTBAppBundle get api parameter app.bundle
-	ORTBAppBundle = "app.bundle"
-	//ORTBAppDomain get api parameter app.domain
-	ORTBAppDomain = "app.domain"
-	//ORTBAppStoreURL get api parameter app.storeurl
-	ORTBAppStoreURL = "app.storeurl"
-	//ORTBAppVer get api parameter app.ver
-	ORTBAppVer = "app.ver"
-	//ORTBAppPaid get api parameter app.paid
-	ORTBAppPaid = "app.paid"
-	//ORTBAppCat get api parameter app.cat
-	ORTBAppCat = "app.cat"
-	//ORTBAppSectionCat get api parameter app.sectioncat
-	ORTBAppSectionCat = "app.sectioncat"
-	//ORTBAppPageCat get api parameter app.pagecat
-	ORTBAppPageCat = "app.pagecat"
-	//ORTBAppPrivacyPolicy get api parameter app.privacypolicy
-	ORTBAppPrivacyPolicy = "app.privacypolicy"
-	//ORTBAppKeywords get api parameter app.keywords
-	ORTBAppKeywords = "app.keywords"
+	ORTBAppID            = "app.id"            //ORTBAppID get api parameter app.id
+	ORTBAppName          = "app.name"          //ORTBAppName get api parameter app.name
+	ORTBAppBundle        = "app.bundle"        //ORTBAppBundle get api parameter app.bundle
+	ORTBAppDomain        = "app.domain"        //ORTBAppDomain get api parameter app.domain
+	ORTBAppStoreURL      = "app.storeurl"      //ORTBAppStoreURL get api parameter app.storeurl
+	ORTBAppVer           = "app.ver"           //ORTBAppVer get api parameter app.ver
+	ORTBAppPaid          = "app.paid"          //ORTBAppPaid get api parameter app.paid
+	ORTBAppCat           = "app.cat"           //ORTBAppCat get api parameter app.cat
+	ORTBAppSectionCat    = "app.sectioncat"    //ORTBAppSectionCat get api parameter app.sectioncat
+	ORTBAppPageCat       = "app.pagecat"       //ORTBAppPageCat get api parameter app.pagecat
+	ORTBAppPrivacyPolicy = "app.privacypolicy" //ORTBAppPrivacyPolicy get api parameter app.privacypolicy
+	ORTBAppKeywords      = "app.keywords"      //ORTBAppKeywords get api parameter app.keywords
 
 	// Site.Publisher level parameters
 
-	//ORTBSitePublisherID get api parameter site.pub.id
-	ORTBSitePublisherID = "site.pub.id"
-	//ORTBSitePublisherName get api parameter site.pub.name
-	ORTBSitePublisherName = "site.pub.name"
-	//ORTBSitePublisherCat get api parameter site.pub.cat
-	ORTBSitePublisherCat = "site.pub.cat"
-	//ORTBSitePublisherDomain get api parameter site.pub.domain
-	ORTBSitePublisherDomain = "site.pub.domain"
+	ORTBSitePublisherID     = "site.pub.id"     //ORTBSitePublisherID get api parameter site.pub.id
+	ORTBSitePublisherName   = "site.pub.name"   //ORTBSitePublisherName get api parameter site.pub.name
+	ORTBSitePublisherCat    = "site.pub.cat"    //ORTBSitePublisherCat get api parameter site.pub.cat
+	ORTBSitePublisherDomain = "site.pub.domain" //ORTBSitePublisherDomain get api parameter site.pub.domain
 
 	// Site.Content level parameters
 
-	//ORTBSiteContentID get api parameter site.cnt.id
-	ORTBSiteContentID = "site.cnt.id"
-	//ORTBSiteContentEpisode get api parameter site.cnt.episode
-	ORTBSiteContentEpisode = "site.cnt.episode"
-	//ORTBSiteContentTitle get api parameter site.cnt.title
-	ORTBSiteContentTitle = "site.cnt.title"
-	//ORTBSiteContentSeries get api parameter site.cnt.series
-	ORTBSiteContentSeries = "site.cnt.series"
-	//ORTBSiteContentSeason get api parameter site.cnt.season
-	ORTBSiteContentSeason = "site.cnt.season"
-	//ORTBSiteContentArtist get api parameter site.cnt.artist
-	ORTBSiteContentArtist = "site.cnt.artist"
-	//ORTBSiteContentGenre get api parameter site.cnt.genre
-	ORTBSiteContentGenre = "site.cnt.genre"
-	//ORTBSiteContentAlbum get api parameter site.cnt.album
-	ORTBSiteContentAlbum = "site.cnt.album"
-	//ORTBSiteContentIsRc get api parameter site.cnt.isrc
-	ORTBSiteContentIsRc = "site.cnt.isrc"
-	//ORTBSiteContentURL get api parameter site.cnt.url
-	ORTBSiteContentURL = "site.cnt.url"
-	//ORTBSiteContentCat get api parameter site.cnt.cat
-	ORTBSiteContentCat = "site.cnt.cat"
-	//ORTBSiteContentProdQ get api parameter site.cnt.prodq
-	ORTBSiteContentProdQ = "site.cnt.prodq"
-	//ORTBSiteContentVideoQuality get api parameter site.cnt.videoquality
-	ORTBSiteContentVideoQuality = "site.cnt.videoquality"
-	//ORTBSiteContentContext get api parameter site.cnt.context
-	ORTBSiteContentContext = "site.cnt.context"
-	//ORTBSiteContentContentRating get api parameter site.cnt.contentrating
-	ORTBSiteContentContentRating = "site.cnt.contentrating"
-	//ORTBSiteContentUserRating get api parameter site.cnt.userrating
-	ORTBSiteContentUserRating = "site.cnt.userrating"
-	//ORTBSiteContentQaGmeDiarating get api parameter site.cnt.qagmediarating
-	ORTBSiteContentQaGmeDiarating = "site.cnt.qagmediarating"
-	//ORTBSiteContentKeywords get api parameter site.cnt.keywords
-	ORTBSiteContentKeywords = "site.cnt.keywords"
-	//ORTBSiteContentLiveStream get api parameter site.cnt.livestream
-	ORTBSiteContentLiveStream = "site.cnt.livestream"
-	//ORTBSiteContentSourceRelationship get api parameter site.cnt.sourcerelationship
-	ORTBSiteContentSourceRelationship = "site.cnt.sourcerelationship"
-	//ORTBSiteContentLen get api parameter site.cnt.len
-	ORTBSiteContentLen = "site.cnt.len"
-	//ORTBSiteContentLanguage get api parameter site.cnt.language
-	ORTBSiteContentLanguage = "site.cnt.language"
-	//ORTBSiteContentEmbeddable get api parameter site.cnt.embeddable
-	ORTBSiteContentEmbeddable = "site.cnt.embeddable"
+	ORTBSiteContentID                 = "site.cnt.id"                 //ORTBSiteContentID get api parameter site.cnt.id
+	ORTBSiteContentEpisode            = "site.cnt.episode"            //ORTBSiteContentEpisode get api parameter site.cnt.episode
+	ORTBSiteContentTitle              = "site.cnt.title"              //ORTBSiteContentTitle get api parameter site.cnt.title
+	ORTBSiteContentSeries             = "site.cnt.series"             //ORTBSiteContentSeries get api parameter site.cnt.series
+	ORTBSiteContentSeason             = "site.cnt.season"             //ORTBSiteContentSeason get api parameter site.cnt.season
+	ORTBSiteContentArtist             = "site.cnt.artist"             //ORTBSiteContentArtist get api parameter site.cnt.artist
+	ORTBSiteContentGenre              = "site.cnt.genre"              //ORTBSiteContentGenre get api parameter site.cnt.genre
+	ORTBSiteContentAlbum              = "site.cnt.album"              //ORTBSiteContentAlbum get api parameter site.cnt.album
+	ORTBSiteContentIsRc               = "site.cnt.isrc"               //ORTBSiteContentIsRc get api parameter site.cnt.isrc
+	ORTBSiteContentURL                = "site.cnt.url"                //ORTBSiteContentURL get api parameter site.cnt.url
+	ORTBSiteContentCat                = "site.cnt.cat"                //ORTBSiteContentCat get api parameter site.cnt.cat
+	ORTBSiteContentProdQ              = "site.cnt.prodq"              //ORTBSiteContentProdQ get api parameter site.cnt.prodq
+	ORTBSiteContentVideoQuality       = "site.cnt.videoquality"       //ORTBSiteContentVideoQuality get api parameter site.cnt.videoquality
+	ORTBSiteContentContext            = "site.cnt.context"            //ORTBSiteContentContext get api parameter site.cnt.context
+	ORTBSiteContentContentRating      = "site.cnt.contentrating"      //ORTBSiteContentContentRating get api parameter site.cnt.contentrating
+	ORTBSiteContentUserRating         = "site.cnt.userrating"         //ORTBSiteContentUserRating get api parameter site.cnt.userrating
+	ORTBSiteContentQaGmeDiarating     = "site.cnt.qagmediarating"     //ORTBSiteContentQaGmeDiarating get api parameter site.cnt.qagmediarating
+	ORTBSiteContentKeywords           = "site.cnt.keywords"           //ORTBSiteContentKeywords get api parameter site.cnt.keywords
+	ORTBSiteContentLiveStream         = "site.cnt.livestream"         //ORTBSiteContentLiveStream get api parameter site.cnt.livestream
+	ORTBSiteContentSourceRelationship = "site.cnt.sourcerelationship" //ORTBSiteContentSourceRelationship get api parameter site.cnt.sourcerelationship
+	ORTBSiteContentLen                = "site.cnt.len"                //ORTBSiteContentLen get api parameter site.cnt.len
+	ORTBSiteContentLanguage           = "site.cnt.language"           //ORTBSiteContentLanguage get api parameter site.cnt.language
+	ORTBSiteContentEmbeddable         = "site.cnt.embeddable"         //ORTBSiteContentEmbeddable get api parameter site.cnt.embeddable
 
 	// Site.Producer level parameters
-
-	//ORTBSiteContentProducerID get api parameter site.cnt.prod.id
-	ORTBSiteContentProducerID = "site.cnt.prod.id"
-	//ORTBSiteContentProducerName get api parameter site.cnt.prod.name
-	ORTBSiteContentProducerName = "site.cnt.prod.name"
-	//ORTBSiteContentProducerCat get api parameter site.cnt.prod.cat
-	ORTBSiteContentProducerCat = "site.cnt.prod.cat"
-	//ORTBSiteContentProducerDomain get api parameter site.cnt.prod.domain
-	ORTBSiteContentProducerDomain = "site.cnt.prod.domain"
+	ORTBSiteContentProducerID     = "site.cnt.prod.id"     //ORTBSiteContentProducerID get api parameter site.cnt.prod.id
+	ORTBSiteContentProducerName   = "site.cnt.prod.name"   //ORTBSiteContentProducerName get api parameter site.cnt.prod.name
+	ORTBSiteContentProducerCat    = "site.cnt.prod.cat"    //ORTBSiteContentProducerCat get api parameter site.cnt.prod.cat
+	ORTBSiteContentProducerDomain = "site.cnt.prod.domain" //ORTBSiteContentProducerDomain get api parameter site.cnt.prod.domain
 
 	// App.Publisher level parameters
-
-	//ORTBAppPublisherID get api parameter app.pub.id
-	ORTBAppPublisherID = "app.pub.id"
-	//ORTBAppPublisherName get api parameter app.pub.name
-	ORTBAppPublisherName = "app.pub.name"
-	//ORTBAppPublisherCat get api parameter app.pub.cat
-	ORTBAppPublisherCat = "app.pub.cat"
-	//ORTBAppPublisherDomain get api parameter app.pub.domain
-	ORTBAppPublisherDomain = "app.pub.domain"
+	ORTBAppPublisherID     = "app.pub.id"     //ORTBAppPublisherID get api parameter app.pub.id
+	ORTBAppPublisherName   = "app.pub.name"   //ORTBAppPublisherName get api parameter app.pub.name
+	ORTBAppPublisherCat    = "app.pub.cat"    //ORTBAppPublisherCat get api parameter app.pub.cat
+	ORTBAppPublisherDomain = "app.pub.domain" //ORTBAppPublisherDomain get api parameter app.pub.domain
 
 	// App.Content level parameters
-
-	//ORTBAppContentID get api parameter app.cnt.id
-	ORTBAppContentID = "app.cnt.id"
-	//ORTBAppContentEpisode get api parameter app.cnt.episode
-	ORTBAppContentEpisode = "app.cnt.episode"
-	//ORTBAppContentTitle get api parameter app.cnt.title
-	ORTBAppContentTitle = "app.cnt.title"
-	//ORTBAppContentSeries get api parameter app.cnt.series
-	ORTBAppContentSeries = "app.cnt.series"
-	//ORTBAppContentSeason get api parameter app.cnt.season
-	ORTBAppContentSeason = "app.cnt.season"
-	//ORTBAppContentArtist get api parameter app.cnt.artist
-	ORTBAppContentArtist = "app.cnt.artist"
-	//ORTBAppContentGenre get api parameter app.cnt.genre
-	ORTBAppContentGenre = "app.cnt.genre"
-	//ORTBAppContentAlbum get api parameter app.cnt.album
-	ORTBAppContentAlbum = "app.cnt.album"
-	//ORTBAppContentIsRc get api parameter app.cnt.isrc
-	ORTBAppContentIsRc = "app.cnt.isrc"
-	//ORTBAppContentURL get api parameter app.cnt.url
-	ORTBAppContentURL = "app.cnt.url"
-	//ORTBAppContentCat get api parameter app.cnt.cat
-	ORTBAppContentCat = "app.cnt.cat"
-	//ORTBAppContentProdQ get api parameter app.cnt.prodq
-	ORTBAppContentProdQ = "app.cnt.prodq"
-	//ORTBAppContentVideoQuality get api parameter app.cnt.videoquality
-	ORTBAppContentVideoQuality = "app.cnt.videoquality"
-	//ORTBAppContentContext get api parameter app.cnt.context
-	ORTBAppContentContext = "app.cnt.context"
-	//ORTBAppContentContentRating get api parameter app.cnt.contentrating
-	ORTBAppContentContentRating = "app.cnt.contentrating"
-	//ORTBAppContentUserRating get api parameter app.cnt.userrating
-	ORTBAppContentUserRating = "app.cnt.userrating"
-	//ORTBAppContentQaGmeDiarating get api parameter app.cnt.qagmediarating
-	ORTBAppContentQaGmeDiarating = "app.cnt.qagmediarating"
-	//ORTBAppContentKeywords get api parameter app.cnt.keywords
-	ORTBAppContentKeywords = "app.cnt.keywords"
-	//ORTBAppContentLiveStream get api parameter app.cnt.livestream
-	ORTBAppContentLiveStream = "app.cnt.livestream"
-	//ORTBAppContentSourceRelationship get api parameter app.cnt.sourcerelationship
-	ORTBAppContentSourceRelationship = "app.cnt.sourcerelationship"
-	//ORTBAppContentLen get api parameter app.cnt.len
-	ORTBAppContentLen = "app.cnt.len"
-	//ORTBAppContentLanguage get api parameter app.cnt.language
-	ORTBAppContentLanguage = "app.cnt.language"
-	//ORTBAppContentEmbeddable get api parameter app.cnt.embeddable
-	ORTBAppContentEmbeddable = "app.cnt.embeddable"
+	ORTBAppContentID                 = "app.cnt.id"                 //ORTBAppContentID get api parameter app.cnt.id
+	ORTBAppContentEpisode            = "app.cnt.episode"            //ORTBAppContentEpisode get api parameter app.cnt.episode
+	ORTBAppContentTitle              = "app.cnt.title"              //ORTBAppContentTitle get api parameter app.cnt.title
+	ORTBAppContentSeries             = "app.cnt.series"             //ORTBAppContentSeries get api parameter app.cnt.series
+	ORTBAppContentSeason             = "app.cnt.season"             //ORTBAppContentSeason get api parameter app.cnt.season
+	ORTBAppContentArtist             = "app.cnt.artist"             //ORTBAppContentArtist get api parameter app.cnt.artist
+	ORTBAppContentGenre              = "app.cnt.genre"              //ORTBAppContentGenre get api parameter app.cnt.genre
+	ORTBAppContentAlbum              = "app.cnt.album"              //ORTBAppContentAlbum get api parameter app.cnt.album
+	ORTBAppContentIsRc               = "app.cnt.isrc"               //ORTBAppContentIsRc get api parameter app.cnt.isrc
+	ORTBAppContentURL                = "app.cnt.url"                //ORTBAppContentURL get api parameter app.cnt.url
+	ORTBAppContentCat                = "app.cnt.cat"                //ORTBAppContentCat get api parameter app.cnt.cat
+	ORTBAppContentProdQ              = "app.cnt.prodq"              //ORTBAppContentProdQ get api parameter app.cnt.prodq
+	ORTBAppContentVideoQuality       = "app.cnt.videoquality"       //ORTBAppContentVideoQuality get api parameter app.cnt.videoquality
+	ORTBAppContentContext            = "app.cnt.context"            //ORTBAppContentContext get api parameter app.cnt.context
+	ORTBAppContentContentRating      = "app.cnt.contentrating"      //ORTBAppContentContentRating get api parameter app.cnt.contentrating
+	ORTBAppContentUserRating         = "app.cnt.userrating"         //ORTBAppContentUserRating get api parameter app.cnt.userrating
+	ORTBAppContentQaGmeDiarating     = "app.cnt.qagmediarating"     //ORTBAppContentQaGmeDiarating get api parameter app.cnt.qagmediarating
+	ORTBAppContentKeywords           = "app.cnt.keywords"           //ORTBAppContentKeywords get api parameter app.cnt.keywords
+	ORTBAppContentLiveStream         = "app.cnt.livestream"         //ORTBAppContentLiveStream get api parameter app.cnt.livestream
+	ORTBAppContentSourceRelationship = "app.cnt.sourcerelationship" //ORTBAppContentSourceRelationship get api parameter app.cnt.sourcerelationship
+	ORTBAppContentLen                = "app.cnt.len"                //ORTBAppContentLen get api parameter app.cnt.len
+	ORTBAppContentLanguage           = "app.cnt.language"           //ORTBAppContentLanguage get api parameter app.cnt.language
+	ORTBAppContentEmbeddable         = "app.cnt.embeddable"         //ORTBAppContentEmbeddable get api parameter app.cnt.embeddable
 
 	// App.Producer level parameters
-
-	//ORTBAppContentProducerID get api parameter app.cnt.prod.id
-	ORTBAppContentProducerID = "app.cnt.prod.id"
-	//ORTBAppContentProducerName get api parameter app.cnt.prod.name
-	ORTBAppContentProducerName = "app.cnt.prod.name"
-	//ORTBAppContentProducerCat get api parameter app.cnt.prod.cat
-	ORTBAppContentProducerCat = "app.cnt.prod.cat"
-	//ORTBAppContentProducerDomain get api parameter app.cnt.prod.domain
-	ORTBAppContentProducerDomain = "app.cnt.prod.domain"
+	ORTBAppContentProducerID     = "app.cnt.prod.id"     //ORTBAppContentProducerID get api parameter app.cnt.prod.id
+	ORTBAppContentProducerName   = "app.cnt.prod.name"   //ORTBAppContentProducerName get api parameter app.cnt.prod.name
+	ORTBAppContentProducerCat    = "app.cnt.prod.cat"    //ORTBAppContentProducerCat get api parameter app.cnt.prod.cat
+	ORTBAppContentProducerDomain = "app.cnt.prod.domain" //ORTBAppContentProducerDomain get api parameter app.cnt.prod.domain
 
 	// Device level parameters
-
-	//ORTBDeviceUserAgent get api parameter dev.ua
-	ORTBDeviceUserAgent = "dev.ua"
-	//ORTBDeviceDnt get api parameter dev.dnt
-	ORTBDeviceDnt = "dev.dnt"
-	//ORTBDeviceLmt get api parameter dev.lmt
-	ORTBDeviceLmt = "dev.lmt"
-	//ORTBDeviceIP get api parameter dev.ip
-	ORTBDeviceIP = "dev.ip"
-	//ORTBDeviceIpv6 get api parameter dev.ipv6
-	ORTBDeviceIpv6 = "dev.ipv6"
-	//ORTBDeviceDeviceType get api parameter dev.devicetype
-	ORTBDeviceDeviceType = "dev.devicetype"
-	//ORTBDeviceMake get api parameter dev.make
-	ORTBDeviceMake = "dev.make"
-	//ORTBDeviceModel get api parameter dev.model
-	ORTBDeviceModel = "dev.model"
-	//ORTBDeviceOs get api parameter dev.os
-	ORTBDeviceOs = "dev.os"
-	//ORTBDeviceOsv get api parameter dev.osv
-	ORTBDeviceOsv = "dev.osv"
-	//ORTBDeviceHwv get api parameter dev.hwv
-	ORTBDeviceHwv = "dev.hwv"
-	//ORTBDeviceWidth get api parameter dev.w
-	ORTBDeviceWidth = "dev.w"
-	//ORTBDeviceHeight get api parameter dev.h
-	ORTBDeviceHeight = "dev.h"
-	//ORTBDevicePpi get api parameter dev.ppi
-	ORTBDevicePpi = "dev.ppi"
-	//ORTBDevicePxRatio get api parameter dev.pxratio
-	ORTBDevicePxRatio = "dev.pxratio"
-	//ORTBDeviceJS get api parameter dev.js
-	ORTBDeviceJS = "dev.js"
-	//ORTBDeviceGeoFetch get api parameter dev.geofetch
-	ORTBDeviceGeoFetch = "dev.geofetch"
-	//ORTBDeviceFlashVer get api parameter dev.flashver
-	ORTBDeviceFlashVer = "dev.flashver"
-	//ORTBDeviceLanguage get api parameter dev.language
-	ORTBDeviceLanguage = "dev.language"
-	//ORTBDeviceCarrier get api parameter dev.carrier
-	ORTBDeviceCarrier = "dev.carrier"
-	//ORTBDeviceMccmnc get api parameter dev.mccmnc
-	ORTBDeviceMccmnc = "dev.mccmnc"
-	//ORTBDeviceConnectionType get api parameter dev.connectiontype
-	ORTBDeviceConnectionType = "dev.connectiontype"
-	//ORTBDeviceIfa get api parameter dev.ifa
-	ORTBDeviceIfa = "dev.ifa"
-	//ORTBDeviceDidSha1 get api parameter dev.didsha1
-	ORTBDeviceDidSha1 = "dev.didsha1"
-	//ORTBDeviceDidMd5 get api parameter dev.didmd5
-	ORTBDeviceDidMd5 = "dev.didmd5"
-	//ORTBDeviceDpidSha1 get api parameter dev.dpidsha1
-	ORTBDeviceDpidSha1 = "dev.dpidsha1"
-	//ORTBDeviceDpidMd5 get api parameter dev.dpidmd5
-	ORTBDeviceDpidMd5 = "dev.dpidmd5"
-	//ORTBDeviceMacSha1 get api parameter dev.macsha1
-	ORTBDeviceMacSha1 = "dev.macsha1"
-	//ORTBDeviceMacMd5 get api parameter dev.macmd5
-	ORTBDeviceMacMd5 = "dev.macmd5"
+	ORTBDeviceUserAgent      = "dev.ua"             //ORTBDeviceUserAgent get api parameter dev.ua
+	ORTBDeviceDnt            = "dev.dnt"            //ORTBDeviceDnt get api parameter dev.dnt
+	ORTBDeviceLmt            = "dev.lmt"            //ORTBDeviceLmt get api parameter dev.lmt
+	ORTBDeviceIP             = "dev.ip"             //ORTBDeviceIP get api parameter dev.ip
+	ORTBDeviceIpv6           = "dev.ipv6"           //ORTBDeviceIpv6 get api parameter dev.ipv6
+	ORTBDeviceDeviceType     = "dev.devicetype"     //ORTBDeviceDeviceType get api parameter dev.devicetype
+	ORTBDeviceMake           = "dev.make"           //ORTBDeviceMake get api parameter dev.make
+	ORTBDeviceModel          = "dev.model"          //ORTBDeviceModel get api parameter dev.model
+	ORTBDeviceOs             = "dev.os"             //ORTBDeviceOs get api parameter dev.os
+	ORTBDeviceOsv            = "dev.osv"            //ORTBDeviceOsv get api parameter dev.osv
+	ORTBDeviceHwv            = "dev.hwv"            //ORTBDeviceHwv get api parameter dev.hwv
+	ORTBDeviceWidth          = "dev.w"              //ORTBDeviceWidth get api parameter dev.w
+	ORTBDeviceHeight         = "dev.h"              //ORTBDeviceHeight get api parameter dev.h
+	ORTBDevicePpi            = "dev.ppi"            //ORTBDevicePpi get api parameter dev.ppi
+	ORTBDevicePxRatio        = "dev.pxratio"        //ORTBDevicePxRatio get api parameter dev.pxratio
+	ORTBDeviceJS             = "dev.js"             //ORTBDeviceJS get api parameter dev.js
+	ORTBDeviceGeoFetch       = "dev.geofetch"       //ORTBDeviceGeoFetch get api parameter dev.geofetch
+	ORTBDeviceFlashVer       = "dev.flashver"       //ORTBDeviceFlashVer get api parameter dev.flashver
+	ORTBDeviceLanguage       = "dev.language"       //ORTBDeviceLanguage get api parameter dev.language
+	ORTBDeviceCarrier        = "dev.carrier"        //ORTBDeviceCarrier get api parameter dev.carrier
+	ORTBDeviceMccmnc         = "dev.mccmnc"         //ORTBDeviceMccmnc get api parameter dev.mccmnc
+	ORTBDeviceConnectionType = "dev.connectiontype" //ORTBDeviceConnectionType get api parameter dev.connectiontype
+	ORTBDeviceIfa            = "dev.ifa"            //ORTBDeviceIfa get api parameter dev.ifa
+	ORTBDeviceDidSha1        = "dev.didsha1"        //ORTBDeviceDidSha1 get api parameter dev.didsha1
+	ORTBDeviceDidMd5         = "dev.didmd5"         //ORTBDeviceDidMd5 get api parameter dev.didmd5
+	ORTBDeviceDpidSha1       = "dev.dpidsha1"       //ORTBDeviceDpidSha1 get api parameter dev.dpidsha1
+	ORTBDeviceDpidMd5        = "dev.dpidmd5"        //ORTBDeviceDpidMd5 get api parameter dev.dpidmd5
+	ORTBDeviceMacSha1        = "dev.macsha1"        //ORTBDeviceMacSha1 get api parameter dev.macsha1
+	ORTBDeviceMacMd5         = "dev.macmd5"         //ORTBDeviceMacMd5 get api parameter dev.macmd5
 
 	// Device.Geo level parameters
-
-	//ORTBDeviceGeoLat get api parameter dev.geo.lat
-	ORTBDeviceGeoLat = "dev.geo.lat"
-	//ORTBDeviceGeoLon get api parameter dev.geo.lon
-	ORTBDeviceGeoLon = "dev.geo.lon"
-	//ORTBDeviceGeoType get api parameter dev.geo.type
-	ORTBDeviceGeoType = "dev.geo.type"
-	//ORTBDeviceGeoAccuracy get api parameter dev.geo.accuracy
-	ORTBDeviceGeoAccuracy = "dev.geo.accuracy"
-	//ORTBDeviceGeoLastFix get api parameter dev.geo.lastfix
-	ORTBDeviceGeoLastFix = "dev.geo.lastfix"
-	//ORTBDeviceGeoIPService get api parameter dev.geo.ipservice
-	ORTBDeviceGeoIPService = "dev.geo.ipservice"
-	//ORTBDeviceGeoCountry get api parameter dev.geo.country
-	ORTBDeviceGeoCountry = "dev.geo.country"
-	//ORTBDeviceGeoRegion get api parameter dev.geo.region
-	ORTBDeviceGeoRegion = "dev.geo.region"
-	//ORTBDeviceGeoRegionFips104 get api parameter dev.geo.regionfips104
-	ORTBDeviceGeoRegionFips104 = "dev.geo.regionfips104"
-	//ORTBDeviceGeoMetro get api parameter dev.geo.metro
-	ORTBDeviceGeoMetro = "dev.geo.metro"
-	//ORTBDeviceGeoCity get api parameter dev.geo.city
-	ORTBDeviceGeoCity = "dev.geo.city"
-	//ORTBDeviceGeoZip get api parameter dev.geo.zip
-	ORTBDeviceGeoZip = "dev.geo.zip"
-	//ORTBDeviceGeoUtcOffset get api parameter dev.geo.utcoffset
-	ORTBDeviceGeoUtcOffset = "dev.geo.utcoffset"
+	ORTBDeviceGeoLat           = "dev.geo.lat"           //ORTBDeviceGeoLat get api parameter dev.geo.lat
+	ORTBDeviceGeoLon           = "dev.geo.lon"           //ORTBDeviceGeoLon get api parameter dev.geo.lon
+	ORTBDeviceGeoType          = "dev.geo.type"          //ORTBDeviceGeoType get api parameter dev.geo.type
+	ORTBDeviceGeoAccuracy      = "dev.geo.accuracy"      //ORTBDeviceGeoAccuracy get api parameter dev.geo.accuracy
+	ORTBDeviceGeoLastFix       = "dev.geo.lastfix"       //ORTBDeviceGeoLastFix get api parameter dev.geo.lastfix
+	ORTBDeviceGeoIPService     = "dev.geo.ipservice"     //ORTBDeviceGeoIPService get api parameter dev.geo.ipservice
+	ORTBDeviceGeoCountry       = "dev.geo.country"       //ORTBDeviceGeoCountry get api parameter dev.geo.country
+	ORTBDeviceGeoRegion        = "dev.geo.region"        //ORTBDeviceGeoRegion get api parameter dev.geo.region
+	ORTBDeviceGeoRegionFips104 = "dev.geo.regionfips104" //ORTBDeviceGeoRegionFips104 get api parameter dev.geo.regionfips104
+	ORTBDeviceGeoMetro         = "dev.geo.metro"         //ORTBDeviceGeoMetro get api parameter dev.geo.metro
+	ORTBDeviceGeoCity          = "dev.geo.city"          //ORTBDeviceGeoCity get api parameter dev.geo.city
+	ORTBDeviceGeoZip           = "dev.geo.zip"           //ORTBDeviceGeoZip get api parameter dev.geo.zip
+	ORTBDeviceGeoUtcOffset     = "dev.geo.utcoffset"     //ORTBDeviceGeoUtcOffset get api parameter dev.geo.utcoffset
 
 	// User level parameters
-
-	//ORTBUserID get api parameter user.id
-	ORTBUserID = "user.id"
-	//ORTBUserBuyerUID get api parameter user.buyeruid
-	ORTBUserBuyerUID = "user.buyeruid"
-	//ORTBUserYob get api parameter user.yob
-	ORTBUserYob = "user.yob"
-	//ORTBUserGender get api parameter user.gender
-	ORTBUserGender = "user.gender"
-	//ORTBUserKeywords get api parameter user.keywords
-	ORTBUserKeywords = "user.keywords"
-	//ORTBUserCustomData get api parameter user.customdata
-	ORTBUserCustomData = "user.customdata"
+	ORTBUserID         = "user.id"         //ORTBUserID get api parameter user.id
+	ORTBUserBuyerUID   = "user.buyeruid"   //ORTBUserBuyerUID get api parameter user.buyeruid
+	ORTBUserYob        = "user.yob"        //ORTBUserYob get api parameter user.yob
+	ORTBUserGender     = "user.gender"     //ORTBUserGender get api parameter user.gender
+	ORTBUserKeywords   = "user.keywords"   //ORTBUserKeywords get api parameter user.keywords
+	ORTBUserCustomData = "user.customdata" //ORTBUserCustomData get api parameter user.customdata
 
 	// User.Geo level parameters
-
-	//ORTBUserGeoLat get api parameter user.geo.lat
-	ORTBUserGeoLat = "user.geo.lat"
-	//ORTBUserGeoLon get api parameter user.geo.lon
-	ORTBUserGeoLon = "user.geo.lon"
-	//ORTBUserGeoType get api parameter user.geo.type
-	ORTBUserGeoType = "user.geo.type"
-	//ORTBUserGeoAccuracy get api parameter user.geo.accuracy
-	ORTBUserGeoAccuracy = "user.geo.accuracy"
-	//ORTBUserGeoLastFix get api parameter user.geo.lastfix
-	ORTBUserGeoLastFix = "user.geo.lastfix"
-	//ORTBUserGeoIPService get api parameter user.geo.ipservice
-	ORTBUserGeoIPService = "user.geo.ipservice"
-	//ORTBUserGeoCountry get api parameter user.geo.country
-	ORTBUserGeoCountry = "user.geo.country"
-	//ORTBUserGeoRegion get api parameter user.geo.region
-	ORTBUserGeoRegion = "user.geo.region"
-	//ORTBUserGeoRegionFips104 get api parameter user.geo.regionfips104
-	ORTBUserGeoRegionFips104 = "user.geo.regionfips104"
-	//ORTBUserGeoMetro get api parameter user.geo.metro
-	ORTBUserGeoMetro = "user.geo.metro"
-	//ORTBUserGeoCity get api parameter user.geo.city
-	ORTBUserGeoCity = "user.geo.city"
-	//ORTBUserGeoZip get api parameter user.geo.zip
-	ORTBUserGeoZip = "user.geo.zip"
-	//ORTBUserGeoUtcOffset get api parameter user.geo.utcoffset
-	ORTBUserGeoUtcOffset = "user.geo.utcoffset"
+	ORTBUserGeoLat           = "user.geo.lat"           //ORTBUserGeoLat get api parameter user.geo.lat
+	ORTBUserGeoLon           = "user.geo.lon"           //ORTBUserGeoLon get api parameter user.geo.lon
+	ORTBUserGeoType          = "user.geo.type"          //ORTBUserGeoType get api parameter user.geo.type
+	ORTBUserGeoAccuracy      = "user.geo.accuracy"      //ORTBUserGeoAccuracy get api parameter user.geo.accuracy
+	ORTBUserGeoLastFix       = "user.geo.lastfix"       //ORTBUserGeoLastFix get api parameter user.geo.lastfix
+	ORTBUserGeoIPService     = "user.geo.ipservice"     //ORTBUserGeoIPService get api parameter user.geo.ipservice
+	ORTBUserGeoCountry       = "user.geo.country"       //ORTBUserGeoCountry get api parameter user.geo.country
+	ORTBUserGeoRegion        = "user.geo.region"        //ORTBUserGeoRegion get api parameter user.geo.region
+	ORTBUserGeoRegionFips104 = "user.geo.regionfips104" //ORTBUserGeoRegionFips104 get api parameter user.geo.regionfips104
+	ORTBUserGeoMetro         = "user.geo.metro"         //ORTBUserGeoMetro get api parameter user.geo.metro
+	ORTBUserGeoCity          = "user.geo.city"          //ORTBUserGeoCity get api parameter user.geo.city
+	ORTBUserGeoZip           = "user.geo.zip"           //ORTBUserGeoZip get api parameter user.geo.zip
+	ORTBUserGeoUtcOffset     = "user.geo.utcoffset"     //ORTBUserGeoUtcOffset get api parameter user.geo.utcoffset
 
 	// User.Ext.Consent level parameters
-
-	//ORTBUserExtConsent get api parameter user.ext.consent
-	ORTBUserExtConsent = "user.ext.consent"
-
-	//ORTBUserExtEIDS get api parameter user.ext.eids
-	ORTBUserExtEIDS = "user.ext.eids"
-
-	//ORTBUserData get api parameter user.data
-	ORTBUserData = "user.data"
+	ORTBUserExtConsent = "user.ext.consent" //ORTBUserExtConsent get api parameter user.ext.consent
+	ORTBUserExtEIDS    = "user.ext.eids"    //ORTBUserExtEIDS get api parameter user.ext.eids
+	ORTBUserData       = "user.data"        //ORTBUserData get api parameter user.data
+	ORTBExtEIDS        = "eids"             //ORTBExtEIDS parameter
 
 	// Regs.Ext.GDPR level parameters
-
-	//ORTBRegsExtGdpr get api parameter regs.ext.gdpr
-	ORTBRegsExtGdpr = "regs.ext.gdpr"
-	//ORTBRegsExtUSPrivacy get api parameter regs.ext.us_privacy
-	ORTBRegsExtUSPrivacy = "regs.ext.us_privacy"
+	ORTBRegsExtGdpr      = "regs.ext.gdpr"       //ORTBRegsExtGdpr get api parameter regs.ext.gdpr
+	ORTBRegsExtUSPrivacy = "regs.ext.us_privacy" //ORTBRegsExtUSPrivacy get api parameter regs.ext.us_privacy
+	ORTBExtUSPrivacy     = "us_privacy"          //ORTBExtUSPrivacy get api parameter us_privacy
 
 	// VideoExtension level parameters
-
-	//ORTBImpVideoExtOffset get api parameter imp.vid.ext.offset
-	ORTBImpVideoExtOffset = "imp.vid.ext.offset"
-	//ORTBImpVideoExtAdPodMinAds get api parameter imp.vid.ext.adpod.minads
-	ORTBImpVideoExtAdPodMinAds = "imp.vid.ext.adpod.minads"
-	//ORTBImpVideoExtAdPodMaxAds get api parameter imp.vid.ext.adpod.maxads
-	ORTBImpVideoExtAdPodMaxAds = "imp.vid.ext.adpod.maxads"
-	//ORTBImpVideoExtAdPodMinDuration get api parameter imp.vid.ext.adpod.adminduration
-	ORTBImpVideoExtAdPodMinDuration = "imp.vid.ext.adpod.adminduration"
-	//ORTBImpVideoExtAdPodMaxDuration get api parameter imp.vid.ext.adpod.admaxduration
-	ORTBImpVideoExtAdPodMaxDuration = "imp.vid.ext.adpod.admaxduration"
-	//ORTBImpVideoExtAdPodAdvertiserExclusionPercent get api parameter imp.vid.ext.adpod.excladv
-	ORTBImpVideoExtAdPodAdvertiserExclusionPercent = "imp.vid.ext.adpod.excladv"
-	//ORTBImpVideoExtAdPodIABCategoryExclusionPercent get api parameter imp.vid.ext.adpod.excliabcat
-	ORTBImpVideoExtAdPodIABCategoryExclusionPercent = "imp.vid.ext.adpod.excliabcat"
+	ORTBImpVideoExtOffset                           = "imp.vid.ext.offset"              //ORTBImpVideoExtOffset get api parameter imp.vid.ext.offset
+	ORTBImpVideoExtAdPodMinAds                      = "imp.vid.ext.adpod.minads"        //ORTBImpVideoExtAdPodMinAds get api parameter imp.vid.ext.adpod.minads
+	ORTBImpVideoExtAdPodMaxAds                      = "imp.vid.ext.adpod.maxads"        //ORTBImpVideoExtAdPodMaxAds get api parameter imp.vid.ext.adpod.maxads
+	ORTBImpVideoExtAdPodMinDuration                 = "imp.vid.ext.adpod.adminduration" //ORTBImpVideoExtAdPodMinDuration get api parameter imp.vid.ext.adpod.adminduration
+	ORTBImpVideoExtAdPodMaxDuration                 = "imp.vid.ext.adpod.admaxduration" //ORTBImpVideoExtAdPodMaxDuration get api parameter imp.vid.ext.adpod.admaxduration
+	ORTBImpVideoExtAdPodAdvertiserExclusionPercent  = "imp.vid.ext.adpod.excladv"       //ORTBImpVideoExtAdPodAdvertiserExclusionPercent get api parameter imp.vid.ext.adpod.excladv
+	ORTBImpVideoExtAdPodIABCategoryExclusionPercent = "imp.vid.ext.adpod.excliabcat"    //ORTBImpVideoExtAdPodIABCategoryExclusionPercent get api parameter imp.vid.ext.adpod.excliabcat
 
 	// ReqWrapperExtension level parameters
-
-	//ORTBProfileID get api parameter req.ext.wrapper.profileid
-	ORTBProfileID = "req.ext.wrapper.profileid"
-	//ORTBVersionID get api parameter req.ext.wrapper.versionid
-	ORTBVersionID = "req.ext.wrapper.versionid"
-	//ORTBSSAuctionFlag get api parameter req.ext.wrapper.ssauction
-	ORTBSSAuctionFlag = "req.ext.wrapper.ssauction"
-	//ORTBSumryDisableFlag get api parameter req.ext.wrapper.sumry_disable
-	ORTBSumryDisableFlag = "req.ext.wrapper.sumry_disable"
-	//ORTBClientConfigFlag get api parameter req.ext.wrapper.clientconfig
-	ORTBClientConfigFlag = "req.ext.wrapper.clientconfig"
-	//ORTBSupportDeals get api parameter req.ext.wrapper.supportdeals
-	ORTBSupportDeals = "req.ext.wrapper.supportdeals"
-	//ORTBIncludeBrandCategory get api parameter req.ext.wrapper.includebrandcategory
-	ORTBIncludeBrandCategory = "req.ext.wrapper.includebrandcategory"
+	ORTBProfileID            = "req.ext.wrapper.profileid"            //ORTBProfileID get api parameter req.ext.wrapper.profileid
+	ORTBVersionID            = "req.ext.wrapper.versionid"            //ORTBVersionID get api parameter req.ext.wrapper.versionid
+	ORTBSSAuctionFlag        = "req.ext.wrapper.ssauction"            //ORTBSSAuctionFlag get api parameter req.ext.wrapper.ssauction
+	ORTBSumryDisableFlag     = "req.ext.wrapper.sumry_disable"        //ORTBSumryDisableFlag get api parameter req.ext.wrapper.sumry_disable
+	ORTBClientConfigFlag     = "req.ext.wrapper.clientconfig"         //ORTBClientConfigFlag get api parameter req.ext.wrapper.clientconfig
+	ORTBSupportDeals         = "req.ext.wrapper.supportdeals"         //ORTBSupportDeals get api parameter req.ext.wrapper.supportdeals
+	ORTBIncludeBrandCategory = "req.ext.wrapper.includebrandcategory" //ORTBIncludeBrandCategory get api parameter req.ext.wrapper.includebrandcategory
+	ORTBSSAI                 = "req.ext.wrapper.ssai"                 //ORTBSSAI get the api parameter req.ext.wrapper.ssai
+	ORTBKeyValues            = "req.ext.wrapper.kv"                   //ORTBKeyValues get the api parameter req.ext.wrapper.kv
+	ORTBKeyValuesMap         = "req.ext.wrapper.kvm"                  //ORTBKeyValuesMap get the api parameter req.ext.wrapper.kvm
 
 	// ReqAdPodExt level parameters
-
-	//ORTBRequestExtAdPodMinAds get api parameter req.ext.adpod.minads
-	ORTBRequestExtAdPodMinAds = "req.ext.adpod.minads"
-	//ORTBRequestExtAdPodMaxAds get api parameter req.ext.adpod.maxads
-	ORTBRequestExtAdPodMaxAds = "req.ext.adpod.maxads"
-	//ORTBRequestExtAdPodMinDuration get api parameter req.ext.adpod.adminduration
-	ORTBRequestExtAdPodMinDuration = "req.ext.adpod.adminduration"
-	//ORTBRequestExtAdPodMaxDuration get api parameter req.ext.adpod.admaxduration
-	ORTBRequestExtAdPodMaxDuration = "req.ext.adpod.admaxduration"
-	//ORTBRequestExtAdPodAdvertiserExclusionPercent get api parameter req.ext.adpod.excladv
-	ORTBRequestExtAdPodAdvertiserExclusionPercent = "req.ext.adpod.excladv"
-	//ORTBRequestExtAdPodIABCategoryExclusionPercent get api parameter req.ext.adpod.excliabcat
-	ORTBRequestExtAdPodIABCategoryExclusionPercent = "req.ext.adpod.excliabcat"
-	//ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent get api parameter req.ext.adpod.crosspodexcladv
-	ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent = "req.ext.adpod.crosspodexcladv"
-	//ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent get api parameter req.ext.adpod.crosspodexcliabcat
-	ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent = "req.ext.adpod.crosspodexcliabcat"
-	//ORTBRequestExtAdPodIABCategoryExclusionWindow get api parameter req.ext.adpod.excliabcatwindow
-	ORTBRequestExtAdPodIABCategoryExclusionWindow = "req.ext.adpod.excliabcatwindow"
-	//ORTBRequestExtAdPodAdvertiserExclusionWindow get api parameter req.ext.adpod.excladvwindow
-	ORTBRequestExtAdPodAdvertiserExclusionWindow = "req.ext.adpod.excladvwindow"
+	ORTBRequestExtAdPodMinAds                              = "req.ext.adpod.minads"             //ORTBRequestExtAdPodMinAds get api parameter req.ext.adpod.minads
+	ORTBRequestExtAdPodMaxAds                              = "req.ext.adpod.maxads"             //ORTBRequestExtAdPodMaxAds get api parameter req.ext.adpod.maxads
+	ORTBRequestExtAdPodMinDuration                         = "req.ext.adpod.adminduration"      //ORTBRequestExtAdPodMinDuration get api parameter req.ext.adpod.adminduration
+	ORTBRequestExtAdPodMaxDuration                         = "req.ext.adpod.admaxduration"      //ORTBRequestExtAdPodMaxDuration get api parameter req.ext.adpod.admaxduration
+	ORTBRequestExtAdPodAdvertiserExclusionPercent          = "req.ext.adpod.excladv"            //ORTBRequestExtAdPodAdvertiserExclusionPercent get api parameter req.ext.adpod.excladv
+	ORTBRequestExtAdPodIABCategoryExclusionPercent         = "req.ext.adpod.excliabcat"         //ORTBRequestExtAdPodIABCategoryExclusionPercent get api parameter req.ext.adpod.excliabcat
+	ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent  = "req.ext.adpod.crosspodexcladv"    //ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent get api parameter req.ext.adpod.crosspodexcladv
+	ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent = "req.ext.adpod.crosspodexcliabcat" //ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent get api parameter req.ext.adpod.crosspodexcliabcat
+	ORTBRequestExtAdPodIABCategoryExclusionWindow          = "req.ext.adpod.excliabcatwindow"   //ORTBRequestExtAdPodIABCategoryExclusionWindow get api parameter req.ext.adpod.excliabcatwindow
+	ORTBRequestExtAdPodAdvertiserExclusionWindow           = "req.ext.adpod.excladvwindow"      //ORTBRequestExtAdPodAdvertiserExclusionWindow get api parameter req.ext.adpod.excladvwindow
 
 	// ORTB Extension Objects */ //// get api parameter xtension Objelevel parameters
-
-	//ORTBBidRequestExt get api parameter req.ext
-	ORTBBidRequestExt = "req.ext"
-	//ORTBSourceExt get api parameter src.ext
-	ORTBSourceExt = "src.ext"
-	//ORTBRegsExt get api parameter regs.ext
-	ORTBRegsExt = "regs.ext"
-	//ORTBImpExt get api parameter imp.ext
-	ORTBImpExt = "imp.ext"
-	//ORTBImpVideoExt get api parameter imp.vid.ext
-	ORTBImpVideoExt = "imp.vid.ext"
-	//ORTBSiteExt get api parameter site.ext
-	ORTBSiteExt = "site.ext"
-	//ORTBAppExt get api parameter app.ext
-	ORTBAppExt = "app.ext"
-	//ORTBSitePublisherExt get api parameter site.pub.ext
-	ORTBSitePublisherExt = "site.pub.ext"
-	//ORTBSiteContentExt get api parameter site.cnt.ext
-	ORTBSiteContentExt = "site.cnt.ext"
-	//ORTBSiteContentProducerExt get api parameter site.cnt.prod.ext
-	ORTBSiteContentProducerExt = "site.cnt.prod.ext"
-	//ORTBAppPublisherExt get api parameter app.pub.ext
-	ORTBAppPublisherExt = "app.pub.ext"
-	//ORTBAppContentExt get api parameter app.cnt.ext
-	ORTBAppContentExt = "app.cnt.ext"
-	//ORTBAppContentProducerExt get api parameter app.cnt.prod.ext
-	ORTBAppContentProducerExt = "app.cnt.prod.ext"
-	//ORTBDeviceExt get api parameter dev.ext
-	ORTBDeviceExt = "dev.ext"
-	//ORTBDeviceGeoExt get api parameter dev.geo.ext
-	ORTBDeviceGeoExt = "dev.geo.ext"
-	//ORTBUserExt get api parameter user.ext
-	ORTBUserExt = "user.ext"
-	//ORTBUserGeoExt get api parameter user.geo.ext
-	ORTBUserGeoExt = "user.geo.ext"
+	ORTBBidRequestExt          = "req.ext"           //ORTBBidRequestExt get api parameter req.ext
+	ORTBSourceExt              = "src.ext"           //ORTBSourceExt get api parameter src.ext
+	ORTBRegsExt                = "regs.ext"          //ORTBRegsExt get api parameter regs.ext
+	ORTBImpExt                 = "imp.ext"           //ORTBImpExt get api parameter imp.ext
+	ORTBImpVideoExt            = "imp.vid.ext"       //ORTBImpVideoExt get api parameter imp.vid.ext
+	ORTBSiteExt                = "site.ext"          //ORTBSiteExt get api parameter site.ext
+	ORTBAppExt                 = "app.ext"           //ORTBAppExt get api parameter app.ext
+	ORTBSitePublisherExt       = "site.pub.ext"      //ORTBSitePublisherExt get api parameter site.pub.ext
+	ORTBSiteContentExt         = "site.cnt.ext"      //ORTBSiteContentExt get api parameter site.cnt.ext
+	ORTBSiteContentProducerExt = "site.cnt.prod.ext" //ORTBSiteContentProducerExt get api parameter site.cnt.prod.ext
+	ORTBAppPublisherExt        = "app.pub.ext"       //ORTBAppPublisherExt get api parameter app.pub.ext
+	ORTBAppContentExt          = "app.cnt.ext"       //ORTBAppContentExt get api parameter app.cnt.ext
+	ORTBAppContentProducerExt  = "app.cnt.prod.ext"  //ORTBAppContentProducerExt get api parameter app.cnt.prod.ext
+	ORTBDeviceExt              = "dev.ext"           //ORTBDeviceExt get api parameter dev.ext
+	ORTBDeviceGeoExt           = "dev.geo.ext"       //ORTBDeviceGeoExt get api parameter dev.geo.ext
+	ORTBUserExt                = "user.ext"          //ORTBUserExt get api parameter user.ext
+	ORTBUserGeoExt             = "user.geo.ext"      //ORTBUserGeoExt get api parameter user.geo.ext
 
 	// ORTB Extension Standard Keys */ //// get api parameter xtension Standard Klevel parameters
+	ORTBExtWrapper                                  = "wrapper"              //ORTBExtWrapper get api parameter wrapper
+	ORTBExtProfileId                                = "profileid"            //ORTBExtProfileId get api parameter profileid
+	ORTBExtSsai                                     = "ssai"                 //ORTBExtSsai get api parameter ssai
+	ORTBExtKV                                       = "kv"                   //ORTBExtKV get api parameter kv
+	ORTBExtVersionId                                = "versionid"            //ORTBExtVersionId get api parameter versionid
+	ORTBExtSSAuctionFlag                            = "ssauction"            //ORTBExtSSAuctionFlag get api parameter ssauction
+	ORTBExtSumryDisableFlag                         = "sumry_disable"        //ORTBExtSumryDisableFlag get api parameter sumry_disable
+	ORTBExtClientConfigFlag                         = "clientconfig"         //ORTBExtClientConfigFlag get api parameter clientconfig
+	ORTBExtSupportDeals                             = "supportdeals"         //ORTBExtSupportDeals get api parameter supportdeals
+	ORTBExtIncludeBrandCategory                     = "includebrandcategory" //ORTBExtIncludeBrandCategory get api parameter includebrandcategory
+	ORTBExtGDPR                                     = "gdpr"                 //ORTBExtGDPR get api parameter gdpr
+	ORTBExtConsent                                  = "consent"              //ORTBExtConsent get api parameter consent
+	ORTBExtAdPod                                    = "adpod"                //ORTBExtAdPod get api parameter adpod
+	ORTBExtAdPodOffset                              = "offset"               //ORTBExtAdPodOffset get api parameter offset
+	ORTBExtAdPodMinAds                              = "minads"               //ORTBExtAdPodMinAds get api parameter minads
+	ORTBExtAdPodMaxAds                              = "maxads"               //ORTBExtAdPodMaxAds get api parameter maxads
+	ORTBExtAdPodMinDuration                         = "adminduration"        //ORTBExtAdPodMinDuration get api parameter adminduration
+	ORTBExtAdPodMaxDuration                         = "admaxduration"        //ORTBExtAdPodMaxDuration get api parameter admaxduration
+	ORTBExtAdPodAdvertiserExclusionPercent          = "excladv"              //ORTBExtAdPodAdvertiserExclusionPercent get api parameter excladv
+	ORTBExtAdPodIABCategoryExclusionPercent         = "excliabcat"           //ORTBExtAdPodIABCategoryExclusionPercent get api parameter excliabcat
+	ORTBExtAdPodCrossPodAdvertiserExclusionPercent  = "crosspodexcladv"      //ORTBExtAdPodCrossPodAdvertiserExclusionPercent get api parameter crosspodexcladv
+	ORTBExtAdPodCrossPodIABCategoryExclusionPercent = "crosspodexcliabcat"   //ORTBExtAdPodCrossPodIABCategoryExclusionPercent get api parameter crosspodexcliabcat
+	ORTBExtAdPodIABCategoryExclusionWindow          = "excliabcatwindow"     //ORTBExtAdPodIABCategoryExclusionWindow get api parameter excliabcatwindow
+	ORTBExtAdPodAdvertiserExclusionWindow           = "excladvwindow"        //ORTBExtAdPodAdvertiserExclusionWindow get api parameter excladvwindow
 
-	//ORTBExtWrapper get api parameter wrapper
-	ORTBExtWrapper = "wrapper"
-	//ORTBExtProfileId get api parameter profileid
-	ORTBExtProfileId = "profileid"
-	ORTBExtSsai      = "ssai"
-	//ORTBExtKV get api parameter kv
-	ORTBExtKV = "kv"
-	//ORTBExtVersionId get api parameter versionid
-	ORTBExtVersionId = "versionid"
-	//ORTBExtSSAuctionFlag get api parameter ssauction
-	ORTBExtSSAuctionFlag = "ssauction"
-	//ORTBExtSumryDisableFlag get api parameter sumry_disable
-	ORTBExtSumryDisableFlag = "sumry_disable"
-	//ORTBExtClientConfigFlag get api parameter clientconfig
-	ORTBExtClientConfigFlag = "clientconfig"
-	//ORTBExtSupportDeals get api parameter supportdeals
-	ORTBExtSupportDeals = "supportdeals"
-	//ORTBExtIncludeBrandCategory get api parameter includebrandcategory
-	ORTBExtIncludeBrandCategory = "includebrandcategory"
-	// ORTBSSAI get the api parameter req.ext.wrapper.ssai
-	ORTBSSAI = "req.ext.wrapper.ssai"
-	//ORTBKeyValues get the api parameter req.ext.wrapper.kv
-	ORTBKeyValues = "req.ext.wrapper.kv"
-	//ORTBKeyValuesMap get the api parameter req.ext.wrapper.kvm
-	ORTBKeyValuesMap = "req.ext.wrapper.kvm"
-	//ORTBExtGDPR get api parameter gdpr
-	ORTBExtGDPR = "gdpr"
-	//ORTBExtUSPrivacy get api parameter us_privacy
-	ORTBExtUSPrivacy = "us_privacy"
-	//ORTBExtConsent get api parameter consent
-	ORTBExtConsent = "consent"
-	//ORTBExtAdPod get api parameter adpod
-	ORTBExtAdPod = "adpod"
-	//ORTBExtAdPodOffset get api parameter offset
-	ORTBExtAdPodOffset = "offset"
-	//ORTBExtAdPodMinAds get api parameter minads
-	ORTBExtAdPodMinAds = "minads"
-	//ORTBExtAdPodMaxAds get api parameter maxads
-	ORTBExtAdPodMaxAds = "maxads"
-	//ORTBExtAdPodMinDuration get api parameter adminduration
-	ORTBExtAdPodMinDuration = "adminduration"
-	//ORTBExtAdPodMaxDuration get api parameter admaxduration
-	ORTBExtAdPodMaxDuration = "admaxduration"
-	//ORTBExtAdPodAdvertiserExclusionPercent get api parameter excladv
-	ORTBExtAdPodAdvertiserExclusionPercent = "excladv"
-	//ORTBExtAdPodIABCategoryExclusionPercent get api parameter excliabcat
-	ORTBExtAdPodIABCategoryExclusionPercent = "excliabcat"
-	//ORTBExtAdPodCrossPodAdvertiserExclusionPercent get api parameter crosspodexcladv
-	ORTBExtAdPodCrossPodAdvertiserExclusionPercent = "crosspodexcladv"
-	//ORTBExtAdPodCrossPodIABCategoryExclusionPercent get api parameter crosspodexcliabcat
-	ORTBExtAdPodCrossPodIABCategoryExclusionPercent = "crosspodexcliabcat"
-	//ORTBExtAdPodIABCategoryExclusionWindow get api parameter excliabcatwindow
-	ORTBExtAdPodIABCategoryExclusionWindow = "excliabcatwindow"
-	//ORTBExtAdPodAdvertiserExclusionWindow get api parameter excladvwindow
-	ORTBExtAdPodAdvertiserExclusionWindow = "excladvwindow"
+	//Device Extensions Parameters
+	ORTBDeviceExtIfaType   = "dev.ext.ifa_type"   //ORTBDeviceExtIfaType get api parameter ifa_type
+	ORTBDeviceExtSessionID = "dev.ext.session_id" //ORTBDeviceExtSessionID get api parameter session_id
+	ORTBDeviceExtATTS      = "dev.ext.atts"       //ORTBDeviceExtATTS get api parameter atts
+	ORTBExtIfaType         = "ifa_type"           //ORBTExtDeviceIfaType get api parameter
+	ORTBExtSessionID       = "session_id"         //ORTBExtSessionID parameter
+	ORTBExtATTS            = "atts"               //ORBTExtDeviceATTS get api parameter
 
-	//ORBTExtDeviceIfaType get api parameter
-	ORTBExtIfaType       = "ifa_type"
-	ORTBDeviceExtIfaType = "dev.ext.ifa_type"
-
-	//ORTBExtSessionID parameter
-	ORTBExtSessionID       = "session_id"
-	ORTBDeviceExtSessionID = "dev.ext.session_id"
-
-	//ORTBExtEIDS parameter
-	ORTBExtEIDS = "eids"
-
-	//ORTBRequestExtPrebidTransparencyContent get api parameter req.ext.prebid.transparency.content
-	ORTBRequestExtPrebidTransparencyContent = "req.ext.prebid.transparency.content"
-	//ORTBExtPrebid get api parameter prebid
-	ORTBExtPrebid = "prebid"
-	//ORTBExtPrebidTransparency get api parameter transparency
-	ORTBExtPrebidTransparency = "transparency"
-	//ORTBExtPrebidTransparencyContent get api parameter content
-	ORTBExtPrebidTransparencyContent = "content"
-
-	ORTBExtPrebidFloors            = "floors"
-	ORTBExtFloorEnforcement        = "enforcement"
-	ORTBExtPrebidFloorsEnforcement = "req.ext.prebid.floors.enforcement"
-
-	Debug = "debug"
+	ORTBExtPrebidBidderParams               = "bidderparams"                        //ORTBExtPrebidBidderParams get api parameter bidderparams
+	ORTBExtPrebidBidderParamsPubmaticCDS    = "cds"                                 //ORTBExtPrebidBidderParamsPubmaticCDS get api parameter cds
+	ORTBExtPrebid                           = "prebid"                              //ORTBExtPrebid get api parameter prebid
+	ORTBExtPrebidTransparencyContent        = "content"                             //ORTBExtPrebidTransparencyContent get api parameter content
+	ORTBExtPrebidTransparency               = "transparency"                        //ORTBExtPrebidTransparency get api parameter transparency
+	ORTBRequestExtPrebidTransparencyContent = "req.ext.prebid.transparency.content" //ORTBRequestExtPrebidTransparencyContent get api parameter req.ext.prebid.transparency.content
+	ORTBExtPrebidFloors                     = "floors"                              //ORTBExtPrebidFloors get api parameter for floors
+	ORTBExtFloorEnforcement                 = "enforcement"                         //ORTBExtFloorEnforcement get api parameter for enforcement
+	ORTBExtPrebidFloorsEnforcement          = "req.ext.prebid.floors.enforcement"   //ORTBExtPrebidFloorsEnforcement get api parameter for enforcement
+	ORTBExtPrebidReturnAllBidStatus         = "req.ext.prebid.returnallbidstatus"   //ORTBExtPrebidReturnAllBidStatus get api parameter for returnallbidstatus
+	ReturnAllBidStatus                      = "returnallbidstatus"
 )
 
 const (
