@@ -99,5 +99,9 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 		slotConfig.Floors = defaultConfig.Floors
 	}
 
+	if slotConfig.Transparency == nil {
+		slotConfig.Transparency = defaultConfig.Transparency
+	}
+
 	return slotConfig
 }
