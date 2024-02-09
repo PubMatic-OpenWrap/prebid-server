@@ -281,7 +281,7 @@ func DecodeImpressionID(id string) (string, int) {
 		return id, 0
 	}
 
-	sequence, err := strconv.Atoi(id[index+1:])
+	sequence, err := strconv.Atoi(id[index+2:])
 	if err != nil || sequence == 0 {
 		return id, 0
 	}
