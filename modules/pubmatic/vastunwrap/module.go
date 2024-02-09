@@ -52,7 +52,7 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		Enabled:               vastUnwrapModuleCfg.Enabled,
 		MetricsEngine:         metricEngine,
 		unwrapRequest:         vastunwrap.UnwrapRequest,
-		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnable,
+		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnabled,
 	}, nil
 }
 

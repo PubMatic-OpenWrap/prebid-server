@@ -140,6 +140,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 		if err != nil {
 			requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+			//update this code once we fully support modular code for all endpoint
 			if err != nil {
 				requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 			}
@@ -150,7 +151,6 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 
 func GetEndpoint(path, source string) string {
 	switch path {
-	// Direct call to 8000 port
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
@@ -160,9 +160,7 @@ func GetEndpoint(path, source string) string {
 		default:
 			return models.EndpointHybrid
 		}
-	// call to 8001 port and here via reverse proxy
-	case OpenWrapAuction: // legacy hybrid api should not execute module
-		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after hybrid call through module
+	case OpenWrapAuction:
 		return models.EndpointHybrid
 	case OpenWrapV25:
 		return models.EndpointV25
@@ -176,8 +174,6 @@ func GetEndpoint(path, source string) string {
 		return models.EndpointVAST
 	case OpenWrapJSON:
 		return models.EndpointJson
-	default:
-		// we should return from here
 	}
 	return ""
 }

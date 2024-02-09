@@ -40,20 +40,18 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
 }
 
-// GetVastUnwrapEnable
-func GetVastUnwrapEnable(rctx vastmodels.RequestCtx) bool {
-	rCtx := models.RequestCtx{}
-	rCtx.Endpoint = rctx.Endpoint
-	rCtx.PubID = rctx.PubID
-	rCtx.ProfileID = rctx.ProfileID
-	rCtx.DisplayID = rctx.DisplayID
+// GetVastUnwrapEnabled function return vastunwrap flag from the database
+func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
+	rCtx := models.RequestCtx{
+		Endpoint:  rctx.Endpoint,
+		PubID:     rctx.PubID,
+		ProfileID: rctx.ProfileID,
+		DisplayID: rctx.DisplayID,
+	}
 	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
 	if err != nil || len(partnerConfigMap) == 0 {
 		return false
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
-	if models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1" {
-		return true
-	}
-	return false
+	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1"
 }

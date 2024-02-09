@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
@@ -97,27 +96,6 @@ func TestHandleEntrypointHook(t *testing.T) {
 			},
 			randomNum: 1,
 			want:      hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: false, ProfileID: 5890, DisplayID: 1, Endpoint: "video"}}},
-		},
-		{
-			name: "Enable Vast Unwrapper for owsdk source request but missing profileID",
-			args: args{
-				payload: hookstage.EntrypointPayload{
-					Request: func() *http.Request {
-						r, _ := http.NewRequest("POST", "http://localhost/video/openrtb?source=owsdk", nil)
-						return r
-					}(),
-					Body: []byte(`{"ext":{"wrapper":{"versionid":1}}}`),
-				},
-				config: VastUnwrapModule{
-					TrafficPercentage: 2,
-				},
-			},
-			randomNum: 1,
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				Reject:  true,
-				NbrCode: nbr.InvalidProfileID,
-				Errors:  []string{"ErrMissingProfileID"},
-			},
 		},
 	}
 	for _, tt := range tests {

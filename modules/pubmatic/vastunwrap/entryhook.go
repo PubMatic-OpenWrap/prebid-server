@@ -8,7 +8,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
@@ -31,7 +30,6 @@ func handleEntrypointHook(
 		}
 	}()
 	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
-	result.Reject = true
 	vastRequestContext := models.RequestCtx{}
 	queryParams := payload.Request.URL.Query()
 	source := queryParams.Get("source")
@@ -42,19 +40,7 @@ func handleEntrypointHook(
 		}
 	} else {
 		endpoint := openwrap.GetEndpoint(payload.Request.URL.Path, source)
-		requestExtWrapper, err := openwrap.GetRequestWrapper(payload, result)
-		if err != nil {
-			result.NbrCode = nbr.InvalidRequestWrapperExtension
-			result.Errors = append(result.Errors, err.Error())
-			return result, err
-		}
-
-		if requestExtWrapper.ProfileId <= 0 {
-			result.NbrCode = nbr.InvalidProfileID
-			result.Errors = append(result.Errors, "ErrMissingProfileID")
-			return result, err
-		}
-
+		requestExtWrapper, _ := openwrap.GetRequestWrapper(payload, result)
 		vastRequestContext = models.RequestCtx{
 			ProfileID: requestExtWrapper.ProfileId,
 			DisplayID: requestExtWrapper.VersionId,
@@ -63,6 +49,5 @@ func handleEntrypointHook(
 	}
 	result.ModuleContext = make(hookstage.ModuleContext)
 	result.ModuleContext[RequestContext] = vastRequestContext
-	result.Reject = false
 	return result, nil
 }
