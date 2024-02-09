@@ -165,7 +165,7 @@ func TestGetVASTEventMacros(t *testing.T) {
 			args: args{
 				rctx: models.RequestCtx{
 					ProfileID:          1234,
-					DisplayID:          1234,
+					DisplayVersionID:   1234,
 					StartTime:          1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "",
@@ -187,7 +187,7 @@ func TestGetVASTEventMacros(t *testing.T) {
 			args: args{
 				rctx: models.RequestCtx{
 					ProfileID:          1234,
-					DisplayID:          1234,
+					DisplayVersionID:   1234,
 					StartTime:          1234,
 					LoggerImpressionID: "1234",
 					SSAI:               "1234",
