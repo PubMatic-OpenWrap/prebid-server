@@ -13,7 +13,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 	tracker := models.Tracker{
 		PubID:             rCtx.PubID,
 		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayVersionID),
 		PageURL:           rCtx.PageURL,
 		Timestamp:         rCtx.StartTime,
 		IID:               rCtx.LoggerImpressionID,

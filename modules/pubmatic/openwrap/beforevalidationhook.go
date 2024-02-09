@@ -841,7 +841,7 @@ func getPageURL(bidRequest *openrtb2.BidRequest) string {
 func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 	macros := map[string]string{
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
-		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
+		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayVersionID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
 		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DeviceCtx.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
