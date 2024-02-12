@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
 	"testing"
@@ -2845,7 +2844,6 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.Reject, got.Reject)
 			assert.Equal(t, tt.want.NbrCode, got.NbrCode)
-			fmt.Println("*********", got.DebugMessages)
 			for i := 0; i < len(got.DebugMessages); i++ {
 				gotDebugMessage, _ := json.Marshal(got.DebugMessages[i])
 				wantDebugMessage, _ := json.Marshal(tt.want.DebugMessages[i])
@@ -2865,7 +2863,6 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 					result, err := mut.Apply(tt.args.payload)
 					assert.Nil(t, err, tt.name)
 					gotBidRequest, _ := json.Marshal(result.BidRequest)
-					fmt.Println("*********", string(gotBidRequest))
 					assert.JSONEq(t, string(tt.wantBidRequest), string(gotBidRequest))
 				}
 			}
