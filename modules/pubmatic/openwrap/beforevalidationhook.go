@@ -221,6 +221,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	disabledSlots := 0
 	serviceSideBidderPresent := false
+	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
 
 	if rCtx.IsCTVRequest {
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
@@ -445,6 +446,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
+			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
 
@@ -936,7 +939,7 @@ func getPageURL(bidRequest *openrtb2.BidRequest) string {
 func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 	macros := map[string]string{
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
-		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
+		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayVersionID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
 		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DeviceCtx.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
