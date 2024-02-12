@@ -56,14 +56,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
-	// return prebid validation error
-	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
-		result.Reject = false
-		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
-		return result, nil
-	}
-
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
@@ -78,6 +70,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	if rCtx.IsCTVRequest {
 		m.metricEngine.RecordCTVRequests(rCtx.Endpoint, getPlatformFromRequest(payload.BidRequest))
+	}
+
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		result.Reject = false
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		return result, nil
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
@@ -178,7 +178,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Platform = platform
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
-	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
@@ -187,6 +186,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.PartnerConfigMap = newPartnerConfigMap
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
+
+	//TMax should be updated after ABTest processing
+	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
