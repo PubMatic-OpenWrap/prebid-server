@@ -1331,3 +1331,107 @@ func TestGetKGPSV(t *testing.T) {
 		})
 	}
 }
+
+func TestGetGrossEcpmFromNetEcpm(t *testing.T) {
+	type args struct {
+		netEcpm  float64
+		revShare float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "When netcpm is 100 and revShare is 0",
+			args: args{
+				netEcpm:  100,
+				revShare: 0,
+			},
+			want: 100,
+		},
+		{
+			name: "When netcpm is 0 and revShare is 100",
+			args: args{
+				netEcpm:  0,
+				revShare: 100,
+			},
+			want: 0,
+		},
+		{
+			name: "When netcpm is 100 and revShare is 50",
+			args: args{
+				netEcpm:  100,
+				revShare: 50,
+			},
+			want: 200,
+		},
+		{
+			name: "When netcpm is 80 and revShare is 20",
+			args: args{
+				netEcpm:  80,
+				revShare: 20,
+			},
+			want: 100,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetGrossEcpmFromNetEcpm(tt.args.netEcpm, tt.args.revShare); got != tt.want {
+				t.Errorf("GetGrossEcpmFromNetEcpm() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToFixed(t *testing.T) {
+	type args struct {
+		num       float64
+		precision int
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "Rounding of 0.1",
+			args: args{
+				num:       0.1,
+				precision: 2,
+			},
+			want: 0.10,
+		},
+		{
+			name: "Rounding of 0.1101",
+			args: args{
+				num:       0.1101,
+				precision: 2,
+			},
+			want: 0.11,
+		},
+		{
+			name: "Rounding of 0.10000000149011612",
+			args: args{
+				num:       0.10000000149011612,
+				precision: 2,
+			},
+			want: 0.10,
+		},
+		{
+			name: "Rounding of 0.10000000149011612",
+			args: args{
+				num:       0.10000000149011612,
+				precision: 3,
+			},
+			want: 0.100,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToFixed(tt.args.num, tt.args.precision); got != tt.want {
+				t.Errorf("toFixed() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

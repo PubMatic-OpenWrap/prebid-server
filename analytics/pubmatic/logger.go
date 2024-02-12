@@ -360,8 +360,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			price := bid.Price
 			if ao.Response.Cur != models.USD {
-				if bidCtx.EG != 0 { // valid-bids + dropped-bids+ default-bids
-					price = bidCtx.EG
+				if bidCtx.EN != 0 { // valid-bids + dropped-bids+ default-bids
+					price = bidCtx.EN
 				} else if bidExt.OriginalBidCPMUSD != 0 { // valid non-bids
 					price = bidExt.OriginalBidCPMUSD
 				}
@@ -403,11 +403,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if pr.NetECPM == 0 {
-				pr.NetECPM = models.GetNetEcpm(price, revShare)
+				pr.NetECPM = models.ToFixed(price, models.BID_PRECISION)
 			}
 
 			if pr.GrossECPM == 0 {
-				pr.GrossECPM = models.GetGrossEcpm(price)
+				pr.GrossECPM = models.GetGrossEcpmFromNetEcpm(price, revShare)
 			}
 
 			if pr.PartnerSize == "" {
