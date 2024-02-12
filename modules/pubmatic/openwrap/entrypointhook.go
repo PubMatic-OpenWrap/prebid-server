@@ -48,11 +48,10 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 	}()
 
-	rCtx.Sshb = queryParams.Get("sshb")
-	//Do not execute the module for requests processed in SSHB(8001)
-	if queryParams.Get("sshb") == "1" {
-		return result, nil
-	}
+	// //Do not execute the module for requests processed in SSHB(8001)
+	// if queryParams.Get("sshb") == "1" {
+	// 	return result, nil
+	// }
 
 	switch payload.Request.URL.Path {
 	// Direct call to 8000 port
@@ -148,6 +147,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
+		Sshb: queryParams.Get("sshb"),
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

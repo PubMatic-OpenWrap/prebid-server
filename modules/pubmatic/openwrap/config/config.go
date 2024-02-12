@@ -1,22 +1,26 @@
 package config
 
 import (
+	"net/http"
 	"time"
 
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
 )
 
 // Config contains the values read from the config file at boot time
 type Config struct {
-	Server    Server
-	Database  Database
-	Cache     Cache
-	Timeout   Timeout
-	Tracker   Tracker
-	PixelView PixelView
-	Features  FeatureToggle
-	Log       Log
-	Stats     stats.Stats
+	Server           Server
+	Database         Database
+	Cache            Cache
+	Timeout          Timeout
+	Tracker          Tracker
+	PixelView        PixelView
+	Features         FeatureToggle
+	Log              Log
+	Stats            stats.Stats
+	VastUnwrapModule VastUnwrapModule
 }
 
 type Server struct {
@@ -91,4 +95,13 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
+}
+
+type VastUnwrapModule struct {
+	Cfg                   unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
+	TrafficPercentage     int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
+	StatTrafficPercentage int                     `mapstructure:"stat_traffic_percentage" json:"stat_traffic_percentage"`
+	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
+	MetricsEngine         metrics.MetricsEngine
+	UnwrapRequest         func(w http.ResponseWriter, r *http.Request)
 }

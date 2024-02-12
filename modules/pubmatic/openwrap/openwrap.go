@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	vastunwrap "git.pubmatic.com/vastunwrap"
+
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/currency"
@@ -74,6 +76,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	// Init TBF (tracking-beacon-first) feature related services
 	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
+
+	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapModule.Cfg)
+	cfg.VastUnwrapModule.UnwrapRequest = vastunwrap.UnwrapRequest
 
 	return OpenWrap{
 		cfg:                cfg,

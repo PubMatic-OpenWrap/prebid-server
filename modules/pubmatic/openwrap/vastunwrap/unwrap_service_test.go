@@ -10,7 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
-	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
+	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/openwrap/vastunwrap/stats/mock"
 
 	"github.com/stretchr/testify/assert"
 )

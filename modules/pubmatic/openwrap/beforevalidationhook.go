@@ -48,18 +48,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
-	//Do not execute the module for requests processed in SSHB(8001)
-	if rCtx.Sshb == "1" {
-		result.Reject = false
-		return result, nil
-	}
-
-	if rCtx.Endpoint == models.EndpointHybrid {
-		//TODO: Add bidder params fix
-		result.Reject = false
-		return result, nil
-	}
-
 	// return prebid validation error
 	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
 		result.Reject = false
@@ -76,10 +64,41 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
+	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+
+	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
+	if err != nil || len(partnerConfigMap) == 0 {
+		// TODO: seperate DB fetch errors as internal errors
+		result.NbrCode = nbr.InvalidProfileConfiguration
+		if err != nil {
+			err = errors.New("failed to get profile data: " + err.Error())
+		} else {
+			err = errors.New("failed to get profile data: received empty data")
+		}
+		result.Errors = append(result.Errors, err.Error())
+		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+		return result, err
+	}
+
+	// return from here if this is redirect from sshb or vanilla call.
+	// IMPORTANT: Do not change the location as we need pubid for vast unwrap even if the request failed
+
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rCtx.Sshb == "1" {
+		result.Reject = false
+		return result, nil
+	}
+
+	if rCtx.Endpoint == models.EndpointHybrid {
+		//TODO: Add bidder params fix
+		result.Reject = false
+		return result, nil
+	}
+
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
@@ -102,21 +121,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
 	if payload.BidRequest.Test != 0 {
 		rCtx.IsTestRequest = payload.BidRequest.Test
-	}
-
-	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
-	if err != nil || len(partnerConfigMap) == 0 {
-		// TODO: seperate DB fetch errors as internal errors
-		result.NbrCode = nbr.InvalidProfileConfiguration
-		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
-		} else {
-			err = errors.New("failed to get profile data: received empty data")
-		}
-		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
