@@ -24,10 +24,10 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	if !vastRequestContext.Redirect {
 		pubId, _ := strconv.Atoi(miCtx.AccountID)
 		vastRequestContext.PubID = pubId
-		vastUnwrapEnabled = m.getVastUnwrapEnable(vastRequestContext)
+		vastUnwrapEnabled = m.getVastUnwrapEnable(vastRequestContext) && getRandomNumber() < m.TrafficPercentage
 	}
 
-	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled && getRandomNumber() < m.TrafficPercentage
+	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
 	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
 
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
