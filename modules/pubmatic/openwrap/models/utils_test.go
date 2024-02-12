@@ -420,7 +420,7 @@ func TestGetSizeForPlatform(t *testing.T) {
 				height:   10,
 				platform: PLATFORM_VIDEO,
 			},
-			size: "100x10v",
+			size: "100x10",
 		},
 	}
 	for _, tt := range tests {

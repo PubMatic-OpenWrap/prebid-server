@@ -539,9 +539,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
 	}
 
-	if _, ok := requestExt.Prebid.Aliases[string(models.BidderPubMaticSecondaryAlias)]; ok {
-		if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
-			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
+	for bidderCode, coreBidder := range rCtx.Aliases {
+		if coreBidder == string(openrtb_ext.BidderPubmatic) {
+			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
+			}
 		}
 	}
 
