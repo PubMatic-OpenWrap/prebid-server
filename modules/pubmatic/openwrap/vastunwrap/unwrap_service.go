@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 )
 
-func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
+func DoUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
