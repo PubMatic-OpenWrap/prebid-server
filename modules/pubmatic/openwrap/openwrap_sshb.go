@@ -9,6 +9,10 @@ import (
 	vastmodels "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
+const (
+	VastUnwrapperEnableValue = "1"
+)
+
 // GetConfig Temporary function to expose config to SSHB
 func (ow OpenWrap) GetConfig() config.Config {
 	return ow.cfg
@@ -53,5 +57,5 @@ func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 		return false
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
-	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1"
+	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
 }
