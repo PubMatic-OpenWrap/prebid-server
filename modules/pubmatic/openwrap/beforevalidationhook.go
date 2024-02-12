@@ -177,6 +177,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
+	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
@@ -358,6 +359,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
+			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
 
