@@ -1565,7 +1565,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
+func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
 	tbf.SetAndResetTBFConfig(mockCache, nil)
@@ -1895,7 +1895,7 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 					result, err := mut.Apply(tt.args.payload)
 					gotBidResponse, _ := json.Marshal(result.BidResponse)
 					assert.Nil(t, err, tt.name)
-					assert.Equal(t, tt.want.bidResponse, json.RawMessage(gotBidResponse), tt.name)
+					assert.Equal(t, string(tt.want.bidResponse), string(gotBidResponse), tt.name)
 				}
 				return
 			}

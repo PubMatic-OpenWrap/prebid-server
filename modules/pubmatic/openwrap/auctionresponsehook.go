@@ -396,7 +396,7 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 		for i := range bidResponse.SeatBid {
 			filteredBid := make([]openrtb2.Bid, 0, len(bidResponse.SeatBid[i].Bid))
 			for _, bid := range bidResponse.SeatBid[i].Bid {
-				impId := bid.ID
+				impId := bid.ImpID
 				if rctx.IsCTVRequest {
 					impId, _ = models.GetImpressionID(bid.ImpID)
 				}
@@ -433,7 +433,7 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 	// update bid ext and other details
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
-			impId := bid.ID
+			impId := bid.ImpID
 			if rctx.IsCTVRequest {
 				impId, _ = models.GetImpressionID(bid.ImpID)
 			}

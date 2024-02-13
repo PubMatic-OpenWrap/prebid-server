@@ -524,7 +524,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 					{
 						PartnerID:   "pubmatic",
 						BidderCode:  "pubmatic",
-						PartnerSize: "30x50v",
+						PartnerSize: "30x50",
 						BidID:       "bid-id-1",
 						OrigBidID:   "bid-id-1",
 						DealID:      "-1",
