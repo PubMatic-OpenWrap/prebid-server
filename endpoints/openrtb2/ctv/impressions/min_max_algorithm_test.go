@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/impressions/testdata"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/impressions/testdata"
 	"github.com/stretchr/testify/assert"
 )
 
