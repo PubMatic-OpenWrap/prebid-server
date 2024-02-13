@@ -1,6 +1,7 @@
 package vastunwrap
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/prebid/prebid-server/adapters"
@@ -19,6 +20,16 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
 		return result, nil
 	}
+	vastUnwrapEnabled := vastRequestContext.VastUnwrapEnabled
+	if !vastRequestContext.Redirect {
+		pubId, _ := strconv.Atoi(miCtx.AccountID)
+		vastRequestContext.PubID = pubId
+		vastUnwrapEnabled = m.getVastUnwrapEnable(vastRequestContext) && getRandomNumber() < m.TrafficPercentage
+	}
+
+	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
+	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
+
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
 		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
 		return result, nil

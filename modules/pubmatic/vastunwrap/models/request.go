@@ -1,7 +1,10 @@
 package models
 
 type RequestCtx struct {
-	UA                     string
-	VastUnwrapEnabled      bool
-	VastUnwrapStatsEnabled bool
+	UA                                     string
+	VastUnwrapEnabled                      bool
+	PubID, ProfileID, DisplayID, VersionID int
+	Endpoint                               string
+	VastUnwrapStatsEnabled                 bool
+	Redirect                               bool
 }
