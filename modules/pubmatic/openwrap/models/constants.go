@@ -498,7 +498,7 @@ const (
 
 // constants for adpod type
 const (
-	Dynamic    = "dynamic"
-	Structured = "structured"
-	Hybrid     = "hybrid"
+	AdPodTypeDynamic    = "dynamic"
+	AdPodTypeStructured = "structured"
+	AdPodTypeHybrid     = "hybrid"
 )

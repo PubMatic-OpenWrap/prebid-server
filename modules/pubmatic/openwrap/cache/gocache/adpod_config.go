@@ -28,7 +28,7 @@ func (c *cache) GetAdpodConfigs(pubID, profileID, displayVersion int) (*adpodcon
 		return adpodConfig, nil
 	}
 
-	lockKey := key("%d", pubID)
+	lockKey := cacheKey // Making cache key as lock key
 	if err := c.LockAndLoad(lockKey, func() error {
 		return c.populateCacheWithAdpodConfig(pubID, profileID, displayVersion)
 	}); err != nil {

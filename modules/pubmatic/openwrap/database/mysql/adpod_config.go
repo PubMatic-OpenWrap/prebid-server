@@ -44,11 +44,11 @@ func (db *mySqlDB) GetAdpodConfigs(profileID, displayVersion int) (*adpodconfig.
 		}
 
 		switch strings.ToLower(podType) {
-		case models.Dynamic:
+		case models.AdPodTypeDynamic:
 			err = json.Unmarshal([]byte(podConfig), &config.Dynamic)
-		case models.Structured:
+		case models.AdPodTypeStructured:
 			err = json.Unmarshal([]byte(podConfig), &config.Structured)
-		case models.Hybrid:
+		case models.AdPodTypeHybrid:
 			err = json.Unmarshal([]byte(podConfig), &config.Hybrid)
 		}
 
