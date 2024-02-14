@@ -157,6 +157,7 @@ type ImpCtx struct {
 	AdserverURL       string
 	//temp
 	BidderError string
+	BidIDToDur  map[string]int64
 }
 
 type PartnerData struct {

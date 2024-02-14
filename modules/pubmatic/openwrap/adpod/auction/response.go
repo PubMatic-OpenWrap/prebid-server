@@ -11,10 +11,12 @@ func GetWinningBidsIds(adpodBids []*AdPodBid, impCtxMap map[string]models.ImpCtx
 	winningBidIds = make(map[string][]string)
 	for _, eachAdpodBid := range adpodBids {
 		impCtx := impCtxMap[eachAdpodBid.OriginalImpID]
+		impCtx.BidIDToDur = make(map[string]int64)
 		for _, bid := range eachAdpodBid.Bids {
 			if len(bid.AdM) == 0 {
 				continue
 			}
+			impCtx.BidIDToDur[bid.ID] = int64(bid.Duration)
 			winningBidIds[eachAdpodBid.OriginalImpID] = append(winningBidIds[eachAdpodBid.OriginalImpID], bid.ID)
 			impCtx.BidIDToAPRC[bid.ID] = models.StatusWinningBid
 		}
