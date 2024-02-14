@@ -1,7 +1,6 @@
 package pubmatic
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -10,168 +9,6 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestLogDeviceObject(t *testing.T) {
-	type args struct {
-		ortbBidRequest *openrtb2.BidRequest
-		rctx           *models.RequestCtx
-	}
-
-	type want struct {
-		device Device
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: `Nil request`,
-			args: args{
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformDesktop,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformDesktop,
-				},
-			},
-		},
-		{
-			name: `Empty uaFromHTTPReq`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-				},
-			},
-		},
-		{
-			name: `Invalid device ext`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`invalid ext`),
-					},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: 0,
-				},
-			},
-		},
-		{
-			name: `IFA Type key absent`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"anykey":"anyval"}`),
-					},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-				},
-			},
-		},
-		{
-			name: `Invalid data type for ifa_type key`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": 123}`)},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-				},
-			},
-		},
-		{
-			name: `ifa_type missing in DeviceIFATypeID mapping`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "anything"}`),
-					},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-					IFAType:  ptrutil.ToPtr(0),
-				},
-			},
-		},
-		{
-			name: `Case insensitive ifa_type`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "DpId"}`),
-					},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-					IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-				},
-			},
-		},
-		{
-			name: `Valid ifa_type`,
-			args: args{
-				ortbBidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"ifa_type": "sessionid"}`),
-					},
-				},
-				rctx: &models.RequestCtx{
-					DevicePlatform: models.DevicePlatformMobileWeb,
-				},
-			},
-			want: want{
-				device: Device{
-					Platform: models.DevicePlatformMobileWeb,
-					IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wlog := &WloggerRecord{}
-			wlog.logDeviceObject(tt.args.rctx, tt.args.ortbBidRequest)
-			assert.Equal(t, tt.want.device, wlog.Device)
-		})
-	}
-}
 
 func TestLogIntegrationType(t *testing.T) {
 	tests := []struct {
@@ -514,6 +351,105 @@ func TestSetMetaDataObject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.partnerRecord.setMetaDataObject(tt.args.meta)
 			assert.Equal(t, tt.partnerRecord, tt.args.partnerRecord, tt.name)
+		})
+	}
+}
+
+func TestLogDeviceObject(t *testing.T) {
+	type args struct {
+		dvc *models.DeviceCtx
+	}
+	tests := []struct {
+		name string
+		args args
+		want Device
+	}{
+		{
+			name: `empty`,
+			args: args{
+				dvc: nil,
+			},
+			want: Device{},
+		},
+		{
+			name: `missing_ifatype`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform: models.DevicePlatformDesktop,
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+			},
+		},
+		{
+			name: `missing_ext`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `missing_device_ext`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext:       &models.ExtDevice{},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `missing_atts`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext: &models.ExtDevice{
+						ExtDevice: openrtb_ext.ExtDevice{},
+					},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+			},
+		},
+		{
+			name: `valid`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Platform:  models.DevicePlatformDesktop,
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					Ext: &models.ExtDevice{
+						ExtDevice: openrtb_ext.ExtDevice{
+							ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
+						},
+					},
+				},
+			},
+			want: Device{
+				Platform: models.DevicePlatformDesktop,
+				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+				ATTS:     ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{}
+			wlog.logDeviceObject(tt.args.dvc)
+			assert.Equal(t, tt.want, wlog.Device)
 		})
 	}
 }

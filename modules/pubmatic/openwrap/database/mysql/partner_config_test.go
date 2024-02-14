@@ -111,6 +111,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"serverSideEnabled": "1",
 					"isAlias":           "0",
 					"partnerId":         "101",
+					"vendorId":          "76",
 				},
 				-1: {
 					"bidderCode":        "ALL",
@@ -120,6 +121,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"partnerId":         "-1",
 					"displayVersionId":  "9",
 					"platform":          "display",
+					"vendorId":          "-1",
 				},
 			},
 			wantErr: false,
@@ -132,12 +134,12 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
-				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow("-1", "ALL", "ALL", 0, -1, 0, "platform", "display").
-					AddRow("-1", "ALL", "ALL", 0, -1, 0, "gdpr", "0").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "kgp", "_AU_@_W_x_H_").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "timeout", "200").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "serverSideEnabled", "1")
+				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "gdpr", "0").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
@@ -168,6 +170,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"serverSideEnabled": "1",
 					"isAlias":           "0",
 					"partnerId":         "101",
+					"vendorId":          "76",
 				},
 				-1: {
 					"bidderCode":        "ALL",
@@ -177,6 +180,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"partnerId":         "-1",
 					"displayVersionId":  "9",
 					"platform":          "display",
+					"vendorId":          "-1",
 				},
 			},
 			wantErr: false,
@@ -189,12 +193,81 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
-				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow("-1", "ALL", "ALL", 0, -1, 0, "platform", "display").
-					AddRow("-1", "ALL", "ALL", 0, -1, 0, "gdpr", "0").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "kgp", "_AU_@_W_x_H_").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "timeout", "200").
-					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, "serverSideEnabled", "1")
+				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "gdpr", "0").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
+				return db
+			},
+		},
+		{
+			name: "vastbidder present with publisher key vendorId",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetParterConfig:          "^SELECT (.+) FROM wrapper_config_map (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				pubID:          5890,
+				profileID:      19109,
+				displayVersion: 3,
+			},
+
+			want: map[int]map[string]string{
+				234: {
+					"bidderCode":        "test-vastbidder",
+					"prebidPartnerName": "vastbidder",
+					"serverSideEnabled": "1",
+					"isAlias":           "0",
+					"partnerId":         "234",
+					"vendorId":          "999",
+				},
+				101: {
+					"bidderCode":        "pubmatic",
+					"prebidPartnerName": "pubmatic",
+					"timeout":           "200",
+					"kgp":               "_AU_@_W_x_H_",
+					"serverSideEnabled": "1",
+					"isAlias":           "0",
+					"partnerId":         "101",
+					"vendorId":          "76",
+				},
+				-1: {
+					"bidderCode":        "ALL",
+					"prebidPartnerName": "ALL",
+					"gdpr":              "0",
+					"isAlias":           "0",
+					"partnerId":         "-1",
+					"displayVersionId":  "9",
+					"platform":          "display",
+					"vendorId":          "-1",
+				},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+
+				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
+					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "gdpr", "0").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
+					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1").
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "serverSideEnabled", "1").
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "vendorId", "999")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
@@ -263,8 +336,8 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow("11_11", "openx", "openx", 0, -1, 0, "k1", "v1")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow("11_11", "openx", "openx", 0, -1, 0, -1, "k1", "v1")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -290,6 +363,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "openx",
 					"bidderCode":        "openx",
 					"isAlias":           "0",
+					"vendorId":          "152",
 				},
 				102: {
 					"k1":                "v2",
@@ -297,6 +371,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "pubmatic",
 					"bidderCode":        "pubmatic",
 					"isAlias":           "0",
+					"vendorId":          "76",
 				},
 			},
 			wantErr: false,
@@ -305,10 +380,10 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow(101, "openx", "openx", 0, -1, 0, "k1", "v1").
-					AddRow(101, "openx", "openx", 0, -1, 0, "k2", "v2").
-					AddRow(102, "pubmatic", "pubmatic", 0, -1, 0, "k1", "v2")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k1", "v1").
+					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k2", "v2").
+					AddRow(102, "pubmatic", "pubmatic", 0, -1, 0, 76, "k1", "v2")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -335,6 +410,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "FirstPartnerName",
 					"bidderCode":        "FirstBidder",
 					"isAlias":           "0",
+					"vendorId":          "152",
 				},
 				102: {
 					"k1":                "v1",
@@ -343,6 +419,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "SecondPartnerName",
 					"bidderCode":        "SecondBidder",
 					"isAlias":           "0",
+					"vendorId":          "100",
 				},
 			},
 			wantErr: false,
@@ -351,14 +428,14 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "accountId", "1234").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "accountId", "9876").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "pubId", "9999").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "pubId", "8888").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k1", "v1").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 152, "accountId", "1234").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 152, "accountId", "9876").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 152, "pubId", "9999").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 152, "pubId", "8888").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 152, "rev_share", "10").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k1", "v1").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -388,6 +465,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"sstimeout_test":    "350",
 					"testEnabled":       "1",
 					"isAlias":           "0",
+					"vendorId":          "76",
 				},
 				102: {
 					"k1":                "v1",
@@ -396,6 +474,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "SecondPartnerName",
 					"bidderCode":        "SecondBidder",
 					"isAlias":           "0",
+					"vendorId":          "100",
 				},
 			},
 			wantErr: false,
@@ -404,14 +483,14 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "accountId", "1234").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "sstimeout", "200").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 1, "sstimeout", "350").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "pubId", "8888").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k1", "v1").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "accountId", "1234").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "sstimeout", "200").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 1, 76, "sstimeout", "350").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "pubId", "8888").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k1", "v1").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -440,6 +519,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"bidderCode":        "FirstBidder",
 					"sstimeout":         "200",
 					"isAlias":           "0",
+					"vendorId":          "76",
 				},
 				102: {
 					"k1":                "v1",
@@ -448,6 +528,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "SecondPartnerName",
 					"bidderCode":        "SecondBidder",
 					"isAlias":           "1",
+					"vendorId":          "100",
 				},
 			},
 			wantErr: false,
@@ -456,13 +537,13 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "accountId", "1234").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, "sstimeout", "200").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "pubId", "8888").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, "k1", "v1").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, "k2", "v2")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "accountId", "1234").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "sstimeout", "200").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "pubId", "8888").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, 100, "k1", "v1").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, 100, "k2", "v2")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -490,6 +571,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"bidderCode":        "FirstBidder",
 					"sstimeout":         "200",
 					"isAlias":           "0",
+					"vendorId":          "76",
 				},
 				102: {
 					"k1":                "v1",
@@ -498,6 +580,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"prebidPartnerName": "SecondPartnerName",
 					"bidderCode":        "SecondBidder",
 					"isAlias":           "0",
+					"vendorId":          "100",
 				},
 			},
 			wantErr: false,
@@ -506,14 +589,14 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "keyName", "value"}).
-					AddRow(101, "-", "-", 0, 1, 0, "accountId", "1234").
-					AddRow(101, "-", "-", 0, 1, 0, "sstimeout", "200").
-					AddRow(101, "-", "-", 0, 1, 0, "pubId", "8888").
-					AddRow(101, "-", "-", 0, 3, 0, "pubId", "12345").
-					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, "rev_share", "10").
-					AddRow(102, "-", "-", 0, -1, 0, "k1", "v1").
-					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, "k2", "v2")
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "-", "-", 0, 1, 0, 76, "accountId", "1234").
+					AddRow(101, "-", "-", 0, 1, 0, 76, "sstimeout", "200").
+					AddRow(101, "-", "-", 0, 1, 0, 76, "pubId", "8888").
+					AddRow(101, "-", "-", 0, 3, 0, 76, "pubId", "12345").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
+					AddRow(102, "-", "-", 0, -1, 0, 100, "k1", "v1").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
 				return db
 			},

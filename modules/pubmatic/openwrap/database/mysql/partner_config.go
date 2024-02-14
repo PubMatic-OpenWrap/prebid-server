@@ -40,10 +40,10 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 	partnerConfigMap := make(map[int]map[string]string, 0)
 	for rows.Next() {
 		var (
-			keyName, value, prebidPartnerName, bidderCode string
-			partnerID, entityTypeID, testConfig, isAlias  int
+			keyName, value, prebidPartnerName, bidderCode          string
+			partnerID, entityTypeID, testConfig, isAlias, vendorID int
 		)
-		if err := rows.Scan(&partnerID, &prebidPartnerName, &bidderCode, &isAlias, &entityTypeID, &testConfig, &keyName, &value); err != nil {
+		if err := rows.Scan(&partnerID, &prebidPartnerName, &bidderCode, &isAlias, &entityTypeID, &testConfig, &vendorID, &keyName, &value); err != nil {
 			continue
 		}
 
@@ -65,6 +65,9 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 			partnerConfigMap[partnerID][models.PREBID_PARTNER_NAME] = prebidPartnerName
 			partnerConfigMap[partnerID][models.BidderCode] = bidderCode
 			partnerConfigMap[partnerID][models.IsAlias] = strconv.Itoa(isAlias)
+			if prebidPartnerName != models.BidderVASTBidder {
+				partnerConfigMap[partnerID][models.VENDORID] = strconv.Itoa(vendorID)
+			}
 		}
 	}
 

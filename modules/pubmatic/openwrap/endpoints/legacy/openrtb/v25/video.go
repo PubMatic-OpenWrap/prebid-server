@@ -221,7 +221,7 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 		}
 
 		if ifaType := GetValueFromRequest(values, redirectQueryParams, models.DeviceExtIfaType); ifaType != nil {
-			deviceExt.ExtDevice = &openrtb_ext.ExtDevice{
+			deviceExt.ExtDevice = openrtb_ext.ExtDevice{
 				IFAType: GetString(ifaType),
 			}
 		}

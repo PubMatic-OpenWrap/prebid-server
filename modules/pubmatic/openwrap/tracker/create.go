@@ -61,7 +61,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				PageURL:           rctx.PageURL,
 				Timestamp:         rctx.StartTime,
 				IID:               rctx.LoggerImpressionID,
-				Platform:          int(rctx.DevicePlatform),
+				Platform:          int(rctx.DeviceCtx.Platform),
 				SSAI:              rctx.SSAI,
 				ImpID:             bid.ImpID,
 				Origin:            rctx.Origin,
@@ -85,6 +85,10 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				dspId                                          int
 				eg, en                                         float64
 			)
+
+			if rctx.DeviceCtx.Ext != nil {
+				tracker.ATTS = rctx.DeviceCtx.Ext.ATTS
+			}
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
@@ -266,6 +270,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKDealID, partner.DealID)
 	if tracker.CustomDimensions != "" {
 		v.Set(models.TRKCustomDimensions, tracker.CustomDimensions)
+	}
+	if tracker.ATTS != nil {
+		v.Set(models.TRKATTS, strconv.Itoa(int(*tracker.ATTS)))
 	}
 	queryString := v.Encode()
 

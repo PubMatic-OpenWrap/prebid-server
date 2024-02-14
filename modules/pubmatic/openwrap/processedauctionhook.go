@@ -16,12 +16,17 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	result.ChangeSet = hookstage.ChangeSet[hookstage.ProcessedAuctionRequestPayload]{}
 
 	if len(moduleCtx.ModuleContext) == 0 {
-		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleProcessedAuctionHook()")
 		return result, nil
 	}
 	rctx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
-		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleProcessedAuctionHook()")
+		return result, nil
+	}
+
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
 

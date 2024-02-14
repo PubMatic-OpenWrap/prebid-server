@@ -33,7 +33,19 @@ func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidReque
 		return "", nil, nil, err
 	}
 
-	bidParams := adapters.PrepareVASTBidderParamJSON(&bidRequest, &imp, pubVASTTags, matchedSlotKeys, slotMap, adpodExt)
+	// NYC_TODO:
+	//setting flagmap
+	// bidderWrapper := &BidderWrapper{VASTagFlags: make(map[string]bool)}
+	// for _, key := range matchedSlotKeys {
+	// 	bidderWrapper.VASTagFlags[key] = false
+	// }
+	// impWrapper.Bidder[bidderCode] = bidderWrapper
+	var bidParams json.RawMessage
+	if imp.Video != nil {
+		bidParams = adapters.PrepareVASTBidderParamJSON(pubVASTTags, matchedSlotKeys, slotMap)
+	} else {
+		bidParams = nil
+	}
 
 	/*
 		Sample Values

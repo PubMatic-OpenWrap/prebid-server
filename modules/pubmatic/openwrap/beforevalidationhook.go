@@ -48,14 +48,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}()
 
-	// return prebid validation error
-	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
-		result.Reject = false
-		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
-		return result, nil
-	}
-
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" {
 		result.Reject = false
@@ -65,6 +57,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if rCtx.Endpoint == models.EndpointHybrid {
 		//TODO: Add bidder params fix
 		result.Reject = false
+		return result, nil
+	}
+
+	// return prebid validation error
+	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
+		result.Reject = false
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
 		return result, nil
 	}
 
@@ -79,7 +79,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -131,9 +133,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 	rCtx.Platform = platform
-	rCtx.DevicePlatform = GetDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
-	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
@@ -142,6 +143,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.PartnerConfigMap = newPartnerConfigMap
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
+
+	//TMax should be updated after ABTest processing
+	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
@@ -175,6 +179,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
+	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
@@ -340,19 +345,24 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderMeta[bidder].VASTTagFlags[bidder] = false
 			}
 
+			isAlias := false
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
 				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
 					rCtx.Aliases[bidderCode] = adapters.ResolveOWBidder(prebidPartnerName)
+					isAlias = true
 				}
 			}
 			if alias, ok := IsAlias(bidderCode); ok {
 				rCtx.Aliases[bidderCode] = alias
+				isAlias = true
 			}
 
-			if partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
+			if isAlias || partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
+			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
 
@@ -522,7 +532,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
-	validateDevice(bidRequest.Device)
+	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 
 	if bidRequest.User == nil {
 		bidRequest.User = &openrtb2.User{}
@@ -836,9 +846,9 @@ func getPageURL(bidRequest *openrtb2.BidRequest) string {
 func getVASTEventMacros(rctx models.RequestCtx) map[string]string {
 	macros := map[string]string{
 		string(models.MacroProfileID):           fmt.Sprintf("%d", rctx.ProfileID),
-		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayID),
+		string(models.MacroProfileVersionID):    fmt.Sprintf("%d", rctx.DisplayVersionID),
 		string(models.MacroUnixTimeStamp):       fmt.Sprintf("%d", rctx.StartTime),
-		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DevicePlatform),
+		string(models.MacroPlatform):            fmt.Sprintf("%d", rctx.DeviceCtx.Platform),
 		string(models.MacroWrapperImpressionID): rctx.LoggerImpressionID,
 	}
 
