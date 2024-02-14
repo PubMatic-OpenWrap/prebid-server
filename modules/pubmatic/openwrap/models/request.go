@@ -56,7 +56,8 @@ type BidderExtension struct {
 
 // ExtImpWrapper - Impression wrapper Extension
 type ExtImpWrapper struct {
-	Div string `json:"div,omitempty"`
+	AdServerURL string `json:"adserverurl,omitempty"`
+	Div         string `json:"div,omitempty"`
 }
 
 // ExtVideo structure to accept video specific more parameters like adpod

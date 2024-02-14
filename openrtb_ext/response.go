@@ -35,8 +35,9 @@ type ExtBidResponse struct {
 }
 
 type ExtWrapper struct {
-	ResponseFormat string `json:"responseformat,omitempty"`
-	RedirectURL    string `json:"redirecturl,omitempty"`
+	ResponseFormat   string            `json:"responseformat,omitempty"`
+	RedirectURL      string            `json:"redirecturl,omitempty"`
+	ImpToAdServerURL map[string]string `json:"imptoadserverurl,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug

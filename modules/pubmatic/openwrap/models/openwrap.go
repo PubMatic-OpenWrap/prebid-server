@@ -154,7 +154,7 @@ type ImpCtx struct {
 	AdpodConfig       *AdPod
 	ImpAdPodCfg       []*ImpAdPodConfig
 	BidIDToAPRC       map[string]int64
-
+	AdserverURL       string
 	//temp
 	BidderError string
 }

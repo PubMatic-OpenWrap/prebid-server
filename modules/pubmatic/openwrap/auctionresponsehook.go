@@ -294,11 +294,25 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
-		if len(rctx.ResponseFormat) > 0 && len(rctx.RedirectURL) > 0 {
+		if len(rctx.RedirectURL) > 0 {
 			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
 				ResponseFormat: rctx.ResponseFormat,
 				RedirectURL:    rctx.RedirectURL,
 			}
+		}
+
+		impToAdserverURL := make(map[string]string)
+		for _, impCtx := range rctx.ImpBidCtx {
+			if impCtx.AdserverURL != "" {
+				impToAdserverURL[impCtx.ImpID] = impCtx.AdserverURL
+			}
+		}
+
+		if len(impToAdserverURL) > 0 {
+			if responseExt.Wrapper == nil {
+				responseExt.Wrapper = &openrtb_ext.ExtWrapper{}
+			}
+			responseExt.Wrapper.ImpToAdServerURL = impToAdserverURL
 		}
 	}
 
