@@ -191,18 +191,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordCacheErrorRequests(arg0, arg1, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCacheErrorRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCacheErrorRequests), arg0, arg1, arg2)
 }
 
-// RecordCountry mocks base method.
-func (m *MockMetricsEngine) RecordCountry(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordCountry", arg0)
-}
-
-// RecordCountry indicates an expected call of RecordCountry.
-func (mr *MockMetricsEngineMockRecorder) RecordCountry(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCountry", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCountry), arg0)
-}
-
 // RecordCtvUaAccuracy mocks base method.
 func (m *MockMetricsEngine) RecordCtvUaAccuracy(arg0, arg1 string) {
 	m.ctrl.T.Helper()

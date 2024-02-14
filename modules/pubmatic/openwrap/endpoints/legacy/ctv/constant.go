@@ -7,15 +7,11 @@ const (
 	Ext = ".ext."
 	//ExtLen get api ext parameter length
 	ExtLen = len(Ext)
-)
 
-const (
 	// USD denotes currency USD
 	USD   = "USD"
 	Debug = "debug"
-)
 
-const (
 	BIDDER_KEY = "bidder"
 	PrebidKey  = "prebid"
 )

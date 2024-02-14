@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/endpoints/events"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/rs/vast"
@@ -191,39 +189,6 @@ func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid) (string, float64) {
 		return "", price
 	}
 	return bidAdM, price
-}
-
-func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
-	// adjusment: update bid.id with ctv module generated bid.id
-	creatives := events.FindCreatives(doc)
-	for _, creative := range creatives {
-		trackingEvents := creative.FindElements("TrackingEvents/Tracking")
-		// update bidid= value with ctv generated bid id for this bid
-		for _, trackingEvent := range trackingEvents {
-			u, e := url.Parse(trackingEvent.Text())
-			if e == nil {
-				values, e := url.ParseQuery(u.RawQuery)
-				// only do replacment if operId=8
-				if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
-					values.Set("bidid", bid.ID)
-				} else {
-					continue
-				}
-
-				//OTT-183: Fix
-				if values["operId"] != nil && values["operId"][0] == "8" {
-					operID := values.Get("operId")
-					values.Del("operId")
-					values.Add("_operId", operID) // _ (underscore) will keep it as first key
-				}
-
-				u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
-				// replace _operId with operId
-				u.RawQuery = strings.ReplaceAll(u.RawQuery, "_operId", "operId")
-				trackingEvent.SetText(u.String())
-			}
-		}
-	}
 }
 
 func addExtInfo(vastBytes []byte, responseExt json.RawMessage) []byte {

@@ -76,8 +76,7 @@ type Metrics struct {
 	ctvReqImpsWithReqConfigCount   *prometheus.CounterVec
 	adPodGeneratedImpressionsCount *prometheus.CounterVec
 	ctvReqCountWithAdPod           *prometheus.CounterVec
-
-	prebidCacheWriteTimer *prometheus.HistogramVec
+	cacheWriteTime                 *prometheus.HistogramVec
 }
 
 const (
@@ -113,7 +112,7 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
-	cacheWriteTimeBuckets := []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1}
+	cacheWriteTimeBuckets := []float64{10, 25, 50, 100}
 
 	// general metrics
 	metrics.panics = newCounter(cfg, promRegistry,
@@ -257,8 +256,8 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
 
-	metrics.prebidCacheWriteTimer = newHistogramVec(cfg, promRegistry,
-		"openwrap_write_time_seconds",
+	metrics.cacheWriteTime = newHistogramVec(cfg, promRegistry,
+		"cache_write_time",
 		"Seconds to write to Prebid Cache labeled by success or failure. Failure timing is limited by Prebid Server enforced timeouts.",
 		[]string{successLabel},
 		cacheWriteTimeBuckets)
@@ -590,7 +589,7 @@ func (m *Metrics) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publish
 func (m *Metrics) Shutdown() {}
 
 func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duration) {
-	m.prebidCacheWriteTimer.With(prometheus.Labels{
+	m.cacheWriteTime.With(prometheus.Labels{
 		successLabel: strconv.FormatBool(success),
-	}).Observe(length.Seconds())
+	}).Observe(float64(length.Milliseconds()))
 }
