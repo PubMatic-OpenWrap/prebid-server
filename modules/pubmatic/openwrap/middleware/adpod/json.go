@@ -27,16 +27,18 @@ var (
 )
 
 type adPodBid struct {
-	ID        string                `json:"id,omitempty"`
-	NBR       *openrtb3.NoBidReason `json:"nbr,omitempty"`
-	Targeting []map[string]string   `json:"targeting,omitempty"`
-	Error     string                `json:"error,omitempty"`
-	Ext       interface{}           `json:"ext,omitempty"`
+	ModifiedURL string                `json:"modifiedurl,omitempty"`
+	ID          string                `json:"id,omitempty"`
+	NBR         *openrtb3.NoBidReason `json:"nbr,omitempty"`
+	Targeting   []map[string]string   `json:"targeting,omitempty"`
+	Error       string                `json:"error,omitempty"`
+	Ext         interface{}           `json:"ext,omitempty"`
 }
 
 type bidResponseAdpod struct {
-	AdPodBids []*adPodBid `json:"adpods,omitempty"`
-	Ext       interface{} `json:"ext,omitempty"`
+	AdPodBids   []*adPodBid `json:"adpods,omitempty"`
+	Ext         interface{} `json:"ext,omitempty"`
+	RedirectURL string      `json:"redirect_url,omitempty"`
 }
 
 type jsonResponse struct {
@@ -44,7 +46,7 @@ type jsonResponse struct {
 	debug       string
 }
 
-func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
+func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWriter, requestMethod string) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
 		ContentType:    ApplicationJSON,
@@ -74,12 +76,12 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWr
 	}
 
 	var finalResponse []byte
-	finalResponse, statusCode = jr.getJsonResponse(bidResponse)
+	finalResponse, statusCode = jr.getJsonResponse(bidResponse, requestMethod)
 
 	return finalResponse, headers, statusCode
 }
 
-func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) ([]byte, int) {
+func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, requestMethod string) ([]byte, int) {
 	if bidResponse == nil {
 		return formJSONErrorResponse("", "empty bid response recieved", GetNoBidReasonCode(int(openrtb3.NoBidGeneralError)), nil, jr.debug), http.StatusOK
 	}
@@ -90,10 +92,14 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) ([]by
 		return formJSONErrorResponse("", "error in unmarshaling request extension, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), http.StatusInternalServerError
 	}
 
-	var responseFormat, redirectURL string
+	var (
+		responseFormat, redirectURL string
+		impToAdserverURL            = map[string]string{}
+	)
 	if reqExt.Wrapper != nil {
 		responseFormat = reqExt.Wrapper.ResponseFormat
 		redirectURL = reqExt.Wrapper.RedirectURL
+		impToAdserverURL = reqExt.Wrapper.ImpToAdServerURL
 		reqExt.Wrapper = nil
 	}
 	bidResponse.Ext, _ = json.Marshal(reqExt)
@@ -120,53 +126,15 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse) ([]by
 		}
 	}
 	adPodBids := formAdpodBids(bidArrayMap, jr.cacheClient)
-
+	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
+	formRedirectURL(&adpodResponse, requestMethod, redirectURL, impToAdserverURL)
 	if len(redirectURL) > 0 && responseFormat == models.ResponseFormatRedirect && jr.debug != "1" {
-		return getRedirectResponse(adPodBids, redirectURL), http.StatusFound
+		return []byte(adpodResponse.RedirectURL), http.StatusFound
 	}
 
-	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
 	response, _ := json.Marshal(adpodResponse)
 
 	return response, http.StatusOK
-}
-
-func getRedirectResponse(adpodBids []*adPodBid, redirectURL string) []byte {
-	if len(adpodBids) == 0 {
-		return []byte(redirectURL)
-	}
-
-	if len(adpodBids[0].Targeting) == 0 {
-		return []byte(redirectURL)
-	}
-
-	parsedURL, err := url.ParseRequestURI(redirectURL)
-	if err != nil {
-		return []byte(redirectURL)
-	}
-
-	redirectQuery := parsedURL.Query()
-	custParams, err := url.ParseQuery(strings.TrimSpace(redirectQuery.Get(models.CustParams)))
-	if err != nil {
-		return []byte(redirectURL)
-	}
-
-	for i, target := range adpodBids[0].Targeting {
-		sNo := i + 1
-		for _, tk := range redirectTargetingKeys {
-			targetingKey := prepareSlotLevelKey(sNo, tk)
-			if value, ok := target[targetingKey]; ok {
-				custParams.Set(targetingKey, value)
-			}
-		}
-	}
-
-	redirectQuery.Set(models.CustParams, custParams.Encode())
-	parsedURL.RawQuery = redirectQuery.Encode()
-
-	rURL := parsedURL.String()
-
-	return []byte(rURL)
 }
 
 func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) []*adPodBid {
@@ -201,6 +169,7 @@ func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) [
 		if len(targetings) > 0 {
 			adpodBid.Targeting = targetings
 		}
+
 		adpodBids = append(adpodBids, adpodBid)
 	}
 
@@ -276,4 +245,68 @@ func formJSONErrorResponse(id string, errMessage string, nbr *openrtb3.NoBidReas
 
 	responseBytes, _ := json.Marshal(response)
 	return responseBytes
+}
+
+func formRedirectURL(response *bidResponseAdpod, requestMethod, owRedirectURL string, impToAdserverURL map[string]string) {
+
+	if requestMethod == http.MethodPost {
+		for _, adPodBid := range response.AdPodBids {
+			adServerURL, ok := impToAdserverURL[adPodBid.ID]
+			if !ok {
+				continue
+			}
+			adPodBid.ModifiedURL = updateAdServerURL(adPodBid, adServerURL)
+		}
+		return
+	}
+
+	if owRedirectURL == "" {
+		return
+	}
+
+	if len(response.AdPodBids) != 1 {
+		// There should be just one AdPod here because we only allow single impression in GET requests
+		return
+	}
+
+	modifiedURL := updateAdServerURL(response.AdPodBids[0], owRedirectURL)
+	if modifiedURL == "" {
+		return
+	}
+	response.AdPodBids[0].ModifiedURL = modifiedURL
+	response.RedirectURL = modifiedURL
+}
+
+func updateAdServerURL(adPodBid *adPodBid, adServerURL string) string {
+	redirectURL, err := url.ParseRequestURI(strings.TrimSpace(adServerURL))
+	if err != nil {
+		return ""
+	}
+
+	if len(adPodBid.Targeting) == 0 {
+		// This is if there are no valid bids
+		return redirectURL.String()
+	}
+
+	redirectQuery := redirectURL.Query()
+	cursParams, err := url.ParseQuery(strings.TrimSpace(redirectQuery.Get(models.CustParams)))
+	if err != nil {
+		return ""
+	}
+
+	for i, target := range adPodBid.Targeting {
+		sNo := i + 1
+
+		for _, tk := range redirectTargetingKeys {
+			targetingKey := prepareSlotLevelKey(sNo, tk)
+			if value, ok := target[targetingKey]; ok {
+				cursParams.Set(targetingKey, value)
+			}
+		}
+	}
+
+	redirectQuery.Set(models.CustParams, cursParams.Encode())
+	redirectURL.RawQuery = redirectQuery.Encode()
+
+	return redirectURL.String()
 }

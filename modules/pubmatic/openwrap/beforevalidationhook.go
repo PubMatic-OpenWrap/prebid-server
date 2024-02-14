@@ -460,7 +460,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for bidder, meta := range bidderMeta {
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
-
+		adserverURL := ""
+		if impExt.Wrapper != nil {
+			adserverURL = impExt.Wrapper.AdServerURL
+		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -489,6 +492,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				AdpodConfig:       adpodConfig,
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
+				AdserverURL:       adserverURL,
 			}
 		}
 

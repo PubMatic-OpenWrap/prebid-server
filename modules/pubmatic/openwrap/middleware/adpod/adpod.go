@@ -108,7 +108,7 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 		cacheClient: a.cacheClient,
 		debug:       r.URL.Query().Get(models.Debug),
 	}
-	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter)
+	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter, http.MethodPost)
 
 	SetCORSHeaders(w, r)
 	for k, v := range headers {
@@ -139,7 +139,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 		cacheClient: a.cacheClient,
 		debug:       r.URL.Query().Get(models.Debug),
 	}
-	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter)
+	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter, http.MethodGet)
 
 	SetCORSHeaders(w, r)
 	if statusCode == http.StatusFound {
