@@ -994,7 +994,7 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("analytics.pubstack.enabled", true)
 	v.SetDefault("analytics.pubstack.configuration_refresh_delay", "2h")
 	v.SetDefault("analytics.pubstack.buffers.size", "2MB")
-	v.SetDefault("analytics.pubstack.buffers.count", 2)
+	v.SetDefault("analytics.pubstack.buffers.count", 5)
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
 	v.BindEnv("gdpr.default_value")
