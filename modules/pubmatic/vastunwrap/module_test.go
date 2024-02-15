@@ -53,15 +53,15 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 			},
 				TrafficPercentage: 2}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
-						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
+						r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
 						return r
 					}(),
 				}},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 		},
 		{
 			name: "Vast unwrap is disabled in the config",
@@ -78,7 +78,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				payload: hookstage.EntrypointPayload{
 					Request: func() *http.Request {
 						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
-						r, _ := http.NewRequestWithContext(ctx, "", "", nil)
+						r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
 						return r
 					}(),
 				}},
@@ -111,10 +111,11 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 		cfg VastUnwrapModule
 	}
 	type args struct {
-		in0     context.Context
-		miCtx   hookstage.ModuleInvocationContext
-		payload hookstage.RawBidderResponsePayload
-		wantAdM bool
+		in0          context.Context
+		miCtx        hookstage.ModuleInvocationContext
+		payload      hookstage.RawBidderResponsePayload
+		wantAdM      bool
+		randomNumber int
 	}
 	tests := []struct {
 		name          string
@@ -134,9 +135,9 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				TrafficPercentage: 2}},
+				TrafficPercentage: 100}},
 			args: args{
-				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				payload: hookstage.RawBidderResponsePayload{
 					Bids: []*adapters.TypedBid{
 						{
@@ -153,7 +154,8 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				wantAdM: true,
+				wantAdM:      true,
+				randomNumber: 10,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0")
@@ -205,11 +207,15 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+			getRandomNumber = func() int {
+				return tt.args.randomNumber
+			}
 			m := VastUnwrapModule{
-				Cfg:           tt.fields.cfg.Cfg,
-				Enabled:       tt.fields.cfg.Enabled,
-				MetricsEngine: mockMetricsEngine,
-				unwrapRequest: tt.unwrapRequest,
+				Cfg:               tt.fields.cfg.Cfg,
+				Enabled:           tt.fields.cfg.Enabled,
+				MetricsEngine:     mockMetricsEngine,
+				unwrapRequest:     tt.unwrapRequest,
+				TrafficPercentage: tt.fields.cfg.TrafficPercentage,
 			}
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
