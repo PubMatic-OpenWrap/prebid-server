@@ -168,7 +168,6 @@ type PartnerData struct {
 	KGPV             string
 	IsRegex          bool
 	Params           json.RawMessage
-	VASTTagFlag      bool
 	VASTTagFlags     map[string]bool
 }
 

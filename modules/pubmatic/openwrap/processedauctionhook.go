@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod/impressions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -44,6 +45,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 				result.Warnings = append(result.Warnings, errs[i].Error())
 			}
 		}
+		adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
 	}
 
 	ip := rctx.IP

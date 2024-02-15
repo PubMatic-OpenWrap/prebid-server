@@ -428,10 +428,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderMeta[bidderCode] = meta
 			}
 
-			for _, key := range matchedSlotKeysVAST {
-				bidderMeta[bidderCode].VASTTagFlags[key] = false
-			}
-
 			isAlias := false
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
 				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
