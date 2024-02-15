@@ -925,7 +925,7 @@ func (de *DeviceExt) Clone() *DeviceExt {
 
 	if de.prebid != nil {
 		clonedPrebid := *de.prebid
-		if clonedPrebid.Interstitial != nil {
+		if clonedPrebid.Interstitial != nil && de.prebid.Interstitial != nil {
 			clonedInterstitial := *de.prebid.Interstitial
 			clonedPrebid.Interstitial = &clonedInterstitial
 		}

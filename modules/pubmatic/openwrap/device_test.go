@@ -497,6 +497,7 @@ func TestAmendDeviceObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			amendDeviceObject(tt.args.device, tt.args.dvc)
+			assert.Equal(t, tt.args.device, tt.want, "mismatched device object")
 		})
 	}
 }
