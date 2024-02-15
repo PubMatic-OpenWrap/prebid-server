@@ -1075,7 +1075,6 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 	}
 }
 
-
 func TestPrepareBidParamJSONForPartnerGumGum(t *testing.T) {
 	type args struct {
 		reqID       string
