@@ -54,7 +54,7 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("adpod config row scan failed for profile %d with versionID %d", profileID, displayVersion)
+		glog.Errorf("adpod config row scan failed for publisher %d having profile %d with versionID %d", pubID, profileID, displayVersion)
 	}
 
 	return config, nil
