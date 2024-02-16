@@ -27,7 +27,9 @@ var (
 	ctvRegex                    *regexp.Regexp
 )
 
-const test = "_test"
+const (
+	test = "_test"
+)
 
 func init() {
 	widthRegEx = regexp.MustCompile(models.MACRO_WIDTH)
