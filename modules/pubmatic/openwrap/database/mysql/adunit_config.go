@@ -31,7 +31,7 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	adunitConfig := &adunitconfig.AdUnitConfig{}
 	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
 	if err != nil {
-		return nil, adunitconfig.ErrAdUnitUnmarshal
+		return nil, err
 	}
 
 	for k, v := range adunitConfig.Config {

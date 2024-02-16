@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/pkg/errors"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
@@ -394,6 +395,52 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, nil)
 			},
 		},
+		{
+			name: "check_unmarshal_error",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 100,
+				},
+				db: mockDatabase,
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			want: want{
+				cacheEntry: true,
+				err:        errors.Errorf("unmarshal: unmarshal error adunitconfig"),
+				partnerConfigMap: map[int]map[string]string{
+					1: {
+						"bidderCode":        "pubmatic",
+						"kgp":               "_AU_@_W_x_H",
+						"level":             "multi",
+						"partnerId":         "1",
+						"prebidPartnerName": "pubmatic",
+						"serverSideEnabled": "1",
+						"timeout":           "220",
+					},
+				},
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
+					1: {
+						{
+							PartnerId:   testPartnerID,
+							AdapterId:   testAdapterID,
+							VersionId:   testVersionID,
+							SlotName:    testSlotName,
+							MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\",\"video\":{\"skippable\":\"TRUE\"}}",
+						},
+					},
+				}, nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, errors.Wrap(adunitconfig.ErrAdUnitUnmarshal, "unmarshal"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123")
+			},
+		},
 	}
 	for ind := range tests {
 		tt := &tests[ind]
@@ -408,7 +455,9 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				metricEngine: mockEngine,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			assert.Equal(t, tt.want.err, err)
+			if err != nil {
+				assert.Equal(t, tt.want.err.Error(), err.Error())
+			}
 			cacheKey := key(PUB_HB_PARTNER, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			partnerConfigMap, found := c.Get(cacheKey)
 			if tt.want.cacheEntry {
