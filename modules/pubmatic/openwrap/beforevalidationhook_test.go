@@ -3159,7 +3159,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			},
 		},
 		{
-			name: "default_impctx_if_TagID_not_present_in_imp",
+			name: "empty_impctx_if_TagID_not_present_in_imp",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
@@ -3203,7 +3203,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			},
 		},
 		{
-			name: "default_impctx_if_imp_ext_parse_fails",
+			name: "empty_impctx_if_imp_ext_parse_fails",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
