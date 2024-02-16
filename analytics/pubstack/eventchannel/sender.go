@@ -3,10 +3,11 @@ package eventchannel
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/glog"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/golang/glog"
 )
 
 type Sender = func(payload []byte) error
@@ -40,6 +41,6 @@ func BuildEndpointSender(client *http.Client, baseUrl string, module string) Sen
 	if err != nil {
 		glog.Error(err)
 	}
-	endpoint.Path = path.Join(endpoint.Path, "intake", module)
+	endpoint.Path = path.Join(endpoint.Path)
 	return NewHttpSender(client, endpoint.String())
 }
