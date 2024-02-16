@@ -52,19 +52,19 @@ func (mr *MockCacheMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), arg0)
 }
 
-// GetAdpodConfigs mocks base method.
-func (m *MockCache) GetAdpodConfigs(arg0, arg1, arg2 int) (*adpodconfig.AdpodConfig, error) {
+// GetAdpodConfig mocks base method.
+func (m *MockCache) GetAdpodConfig(arg0, arg1, arg2 int) (*adpodconfig.AdpodConfig, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdpodConfigs", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetAdpodConfig", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*adpodconfig.AdpodConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAdpodConfigs indicates an expected call of GetAdpodConfigs.
-func (mr *MockCacheMockRecorder) GetAdpodConfigs(arg0, arg1, arg2 interface{}) *gomock.Call {
+// GetAdpodConfig indicates an expected call of GetAdpodConfig.
+func (mr *MockCacheMockRecorder) GetAdpodConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdpodConfigs", reflect.TypeOf((*MockCache)(nil).GetAdpodConfigs), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdpodConfig", reflect.TypeOf((*MockCache)(nil).GetAdpodConfig), arg0, arg1, arg2)
 }
 
 // GetAdunitConfigFromCache mocks base method.

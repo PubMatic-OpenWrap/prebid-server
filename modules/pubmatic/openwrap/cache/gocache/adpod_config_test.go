@@ -57,7 +57,7 @@ func TestCachePopulateCacheWithAdpodConfig(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetAdpodConfigs(testProfileID, testVersionID).Return(&adpodconfig.AdpodConfig{
+				mockDatabase.EXPECT().GetAdpodConfig(testPubID, testProfileID, testVersionID).Return(&adpodconfig.AdpodConfig{
 					Dynamic: []adpodconfig.Dynamic{
 						{
 							MinDuration: 10,
@@ -144,7 +144,7 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 			setup: func(ctrl *gomock.Controller, cache *gocache.Cache) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
 				mockDatabase := mock_database.NewMockDatabase(ctrl)
 				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockDatabase.EXPECT().GetAdpodConfigs(testProfileID, testVersionID).Return(&adpodconfig.AdpodConfig{
+				mockDatabase.EXPECT().GetAdpodConfig(testPubID, testProfileID, testVersionID).Return(&adpodconfig.AdpodConfig{
 					Dynamic: []adpodconfig.Dynamic{
 						{
 							MinDuration: 10,
@@ -185,7 +185,7 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 			setup: func(ctrl *gomock.Controller, cache *gocache.Cache) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
 				mockDatabase := mock_database.NewMockDatabase(ctrl)
 				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockDatabase.EXPECT().GetAdpodConfigs(testProfileID, testVersionID).Return(nil, nil)
+				mockDatabase.EXPECT().GetAdpodConfig(testPubID, testProfileID, testVersionID).Return(nil, nil)
 				return mockDatabase, mockEngine
 			},
 			want:    nil,
@@ -296,7 +296,7 @@ func TestCacheGetAdpodConfigs(t *testing.T) {
 			}
 			c.db, c.metricEngine = tt.setup(ctrl, c.cache)
 
-			got, err := c.GetAdpodConfigs(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			got, err := c.GetAdpodConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cache.GetAdpodConfigs() error = %v, wantErr %v", err, tt.wantErr)
 				return

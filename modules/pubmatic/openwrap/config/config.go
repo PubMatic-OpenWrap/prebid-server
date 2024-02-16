@@ -57,7 +57,6 @@ type Queries struct {
 	GetAllDspFscPcntQuery             string
 	GetTBFRateQuery                   string
 	GetAdpodConfig                    string
-	GetAdpodConfigForLiveVersion      string
 }
 
 type Cache struct {

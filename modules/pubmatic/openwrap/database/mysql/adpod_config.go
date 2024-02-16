@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"strings"
 	"time"
 
@@ -12,19 +11,16 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adpodconfig"
 )
 
-func (db *mySqlDB) GetAdpodConfigs(profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
-	adpodConfigQuery := db.cfg.Queries.GetAdpodConfig
-	if displayVersion == 0 {
-		adpodConfigQuery = db.cfg.Queries.GetAdpodConfigForLiveVersion
+func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
+	versionID, displayVersion, err := db.getVersionID(profileID, displayVersion, pubID)
+	if err != nil {
+		return nil, err
 	}
-
-	adpodConfigQuery = strings.Replace(adpodConfigQuery, profileIdKey, strconv.Itoa(profileID), -1)
-	adpodConfigQuery = strings.Replace(adpodConfigQuery, displayVersionKey, strconv.Itoa(displayVersion), -1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, adpodConfigQuery)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, versionID)
 	if err != nil {
 		return nil, err
 	}

@@ -16,5 +16,5 @@ type Database interface {
 	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
 	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
-	GetAdpodConfigs(profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
+	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 }

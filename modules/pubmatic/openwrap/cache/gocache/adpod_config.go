@@ -8,7 +8,7 @@ import (
 )
 
 func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion int) (err error) {
-	adpodConfig, err := c.db.GetAdpodConfigs(profileID, displayVersion)
+	adpodConfig, err := c.db.GetAdpodConfig(pubID, profileID, displayVersion)
 	if err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion in
 }
 
 // GetAdpodConfig this function gets adunit config from cache for a given request
-func (c *cache) GetAdpodConfigs(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
+func (c *cache) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
 	var adpodConfig *adpodconfig.AdpodConfig
 
 	cacheKey := key(PubAdpodConfig, pubID, profileID, displayVersion)
