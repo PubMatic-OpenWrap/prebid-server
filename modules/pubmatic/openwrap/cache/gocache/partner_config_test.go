@@ -396,7 +396,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			},
 		},
 		{
-			name: "check_unmarshal_error",
+			name: "Failed to unmarshal adunitConfig",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				cfg: config.Cache{
