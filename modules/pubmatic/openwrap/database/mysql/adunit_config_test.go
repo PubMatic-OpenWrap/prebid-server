@@ -140,7 +140,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				displayVersion: 0,
 			},
 			want:    nil,
-			wantErr: fmt.Errorf("unexpected end of JSON input"),
+			wantErr: fmt.Errorf("unexpected end of JSON input: ErrAdUnitUnmarshal"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -256,7 +256,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				displayVersion: 1,
 			},
 			want:    nil,
-			wantErr: fmt.Errorf("json: cannot unmarshal string into Go struct field Banner.config.banner.enabled of type bool"),
+			wantErr: fmt.Errorf("json: cannot unmarshal string into Go struct field Banner.config.banner.enabled of type bool: ErrAdUnitUnmarshal"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {

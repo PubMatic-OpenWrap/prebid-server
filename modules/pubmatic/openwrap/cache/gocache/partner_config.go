@@ -2,10 +2,10 @@ package gocache
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
@@ -88,9 +88,10 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		res, _ := regexp.MatchString("unmarshal", errAdunitConfig.Error())
-		if res {
-			queryType = models.AdUnitFailUnmarshal
+		if cause := errors.Cause(errAdunitConfig); cause != nil {
+			if cause.Error() == "ErrAdUnitUnmarshal" {
+				queryType = models.AdUnitFailUnmarshal
+			}
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		err = models.ErrorWrap(err, errAdunitConfig)
