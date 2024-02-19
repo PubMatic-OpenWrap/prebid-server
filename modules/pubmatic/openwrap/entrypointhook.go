@@ -53,16 +53,16 @@ func (m OpenWrap) handleEntrypointHook(
 	if queryParams.Get("sshb") == "1" {
 		return result, nil
 	}
-
-	requestExtWrapper, err = GetRequestWrapper(payload, result)
 	endpoint = GetEndpoint(payload.Request.URL.Path, source)
 	if endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
+
 	// init default for all modules
 	result.Reject = true
 
+	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestWrapperExtension
 		result.Errors = append(result.Errors, err.Error())
@@ -134,18 +134,27 @@ func (m OpenWrap) handleEntrypointHook(
 	result.Reject = false
 	return result, nil
 }
-func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestExtWrapper, error) {
-	requestExtWrapper, err := models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	if err != nil {
+
+func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
+	var requestExtWrapper models.RequestExtWrapper
+	var err error
+	switch endpoint {
+	case models.EndpointWebS2S:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		if err != nil {
-			requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
-			//update this code once we fully support modular code for all endpoint
-			if err != nil {
-				requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
-			}
-		}
+	case models.EndpointV25:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpintInappVideo:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+	case models.EndpointAMP:
+		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+	case models.EndpointVideo:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointVAST:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointJson:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	}
+
 	return requestExtWrapper, err
 }
 
@@ -165,7 +174,7 @@ func GetEndpoint(path, source string) string {
 	case OpenWrapV25:
 		return models.EndpointV25
 	case OpenWrapV25Video:
-		return models.EndpointVideo
+		return models.EndpintInappVideo
 	case OpenWrapAmp:
 		return models.EndpointAMP
 	case OpenWrapOpenRTBVideo:
