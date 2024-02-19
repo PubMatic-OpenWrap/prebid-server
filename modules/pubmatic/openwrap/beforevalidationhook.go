@@ -338,6 +338,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				return result, nil
 			}
+
+			//Adding default durations for CTV Test requests
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
+				adpodConfig.VideoAdDuration = []int{5, 10}
+			}
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
+				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+			}
+
 			if err := adpod.Validate(adpodConfig); err != nil {
 				result.NbrCode = nbr.InvalidAdpodConfig
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
