@@ -1052,7 +1052,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				DealTierSatisfied: bid.DealTierSatisfied,
 				GeneratedBidID:    bid.GeneratedBidID,
 				TargetBidderCode:  bid.TargetBidderCode,
-				OriginalBidCPMUSD: bid.OriginalBidCPM,
+				OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
 				BidMeta:           bid.BidMeta,
 				BidType:           bid.BidType,
 				BidTargets:        bid.BidTargets,
