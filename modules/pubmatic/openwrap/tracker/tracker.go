@@ -27,7 +27,9 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 	}
 
 	if rCtx.DeviceCtx.Ext != nil {
-		tracker.ATTS = rCtx.DeviceCtx.Ext.ATTS
+		if val, ok := rCtx.DeviceCtx.Ext.GetAtts(); ok {
+			tracker.ATTS = &val
+		}
 	}
 
 	constructedURLString := constructTrackerURL(rCtx, tracker)
