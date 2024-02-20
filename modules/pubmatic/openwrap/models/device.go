@@ -1,6 +1,9 @@
 package models
 
-import "github.com/prebid/prebid-server/openrtb_ext"
+import (
+	"encoding/json"
+	"strings"
+)
 
 const (
 	//Device.DeviceType values as per OpenRTB-API-Specification-Version-2-5
@@ -56,8 +59,96 @@ const (
 	DeviceIFATypeSESSIONID = "sessionid"
 )
 
+// device.ext related keys
+const (
+	ExtDeviceIFAType   = "ifa_type"
+	ExtDeviceSessionID = "session_id"
+	ExtDeviceAtts      = "atts"
+)
+
+// ExtDevice will store device.ext parameters
 type ExtDevice struct {
-	openrtb_ext.ExtDevice
-	SessionID string `json:"session_id,omitempty"`
-	IDFV      string `json:"idfv,omitempty"`
+	data map[string]any
+}
+
+func NewExtDevice() *ExtDevice {
+	return &ExtDevice{
+		data: make(map[string]any),
+	}
+}
+
+func (e *ExtDevice) UnmarshalJSON(data []byte) error {
+	var intermediate map[string]interface{}
+	if err := json.Unmarshal(data, &intermediate); err != nil {
+		return err
+	}
+	e.data = intermediate
+	return nil
+}
+
+func (e *ExtDevice) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.data)
+}
+
+func (e *ExtDevice) getStringValue(key string) (value string, found bool) {
+	if e.data == nil {
+		return value, found
+	}
+	val, found := e.data[key]
+	if !found {
+		return "", found
+	}
+	value, found = val.(string)
+	return strings.TrimSpace(value), found
+}
+
+func (e *ExtDevice) GetIFAType() (value string, found bool) {
+	return e.getStringValue(ExtDeviceIFAType)
+}
+
+func (e *ExtDevice) GetSessionID() (value string, found bool) {
+	return e.getStringValue(ExtDeviceSessionID)
+}
+
+func (e *ExtDevice) getFloatValue(key string) (value float64, found bool) {
+	if e.data == nil {
+		return value, found
+	}
+	val, found := e.data[key]
+	if !found {
+		return 0, found
+	}
+	value, found = val.(float64)
+	return value, found
+}
+
+func (e *ExtDevice) GetAtts() (value *float64, found bool) {
+	val, ok := e.getFloatValue(ExtDeviceAtts)
+	if !ok {
+		return nil, ok
+	}
+	return &val, ok
+}
+
+func (e *ExtDevice) setStringValue(key, value string) {
+	if e.data == nil {
+		e.data = make(map[string]any)
+	}
+	e.data[key] = value
+}
+
+func (e *ExtDevice) SetIFAType(ifaType string) {
+	e.setStringValue(ExtDeviceIFAType, ifaType)
+}
+
+func (e *ExtDevice) SetSessionID(sessionID string) {
+	e.setStringValue(ExtDeviceSessionID, sessionID)
+}
+
+func (e *ExtDevice) DeleteIFAType() {
+	delete(e.data, ExtDeviceIFAType)
+}
+
+func (e *ExtDevice) DeleteSessionID() {
+	delete(e.data, ExtDeviceSessionID)
 }
