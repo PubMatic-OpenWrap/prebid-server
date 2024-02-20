@@ -76,9 +76,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
-	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
+	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
+
+	// todo: if platform == in-app
+	// todo: rctx.DisplayVersionID or seperate cache and make it ttl 30 min
+	if newRctx, ok := ow.getCachedRequest(rCtx); ok {
+		result.Warnings = append(result.Warnings, "using cached request context")
+		result.ModuleContext["rctx"] = newRctx
+		return result, nil
+	}
+	defer m.cacheRequest(rCtx)
+
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
