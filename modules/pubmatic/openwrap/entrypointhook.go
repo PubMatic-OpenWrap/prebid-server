@@ -139,20 +139,18 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	var requestExtWrapper models.RequestExtWrapper
 	var err error
 	switch endpoint {
-	case models.EndpointWebS2S:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-	case models.EndpointV25:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpintInappVideo:
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 	case models.EndpointAMP:
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
-	case models.EndpointVideo:
+	case models.EndpointV25:
+		fallthrough
+	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case models.EndpointVAST:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case models.EndpointJson:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointWebS2S:
+		fallthrough
+	default:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 	}
 
 	return requestExtWrapper, err
