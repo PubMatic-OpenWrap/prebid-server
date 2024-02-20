@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
@@ -526,6 +527,151 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				got.ModuleContext["rctx"] = gotRctx
 			}
 			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func TestGetRequestWrapper(t *testing.T) {
+	type args struct {
+		payload  hookstage.EntrypointPayload
+		result   hookstage.HookResult[hookstage.EntrypointPayload]
+		endpoint string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    models.RequestExtWrapper
+		wantErr bool
+	}{
+		{
+			name: "EndpointWebS2S",
+			args: args{
+				payload: hookstage.EntrypointPayload{
+					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1},"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100,"versionid":2}}}}}}`),
+				},
+				result:   hookstage.HookResult[hookstage.EntrypointPayload]{},
+				endpoint: models.EndpointWebS2S,
+			},
+			want: models.RequestExtWrapper{
+				SSAuctionFlag: -1,
+				ProfileId:     100,
+				VersionId:     2,
+			},
+			wantErr: false,
+		},
+		{
+			name: "EndpointV25",
+			args: args{
+				payload: hookstage.EntrypointPayload{
+					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1},"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100,"versionid":2}}}}}}`),
+				},
+				result:   hookstage.HookResult[hookstage.EntrypointPayload]{},
+				endpoint: models.EndpointV25,
+			},
+			want: models.RequestExtWrapper{
+				SSAuctionFlag: -1,
+				ProfileId:     5890,
+				VersionId:     1,
+			},
+		},
+		//TODO: Add test cases for other endpoints after migration(AMP, Video, VAST, JSON, InappVideo)
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetRequestWrapper(tt.args.payload, tt.args.result, tt.args.endpoint)
+			assert.Equal(t, err != nil, tt.wantErr)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetEndpoint(t *testing.T) {
+	type args struct {
+		path   string
+		source string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "EndpointAuction Activation",
+			args: args{
+				path:   hookexecution.EndpointAuction,
+				source: "pbjs",
+			},
+			want: models.EndpointWebS2S,
+		},
+		{
+			name: "EndpointAuction inapp",
+			args: args{
+				path:   hookexecution.EndpointAuction,
+				source: "owsdk",
+			},
+			want: models.EndpointV25,
+		},
+		{
+			name: "EndpointAuction default",
+			args: args{
+				path: hookexecution.EndpointAuction,
+			},
+			want: models.EndpointHybrid,
+		},
+		{
+			name: "OpenWrapAuction",
+			args: args{
+				path: OpenWrapAuction,
+			},
+			want: models.EndpointHybrid,
+		},
+		{
+			name: "OpenWrapV25",
+			args: args{
+				path: OpenWrapV25,
+			},
+			want: models.EndpointV25,
+		},
+		{
+			name: "OpenWrapV25Video",
+			args: args{
+				path: OpenWrapV25Video,
+			},
+			want: models.EndpintInappVideo,
+		},
+		{
+			name: "OpenWrapAmp",
+			args: args{
+				path: OpenWrapAmp,
+			},
+			want: models.EndpointAMP,
+		},
+		{
+			name: "OpenWrapOpenRTBVideo",
+			args: args{
+				path: OpenWrapOpenRTBVideo,
+			},
+			want: models.EndpointVideo,
+		},
+		{
+			name: "OpenWrapVAST",
+			args: args{
+				path: OpenWrapVAST,
+			},
+			want: models.EndpointVAST,
+		},
+		{
+			name: "OpenWrapJSON",
+			args: args{
+				path: OpenWrapJSON,
+			},
+			want: models.EndpointJson,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetEndpoint(tt.args.path, tt.args.source)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

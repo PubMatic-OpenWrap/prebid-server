@@ -40,7 +40,7 @@ func handleEntrypointHook(
 		}
 	} else {
 		endpoint := openwrap.GetEndpoint(payload.Request.URL.Path, source)
-		requestExtWrapper, _ := openwrap.GetRequestWrapper(payload, result)
+		requestExtWrapper, _ := openwrap.GetRequestWrapper(payload, result, endpoint)
 		vastRequestContext = models.RequestCtx{
 			ProfileID: requestExtWrapper.ProfileId,
 			DisplayID: requestExtWrapper.VersionId,
