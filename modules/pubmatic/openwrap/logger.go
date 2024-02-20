@@ -9,24 +9,29 @@ import (
 )
 
 func getIncomingSlots(imp openrtb2.Imp) []string {
-	sizes := []string{}
+	sizes := map[string]struct{}{}
 	if imp.Banner == nil && imp.Video == nil && imp.Native != nil {
 		return []string{"1x1"}
 	}
 	if imp.Banner != nil {
 		if imp.Banner.W != nil && imp.Banner.H != nil {
-			sizes = append(sizes, fmt.Sprintf("%dx%d", *imp.Banner.W, *imp.Banner.H))
+			sizes[fmt.Sprintf("%dx%d", *imp.Banner.W, *imp.Banner.H)] = struct{}{}
 		}
 
 		for _, format := range imp.Banner.Format {
-			sizes = append(sizes, fmt.Sprintf("%dx%d", format.W, format.H))
+			sizes[fmt.Sprintf("%dx%d", format.W, format.H)] = struct{}{}
 		}
 	}
 
 	if imp.Video != nil {
-		sizes = append(sizes, fmt.Sprintf("%dx%dv", imp.Video.W, imp.Video.H))
+		sizes[fmt.Sprintf("%dx%dv", imp.Video.W, imp.Video.H)] = struct{}{}
 	}
-	return sizes
+
+	var s []string
+	for k := range sizes {
+		s = append(s, k)
+	}
+	return s
 }
 
 func getDefaultImpBidCtx(request openrtb2.BidRequest) map[string]models.ImpCtx {

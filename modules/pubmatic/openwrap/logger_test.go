@@ -1,11 +1,11 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_getIncomingSlots(t *testing.T) {
@@ -116,12 +116,30 @@ func Test_getIncomingSlots(t *testing.T) {
 			},
 			want: []string{"300x250", "400x300", "300x250v"},
 		},
+		{
+			name: "duplicate_slot",
+			args: args{
+				imp: openrtb2.Imp{
+					ID: "1",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
+						Format: []openrtb2.Format{
+							{
+								W: 300,
+								H: 250,
+							},
+						},
+					},
+				},
+			},
+			want: []string{"300x250"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getIncomingSlots(tt.args.imp); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getIncomingSlots() = %v, want %v", got, tt.want)
-			}
+			slots := getIncomingSlots(tt.args.imp)
+			assert.ElementsMatch(t, tt.want, slots, "mismatched slots")
 		})
 	}
 }
