@@ -199,9 +199,7 @@ func (wlog *WloggerRecord) logDeviceObject(dvc *models.DeviceCtx) {
 	wlog.Device.Platform = dvc.Platform
 	wlog.Device.IFAType = dvc.IFATypeID
 	if dvc.Ext != nil {
-		if val, ok := dvc.Ext.GetAtts(); ok {
-			wlog.record.Device.ATTS = &val
-		}
+		wlog.record.Device.ATTS, _ = dvc.Ext.GetAtts()
 	}
 }
 

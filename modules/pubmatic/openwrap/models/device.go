@@ -71,8 +71,10 @@ type ExtDevice struct {
 	data map[string]any
 }
 
-func (e *ExtDevice) Init() {
-	e.data = make(map[string]any)
+func NewExtDevice() *ExtDevice {
+	return &ExtDevice{
+		data: make(map[string]any),
+	}
 }
 
 func (e *ExtDevice) UnmarshalJSON(data []byte) error {
@@ -120,8 +122,12 @@ func (e *ExtDevice) getFloatValue(key string) (value float64, found bool) {
 	return value, found
 }
 
-func (e *ExtDevice) GetAtts() (value float64, found bool) {
-	return e.getFloatValue(ExtDeviceAtts)
+func (e *ExtDevice) GetAtts() (value *float64, found bool) {
+	val, ok := e.getFloatValue(ExtDeviceAtts)
+	if !ok {
+		return nil, ok
+	}
+	return &val, ok
 }
 
 func (e *ExtDevice) setStringValue(key, value string) {

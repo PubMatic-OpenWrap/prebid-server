@@ -85,11 +85,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 			want: want{
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
-					Ext: func() *models.ExtDevice {
-						dvcExt := models.ExtDevice{}
-						dvcExt.Init()
-						return &dvcExt
-					}(),
+					Ext:       models.NewExtDevice(),
 				},
 			},
 		},
@@ -105,11 +101,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 				/* removed_invalid_ifatype */
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
-					Ext: func() *models.ExtDevice {
-						dvcExt := models.ExtDevice{}
-						dvcExt.Init()
-						return &dvcExt
-					}(),
+					Ext:       models.NewExtDevice(),
 				},
 			},
 		},
@@ -162,11 +154,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 			},
 			want: want{
 				deviceCtx: models.DeviceCtx{
-					Ext: func() *models.ExtDevice {
-						dvcExt := models.ExtDevice{}
-						dvcExt.Init()
-						return &dvcExt
-					}(),
+					Ext: models.NewExtDevice(),
 				},
 			},
 		},
@@ -288,11 +276,7 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 				},
 			},
 			want: &models.DeviceCtx{
-				Ext: func() *models.ExtDevice {
-					ext := &models.ExtDevice{}
-					ext.Init()
-					return ext
-				}(),
+				Ext: models.NewExtDevice(),
 			},
 		},
 		{
@@ -309,11 +293,7 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_ifa_value`,
-				Ext: func() *models.ExtDevice {
-					ext := &models.ExtDevice{}
-					ext.Init()
-					return ext
-				}(),
+				Ext:       models.NewExtDevice(),
 			},
 		},
 		{
@@ -395,11 +375,7 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 				},
 			},
 			want: &models.DeviceCtx{
-				Ext: func() *models.ExtDevice {
-					extDevice := models.ExtDevice{}
-					extDevice.Init()
-					return &extDevice
-				}(),
+				Ext: models.NewExtDevice(),
 			},
 		},
 		{
