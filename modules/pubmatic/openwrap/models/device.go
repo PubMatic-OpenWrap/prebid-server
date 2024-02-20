@@ -66,6 +66,7 @@ const (
 	ExtDeviceAtts      = "atts"
 )
 
+// ExtDevice will store device.ext parameters
 type ExtDevice struct {
 	data map[string]any
 }
@@ -138,17 +139,10 @@ func (e *ExtDevice) SetSessionID(sessionID string) {
 	e.setStringValue(ExtDeviceSessionID, sessionID)
 }
 
-func (e *ExtDevice) deleteKey(key string) {
-	if e.data == nil {
-		return
-	}
-	delete(e.data, key)
-}
-
 func (e *ExtDevice) DeleteIFAType() {
-	e.deleteKey(ExtDeviceIFAType)
+	delete(e.data, ExtDeviceIFAType)
 }
 
 func (e *ExtDevice) DeleteSessionID() {
-	e.deleteKey(ExtDeviceSessionID)
+	delete(e.data, ExtDeviceSessionID)
 }
