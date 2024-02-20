@@ -56,6 +56,7 @@ type RequestCtx struct {
 
 	//tracker
 	PageURL   string
+	App       *openrtb2.App
 	StartTime int64
 	DeviceCtx DeviceCtx
 

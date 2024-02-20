@@ -8,7 +8,9 @@ import (
 )
 
 func (ow *OpenWrap) cacheRequest(rctx models.RequestCtx) {
-	if rctx.IsTestRequest != 0 || rctx.ABTestConfig != 0 || rctx.ABTestConfigApplied != 0 || rctx.AdapterThrottleMap != nil || rctx.PageURL == "" {
+	if !ow.cfg.Features.AppRequestCache ||
+		rctx.IsTestRequest != 0 || rctx.ABTestConfig != 0 || rctx.ABTestConfigApplied != 0 || rctx.AdapterThrottleMap != nil ||
+		rctx.PageURL == "" || rctx.App != nil || rctx.App.Bundle != "" || rctx.App.ID != "" {
 		return
 	}
 
@@ -27,8 +29,8 @@ func (ow *OpenWrap) cacheRequest(rctx models.RequestCtx) {
 }
 
 func (ow *OpenWrap) getCachedRequest(rctx models.RequestCtx) (models.RequestCtx, bool) {
-	if rctx.Platform == models.PLATFORM_APP {
-		storedRequestKey := fmt.Sprintf("%s%s%d%s%s", rctx.PubIDStr, rctx.ProfileIDStr, rctx.VersionID, rctx.PageURL, rctx.Source)
+	if ow.cfg.Features.AppRequestCache && rctx.Platform == models.PLATFORM_APP {
+		storedRequestKey := fmt.Sprintf("%s%s%d%s%s%s", rctx.PubIDStr, rctx.ProfileIDStr, rctx.VersionID, rctx.PageURL, rctx.App.ID, rctx.App.Bundle)
 		storedRCtx, ok := ow.cache.Get(storedRequestKey)
 		if ok {
 			if newRctx, ok := storedRCtx.(models.RequestCtx); ok {

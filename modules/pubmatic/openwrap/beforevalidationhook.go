@@ -79,6 +79,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
+	rCtx.App = payload.BidRequest.App
 
 	// todo: if platform == in-app
 	// todo: rctx.DisplayVersionID or seperate cache and make it ttl 30 min

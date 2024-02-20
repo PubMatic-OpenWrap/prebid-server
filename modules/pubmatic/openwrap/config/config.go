@@ -81,6 +81,7 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
+	AppRequestCache bool
 }
 
 type Log struct { //Log Details
