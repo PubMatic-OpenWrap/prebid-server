@@ -1,6 +1,7 @@
 package vastunwrap
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -24,14 +25,17 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	if !vastRequestContext.Redirect {
 		pubId, _ := strconv.Atoi(miCtx.AccountID)
 		vastRequestContext.PubID = pubId
-		vastUnwrapEnabled = m.getVastUnwrapEnable(vastRequestContext) && getRandomNumber() < m.TrafficPercentage
+		vastUnwrapEnabled = getRandomNumber() < m.TrafficPercentage && m.getVastUnwrapEnable(vastRequestContext)
+		result.DebugMessages = append(result.DebugMessages,
+			fmt.Sprintf("debug: found request without sshb=1 in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
 	}
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
 	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
 
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
-		result.DebugMessages = append(result.DebugMessages, "error: vast unwrap flag is not enabled in handleRawBidderResponseHook()")
+		result.DebugMessages = append(result.DebugMessages,
+			fmt.Sprintf("error: vast unwrap flag is not enabled in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
 		return result, nil
 	}
 
