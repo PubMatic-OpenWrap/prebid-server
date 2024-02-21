@@ -85,399 +85,402 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// todo: rctx.DisplayVersionID or seperate cache and make it ttl 30 min
 	if newRctx, ok := ow.getCachedRequest(rCtx); ok {
 		result.Warnings = append(result.Warnings, "using cached request context")
-		result.ModuleContext["rctx"] = newRctx
-		return result, nil
-	}
-	defer m.cacheRequest(rCtx)
+		// result.ModuleContext["rctx"] = newRctx
+		// return result, nil
+		rCtx = newRctx
+	} else {
+		defer m.cacheRequest(rCtx)
 
-	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
-	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
-	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
+		rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+		rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+		populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
-	if rCtx.UidCookie == nil {
-		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
-	}
-	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
+		if rCtx.UidCookie == nil {
+			m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+		}
+		m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 
-	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
-	if err != nil {
-		result.NbrCode = nbr.InvalidRequestExt
-		err = errors.New("failed to get request ext: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
-		return result, err
-	}
-	rCtx.NewReqExt = requestExt
-	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
-	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
-
-	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
-	if payload.BidRequest.Test != 0 {
-		rCtx.IsTestRequest = payload.BidRequest.Test
-	}
-
-	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
-	if err != nil || len(partnerConfigMap) == 0 {
-		// TODO: seperate DB fetch errors as internal errors
-		result.NbrCode = nbr.InvalidProfileConfiguration
+		requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
-		} else {
-			err = errors.New("failed to get profile data: received empty data")
-		}
-		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
-	}
-
-	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
-	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
-		rCtx.DisplayVersionID = ver
-	}
-	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
-	if platform == "" {
-		result.NbrCode = nbr.InvalidPlatform
-		err = errors.New("failed to get platform data")
-		result.Errors = append(result.Errors, err.Error())
-		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
-	}
-	rCtx.Platform = platform
-	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
-	rCtx.SendAllBids = isSendAllBids(rCtx)
-
-	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
-
-	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
-		rCtx.ABTestConfigApplied = 1
-		rCtx.PartnerConfigMap = newPartnerConfigMap
-		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
-	}
-
-	//TMax should be updated after ABTest processing
-	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
-
-	var allPartnersThrottledFlag bool
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
-	if allPartnersThrottledFlag {
-		result.NbrCode = nbr.AllPartnerThrottled
-		result.Errors = append(result.Errors, "All adapters throttled")
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
-	}
-
-	priceGranularity, err := computePriceGranularity(rCtx)
-	if err != nil {
-		result.NbrCode = nbr.InvalidPriceGranularityConfig
-		err = errors.New("failed to price granularity details: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
-	}
-
-	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
-
-	requestExt.Prebid.Debug = rCtx.Debug
-	// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
-	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
-	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
-		PriceGranularity:  &priceGranularity,
-		IncludeBidderKeys: boolutil.BoolPtr(true),
-		IncludeWinners:    boolutil.BoolPtr(true),
-	}
-
-	isAdPodRequest := false
-	disabledSlots := 0
-	serviceSideBidderPresent := false
-	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
-
-	aliasgvlids := make(map[string]uint16)
-	for i := 0; i < len(payload.BidRequest.Imp); i++ {
-		slotType := "banner"
-		var adpodExt *models.AdPod
-		var isAdPodImpression bool
-		imp := payload.BidRequest.Imp[i]
-
-		impExt := &models.ImpExtension{}
-		if len(imp.Ext) != 0 {
-			err := json.Unmarshal(imp.Ext, impExt)
-			if err != nil {
-				result.NbrCode = nbr.InternalError
-				err = errors.New("failed to parse imp.ext: " + imp.ID)
-				result.Errors = append(result.Errors, err.Error())
-				return result, err
-			}
-		}
-		if rCtx.Endpoint == models.EndpointWebS2S {
-			imp.TagID = getTagID(imp, impExt)
-		}
-		if imp.TagID == "" {
-			result.NbrCode = nbr.InvalidImpressionTagID
-			err = errors.New("tagid missing for imp: " + imp.ID)
+			result.NbrCode = nbr.InvalidRequestExt
+			err = errors.New("failed to get request ext: " + err.Error())
 			result.Errors = append(result.Errors, err.Error())
 			return result, err
 		}
+		rCtx.NewReqExt = requestExt
+		rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
+		rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 
-		if imp.Video != nil {
-			slotType = "video"
+		// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
+		if payload.BidRequest.Test != 0 {
+			rCtx.IsTestRequest = payload.BidRequest.Test
+		}
 
-			//add stats for video instl impressions
-			if imp.Instl == 1 {
-				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+		partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
+		if err != nil || len(partnerConfigMap) == 0 {
+			// TODO: seperate DB fetch errors as internal errors
+			result.NbrCode = nbr.InvalidProfileConfiguration
+			if err != nil {
+				err = errors.New("failed to get profile data: " + err.Error())
+			} else {
+				err = errors.New("failed to get profile data: received empty data")
 			}
-			if len(requestExt.Prebid.Macros) == 0 {
-				// provide custom macros for video event trackers
-				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+			result.Errors = append(result.Errors, err.Error())
+			m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+			return result, err
+		}
+
+		rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
+		if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
+			rCtx.DisplayVersionID = ver
+		}
+		platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
+		if platform == "" {
+			result.NbrCode = nbr.InvalidPlatform
+			err = errors.New("failed to get platform data")
+			result.Errors = append(result.Errors, err.Error())
+			m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
+			m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
+			return result, err
+		}
+		rCtx.Platform = platform
+		rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+		rCtx.SendAllBids = isSendAllBids(rCtx)
+
+		m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
+
+		if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
+			rCtx.ABTestConfigApplied = 1
+			rCtx.PartnerConfigMap = newPartnerConfigMap
+			result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
+		}
+
+		//TMax should be updated after ABTest processing
+		rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
+
+		var allPartnersThrottledFlag bool
+		rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+		if allPartnersThrottledFlag {
+			result.NbrCode = nbr.AllPartnerThrottled
+			result.Errors = append(result.Errors, "All adapters throttled")
+			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			return result, err
+		}
+
+		priceGranularity, err := computePriceGranularity(rCtx)
+		if err != nil {
+			result.NbrCode = nbr.InvalidPriceGranularityConfig
+			err = errors.New("failed to price granularity details: " + err.Error())
+			result.Errors = append(result.Errors, err.Error())
+			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			return result, err
+		}
+
+		rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
+
+		requestExt.Prebid.Debug = rCtx.Debug
+		// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
+		requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
+		requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
+			PriceGranularity:  &priceGranularity,
+			IncludeBidderKeys: boolutil.BoolPtr(true),
+			IncludeWinners:    boolutil.BoolPtr(true),
+		}
+
+		isAdPodRequest := false
+		disabledSlots := 0
+		serviceSideBidderPresent := false
+		requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
+
+		aliasgvlids := make(map[string]uint16)
+		for i := 0; i < len(payload.BidRequest.Imp); i++ {
+			slotType := "banner"
+			var adpodExt *models.AdPod
+			var isAdPodImpression bool
+			imp := payload.BidRequest.Imp[i]
+
+			impExt := &models.ImpExtension{}
+			if len(imp.Ext) != 0 {
+				err := json.Unmarshal(imp.Ext, impExt)
+				if err != nil {
+					result.NbrCode = nbr.InternalError
+					err = errors.New("failed to parse imp.ext: " + imp.ID)
+					result.Errors = append(result.Errors, err.Error())
+					return result, err
+				}
+			}
+			if rCtx.Endpoint == models.EndpointWebS2S {
+				imp.TagID = getTagID(imp, impExt)
+			}
+			if imp.TagID == "" {
+				result.NbrCode = nbr.InvalidImpressionTagID
+				err = errors.New("tagid missing for imp: " + imp.ID)
+				result.Errors = append(result.Errors, err.Error())
+				return result, err
 			}
 
-			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
-				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					isAdPodImpression = true
-					if !isAdPodRequest {
-						isAdPodRequest = true
-						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
+			if imp.Video != nil {
+				slotType = "video"
+
+				//add stats for video instl impressions
+				if imp.Instl == 1 {
+					m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+				}
+				if len(requestExt.Prebid.Macros) == 0 {
+					// provide custom macros for video event trackers
+					requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+				}
+
+				if rCtx.IsCTVRequest && imp.Video.Ext != nil {
+					if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
+						isAdPodImpression = true
+						if !isAdPodRequest {
+							isAdPodRequest = true
+							rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
+						}
 					}
 				}
 			}
-		}
 
-		div := ""
-		if impExt.Wrapper != nil {
-			div = impExt.Wrapper.Div
-		}
+			div := ""
+			if impExt.Wrapper != nil {
+				div = impExt.Wrapper.Div
+			}
 
-		// reuse the existing impExt instead of allocating a new one
-		reward := impExt.Reward
-		if reward != nil {
-			impExt.Prebid.IsRewardedInventory = reward
-		}
-		// if imp.ext.data.pbadslot is absent then set it to tagId
-		if len(impExt.Data.PbAdslot) == 0 {
-			impExt.Data.PbAdslot = imp.TagID
-		}
+			// reuse the existing impExt instead of allocating a new one
+			reward := impExt.Reward
+			if reward != nil {
+				impExt.Prebid.IsRewardedInventory = reward
+			}
+			// if imp.ext.data.pbadslot is absent then set it to tagId
+			if len(impExt.Data.PbAdslot) == 0 {
+				impExt.Data.PbAdslot = imp.TagID
+			}
 
-		incomingSlots := getIncomingSlots(imp)
-		slotName := getSlotName(imp.TagID, impExt)
-		adUnitName := getAdunitName(imp.TagID, impExt)
+			incomingSlots := getIncomingSlots(imp)
+			slotName := getSlotName(imp.TagID, impExt)
+			adUnitName := getAdunitName(imp.TagID, impExt)
 
-		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
-		if rCtx.AdUnitConfig != nil {
-			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
-			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
-				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
-					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeApp)
+			var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
+			if rCtx.AdUnitConfig != nil {
+				// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
+				if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
+					if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
+						m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeApp)
+					}
+					if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
+						m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
+					}
 				}
-				if payload.BidRequest.Site != nil && payload.BidRequest.Site.Content != nil {
-					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
+				videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
+				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
+			}
+
+			// ignore adunit config status for native as it is not supported for native
+			if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
+				disabledSlots++
+
+				rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
+					IncomingSlots:     incomingSlots,
+					AdUnitName:        adUnitName,
+					SlotName:          slotName,
+					IsRewardInventory: reward,
 				}
-			}
-			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
-			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
-		}
-
-		// ignore adunit config status for native as it is not supported for native
-		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
-			disabledSlots++
-
-			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
-				IncomingSlots:     incomingSlots,
-				AdUnitName:        adUnitName,
-				SlotName:          slotName,
-				IsRewardInventory: reward,
-			}
-			continue
-		}
-
-		bidderMeta := make(map[string]models.PartnerData)
-		nonMapped := make(map[string]struct{})
-		for _, partnerConfig := range rCtx.PartnerConfigMap {
-			if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 				continue
 			}
 
-			partneridstr, ok := partnerConfig[models.PARTNER_ID]
-			if !ok {
-				continue
-			}
-			partnerID, err := strconv.Atoi(partneridstr)
-			if err != nil || partnerID == models.VersionLevelConfigID {
-				continue
-			}
-
-			// bidderCode is in context with pubmatic. Ex. it could be appnexus-1, appnexus-2, etc.
-			bidderCode := partnerConfig[models.BidderCode]
-			// prebidBidderCode is equivalent of PBS-Core's bidderCode
-			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
-			//
-			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
-
-			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
-				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
-				continue
-			}
-
-			var isRegex bool
-			var slot, kgpv string
-			var bidderParams json.RawMessage
-			var matchedSlotKeysVAST []string
-			switch prebidBidderCode {
-			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
-			case models.BidderVASTBidder:
-				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
-			default:
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
-			}
-
-			if err != nil || len(bidderParams) == 0 {
-				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
-				nonMapped[bidderCode] = struct{}{}
-				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
-
-				if prebidBidderCode != string(openrtb_ext.BidderPubmatic) && prebidBidderCode != string(models.BidderPubMaticSecondaryAlias) {
+			bidderMeta := make(map[string]models.PartnerData)
+			nonMapped := make(map[string]struct{})
+			for _, partnerConfig := range rCtx.PartnerConfigMap {
+				if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 					continue
 				}
-			}
 
-			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
+				partneridstr, ok := partnerConfig[models.PARTNER_ID]
+				if !ok {
+					continue
+				}
+				partnerID, err := strconv.Atoi(partneridstr)
+				if err != nil || partnerID == models.VersionLevelConfigID {
+					continue
+				}
 
-			bidderMeta[bidderCode] = models.PartnerData{
-				PartnerID:        partnerID,
-				PrebidBidderCode: prebidBidderCode,
-				MatchedSlot:      slot, // KGPSV
-				Params:           bidderParams,
-				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
-				KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
-				IsRegex:          isRegex,                                                  // regex pattern
-			}
+				// bidderCode is in context with pubmatic. Ex. it could be appnexus-1, appnexus-2, etc.
+				bidderCode := partnerConfig[models.BidderCode]
+				// prebidBidderCode is equivalent of PBS-Core's bidderCode
+				prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
+				//
+				rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
 
-			for _, bidder := range matchedSlotKeysVAST {
-				bidderMeta[bidder].VASTTagFlags[bidder] = false
-			}
+				if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
+					result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
+					continue
+				}
 
-			isAlias := false
-			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
-				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
-					rCtx.Aliases[bidderCode] = adapters.ResolveOWBidder(prebidPartnerName)
+				var isRegex bool
+				var slot, kgpv string
+				var bidderParams json.RawMessage
+				var matchedSlotKeysVAST []string
+				switch prebidBidderCode {
+				case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
+					slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
+				case models.BidderVASTBidder:
+					slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
+				default:
+					slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
+				}
+
+				if err != nil || len(bidderParams) == 0 {
+					result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
+					nonMapped[bidderCode] = struct{}{}
+					m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
+
+					if prebidBidderCode != string(openrtb_ext.BidderPubmatic) && prebidBidderCode != string(models.BidderPubMaticSecondaryAlias) {
+						continue
+					}
+				}
+
+				m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
+
+				bidderMeta[bidderCode] = models.PartnerData{
+					PartnerID:        partnerID,
+					PrebidBidderCode: prebidBidderCode,
+					MatchedSlot:      slot, // KGPSV
+					Params:           bidderParams,
+					KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
+					KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
+					IsRegex:          isRegex,                                                  // regex pattern
+				}
+
+				for _, bidder := range matchedSlotKeysVAST {
+					bidderMeta[bidder].VASTTagFlags[bidder] = false
+				}
+
+				isAlias := false
+				if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
+					if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
+						rCtx.Aliases[bidderCode] = adapters.ResolveOWBidder(prebidPartnerName)
+						isAlias = true
+					}
+				}
+				if alias, ok := IsAlias(bidderCode); ok {
+					rCtx.Aliases[bidderCode] = alias
 					isAlias = true
 				}
+
+				if isAlias || partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
+					updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
+				}
+
+				revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+				requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
+				serviceSideBidderPresent = true
+			} // for(rctx.PartnerConfigMap
+
+			// update the imp.ext with bidder params for this
+			if impExt.Prebid.Bidder == nil {
+				impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 			}
-			if alias, ok := IsAlias(bidderCode); ok {
-				rCtx.Aliases[bidderCode] = alias
-				isAlias = true
+			for bidder, meta := range bidderMeta {
+				impExt.Prebid.Bidder[bidder] = meta.Params
 			}
 
-			if isAlias || partnerConfig[models.PREBID_PARTNER_NAME] == models.BidderVASTBidder {
-				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
+			impExt.Wrapper = nil
+			impExt.Reward = nil
+			impExt.Bidder = nil
+			newImpExt, err := json.Marshal(impExt)
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 			}
 
-			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
-			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
-			serviceSideBidderPresent = true
-		} // for(rctx.PartnerConfigMap
+			// cache the details for further processing
+			if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
+				rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
+					ImpID:             imp.ID,
+					TagID:             imp.TagID,
+					Div:               div,
+					IsRewardInventory: reward,
+					BidFloor:          imp.BidFloor,
+					BidFloorCur:       imp.BidFloorCur,
+					Type:              slotType,
+					Banner:            imp.Banner != nil,
+					Video:             imp.Video,
+					Native:            imp.Native,
+					IncomingSlots:     incomingSlots,
+					Bidders:           make(map[string]models.PartnerData),
+					BidCtx:            make(map[string]models.BidCtx),
+					NewExt:            json.RawMessage(newImpExt),
+					IsAdPodRequest:    isAdPodRequest,
+					SlotName:          slotName,
+					AdUnitName:        adUnitName,
+				}
+			}
 
-		// update the imp.ext with bidder params for this
-		if impExt.Prebid.Bidder == nil {
-			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
-		}
-		for bidder, meta := range bidderMeta {
-			impExt.Prebid.Bidder[bidder] = meta.Params
+			if isAdPodImpression {
+				bidderMeta[string(openrtb_ext.BidderOWPrebidCTV)] = models.PartnerData{}
+			}
+
+			impCtx := rCtx.ImpBidCtx[imp.ID]
+			impCtx.Bidders = bidderMeta
+			impCtx.NonMapped = nonMapped
+			impCtx.VideoAdUnitCtx = videoAdUnitCtx
+			impCtx.BannerAdUnitCtx = bannerAdUnitCtx
+			rCtx.ImpBidCtx[imp.ID] = impCtx
+		} // for(imp
+
+		if disabledSlots == len(payload.BidRequest.Imp) {
+			result.NbrCode = nbr.AllSlotsDisabled
+			if err != nil {
+				err = errors.New("All slots disabled: " + err.Error())
+			} else {
+				err = errors.New("All slots disabled")
+			}
+			result.Errors = append(result.Errors, err.Error())
+			return result, nil
 		}
 
-		impExt.Wrapper = nil
-		impExt.Reward = nil
-		impExt.Bidder = nil
-		newImpExt, err := json.Marshal(impExt)
-		if err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
+		if !serviceSideBidderPresent {
+			result.NbrCode = nbr.ServerSidePartnerNotConfigured
+			if err != nil {
+				err = errors.New("server side partner not found: " + err.Error())
+			} else {
+				err = errors.New("server side partner not found")
+			}
+			result.Errors = append(result.Errors, err.Error())
+			return result, nil
 		}
 
-		// cache the details for further processing
-		if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
-			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
-				ImpID:             imp.ID,
-				TagID:             imp.TagID,
-				Div:               div,
-				IsRewardInventory: reward,
-				BidFloor:          imp.BidFloor,
-				BidFloorCur:       imp.BidFloorCur,
-				Type:              slotType,
-				Banner:            imp.Banner != nil,
-				Video:             imp.Video,
-				Native:            imp.Native,
-				IncomingSlots:     incomingSlots,
-				Bidders:           make(map[string]models.PartnerData),
-				BidCtx:            make(map[string]models.BidCtx),
-				NewExt:            json.RawMessage(newImpExt),
-				IsAdPodRequest:    isAdPodRequest,
-				SlotName:          slotName,
-				AdUnitName:        adUnitName,
+		if cto := setContentTransparencyObject(rCtx, requestExt); cto != nil {
+			requestExt.Prebid.Transparency = cto
+		}
+
+		adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
+		setFloorsExt(requestExt, rCtx.PartnerConfigMap)
+
+		if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
+			requestExt.Prebid.Aliases = make(map[string]string)
+		}
+		for k, v := range rCtx.Aliases {
+			requestExt.Prebid.Aliases[k] = v
+		}
+
+		requestExt.Prebid.AliasGVLIDs = aliasgvlids
+		if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
+			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+		}
+
+		if _, ok := requestExt.Prebid.Aliases[string(models.BidderPubMaticSecondaryAlias)]; ok {
+			if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
 			}
 		}
 
-		if isAdPodImpression {
-			bidderMeta[string(openrtb_ext.BidderOWPrebidCTV)] = models.PartnerData{}
-		}
+		// similar to impExt, reuse the existing requestExt to avoid additional memory requests
+		requestExt.Wrapper = nil
+		requestExt.Bidder = nil
 
-		impCtx := rCtx.ImpBidCtx[imp.ID]
-		impCtx.Bidders = bidderMeta
-		impCtx.NonMapped = nonMapped
-		impCtx.VideoAdUnitCtx = videoAdUnitCtx
-		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
-		rCtx.ImpBidCtx[imp.ID] = impCtx
-	} // for(imp
-
-	if disabledSlots == len(payload.BidRequest.Imp) {
-		result.NbrCode = nbr.AllSlotsDisabled
-		if err != nil {
-			err = errors.New("All slots disabled: " + err.Error())
-		} else {
-			err = errors.New("All slots disabled")
-		}
-		result.Errors = append(result.Errors, err.Error())
-		return result, nil
 	}
-
-	if !serviceSideBidderPresent {
-		result.NbrCode = nbr.ServerSidePartnerNotConfigured
-		if err != nil {
-			err = errors.New("server side partner not found: " + err.Error())
-		} else {
-			err = errors.New("server side partner not found")
-		}
-		result.Errors = append(result.Errors, err.Error())
-		return result, nil
-	}
-
-	if cto := setContentTransparencyObject(rCtx, requestExt); cto != nil {
-		requestExt.Prebid.Transparency = cto
-	}
-
-	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap)
-
-	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
-		requestExt.Prebid.Aliases = make(map[string]string)
-	}
-	for k, v := range rCtx.Aliases {
-		requestExt.Prebid.Aliases[k] = v
-	}
-
-	requestExt.Prebid.AliasGVLIDs = aliasgvlids
-	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
-	}
-
-	if _, ok := requestExt.Prebid.Aliases[string(models.BidderPubMaticSecondaryAlias)]; ok {
-		if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
-			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
-		}
-	}
-
-	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
-	requestExt.Wrapper = nil
-	requestExt.Bidder = nil
 
 	if rCtx.Debug {
 		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
