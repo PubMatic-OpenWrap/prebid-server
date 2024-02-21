@@ -811,6 +811,7 @@ func (e *exchange) getAllBids(
 					} else {
 						adapterBids[bidderName] = seatBid
 					}
+					extraRespInfo.bidsFound = true
 				}
 				// collect fledgeAuctionConfigs separately from bids, as empty seatBids may be discarded
 				extraRespInfo.fledge = collectFledgeFromSeatBid(extraRespInfo.fledge, bidderName, brw.adapter, seatBid)

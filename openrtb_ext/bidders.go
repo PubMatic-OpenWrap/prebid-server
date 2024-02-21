@@ -158,6 +158,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderPubnative,
 	BidderPulsepoint,
 	BidderPWBid,
+	BidderRelevantDigital,
 	BidderRevcontent,
 	BidderRichaudience,
 	BidderRise,
@@ -181,7 +182,6 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderSspBC,
 	BidderSpotX,
 	BidderStroeerCore,
-	BidderSuntContent,
 	BidderTaboola,
 	BidderTappx,
 	BidderTeads,
@@ -438,6 +438,7 @@ const (
 	BidderPubnative         BidderName = "pubnative"
 	BidderPulsepoint        BidderName = "pulsepoint"
 	BidderPWBid             BidderName = "pwbid"
+	BidderRelevantDigital   BidderName = "relevantdigital"
 	BidderRevcontent        BidderName = "revcontent"
 	BidderRichaudience      BidderName = "richaudience"
 	BidderRise              BidderName = "rise"
@@ -462,7 +463,6 @@ const (
 	BidderSpotX             BidderName = "spotx"
 	BidderStreamkey         BidderName = "streamkey"
 	BidderStroeerCore       BidderName = "stroeerCore"
-	BidderSuntContent       BidderName = "suntContent"
 	BidderTaboola           BidderName = "taboola"
 	BidderTappx             BidderName = "tappx"
 	BidderTeads             BidderName = "teads"
@@ -629,7 +629,7 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 		schemaContents[BidderName(bidderName)] = string(fileBytes)
 	}
 
-	//set alias bidder params schema to its parent
+	// set alias bidder params schema to its parent
 	for alias, parent := range aliasBidderToParent {
 		parentSchema := schemas[parent]
 		schemas[alias] = parentSchema
