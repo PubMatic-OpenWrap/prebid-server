@@ -10,7 +10,7 @@ import (
 func (ow *OpenWrap) cacheRequest(rctx models.RequestCtx) {
 	if !ow.cfg.Features.AppRequestCache ||
 		rctx.IsTestRequest != 0 || rctx.ABTestConfig != 0 || rctx.ABTestConfigApplied != 0 || rctx.AdapterThrottleMap != nil ||
-		rctx.PageURL == "" || rctx.App != nil || rctx.App.Bundle != "" || rctx.App.ID != "" {
+		rctx.PageURL == "" || rctx.App == nil || rctx.App.Bundle == "" || rctx.App.ID == "" {
 		return
 	}
 
