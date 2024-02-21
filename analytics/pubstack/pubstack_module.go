@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -54,7 +55,7 @@ type PubstackModule struct {
 }
 
 func NewModule(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
-	configUpdateTask, err := NewConfigUpdateHttpTaskPubmatic(
+	configUpdateTask, err := NewConfigUpdateHttpTask(
 		client,
 		scope,
 		endpoint,
@@ -142,6 +143,8 @@ func (p *PubstackModule) LogAuctionObject(ao *analytics.AuctionObject) {
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 		return
 	}
+
+	url = strings.TrimPrefix(url, "http://10.172.141.11/wl?")
 
 	payload := []byte(url)
 

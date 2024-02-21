@@ -3,37 +3,56 @@ package pubstack
 import (
 	"fmt"
 	"net/http"
-	"time"
+	"os"
+	"sync"
 
-	"github.com/prebid/prebid-server/util/task"
+	"github.com/benbjohnson/clock"
+	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/analytics/pubstack/eventchannel"
 )
 
-func NewConfigUpdateHttpTaskPubmatic(httpClient *http.Client, scope, endpoint, refreshInterval string) (*ConfigUpdateHttpTask, error) {
-	refreshDuration, err := time.ParseDuration(refreshInterval)
+func NewModulePubmatic(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+
+	return NewModuleWithConfigTaskPubmatic(client, scope, endpoint, maxEventCount, maxByteSize, maxTime, clock)
+}
+
+func NewModuleWithConfigTaskPubmatic(client *http.Client, scope, endpoint string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+	glog.Infof("[pubstack] Initializing module scope=%s endpoint=%s\n", scope, endpoint)
+
+	// parse args
+	bufferCfg, err := newBufferConfig(maxEventCount, maxByteSize, maxTime)
 	if err != nil {
-		return nil, fmt.Errorf("fail to parse the module args, arg=analytics.pubstack.configuration_refresh_delay: %v", err)
+		return nil, fmt.Errorf("fail to parse the module args, arg=analytics.pubstack.buffers, :%v", err)
 	}
 
-	configChan := make(chan *Configuration)
+	defaultFeatures := map[string]bool{
+		auction:    true,
+		video:      true,
+		amp:        true,
+		cookieSync: true,
+		setUID:     true,
+	}
 
-	tr := task.NewTickerTaskFromFunc(refreshDuration, func() error {
-		config := &Configuration{
-			ScopeID:  scope,
-			Endpoint: endpoint,
-			Features: map[string]bool{
-				"auction":    true,
-				"cookiesync": true,
-				"amp":        true,
-				"setuid":     true,
-				"video":      true,
-			},
-		}
-		configChan <- config
-		return nil
-	})
+	defaultConfig := &Configuration{
+		ScopeID:  scope,
+		Endpoint: endpoint,
+		Features: defaultFeatures,
+	}
 
-	return &ConfigUpdateHttpTask{
-		task:       tr,
-		configChan: configChan,
-	}, nil
+	pb := PubstackModule{
+		scope:         scope,
+		httpClient:    client,
+		cfg:           defaultConfig,
+		buffsCfg:      bufferCfg,
+		sigTermCh:     make(chan os.Signal),
+		stopCh:        make(chan struct{}),
+		eventChannels: make(map[string]*eventchannel.EventChannel),
+		muxConfig:     sync.RWMutex{},
+		clock:         clock,
+	}
+
+	pb.registerChannel(auction)
+
+	return &pb, nil
 }
