@@ -14,15 +14,21 @@ import (
 
 	"github.com/alitto/pond"
 	validator "github.com/asaskevich/govalidator"
+	"github.com/coocood/freecache"
 	"github.com/golang/glog"
-	"github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/timeutil"
 )
 
-type FloorFetcher interface {
-	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
+var refetchCheckInterval = 300
+
+type fetchInfo struct {
+	config.AccountFloorFetch
+	fetchTime      int64
+	refetchRequest bool
+	retryCount     int
 }
 
 type WorkerPool interface {
@@ -30,33 +36,32 @@ type WorkerPool interface {
 	Stop()
 }
 
-var refetchCheckInterval = 300
+type FloorFetcher interface {
+	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
+	Stop()
+}
 
 type PriceFloorFetcher struct {
-	pool            WorkerPool      // Goroutines worker pool
-	fetchQueue      FetchQueue      // Priority Queue to fetch floor data
-	fetchInprogress map[string]bool // Map of URL with fetch status
-	configReceiver  chan FetchInfo  // Channel which recieves URLs to be fetched
-	done            chan struct{}   // Channel to close fetcher
-	cache           *cache.Cache    // cache
-	cacheExpiry     time.Duration   // cache expiry time
-	metricEngine    metrics.MetricsEngine
+	pool            WorkerPool            // Goroutines worker pool
+	fetchQueue      FetchQueue            // Priority Queue to fetch floor data
+	fetchInProgress map[string]bool       // Map of URL with fetch status
+	configReceiver  chan fetchInfo        // Channel which recieves URLs to be fetched
+	done            chan struct{}         // Channel to close fetcher
+	cache           *freecache.Cache      // cache
+	httpClient      *http.Client          // http client to fetch data from url
+	time            timeutil.Time         // time interface to record request timings
+	metricEngine    metrics.MetricsEngine // Records malfunctions in dynamic fetch
+	maxRetries      int                   // Max number of retries for failing URLs
 }
 
-type FetchInfo struct {
-	config.AccountFloorFetch
-	FetchTime      int64
-	RefetchRequest bool
-}
-
-type FetchQueue []*FetchInfo
+type FetchQueue []*fetchInfo
 
 func (fq FetchQueue) Len() int {
 	return len(fq)
 }
 
 func (fq FetchQueue) Less(i, j int) bool {
-	return fq[i].FetchTime < fq[j].FetchTime
+	return fq[i].fetchTime < fq[j].fetchTime
 }
 
 func (fq FetchQueue) Swap(i, j int) {
@@ -64,7 +69,7 @@ func (fq FetchQueue) Swap(i, j int) {
 }
 
 func (fq *FetchQueue) Push(element interface{}) {
-	fetchInfo := element.(*FetchInfo)
+	fetchInfo := element.(*fetchInfo)
 	*fq = append(*fq, fetchInfo)
 }
 
@@ -72,12 +77,12 @@ func (fq *FetchQueue) Pop() interface{} {
 	old := *fq
 	n := len(old)
 	fetchInfo := old[n-1]
-	old[n-1] = nil // avoid memory leak
+	old[n-1] = nil
 	*fq = old[0 : n-1]
 	return fetchInfo
 }
 
-func (fq *FetchQueue) Top() *FetchInfo {
+func (fq *FetchQueue) Top() *fetchInfo {
 	old := *fq
 	if len(old) == 0 {
 		return nil
@@ -89,17 +94,22 @@ func workerPanicHandler(p interface{}) {
 	glog.Errorf("floor fetcher worker panicked: %v", p)
 }
 
-func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry int, metricEngine metrics.MetricsEngine) *PriceFloorFetcher {
+func NewPriceFloorFetcher(config config.PriceFloors, httpClient *http.Client, metricEngine metrics.MetricsEngine) *PriceFloorFetcher {
+	if !config.Enabled {
+		return nil
+	}
 
 	floorFetcher := PriceFloorFetcher{
-		pool:            pond.New(maxWorkers, maxCapacity, pond.PanicHandler(workerPanicHandler)),
+		pool:            pond.New(config.Fetcher.Worker, config.Fetcher.Capacity, pond.PanicHandler(workerPanicHandler)),
 		fetchQueue:      make(FetchQueue, 0, 100),
-		fetchInprogress: make(map[string]bool),
-		configReceiver:  make(chan FetchInfo, maxCapacity),
+		fetchInProgress: make(map[string]bool),
+		configReceiver:  make(chan fetchInfo, config.Fetcher.Capacity),
 		done:            make(chan struct{}),
-		cacheExpiry:     time.Duration(cacheExpiry) * time.Second,
-		cache:           cache.New(time.Duration(cacheExpiry)*time.Second, time.Duration(cacheCleanUpInt)*time.Second),
+		cache:           freecache.NewCache(config.Fetcher.CacheSize * 1024 * 1024),
+		httpClient:      httpClient,
+		time:            &timeutil.RealTime{},
 		metricEngine:    metricEngine,
+		maxRetries:      config.Fetcher.MaxRetries,
 	}
 
 	go floorFetcher.Fetcher()
@@ -107,126 +117,144 @@ func NewPriceFloorFetcher(maxWorkers, maxCapacity, cacheCleanUpInt, cacheExpiry 
 	return &floorFetcher
 }
 
-func (f *PriceFloorFetcher) SetWithExpiry(key string, value interface{}, cacheExpiry time.Duration) {
-	f.cache.Set(key, value, cacheExpiry)
+func (f *PriceFloorFetcher) SetWithExpiry(key string, value json.RawMessage, cacheExpiry int) {
+	f.cache.Set([]byte(key), value, cacheExpiry)
 }
 
-func (f *PriceFloorFetcher) Get(key string) (interface{}, bool) {
-	return f.cache.Get(key)
+func (f *PriceFloorFetcher) Get(key string) (json.RawMessage, bool) {
+	data, err := f.cache.Get([]byte(key))
+	if err != nil {
+		return nil, false
+	}
+
+	return data, true
 }
 
-func (f *PriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
-
-	if !configs.UseDynamicData || len(configs.Fetch.URL) == 0 || !validator.IsURL(configs.Fetch.URL) {
+func (f *PriceFloorFetcher) Fetch(config config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
+	if f == nil || !config.UseDynamicData || len(config.Fetcher.URL) == 0 || !validator.IsURL(config.Fetcher.URL) {
 		return nil, openrtb_ext.FetchNone
 	}
 
 	// Check for floors JSON in cache
-	result, found := f.Get(configs.Fetch.URL)
-	if found {
-		fetcheRes, ok := result.(*openrtb_ext.PriceFloorRules)
-		if !ok || fetcheRes.Data == nil {
+	if result, found := f.Get(config.Fetcher.URL); found {
+		var fetchedFloorData openrtb_ext.PriceFloorRules
+		if err := json.Unmarshal(result, &fetchedFloorData); err != nil || fetchedFloorData.Data == nil {
 			return nil, openrtb_ext.FetchError
 		}
-		return fetcheRes, openrtb_ext.FetchSuccess
+		return &fetchedFloorData, openrtb_ext.FetchSuccess
 	}
 
 	//miss: push to channel to fetch and return empty response
-	if configs.Enabled && configs.Fetch.Enabled && configs.Fetch.Timeout > 0 {
-		fetchInfo := FetchInfo{AccountFloorFetch: configs.Fetch, FetchTime: time.Now().Unix(), RefetchRequest: false}
-		f.configReceiver <- fetchInfo
+	if config.Enabled && config.Fetcher.Enabled && config.Fetcher.Timeout > 0 {
+		fetchConfig := fetchInfo{AccountFloorFetch: config.Fetcher, fetchTime: f.time.Now().Unix(), refetchRequest: false, retryCount: 0}
+		f.configReceiver <- fetchConfig
 	}
 
 	return nil, openrtb_ext.FetchInprogress
 }
 
-func (f *PriceFloorFetcher) worker(configs config.AccountFloorFetch) {
-
-	floorData, fetchedMaxAge := fetchAndValidate(configs, f.metricEngine)
+func (f *PriceFloorFetcher) worker(fetchConfig fetchInfo) {
+	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch, f.metricEngine)
 	if floorData != nil {
+		// Reset retry count when data is successfully fetched
+		fetchConfig.retryCount = 0
+
 		// Update cache with new floor rules
-		glog.Infof("Updating Value in cache for URL %s", configs.URL)
-		cacheExpiry := f.cacheExpiry
-		if fetchedMaxAge != 0 && fetchedMaxAge > configs.Period && fetchedMaxAge < math.MaxInt32 {
-			cacheExpiry = time.Duration(fetchedMaxAge) * time.Second
+		cacheExpiry := fetchConfig.AccountFloorFetch.MaxAge
+		if fetchedMaxAge != 0 {
+			cacheExpiry = fetchedMaxAge
 		}
-		f.SetWithExpiry(configs.URL, floorData, cacheExpiry)
+		floorData, err := json.Marshal(floorData)
+		if err != nil {
+			glog.Errorf("Error while marshaling fetched floor data for url %s", fetchConfig.AccountFloorFetch.URL)
+		} else {
+			f.SetWithExpiry(fetchConfig.AccountFloorFetch.URL, floorData, cacheExpiry)
+		}
+	} else {
+		fetchConfig.retryCount++
 	}
 
 	// Send to refetch channel
-	f.configReceiver <- FetchInfo{AccountFloorFetch: configs, FetchTime: time.Now().Add(time.Duration(configs.Period) * time.Second).Unix(), RefetchRequest: true}
-
+	if fetchConfig.retryCount < f.maxRetries {
+		fetchConfig.fetchTime = f.time.Now().Add(time.Duration(fetchConfig.AccountFloorFetch.Period) * time.Second).Unix()
+		fetchConfig.refetchRequest = true
+		f.configReceiver <- fetchConfig
+	}
 }
 
+// Stop terminates price floor fetcher
 func (f *PriceFloorFetcher) Stop() {
+	if f == nil {
+		return
+	}
+
 	close(f.done)
+	f.pool.Stop()
+	close(f.configReceiver)
 }
 
-func (f *PriceFloorFetcher) submit(fetchInfo *FetchInfo) {
+func (f *PriceFloorFetcher) submit(fetchConfig *fetchInfo) {
 	status := f.pool.TrySubmit(func() {
-		f.worker(fetchInfo.AccountFloorFetch)
+		f.worker(*fetchConfig)
 	})
 	if !status {
-		heap.Push(&f.fetchQueue, fetchInfo)
+		heap.Push(&f.fetchQueue, fetchConfig)
 	}
 }
 
 func (f *PriceFloorFetcher) Fetcher() {
-
 	//Create Ticker of 5 minutes
 	ticker := time.NewTicker(time.Duration(refetchCheckInterval) * time.Second)
 
 	for {
 		select {
-		case fetchInfo := <-f.configReceiver:
-			if fetchInfo.RefetchRequest {
-				heap.Push(&f.fetchQueue, &fetchInfo)
+		case fetchConfig := <-f.configReceiver:
+			if fetchConfig.refetchRequest {
+				heap.Push(&f.fetchQueue, &fetchConfig)
 			} else {
-				if _, ok := f.fetchInprogress[fetchInfo.URL]; !ok {
-					f.fetchInprogress[fetchInfo.URL] = true
-					f.submit(&fetchInfo)
+				if _, ok := f.fetchInProgress[fetchConfig.URL]; !ok {
+					f.fetchInProgress[fetchConfig.URL] = true
+					f.submit(&fetchConfig)
 				}
 			}
 		case <-ticker.C:
-			currentTime := time.Now().Unix()
-			for top := f.fetchQueue.Top(); top != nil && top.FetchTime <= currentTime; top = f.fetchQueue.Top() {
+			currentTime := f.time.Now().Unix()
+			for top := f.fetchQueue.Top(); top != nil && top.fetchTime <= currentTime; top = f.fetchQueue.Top() {
 				nextFetch := heap.Pop(&f.fetchQueue)
-				f.submit(nextFetch.(*FetchInfo))
+				f.submit(nextFetch.(*fetchInfo))
 			}
 		case <-f.done:
-			f.pool.Stop()
+			ticker.Stop()
 			glog.Info("Price Floor fetcher terminated")
 			return
 		}
 	}
 }
 
-func fetchAndValidate(configs config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
-
-	floorResp, maxAge, err := fetchFloorRulesFromURL(configs)
-	if err != nil {
-		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "1")
-		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", configs.URL, err.Error())
+func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
+	floorResp, maxAge, err := f.fetchFloorRulesFromURL(config)
+	if floorResp == nil || err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "1")
+		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", config.URL, err.Error())
 		return nil, 0
 	}
 
-	if len(floorResp) > (configs.MaxFileSize * 1024) {
-		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", configs.URL)
+	if len(floorResp) > (config.MaxFileSizeKB * 1024) {
+		glog.Errorf("Recieved invalid floor data from URL: %s, reason : floor file size is greater than MaxFileSize", config.URL)
 		return nil, 0
 	}
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
-		metricEngine.RecordDynamicFetchFailure(configs.AccountID, "2")
-		glog.Errorf("Recieved invalid price floor json from URL: %s", configs.URL)
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "2")
+		glog.Errorf("Recieved invalid price floor json from URL: %s", config.URL)
 		return nil, 0
-	} else {
-		err := validateRules(configs, &priceFloors)
-		if err != nil {
-			metricEngine.RecordDynamicFetchFailure(configs.AccountID, "3")
-			glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", configs.URL, err.Error())
-			return nil, 0
-		}
+	}
+
+	if err := validateRules(config, &priceFloors); err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, "3")
+		glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", config.URL, err.Error())
+		return nil, 0
 	}
 
 	return &priceFloors, maxAge
@@ -234,30 +262,32 @@ func fetchAndValidate(configs config.AccountFloorFetch, metricEngine metrics.Met
 
 // fetchFloorRulesFromURL returns a price floor JSON and time for which this JSON is valid
 // from provided URL with timeout constraints
-func fetchFloorRulesFromURL(configs config.AccountFloorFetch) ([]byte, int, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(configs.Timeout)*time.Millisecond)
+func (f *PriceFloorFetcher) fetchFloorRulesFromURL(config config.AccountFloorFetch) ([]byte, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.Timeout)*time.Millisecond)
 	defer cancel()
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, configs.URL, nil)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, config.URL, nil)
 	if err != nil {
 		return nil, 0, errors.New("error while forming http fetch request : " + err.Error())
 	}
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := f.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, 0, errors.New("error while getting response from url : " + err.Error())
 	}
 
-	if httpResp.StatusCode != 200 {
+	if httpResp.StatusCode != http.StatusOK {
 		return nil, 0, errors.New("no response from server")
 	}
 
 	var maxAge int
 	if maxAgeStr := httpResp.Header.Get("max-age"); maxAgeStr != "" {
-		maxAge, _ = strconv.Atoi(maxAgeStr)
-		if maxAge <= configs.Period || maxAge > math.MaxInt32 {
-			glog.Errorf("Invalid max-age = %s provided, value should be valid integer and should be within (%v, %v)", maxAgeStr, configs.Period, math.MaxInt32)
+		maxAge, err = strconv.Atoi(maxAgeStr)
+		if err != nil {
+			glog.Errorf("max-age in header is malformed for url %s", config.URL)
+		}
+		if maxAge <= config.Period || maxAge > math.MaxInt32 {
+			glog.Errorf("Invalid max-age = %s provided, value should be valid integer and should be within (%v, %v)", maxAgeStr, config.Period, math.MaxInt32)
 		}
 	}
 
@@ -270,8 +300,7 @@ func fetchFloorRulesFromURL(configs config.AccountFloorFetch) ([]byte, int, erro
 	return respBody, maxAge, nil
 }
 
-func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.PriceFloorRules) error {
-
+func validateRules(config config.AccountFloorFetch, priceFloors *openrtb_ext.PriceFloorRules) error {
 	if priceFloors.Data == nil {
 		return errors.New("empty data in floor JSON")
 	}
@@ -280,8 +309,8 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 		return errors.New("no model groups found in price floor data")
 	}
 
-	if priceFloors.Data.SkipRate < skipRateMin || priceFloors.Data.SkipRate > skipRateMax {
-		return fmt.Errorf("skip rate should be greater than or equal to %d and less than %d", skipRateMin, skipRateMax)
+	if priceFloors.Data.SkipRate < 0 || priceFloors.Data.SkipRate > 100 {
+		return errors.New("skip rate should be greater than or equal to 0 and less than 100")
 	}
 
 	if priceFloors.Data.UseFetchDataRate != nil && (*priceFloors.Data.UseFetchDataRate < dataRateMin || *priceFloors.Data.UseFetchDataRate > dataRateMax) {
@@ -289,7 +318,7 @@ func validateRules(configs config.AccountFloorFetch, priceFloors *openrtb_ext.Pr
 	}
 
 	for _, modelGroup := range priceFloors.Data.ModelGroups {
-		if len(modelGroup.Values) == 0 || len(modelGroup.Values) > configs.MaxRules {
+		if len(modelGroup.Values) == 0 || len(modelGroup.Values) > config.MaxRules {
 			return errors.New("invalid number of floor rules, floor rules should be greater than zero and less than MaxRules specified in account config")
 		}
 

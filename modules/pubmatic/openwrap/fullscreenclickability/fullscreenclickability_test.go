@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_dbcache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_dbcache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
 
 	"github.com/golang/mock/gomock"
 )

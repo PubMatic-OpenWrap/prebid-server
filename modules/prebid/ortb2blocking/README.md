@@ -14,5 +14,5 @@ This module allows Prebid Server host companies to better support adapters that 
 
 Any suggestions or questions can be directed to [example@site.com]() e-mail.
 
-Or just open new [issue](https://github.com/prebid/prebid-server/issues/new)
-or [pull request](https://github.com/prebid/prebid-server/pulls) in this repository.
+Or just open new [issue](https://github.com/prebid/prebid-server/v2/issues/new)
+or [pull request](https://github.com/prebid/prebid-server/v2/pulls) in this repository.
