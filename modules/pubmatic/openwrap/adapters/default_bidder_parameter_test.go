@@ -119,7 +119,7 @@ func TestParseBidderParams(t *testing.T) {
 
 func TestParseBidderSchemaDefinitions(t *testing.T) {
 	schemaDefinitions, _ := parseBidderSchemaDefinitions("../../../../static/bidder-params")
-	assert.Equal(t, 192, len(schemaDefinitions), "Length of expected entries should match")
+	assert.Equal(t, 193, len(schemaDefinitions), "Length of expected entries should match")
 	// calculate this number using command - `ls -l | wc -l` (substract 1 from result)
 }
 
