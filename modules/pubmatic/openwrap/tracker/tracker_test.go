@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -38,11 +39,11 @@ func TestGetTrackerInfo(t *testing.T) {
 					ABTestConfigApplied: 1,
 					DeviceCtx: models.DeviceCtx{
 						Platform: models.DevicePlatformMobileAppAndroid,
-						Ext: &models.ExtDevice{
-							ExtDevice: openrtb_ext.ExtDevice{
-								ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
-							},
-						},
+						Ext: func() *models.ExtDevice {
+							extDevice := models.ExtDevice{}
+							json.Unmarshal([]byte(`{"atts":1}`), &extDevice)
+							return &extDevice
+						}(),
 					},
 				},
 				responseExt: openrtb_ext.ExtBidResponse{},

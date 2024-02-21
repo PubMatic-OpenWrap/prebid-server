@@ -51,9 +51,9 @@ type record struct {
 
 // Device struct for storing device information
 type Device struct {
-	Platform models.DevicePlatform             `json:"plt,omitempty"`
-	IFAType  *models.DeviceIFAType             `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
-	ATTS     *openrtb_ext.IOSAppTrackingStatus `json:"atts,omitempty"` //device.ext.atts
+	Platform models.DevicePlatform `json:"plt,omitempty"`
+	IFAType  *models.DeviceIFAType `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
+	ATTS     *float64              `json:"atts,omitempty"` //device.ext.atts
 }
 
 /*
@@ -199,7 +199,7 @@ func (wlog *WloggerRecord) logDeviceObject(dvc *models.DeviceCtx) {
 	wlog.Device.Platform = dvc.Platform
 	wlog.Device.IFAType = dvc.IFATypeID
 	if dvc.Ext != nil {
-		wlog.record.Device.ATTS = dvc.Ext.ATTS
+		wlog.record.Device.ATTS, _ = dvc.Ext.GetAtts()
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +67,11 @@ func TestPopulateDeviceExt(t *testing.T) {
 			want: want{
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
-					Ext:       &models.ExtDevice{},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"anykey": "anyval"}`))
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -82,6 +85,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 			want: want{
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
+					Ext:       models.NewExtDevice(),
 				},
 			},
 		},
@@ -97,7 +101,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 				/* removed_invalid_ifatype */
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
-					Ext:       &models.ExtDevice{},
+					Ext:       models.NewExtDevice(),
 				},
 			},
 		},
@@ -113,11 +117,11 @@ func TestPopulateDeviceExt(t *testing.T) {
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: `DpId`,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetIFAType("DpId")
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -133,11 +137,11 @@ func TestPopulateDeviceExt(t *testing.T) {
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: `sessionid`,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetIFAType("sessionid")
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -150,7 +154,7 @@ func TestPopulateDeviceExt(t *testing.T) {
 			},
 			want: want{
 				deviceCtx: models.DeviceCtx{
-					Ext: &models.ExtDevice{},
+					Ext: models.NewExtDevice(),
 				},
 			},
 		},
@@ -165,6 +169,11 @@ func TestPopulateDeviceExt(t *testing.T) {
 			want: want{
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"atts":"invalid_value"}`))
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -177,11 +186,11 @@ func TestPopulateDeviceExt(t *testing.T) {
 			},
 			want: want{
 				deviceCtx: models.DeviceCtx{
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"atts":1}`))
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -197,12 +206,12 @@ func TestPopulateDeviceExt(t *testing.T) {
 				deviceCtx: models.DeviceCtx{
 					DeviceIFA: `test_ifa`,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: `sessionid`,
-							ATTS:    ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"atts":1}`))
+						deviceExt.SetIFAType("sessionid")
+						return deviceExt
+					}(),
 				},
 			},
 		},
@@ -259,15 +268,15 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			name: `ifa_type_present_ifa_missing`,
 			args: args{
 				dvc: &models.DeviceCtx{
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: models.DeviceIFATypeDPID,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						ext := &models.ExtDevice{}
+						ext.SetIFAType(models.DeviceIFATypeDPID)
+						return ext
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
-				Ext: &models.ExtDevice{},
+				Ext: models.NewExtDevice(),
 			},
 		},
 		{
@@ -275,18 +284,16 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			args: args{
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `sample_ifa_value`,
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: `wrong_ifa_type`,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						ext := &models.ExtDevice{}
+						ext.SetIFAType("wrong_ifa_type")
+						return ext
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_ifa_value`,
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{},
-				},
+				Ext:       models.NewExtDevice(),
 			},
 		},
 		{
@@ -294,21 +301,21 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			args: args{
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `sample_ifa_value`,
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: models.DeviceIFATypeDPID,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						ext := &models.ExtDevice{}
+						ext.SetIFAType(models.DeviceIFATypeDPID)
+						return ext
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_ifa_value`,
 				IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{
-						IFAType: models.DeviceIFATypeDPID,
-					},
-				},
+				Ext: func() *models.ExtDevice {
+					ext := &models.ExtDevice{}
+					ext.SetIFAType(models.DeviceIFATypeDPID)
+					return ext
+				}(),
 			},
 		},
 		{
@@ -316,61 +323,59 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			args: args{
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `sample_ifa_value`,
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: strings.ToUpper(models.DeviceIFATypeDPID),
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						ext := &models.ExtDevice{}
+						ext.SetIFAType(strings.ToUpper(models.DeviceIFATypeDPID))
+						return ext
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_ifa_value`,
 				IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{
-						IFAType: strings.ToUpper(models.DeviceIFATypeDPID),
-					},
-				},
+				Ext: func() *models.ExtDevice {
+					ext := &models.ExtDevice{}
+					ext.SetIFAType(strings.ToUpper(models.DeviceIFATypeDPID))
+					return ext
+				}(),
 			},
 		},
 		{
 			name: `ifa_type_present_session_id_present`,
 			args: args{
 				dvc: &models.DeviceCtx{
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: models.DeviceIFATypeDPID,
-						},
-						SessionID: `sample_session_id`,
-					},
+					Ext: func() *models.ExtDevice {
+						ext := &models.ExtDevice{}
+						ext.SetIFAType(strings.ToUpper(models.DeviceIFATypeDPID))
+						ext.SetSessionID(`sample_session_id`)
+						return ext
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_session_id`,
 				IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{
-						IFAType: models.DeviceIFATypeSESSIONID,
-					},
-					SessionID: `sample_session_id`,
-				},
+				Ext: func() *models.ExtDevice {
+					ext := &models.ExtDevice{}
+					ext.SetIFAType(models.DeviceIFATypeSESSIONID)
+					ext.SetSessionID(`sample_session_id`)
+					return ext
+				}(),
 			},
 		},
 		{
 			name: `ifa_type_present_session_id_missing`,
 			args: args{
 				dvc: &models.DeviceCtx{
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							IFAType: models.DeviceIFATypeDPID,
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetIFAType(models.DeviceIFATypeDPID)
+						return deviceExt
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{},
-				},
+				Ext: models.NewExtDevice(),
 			},
 		},
 		{
@@ -378,21 +383,22 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			args: args{
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `existing_ifa_id`,
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{},
-						SessionID: `sample_session_id`,
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetSessionID(`sample_session_id`)
+						return deviceExt
+					}(),
 				},
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_session_id`,
 				IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
-				Ext: &models.ExtDevice{
-					ExtDevice: openrtb_ext.ExtDevice{
-						IFAType: models.DeviceIFATypeSESSIONID,
-					},
-					SessionID: `sample_session_id`,
-				},
+				Ext: func() *models.ExtDevice {
+					deviceExt := &models.ExtDevice{}
+					deviceExt.SetSessionID(`sample_session_id`)
+					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
+					return deviceExt
+				}(),
 			},
 		},
 		// TODO: Add test cases.
@@ -460,9 +466,11 @@ func TestAmendDeviceObject(t *testing.T) {
 				},
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `new_ifa`,
-					Ext: &models.ExtDevice{
-						SessionID: `sample_session`,
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetSessionID("sample_session")
+						return deviceExt
+					}(),
 				},
 			},
 			want: &openrtb2.Device{
@@ -481,9 +489,11 @@ func TestAmendDeviceObject(t *testing.T) {
 				},
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `new_ifa`,
-					Ext: &models.ExtDevice{
-						SessionID: `sample_session`,
-					},
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetSessionID("sample_session")
+						return deviceExt
+					}(),
 				},
 			},
 			want: &openrtb2.Device{
@@ -497,6 +507,7 @@ func TestAmendDeviceObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			amendDeviceObject(tt.args.device, tt.args.dvc)
+			assert.Equal(t, tt.args.device, tt.want, "mismatched device object")
 		})
 	}
 }

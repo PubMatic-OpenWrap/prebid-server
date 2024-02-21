@@ -87,7 +87,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			)
 
 			if rctx.DeviceCtx.Ext != nil {
-				tracker.ATTS = rctx.DeviceCtx.Ext.ATTS
+				tracker.ATTS, _ = rctx.DeviceCtx.Ext.GetAtts()
 			}
 
 			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
