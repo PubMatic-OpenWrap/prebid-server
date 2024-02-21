@@ -210,6 +210,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	ctx := r.Context()
 	hookExecutor.SetActivityControl(activityControl)
+	hookExecutor.SetAccount(account)
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
 	if timeout > 0 {
