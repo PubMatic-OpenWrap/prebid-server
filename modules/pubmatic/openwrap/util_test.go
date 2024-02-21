@@ -180,6 +180,9 @@ func (s fakeSyncer) SupportsType(syncTypes []usersync.SyncType) bool {
 func (fakeSyncer) GetSync([]usersync.SyncType, macros.UserSyncPrivacy) (usersync.Sync, error) {
 	return usersync.Sync{}, nil
 }
+func (fakeSyncer) DefaultResponseFormat() usersync.SyncType {
+	return usersync.SyncType("")
+}
 
 func TestGetDevicePlatform(t *testing.T) {
 	type args struct {
