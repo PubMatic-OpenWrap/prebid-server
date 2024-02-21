@@ -3,7 +3,7 @@ package gocache
 import (
 	"testing"
 
-	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

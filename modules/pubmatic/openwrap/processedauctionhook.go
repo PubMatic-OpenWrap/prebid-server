@@ -3,8 +3,8 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(
@@ -33,8 +33,8 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	ip := rctx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		if parp.RequestWrapper != nil && parp.RequestWrapper.BidRequest.Device != nil && (parp.RequestWrapper.BidRequest.Device.IP == "" && parp.RequestWrapper.BidRequest.Device.IPv6 == "") {
-			parp.RequestWrapper.BidRequest.Device.IP = ip
+		if parp.Request != nil && parp.Request.BidRequest.Device != nil && (parp.Request.BidRequest.Device.IP == "" && parp.Request.BidRequest.Device.IPv6 == "") {
+			parp.Request.BidRequest.Device.IP = ip
 		}
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-device-ip")

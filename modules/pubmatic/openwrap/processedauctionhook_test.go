@@ -6,11 +6,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -117,7 +117,7 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 					},
 				},
 				payload: hookstage.ProcessedAuctionRequestPayload{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
+					Request: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{
 							Device: &openrtb2.Device{
 								IP: "",
@@ -154,7 +154,7 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 				for _, mut := range mutations {
 					result, err := mut.Apply(tt.args.payload)
 					assert.Nil(t, err, tt.name)
-					assert.Equal(t, tt.wantBidRequest, result.RequestWrapper.BidRequest, tt.name)
+					assert.Equal(t, tt.wantBidRequest, result.Request.BidRequest, tt.name)
 				}
 			}
 			assert.Equal(t, tt.want.DebugMessages, got.DebugMessages, "Debug messages should be equal")
