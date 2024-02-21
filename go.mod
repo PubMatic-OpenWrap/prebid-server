@@ -1,6 +1,8 @@
-module github.com/prebid/prebid-server/v2
+module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.20
+
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240215114830-026b72bf5a2f
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -8,26 +10,30 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/alitto/pond v1.8.3
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/beevik/etree v1.0.2
 	github.com/benbjohnson/clock v1.3.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/chasex/glog v0.0.0-20160217080310-c62392af379c
 	github.com/coocood/freecache v1.2.1
 	github.com/docker/go-units v0.4.0
-	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/glog v1.1.0
 	github.com/json-iterator/go v1.1.12
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.4
+	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/copystructure v1.2.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prebid/go-gdpr v1.12.0
 	github.com/prebid/go-gpp v0.1.1
 	github.com/prebid/openrtb/v19 v19.0.0
+	github.com/prebid/prebid-server/v2 v2.1.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/rs/cors v1.8.2
+	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.1
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
@@ -41,6 +47,15 @@ require (
 )
 
 require (
+	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
+	github.com/go-sql-driver/mysql v1.7.0
+	github.com/golang/mock v1.6.0
+	github.com/satori/go.uuid v1.2.0
+	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
+)
+
+require (
+	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -48,7 +63,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d // indirect
-	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -59,7 +73,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
-	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -77,3 +90,11 @@ require (
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/prebid/prebid-server/v2 => ./
+
+replace github.com/prebid/openrtb/v19 => github.com/PubMatic-OpenWrap/prebid-openrtb/v19 v19.0.0-20230517094918-56ce40c97ced
+
+replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
+
+replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0

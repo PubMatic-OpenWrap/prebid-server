@@ -2131,6 +2131,17 @@ func (e TestApplyHookMutationsBuilder) PlanForRawAuctionStage(_ string, _ *confi
 	}
 }
 
+func (e TestApplyHookMutationsBuilder) PlanForValidationStage(_ string, _ *config.Account) hooks.Plan[hookstage.BeforeValidationRequest] {
+	return hooks.Plan[hookstage.BeforeValidationRequest]{
+		hooks.Group[hookstage.BeforeValidationRequest]{
+			Timeout: 10 * time.Millisecond,
+			Hooks: []hooks.HookWrapper[hookstage.BeforeValidationRequest]{
+				{Module: "foobar", Code: "foo", Hook: mockUpdateBidRequestHook{}},
+			},
+		},
+	}
+}
+
 func (e TestApplyHookMutationsBuilder) PlanForProcessedAuctionStage(_ string, _ *config.Account) hooks.Plan[hookstage.ProcessedAuctionRequest] {
 	return hooks.Plan[hookstage.ProcessedAuctionRequest]{
 		hooks.Group[hookstage.ProcessedAuctionRequest]{
