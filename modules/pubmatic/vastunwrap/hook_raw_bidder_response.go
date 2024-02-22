@@ -27,7 +27,7 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		vastRequestContext.PubID = pubId
 		vastUnwrapEnabled = getRandomNumber() < m.TrafficPercentage && m.getVastUnwrapEnable(vastRequestContext)
 		result.DebugMessages = append(result.DebugMessages,
-			fmt.Sprintf("debug: found request without sshb=1 in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
+			fmt.Sprintf("found request without sshb=1 in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
 	}
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled

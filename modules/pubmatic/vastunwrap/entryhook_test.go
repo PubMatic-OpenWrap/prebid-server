@@ -109,7 +109,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{},
-				DebugMessages: []string{"debug: webs2s endpoint does not support vast-unwrap feature"},
+				DebugMessages: []string{"webs2s endpoint does not support vast-unwrap feature"},
 			},
 		},
 		{
@@ -126,7 +126,7 @@ func TestHandleEntrypointHook(t *testing.T) {
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{},
-				DebugMessages: []string{"debug: hybrid endpoint does not support vast-unwrap feature"},
+				DebugMessages: []string{"hybrid endpoint does not support vast-unwrap feature"},
 			},
 		},
 		{

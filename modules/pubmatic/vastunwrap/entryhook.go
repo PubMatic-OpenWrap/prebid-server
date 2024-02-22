@@ -53,7 +53,7 @@ func handleEntrypointHook(
 	} else {
 		endpoint := openwrap.GetEndpoint(payload.Request.URL.Path, source)
 		if _, ok := supportedEndpoints[endpoint]; !ok {
-			result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("debug: %s endpoint does not support vast-unwrap feature", endpoint))
+			result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("%s endpoint does not support vast-unwrap feature", endpoint))
 			return result, nil
 		}
 		requestExtWrapper, _ := openwrap.GetRequestWrapper(payload, result, endpoint)
