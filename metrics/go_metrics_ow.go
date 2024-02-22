@@ -44,3 +44,7 @@ func (me *Metrics) RecordHttpCounter() {
 // RecordVASTTagType as a noop
 func (me *Metrics) RecordVASTTagType(biddder, vastTag string) {
 }
+
+// RecordPanic as a noop
+func (me *Metrics) RecordPanic(hostname, method string) {
+}

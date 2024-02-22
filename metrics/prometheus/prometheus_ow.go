@@ -16,6 +16,8 @@ const (
 	profileLabel     = "profileid"
 	dealLabel        = "deal"
 	vastTagTypeLabel = "type"
+	hostNameLabel    = "host"
+	methodLabel      = "method"
 )
 
 type OWMetrics struct {
@@ -46,6 +48,8 @@ type OWMetrics struct {
 	// algorithm to generate final pod response based on bid response and ad pod request
 	podCompExclTimer *prometheus.HistogramVec
 	httpCounter      prometheus.Counter
+
+	panics *prometheus.CounterVec
 }
 
 func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
@@ -179,6 +183,13 @@ func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
 	}
 }
 
+func (m *OWMetrics) RecordPanic(hostname, method string) {
+	m.panics.With(prometheus.Labels{
+		hostNameLabel: hostname,
+		methodLabel:   method,
+	}).Inc()
+}
+
 func (m *Metrics) RecordHttpCounter() {
 	m.httpCounter.Inc()
 }
@@ -256,5 +267,10 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		// 200 µS, 250 µS, 275 µS, 300 µS
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
+
+	m.panics = newCounter(cfg, reg,
+		"prebid_panics",
+		"Count of prebid server panics",
+		[]string{hostNameLabel, methodLabel})
 
 }

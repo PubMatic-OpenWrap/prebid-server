@@ -8,6 +8,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -23,17 +26,19 @@ const (
 )
 
 type adpod struct {
-	handle      httprouter.Handle
-	cacheClient *pbc.Client
+	handle        httprouter.Handle
+	config        *config.Configuration
+	cacheClient   *pbc.Client
+	metricsEngine metrics.MetricsEngine
 }
 
-func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, cacheClient *pbc.Client) *adpod {
-	return &adpod{handle: handleToWrap, cacheClient: cacheClient}
+func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, config *config.Configuration, cc *pbc.Client, me metrics.MetricsEngine) *adpod {
+	return &adpod{handle: handleToWrap, config: config, cacheClient: cc, metricsEngine: me}
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer panicHandler(r)
+	defer a.panicHandler(r)
 
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
@@ -67,7 +72,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer panicHandler(r)
+	defer a.panicHandler(r)
 
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
@@ -99,7 +104,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer panicHandler(r)
+	defer a.panicHandler(r)
 
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
@@ -121,7 +126,7 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 // JsonGetEndpoint
 func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer panicHandler(r)
+	defer a.panicHandler(r)
 
 	enrichError := enrichRequestBody(r)
 	if enrichError != nil {
@@ -154,8 +159,9 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	w.Write(response)
 }
 
-func panicHandler(r *http.Request) {
+func (a *adpod) panicHandler(r *http.Request) {
 	if recover := recover(); recover != nil {
+		a.metricsEngine.RecordPanic(openwrap.GetHostName(), "openwrap-module-middleware")
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))

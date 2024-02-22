@@ -45,3 +45,8 @@ func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
 func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
 	me.Called(bidder, vastTagType)
 }
+
+// RecordPanic mock
+func (me *MetricsEngineMock) RecordPanic(hostname, method string) {
+	me.Called(hostname, method)
+}

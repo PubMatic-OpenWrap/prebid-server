@@ -8,4 +8,6 @@ type OWMetricsEngine interface {
 	RecordVastVersion(coreBidder, vastVersion string)
 	//RecordVASTTagType record the count of vast tag type labeled by bidder and vast tag
 	RecordVASTTagType(bidder, vastTagType string)
+
+	RecordPanic(hostname, method string)
 }

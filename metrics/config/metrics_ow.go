@@ -62,6 +62,13 @@ func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
 	}
 }
 
+// RecordPanic across all engines
+func (me *MultiMetricsEngine) RecordPanic(hostname, method string) {
+	for _, thisME := range *me {
+		thisME.RecordPanic(hostname, method)
+	}
+}
+
 // RecordVASTTagType as a noop
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
@@ -87,4 +94,8 @@ func (m *NilMetricsEngine) RecordHttpCounter() {
 
 // RecordRejectedBidsForBidder as a noop
 func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+}
+
+// RecordPanic as a noop
+func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
 }

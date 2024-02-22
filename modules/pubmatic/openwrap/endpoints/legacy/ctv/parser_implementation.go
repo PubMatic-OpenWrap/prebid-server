@@ -4615,7 +4615,7 @@ func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
 
 	bidderParams, ok := prebidExt[ORTBExtPrebidBidderParams].(map[string]interface{})
 	if !ok {
-		prebidExt[ORTBExtPrebidBidderParams] = map[string]interface{}{}
+		bidderParams = map[string]interface{}{}
 	}
 
 	pubmaticBidderParams, ok := bidderParams[models.BidderPubMatic].(map[string]interface{})
