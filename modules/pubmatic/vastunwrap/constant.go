@@ -14,4 +14,8 @@ const (
 	ContentType         = "Content-Type"
 	UnwrapTimeout       = "unwrap-timeout"
 	MediaTypeVideo      = "video"
+	ProfileId           = "profileID"
+	VersionId           = "versionID"
+	DisplayId           = "DisplayID"
+	Endpoint            = "Endpoint"
 )

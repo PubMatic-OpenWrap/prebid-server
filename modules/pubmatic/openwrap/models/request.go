@@ -110,6 +110,7 @@ type RequestExtWrapper struct {
 	LoggerImpressionID   string                 `json:"wiid,omitempty"`
 	SSAI                 string                 `json:"ssai,omitempty"`
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
+	PubId                int                    `json:"-"`
 }
 
 type BidderWrapper struct {

@@ -217,13 +217,11 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 		var deviceExt models.ExtDevice
 
 		if session_id := GetValueFromRequest(values, redirectQueryParams, models.DeviceExtSessionID); session_id != nil {
-			deviceExt.SessionID = GetString(session_id)
+			deviceExt.SetSessionID(GetString(session_id))
 		}
 
 		if ifaType := GetValueFromRequest(values, redirectQueryParams, models.DeviceExtIfaType); ifaType != nil {
-			deviceExt.ExtDevice = openrtb_ext.ExtDevice{
-				IFAType: GetString(ifaType),
-			}
+			deviceExt.SetIFAType(GetString(ifaType))
 		}
 		bidRequest.Device.Ext, _ = json.Marshal(deviceExt)
 	} else {

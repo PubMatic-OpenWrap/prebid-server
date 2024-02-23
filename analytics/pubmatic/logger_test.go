@@ -3569,11 +3569,11 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					PubID: 5890,
 					DeviceCtx: models.DeviceCtx{
-						Ext: &models.ExtDevice{
-							ExtDevice: openrtb_ext.ExtDevice{
-								ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
-							},
-						},
+						Ext: func() *models.ExtDevice {
+							extDevice := models.ExtDevice{}
+							extDevice.UnmarshalJSON([]byte(`{"atts":1}`))
+							return &extDevice
+						}(),
 					},
 				},
 				logInfo:    true,

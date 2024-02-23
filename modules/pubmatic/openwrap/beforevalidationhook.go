@@ -129,6 +129,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = errors.New("failed to get profile data: received empty data")
 		}
 		result.Errors = append(result.Errors, err.Error())
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, nil
@@ -170,7 +171,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = nbr.InvalidPlatform
-		result.Errors = append(result.Errors, "failed to get platform data")
+		err = errors.New("failed to get platform data")
+		result.Errors = append(result.Errors, err.Error())
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, nil
@@ -247,6 +250,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = nbr.InternalError
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
+				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
 				return result, err
 			}
 		}
@@ -257,6 +261,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = nbr.InvalidImpressionTagID
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
+			rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
 			return result, err
 		}
 
