@@ -3024,8 +3024,8 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						NetECPM:     90,
-						GrossECPM:   100,
+						NetECPM:     100,
+						GrossECPM:   111.11,
 						OriginalCPM: 100,
 						OriginalCur: "USD",
 						PartnerID:   "pubmatic",
@@ -3198,8 +3198,8 @@ func TestGetPartnerRecordsByImpForRevShareAndBidCPM(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						NetECPM:     90,
-						GrossECPM:   100,
+						NetECPM:     100,
+						GrossECPM:   111.11,
 						OriginalCPM: 200,
 						OriginalCur: "INR",
 						PartnerID:   "pubmatic",
@@ -3568,11 +3568,11 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					PubID: 5890,
 					DeviceCtx: models.DeviceCtx{
-						Ext: &models.ExtDevice{
-							ExtDevice: openrtb_ext.ExtDevice{
-								ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusRestricted),
-							},
-						},
+						Ext: func() *models.ExtDevice {
+							extDevice := models.ExtDevice{}
+							extDevice.UnmarshalJSON([]byte(`{"atts":1}`))
+							return &extDevice
+						}(),
 					},
 				},
 				logInfo:    true,

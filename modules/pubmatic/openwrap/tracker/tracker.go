@@ -13,7 +13,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 	tracker := models.Tracker{
 		PubID:             rCtx.PubID,
 		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayVersionID),
 		PageURL:           rCtx.PageURL,
 		Timestamp:         rCtx.StartTime,
 		IID:               rCtx.LoggerImpressionID,
@@ -27,7 +27,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 	}
 
 	if rCtx.DeviceCtx.Ext != nil {
-		tracker.ATTS = rCtx.DeviceCtx.Ext.ATTS
+		tracker.ATTS, _ = rCtx.DeviceCtx.Ext.GetAtts()
 	}
 
 	constructedURLString := constructTrackerURL(rCtx, tracker)

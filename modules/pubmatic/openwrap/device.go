@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -21,7 +20,7 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 
 	//unmarshal device ext
 	var deviceExt models.ExtDevice
-	if err := json.Unmarshal(device.Ext, &deviceExt); err != nil {
+	if err := deviceExt.UnmarshalJSON(device.Ext); err != nil {
 		return
 	}
 	dvc.Ext = &deviceExt
@@ -36,28 +35,44 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 	}
 
 	deviceExt := dvc.Ext
-	deviceExt.IFAType = strings.TrimSpace(deviceExt.IFAType)
-	deviceExt.SessionID = strings.TrimSpace(deviceExt.SessionID)
+	extIFATypeStr, _ := deviceExt.GetIFAType()
+	extSessionIDStr, _ := deviceExt.GetSessionID()
 
-	//refactor below condition
-	if deviceExt.IFAType != "" {
-		if dvc.DeviceIFA != "" {
-			if _, ok := models.DeviceIFATypeID[strings.ToLower(deviceExt.IFAType)]; !ok {
-				deviceExt.IFAType = ""
-			}
-		} else if deviceExt.SessionID != "" {
-			dvc.DeviceIFA = deviceExt.SessionID
-			deviceExt.IFAType = models.DeviceIFATypeSESSIONID
-		} else {
-			deviceExt.IFAType = ""
+	if extIFATypeStr == "" {
+		if extSessionIDStr == "" {
+			deviceExt.DeleteIFAType()
+			deviceExt.DeleteSessionID()
+			return
 		}
-	} else if deviceExt.SessionID != "" {
-		dvc.DeviceIFA = deviceExt.SessionID
-		deviceExt.IFAType = models.DeviceIFATypeSESSIONID
+		dvc.DeviceIFA = extSessionIDStr
+		extIFATypeStr = models.DeviceIFATypeSESSIONID
+	}
+	if dvc.DeviceIFA != "" {
+		if _, ok := models.DeviceIFATypeID[strings.ToLower(extIFATypeStr)]; !ok {
+			extIFATypeStr = ""
+		}
+	} else if extSessionIDStr != "" {
+		dvc.DeviceIFA = extSessionIDStr
+		extIFATypeStr = models.DeviceIFATypeSESSIONID
+
+	} else {
+		extIFATypeStr = ""
 	}
 
-	if ifaTypeID, ok := models.DeviceIFATypeID[strings.ToLower(deviceExt.IFAType)]; ok {
+	if ifaTypeID, ok := models.DeviceIFATypeID[strings.ToLower(extIFATypeStr)]; ok {
 		dvc.IFATypeID = &ifaTypeID
+	}
+
+	if extIFATypeStr == "" {
+		deviceExt.DeleteIFAType()
+	} else {
+		deviceExt.SetIFAType(extIFATypeStr)
+	}
+
+	if extSessionIDStr == "" {
+		deviceExt.DeleteSessionID()
+	} else {
+		deviceExt.SetSessionID(extSessionIDStr)
 	}
 }
 
@@ -73,6 +88,6 @@ func amendDeviceObject(device *openrtb2.Device, dvc *models.DeviceCtx) {
 
 	//update device extension
 	if dvc.Ext != nil {
-		device.Ext, _ = json.Marshal(dvc.Ext)
+		device.Ext, _ = dvc.Ext.MarshalJSON()
 	}
 }
