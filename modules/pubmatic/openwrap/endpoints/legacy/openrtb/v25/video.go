@@ -9,11 +9,12 @@ import (
 	"strings"
 
 	"github.com/gofrs/uuid"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestExtWrapper, error) {
@@ -75,7 +76,7 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 		bidRequest.Imp[0].Video.Sequence = *sequence
 	}
 	if boxingAllowed := GetCustomAtoI8(GetString(GetValueFromRequest(values, redirectQueryParams, models.BoxingAllowedORTBParam))); boxingAllowed != nil {
-		bidRequest.Imp[0].Video.BoxingAllowed = *boxingAllowed
+		bidRequest.Imp[0].Video.BoxingAllowed = boxingAllowed
 	}
 	if prctl := GetCustomAtoI8(GetString(GetValueFromRequest(values, redirectQueryParams, models.ProtocolORTBParam))); prctl != nil {
 		bidRequest.Imp[0].Video.Protocol = adcom1.MediaCreativeSubtype(*prctl)
@@ -98,8 +99,10 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 	size := GetString(GetValueFromRequest(values, redirectQueryParams, models.SizeORTBParam))
 	if size != "" && strings.Split(size, "x") != nil {
 		sizeValues := strings.Split(size, "x")
-		bidRequest.Imp[0].Video.W, _ = strconv.ParseInt(sizeValues[0], 10, 64)
-		bidRequest.Imp[0].Video.H, _ = strconv.ParseInt(sizeValues[1], 10, 64)
+		w, _ := strconv.ParseInt(sizeValues[0], 10, 64)
+		h, _ := strconv.ParseInt(sizeValues[0], 10, 64)
+		bidRequest.Imp[0].Video.W = &w
+		bidRequest.Imp[0].Video.H = &h
 	}
 
 	slot := redirectQueryParams.Get(models.InventoryUnitKey)
@@ -190,8 +193,8 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 			MACSHA1:  GetString(GetValueFromRequest(values, redirectQueryParams, models.DeviceMacsha1ORTBParam)),
 			MACMD5:   GetString(GetValueFromRequest(values, redirectQueryParams, models.DeviceMacmd5ORTBParam)),
 			Geo: &openrtb2.Geo{
-				Lat:       GetCustomStrToFloat(GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoLatORTBParam))),
-				Lon:       GetCustomStrToFloat(GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoLonORTBParam))),
+				Lat:       ptrutil.ToPtr(GetCustomStrToFloat(GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoLatORTBParam)))),
+				Lon:       ptrutil.ToPtr(GetCustomStrToFloat(GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoLonORTBParam)))),
 				Country:   GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoCountryORTBParam)),
 				City:      GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoCityORTBParam)),
 				Metro:     GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoMetroORTBParam)),
@@ -202,12 +205,12 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 
 		paid := GetCustomAtoI8(GetString(GetValueFromRequest(values, redirectQueryParams, models.AppPaidORTBParam)))
 		if paid != nil {
-			bidRequest.App.Paid = *paid
+			bidRequest.App.Paid = paid
 		}
 
 		js := GetCustomAtoI8(GetString(GetValueFromRequest(values, redirectQueryParams, models.DeviceJSORTBParam)))
 		if js != nil {
-			bidRequest.Device.JS = *js
+			bidRequest.Device.JS = js
 		}
 
 		if locationTypeValue := GetCustomAtoI8(GetString(GetValueFromRequest(values, redirectQueryParams, models.GeoTypeORTBParam))); locationTypeValue != nil {

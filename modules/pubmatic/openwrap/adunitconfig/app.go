@@ -1,7 +1,7 @@
 package adunitconfig
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
@@ -63,11 +63,11 @@ func ReplaceAppObjectFromAdUnitConfig(rCtx models.RequestCtx, app *openrtb2.App)
 		app.Ver = adUnitCfg.App.Ver
 	}
 
-	if app.PrivacyPolicy == 0 {
+	if app.PrivacyPolicy == nil || *app.PrivacyPolicy == 0 {
 		app.PrivacyPolicy = adUnitCfg.App.PrivacyPolicy
 	}
 
-	if app.Paid == 0 {
+	if app.Paid == nil || *app.Paid == 0 {
 		app.Paid = adUnitCfg.App.Paid
 	}
 

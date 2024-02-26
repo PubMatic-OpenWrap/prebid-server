@@ -3,7 +3,7 @@ package openwrap
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -83,8 +83,8 @@ func Test_getIncomingSlots(t *testing.T) {
 				imp: openrtb2.Imp{
 					ID: "1",
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 			},
@@ -109,8 +109,8 @@ func Test_getIncomingSlots(t *testing.T) {
 						},
 					},
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 			},

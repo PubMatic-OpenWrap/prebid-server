@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -122,8 +122,8 @@ func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
 		}
 	}
 
-	if imp.Video != nil {
-		size := models.GetSizeForPlatform(imp.Video.W, imp.Video.H, models.PLATFORM_VIDEO)
+	if imp.Video != nil && imp.Video.W != nil && imp.Video.H != nil{
+		size := models.GetSizeForPlatform(*imp.Video.W, *imp.Video.H, models.PLATFORM_VIDEO)
 		if _, ok := sizes[size]; !ok {
 			sizeArr = append(sizeArr, size)
 			sizes[size] = true

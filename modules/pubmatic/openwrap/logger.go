@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -23,8 +23,8 @@ func getIncomingSlots(imp openrtb2.Imp) []string {
 		}
 	}
 
-	if imp.Video != nil {
-		sizes[fmt.Sprintf("%dx%dv", imp.Video.W, imp.Video.H)] = struct{}{}
+	if imp.Video != nil && imp.Video.W != nil && imp.Video.H != nil {
+		sizes[fmt.Sprintf("%dx%dv", *imp.Video.W, *imp.Video.H)] = struct{}{}
 	}
 
 	var s []string

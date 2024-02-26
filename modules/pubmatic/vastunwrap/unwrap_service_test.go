@@ -8,7 +8,7 @@ import (
 	"git.pubmatic.com/vastunwrap/config"
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	mock_stats "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/stats/mock"
 

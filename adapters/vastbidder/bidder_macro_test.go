@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -660,7 +661,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
 					Source: &openrtb2.Source{
-						FD:     1,
+						FD:     ptrutil.ToPtr[int8](1),
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
@@ -704,8 +705,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxDuration:    60,
 								Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST40Wrapper},
 								Protocol:       adcom1.CreativeVAST40Wrapper,
-								W:              640,
-								H:              480,
+								W:              ptrutil.ToPtr[int64](640),
+								H:              ptrutil.ToPtr[int64](480),
 								StartDelay:     new(adcom1.StartDelay),
 								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
@@ -717,7 +718,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
-								BoxingAllowed:  1,
+								BoxingAllowed:  ptrutil.ToPtr[int8](1),
 								PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn, adcom1.PlaybackClickSoundOn},
 								PlaybackEnd:    adcom1.PlaybackCompletion,
 								Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryStreaming, adcom1.DeliveryDownload},
@@ -736,8 +737,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						Page:          `site-page-url`,
 						Ref:           `site-referer-url`,
 						Search:        `site-search-keywords`,
-						Mobile:        1,
-						PrivacyPolicy: 2,
+						Mobile:        ptrutil.ToPtr[int8](1),
+						PrivacyPolicy: ptrutil.ToPtr[int8](2),
 						Keywords:      `site-keywords`,
 						Publisher: &openrtb2.Publisher{
 							ID:     `site-pub-id`,
@@ -763,11 +764,11 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UserRating:         `2.2`,
 							QAGMediaRating:     adcom1.MediaRatingAll,
 							Keywords:           `site-cnt-keywords`,
-							LiveStream:         1,
-							SourceRelationship: 1,
+							LiveStream:         ptrutil.ToPtr[int8](1),
+							SourceRelationship: ptrutil.ToPtr[int8](1),
 							Len:                100,
 							Language:           `english`,
-							Embeddable:         1,
+							Embeddable:         ptrutil.ToPtr[int8](1),
 							Producer: &openrtb2.Producer{
 								ID:   `site-cnt-prod-id`,
 								Name: `site-cnt-prod-name`,
@@ -787,7 +788,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						OSV:            `os-version`,
 						H:              1024,
 						W:              2048,
-						JS:             1,
+						JS:             ptrutil.ToPtr[int8](1),
 						Language:       `device-lang`,
 						ConnectionType: new(adcom1.ConnectionType),
 						IFA:            `ifa`,
@@ -798,8 +799,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
 						Geo: &openrtb2.Geo{
-							Lat:       1.1,
-							Lon:       2.2,
+							Lat:       ptrutil.ToPtr[float64](1.1),
+							Lon:       ptrutil.ToPtr[float64](2.2),
 							Country:   `country`,
 							Region:    `region`,
 							City:      `city`,
@@ -959,7 +960,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
 					Source: &openrtb2.Source{
-						FD:     1,
+						FD:     ptrutil.ToPtr[int8](1),
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
@@ -1003,8 +1004,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxDuration:    60,
 								Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST40Wrapper},
 								Protocol:       adcom1.CreativeVAST40Wrapper,
-								W:              640,
-								H:              480,
+								W:              ptrutil.ToPtr[int64](640),
+								H:              ptrutil.ToPtr[int64](480),
 								StartDelay:     new(adcom1.StartDelay),
 								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
@@ -1016,7 +1017,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
-								BoxingAllowed:  1,
+								BoxingAllowed:  ptrutil.ToPtr[int8](1),
 								PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn, adcom1.PlaybackClickSoundOn},
 								PlaybackEnd:    adcom1.PlaybackCompletion,
 								Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryStreaming, adcom1.DeliveryDownload},
@@ -1030,13 +1031,13 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						Bundle:        `app-bundle`,
 						StoreURL:      `app-store-url`,
 						Ver:           `app-version`,
-						Paid:          1,
+						Paid:          ptrutil.ToPtr[int8](1),
 						Name:          `app-name`,
 						Domain:        `app-domain`,
 						Cat:           []string{`app-cat1`, `app-cat2`},
 						SectionCat:    []string{`app-sec-cat1`, `app-sec-cat2`},
 						PageCat:       []string{`app-page-cat1`, `app-page-cat2`},
-						PrivacyPolicy: 2,
+						PrivacyPolicy: ptrutil.ToPtr[int8](2),
 						Keywords:      `app-keywords`,
 						Publisher: &openrtb2.Publisher{
 							ID:     `app-pub-id`,
@@ -1062,11 +1063,11 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UserRating:         `2.2`,
 							QAGMediaRating:     adcom1.MediaRatingAll,
 							Keywords:           `app-cnt-keywords`,
-							LiveStream:         1,
-							SourceRelationship: 1,
+							LiveStream:         ptrutil.ToPtr[int8](1),
+							SourceRelationship: ptrutil.ToPtr[int8](1),
 							Len:                100,
 							Language:           `english`,
-							Embeddable:         1,
+							Embeddable:         ptrutil.ToPtr[int8](1),
 							Producer: &openrtb2.Producer{
 								ID:   `app-cnt-prod-id`,
 								Name: `app-cnt-prod-name`,
@@ -1085,7 +1086,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						OSV:            `os-version`,
 						H:              1024,
 						W:              2048,
-						JS:             1,
+						JS:             ptrutil.ToPtr[int8](1),
 						Language:       `device-lang`,
 						ConnectionType: new(adcom1.ConnectionType),
 						IFA:            `ifa`,
@@ -1096,8 +1097,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
 						Geo: &openrtb2.Geo{
-							Lat:       1.1,
-							Lon:       2.2,
+							Lat:       ptrutil.ToPtr[float64](1.1),
+							Lon:       ptrutil.ToPtr[float64](2.2),
 							Country:   `country`,
 							Region:    `region`,
 							City:      `city`,

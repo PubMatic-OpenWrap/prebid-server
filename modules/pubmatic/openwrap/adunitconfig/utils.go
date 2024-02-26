@@ -1,7 +1,7 @@
 package adunitconfig
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -10,8 +10,16 @@ import (
 // TODO use this
 func GetMatchedSlotName(rCtx models.RequestCtx, imp openrtb2.Imp, impExt models.ImpExtension) (slotAdUnitConfig *adunitconfig.AdConfig, isRegex bool) {
 	div := ""
-	height := imp.Video.H
-	width := imp.Video.W
+	var height, width int64
+	if imp.Video != nil {
+		if imp.Video.H != nil {
+			height = *imp.Video.H
+		}
+		if imp.Video.W != nil {
+			width = *imp.Video.W
+		}
+	}
+
 	tagID := imp.TagID
 
 	if impExt.Wrapper != nil {

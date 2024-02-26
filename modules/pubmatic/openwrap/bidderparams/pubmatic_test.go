@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -33,8 +33,8 @@ func getTestImp(tagID string, banner bool, video bool) openrtb2.Imp {
 		return openrtb2.Imp{
 			ID: "111",
 			Video: &openrtb2.Video{
-				W: 200,
-				H: 300,
+				W: ptrutil.ToPtr[int64](200),
+				H: ptrutil.ToPtr[int64](300),
 			},
 			TagID: tagID,
 		}

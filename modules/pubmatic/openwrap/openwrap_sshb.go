@@ -1,7 +1,7 @@
 package openwrap
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"

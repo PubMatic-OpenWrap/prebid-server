@@ -220,7 +220,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "",
 			floorRuleVal: 5.5,
 			floorVal:     15.5,
-			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)}, Ext: []byte(`{"prebid": {"test": true}}`)}},
 			expected:     []byte(`{"prebid":{"floors":{"floorvalue":15.5}}}`),
 		},
 	}

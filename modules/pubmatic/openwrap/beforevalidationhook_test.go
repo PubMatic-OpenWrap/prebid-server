@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
@@ -70,8 +70,8 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 				H: ptrutil.ToPtr[int64](300),
 			},
 			Video: &openrtb2.Video{
-				W:     200,
-				H:     300,
+				W:     ptrutil.ToPtr[int64](200),
+				H:     ptrutil.ToPtr[int64](300),
 				Plcmt: 1,
 			},
 		},
@@ -912,8 +912,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -975,8 +975,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -1185,8 +1185,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1194,8 +1194,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -1230,8 +1230,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1279,10 +1279,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1310,8 +1310,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:              640,
-						H:              480,
+						W:              ptrutil.ToPtr[int64](640),
+						H:              ptrutil.ToPtr[int64](480),
 						MinDuration:    10,
 						MaxDuration:    40,
 						Skip:           ptrutil.ToPtr(int8(1)),
@@ -1325,7 +1325,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						Linearity:      1,
 						Protocol:       1,
 						Sequence:       2,
-						BoxingAllowed:  1,
+						BoxingAllowed:  ptrutil.ToPtr[int8](1),
 						PlaybackEnd:    2,
 						MIMEs:          []string{"mimes"},
 						API:            []adcom1.APIFramework{1, 2},
@@ -1359,10 +1359,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1411,8 +1411,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),
@@ -1425,8 +1425,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),

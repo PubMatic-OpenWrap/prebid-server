@@ -1,7 +1,7 @@
 package floors
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 func RequestHasFloors(bidRequest *openrtb2.BidRequest) bool {
