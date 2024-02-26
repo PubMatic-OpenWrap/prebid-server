@@ -27,9 +27,9 @@ const (
 	modelWeightMin   int     = 1
 	enforceRateMin   int     = 0
 	enforceRateMax   int     = 100
+	floorPrecision   float64 = 0.01
 	dataRateMin      int     = 0
 	dataRateMax      int     = 100
-	floorPrecision   float64 = 0.01
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -137,8 +137,8 @@ func isPriceFloorsEnabledForRequest(bidRequestWrapper *openrtb_ext.RequestWrappe
 	return true
 }
 
-// shouldUseFetchedData will check if to use fetched data or request data
-func shouldUseFetchedData(rate *int) bool {
+// useFetchedData will check if to use fetched data or request data
+func useFetchedData(rate *int) bool {
 	if rate == nil {
 		return true
 	}
@@ -148,8 +148,12 @@ func shouldUseFetchedData(rate *int) bool {
 
 // resolveFloors does selection of floors fields from request data and dynamic fetched data if dynamic fetch is enabled
 func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.RequestWrapper, conversions currency.Conversions, priceFloorFetcher FloorFetcher) (*openrtb_ext.PriceFloorRules, []error) {
-	var errList []error
-	var floorRules *openrtb_ext.PriceFloorRules
+	var (
+		errList     []error
+		floorRules  *openrtb_ext.PriceFloorRules
+		fetchResult *openrtb_ext.PriceFloorRules
+		fetchStatus string
+	)
 
 	reqFloor := extractFloorsFromRequest(bidRequestWrapper)
 	if reqFloor != nil && reqFloor.Location != nil && len(reqFloor.Location.URL) > 0 {
@@ -157,14 +161,11 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 	}
 	account.PriceFloors.Fetcher.AccountID = account.ID
 
-	var fetchResult *openrtb_ext.PriceFloorRules
-	fetchStatus := openrtb_ext.FetchNone
-
 	if priceFloorFetcher != nil && account.PriceFloors.UseDynamicData {
 		fetchResult, fetchStatus = priceFloorFetcher.Fetch(account.PriceFloors)
 	}
 
-	if fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && shouldUseFetchedData(fetchResult.Data.UseFetchDataRate) {
+	if fetchResult != nil && fetchStatus == openrtb_ext.FetchSuccess && useFetchedData(fetchResult.Data.FetchRate) {
 		mergedFloor := mergeFloors(reqFloor, fetchResult, conversions)
 		floorRules, errList = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
