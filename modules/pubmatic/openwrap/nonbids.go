@@ -102,7 +102,7 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 
 func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidationRequestPayload) openrtb_ext.NonBidCollection {
 	var seatNonBids openrtb_ext.NonBidCollection
-	for bidderName, _ := range Bidders {
+	for bidderName := range Bidders {
 		for _, imp := range payload.BidRequest.Imp {
 			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 				Bid:          &openrtb2.Bid{ImpID: imp.ID},

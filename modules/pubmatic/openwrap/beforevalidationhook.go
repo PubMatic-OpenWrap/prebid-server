@@ -161,10 +161,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
 
-	seatNonBids := getSeatNonBid(filteredBidders, payload)
+	result.SeatNonBid = getSeatNonBid(filteredBidders, payload)
 
 	if allPartnersFilteredFlag {
-		result.SeatNonBid = seatNonBids
 		result.NbrCode = nbr.AllPartnersFiltered
 		result.Errors = append(result.Errors, "All partners filtered")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
@@ -508,7 +507,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
 	result.Reject = false
-	result.SeatNonBid = seatNonBids
 	return result, nil
 }
 

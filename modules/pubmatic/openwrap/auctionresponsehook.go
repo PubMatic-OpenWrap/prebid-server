@@ -269,7 +269,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	seatNonBids := prepareSeatNonBids(rctx)
+	result.SeatNonBid = prepareSeatNonBids(rctx)
+
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
@@ -316,8 +317,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// TODO: move debug here
 	// result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
-	result.SeatNonBid = seatNonBids
-
 	return result, nil
 }
 

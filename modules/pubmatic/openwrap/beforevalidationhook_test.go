@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -2170,6 +2171,85 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Some_partners_filtered",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"IN"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+						models.THROTTLE:            "100",
+					},
+					3: {
+						models.PARTNER_ID:          "3",
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+						models.THROTTLE:            "100",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
+					"appnexus": map[string]interface{}{
+						"in": []interface{}{
+							map[string]interface{}{
+								"var": "country",
+							},
+							[]interface{}{
+								"JP",
+								"KR",
+							},
+						},
+					},
+					"pubmatic": map[string]interface{}{
+						"in": []interface{}{
+							map[string]interface{}{
+								"var": "country",
+							},
+							[]interface{}{
+								"IN",
+							},
+						},
+					},
+				}, true)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:     true,
+				NbrCode:    nbr.InvalidImpressionTagID,
+				Errors:     []string{"tagid missing for imp: 123"},
+				SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "123"}, NonBidReason: int(exchange.RequestBlockedPartnerFiltered)}}}),
+			},
+			wantErr: true,
+		},
+		{
 			name: "All_partners_filtered",
 			args: args{
 				ctx: context.Background(),
@@ -2193,7 +2273,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						models.SERVER_SIDE_FLAG:    "1",
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
-						models.THROTTLE:            "70",
+						models.THROTTLE:            "100",
 					},
 					-1: {
 						models.DisplayVersionID: "1",
@@ -2220,9 +2300,10 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-				Reject:  true,
-				NbrCode: nbr.AllPartnersFiltered,
-				Errors:  []string{"All partners filtered"},
+				Reject:     true,
+				NbrCode:    nbr.AllPartnersFiltered,
+				Errors:     []string{"All partners filtered"},
+				SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "123"}, NonBidReason: int(exchange.RequestBlockedPartnerFiltered)}}}),
 			},
 			wantErr: false,
 		},
@@ -2909,6 +2990,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.Reject, got.Reject)
 			assert.Equal(t, tt.want.NbrCode, got.NbrCode)
+			assert.Equal(t, tt.want.SeatNonBid, got.SeatNonBid)
 			for i := 0; i < len(got.DebugMessages); i++ {
 				gotDebugMessage, _ := json.Marshal(got.DebugMessages[i])
 				wantDebugMessage, _ := json.Marshal(tt.want.DebugMessages[i])
@@ -3254,6 +3336,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
@@ -3298,6 +3381,8 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
