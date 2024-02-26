@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server
 
 go 1.20
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20231102070946-3c5a3bc1dff5
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240215114830-026b72bf5a2f
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -54,8 +54,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
-
-require github.com/yudai/pp v2.0.1+incompatible // indirect
 
 require (
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect

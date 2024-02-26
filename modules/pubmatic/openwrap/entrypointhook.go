@@ -53,51 +53,16 @@ func (m OpenWrap) handleEntrypointHook(
 	if queryParams.Get("sshb") == "1" {
 		return result, nil
 	}
-
-	switch payload.Request.URL.Path {
-	// Direct call to 8000 port
-	case hookexecution.EndpointAuction:
-		switch source {
-		case "pbjs":
-			endpoint = models.EndpointWebS2S
-			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		case "owsdk":
-			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-			endpoint = models.EndpointV25
-		default:
-			rCtx.Endpoint = models.EndpointHybrid
-			return result, nil
-		}
-	// call to 8001 port and here via reverse proxy
-	case OpenWrapAuction: // legacy hybrid api should not execute module
-		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after hybrid call through module
+	endpoint = GetEndpoint(payload.Request.URL.Path, source)
+	if endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
-	case OpenWrapV25:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointV25
-	case OpenWrapV25Video:
-		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
-		endpoint = models.EndpointVideo
-	case OpenWrapAmp:
-		requestExtWrapper, pubid, err = models.GetQueryParamRequestExtWrapper(payload.Request)
-		endpoint = models.EndpointAMP
-	case OpenWrapOpenRTBVideo:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointVideo
-	case OpenWrapVAST:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointVAST
-	case OpenWrapJSON:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointJson
-	default:
-		// we should return from here
 	}
 
 	// init default for all modules
 	result.Reject = true
 
+	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
 		result.NbrCode = nbr.InvalidRequestWrapperExtension
 		result.Errors = append(result.Errors, err.Error())
@@ -169,4 +134,54 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 	return result, nil
+}
+
+func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
+	var requestExtWrapper models.RequestExtWrapper
+	var err error
+	switch endpoint {
+	case models.EndpintInappVideo:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+	case models.EndpointAMP:
+		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+	case models.EndpointV25:
+		fallthrough
+	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointWebS2S:
+		fallthrough
+	default:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+	}
+
+	return requestExtWrapper, err
+}
+
+func GetEndpoint(path, source string) string {
+	switch path {
+	case hookexecution.EndpointAuction:
+		switch source {
+		case "pbjs":
+			return models.EndpointWebS2S
+		case "owsdk":
+			return models.EndpointV25
+		default:
+			return models.EndpointHybrid
+		}
+	case OpenWrapAuction:
+		return models.EndpointHybrid
+	case OpenWrapV25:
+		return models.EndpointV25
+	case OpenWrapV25Video:
+		return models.EndpintInappVideo
+	case OpenWrapAmp:
+		return models.EndpointAMP
+	case OpenWrapOpenRTBVideo:
+		return models.EndpointVideo
+	case OpenWrapVAST:
+		return models.EndpointVAST
+	case OpenWrapJSON:
+		return models.EndpointJson
+	}
+	return ""
 }

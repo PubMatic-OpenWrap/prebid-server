@@ -23,21 +23,25 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 	mockMetricsEngine := mock_stats.NewMockMetricsEngine(ctrl)
 	VastUnWrapModule := VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine}
 	type args struct {
-		module              VastUnwrapModule
-		payload             hookstage.RawBidderResponsePayload
-		moduleInvocationCtx hookstage.ModuleInvocationContext
-		unwrapTimeout       int
-		url                 string
-		wantAdM             bool
+		module                VastUnwrapModule
+		payload               hookstage.RawBidderResponsePayload
+		moduleInvocationCtx   hookstage.ModuleInvocationContext
+		unwrapTimeout         int
+		url                   string
+		wantAdM               bool
+		randomNumber          int
+		trafficPercentage     int
+		statTrafficPercentage int
 	}
 	tests := []struct {
-		name          string
-		args          args
-		wantResult    hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		expectedBids  []*adapters.TypedBid
-		setup         func()
-		wantErr       bool
-		unwrapRequest func(w http.ResponseWriter, req *http.Request)
+		name                string
+		args                args
+		wantResult          hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		expectedBids        []*adapters.TypedBid
+		setup               func()
+		wantErr             bool
+		unwrapRequest       func(w http.ResponseWriter, req *http.Request)
+		getVastUnwrapEnable func(rctx models.RequestCtx) bool
 	}{
 		{
 			name: "Empty Request Context",
@@ -65,7 +69,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 							BidType: "video",
 						}}},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: true}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantErr:    false,
@@ -90,7 +94,9 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, VastUnwrapStatsEnabled: true}}},
+				moduleInvocationCtx:   hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, VastUnwrapStatsEnabled: true, Redirect: true}}},
+				statTrafficPercentage: 100,
+				randomNumber:          10,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -128,7 +134,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				url:                 UnwrapURL,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -164,7 +170,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				url:                 UnwrapURL,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -214,9 +220,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				url:                 UnwrapURL,
 				wantAdM:             true,
+				randomNumber:        10,
+				trafficPercentage:   100,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -265,7 +273,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				url:                 UnwrapURL,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -308,17 +316,66 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 			wantErr: false,
 		},
+
+		{
+			name: "Set Vast Unwrapper to true in request context with type video and source owsdk",
+			args: args{
+				module: VastUnWrapModule,
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{Redirect: false, ProfileID: 5890, DisplayID: 1, Endpoint: "/openrtb/video"}}},
+				url:                 UnwrapURL,
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordWrapperCount("5890", "pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
+			},
+			unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "1")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(inlineXMLAdM))
+			},
+			getVastUnwrapEnable: func(rctx models.RequestCtx) bool {
+				return true
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+			getRandomNumber = func() int {
+				return tt.args.randomNumber
+			}
 			m := VastUnwrapModule{
-				Cfg:           tt.args.module.Cfg,
-				Enabled:       true,
-				MetricsEngine: mockMetricsEngine,
-				unwrapRequest: tt.unwrapRequest,
+				Cfg:                   tt.args.module.Cfg,
+				Enabled:               true,
+				MetricsEngine:         mockMetricsEngine,
+				unwrapRequest:         tt.unwrapRequest,
+				getVastUnwrapEnable:   tt.getVastUnwrapEnable,
+				TrafficPercentage:     tt.args.trafficPercentage,
+				StatTrafficPercentage: tt.args.statTrafficPercentage,
 			}
 			_, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload, "test")
 			if !assert.NoError(t, err, tt.wantErr) {
