@@ -12,7 +12,6 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
@@ -163,10 +162,10 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
 	case models.EndpointAMP:
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
-	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
-		requestExtWrapper, err = ctv.GetRequestExtWrapper(payload, &result)
 	case models.EndpointV25:
 		fallthrough
+	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointWebS2S:
 		fallthrough
 	default:

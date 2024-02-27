@@ -122,7 +122,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
-			if bidExt.Prebid.Video.Duration == 0 {
+			if bidExt.Prebid != nil && bidExt.Video != nil && bidExt.Prebid.Video.Duration == 0 {
 				bidExt.Prebid.Video.Duration = int(impCtx.Video.MaxDuration)
 			}
 

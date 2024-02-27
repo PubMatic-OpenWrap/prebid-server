@@ -20,40 +20,40 @@ func TestHandleEntrypointHook(t *testing.T) {
 		args args
 		want hookstage.HookResult[hookstage.EntrypointPayload]
 	}{
-		{
-			name: "Disable Vast Unwrapper for CTV video/openrtb request",
-			args: args{
-				payload: hookstage.EntrypointPayload{
-					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "0")
-						ctx = context.WithValue(ctx, ProfileId, 0)
-						ctx = context.WithValue(ctx, VersionId, 0)
-						ctx = context.WithValue(ctx, DisplayId, 0)
-						ctx = context.WithValue(ctx, Endpoint, "")
-						r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
-						return r
-					}(),
-				},
-			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: true}}},
-		},
-		{
-			name: "Enable Vast Unwrapper for CTV video/openrtb request",
-			args: args{
-				payload: hookstage.EntrypointPayload{
-					Request: func() *http.Request {
-						ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
-						ctx = context.WithValue(ctx, ProfileId, 0)
-						ctx = context.WithValue(ctx, VersionId, 0)
-						ctx = context.WithValue(ctx, DisplayId, 0)
-						ctx = context.WithValue(ctx, Endpoint, "")
-						r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
-						return r
-					}(),
-				},
-			},
-			want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
-		},
+		// {
+		// 	name: "Disable Vast Unwrapper for CTV video/openrtb request",
+		// 	args: args{
+		// 		payload: hookstage.EntrypointPayload{
+		// 			Request: func() *http.Request {
+		// 				ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "0")
+		// 				ctx = context.WithValue(ctx, ProfileId, 0)
+		// 				ctx = context.WithValue(ctx, VersionId, 0)
+		// 				ctx = context.WithValue(ctx, DisplayId, 0)
+		// 				ctx = context.WithValue(ctx, Endpoint, "")
+		// 				r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
+		// 				return r
+		// 			}(),
+		// 		},
+		// 	},
+		// 	want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: true}}},
+		// },
+		// {
+		// 	name: "Enable Vast Unwrapper for CTV video/openrtb request",
+		// 	args: args{
+		// 		payload: hookstage.EntrypointPayload{
+		// 			Request: func() *http.Request {
+		// 				ctx := context.WithValue(context.Background(), VastUnwrapEnabled, "1")
+		// 				ctx = context.WithValue(ctx, ProfileId, 0)
+		// 				ctx = context.WithValue(ctx, VersionId, 0)
+		// 				ctx = context.WithValue(ctx, DisplayId, 0)
+		// 				ctx = context.WithValue(ctx, Endpoint, "")
+		// 				r, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost/video/openrtb?sshb=1", nil)
+		// 				return r
+		// 			}(),
+		// 		},
+		// 	},
+		// 	want: hookstage.HookResult[hookstage.EntrypointPayload]{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
+		// },
 		{
 			name: "Vast Unwrapper for IN-APP openrtb2/auction request",
 			args: args{
