@@ -534,11 +534,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-
-	if bidRequest.Device != nil && bidRequest.Device.IP == "" {
-		bidRequest.Device.IP = rctx.IP
-	}
-
+	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 
