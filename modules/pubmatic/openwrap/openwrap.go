@@ -82,7 +82,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	// Init TBF (tracking-beacon-first) feature related services
 	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
-
 	once.Do(func() {
 		ow = &OpenWrap{
 			cfg:                cfg,

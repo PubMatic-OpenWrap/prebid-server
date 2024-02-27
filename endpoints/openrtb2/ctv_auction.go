@@ -118,6 +118,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var response *openrtb2.BidResponse
 	var err error
 	var errL []error
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,
@@ -248,12 +249,11 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
-	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
-	err = setSeatNonBidRaw(ao.RequestWrapper, auctionResponse)
-	if err != nil {
-		glog.Errorf("Error setting seat non-bid: %v", err)
+	if auctionResponse != nil {
+		response = auctionResponse.BidResponse
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
-	response = auctionResponse.BidResponse
+	ao.SeatNonBid = seatNonBid.Get()
 	util.JLogf("BidResponse", response) //TODO: REMOVE LOG
 
 	if deps.isAdPodRequest {
@@ -283,6 +283,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
 	ao.Response = response
+	// TODO - add seatNonBids in response.Ext
 
 	// Response Generation
 	enc := json.NewEncoder(w)

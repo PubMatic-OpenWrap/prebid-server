@@ -151,6 +151,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+
 	if allPartnersThrottledFlag {
 		result.NbrCode = nbr.AllPartnerThrottled
 		result.Errors = append(result.Errors, "All adapters throttled")
@@ -159,6 +160,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+  
+	result.SeatNonBid = getSeatNonBid(filteredBidders, payload)
+  
 	if allPartnersFilteredFlag {
 		result.NbrCode = nbr.AllPartnersFiltered
 		result.Errors = append(result.Errors, "All partners filtered")

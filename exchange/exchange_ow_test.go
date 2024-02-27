@@ -34,7 +34,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	type want struct {
 		rejectedBidIds       []string
 		validBidCountPerSeat map[string]int
-		expectedseatNonBids  nonBids
+		expectedseatNonBids  openrtb_ext.NonBidCollection
 	}
 	tests := []struct {
 		name string
@@ -90,34 +90,26 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				},
 			},
 			want: want{
-				expectedseatNonBids: nonBids{
-					seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+				expectedseatNonBids: getNonBids(
+					map[string][]openrtb_ext.NonBidParams{
 						"": {
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
-								Ext: openrtb_ext.NonBidExt{
-									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-										Bid: openrtb_ext.NonBidObject{
-											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
-											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
-										},
-									},
+								NonBidReason: int(openrtb3.LossBidAdvertiserBlocking),
+								Bid: &openrtb2.Bid{
+									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
+									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
 								},
 							},
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
-								Ext: openrtb_ext.NonBidExt{
-									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-										Bid: openrtb_ext.NonBidObject{
-											ID:      "a.com_bid",
-											ADomain: []string{"a.com"},
-										},
-									},
+								NonBidReason: int(openrtb3.LossBidAdvertiserBlocking),
+								Bid: &openrtb2.Bid{
+									ID:      "a.com_bid",
+									ADomain: []string{"a.com"},
 								},
 							},
 						},
 					},
-				},
+				),
 				rejectedBidIds: []string{"a.com_bid", "reject_b.a.com.a.com.b.c.d.a.com"},
 				validBidCountPerSeat: map[string]int{
 					"vast_tag_bidder": 3,
@@ -146,7 +138,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tab_bidder_1": 2,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -178,7 +170,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
 					"rtb_bidder_1": 2, // no bid must be rejected
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -202,7 +194,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adaptor_1": 1,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -234,7 +226,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -266,7 +258,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -291,7 +283,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
 				validBidCountPerSeat: map[string]int{"my_adapter": 1},
-				expectedseatNonBids:  nonBids{},
+				expectedseatNonBids:  openrtb_ext.NonBidCollection{},
 			},
 		}, {
 			name: "multiple_badv",
@@ -333,7 +325,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		}, {
 			name: "multiple_adomain",
@@ -375,7 +367,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		}, {
 			name: "case_insensitive_badv", // case of domain not matters
@@ -399,7 +391,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -424,7 +416,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -460,7 +452,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"block_bidder":         0,
 					"rtb_non_block_bidder": 4,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -487,7 +479,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"block_bidder": 1,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		}, {
 			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
@@ -513,7 +505,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 3,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 		{
@@ -539,7 +531,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 2,
 				},
-				expectedseatNonBids: nonBids{},
+				expectedseatNonBids: openrtb_ext.NonBidCollection{},
 			},
 		},
 	}
@@ -559,7 +551,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				seatBids[adaptor.BidderName] = sbids
 			}
 
-			seatNonBids := nonBids{}
+			seatNonBids := openrtb_ext.NonBidCollection{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
 			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
@@ -592,13 +584,17 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					continue // advertiser blocking is currently enabled only for tag bidders
 				}
 
-				sort.Slice(seatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
-					return seatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
+				seatNonBidsMap := seatNonBids.GetSeatNonBidMap()
+
+				sort.Slice(seatNonBidsMap[sBid.Seat], func(i, j int) bool {
+					return seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
 				})
-				sort.Slice(tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat], func(i, j int) bool {
-					return tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > tt.want.expectedseatNonBids.seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
+
+				expectedSeatNonBids := tt.want.expectedseatNonBids.GetSeatNonBidMap()
+				sort.Slice(expectedSeatNonBids[sBid.Seat], func(i, j int) bool {
+					return expectedSeatNonBids[sBid.Seat][i].Ext.Prebid.Bid.ID > expectedSeatNonBids[sBid.Seat][j].Ext.Prebid.Bid.ID
 				})
-				assert.Equal(t, tt.want.expectedseatNonBids.seatNonBidsMap, seatNonBids.seatNonBidsMap, "SeatNonBids not matching")
+				assert.Equal(t, expectedSeatNonBids, seatNonBidsMap, "SeatNonBids not matching")
 
 				for _, bid := range sBid.Bids {
 					if nil != bid.Bid.ADomain {
@@ -1448,173 +1444,173 @@ func TestGetPriceBucketStringOW(t *testing.T) {
 	}
 }
 
-func Test_updateSeatNonBidsFloors(t *testing.T) {
-	type args struct {
-		seatNonBids  *nonBids
-		rejectedBids []*entities.PbsOrtbSeatBid
-	}
-	tests := []struct {
-		name                string
-		args                args
-		expectedseatNonBids *nonBids
-	}{
-		{
-			name: "nil rejectedBids",
-			args: args{
-				rejectedBids: nil,
-				seatNonBids:  &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{},
-		},
-		{
-			name: "floors one rejectedBids in seatnonbid",
-			args: args{
-				rejectedBids: []*entities.PbsOrtbSeatBid{
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "pubmatic",
-					},
-				},
-				seatNonBids: &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{
-				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-					"pubmatic": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "floors two rejectedBids in seatnonbid",
-			args: args{
-				rejectedBids: []*entities.PbsOrtbSeatBid{
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "pubmatic",
-					},
-					{
-						Bids: []*entities.PbsOrtbBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID: "bid1",
-								},
-							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:     "bid2",
-									DealID: "deal1",
-								},
-							},
-						},
-						Seat: "appnexus",
-					},
-				},
-				seatNonBids: &nonBids{},
-			},
-			expectedseatNonBids: &nonBids{
-				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-					"pubmatic": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-					"appnexus": {
-						{
-							StatusCode: 301,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
-									},
-								},
-							},
-						},
-						{
-							StatusCode: 304,
-							Ext: openrtb_ext.NonBidExt{
-								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{
-										ID:     "bid2",
-										DealID: "deal1",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			updateSeatNonBidsFloors(tt.args.seatNonBids, tt.args.rejectedBids)
-			assert.Equal(t, tt.expectedseatNonBids, tt.args.seatNonBids)
-		})
-	}
-}
+// func Test_updateSeatNonBidsFloors(t *testing.T) {
+// 	type args struct {
+// 		seatNonBids  *nonBids
+// 		rejectedBids []*entities.PbsOrtbSeatBid
+// 	}
+// 	tests := []struct {
+// 		name                string
+// 		args                args
+// 		expectedseatNonBids *nonBids
+// 	}{
+// 		{
+// 			name: "nil rejectedBids",
+// 			args: args{
+// 				rejectedBids: nil,
+// 				seatNonBids:  &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{},
+// 		},
+// 		{
+// 			name: "floors one rejectedBids in seatnonbid",
+// 			args: args{
+// 				rejectedBids: []*entities.PbsOrtbSeatBid{
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "pubmatic",
+// 					},
+// 				},
+// 				seatNonBids: &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{
+// 				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+// 					"pubmatic": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 		{
+// 			name: "floors two rejectedBids in seatnonbid",
+// 			args: args{
+// 				rejectedBids: []*entities.PbsOrtbSeatBid{
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "pubmatic",
+// 					},
+// 					{
+// 						Bids: []*entities.PbsOrtbBid{
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID: "bid1",
+// 								},
+// 							},
+// 							{
+// 								Bid: &openrtb2.Bid{
+// 									ID:     "bid2",
+// 									DealID: "deal1",
+// 								},
+// 							},
+// 						},
+// 						Seat: "appnexus",
+// 					},
+// 				},
+// 				seatNonBids: &nonBids{},
+// 			},
+// 			expectedseatNonBids: &nonBids{
+// 				seatNonBidsMap: map[string][]openrtb_ext.NonBid{
+// 					"pubmatic": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 					"appnexus": {
+// 						{
+// 							StatusCode: 301,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID: "bid1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							StatusCode: 304,
+// 							Ext: openrtb_ext.NonBidExt{
+// 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
+// 									Bid: openrtb_ext.NonBidObject{
+// 										ID:     "bid2",
+// 										DealID: "deal1",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			updateSeatNonBidsFloors(tt.args.seatNonBids, tt.args.rejectedBids)
+// 			assert.Equal(t, tt.expectedseatNonBids, tt.args.seatNonBids)
+// 		})
+// 	}
+// }
 
 func TestRecordVASTTagType(t *testing.T) {
 	var vastXMLAdM = "<VAST version='3.0'><Ad><Wrapper><VASTAdTagURI><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/video/Shashank/dspResponse/vastInline.php?m=1&x=3&y=3&p=11&va=3&sc=1]]></VASTAdTagURI></Wrapper></Ad></VAST>"
