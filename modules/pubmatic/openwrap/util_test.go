@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/macros"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
@@ -915,7 +916,7 @@ func TestGetHostName(t *testing.T) {
 
 func TestGetPubmaticErrorCode(t *testing.T) {
 	type args struct {
-		standardNBR int
+		standardNBR openrtb3.NoBidReason
 	}
 	tests := []struct {
 		name string

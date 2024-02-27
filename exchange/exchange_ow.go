@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
@@ -139,7 +138,7 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						seatNonBids.addBid(bid, int(openrtb3.LossBidAdvertiserBlocking), seatBid.Seat)
+						seatNonBids.addBid(bid, int(ResponseRejectedCreativeAdvertiserBlocking), seatBid.Seat)
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -224,9 +223,9 @@ func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
 func updateSeatNonBidsFloors(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			var rejectionReason = openrtb3.LossBidBelowAuctionFloor
+			var rejectionReason = ResponseRejectedBelowFloor
 			if pbsRejBid.Bid.DealID != "" {
-				rejectionReason = openrtb3.LossBidBelowDealFloor
+				rejectionReason = ResponseRejectedBelowDealFloor
 			}
 			seatNonBids.addBid(pbsRejBid, int(rejectionReason), pbsRejSeatBid.Seat)
 		}

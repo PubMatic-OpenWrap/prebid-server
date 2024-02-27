@@ -24,11 +24,11 @@ type BidExt struct {
 	Winner      int             `json:"winner,omitempty"`
 	NetECPM     float64         `json:"netecpm,omitempty"`
 
-	OriginalBidCPM    float64                    `json:"origbidcpm,omitempty"`
-	OriginalBidCur    string                     `json:"origbidcur,omitempty"`
-	OriginalBidCPMUSD float64                    `json:"origbidcpmusd,omitempty"`
-	Nbr               *openrtb3.NonBidStatusCode `json:"-"` // Reason for not bidding
-	Fsc               int                        `json:"fsc,omitempty"`
+	OriginalBidCPM    float64               `json:"origbidcpm,omitempty"`
+	OriginalBidCur    string                `json:"origbidcur,omitempty"`
+	OriginalBidCPMUSD float64               `json:"origbidcpmusd,omitempty"`
+	Nbr               *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
+	Fsc               int                   `json:"fsc,omitempty"`
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video

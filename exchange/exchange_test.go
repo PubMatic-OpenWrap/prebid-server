@@ -21,7 +21,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -2773,7 +2772,7 @@ func TestCategoryMapping(t *testing.T) {
 			"": {
 				{
 					ImpId:      "imp_id4",
-					StatusCode: int(openrtb3.LossBidCategoryMapping),
+					StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
@@ -2924,7 +2923,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 			"": {
 				{
 					ImpId:      "imp_id3",
-					StatusCode: int(openrtb3.LossBidCategoryMapping),
+					StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 					Ext: openrtb_ext.NonBidExt{
 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 							Bid: openrtb_ext.NonBidObject{
@@ -3394,7 +3393,7 @@ func TestBidRejectionErrors(t *testing.T) {
 					"appnexus": {
 						{
 							ImpId:      "imp_id1",
-							StatusCode: int(openrtb3.LossBidCategoryMapping),
+							StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
@@ -3434,7 +3433,7 @@ func TestBidRejectionErrors(t *testing.T) {
 					"": {
 						{
 							ImpId:      "imp_id1",
-							StatusCode: int(openrtb3.LossBidCategoryMapping),
+							StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
@@ -3474,7 +3473,7 @@ func TestBidRejectionErrors(t *testing.T) {
 					"": {
 						{
 							ImpId:      "imp_id1",
-							StatusCode: int(openrtb3.LossBidCategoryMapping),
+							StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
@@ -3516,7 +3515,7 @@ func TestBidRejectionErrors(t *testing.T) {
 					"": {
 						{
 							ImpId:      "imp_id1",
-							StatusCode: int(openrtb3.LossBidCategoryMapping),
+							StatusCode: int(ResponseRejectedInvalidCategoryMapping),
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{

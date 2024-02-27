@@ -248,7 +248,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 }
 
 // getPubmaticErrorCode is temporary function which returns the pubmatic specific error code for standardNBR code
-func getPubmaticErrorCode(standardNBR int) int {
+func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	switch standardNBR {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
@@ -301,8 +301,4 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
-}
-
-func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
-	return &nbr
 }
