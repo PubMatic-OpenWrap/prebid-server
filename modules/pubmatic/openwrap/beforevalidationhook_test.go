@@ -1801,7 +1801,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		{
 			name: "empty_cookie",
 			args: args{
-				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				bidderParams: json.RawMessage(`"{\"pubmatic\":{\"adSlot\":\"/43743431/DMDemo2@0x0\",\"publisherId\":\"5890\",\"wrapper\":{\"profile\":6278,\"version\":0}}}"`),
 				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
 				bidderCode:   "pubmatic",
 			},
@@ -1811,7 +1811,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		{
 			name: "empty_loggerID",
 			args: args{
-				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				bidderParams: json.RawMessage(`"{\"pubmatic\":{\"adSlot\":\"/43743431/DMDemo2@0x0\",\"publisherId\":\"5890\",\"wrapper\":{\"profile\":6278,\"version\":0}}}"`),
 				cookie:       "test_cookie",
 				bidderCode:   "pubmatic",
 			},
@@ -1820,7 +1820,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		{
 			name: "both_cookie_and_loogerID_are_empty",
 			args: args{
-				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				bidderParams: json.RawMessage(`"{\"pubmatic\":{\"adSlot\":\"/43743431/DMDemo2@0x0\",\"publisherId\":\"5890\",\"wrapper\":{\"profile\":6278,\"version\":0}}}"`),
 				cookie:       "",
 				loggerID:     "",
 				bidderCode:   "pubmatic",
@@ -1830,7 +1830,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		{
 			name: "both_cookie_and_loogerID_are_present",
 			args: args{
-				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				bidderParams: json.RawMessage(`"{\"pubmatic\":{\"adSlot\":\"/43743431/DMDemo2@0x0\",\"publisherId\":\"5890\",\"wrapper\":{\"profile\":6278,\"version\":0}}}"`),
 				cookie:       "test_cookie",
 				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
 				bidderCode:   "pubmatic",
@@ -1840,13 +1840,9 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
-			if (err != nil) != tt.wantErr {
-				assert.Equal(t, tt.wantErr, err != nil)
-				return
-			}
-			assert.Equal(t, tt.want, got)
-
+			originalBidderParams := tt.args.bidderParams // make a copy of the original bidderParams
+			updateRequestExtBidderParamsPubmatic(&originalBidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
+			assert.Equal(t, tt.want, originalBidderParams)
 		})
 	}
 }

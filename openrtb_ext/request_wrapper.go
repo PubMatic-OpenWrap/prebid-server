@@ -1610,7 +1610,7 @@ func (e *ImpExt) Clone() *ImpExt {
 			}
 		}
 		clonedPrebid.IsRewardedInventory = ptrutil.Clone(e.prebid.IsRewardedInventory)
-		clonedPrebid.Bidder = maputil.Clone(e.prebid.Bidder)
+		// clonedPrebid.Bidder = maputil.Clone(e.prebid.Bidder)
 		clonedPrebid.Options = ptrutil.Clone(e.prebid.Options)
 		clonedPrebid.Floors = ptrutil.Clone(e.prebid.Floors)
 		clone.prebid = &clonedPrebid
