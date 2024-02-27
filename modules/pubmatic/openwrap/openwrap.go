@@ -92,7 +92,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		}
 	})
 	return *ow, nil
-
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {

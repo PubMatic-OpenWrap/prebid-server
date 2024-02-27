@@ -55,8 +55,6 @@ require (
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
 
-require github.com/yudai/pp v2.0.1+incompatible // indirect
-
 require (
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
