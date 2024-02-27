@@ -423,20 +423,21 @@ const (
 )
 
 const (
-	EndpointV25     = "v25"
-	EndpointAMP     = "amp"
-	EndpointVideo   = "video"
-	EndpointJson    = "json"
-	EndpointORTB    = "ortb"
-	EndpointVAST    = "vast"
-	EndpointWebS2S  = "webs2s"
-	EndPointCTV     = "ctv"
-	EndpointHybrid  = "hybrid"
-	Openwrap        = "openwrap"
-	ImpTypeBanner   = "banner"
-	ImpTypeVideo    = "video"
-	ContentTypeSite = "site"
-	ContentTypeApp  = "app"
+	EndpointV25       = "v25"
+	EndpointAMP       = "amp"
+	EndpintInappVideo = "inappvideo"
+	EndpointVideo     = "video"
+	EndpointJson      = "json"
+	EndpointORTB      = "ortb"
+	EndpointVAST      = "vast"
+	EndpointWebS2S    = "webs2s"
+	EndPointCTV       = "ctv"
+	EndpointHybrid    = "hybrid"
+	Openwrap          = "openwrap"
+	ImpTypeBanner     = "banner"
+	ImpTypeVideo      = "video"
+	ContentTypeSite   = "site"
+	ContentTypeApp    = "app"
 )
 
 const (

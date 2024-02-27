@@ -1,7 +1,5 @@
 package models
 
-import "github.com/prebid/prebid-server/openrtb_ext"
-
 // OWTracker vast video parameters to be injected
 type OWTracker struct {
 	Tracker       Tracker
@@ -39,7 +37,7 @@ type Tracker struct {
 	FloorSource       *int
 	FloorType         int
 	CustomDimensions  string
-	ATTS              *openrtb_ext.IOSAppTrackingStatus
+	ATTS              *float64
 	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
 	ImpID  string `json:"-"`
