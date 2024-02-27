@@ -157,7 +157,7 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 							BidFloors:         bid.BidFloors,
 						}
 						nonBid := openrtb_ext.NewNonBid(nonBidParams)
-						seatNonBids.AddBid(nonBid, string(bidderName))
+						seatNonBids.AddBid(nonBid, seatBid.Seat)
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
