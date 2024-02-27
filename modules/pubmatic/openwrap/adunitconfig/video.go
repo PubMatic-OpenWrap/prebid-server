@@ -40,10 +40,10 @@ func UpdateVideoObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp,
 	}
 
 	var height, width int64
-	if imp.Video != nil  {
+	if imp.Video != nil {
 		if imp.Video.H != nil {
 			height = *imp.Video.H
-			}
+		}
 		if imp.Video.W != nil {
 			width = *imp.Video.W
 		}

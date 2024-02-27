@@ -5019,6 +5019,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										W: 200,
 										H: 200,
+										Type: "banner",
 									},
 								},
 							},
@@ -5047,6 +5048,13 @@ func TestMakeBidWithValidation(t *testing.T) {
 						{
 							ImpId:      "1",
 							StatusCode: 352,
+							Ext: openrtb_ext.NonBidExt{
+								Prebid: openrtb_ext.ExtResponseNonBidPrebid {
+									Bid: openrtb_ext.NonBidObject{
+										Type: "banner",
+								},
+							},
+							},
 						},
 					},
 				},

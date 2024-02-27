@@ -122,7 +122,7 @@ func getSizesFromImp(imp openrtb2.Imp, platform string) []string {
 		}
 	}
 
-	if imp.Video != nil && imp.Video.W != nil && imp.Video.H != nil{
+	if imp.Video != nil && imp.Video.W != nil && imp.Video.H != nil {
 		size := models.GetSizeForPlatform(*imp.Video.W, *imp.Video.H, models.PLATFORM_VIDEO)
 		if _, ok := sizes[size]; !ok {
 			sizeArr = append(sizeArr, size)

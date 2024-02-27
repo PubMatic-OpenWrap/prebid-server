@@ -524,7 +524,7 @@ func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
 
 // MacroVideoBoxing contains definition for VideoBoxing Parameter
 func (tag *BidderMacro) MacroVideoBoxing(key string) string {
-	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed != nil &&*tag.Imp.Video.BoxingAllowed > 0 {
+	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed != nil && *tag.Imp.Video.BoxingAllowed > 0 {
 		return strconv.FormatInt(int64(*tag.Imp.Video.BoxingAllowed), intBase)
 	}
 	return ""
@@ -708,7 +708,7 @@ func (tag *BidderMacro) MacroPageCategory(key string) string {
 // MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
 func (tag *BidderMacro) MacroPrivacyPolicy(key string) string {
 	var value int8 = 0
-	if tag.IsApp && tag.Request.App.PrivacyPolicy != nil{
+	if tag.IsApp && tag.Request.App.PrivacyPolicy != nil {
 		value = *tag.Request.App.PrivacyPolicy
 	} else if tag.Request.Site != nil && tag.Request.Site.PrivacyPolicy != nil {
 		value = *tag.Request.Site.PrivacyPolicy
