@@ -2,7 +2,7 @@ package nbr
 
 import "github.com/prebid/openrtb/v19/openrtb3"
 
-// vendor specific NonBidReasons (500+)
+// vendor specific NoBidReasons (500+)
 const (
 	LossBidLostToHigherBid        openrtb3.NoBidReason = 501 // Response Rejected - Lost to Higher Bid
 	LossBidLostToDealBid          openrtb3.NoBidReason = 502 // Response Rejected - Lost to a Bid for a Deal
