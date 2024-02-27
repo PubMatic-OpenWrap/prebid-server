@@ -80,6 +80,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
@@ -534,7 +535,10 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
 
-	bidRequest.Device.IP = rctx.IP
+	if bidRequest.Device != nil && bidRequest.Device.IP == "" {
+		bidRequest.Device.IP = rctx.IP
+	}
+
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 
