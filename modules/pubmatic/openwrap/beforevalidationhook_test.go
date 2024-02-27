@@ -2274,7 +2274,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
 						models.THROTTLE:            "100",
-					},
+          },
 					-1: {
 						models.DisplayVersionID: "1",
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
@@ -2810,6 +2810,7 @@ func TestOpenWrap_handleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
+        
 				// mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
@@ -3335,6 +3336,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
+				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				//prometheus metrics
@@ -3366,6 +3368,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
+				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
