@@ -38,6 +38,7 @@ const (
 	BidAdjustmentWarningCode
 	FloorBidRejectionWarningCode
 	AdpodPostFilteringWarningCode
+	InvalidBidResponseDSAWarningCode
 )
 
 // Coder provides an error or warning code with severity.
