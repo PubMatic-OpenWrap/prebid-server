@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -143,13 +142,13 @@ func TestRecordRejectedBids(t *testing.T) {
 					{
 						NonBid: []openrtb_ext.NonBid{
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserExclusions),
+								StatusCode: int(exchange.ResponseRejectedCreativeAdvertiserExclusions),
 							},
 							{
-								StatusCode: int(openrtb3.LossBidBelowDealFloor),
+								StatusCode: int(exchange.ResponseRejectedBelowDealFloor),
 							},
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserExclusions),
+								StatusCode: int(exchange.ResponseRejectedCreativeAdvertiserExclusions),
 							},
 						},
 						Seat: "pubmatic",
@@ -157,7 +156,7 @@ func TestRecordRejectedBids(t *testing.T) {
 					{
 						NonBid: []openrtb_ext.NonBid{
 							{
-								StatusCode: int(openrtb3.LossBidBelowDealFloor),
+								StatusCode: int(exchange.ResponseRejectedBelowDealFloor),
 							},
 						},
 						Seat: "appnexus",

@@ -2,49 +2,11 @@ package middleware
 
 import (
 	"encoding/json"
-	"net/http"
-	"strings"
-
-	validator "github.com/asaskevich/govalidator"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 )
 
 var (
 	middlewareLocation = []string{"prebid", "modules", "errors", "pubmatic.openwrap", "pubmatic.openwrap.middleware"}
 )
-
-func getAndValidateRedirectURL(r *http.Request) (string, string, CustomError) {
-	params := r.URL.Query()
-	debug := params.Get(models.Debug)
-	if len(debug) == 0 {
-		debug = "0"
-	}
-
-	format := strings.ToLower(strings.TrimSpace(params.Get(models.ResponseFormatKey)))
-	if format != "" {
-		if format != models.ResponseFormatJSON && format != models.ResponseFormatRedirect {
-			return "", debug, NewError(nbr.InvalidResponseFormat, "Invalid response format, must be 'json' or 'redirect'")
-		}
-	}
-
-	owRedirectURL := params.Get(models.OWRedirectURLKey)
-	if len(owRedirectURL) > 0 {
-		owRedirectURL = strings.TrimSpace(owRedirectURL)
-		if format == models.ResponseFormatRedirect && !isValidURL(owRedirectURL) {
-			return "", debug, NewError(nbr.InvalidRedirectURL, "Invalid redirect URL")
-		}
-	}
-
-	return owRedirectURL, debug, nil
-}
-
-func isValidURL(urlVal string) bool {
-	if !(strings.HasPrefix(urlVal, "http://") || strings.HasPrefix(urlVal, "https://")) {
-		return false
-	}
-	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
-}
 
 func addErrorInExtension(errMsg string, ext json.RawMessage, debug string) json.RawMessage {
 	if debug != "1" {

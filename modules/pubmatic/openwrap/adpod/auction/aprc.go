@@ -2,7 +2,9 @@ package auction
 
 import (
 	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 )
 
 func collectAPRC(impAdpodBidsMap map[string]*AdPodBid, impCtxMap map[string]models.ImpCtx) {
@@ -23,18 +25,18 @@ func collectAPRC(impAdpodBidsMap map[string]*AdPodBid, impCtxMap map[string]mode
 }
 
 // ConvertAPRCToNBRC converts the aprc to NonBidStatusCode
-func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NonBidStatusCode {
-	var nbrCode openrtb3.NonBidStatusCode
+func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
+	var nbrCode openrtb3.NoBidReason
 
 	switch bidStatus {
 	case models.StatusOK:
-		nbrCode = openrtb3.LossBidLostToHigherBid
+		nbrCode = nbr.LossBidLostToHigherBid
 	case models.StatusCategoryExclusion:
-		nbrCode = openrtb3.LossBidCategoryExclusions
+		nbrCode = exchange.ResponseRejectedCreativeCategoryExclusions
 	case models.StatusDomainExclusion:
-		nbrCode = openrtb3.LossBidAdvertiserExclusions
+		nbrCode = exchange.ResponseRejectedCreativeAdvertiserExclusions
 	case models.StatusDurationMismatch:
-		nbrCode = openrtb3.LossBidInvalidCreative
+		nbrCode = exchange.ResponseRejectedInvalidCreative
 	default:
 		return nil
 	}

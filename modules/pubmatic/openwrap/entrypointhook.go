@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -44,7 +45,7 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 		} else {
 			result.ModuleContext = make(hookstage.ModuleContext)
 			result.ModuleContext["rctx"] = rCtx
@@ -67,13 +68,13 @@ func (m OpenWrap) handleEntrypointHook(
 
 	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequestWrapperExtension
+		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 
 	if requestExtWrapper.ProfileId <= 0 {
-		result.NbrCode = nbr.InvalidProfileID
+		result.NbrCode = int(nbr.InvalidProfileID)
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
 	}

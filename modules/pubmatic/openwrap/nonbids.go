@@ -1,9 +1,8 @@
 package openwrap
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -17,7 +16,7 @@ func prepareSeatNonBids(rctx models.RequestCtx) map[string][]openrtb_ext.NonBid 
 		for bidder := range rctx.AdapterThrottleMap {
 			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
 				ImpId:      impID,
-				StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+				StatusCode: int(nbr.RequestBlockedPartnerThrottle),
 			})
 		}
 		// seat-non-bid for slot-not-mapped error
@@ -25,7 +24,7 @@ func prepareSeatNonBids(rctx models.RequestCtx) map[string][]openrtb_ext.NonBid 
 		for bidder := range impCtx.NonMapped {
 			seatNonBids[bidder] = append(seatNonBids[bidder], openrtb_ext.NonBid{
 				ImpId:      impID,
-				StatusCode: int(exchange.RequestBlockedSlotNotMapped),
+				StatusCode: int(nbr.RequestBlockedSlotNotMapped),
 			})
 		}
 	}
@@ -92,7 +91,7 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 			if bidDealTierSatisfied {
 				continue
 			}
-			bidCtx.BidExt.Nbr = models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bidCtx.BidExt.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
 		}
 	}

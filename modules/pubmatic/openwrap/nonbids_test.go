@@ -3,9 +3,8 @@ package openwrap
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,7 +61,7 @@ func TestPrepareSeatNonBids(t *testing.T) {
 				"pubmatic": {
 					openrtb_ext.NonBid{
 						ImpId:      "imp1",
-						StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+						StatusCode: int(nbr.RequestBlockedPartnerThrottle),
 					},
 				},
 			},
@@ -93,13 +92,13 @@ func TestPrepareSeatNonBids(t *testing.T) {
 				"pubmatic": {
 					{
 						ImpId:      "imp1",
-						StatusCode: int(exchange.RequestBlockedSlotNotMapped),
+						StatusCode: int(nbr.RequestBlockedSlotNotMapped),
 					},
 				},
 				"appnexus": {
 					{
 						ImpId:      "imp1",
-						StatusCode: int(exchange.RequestBlockedSlotNotMapped),
+						StatusCode: int(nbr.RequestBlockedSlotNotMapped),
 					},
 				},
 			},
@@ -125,17 +124,17 @@ func TestPrepareSeatNonBids(t *testing.T) {
 				"pubmatic": {
 					{
 						ImpId:      "imp1",
-						StatusCode: int(exchange.RequestBlockedSlotNotMapped),
+						StatusCode: int(nbr.RequestBlockedSlotNotMapped),
 					},
 				},
 				"appnexus": {
 					{
 						ImpId:      "imp2",
-						StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+						StatusCode: int(nbr.RequestBlockedPartnerThrottle),
 					},
 					{
 						ImpId:      "imp1",
-						StatusCode: int(exchange.RequestBlockedPartnerThrottle),
+						StatusCode: int(nbr.RequestBlockedPartnerThrottle),
 					},
 				},
 			},
@@ -497,7 +496,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: true,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 								},
 							},
 							"bid-id-2": {
@@ -508,7 +507,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: true,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 								},
 							},
 							"bid-id-3": {
@@ -538,7 +537,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: true,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+								Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 							},
 						},
 						"bid-id-2": {
@@ -549,7 +548,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: true,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+								Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 							},
 						},
 						"bid-id-3": {
@@ -588,7 +587,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 								},
 							},
 							"bid-id-2": {
@@ -599,7 +598,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr: nbr.LossBidLostToDealBid.Ptr(),
 								},
 							},
 							"bid-id-3": {
@@ -629,7 +628,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 						"bid-id-2": {
@@ -640,7 +639,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 						"bid-id-3": {
@@ -684,7 +683,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 								},
 							},
 							"bid-id-2": {
@@ -695,7 +694,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr: nbr.LossBidLostToDealBid.Ptr(),
 								},
 							},
 							"bid-id-3": {
@@ -721,7 +720,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr: nbr.LossBidLostToDealBid.Ptr(),
 								},
 							},
 							"bid-id-2": {
@@ -742,7 +741,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 											DealTierSatisfied: false,
 										},
 									},
-									Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr: nbr.LossBidLostToDealBid.Ptr(),
 								},
 							},
 						},
@@ -762,7 +761,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 						"bid-id-2": {
@@ -773,7 +772,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 						"bid-id-3": {
@@ -799,7 +798,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 						"bid-id-2": {
@@ -820,7 +819,7 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 										DealTierSatisfied: false,
 									},
 								},
-								Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+								Nbr: nbr.LossBidLostToDealBid.Ptr(),
 							},
 						},
 					},

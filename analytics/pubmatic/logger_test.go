@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -111,7 +112,7 @@ func TestConvertNonBidToBid(t *testing.T) {
 		{
 			name: "nonbid to bidwrapper",
 			nonBid: openrtb_ext.NonBid{
-				StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+				StatusCode: int(exchange.ResponseRejectedBelowFloor),
 				ImpId:      "imp1",
 				Ext: openrtb_ext.NonBidExt{
 					Prebid: openrtb_ext.ExtResponseNonBidPrebid{
@@ -142,7 +143,7 @@ func TestConvertNonBidToBid(t *testing.T) {
 					H:       50,
 					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
 				},
-				models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+				exchange.ResponseRejectedBelowFloor.Ptr(),
 			},
 		},
 	}
@@ -1057,7 +1058,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1077,7 +1078,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+										Nbr:    exchange.ErrorTimeout.Ptr(),
 									},
 								},
 							},
@@ -1096,7 +1097,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						DealID:      "-1",
 						ServerSide:  1,
 						OriginalCur: "USD",
-						Nbr:         models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:         exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 					{
 						PartnerID:            "pubmatic",
@@ -1109,7 +1110,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						OriginalCur:          "USD",
 						NetECPM:              0,
 						GrossECPM:            0,
-						Nbr:                  models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
 					},
 				},
@@ -1139,7 +1140,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1159,7 +1160,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+										Nbr:    exchange.ErrorGeneral.Ptr(),
 									},
 								},
 							},
@@ -1180,7 +1181,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						OriginalCur: "USD",
 						NetECPM:     0,
 						GrossECPM:   0,
-						Nbr:         models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:         exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1212,7 +1213,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+										Nbr:    exchange.ErrorGeneral.Ptr(),
 									},
 								},
 							},
@@ -1252,7 +1253,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+										Nbr:    exchange.ErrorGeneral.Ptr(),
 									},
 								},
 							},
@@ -1311,7 +1312,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowDealFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowDealFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1341,7 +1342,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1373,7 +1374,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 								"bid-id-1": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+										Nbr:    exchange.ResponseRejectedBelowFloor.Ptr(),
 									},
 								},
 							},
@@ -1408,7 +1409,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     10.5,
 						FloorRuleValue: 10.5,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1442,7 +1443,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1492,7 +1493,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     1,
 						FloorRuleValue: 1,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1508,7 +1509,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int((openrtb3.LossBidBelowAuctionFloor)),
+									StatusCode: int((exchange.ResponseRejectedBelowFloor)),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1558,7 +1559,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     0,
 						FloorRuleValue: 0,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1574,7 +1575,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int((openrtb3.LossBidBelowAuctionFloor)),
+									StatusCode: int((exchange.ResponseRejectedBelowFloor)),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1624,7 +1625,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     10,
 						FloorRuleValue: 10,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1640,7 +1641,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1684,7 +1685,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     10.57,
 						FloorRuleValue: 10.57,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1700,7 +1701,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1747,7 +1748,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     1000,
 						FloorRuleValue: 1000,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1763,7 +1764,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidBelowAuctionFloor),
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -1816,7 +1817,7 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 						OriginalCur:    models.USD,
 						FloorValue:     0.12,
 						FloorRuleValue: 0.12,
-						Nbr:            models.GetNonBidStatusCodePtr(openrtb3.LossBidBelowAuctionFloor),
+						Nbr:            exchange.ResponseRejectedBelowFloor.Ptr(),
 					},
 				},
 			},
@@ -1905,7 +1906,7 @@ func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										Nbr: models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+										Nbr: exchange.ErrorTimeout.Ptr(),
 									},
 								},
 							},
@@ -1925,7 +1926,7 @@ func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 						ServerSide:           1,
 						OriginalCur:          models.USD,
 						PostTimeoutBidStatus: 1,
-						Nbr:                  models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						Nbr:                  exchange.ErrorTimeout.Ptr(),
 					},
 				},
 			},
@@ -2096,7 +2097,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 												DealTierSatisfied: true,
 											},
 										},
-										Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+										Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 									},
 								},
 							},
@@ -2118,7 +2119,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						NetECPM:      10,
 						GrossECPM:    10,
 						DealPriority: 1,
-						Nbr:          models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+						Nbr:          nbr.LossBidLostToHigherBid.Ptr(),
 					},
 				},
 			},
@@ -2148,7 +2149,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 								"uuid": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+										Nbr:    exchange.ErrorTimeout.Ptr(),
 									},
 								},
 							},
@@ -2167,7 +2168,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						DealID:               "-1",
 						ServerSide:           1,
 						OriginalCur:          models.USD,
-						Nbr:                  models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
 					},
 				},
@@ -2184,7 +2185,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidLostToDealBid),
+									StatusCode: int(nbr.LossBidLostToDealBid),
 									Ext: openrtb_ext.NonBidExt{
 										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 											Bid: openrtb_ext.NonBidObject{
@@ -2218,7 +2219,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						NetECPM:     10,
 						GrossECPM:   10,
 						OriginalCur: models.USD,
-						Nbr:         models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+						Nbr:         nbr.LossBidLostToDealBid.Ptr(),
 					},
 				},
 			},
@@ -2397,7 +2398,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 												DealTierSatisfied: true,
 											},
 										},
-										Nbr: models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+										Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 									},
 								},
 							},
@@ -2450,7 +2451,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 								"uuid": {
 									BidExt: models.BidExt{
 										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+										Nbr:    exchange.ErrorTimeout.Ptr(),
 									},
 								},
 							},
@@ -2469,7 +2470,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						DealID:               "-1",
 						ServerSide:           1,
 						OriginalCur:          models.USD,
-						Nbr:                  models.GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
 					},
 				},
@@ -2486,7 +2487,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(openrtb3.LossBidLostToDealBid),
+									StatusCode: int(nbr.LossBidLostToDealBid),
 									Ext:        openrtb_ext.NonBidExt{},
 								},
 							},
@@ -2512,7 +2513,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						NetECPM:     0,
 						GrossECPM:   0,
 						OriginalCur: models.USD,
-						Nbr:         models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+						Nbr:         nbr.LossBidLostToDealBid.Ptr(),
 					},
 				},
 			},

@@ -11,6 +11,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -54,20 +55,20 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWr
 	}
 
 	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
-		return formJSONErrorResponse("", adpodWriter.Response.String(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, jr.debug), headers, adpodWriter.Code
+		return formJSONErrorResponse("", adpodWriter.Response.String(), nbr.InvalidVideoRequest.Ptr(), nil, jr.debug), headers, adpodWriter.Code
 	}
 
 	response, err := io.ReadAll(adpodWriter.Response)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		return formJSONErrorResponse("", "error in reading response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
+		return formJSONErrorResponse("", "error in reading response, reason: "+err.Error(), nbr.InternalError.Ptr(), nil, jr.debug), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
 	err = json.Unmarshal(response, &bidResponse)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
-		return formJSONErrorResponse("", "error in unmarshaling the auction response, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), headers, statusCode
+		return formJSONErrorResponse("", "error in unmarshaling the auction response, reason: "+err.Error(), nbr.InternalError.Ptr(), nil, jr.debug), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
@@ -83,13 +84,13 @@ func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWr
 
 func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, requestMethod string) ([]byte, int) {
 	if bidResponse == nil {
-		return formJSONErrorResponse("", "empty bid response recieved", GetNoBidReasonCode(int(openrtb3.NoBidGeneralError)), nil, jr.debug), http.StatusOK
+		return formJSONErrorResponse("", "empty bid response recieved", exchange.ErrorGeneral.Ptr(), nil, jr.debug), http.StatusOK
 	}
 
 	var reqExt openrtb_ext.ExtBidResponse
 	err := json.Unmarshal(bidResponse.Ext, &reqExt)
 	if err != nil {
-		return formJSONErrorResponse("", "error in unmarshaling request extension, reason: "+err.Error(), GetNoBidReasonCode(nbr.InternalError), nil, jr.debug), http.StatusInternalServerError
+		return formJSONErrorResponse("", "error in unmarshaling request extension, reason: "+err.Error(), nbr.InternalError.Ptr(), nil, jr.debug), http.StatusInternalServerError
 	}
 
 	var (
@@ -108,7 +109,7 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 		if len(redirectURL) > 0 && responseFormat == models.ResponseFormatRedirect && jr.debug != "1" {
 			return []byte(redirectURL), http.StatusFound
 		}
-		return formJSONErrorResponse("", "No Bid", GetNoBidReasonCode(int(openrtb3.NoBidGeneralError)), bidResponse.Ext, jr.debug), http.StatusOK
+		return formJSONErrorResponse("", "No Bid", exchange.ErrorGeneral.Ptr(), bidResponse.Ext, jr.debug), http.StatusOK
 	}
 
 	bidArrayMap := make(map[string][]openrtb2.Bid)
@@ -144,7 +145,7 @@ func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) [
 			ID: impId,
 		}
 		if len(bids) == 0 {
-			adpodBid.NBR = GetNoBidReasonCode(int(openrtb3.NoBidGeneralError))
+			adpodBid.NBR = exchange.ErrorGeneral.Ptr()
 			adpodBids = append(adpodBids, adpodBid)
 			continue
 		}

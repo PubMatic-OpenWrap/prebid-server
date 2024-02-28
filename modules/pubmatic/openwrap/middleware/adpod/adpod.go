@@ -44,7 +44,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 		err := enrichRequestBody(r)
 		if err != nil {
 			ext := addErrorInExtension(err.Error(), nil, r.URL.Query().Get(models.Debug))
-			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest, ext)
+			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest.Ptr(), ext)
 			w.Header().Set(ContentType, ApplicationJSON)
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(errResponse)
@@ -130,7 +130,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	enrichError := enrichRequestBody(r)
 	if enrichError != nil {
-		errResponse := formJSONErrorResponse("", enrichError.Error(), GetNoBidReasonCode(nbr.InvalidVideoRequest), nil, r.URL.Query().Get(models.Debug))
+		errResponse := formJSONErrorResponse("", enrichError.Error(), nbr.InvalidVideoRequest.Ptr(), nil, r.URL.Query().Get(models.Debug))
 		w.Header().Set(ContentType, ApplicationJSON)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(errResponse)

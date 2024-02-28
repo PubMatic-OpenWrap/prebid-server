@@ -2076,11 +2076,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPublisherID))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("", nbr.InvalidPublisherID)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("", int(nbr.InvalidPublisherID))
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        true,
-				NbrCode:       nbr.InvalidPublisherID,
+				NbrCode:       int(nbr.InvalidPublisherID),
 				Errors:        []string{"ErrInvalidPublisherID"},
 				DebugMessages: nil,
 			},
@@ -2104,11 +2104,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidRequestExt,
+				NbrCode: int(nbr.InvalidRequestExt),
 				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
 			},
 			wantErr: false,
@@ -2146,13 +2146,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidProfileConfiguration)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidProfileConfiguration,
+				NbrCode: int(nbr.InvalidProfileConfiguration),
 				Errors:  []string{"failed to get profile data: test"},
 			},
 			wantErr: false,
@@ -2177,13 +2177,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidProfileConfiguration)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidProfileConfiguration,
+				NbrCode: int(nbr.InvalidProfileConfiguration),
 				Errors:  []string{"failed to get profile data: received empty data"},
 			},
 			wantErr: false,
@@ -2220,13 +2220,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidPlatform)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidPlatform,
+				NbrCode: int(nbr.InvalidPlatform),
 				Errors:  []string{"failed to get platform data"},
 			},
 			wantErr: false,
@@ -2265,12 +2265,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnerThrottled)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.AllPartnerThrottled,
+				NbrCode: int(nbr.AllPartnerThrottled),
 				Errors:  []string{"All adapters throttled"},
 			},
 			wantErr: false,
@@ -2309,12 +2309,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidImpressionTagID,
+				NbrCode: int(nbr.InvalidImpressionTagID),
 				Errors:  []string{"tagid missing for imp: 123"},
 			},
 			wantErr: true,
@@ -2357,12 +2357,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidImpressionTagID,
+				NbrCode: int(nbr.InvalidImpressionTagID),
 				Errors:  []string{"tagid missing for imp: 123"},
 			},
 			wantErr: true,
@@ -2401,12 +2401,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InternalError)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.InternalError,
+				NbrCode: int(nbr.InternalError),
 				Errors:  []string{"failed to parse imp.ext: 123"},
 			},
 			wantErr: true,
@@ -2487,15 +2487,15 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllSlotsDisabled))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllSlotsDisabled)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllSlotsDisabled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.AllSlotsDisabled,
-				Errors:  []string{"all slots disabled"},
+				NbrCode: int(nbr.AllSlotsDisabled),
+				Errors:  []string{"All slots disabled"},
 			},
 			wantErr: false,
 		},
@@ -2604,7 +2604,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			},
 			wantErr:        false,
 			doMutate:       true,
-			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","native":{"request":""},"tagid":"adunit","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"127.0.0.1"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","native":{"request":""},"tagid":"adunit","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 		},
 		{
 			name: "no_serviceSideBidderPresent",
@@ -2667,18 +2667,18 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.ServerSidePartnerNotConfigured)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
-				NbrCode: nbr.ServerSidePartnerNotConfigured,
+				NbrCode: int(nbr.ServerSidePartnerNotConfigured),
 				Errors:  []string{"server side partner not found"},
 			},
 			wantErr: false,
 		},
 		{
-			name: "if-partner-is-alias-update-req.ext.prebid.aliasgvlid",
+			name: "if_partner_is_alias_update_req.ext.prebid.aliasgvlid",
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
@@ -2876,7 +2876,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"Native":null,"IncomingSlots":["300x250","640x480","700x900","728x90"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidderError":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 				AnalyticsTags: hookanalytics.Analytics{},
 			},
-			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"127.0.0.1"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 			wantErr:        false,
 			doMutate:       true,
 		},
@@ -3023,7 +3023,7 @@ func TestUserAgentHandleBeforeValidationHook(t *testing.T) {
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3051,7 +3051,7 @@ func TestUserAgentHandleBeforeValidationHook(t *testing.T) {
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidRequestExt)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3151,7 +3151,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				}, errors.New("test"))
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidProfileConfiguration)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 			},
@@ -3202,7 +3202,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidPlatform)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 			},
@@ -3255,7 +3255,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnerThrottled)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: want{
@@ -3307,7 +3307,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InvalidImpressionTagID)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: want{
@@ -3351,7 +3351,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", nbr.InternalError)
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 			},
 			want: want{

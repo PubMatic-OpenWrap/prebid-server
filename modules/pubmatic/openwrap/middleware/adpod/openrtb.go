@@ -8,6 +8,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -33,7 +34,7 @@ func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.HTTPResponseBuffe
 	if err != nil {
 		statusCode = http.StatusInternalServerError
 		ext := addErrorInExtension(err.Error(), nil, or.debug)
-		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
+		return formErrorBidResponse("", nbr.InternalError.Ptr(), ext), headers, statusCode
 	}
 
 	var bidResponse *openrtb2.BidResponse
@@ -41,7 +42,7 @@ func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.HTTPResponseBuffe
 	if err != nil {
 		statusCode = http.StatusInternalServerError
 		ext := addErrorInExtension(err.Error(), nil, or.debug)
-		return formErrorBidResponse("", nbr.InternalError, ext), headers, statusCode
+		return formErrorBidResponse("", nbr.InternalError.Ptr(), ext), headers, statusCode
 	}
 
 	if bidResponse.NBR != nil {
@@ -61,7 +62,7 @@ func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.HTTPResponseBuffe
 			bidExt = bidResponse.Ext
 		}
 		bidExt = addErrorInExtension(err.Error(), bidExt, or.debug)
-		return formErrorBidResponse(id, nbr.InternalError, bidExt), headers, statusCode
+		return formErrorBidResponse(id, nbr.InternalError.Ptr(), bidExt), headers, statusCode
 	}
 
 	return data, headers, statusCode
@@ -137,10 +138,10 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 	return seatBids
 }
 
-func formErrorBidResponse(id string, nbrCode int, ext json.RawMessage) []byte {
+func formErrorBidResponse(id string, nbrCode *openrtb3.NoBidReason, ext json.RawMessage) []byte {
 	response := openrtb2.BidResponse{
 		ID:  id,
-		NBR: GetNoBidReasonCode(nbrCode),
+		NBR: nbrCode,
 		Ext: ext,
 	}
 	data, _ := json.Marshal(response)

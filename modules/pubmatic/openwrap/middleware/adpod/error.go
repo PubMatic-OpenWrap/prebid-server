@@ -1,7 +1,5 @@
 package middleware
 
-import "github.com/prebid/openrtb/v19/openrtb3"
-
 type CustomError interface {
 	error
 	Code() int
@@ -25,9 +23,4 @@ func (e *OWError) Code() int {
 // Error Returns Error Message
 func (e *OWError) Error() string {
 	return e.message
-}
-
-func GetNoBidReasonCode(code int) *openrtb3.NoBidReason {
-	nbr := openrtb3.NoBidReason(code)
-	return &nbr
 }

@@ -9,11 +9,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
@@ -278,7 +278,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 5,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -303,7 +303,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -388,7 +388,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 5,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -415,7 +415,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -575,7 +575,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-2": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 5,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -588,7 +588,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -674,7 +674,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									NetECPM: 20,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -700,7 +700,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -786,7 +786,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									NetECPM: 20,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -800,7 +800,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							"bid-id-2": {
 								BidExt: models.BidExt{
 									NetECPM: 5,
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
 											Targeting: map[string]string{},
@@ -912,7 +912,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							"bid-id-2": {
 								BidExt: models.BidExt{
 									NetECPM: 5,
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
 											Targeting: map[string]string{},
@@ -924,7 +924,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid),
+									Nbr:     nbr.LossBidLostToDealBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -1030,7 +1030,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 										},
 									},
 									NetECPM: 5,
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 								},
 								EG: 5,
 								EN: 5,
@@ -1043,7 +1043,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 											Targeting:         map[string]string{},
 										},
 									},
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 								},
 								EG: 10,
@@ -1158,7 +1158,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 5,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -1183,7 +1183,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -1281,7 +1281,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 						BidCtx: map[string]models.BidCtx{
 							"bid-id-1": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 5,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{
@@ -1312,7 +1312,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							},
 							"bid-id-3": {
 								BidExt: models.BidExt{
-									Nbr:     models.GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid),
+									Nbr:     nbr.LossBidLostToHigherBid.Ptr(),
 									NetECPM: 10,
 									ExtBid: openrtb_ext.ExtBid{
 										Prebid: &openrtb_ext.ExtBidPrebid{

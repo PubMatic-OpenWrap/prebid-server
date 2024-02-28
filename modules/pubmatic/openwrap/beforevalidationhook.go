@@ -14,6 +14,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod"
@@ -48,9 +49,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			if rCtx.IsCTVRequest {
-				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(result.NbrCode), rCtx.PubIDStr)
+				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
@@ -76,13 +77,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
 		result.Reject = false
 		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, int(nbr.InvalidRequestExt))
 		return result, nil
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
-	if pubID == 0 || err != nil {
-		result.NbrCode = nbr.InvalidPublisherID
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
 		return result, nil
 	}
@@ -92,6 +93,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
@@ -106,7 +108,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequestExt
+		result.NbrCode = int(nbr.InvalidRequestExt)
 		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
 		return result, nil
 	}
@@ -122,7 +124,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
-		result.NbrCode = nbr.InvalidProfileConfiguration
+		result.NbrCode = int(nbr.InvalidProfileConfiguration)
 		if err != nil {
 			err = errors.New("failed to get profile data: " + err.Error())
 		} else {
@@ -138,7 +140,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
-				result.NbrCode = nbr.InvalidResponseFormat
+				result.NbrCode = int(nbr.InvalidResponseFormat)
 				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
 				return result, nil
 			}
@@ -151,14 +153,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(rCtx.RedirectURL) > 0 {
 			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
 			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
-				result.NbrCode = nbr.InvalidRedirectURL
+				result.NbrCode = int(nbr.InvalidRedirectURL)
 				result.Errors = append(result.Errors, "Invalid redirect URL")
 				return result, nil
 			}
 		}
 
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
-			result.NbrCode = nbr.MissingOWRedirectURL
+			result.NbrCode = int(nbr.MissingOWRedirectURL)
 			result.Errors = append(result.Errors, "owRedirectURL is missing")
 			return result, nil
 		}
@@ -170,7 +172,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
-		result.NbrCode = nbr.InvalidPlatform
+		result.NbrCode = int(nbr.InvalidPlatform)
 		err = errors.New("failed to get platform data")
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
@@ -196,7 +198,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 	if allPartnersThrottledFlag {
-		result.NbrCode = nbr.AllPartnerThrottled
+		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
@@ -204,7 +206,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
-		result.NbrCode = nbr.InvalidPriceGranularityConfig
+		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
 		result.Errors = append(result.Errors, "failed to price granularity details: "+err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
@@ -231,7 +233,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if rCtx.IsCTVRequest {
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
-			result.NbrCode = nbr.InvalidVideoRequest
+			result.NbrCode = int(nbr.InvalidVideoRequest)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 			return result, nil
@@ -247,7 +249,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
 			if err != nil {
-				result.NbrCode = nbr.InternalError
+				result.NbrCode = int(nbr.InternalError)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
@@ -258,7 +260,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
-			result.NbrCode = nbr.InvalidImpressionTagID
+			result.NbrCode = int(nbr.InvalidImpressionTagID)
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
@@ -339,7 +341,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
-				result.NbrCode = nbr.InvalidAdpodConfig
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				return result, nil
 			}
@@ -353,7 +355,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			if err := adpod.Validate(adpodConfig); err != nil {
-				result.NbrCode = nbr.InvalidAdpodConfig
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				return result, nil
 			}
@@ -515,7 +517,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	} // for(imp
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
-		result.NbrCode = nbr.AllSlotsDisabled
+		result.NbrCode = int(nbr.AllSlotsDisabled)
 		if err != nil {
 			err = errors.New("all slots disabled: " + err.Error())
 		} else {
@@ -526,7 +528,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	if !serviceSideBidderPresent {
-		result.NbrCode = nbr.ServerSidePartnerNotConfigured
+		result.NbrCode = int(nbr.ServerSidePartnerNotConfigured)
 		if err != nil {
 			err = errors.New("server side partner not found: " + err.Error())
 		} else {
@@ -638,7 +640,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-
 	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)

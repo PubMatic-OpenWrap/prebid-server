@@ -56,7 +56,7 @@ type vastResponse struct {
 	WrapperLoggerDebug string
 }
 
-func (vr *vastResponse) addOwStatusHeader(headers map[string]string, nbr int) {
+func (vr *vastResponse) addOwStatusHeader(headers map[string]string, nbr openrtb3.NoBidReason) {
 	if vr.debug == "1" {
 		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr)
 	}
@@ -91,13 +91,13 @@ func (vr *vastResponse) formVastResponse(adpodWriter *utils.HTTPResponseBufferWr
 
 	if bidResponse.NBR != nil {
 		statusCode = http.StatusBadRequest
-		vr.addOwStatusHeader(headers, int(*bidResponse.NBR))
+		vr.addOwStatusHeader(headers, *bidResponse.NBR)
 		return EmptyVASTResponse, headers, statusCode
 	}
 
 	vast, nbr, err := vr.getVast(bidResponse)
 	if nbr != nil {
-		vr.addOwStatusHeader(headers, int(*nbr))
+		vr.addOwStatusHeader(headers, *nbr)
 		return EmptyVASTResponse, headers, statusCode
 	}
 
@@ -106,7 +106,7 @@ func (vr *vastResponse) formVastResponse(adpodWriter *utils.HTTPResponseBufferWr
 
 func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return "", GetNoBidReasonCode(nbr.EmptySeatBid), errors.New("empty bid response")
+		return "", nbr.EmptySeatBid.Ptr(), errors.New("empty bid response")
 	}
 
 	bidArray := make([]openrtb2.Bid, 0)
