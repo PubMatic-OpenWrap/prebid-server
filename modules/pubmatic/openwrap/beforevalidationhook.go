@@ -352,7 +352,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
 			}
 
-			if err := adpod.Validate(adpodConfig); err != nil {
+			if err := adpod.Validate(adpodConfig, imp.Video); err != nil {
 				result.NbrCode = nbr.InvalidAdpodConfig
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				return result, nil

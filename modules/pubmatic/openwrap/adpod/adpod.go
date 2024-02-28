@@ -82,7 +82,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 
 }
 
-func Validate(config *models.AdPod) error {
+func Validate(config *models.AdPod, video *openrtb2.Video) error {
 	if config == nil {
 		return nil
 	}
@@ -117,6 +117,20 @@ func Validate(config *models.AdPod) error {
 
 	if config.MinDuration > config.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
+	}
+
+	if len(config.VideoAdDuration) > 0 {
+		validDurations := false
+		for _, videoDuration := range config.VideoAdDuration {
+			if videoDuration >= config.MinDuration && videoDuration <= config.MaxDuration {
+				validDurations = true
+				break
+			}
+		}
+
+		if !validDurations {
+			return errors.New("videoAdDuration values should be between adpod.adminduration and dpod.adminduration")
+		}
 	}
 
 	return nil
