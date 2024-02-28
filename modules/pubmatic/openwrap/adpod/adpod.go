@@ -82,7 +82,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 
 }
 
-func Validate(config *models.AdPod, video *openrtb2.Video) error {
+func Validate(config *models.AdPod) error {
 	if config == nil {
 		return nil
 	}
