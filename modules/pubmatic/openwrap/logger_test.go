@@ -88,7 +88,7 @@ func Test_getIncomingSlots(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"300x250v"},
+			want: []string{"300x250"},
 		},
 		{
 			name: "all_slots",
@@ -114,7 +114,7 @@ func Test_getIncomingSlots(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"300x250", "400x300", "300x250v"},
+			want: []string{"300x250", "400x300"},
 		},
 		{
 			name: "duplicate_slot",

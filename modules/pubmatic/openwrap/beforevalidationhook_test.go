@@ -3160,7 +3160,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"123": {
 							IncomingSlots: []string{
-								"640x480v",
+								"640x480",
 							},
 							SlotName:   "adunit",
 							AdUnitName: "adunit",
@@ -3211,7 +3211,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"123": {
 							IncomingSlots: []string{
-								"640x480v",
+								"640x480",
 							},
 							SlotName:   "adunit",
 							AdUnitName: "adunit",
@@ -3264,7 +3264,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"123": {
 							IncomingSlots: []string{
-								"640x480v",
+								"640x480",
 							},
 							SlotName:   "adunit",
 							AdUnitName: "adunit",
