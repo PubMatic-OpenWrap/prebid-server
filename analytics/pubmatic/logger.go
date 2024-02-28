@@ -11,8 +11,8 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/analytics"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -22,7 +22,7 @@ import (
 
 type bidWrapper struct {
 	*openrtb2.Bid
-	Nbr *openrtb3.NonBidStatusCode
+	Nbr *openrtb3.NoBidReason
 }
 
 // getUUID is a function variable which will return uuid
@@ -228,7 +228,7 @@ func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
 	}
 	// the 'nbr' field will be lost due to json.Marshal hence do not set it inside bid.Ext
 	// set the 'nbr' code at bid level, while forming partner-records we give high priority to bid.nbr over bid.ext.nbr
-	bid.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
+	bid.Nbr = openrtb3.NoBidReason(nonBid.StatusCode).Ptr()
 	return bid
 }
 
@@ -421,7 +421,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.FloorValue, pr.FloorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rCtx.CurrencyConversion)
 			}
 
-			if nbr != nil && *nbr == openrtb3.NoBidTimeoutError {
+			if nbr != nil && *nbr == exchange.ErrorTimeout {
 				pr.PostTimeoutBidStatus = 1
 				pr.Latency1 = 0
 			}

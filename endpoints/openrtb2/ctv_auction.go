@@ -36,6 +36,7 @@ import (
 	"github.com/prebid/prebid-server/hooks"
 	"github.com/prebid/prebid-server/hooks/hookexecution"
 	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/usersync"
@@ -1141,18 +1142,18 @@ func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
 }
 
 // ConvertAPRCToNBRC converts the aprc to NonBidStatusCode
-func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NonBidStatusCode {
-	var nbrCode openrtb3.NonBidStatusCode
+func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
+	var nbrCode openrtb3.NoBidReason
 
 	switch bidStatus {
 	case constant.StatusOK:
-		nbrCode = openrtb3.LossBidLostToHigherBid
+		nbrCode = nbr.LossBidLostToHigherBid
 	case constant.StatusCategoryExclusion:
-		nbrCode = openrtb3.LossBidCategoryExclusions
+		nbrCode = exchange.ResponseRejectedCreativeCategoryExclusions
 	case constant.StatusDomainExclusion:
-		nbrCode = openrtb3.LossBidAdvertiserExclusions
+		nbrCode = exchange.ResponseRejectedCreativeAdvertiserExclusions
 	case constant.StatusDurationMismatch:
-		nbrCode = openrtb3.LossBidInvalidCreative
+		nbrCode = exchange.ResponseRejectedInvalidCreative
 
 	default:
 		return nil
