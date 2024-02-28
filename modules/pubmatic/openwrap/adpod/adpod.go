@@ -119,5 +119,19 @@ func Validate(config *models.AdPod) error {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
 	}
 
+	if len(config.VideoAdDuration) > 0 {
+		validDurations := false
+		for _, videoDuration := range config.VideoAdDuration {
+			if videoDuration >= config.MinDuration && videoDuration <= config.MaxDuration {
+				validDurations = true
+				break
+			}
+		}
+
+		if !validDurations {
+			return errors.New("videoAdDuration values should be between adpod.adminduration and dpod.adminduration")
+		}
+	}
+
 	return nil
 }
