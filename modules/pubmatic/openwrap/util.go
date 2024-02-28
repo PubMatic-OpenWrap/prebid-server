@@ -292,6 +292,14 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 	return userAgent
 }
 
+func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
+	ip := defaultIP
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
+		ip = bidRequest.Device.IP
+	}
+	return ip
+}
+
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
 	if request.Site != nil {

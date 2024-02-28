@@ -1007,3 +1007,71 @@ func TestGetPubmaticErrorCode(t *testing.T) {
 		})
 	}
 }
+
+func Test_getIP(t *testing.T) {
+	type args struct {
+		bidRequest *openrtb2.BidRequest
+		defaultIP  string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test_empty_Device_IP",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						IP: "",
+					},
+				},
+				defaultIP: "10.20.30.40",
+			},
+			want: "10.20.30.40",
+		},
+		{
+			name: "Test_valid_Device_IP",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						IP: "10.20.30.40",
+					},
+				},
+				defaultIP: "",
+			},
+			want: "10.20.30.40",
+		},
+		{
+			name: "Test_valid_Device_IP_with_default_IP",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						IP: "10.20.30.40",
+					},
+				},
+				defaultIP: "20.30.40.50",
+			},
+			want: "10.20.30.40",
+		},
+		{
+			name: "Test_empty_Device_IP_with_default_IP",
+			args: args{
+				bidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						IP: "",
+					},
+				},
+				defaultIP: "",
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getIP(tt.args.bidRequest, tt.args.defaultIP); got != tt.want {
+				t.Errorf("getIP() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
