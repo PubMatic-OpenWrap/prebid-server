@@ -58,6 +58,7 @@ func NewSetUIDEndpoint(cfg *config.Configuration, syncersByBidder map[string]use
 		query := r.URL.Query()
 
 		syncer, bidderName, err := getSyncer(query, syncersByBidder)
+		// For RTBBidders; need to add fallback for syncersByBidder
 		if err != nil {
 			handleBadStatus(w, http.StatusBadRequest, metrics.SetUidSyncerUnknown, err, metricsEngine, &so)
 			return
@@ -159,10 +160,14 @@ func NewSetUIDEndpoint(cfg *config.Configuration, syncersByBidder map[string]use
 		setSiteCookie := siteCookieCheck(r.UserAgent())
 
 		// Priority Ejector Set Up
+		// RTBBidders : PriorityGroups will always empty in OW setup,
 		priorityEjector := &usersync.PriorityBidderEjector{PriorityGroups: cfg.UserSync.PriorityGroups, TieEjector: &usersync.OldestEjector{}, SyncersByBidder: syncersByBidder}
 		priorityEjector.IsSyncerPriority = isSyncerPriority(bidderName, cfg.UserSync.PriorityGroups)
 
 		// Write Cookie
+		// priorityEjector will never come in picture for OW
+		// because we set host_cookie.max_cookie_size_bytes=0 in pbs.yaml
+		// so that PrepareCookieForWrite will not make a call to priorityEjector.Choose
 		encodedCookie, err := cookie.PrepareCookieForWrite(&cfg.HostCookie, encoder, priorityEjector)
 		if err != nil {
 			if err.Error() == errSyncerIsNotPriority.Error() {
@@ -329,6 +334,7 @@ func getSyncer(query url.Values, syncersByBidder map[string]usersync.Syncer) (us
 		return nil, "", errors.New(`"bidder" query param is required`)
 	}
 
+	// syncer, syncerExists := syncersByBidder[bidder]
 	syncer, syncerExists := syncersByBidder[bidder]
 	if !syncerExists {
 		return nil, "", errors.New("The bidder name provided is not supported by Prebid Server")

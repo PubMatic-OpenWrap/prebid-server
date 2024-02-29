@@ -117,9 +117,15 @@ var singleTonbidder *RTBBidder = &RTBBidder{
 		InfoAwareBidders: make(map[string]adapters.Bidder),
 		// assume- we will get this 'AliasMap' from database query execution
 		AliasMap: map[string]string{
-			"magnite-1":     "magnite",
-			"myrtbbidder-1": "myrtbbidder",
-			"ashish-1":      "ashish",
+			"magnite-1":         "rtb_magnite",
+			"magnite_alias":     "magnite",
+			"myrtbbidder-1":     "myrtbbidder",
+			"ashish-1":          "ashish",
+			"rtb_magnite_core":  "rtb_magnite",
+			"rtb_magnite_alias": "rtb_magnite",
+			"rtb_magnite_bc":    "rtb_magnite",
+			"magnite_demo":      "rtb_magnite",
+			"magnite_abcd":      "rtb_magnite",
 		},
 	},
 }

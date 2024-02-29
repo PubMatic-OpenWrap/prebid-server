@@ -142,6 +142,7 @@ func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}
 	}
 	syncer, exists := c.bidderSyncerLookup[bidderName]
 	if !exists {
+		// TODO: fallback to rtbbidder.bidderSyncerLookup[]
 		return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}
 	}
 

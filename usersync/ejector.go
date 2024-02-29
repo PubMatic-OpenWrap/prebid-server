@@ -86,6 +86,7 @@ func getNonPriorityUids(uids map[string]UIDEntry, priorityGroups [][]string, syn
 	isPriority := make(map[string]bool)
 	for _, group := range priorityGroups {
 		for _, bidder := range group {
+			// RTBBidders: need to add fallback
 			if bidderSyncer, ok := syncersByBidder[bidder]; ok {
 				isPriority[bidderSyncer.Key()] = true
 			}
@@ -110,6 +111,7 @@ func getPriorityUids(lowestPriorityGroup []string, uids map[string]UIDEntry, syn
 
 	// Loop over lowestPriorityGroup and populate the lowestPriorityUIDs map
 	for _, bidder := range lowestPriorityGroup {
+		// RTBBidders: need to add fallback
 		if bidderSyncer, ok := syncersByBidder[bidder]; ok {
 			if uidEntry, exists := uids[bidderSyncer.Key()]; exists {
 				lowestPriorityUIDs[bidderSyncer.Key()] = uidEntry

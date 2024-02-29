@@ -225,7 +225,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		return nil, err
 	}
 
-	gvlVendorIDs := cfg.BidderInfos.ToGVLVendorIDMap()
+	gvlVendorIDs := cfg.BidderInfos.ToGVLVendorIDMap() // stores bidder-name to GVL-ID
 	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), cfg.GDPR, generalHttpClient, gdpr.VendorListURLMaker)
 	gdprPermsBuilder := gdpr.NewPermissionsBuilder(cfg.GDPR, gvlVendorIDs, vendorListFetcher)
 	tcf2CfgBuilder := gdpr.NewTCF2Config
@@ -334,6 +334,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
+	rtbbidder.StoreHostConfig(cfg)
 	g_syncers = syncersByBidder
 	g_metrics = r.MetricsEngine
 	g_cfg = cfg

@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
+
+	"github.com/prebid/prebid-server/adapters"
+	// "github.com/prebid/prebid-server/config"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
@@ -23,6 +25,7 @@ type Syncer struct {
 	syncPath     string
 	syncInfoPath string
 	AliasMap     map[string]string
+	HostCfg      *config.Configuration
 }
 
 type steps int
@@ -32,6 +35,10 @@ const (
 	SYNC_BIDDER_PARAMS
 	SYNC_BIDDER_INFO
 )
+
+func StoreHostConfig(cfg *config.Configuration) {
+	GetSyncer().HostCfg = cfg
+}
 
 func (s *Syncer) sync() {
 	// sync core bidders, sync bidder-params, sync bidder-info
@@ -69,7 +76,7 @@ func (s *Syncer) syncCoreBidders() bool {
 	for _, rtbBidder := range rtbBidders {
 		if _, present := s.syncedBiddersMap[string(rtbBidder)]; !present {
 			openrtb_ext.SetAliasBidderName(string(rtbBidder), rtbBidder)
-			s.syncedBidders = append(s.syncedBidders, string(rtbBidder))
+			// s.syncedBidders = append(s.syncedBidders, string(rtbBidder))
 			newRTBBidders = append(newRTBBidders, rtbBidder)
 			s.syncedBiddersMap[string(rtbBidder)] = struct{}{}
 			syncDone = true

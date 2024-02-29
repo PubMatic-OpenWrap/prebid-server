@@ -405,6 +405,9 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							}
 						}
 
+						if bidderName == "rtb_magnite" {
+							bidResponse.Bids[i].BidType = "video"
+						}
 						seatBidMap[bidderName].Bids = append(seatBidMap[bidderName].Bids, &entities.PbsOrtbBid{
 							Bid:            bidResponse.Bids[i].Bid,
 							BidMeta:        bidResponse.Bids[i].BidMeta,

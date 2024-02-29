@@ -147,6 +147,10 @@ func (c *cookieSyncEndpoint) parseRequest(r *http.Request) (usersync.Request, ma
 
 	ccpaParsedPolicy := ccpa.ParsedPolicy{}
 	if request.USPrivacy != "" {
+		// for rtbbidders, we need to update/sync bidderHashSet
+		// no need to directly update this 'c.privacyConfig.bidderHashSet'
+		// instead we can update 'parsedpolicy.go'
+		// but hard to maintain this changes ?
 		parsedPolicy, err := ccpa.Policy{Consent: request.USPrivacy}.Parse(c.privacyConfig.bidderHashSet)
 		if err != nil {
 			privacyMacros.USPrivacy = ""

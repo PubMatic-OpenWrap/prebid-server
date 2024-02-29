@@ -23,6 +23,7 @@ func (c standardBidderChooser) choose(requested, available []string, cooperative
 	return c.shuffledCopy(requested)
 }
 
+/* Need to add handling for RTBBidders) */
 func (c standardBidderChooser) chooseCooperative(requested, available []string, priorityGroups [][]string) []string {
 	// allocate enough memory for the slice to try to avoid re-allocation. the 50% overhead is a guess
 	// at a satisfactory value. since all available bidders are included in the slice, along with

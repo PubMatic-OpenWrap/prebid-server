@@ -112,6 +112,7 @@ func parseNoSaleBidders(noSaleBidders []string, validBidders map[string]struct{}
 		if _, exists := validBidders[bidder]; exists {
 			noSaleSpecificBidders[bidder] = struct{}{}
 		} else {
+			// add fallback for RTBBidder's validBidders
 			err = fmt.Errorf("unrecognized bidder '%s'", bidder)
 			return
 		}

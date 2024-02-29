@@ -153,23 +153,23 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	reqWrapper, _, _, _, _, _, errL = deps.parseRequest(r, &deps.labels, hookExecutor)
 
 	/* rtbidder: temporary provision */
-	aliasRTBBidder := "myrtbbidder"
-	coreRTBBidder := "myrtbbidder"
+	// aliasRTBBidder := "myrtbbidder"
+	// coreRTBBidder := "myrtbbidder"
 	req := reqWrapper
 	reqExt, _ := req.GetRequestExt()
 	prebid := reqExt.GetPrebid()
-	prebid.Aliases[aliasRTBBidder] = coreRTBBidder
+	// prebid.Aliases[aliasRTBBidder] = coreRTBBidder
 
 	imps := req.GetImp()
-	for _, imp := range imps {
-		impExt, _ := imp.GetImpExt()
-		prebid := impExt.GetPrebid()
-		prebid.Bidder[aliasRTBBidder] = []byte(`{
-		"uri": "https://core-dev-va2-mgmt.pubmatic.com/master/s/getbid",
-		"requestmode" : "1"
-	}`)
-		impExt.SetPrebid(prebid)
-	}
+	// for _, imp := range imps {
+	// 	impExt, _ := imp.GetImpExt()
+	// 	prebid := impExt.GetPrebid()
+	// 	prebid.Bidder[aliasRTBBidder] = []byte(`{
+	// 	"uri": "https://core-dev-va2-mgmt.pubmatic.com/master/s/getbid",
+	// 	"requestmode" : "1"
+	// }`)
+	// 	impExt.SetPrebid(prebid)
+	// }
 	reqExt.SetPrebid(prebid)
 	req.SetImp(imps)
 	req.RebuildRequest()
