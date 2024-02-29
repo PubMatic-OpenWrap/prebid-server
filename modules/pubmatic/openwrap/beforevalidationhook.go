@@ -130,11 +130,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		} else {
 			err = errors.New("failed to get profile data: received empty data")
 		}
-		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, nil
+		return result, err
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
@@ -173,12 +172,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = int(nbr.InvalidPlatform)
-		err = errors.New("failed to get platform data")
-		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, nil
+		return result, errors.New("failed to get platform data")
 	}
 	rCtx.Platform = platform
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)

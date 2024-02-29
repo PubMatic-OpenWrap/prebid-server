@@ -672,7 +672,7 @@ func TestIsSlotEnabled(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Video_enabled_in_Video_adunit_context but video impression is not present in request",
+			name: "Video_enabled_in_Video_adunit_context_but_video_impression_is_not_present_in_request",
 			args: args{
 				videoAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
@@ -685,7 +685,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Video_enabled_in_Video_adunit_context, video impression is present in request",
+			name: "Video_enabled_in_Video_adunit_context_video_impression_is_present_in_request",
 			args: args{
 				imp: openrtb2.Imp{
 					Video: &openrtb2.Video{
@@ -704,7 +704,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Banner_enabled_in_banner_adunit_context but banner impression is not present in request",
+			name: "Banner_enabled_in_banner_adunit_context_but_banner_impression_is_not_present_in_request",
 			args: args{
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
@@ -717,7 +717,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Banner_enabled_in_banner_adunit_context, banner impression is present in request",
+			name: "Banner_enabled_in_banner_adunit_context_banner_impression_is_present_in_request",
 			args: args{
 				imp: openrtb2.Imp{
 					Banner: &openrtb2.Banner{
@@ -736,7 +736,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "both_banner_and_video_enabled_in_adunit_context and banner and video impressions present in the request",
+			name: "both_banner_and_video_enabled_in_adunit_context_and_banner_and_video_impressions_present_in_the_request",
 			args: args{
 				imp: openrtb2.Imp{
 					Video:  &openrtb2.Video{},
@@ -760,7 +760,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "both_banner_and_video_disabled_in_adunit_context and request has both banner and video impressions",
+			name: "both_banner_and_video_disabled_in_adunit_context_and_request_has_both_banner_and_video_impressions",
 			args: args{
 				imp: openrtb2.Imp{
 					Video:  &openrtb2.Video{},
@@ -784,7 +784,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "both_banner_and_video_enabled_in_adunit_context and banner and video impressions is not present in the request",
+			name: "both_banner_and_video_enabled_in_adunit_context_both_banner_and_video_impressions_is_not_present_in_the_request",
 			args: args{
 				bannerAdUnitCtx: models.AdUnitCtx{
 					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
@@ -804,7 +804,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Banner is enabled in adunit and request has video impressions",
+			name: "Banner_is_enabled_in_adunit_and_request_has_video_impressions",
 			args: args{
 				imp: openrtb2.Imp{
 					Video: &openrtb2.Video{},
@@ -820,7 +820,7 @@ func TestIsSlotEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Native impression is present in request",
+			name: "Native_impression_is_present_in_request",
 			args: args{
 				imp: openrtb2.Imp{
 					Native: &openrtb2.Native{},
@@ -2155,7 +2155,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				NbrCode: int(nbr.InvalidProfileConfiguration),
 				Errors:  []string{"failed to get profile data: test"},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "got_empty_profileData_from_DB",
@@ -2186,7 +2186,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				NbrCode: int(nbr.InvalidProfileConfiguration),
 				Errors:  []string{"failed to get profile data: received empty data"},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "platform_is_not_present_in_request_then_reject_the_request",
@@ -2229,7 +2229,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				NbrCode: int(nbr.InvalidPlatform),
 				Errors:  []string{"failed to get platform data"},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "All_partners_throttled",
@@ -2786,7 +2786,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"Native":null,"IncomingSlots":["640x480","700x900","728x90","300x250"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"adtag":"45343","site":"12313"},"VASTTagFlags":null},"dm-alias":{"PartnerID":3,"PrebidBidderCode":"districtm","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null},"pub2-alias":{"PartnerID":1,"PrebidBidderCode":"pubmatic2","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidderError":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pub2-alias":{"wiid":""},"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 				AnalyticsTags: hookanalytics.Analytics{},
 			},
-			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"127.0.0.1"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pubmatic":{"wiid":""},"pub2-alias":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pubmatic":{"wiid":""},"pub2-alias":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 			wantErr:        false,
 			doMutate:       true,
 		},
@@ -3092,7 +3092,7 @@ func TestUserAgentHandleBeforeValidationHook(t *testing.T) {
 	}
 }
 
-func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
+func TestImpBidCtxHandleBeforeValidationHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
