@@ -122,11 +122,25 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 		creative, price := getAdPodBidCreativeAndPrice(bids)
 		bid.AdM = creative
 		bid.Price = price
-		if len(bids) > 0 {
-			bid.Cat = bids[0].Cat
-			bid.ADomain = bids[0].ADomain
-		}
 		bid.ImpID = impId
+
+		// Get Categories and ad domain
+		category := make(map[string]bool)
+		addomain := make(map[string]bool)
+		for _, eachBid := range bids {
+			for _, cat := range eachBid.Cat {
+				if _, ok := category[cat]; !ok {
+					category[cat] = true
+					bid.Cat = append(bid.Cat, cat)
+				}
+			}
+			for _, domain := range eachBid.ADomain {
+				if _, ok := addomain[domain]; !ok {
+					addomain[domain] = true
+					bid.ADomain = append(bid.ADomain, domain)
+				}
+			}
+		}
 
 		seatBid := openrtb2.SeatBid{}
 		seatBid.Seat = models.BidderOWPrebidCTV

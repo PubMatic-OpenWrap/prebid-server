@@ -70,13 +70,18 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 		return
 	}
 
-	for impID := range rctx.ImpBidCtx {
+	for impID, impCtx := range rctx.ImpBidCtx {
+		// Do not update the nbr in case of adpod bids
+		if impCtx.AdpodConfig != nil {
+			continue
+		}
+
 		_, ok := rctx.WinningBids[impID]
 		if !ok {
 			continue
 		}
 
-		for bidID, bidCtx := range rctx.ImpBidCtx[impID].BidCtx {
+		for bidID, bidCtx := range impCtx.BidCtx {
 			// do not update NonBR for winning bid
 			if rctx.WinningBids.IsWinningBid(impID, bidID) {
 				continue
