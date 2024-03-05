@@ -44,8 +44,10 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 			deviceExt.DeleteSessionID()
 			return
 		}
-		dvc.DeviceIFA = extSessionIDStr
-		extIFATypeStr = models.DeviceIFATypeSESSIONID
+		if dvc.DeviceIFA == "" {
+			dvc.DeviceIFA = extSessionIDStr
+			extIFATypeStr = models.DeviceIFATypeSESSIONID
+		}
 	}
 	if dvc.DeviceIFA != "" {
 		if _, ok := models.DeviceIFATypeID[strings.ToLower(extIFATypeStr)]; !ok {
