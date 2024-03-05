@@ -133,7 +133,7 @@ func GetPrometheusGatherer() *prometheus.Registry {
 }
 
 // CallRecordNonBids calls RecordRejectedBids function on prebid's metric-engine
-func CallRecordNonBids(pubId, bidder string, code openrtb3.NonBidStatusCode) {
+func CallRecordNonBids(pubId, bidder string, code openrtb3.NoBidReason) {
 	if g_metrics != nil {
 		codeStr := strconv.FormatInt(int64(code), 10)
 		g_metrics.RecordRejectedBids(pubId, bidder, codeStr)

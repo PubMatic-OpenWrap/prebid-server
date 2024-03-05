@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -390,21 +390,21 @@ func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
-			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bid.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
-			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			wbid.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			return true
 		}
 	}
 	//both have deal or both do not have deal
 	if bid.NetEcpm > wbid.NetEcpm {
-		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		wbid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 		return true
 	}
-	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 	return false
 }
 

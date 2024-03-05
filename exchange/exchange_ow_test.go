@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/adapters/vastbidder"
 	"github.com/prebid/prebid-server/config"
@@ -94,7 +93,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					seatNonBidsMap: map[string][]openrtb_ext.NonBid{
 						"": {
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+								StatusCode: int(ResponseRejectedCreativeAdvertiserBlocking),
 								Ext: openrtb_ext.NonBidExt{
 									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 										Bid: openrtb_ext.NonBidObject{
@@ -105,7 +104,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 								},
 							},
 							{
-								StatusCode: int(openrtb3.LossBidAdvertiserBlocking),
+								StatusCode: int(ResponseRejectedCreativeAdvertiserBlocking),
 								Ext: openrtb_ext.NonBidExt{
 									Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 										Bid: openrtb_ext.NonBidObject{

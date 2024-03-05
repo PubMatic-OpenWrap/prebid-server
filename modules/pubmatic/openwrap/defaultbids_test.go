@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +18,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		nbr  *openrtb3.NonBidStatusCode
+		nbr  *openrtb3.NoBidReason
 	}{
 		{
 			name: "bidResponseExt.Errors_is_empty",
@@ -27,7 +28,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 					Errors: nil,
 				},
 			},
-			nbr: GetNonBidStatusCodePtr(openrtb3.NoBidGeneral),
+			nbr: openrtb3.NoBidUnknownError.Ptr(),
 		},
 		{
 			name: "invalid_partner_err",
@@ -43,7 +44,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 					},
 				},
 			},
-			nbr: GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+			nbr: exchange.ErrorGeneral.Ptr(),
 		},
 		{
 			name: "unknown_partner_err",
@@ -59,7 +60,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 					},
 				},
 			},
-			nbr: GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError),
+			nbr: exchange.ErrorGeneral.Ptr(),
 		},
 		{
 			name: "partner_timeout_err",
@@ -75,7 +76,7 @@ func TestGetNonBRCodeFromBidRespExt(t *testing.T) {
 					},
 				},
 			},
-			nbr: GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError),
+			nbr: exchange.ErrorTimeout.Ptr(),
 		},
 	}
 	for _, tt := range tests {

@@ -137,9 +137,9 @@ type PartnerRecord struct {
 	OriginalCur string    `json:"ocry"`
 	MetaData    *MetaData `json:"md,omitempty"`
 
-	FloorValue     float64                    `json:"fv,omitempty"`
-	FloorRuleValue float64                    `json:"frv,omitempty"`
-	Nbr            *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
+	FloorValue     float64               `json:"fv,omitempty"`
+	FloorRuleValue float64               `json:"frv,omitempty"`
+	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
 
 }
 
