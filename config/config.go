@@ -100,10 +100,20 @@ type Configuration struct {
 	Hooks       Hooks       `mapstructure:"hooks"`
 	Validations Validations `mapstructure:"validations"`
 	PriceFloors PriceFloors `mapstructure:"price_floors"`
+
+	TrackerURL          string              `mapstructure:"tracker_url"`
+	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
+	PriceFloorFetcher   PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
 }
 
 type PriceFloors struct {
 	Enabled bool `mapstructure:"enabled"`
+}
+
+type VendorListScheduler struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Interval string `mapstructure:"interval"`
+	Timeout  string `mapstructure:"timeout"`
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500
@@ -113,6 +123,11 @@ type HTTPClient struct {
 	MaxIdleConns        int `mapstructure:"max_idle_connections"`
 	MaxIdleConnsPerHost int `mapstructure:"max_idle_connections_per_host"`
 	IdleConnTimeout     int `mapstructure:"idle_connection_timeout_seconds"`
+
+	TLSHandshakeTimeout   int `mapstructure:"tls_handshake_timeout"`
+	ResponseHeaderTimeout int `mapstructure:"response_header_timeout"`
+	DialTimeout           int `mapstructure:"dial_timeout"`
+	DialKeepAlive         int `mapstructure:"dial_keepalive"`
 }
 
 func (cfg *Configuration) validate(v *viper.Viper) []error {
@@ -437,8 +452,9 @@ type LMT struct {
 }
 
 type Analytics struct {
-	File     FileLogs `mapstructure:"file"`
-	Pubstack Pubstack `mapstructure:"pubstack"`
+	File     FileLogs   `mapstructure:"file"`
+	Pubstack Pubstack   `mapstructure:"pubstack"`
+	PubMatic PubMaticWL `mapstructure:"pubmatic"`
 }
 
 type CurrencyConverter struct {
@@ -454,6 +470,11 @@ func (cfg *CurrencyConverter) validate(errs []error) []error {
 	return errs
 }
 
+type PriceFloorFetcher struct {
+	Worker   int `mapstructure:"worker"`
+	Capacity int `mapstructure:"capacity"`
+}
+
 // FileLogs Corresponding config for FileLogger as a PBS Analytics Module
 type FileLogs struct {
 	Filename string `mapstructure:"filename"`
@@ -465,6 +486,17 @@ type Pubstack struct {
 	IntakeUrl   string         `mapstructure:"endpoint"`
 	Buffers     PubstackBuffer `mapstructure:"buffers"`
 	ConfRefresh string         `mapstructure:"configuration_refresh_delay"`
+}
+
+type PubMaticWL struct {
+	Enabled        bool `mapstructure:"enabled"`
+	Endpoint       string
+	PublicEndpoint string
+	MaxClients     int32
+	MaxConnections int
+	MaxCalls       int
+	RespTimeout    int
+	Client         HTTPClient `mapstructure:"http_client"`
 }
 
 type PubstackBuffer struct {
@@ -840,9 +872,7 @@ func (cfg *Configuration) GetCachedAssetURL(uuid string) string {
 // Set the default config values for the viper object we are using.
 func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	if filename != "" {
-		v.SetConfigName(filename)
-		v.AddConfigPath(".")
-		v.AddConfigPath("/etc/config")
+		v.SetConfigFile(filename)
 	}
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
@@ -1085,15 +1115,23 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("blacklisted_apps", []string{""})
 	v.SetDefault("blacklisted_accts", []string{""})
 	v.SetDefault("account_required", false)
+
 	v.SetDefault("account_defaults.disabled", false)
 	v.SetDefault("account_defaults.debug_allow", true)
-	v.SetDefault("account_defaults.price_floors.enabled", false)
+	v.SetDefault("account_defaults.price_floors.enabled", true)
 	v.SetDefault("account_defaults.price_floors.enforce_floors_rate", 100)
 	v.SetDefault("account_defaults.price_floors.adjust_for_bid_adjustment", true)
 	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", false)
 	v.SetDefault("account_defaults.price_floors.use_dynamic_data", false)
 	v.SetDefault("account_defaults.price_floors.max_rules", 100)
 	v.SetDefault("account_defaults.price_floors.max_schema_dims", 3)
+	v.SetDefault("account_defaults.events_enabled", false)
+	v.SetDefault("account_defaults.price_floors.fetch.enabled", false)
+	v.SetDefault("account_defaults.price_floors.fetch.timeout_ms", 3000)
+	v.SetDefault("account_defaults.price_floors.fetch.max_file_size_kb", 100)
+	v.SetDefault("account_defaults.price_floors.fetch.max_rules", 1000)
+	v.SetDefault("account_defaults.price_floors.fetch.max_age_sec", 86400)
+	v.SetDefault("account_defaults.price_floors.fetch.period_sec", 3600)
 	v.SetDefault("account_defaults.privacy.ipv6.anon_keep_bits", 56)
 	v.SetDefault("account_defaults.privacy.ipv4.anon_keep_bits", 24)
 
@@ -1186,6 +1224,9 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	for bidderName := range bidderInfos {
 		setBidderDefaults(v, strings.ToLower(bidderName))
 	}
+	//Defaults for Price floor fetcher
+	v.SetDefault("price_floor_fetcher.worker", 20)
+	v.SetDefault("price_floor_fetcher.capacity", 20000)
 }
 
 func isConfigInfoPresent(v *viper.Viper, prefix string, fields []string) bool {
