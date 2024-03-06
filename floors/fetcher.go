@@ -16,9 +16,9 @@ import (
 	validator "github.com/asaskevich/govalidator"
 	"github.com/golang/glog"
 	"github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type FloorFetcher interface {

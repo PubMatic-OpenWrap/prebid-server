@@ -6,7 +6,7 @@ package mock_mhttp
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	mhttp "github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
+	mhttp "github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	reflect "reflect"
 	sync "sync"
 )

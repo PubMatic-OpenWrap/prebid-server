@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 type prepareBidParamJSONDefaultArgs struct {

@@ -11,11 +11,11 @@ import (
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/moduledeps"
-	openwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
+	openwrap "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/stats"
 )
 
 type VastUnwrapModule struct {
