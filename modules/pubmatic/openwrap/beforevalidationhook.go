@@ -340,6 +340,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
 			}
 
@@ -354,6 +355,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err := adpod.Validate(adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
 			}
 		}
