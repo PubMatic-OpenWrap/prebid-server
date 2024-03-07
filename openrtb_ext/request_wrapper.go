@@ -198,7 +198,7 @@ func (rw *RequestWrapper) RebuildRequest() error {
 	if err := rw.rebuildDeviceExt(); err != nil {
 		return err
 	}
-	if err := rw.rebuildRequestExt(); err != nil {
+	if err := rw.RebuildRequestExt(); err != nil {
 		return err
 	}
 	if err := rw.rebuildAppExt(); err != nil {
@@ -240,7 +240,6 @@ func (rw *RequestWrapper) rebuildImp() error {
 
 	return nil
 }
-
 func (rw *RequestWrapper) rebuildUserExt() error {
 	if rw.userExt == nil || !rw.userExt.Dirty() {
 		return nil
@@ -279,7 +278,7 @@ func (rw *RequestWrapper) rebuildDeviceExt() error {
 	return nil
 }
 
-func (rw *RequestWrapper) rebuildRequestExt() error {
+func (rw *RequestWrapper) RebuildRequestExt() error {
 	if rw.requestExt == nil || !rw.requestExt.Dirty() {
 		return nil
 	}
@@ -1504,7 +1503,6 @@ func (w *ImpWrapper) GetImpExt() (*ImpExt, error) {
 	}
 	return w.impExt, w.impExt.unmarshal(w.Ext)
 }
-
 func (w *ImpWrapper) RebuildImp() error {
 	if w.Imp == nil {
 		return errors.New("ImpWrapper RebuildImp called on a nil Imp")
