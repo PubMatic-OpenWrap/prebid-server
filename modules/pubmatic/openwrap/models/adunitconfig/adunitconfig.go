@@ -54,7 +54,7 @@ type NativeConfig struct {
 
 type Video struct {
 	Enabled              *bool        `json:"enabled,omitempty"`
-	Amptrafficpercentage *int         `json:"amptrafficpercentage,omitempty"`
+	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
 	Config               *VideoConfig `json:"config,omitempty"`
 }
 
