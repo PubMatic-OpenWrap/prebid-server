@@ -248,7 +248,7 @@ func RecordPublisherPartnerNoCookieStats(rctx models.RequestCtx) {
 }
 
 // getPubmaticErrorCode is temporary function which returns the pubmatic specific error code for standardNBR code
-func getPubmaticErrorCode(standardNBR int) int {
+func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	switch standardNBR {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
@@ -292,6 +292,14 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 	return userAgent
 }
 
+func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
+	ip := defaultIP
+	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
+		ip = bidRequest.Device.IP
+	}
+	return ip
+}
+
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
 	if request.Site != nil {
@@ -301,8 +309,4 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
-}
-
-func GetNonBidStatusCodePtr(nbr openrtb3.NonBidStatusCode) *openrtb3.NonBidStatusCode {
-	return &nbr
 }

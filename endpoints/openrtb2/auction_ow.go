@@ -19,13 +19,13 @@ func recordRejectedBids(pubID string, seatNonBids []openrtb_ext.SeatNonBid, metr
 
 	var found bool
 	var codeLabel string
-	reasonCodeMap := make(map[openrtb3.NonBidStatusCode]string)
+	reasonCodeMap := make(map[openrtb3.NoBidReason]string)
 
 	for _, seatNonbid := range seatNonBids {
 		for _, nonBid := range seatNonbid.NonBid {
-			if codeLabel, found = reasonCodeMap[openrtb3.NonBidStatusCode(nonBid.StatusCode)]; !found {
+			if codeLabel, found = reasonCodeMap[openrtb3.NoBidReason(nonBid.StatusCode)]; !found {
 				codeLabel = strconv.FormatInt(int64(nonBid.StatusCode), 10)
-				reasonCodeMap[openrtb3.NonBidStatusCode(nonBid.StatusCode)] = codeLabel
+				reasonCodeMap[openrtb3.NoBidReason(nonBid.StatusCode)] = codeLabel
 			}
 			metricEngine.RecordRejectedBids(pubID, seatNonbid.Seat, codeLabel)
 		}

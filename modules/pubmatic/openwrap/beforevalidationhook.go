@@ -11,6 +11,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
@@ -43,7 +44,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
@@ -64,13 +65,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
 		result.Reject = false
 		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, nbr.InvalidRequestExt)
+		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, int(nbr.InvalidRequestExt))
 		return result, nil
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
-		result.NbrCode = nbr.InvalidPublisherID
+		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
@@ -80,6 +81,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
+	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
@@ -90,7 +92,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequestExt
+		result.NbrCode = int(nbr.InvalidRequestExt)
 		err = errors.New("failed to get request ext: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
@@ -107,7 +109,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
-		result.NbrCode = nbr.InvalidProfileConfiguration
+		result.NbrCode = int(nbr.InvalidProfileConfiguration)
 		if err != nil {
 			err = errors.New("failed to get profile data: " + err.Error())
 		} else {
@@ -126,7 +128,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
-		result.NbrCode = nbr.InvalidPlatform
+		result.NbrCode = int(nbr.InvalidPlatform)
 		err = errors.New("failed to get platform data")
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
@@ -152,7 +154,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	var allPartnersThrottledFlag bool
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 	if allPartnersThrottledFlag {
-		result.NbrCode = nbr.AllPartnerThrottled
+		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
@@ -160,7 +162,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
-		result.NbrCode = nbr.InvalidPriceGranularityConfig
+		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
 		err = errors.New("failed to price granularity details: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
@@ -194,7 +196,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
 			if err != nil {
-				result.NbrCode = nbr.InternalError
+				result.NbrCode = int(nbr.InternalError)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
@@ -205,7 +207,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			imp.TagID = getTagID(imp, impExt)
 		}
 		if imp.TagID == "" {
-			result.NbrCode = nbr.InvalidImpressionTagID
+			result.NbrCode = int(nbr.InvalidImpressionTagID)
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
@@ -422,7 +424,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	} // for(imp
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
-		result.NbrCode = nbr.AllSlotsDisabled
+		result.NbrCode = int(nbr.AllSlotsDisabled)
 		if err != nil {
 			err = errors.New("All slots disabled: " + err.Error())
 		} else {
@@ -433,7 +435,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	if !serviceSideBidderPresent {
-		result.NbrCode = nbr.ServerSidePartnerNotConfigured
+		result.NbrCode = int(nbr.ServerSidePartnerNotConfigured)
 		if err != nil {
 			err = errors.New("server side partner not found: " + err.Error())
 		} else {
@@ -533,7 +535,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-
 	bidRequest.Device.IP = rctx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)

@@ -211,7 +211,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidProfileID,
+				NbrCode: int(nbr.InvalidProfileID),
 				Errors:  []string{"ErrMissingProfileID"},
 			},
 			wantErr: nil,
@@ -362,7 +362,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				Reject:  true,
-				NbrCode: nbr.InvalidProfileID,
+				NbrCode: int(nbr.InvalidProfileID),
 				Errors:  []string{"ErrMissingProfileID"},
 			},
 			wantErr: nil,
