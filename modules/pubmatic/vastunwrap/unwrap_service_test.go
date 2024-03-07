@@ -24,6 +24,7 @@ func TestDoUnwrap(t *testing.T) {
 		statsEnabled         bool
 		bid                  *adapters.TypedBid
 		userAgent            string
+		ip                   string
 		unwrapDefaultTimeout int
 		url                  string
 		wantAdM              bool
@@ -169,7 +170,7 @@ func TestDoUnwrap(t *testing.T) {
 				MetricsEngine: mockMetricsEngine,
 				unwrapRequest: tt.unwrapRequest,
 			}
-			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
+			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.ip, tt.args.url, "5890", "pubmatic")
 			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM {
 				assert.Equal(t, inlineXMLAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}

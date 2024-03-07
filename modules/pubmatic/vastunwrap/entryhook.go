@@ -49,6 +49,8 @@ func handleEntrypointHook(
 		vastRequestContext = models.RequestCtx{
 			VastUnwrapEnabled: getVastUnwrapperEnable(payload.Request.Context(), VastUnwrapEnabled),
 			Redirect:          true,
+			UA:                openwrap.GetRequestUserAgent(payload),
+			IP:                openwrap.GetRequestIP(payload),
 		}
 	} else {
 		endpoint := openwrap.GetEndpoint(payload.Request.URL.Path, source)
@@ -61,6 +63,8 @@ func handleEntrypointHook(
 			ProfileID: requestExtWrapper.ProfileId,
 			DisplayID: requestExtWrapper.VersionId,
 			Endpoint:  endpoint,
+			UA:        openwrap.GetRequestUserAgent(payload),
+			IP:        openwrap.GetRequestIP(payload),
 		}
 	}
 	result.ModuleContext[RequestContext] = vastRequestContext
