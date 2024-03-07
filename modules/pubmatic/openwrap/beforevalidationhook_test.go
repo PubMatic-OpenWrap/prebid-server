@@ -865,6 +865,20 @@ func TestGetPubID(t *testing.T) {
 		want want
 	}{
 		{
+			name: "publisher_id_not_present_in_site_object_and_in_app_object",
+			args: args{
+				bidRequest: openrtb2.BidRequest{
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{},
+					},
+				},
+			},
+			want: want{
+				wantErr: false,
+				pubID:   0,
+			},
+		},
+		{
 			name: "publisher_id_present_in_site_object_and_it_is_valid_integer",
 			args: args{
 				bidRequest: openrtb2.BidRequest{

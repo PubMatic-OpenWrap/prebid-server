@@ -82,7 +82,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)
-	if err != nil {
+	if pubID == 0 || err != nil {
 		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
 		return result, nil
@@ -1080,9 +1080,10 @@ func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUn
 }
 
 func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
-	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil {
+
+	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
 		pubID, err = strconv.Atoi(bidRequest.Site.Publisher.ID)
-	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil {
+	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil && bidRequest.App.Publisher.ID != "" {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
 	return pubID, err
