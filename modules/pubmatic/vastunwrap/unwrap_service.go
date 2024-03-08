@@ -36,10 +36,9 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 	headers.Add(XUserAgent, userAgent)
 	headers.Add(XUserIP, ip)
 	headers.Add(CreativeID, bid.Bid.ID)
-	headers.Add(ImpressionID, bid.Bid.ImpID)
-	headers.Add(PubID, accountID)
 	headers.Add(UnwrapTimeout, strconv.Itoa(m.Cfg.APPConfig.UnwrapDefaultTimeout))
 
+	unwrapURL = unwrapURL + "?" + PubID + "=" + accountID + "&" + ImpressionID + "=" + bid.Bid.ImpID
 	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
 	if err != nil {
 		return
