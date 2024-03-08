@@ -12,6 +12,11 @@ type mySqlDB struct {
 	cfg  config.Database
 }
 
+type PlatformStruct struct {
+	// other fields
+	Platform sql.NullString `json:"platform" db:"platform"`
+}
+
 var db *mySqlDB
 var dbOnce sync.Once
 
