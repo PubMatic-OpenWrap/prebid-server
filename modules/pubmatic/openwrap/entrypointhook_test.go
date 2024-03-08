@@ -656,7 +656,7 @@ func TestGetEndpoint(t *testing.T) {
 			args: args{
 				path: OpenWrapOpenRTBVideo,
 			},
-			want: models.EndpointVideo,
+			want: models.EndpointORTB,
 		},
 		{
 			name: "OpenWrapVAST",

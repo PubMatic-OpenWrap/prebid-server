@@ -484,14 +484,13 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
+			if len(bid.Cat) > 0 {
+				pr.Cat = append(pr.Cat, bid.Cat...)
+			}
+
 			// Adpod parameters
 			if impCtx.AdpodConfig != nil {
 				pr.AdPodSequenceNumber = &sequence
-
-				if len(bid.Cat) > 0 {
-					pr.Cat = append(pr.Cat, bid.Cat...)
-				}
-
 				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
 				pr.NoBidReason = &aprc
 			}
