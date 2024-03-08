@@ -165,7 +165,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 	case models.EndpointV25:
 		fallthrough
-	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointWebS2S:
 		fallthrough
@@ -196,7 +196,7 @@ func GetEndpoint(path, source string) string {
 	case OpenWrapAmp:
 		return models.EndpointAMP
 	case OpenWrapOpenRTBVideo:
-		return models.EndpointVideo
+		return models.EndpointORTB
 	case OpenWrapVAST:
 		return models.EndpointVAST
 	case OpenWrapJSON:

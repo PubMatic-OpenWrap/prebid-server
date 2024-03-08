@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
@@ -69,6 +70,13 @@ func (me *MultiMetricsEngine) RecordPanic(hostname, method string) {
 	}
 }
 
+// RecordBadRequest across all engines
+func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	for _, thisME := range *me {
+		thisME.RecordBadRequest(endpoint, pubId, nbr)
+	}
+}
+
 // RecordVASTTagType as a noop
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
@@ -98,4 +106,8 @@ func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.Bidde
 
 // RecordPanic as a noop
 func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
+}
+
+// RecordBadRequest as a noop
+func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }

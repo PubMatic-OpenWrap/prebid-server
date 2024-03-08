@@ -1,5 +1,7 @@
 package metrics
 
+import "github.com/prebid/openrtb/v19/openrtb3"
+
 type OWMetricsEngine interface {
 	RecordHttpCounter()
 	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
@@ -10,4 +12,5 @@ type OWMetricsEngine interface {
 	RecordVASTTagType(bidder, vastTagType string)
 
 	RecordPanic(hostname, method string)
+	RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason)
 }

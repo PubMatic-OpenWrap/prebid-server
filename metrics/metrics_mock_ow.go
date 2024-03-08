@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/prebid/openrtb/v19/openrtb3"
+)
 
 // RecordAdapterDuplicateBidID mock
 func (me *MetricsEngineMock) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
@@ -49,4 +53,9 @@ func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
 // RecordPanic mock
 func (me *MetricsEngineMock) RecordPanic(hostname, method string) {
 	me.Called(hostname, method)
+}
+
+// RecordPanic mock
+func (me *MetricsEngineMock) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	me.Called(endpoint, pubId, nbr)
 }

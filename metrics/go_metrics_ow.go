@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/prebid/openrtb/v19/openrtb3"
+)
 
 // RecordAdapterDuplicateBidID as noop
 func (me *Metrics) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
@@ -47,4 +51,8 @@ func (me *Metrics) RecordVASTTagType(biddder, vastTag string) {
 
 // RecordPanic as a noop
 func (me *Metrics) RecordPanic(hostname, method string) {
+}
+
+// RecordBadRequest as a noop
+func (me *Metrics) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }

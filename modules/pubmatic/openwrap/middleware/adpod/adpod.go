@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -43,6 +44,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
+			a.metricsEngine.RecordBadRequest(models.EndpointORTB, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
 			ext := addErrorInExtension(err.Error(), nil, r.URL.Query().Get(models.Debug))
 			errResponse := formErrorBidResponse("", nbr.InvalidVideoRequest.Ptr(), ext)
 			w.Header().Set(ContentType, ApplicationJSON)
@@ -77,6 +79,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
+			a.metricsEngine.RecordBadRequest(models.EndpointVAST, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
 			w.Header().Set(ContentType, ApplicationXML)
 			w.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, nbr.InvalidVideoRequest))
 			w.WriteHeader(http.StatusBadRequest)
@@ -130,6 +133,7 @@ func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 
 	enrichError := enrichRequestBody(r)
 	if enrichError != nil {
+		a.metricsEngine.RecordBadRequest(models.EndpointJson, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
 		errResponse := formJSONErrorResponse("", enrichError.Error(), nbr.InvalidVideoRequest.Ptr(), nil, r.URL.Query().Get(models.Debug))
 		w.Header().Set(ContentType, ApplicationJSON)
 		w.WriteHeader(http.StatusBadRequest)

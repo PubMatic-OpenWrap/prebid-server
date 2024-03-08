@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,6 +19,8 @@ const (
 	vastTagTypeLabel = "type"
 	hostNameLabel    = "host"
 	methodLabel      = "method"
+	endpointLabel    = "endpoint"
+	nbrLabel         = "nbr"
 )
 
 type OWMetrics struct {
@@ -50,6 +53,9 @@ type OWMetrics struct {
 	httpCounter      prometheus.Counter
 
 	panics *prometheus.CounterVec
+
+	// Requests
+	badRequests *prometheus.CounterVec
 }
 
 func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
@@ -190,6 +196,16 @@ func (m *OWMetrics) RecordPanic(hostname, method string) {
 	}).Inc()
 }
 
+func (m *OWMetrics) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	if pubId != "0" && pubId != metrics.PublisherUnknown {
+		m.badRequests.With(prometheus.Labels{
+			endpointLabel: endpoint,
+			pubIDLabel:    pubId,
+			nbrLabel:      strconv.Itoa(int(nbr.Val())),
+		}).Inc()
+	}
+}
+
 func (m *Metrics) RecordHttpCounter() {
 	m.httpCounter.Inc()
 }
@@ -269,8 +285,12 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
 	m.panics = newCounter(cfg, reg,
-		"prebid_panics",
+		"pbs_panics",
 		"Count of prebid server panics",
 		[]string{hostNameLabel, methodLabel})
 
+	m.badRequests = newCounter(cfg, reg,
+		"pbs_bad_requests",
+		"Count of bad requests from a publisher to a particular endpoint with nbr code",
+		[]string{endpointLabel, pubIDLabel, nbrLabel})
 }

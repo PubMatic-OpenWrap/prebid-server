@@ -185,7 +185,7 @@ func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, config []*model
 
 	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
-	if nil != err || duration <= 0 {
+	if err != nil || duration <= 0 {
 		var defaultDuration int64
 		for i := range config {
 			if sequence == int(config[i].SequenceNumber) {
