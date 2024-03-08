@@ -14,7 +14,7 @@ import (
 // return the list of active server side header bidding partners
 // with their configurations at publisher-profile-version level
 func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayVersion int) (map[int]map[string]string, error) {
-	versionID, displayVersionID, err := db.getVersionID(profileID, displayVersion, pubID)
+	versionID, displayVersionID, platform, err := db.getVersionID(profileID, displayVersion, pubID)
 	if err != nil {
 		return nil, err
 	}
@@ -22,6 +22,9 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 	partnerConfigMap, err := db.getActivePartnerConfigurations(versionID)
 	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
+		if platform != "" {
+			partnerConfigMap[-1][models.PLATFORM_KEY] = platform
+		}
 	}
 	return partnerConfigMap, err
 }
@@ -76,7 +79,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 	return partnerConfigMap, nil
 }
 
-func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int, error) {
+func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int, string, error) {
 	var row *sql.Row
 	if displayVersion == 0 {
 		row = db.conn.QueryRow(db.cfg.Queries.LiveVersionInnerQuery, profileID, pubID)
@@ -84,10 +87,11 @@ func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int,
 		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, profileID, displayVersion, pubID)
 	}
 
+	var platformStruct PlatformStruct
 	var versionID, displayVersionIDFromDB int
-	err := row.Scan(&versionID, &displayVersionIDFromDB)
+	err := row.Scan(&versionID, &displayVersionIDFromDB, &platformStruct.Platform)
 	if err != nil {
-		return versionID, displayVersionIDFromDB, err
+		return versionID, displayVersionIDFromDB, platformStruct.Platform.String, err
 	}
-	return versionID, displayVersionIDFromDB, nil
+	return versionID, displayVersionIDFromDB, platformStruct.Platform.String, nil
 }
