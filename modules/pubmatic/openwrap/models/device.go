@@ -48,15 +48,16 @@ var DeviceIFATypeID = map[string]DeviceIFAType{
 
 // Device Ifa type constants
 const (
-	DeviceIFATypeDPID      = "dpid"
-	DeviceIFATypeRIDA      = "rida"
-	DeviceIFATypeAAID      = "aaid"
-	DeviceIFATypeIDFA      = "idfa"
-	DeviceIFATypeAFAI      = "afai"
-	DeviceIFATypeMSAI      = "msai"
-	DeviceIFATypePPID      = "ppid"
-	DeviceIFATypeSSPID     = "sspid"
-	DeviceIFATypeSESSIONID = "sessionid"
+	DeviceIFATypeDPID        = "dpid"
+	DeviceIFATypeRIDA        = "rida"
+	DeviceIFATypeAAID        = "aaid"
+	DeviceIFATypeIDFA        = "idfa"
+	DeviceIFATypeAFAI        = "afai"
+	DeviceIFATypeMSAI        = "msai"
+	DeviceIFATypePPID        = "ppid"
+	DeviceIFATypeSSPID       = "sspid"
+	DeviceIFATypeSESSIONID   = "sessionid"
+	DeviceIfaTypeIdSessionId = 9
 )
 
 // device.ext related keys
@@ -98,7 +99,7 @@ func (e *ExtDevice) getStringValue(key string) (value string, found bool) {
 	if !found {
 		return "", found
 	}
-	value, found = val.(string)
+	value, _ = val.(string)
 	return strings.TrimSpace(value), found
 }
 

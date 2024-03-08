@@ -391,10 +391,13 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 				},
 			},
 			want: &models.DeviceCtx{
-				DeviceIFA: `existing_ifa_id`,
+				IFATypeID: ptrutil.ToPtr(9),
+				DeviceIFA: `sample_session_id`,
 				Ext: func() *models.ExtDevice {
 					deviceExt := &models.ExtDevice{}
+					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
 					deviceExt.SetSessionID(`sample_session_id`)
+
 					return deviceExt
 				}(),
 			},
