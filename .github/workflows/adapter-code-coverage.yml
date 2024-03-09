@@ -44,6 +44,8 @@ jobs:
         id: run_coverage
         if: steps.get_directories.outputs.result != ''
         run: |
+          git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
+
           directories=$(echo '${{ steps.get_directories.outputs.result }}' | jq -r '.[]')
           go mod download
 
@@ -66,13 +68,18 @@ jobs:
           # remove pull request branch files
           cd ..
           rm -f -r ./*
+        env:
+          GO111MODULE: "on"
+          GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+          TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+          USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
 
       - name: Checkout coverage-preview branch
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: coverage-preview
-          repository: prebid/prebid-server
+          repository: PubMatic-OpenWrap/prebid-server
 
       - name: Commit coverage files to coverage-preview branch
         if: steps.run_coverage.outputs.coverage_dir != ''

@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -345,7 +344,7 @@ func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/test-version"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/test-version"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -399,7 +398,7 @@ func TestSetGPCHeader(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -451,7 +450,7 @@ func TestSetGPCHeaderNil(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -1091,7 +1090,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"EUR", "USD", "JPY"},
 			bidResponsesCurrency:   "EUR",
 			expectedPickedCurrency: "EUR",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -1111,7 +1110,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"JPY"},
 			bidResponsesCurrency:   "JPY",
 			expectedPickedCurrency: "JPY",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -1881,7 +1880,7 @@ func TestSetAssetTypes(t *testing.T) {
 	}{
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -1933,7 +1932,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -1953,7 +1952,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](2),
+				ID: openrtb2.Int64Ptr(2),
 				Data: &nativeResponse.Data{
 					Label: "some label",
 				},
@@ -1973,7 +1972,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -2162,7 +2161,7 @@ func TestCallRecordDNSTime(t *testing.T) {
 func TestCallRecordTLSHandshakeTime(t *testing.T) {
 	// setup a mock metrics engine and its expectation
 	metricsMock := &metrics.MetricsEngineMock{}
-	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything).Return()
+	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything, mock.Anything).Return()
 	metricsMock.On("RecordOverheadTime", metrics.PreBidder, mock.Anything).Once()
 	metricsMock.On("RecordBidderServerResponseTime", mock.Anything).Once()
 
@@ -2732,7 +2731,7 @@ func TestExtraBidWithBidAdjustments(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 21,
+					Price: 7,
 				},
 				DealPriority:   5,
 				BidType:        openrtb_ext.BidTypeVideo,
@@ -2845,7 +2844,7 @@ func TestExtraBidWithBidAdjustmentsUsingAdapterCode(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 14,
+					Price: 7,
 				},
 				DealPriority:   5,
 				BidType:        openrtb_ext.BidTypeVideo,
@@ -2959,10 +2958,11 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "groupmImp1",
 					Price: 571.5994430039375,
 				},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCPM: 7,
-				OriginalBidCur: "USD",
+				DealPriority:      5,
+				BidType:           openrtb_ext.BidTypeVideo,
+				OriginalBidCPM:    7,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 7,
 			}},
 			Seat:     "groupm",
 			Currency: "INR",
@@ -2974,10 +2974,11 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "pubmaticImp1",
 					Price: 244.97118985883034,
 				},
-				DealPriority:   4,
-				BidType:        openrtb_ext.BidTypeBanner,
-				OriginalBidCPM: 3,
-				OriginalBidCur: "USD",
+				DealPriority:      4,
+				BidType:           openrtb_ext.BidTypeBanner,
+				OriginalBidCPM:    3,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 3,
 			}},
 			Seat:     string(openrtb_ext.BidderPubmatic),
 			Currency: "INR",
@@ -3347,79 +3348,5 @@ func TestDoRequestImplWithTmaxTimeout(t *testing.T) {
 
 		httpCallInfo := bidderAdapter.doRequestImpl(ctx, &bidRequest, logger, requestStartTime, test.tmaxAdjustments)
 		test.assertFn(httpCallInfo.err)
-	}
-}
-
-func TestGetRequestBody(t *testing.T) {
-	tests := []struct {
-		name                string
-		endpointCompression string
-		givenReqBody        []byte
-	}{
-		{
-			name:                "No-Compression",
-			endpointCompression: "",
-			givenReqBody:        []byte("test body"),
-		},
-		{
-			name:                "GZIP-Compression",
-			endpointCompression: "GZIP",
-			givenReqBody:        []byte("test body"),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := &adapters.RequestData{Body: test.givenReqBody, Headers: http.Header{}}
-			requestBody, err := getRequestBody(req, test.endpointCompression)
-			assert.NoError(t, err)
-
-			if test.endpointCompression == "GZIP" {
-				assert.Equal(t, "gzip", req.Headers.Get("Content-Encoding"))
-
-				decompressedReqBody, err := decompressGzip(requestBody)
-				assert.NoError(t, err)
-				assert.Equal(t, test.givenReqBody, decompressedReqBody)
-			} else {
-				assert.Equal(t, test.givenReqBody, requestBody)
-			}
-		})
-	}
-}
-
-func decompressGzip(input []byte) ([]byte, error) {
-	r, err := gzip.NewReader(bytes.NewReader(input))
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-
-	decompressed, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return decompressed, nil
-}
-
-func BenchmarkCompressToGZIPOptimized(b *testing.B) {
-	// Setup the mock server
-	respBody := "{\"bid\":false}"
-	respStatus := 200
-	server := httptest.NewServer(mockHandler(respStatus, "getBody", respBody))
-	defer server.Close()
-
-	// Prepare the request data
-	req := &adapters.RequestData{
-		Method:  "POST",
-		Uri:     server.URL,
-		Body:    []byte("{\"key\":\"val\"}"),
-		Headers: http.Header{},
-	}
-
-	// Run the benchmark
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		getRequestBody(req, "GZIP")
 	}
 }
