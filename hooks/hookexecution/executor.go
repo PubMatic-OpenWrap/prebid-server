@@ -19,6 +19,7 @@ import (
 const (
 	EndpointAuction = "/openrtb2/auction"
 	EndpointAmp     = "/openrtb2/amp"
+	EndpointCtv     = "/openrtb/video"
 )
 
 // An entity specifies the type of object that was processed during the execution of the stage.
@@ -39,6 +40,7 @@ type StageExecutor interface {
 	ExecuteRawBidderResponseStage(response *adapters.BidderResponse, bidder string) *RejectError
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
+	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
 }
 
 type HookStageExecutor interface {
@@ -144,6 +146,35 @@ func (e *hookExecutor) ExecuteRawAuctionStage(requestBody []byte) ([]byte, *Reje
 	e.pushStageOutcome(outcome)
 
 	return payload, reject
+}
+
+func (e *hookExecutor) ExecuteBeforeRequestValidationStage(request *openrtb2.BidRequest) *RejectError {
+	plan := e.planBuilder.PlanForValidationStage(e.endpoint, e.account)
+	if len(plan) == 0 {
+		return nil
+	}
+
+	handler := func(
+		ctx context.Context,
+		moduleCtx hookstage.ModuleInvocationContext,
+		hook hookstage.BeforeValidationRequest,
+		payload hookstage.BeforeValidationRequestPayload,
+	) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+		return hook.HandleBeforeValidationHook(ctx, moduleCtx, payload)
+	}
+
+	stageName := hooks.StageBeforeValidationRequest.String()
+	executionCtx := e.newContext(stageName)
+	payload := hookstage.BeforeValidationRequestPayload{BidRequest: request}
+
+	outcome, _, contexts, reject := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
+	outcome.Entity = entityAuctionRequest
+	outcome.Stage = stageName
+
+	e.saveModuleContexts(contexts)
+	e.pushStageOutcome(outcome)
+
+	return reject
 }
 
 func (e *hookExecutor) ExecuteProcessedAuctionStage(request *openrtb_ext.RequestWrapper) error {
@@ -354,3 +385,7 @@ func (executor EmptyHookExecutor) ExecuteAllProcessedBidResponsesStage(_ map[ope
 }
 
 func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidResponse) {}
+
+func (executor *EmptyHookExecutor) ExecuteBeforeRequestValidationStage(_ *openrtb2.BidRequest) *RejectError {
+	return nil
+}
