@@ -165,6 +165,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/sonobi"
 	"github.com/prebid/prebid-server/v2/adapters/sovrn"
 	"github.com/prebid/prebid-server/v2/adapters/sovrnXsp"
+	"github.com/prebid/prebid-server/v2/adapters/spotx"
 	"github.com/prebid/prebid-server/v2/adapters/sspBC"
 	"github.com/prebid/prebid-server/v2/adapters/stroeerCore"
 	"github.com/prebid/prebid-server/v2/adapters/taboola"
@@ -179,6 +180,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/undertone"
 	"github.com/prebid/prebid-server/v2/adapters/unicorn"
 	"github.com/prebid/prebid-server/v2/adapters/unruly"
+	"github.com/prebid/prebid-server/v2/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters/videobyte"
 	"github.com/prebid/prebid-server/v2/adapters/videoheroes"
 	"github.com/prebid/prebid-server/v2/adapters/vidoomy"
@@ -370,6 +372,8 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderSovrn:             sovrn.Builder,
 		openrtb_ext.BidderSovrnXsp:          sovrnXsp.Builder,
 		openrtb_ext.BidderSspBC:             sspBC.Builder,
+		openrtb_ext.BidderSpotX:             spotx.Builder,
+		openrtb_ext.BidderStreamkey:         adtelligent.Builder,
 		openrtb_ext.BidderStroeerCore:       stroeerCore.Builder,
 		openrtb_ext.BidderTaboola:           taboola.Builder,
 		openrtb_ext.BidderTappx:             tappx.Builder,
@@ -383,6 +387,8 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderUndertone:         undertone.Builder,
 		openrtb_ext.BidderUnicorn:           unicorn.Builder,
 		openrtb_ext.BidderUnruly:            unruly.Builder,
+		openrtb_ext.BidderVASTBidder:        vastbidder.Builder,
+		openrtb_ext.BidderValueImpression:   apacdex.Builder,
 		openrtb_ext.BidderVideoByte:         videobyte.Builder,
 		openrtb_ext.BidderVideoHeroes:       videoheroes.Builder,
 		openrtb_ext.BidderVidoomy:           vidoomy.Builder,

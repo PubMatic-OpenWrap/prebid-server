@@ -37,14 +37,15 @@ type Metrics struct {
 	StoredResponsesMeter           metrics.Meter
 
 	// Metrics for OpenRTB requests specifically
-	RequestStatuses       map[RequestType]map[RequestStatus]metrics.Meter
-	AmpNoCookieMeter      metrics.Meter
-	CookieSyncMeter       metrics.Meter
-	CookieSyncStatusMeter map[CookieSyncStatus]metrics.Meter
-	SyncerRequestsMeter   map[string]map[SyncerCookieSyncStatus]metrics.Meter
-	SetUidMeter           metrics.Meter
-	SetUidStatusMeter     map[SetUidStatus]metrics.Meter
-	SyncerSetsMeter       map[string]map[SyncerSetUidStatus]metrics.Meter
+	RequestStatuses        map[RequestType]map[RequestStatus]metrics.Meter
+	AmpNoCookieMeter       metrics.Meter
+	CookieSyncMeter        metrics.Meter
+	CookieSyncStatusMeter  map[CookieSyncStatus]metrics.Meter
+	SyncerRequestsMeter    map[string]map[SyncerCookieSyncStatus]metrics.Meter
+	SetUidMeter            metrics.Meter
+	SetUidStatusMeter      map[SetUidStatus]metrics.Meter
+	SyncerSetsMeter        map[string]map[SyncerSetUidStatus]metrics.Meter
+	FloorRejectedBidsMeter map[openrtb_ext.BidderName]metrics.Meter
 
 	// Media types found in the "imp" JSON object
 	ImpsTypeBanner metrics.Meter
@@ -106,6 +107,7 @@ type AdapterMetrics struct {
 
 	BidValidationSecureMarkupErrorMeter metrics.Meter
 	BidValidationSecureMarkupWarnMeter  metrics.Meter
+	TLSHandshakeTimer                   metrics.Timer
 }
 
 type MarkupDeliveryMetrics struct {
@@ -114,10 +116,12 @@ type MarkupDeliveryMetrics struct {
 }
 
 type accountMetrics struct {
-	requestMeter      metrics.Meter
-	debugRequestMeter metrics.Meter
-	bidsReceivedMeter metrics.Meter
-	priceHistogram    metrics.Histogram
+	requestMeter       metrics.Meter
+	rejecteBidMeter    metrics.Meter
+	floorsRequestMeter metrics.Meter
+	debugRequestMeter  metrics.Meter
+	bidsReceivedMeter  metrics.Meter
+	priceHistogram     metrics.Histogram
 	// store account by adapter metrics. Type is map[PBSBidder.BidderCode]
 	adapterMetrics       map[string]*AdapterMetrics
 	moduleMetrics        map[string]*ModuleMetrics
@@ -127,6 +131,22 @@ type accountMetrics struct {
 	bidValidationCreativeSizeWarnMeter metrics.Meter
 	bidValidationSecureMarkupMeter     metrics.Meter
 	bidValidationSecureMarkupWarnMeter metrics.Meter
+
+	// Account Deprciation Metrics
+	accountDeprecationWarningsPurpose1Meter  metrics.Meter
+	accountDeprecationWarningsPurpose2Meter  metrics.Meter
+	accountDeprecationWarningsPurpose3Meter  metrics.Meter
+	accountDeprecationWarningsPurpose4Meter  metrics.Meter
+	accountDeprecationWarningsPurpose5Meter  metrics.Meter
+	accountDeprecationWarningsPurpose6Meter  metrics.Meter
+	accountDeprecationWarningsPurpose7Meter  metrics.Meter
+	accountDeprecationWarningsPurpose8Meter  metrics.Meter
+	accountDeprecationWarningsPurpose9Meter  metrics.Meter
+	accountDeprecationWarningsPurpose10Meter metrics.Meter
+	channelEnabledGDPRMeter                  metrics.Meter
+	channelEnabledCCPAMeter                  metrics.Meter
+	accountDeprecationSummaryMeter           metrics.Meter
+	dynamicFetchFailureMeter                 metrics.Meter
 }
 
 type ModuleMetrics struct {
@@ -163,7 +183,6 @@ func NewBlankMetrics(registry metrics.Registry, exchanges []string, disabledMetr
 		NoCookieMeter:                  blankMeter,
 		RequestTimer:                   blankTimer,
 		DNSLookupTimer:                 blankTimer,
-		TLSHandshakeTimer:              blankTimer,
 		RequestsQueueTimer:             make(map[RequestType]map[bool]metrics.Timer),
 		PrebidCacheRequestTimerSuccess: blankTimer,
 		PrebidCacheRequestTimerError:   blankTimer,
@@ -180,6 +199,7 @@ func NewBlankMetrics(registry metrics.Registry, exchanges []string, disabledMetr
 		SetUidStatusMeter:              make(map[SetUidStatus]metrics.Meter),
 		SyncerSetsMeter:                make(map[string]map[SyncerSetUidStatus]metrics.Meter),
 		StoredResponsesMeter:           blankMeter,
+		FloorRejectedBidsMeter:         make(map[openrtb_ext.BidderName]metrics.Meter),
 
 		ImpsTypeBanner: blankMeter,
 		ImpsTypeVideo:  blankMeter,
@@ -295,7 +315,6 @@ func NewMetrics(registry metrics.Registry, exchanges []openrtb_ext.BidderName, d
 	newMetrics.DebugRequestMeter = metrics.GetOrRegisterMeter("debug_requests", registry)
 	newMetrics.RequestTimer = metrics.GetOrRegisterTimer("request_time", registry)
 	newMetrics.DNSLookupTimer = metrics.GetOrRegisterTimer("dns_lookup_time", registry)
-	newMetrics.TLSHandshakeTimer = metrics.GetOrRegisterTimer("tls_handshake_time", registry)
 	newMetrics.PrebidCacheRequestTimerSuccess = metrics.GetOrRegisterTimer("prebid_cache_request_time.ok", registry)
 	newMetrics.PrebidCacheRequestTimerError = metrics.GetOrRegisterTimer("prebid_cache_request_time.err", registry)
 	newMetrics.StoredResponsesMeter = metrics.GetOrRegisterMeter("stored_responses", registry)
@@ -339,6 +358,7 @@ func NewMetrics(registry metrics.Registry, exchanges []openrtb_ext.BidderName, d
 
 	for _, a := range lowerCaseExchanges {
 		registerAdapterMetrics(registry, "adapter", string(a), newMetrics.AdapterMetrics[a])
+		newMetrics.FloorRejectedBidsMeter[openrtb_ext.BidderName(a)] = metrics.GetOrRegisterMeter(fmt.Sprintf("rejected_bid.%s", a), registry)
 	}
 
 	for typ, statusMap := range newMetrics.RequestStatuses {
@@ -405,6 +425,7 @@ func makeBlankAdapterMetrics(disabledMetrics config.DisabledMetrics) *AdapterMet
 		newAdapter.ConnCreated = metrics.NilCounter{}
 		newAdapter.ConnReused = metrics.NilCounter{}
 		newAdapter.ConnWaitTime = &metrics.NilTimer{}
+		newAdapter.TLSHandshakeTimer = &metrics.NilTimer{}
 	}
 	if !disabledMetrics.AdapterGDPRRequestBlocked {
 		newAdapter.GDPRRequestBlocked = blankMeter
@@ -477,6 +498,7 @@ func registerAdapterMetrics(registry metrics.Registry, adapterOrAccount string, 
 	am.ConnCreated = metrics.GetOrRegisterCounter(fmt.Sprintf("%[1]s.%[2]s.connections_created", adapterOrAccount, exchange), registry)
 	am.ConnReused = metrics.GetOrRegisterCounter(fmt.Sprintf("%[1]s.%[2]s.connections_reused", adapterOrAccount, exchange), registry)
 	am.ConnWaitTime = metrics.GetOrRegisterTimer(fmt.Sprintf("%[1]s.%[2]s.connection_wait_time", adapterOrAccount, exchange), registry)
+	am.TLSHandshakeTimer = metrics.GetOrRegisterTimer(fmt.Sprintf("%[1]s.%[2]s.tls_handshake_time", adapterOrAccount, exchange), registry)
 	for err := range am.ErrorMeters {
 		am.ErrorMeters[err] = metrics.GetOrRegisterMeter(fmt.Sprintf("%s.%s.requests.%s", adapterOrAccount, exchange, err), registry)
 	}
@@ -549,6 +571,9 @@ func (me *Metrics) getAccountMetrics(id string) *accountMetrics {
 	}
 	am = &accountMetrics{}
 	am.requestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.requests", id), me.MetricsRegistry)
+	am.rejecteBidMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.rejected_bidrequests", id), me.MetricsRegistry)
+	am.dynamicFetchFailureMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.floors_account_fetch_err", id), me.MetricsRegistry)
+	am.floorsRequestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.bidfloor_requests", id), me.MetricsRegistry)
 	am.debugRequestMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.debug_requests", id), me.MetricsRegistry)
 	am.bidsReceivedMeter = metrics.GetOrRegisterMeter(fmt.Sprintf("account.%s.bids_received", id), me.MetricsRegistry)
 	am.priceHistogram = metrics.GetOrRegisterHistogram(fmt.Sprintf("account.%s.prices", id), me.MetricsRegistry, metrics.NewExpDecaySample(1028, 0.015))
@@ -616,6 +641,24 @@ func (me *Metrics) RecordStoredResponse(pubId string) {
 	me.StoredResponsesMeter.Mark(1)
 	if pubId != PublisherUnknown && !me.MetricsDisabled.AccountStoredResponses {
 		me.getAccountMetrics(pubId).storedResponsesMeter.Mark(1)
+	}
+}
+
+func (me *Metrics) RecordRejectedBidsForAccount(pubId string) {
+	if pubId != PublisherUnknown {
+		me.getAccountMetrics(pubId).rejecteBidMeter.Mark(1)
+	}
+}
+
+// RecordDynamicFetchFailure implements a part of the MetricsEngine interface. Records dynamic fetch failure
+func (me *Metrics) RecordDynamicFetchFailure(pubId, code string) {
+	if pubId != PublisherUnknown {
+		me.getAccountMetrics(pubId).dynamicFetchFailureMeter.Mark(1)
+	}
+}
+func (me *Metrics) RecordFloorsRequestForAccount(pubId string) {
+	if pubId != PublisherUnknown {
+		me.getAccountMetrics(pubId).floorsRequestMeter.Mark(1)
 	}
 }
 
@@ -748,8 +791,18 @@ func (me *Metrics) RecordDNSTime(dnsLookupTime time.Duration) {
 	me.DNSLookupTimer.Update(dnsLookupTime)
 }
 
-func (me *Metrics) RecordTLSHandshakeTime(tlsHandshakeTime time.Duration) {
-	me.TLSHandshakeTimer.Update(tlsHandshakeTime)
+func (me *Metrics) RecordTLSHandshakeTime(adapterName openrtb_ext.BidderName, tlsHandshakeTime time.Duration) {
+	if me.MetricsDisabled.AdapterConnectionMetrics {
+		return
+	}
+
+	am, ok := me.AdapterMetrics[string(adapterName)]
+	if !ok {
+		glog.Errorf("Trying to log adapter TLS Handshake metrics for %s: adapter not found", string(adapterName))
+		return
+	}
+
+	am.TLSHandshakeTimer.Update(tlsHandshakeTime)
 }
 
 func (me *Metrics) RecordBidderServerResponseTime(bidderServerResponseTime time.Duration) {
@@ -799,6 +852,13 @@ func (me *Metrics) RecordAdapterPrice(labels AdapterLabels, cpm float64) {
 	// Account-Adapter metrics
 	if aam, ok := me.getAccountMetrics(labels.PubID).adapterMetrics[lowercaseAdapter]; ok {
 		aam.PriceHistogram.Update(int64(cpm))
+	}
+}
+
+// RecordRejectedBidsForBidder implements a part of the MetricsEngine interface. Records rejected bids from bidder
+func (me *Metrics) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+	if keyMeter, exists := me.FloorRejectedBidsMeter[bidder]; exists {
+		keyMeter.Mark(1)
 	}
 }
 
