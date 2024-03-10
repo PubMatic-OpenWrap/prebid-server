@@ -1,9 +1,11 @@
 package exchange
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -190,5 +192,110 @@ func Test_isEventAllowed(t *testing.T) {
 			isEventAllowed := evData.isEventAllowed()
 			assert.Equal(t, tt.want, isEventAllowed)
 		})
+	}
+}
+
+func TestModifyBidVAST(t *testing.T) {
+	type args struct {
+		bidReq *openrtb2.BidRequest
+		bid    *openrtb2.Bid
+	}
+	type want struct {
+		tags []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "empty_adm", // expect adm contain vast tag with tracking events and  VASTAdTagURI nurl contents
+			args: args{
+				bidReq: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
+				},
+				bid: &openrtb2.Bid{
+					AdM:   "",
+					NURL:  "nurl_contents",
+					ImpID: "123",
+				},
+			},
+			want: want{
+				tags: []string{
+					// `<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=firstQuartile]]></Tracking>`,
+					// `<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=midpoint]]></Tracking>`,
+					// `<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=thirdQuartile]]></Tracking>`,
+					// `<Tracking event="complete"><![CDATA[http://company.tracker.com?e=complete]]></Tracking>`,
+					// "<Wrapper>",
+					// "</Wrapper>",
+					// "<VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI>",
+					`<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking>`,
+					`<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking>`,
+					`<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking>`,
+					`<Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking>`,
+					"<Wrapper>",
+					"</Wrapper>",
+					"<VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI>",
+				},
+			},
+		},
+		{
+			name: "adm_containing_url", // expect adm contain vast tag with tracking events and  VASTAdTagURI adm url (previous value) contents
+			args: args{
+				bidReq: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
+				},
+				bid: &openrtb2.Bid{
+					AdM:   "http://vast_tag_inline.xml",
+					NURL:  "nurl_contents",
+					ImpID: "123",
+				},
+			},
+			want: want{
+				tags: []string{
+					// `<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=firstQuartile]]></Tracking>`,
+					// `<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=midpoint]]></Tracking>`,
+					// `<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=thirdQuartile]]></Tracking>`,
+					// `<Tracking event="complete"><![CDATA[http://company.tracker.com?e=complete]]></Tracking>`,
+					// "<Wrapper>",
+					// "</Wrapper>",
+					// "<VASTAdTagURI><![CDATA[http://vast_tag_inline.xml]]></VASTAdTagURI>",
+					`<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking>`,
+					`<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking>`,
+					`<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking>`,
+					`<Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking>`,
+					"<Wrapper>",
+					"</Wrapper>",
+					"<VASTAdTagURI><![CDATA[http://vast_tag_inline.xml]]></VASTAdTagURI>",
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ev := eventTracking{
+				bidderInfos: config.BidderInfos{
+					"somebidder": config.BidderInfo{
+						ModifyingVastXmlAllowed: false,
+					},
+				},
+			}
+			ev.modifyBidVAST(&entities.PbsOrtbBid{
+				Bid:     tc.args.bid,
+				BidType: openrtb_ext.BidTypeVideo,
+			}, "somebidder", "coreBidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
+			validator(t, tc.args.bid, tc.want.tags)
+		})
+	}
+}
+
+func validator(t *testing.T, b *openrtb2.Bid, expectedTags []string) {
+	adm := b.AdM
+	assert.NotNil(t, adm)
+	assert.NotEmpty(t, adm)
+	// check tags are present
+
+	for _, tag := range expectedTags {
+		assert.True(t, strings.Contains(adm, tag), "expected '"+tag+"' tag in Adm")
 	}
 }

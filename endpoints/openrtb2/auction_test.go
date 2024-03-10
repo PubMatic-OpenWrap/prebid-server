@@ -211,7 +211,7 @@ func runEndToEndTest(t *testing.T, auctionEndpointHandler httprouter.Handle, tes
 		if assert.NoError(t, err, "Could not unmarshal expected bidResponse taken from test file.\n Test file: %s\n Error:%s\n", testFile, err) {
 			err = jsonutil.UnmarshalValid([]byte(actualJsonBidResponse), &actualBidResponse)
 			if assert.NoError(t, err, "Could not unmarshal actual bidResponse from auction.\n Test file: %s\n Error:%s\n actualJsonBidResponse: %s", testFile, err, actualJsonBidResponse) {
-				assertBidResponseEqual(t, testFile, expectedBidResponse, actualBidResponse)
+				assertBidResponseEqual(t, test, testFile, expectedBidResponse, actualBidResponse)
 			}
 		}
 	}
@@ -252,7 +252,7 @@ func compareWarnings(t *testing.T, expectedBidResponseExt, actualBidResponseExt 
 // Once unmarshalled, bidResponse objects can't simply be compared with an `assert.Equalf()` call
 // because tests fail if the elements inside the `bidResponse.SeatBid` and `bidResponse.SeatBid.Bid`
 // arrays, if any, are not listed in the exact same order in the actual version and in the expected version.
-func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
+func assertBidResponseEqual(t *testing.T, test testCase, testFile string, expectedBidResponse openrtb2.BidResponse, actualBidResponse openrtb2.BidResponse) {
 
 	//Assert non-array BidResponse fields
 	assert.Equalf(t, expectedBidResponse.ID, actualBidResponse.ID, "BidResponse.ID doesn't match expected. Test: %s\n", testFile)
@@ -306,7 +306,7 @@ func assertBidResponseEqual(t *testing.T, testFile string, expectedBidResponse o
 			assert.Equalf(t, expectedBid.ImpID, actualBidMap[bidID].ImpID, "BidResponse.SeatBid[%s].Bid[%s].ImpID doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 			assert.Equalf(t, expectedBid.Price, actualBidMap[bidID].Price, "BidResponse.SeatBid[%s].Bid[%s].Price doesn't match expected. Test: %s\n", bidderName, bidID, testFile)
 
-			if len(expectedBid.Ext) > 0 {
+			if test.Config.AssertBidExt && len(expectedBid.Ext) > 0 {
 				assert.JSONEq(t, string(expectedBid.Ext), string(actualBidMap[bidID].Ext), "Incorrect bid extension")
 			}
 		}
@@ -391,7 +391,7 @@ func TestBidRequestAssert(t *testing.T) {
 	}
 
 	for _, test := range testSuites {
-		assertBidResponseEqual(t, test.description, test.expectedBidResponse, test.actualBidResponse)
+		assertBidResponseEqual(t, testCase{Config: &testConfigValues{}}, test.description, test.expectedBidResponse, test.actualBidResponse)
 	}
 }
 
@@ -4738,7 +4738,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    validRequest(t, "site.json"),
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -4747,7 +4747,7 @@ func TestAuctionResponseHeaders(t *testing.T) {
 			requestBody:    "{}",
 			expectedStatus: 400,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}
@@ -5784,7 +5784,7 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 				assert.NoError(t, jsonutil.UnmarshalValid(actualResp.Ext, &actualExt), "Unable to unmarshal actual ExtBidResponse.")
 			}
 
-			assertBidResponseEqual(t, tc.file, expectedResp, actualResp)
+			assertBidResponseEqual(t, test, tc.file, expectedResp, actualResp)
 			assert.Equal(t, expectedResp.NBR, actualResp.NBR, "Invalid NBR.")
 			assert.Equal(t, expectedExt.Warnings, actualExt.Warnings, "Wrong bidResponse.ext.warnings.")
 

@@ -23,6 +23,7 @@ type HookResult[T any] struct {
 type ModuleInvocationContext struct {
 	// AccountConfig represents module config rewritten at the account-level.
 	AccountConfig json.RawMessage
+	AccountID     string
 	// Endpoint represents the path of the current endpoint.
 	Endpoint string
 	// ModuleContext holds values that the module passes to itself from the previous stages.

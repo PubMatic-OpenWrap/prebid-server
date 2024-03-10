@@ -27,9 +27,9 @@ const (
 	modelWeightMin   int     = 1
 	enforceRateMin   int     = 0
 	enforceRateMax   int     = 100
-	floorPrecision   float64 = 0.01
 	dataRateMin      int     = 0
 	dataRateMax      int     = 100
+	floorPrecision   float64 = 0.01
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -98,11 +98,9 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				imp.BidFloor = bidFloor
 				imp.BidFloorCur = floorCur
 
-				if isRuleMatched {
-					err = updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
-					if err != nil {
-						floorErrList = append(floorErrList, err)
-					}
+				err = updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
+				if err != nil {
+					floorErrList = append(floorErrList, err)
 				}
 			} else {
 				floorErrList = append(floorErrList, err)
@@ -170,9 +168,9 @@ func resolveFloors(account config.Account, bidRequestWrapper *openrtb_ext.Reques
 		mergedFloor := mergeFloors(reqFloor, fetchResult, conversions)
 		floorRules, errList = createFloorsFrom(mergedFloor, account, fetchStatus, openrtb_ext.FetchLocation)
 	} else if reqFloor != nil {
-		floorRules, errList = createFloorsFrom(reqFloor, account, openrtb_ext.FetchNone, openrtb_ext.RequestLocation)
+		floorRules, errList = createFloorsFrom(reqFloor, account, fetchStatus, openrtb_ext.RequestLocation)
 	} else {
-		floorRules, errList = createFloorsFrom(nil, account, openrtb_ext.FetchNone, openrtb_ext.NoDataLocation)
+		floorRules, errList = createFloorsFrom(nil, account, fetchStatus, openrtb_ext.NoDataLocation)
 	}
 	return floorRules, errList
 }
@@ -210,7 +208,33 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, account config.Accoun
 		}
 	}
 
+	if floorLocation == openrtb_ext.RequestLocation && finalFloors.Data == nil {
+		finalFloors.PriceFloorLocation = openrtb_ext.NoDataLocation
+	}
+
 	return finalFloors, floorModelErrList
+}
+
+// resolveEnforcement does retrieval of enforceRate from request
+func resolveEnforcement(enforcement *openrtb_ext.PriceFloorEnforcement, enforceRate int) *openrtb_ext.PriceFloorEnforcement {
+	if enforcement == nil {
+		enforcement = new(openrtb_ext.PriceFloorEnforcement)
+	}
+	enforcement.EnforceRate = enforceRate
+	return enforcement
+}
+
+// getFloorsEnabledFlag gets floors enabled flag from request
+func getFloorsEnabledFlag(reqFloors openrtb_ext.PriceFloorRules) bool {
+	if reqFloors.Enabled != nil {
+		return *reqFloors.Enabled
+	}
+	return true
+}
+
+// shouldUseDynamicFetchedFloor gets UseDynamicData flag from account level config
+func shouldUseDynamicFetchedFloor(Account config.Account) bool {
+	return Account.PriceFloors.UseDynamicData
 }
 
 // extractFloorsFromRequest gets floors data from req.ext.prebid.floors
