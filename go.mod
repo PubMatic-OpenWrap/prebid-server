@@ -28,7 +28,7 @@ require (
 	github.com/prebid/go-gdpr v1.12.0
 	github.com/prebid/go-gpp v0.2.0
 	github.com/prebid/openrtb/v20 v20.1.0
-	github.com/prebid/prebid-server/v2 v2.6.0
+	github.com/prebid/prebid-server/v2 v2.7.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
