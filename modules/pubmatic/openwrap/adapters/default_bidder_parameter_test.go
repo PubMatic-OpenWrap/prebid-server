@@ -121,6 +121,9 @@ func TestParseBidderSchemaDefinitions(t *testing.T) {
 	schemaDefinitions, _ := parseBidderSchemaDefinitions("../../../../static/bidder-params")
 	assert.Equal(t, 198, len(schemaDefinitions), "Length of expected entries should match")
 	// calculate this number using command - `ls -l | wc -l` (substract 1 from result)
+}
+
+func TestParseOpenWrapParameterMappings(t *testing.T) {
 	tests := []struct {
 		name string
 		want map[string]map[string]*ParameterMapping

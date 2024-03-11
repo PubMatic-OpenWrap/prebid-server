@@ -2916,7 +2916,7 @@ func TestNoCategoryDedupe(t *testing.T) {
 		"bid_id4": "20.00_30s",
 		"bid_id5": "10.00_30s",
 	}
-	
+
 	numIterations := 10
 
 	// Run the function many times, this should be enough for the 50% chance of which bid to remove to remove bid1 sometimes
@@ -2930,7 +2930,6 @@ func TestNoCategoryDedupe(t *testing.T) {
 			&bid1_4,
 			&bid1_5,
 		}
-		
 
 		seatBid := entities.PbsOrtbSeatBid{Bids: innerBids, Currency: "USD"}
 		bidderName1 := openrtb_ext.BidderName("appnexus")
