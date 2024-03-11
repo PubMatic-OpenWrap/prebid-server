@@ -89,11 +89,11 @@ func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int,
 		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, profileID, displayVersion, pubID)
 	}
 
-	var platformStruct PlatformStruct
+	var platform sql.NullString
 	var versionID, displayVersionIDFromDB int
-	err := row.Scan(&versionID, &displayVersionIDFromDB, &platformStruct.Platform)
+	err := row.Scan(&versionID, &displayVersionIDFromDB, &platform)
 	if err != nil {
-		return versionID, displayVersionIDFromDB, platformStruct.Platform.String, err
+		return versionID, displayVersionIDFromDB, platform.String, err
 	}
-	return versionID, displayVersionIDFromDB, platformStruct.Platform.String, nil
+	return versionID, displayVersionIDFromDB, platform.String, nil
 }

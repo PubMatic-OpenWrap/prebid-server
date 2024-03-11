@@ -279,12 +279,12 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			gotPartnerConfigMap, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
 	}
 }
@@ -608,12 +608,12 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.getActivePartnerConfigurations(tt.args.versionID)
+			gotPartnerConfigMap, err := db.getActivePartnerConfigurations(tt.args.versionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
 	}
 }
@@ -723,9 +723,65 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "in-app"}).AddRow("251", "9", "in-app")
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("251", "9", "in-app")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
+				return db
+			},
+		},
+		{
+			name: "Platform is null",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 2,
+				pubID:          5890,
+			},
+			expectedVersionID:              123,
+			expectedDisplayVersionIDFromDB: 12,
+			expectedPlatform:               "",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("123", "12", nil)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 2, 5890).WillReturnRows(rowsWrapperVersion)
+				return db
+			},
+		},
+		{
+			name: "Platform is not null",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
+			},
+			expectedVersionID:              251,
+			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "in-app",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("251", "9", "in-app")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 				return db
 			},
 		},
@@ -736,20 +792,14 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, got1, got2, err := db.getVersionID(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
+			gotVersionID, gotDisplayVersionID, gotPlatform, err := db.getVersionID(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getVersionID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.expectedVersionID {
-				t.Errorf("mySqlDB.getVersionID() got = %v, want %v", got, tt.expectedVersionID)
-			}
-			if got1 != tt.expectedDisplayVersionIDFromDB {
-				t.Errorf("mySqlDB.getVersionID() got1 = %v, want %v", got1, tt.expectedDisplayVersionIDFromDB)
-			}
-			if got2 != tt.expectedPlatform {
-				t.Errorf("mySqlDB.getVersionID() got1 = %v, want %v", got2, tt.expectedPlatform)
-			}
+			assert.Equal(t, tt.expectedVersionID, gotVersionID, "mySqlDB.getVersionID() gotVersionID and expectedVersionID mismatch")
+			assert.Equal(t, tt.expectedDisplayVersionIDFromDB, gotDisplayVersionID, "mySqlDB.getVersionID() gotDisplayVersionID and expectedDisplayVersionIDFromDB mismatch")
+			assert.Equal(t, tt.expectedPlatform, gotPlatform, "mySqlDB.getVersionID() gotPlatform and expectedPlatform mismatch")
 		})
 	}
 }
