@@ -13,6 +13,7 @@ import (
 	"net/http/httptrace"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -568,14 +569,6 @@ func (bidder *bidderAdapter) doRequestImpl(ctx context.Context, req *adapters.Re
 			request: req,
 			err:     err,
 		}
-	var requestBody []byte
-
-	switch strings.ToUpper(bidder.config.EndpointCompression) {
-	case Gzip:
-		requestBody = compressToGZIP(req.Body)
-		req.Headers.Set("Content-Encoding", "gzip")
-	default:
-		requestBody = req.Body
 	}
 	httpReq, err := http.NewRequest(req.Method, req.Uri, requestBody)
 	if err != nil {
@@ -621,6 +614,7 @@ func (bidder *bidderAdapter) doRequestImpl(ctx context.Context, req *adapters.Re
 				// a loop of trying to report timeouts to the timeout notifications.
 				go bidder.doTimeoutNotification(tb, req, logger)
 			}
+
 		}
 		return &httpCallInfo{
 			request: req,
@@ -695,6 +689,7 @@ func (bidder *bidderAdapter) doTimeoutNotification(timeoutBidder adapters.Timeou
 	}
 
 }
+
 type httpCallInfo struct {
 	request  *adapters.RequestData
 	response *adapters.ResponseData
@@ -830,4 +825,3 @@ var gzipWriterPool = sync.Pool{
 		return gzip.NewWriter(nil)
 	},
 }
-
