@@ -2880,16 +2880,17 @@ func TestCategoryDedupe(t *testing.T) {
 	if error != nil {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
-	requestExt := newExtRequest()
-	targData := &targetData{
-		priceGranularity: *requestExt.Prebid.Targeting.PriceGranularity,
-		includeWinners:   true,
-	}
 	r := &AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{
 			BidRequest: &openrtb2.BidRequest{},
 		},
 	}
+	requestExt := newExtRequest()
+	targData := &targetData{
+		priceGranularity: *requestExt.Prebid.Targeting.PriceGranularity,
+		includeWinners:   true,
+	}
+
 	// bid3 and bid5 will be same price, category, and duration so one of them should be removed based on the dedupe generator
 	bid1 := openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, Cat: []string{"IAB1-3"}, W: 1, H: 1}
 	bid2 := openrtb2.Bid{ID: "bid_id2", ImpID: "imp_id2", Price: 15.0000, Cat: []string{"IAB1-4"}, W: 1, H: 1}
@@ -2946,7 +2947,6 @@ func TestCategoryDedupe(t *testing.T) {
 				},
 			}
 			deduplicateGenerator := fakeBooleanGenerator{value: tt.dedupeGeneratorValue}
-
 			bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &deduplicateGenerator, &nonBids{})
 
 			assert.Nil(t, err)
