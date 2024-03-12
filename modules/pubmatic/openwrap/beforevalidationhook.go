@@ -246,7 +246,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
 			if err != nil {
-				result.NbrCode = int(nbr.InternalError)
+				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger

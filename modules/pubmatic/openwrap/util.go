@@ -257,7 +257,7 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequestExt:
+	case nbr.InvalidRequestExt, openrtb3.NoBidInvalidRequest:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:

@@ -13,7 +13,7 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 		return
 	}
 	//this is needed in determine ifa_type parameter
-	dvc.DeviceIFA = device.IFA
+	dvc.DeviceIFA = strings.TrimSpace(device.IFA)
 
 	if device.Ext == nil {
 		return
@@ -45,6 +45,7 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 				deviceExt.DeleteIFAType()
 			} else {
 				dvc.IFATypeID = &ifaTypeID
+				deviceExt.SetIFAType(extIFAType)
 			}
 		} else if extSessionID != "" {
 			dvc.DeviceIFA = extSessionID
