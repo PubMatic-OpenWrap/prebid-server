@@ -22,7 +22,10 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 	partnerConfigMap, err := db.getActivePartnerConfigurations(versionID)
 	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
-		partnerConfigMap[-1][models.PLATFORM_KEY] = platform
+		// check for SDK new UI
+		if platform != "" {
+			partnerConfigMap[-1][models.PLATFORM_KEY] = platform
+		}
 	}
 	return partnerConfigMap, err
 }
