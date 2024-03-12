@@ -158,6 +158,8 @@ type endpointDeps struct {
 }
 
 func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	deps.metricsEngine.RecordHttpCounter()
+
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
 	//
@@ -185,6 +187,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	activityControl := privacy.ActivityControl{}
 	defer func() {
 		deps.metricsEngine.RecordRequest(labels)
+		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao, activityControl)
 	}()
@@ -207,9 +210,8 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	activityControl = privacy.NewActivityControl(&account.Privacy)
 
 	hookExecutor.SetActivityControl(activityControl)
-	hookExecutor.SetAccount(account)
 
-	ctx := context.Background()
+	ctx := r.Context()
 
 	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(req.TMax) * time.Millisecond)
 	if timeout > 0 {
@@ -341,6 +343,11 @@ func rejectAuctionRequest(
 		response.ID = request.ID
 	}
 
+	// TODO merge this with success case
+	stageOutcomes := hookExecutor.GetOutcomes()
+	ao.HookExecutionOutcome = stageOutcomes
+	UpdateResponseExtOW(response, ao)
+
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
@@ -361,6 +368,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
+		UpdateResponseExtOW(response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -464,7 +472,6 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	if len(errs) > 0 {
 		return nil, nil, nil, nil, nil, nil, errs
 	}
-
 	storedBidRequestId, hasStoredBidRequest, storedRequests, storedImps, errs := deps.getStoredRequests(ctx, requestJson, impInfo)
 	if len(errs) > 0 {
 		return
@@ -523,6 +530,12 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 
 	if err := jsonutil.UnmarshalValid(requestJson, req.BidRequest); err != nil {
 		errs = []error{err}
+		return
+	}
+
+	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(req.BidRequest)
+	if rejectErr != nil {
+		errs = append(errs, rejectErr)
 		return
 	}
 
@@ -1555,7 +1568,11 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 
 		if coreBidderNormalized, isValid := deps.bidderMap[coreBidder.String()]; isValid {
 			if err := deps.paramsValidator.Validate(coreBidderNormalized, ext); err != nil {
-				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
+				msg := fmt.Sprintf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)
+
+				delete(prebid.Bidder, bidder)
+				glog.Errorf("BidderSchemaValidationError: %s", msg)
+				errL = append(errL, &errortypes.BidderFailedSchemaValidation{Message: msg})
 			}
 		} else {
 			if msg, isDisabled := deps.disabledBidders[bidder]; isDisabled {

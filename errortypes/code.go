@@ -17,6 +17,12 @@ const (
 	TmaxTimeoutErrorCode
 	FailedToMarshalErrorCode
 	FailedToUnmarshalErrorCode
+
+	// NYC: shall we have different range for OW error codes to avoid change in codes with introduction of new PBS error codes.
+	NoBidPriceErrorCode
+	BidderFailedSchemaValidationErrorCode
+	AdpodPrefilteringErrorCode
+	BidRejectionFloorsErrorCode
 )
 
 // Defines numeric codes for well-known warnings.
@@ -33,6 +39,7 @@ const (
 	FloorBidRejectionWarningCode
 	InvalidBidResponseDSAWarningCode
 	SecCookieDeprecationLenWarningCode
+	AdpodPostFilteringWarningCode
 )
 
 // Coder provides an error or warning code with severity.

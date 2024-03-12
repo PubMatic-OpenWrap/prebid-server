@@ -97,9 +97,6 @@
               "ext": {
                 "origbidcpm": 0.3,
                 "prebid": {
-                  "meta": {
-                    "adaptercode": "appnexus"
-                  },
                   "bidid": "bid-appnexus-1",
                   "type": "video"
                 }
@@ -118,9 +115,6 @@
               "ext": {
                 "origbidcpm": 0.3,
                 "prebid": {
-                  "meta": {
-                    "adaptercode": "appnexus"
-                  },
                   "bidid": "bid-appnexus-2",
                   "type": "video"
                 }

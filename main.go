@@ -1,4 +1,4 @@
-package main
+package main_ow
 
 import (
 	"flag"
@@ -26,7 +26,8 @@ func init() {
 	jsoniter.RegisterExtension(&jsonutil.RawMessageExtension{})
 }
 
-func main() {
+// TODO: revert this after PBS-OpenWrap module
+func Main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
@@ -57,7 +58,7 @@ func main() {
 	}
 }
 
-const configFileName = "pbs"
+const configFileName = "pbs.yaml"
 const infoDirectory = "./static/bidder-info"
 
 func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {
