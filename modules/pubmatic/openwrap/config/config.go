@@ -56,6 +56,7 @@ type Queries struct {
 	GetAllFscDisabledPublishersQuery  string
 	GetAllDspFscPcntQuery             string
 	GetTBFRateQuery                   string
+	GetRTBBidders                     string
 }
 
 type Cache struct {

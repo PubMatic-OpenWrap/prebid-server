@@ -8,9 +8,9 @@ type Chooser interface {
 }
 
 // NewChooser returns a new instance of the standard chooser implementation.
-func NewChooser(bidderSyncerLookup map[string]Syncer) Chooser {
-	bidders := make([]string, 0, len(bidderSyncerLookup))
-	for k := range bidderSyncerLookup {
+func NewChooser(bidderSyncerLookup AdapterSyncerMap) Chooser {
+	bidders := make([]string, 0, len(bidderSyncerLookup.PrebidBidder))
+	for k := range bidderSyncerLookup.PrebidBidder {
 		bidders = append(bidders, k)
 	}
 
@@ -100,7 +100,8 @@ type Privacy interface {
 
 // standardChooser implements the user syncer algorithm per official Prebid specification.
 type standardChooser struct {
-	bidderSyncerLookup map[string]Syncer
+	// bidderSyncerLookup map[string]Syncer
+	bidderSyncerLookup AdapterSyncerMap
 	biddersAvailable   []string
 	bidderChooser      bidderChooser
 }
@@ -140,7 +141,8 @@ func (c standardChooser) evaluate(bidder string, syncersSeen map[string]struct{}
 	if bidderName == "indexExchange" {
 		bidderName = "ix"
 	}
-	syncer, exists := c.bidderSyncerLookup[bidderName]
+	// syncer, exists:= c.bidderSyncerLookup[bidderName]
+	syncer, exists := c.bidderSyncerLookup.Get(bidderName)
 	if !exists {
 		// TODO: fallback to rtbbidder.bidderSyncerLookup[]
 		return nil, BidderEvaluation{Status: StatusUnknownBidder, Bidder: bidder}

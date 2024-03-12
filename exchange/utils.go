@@ -25,6 +25,7 @@ import (
 	"github.com/prebid/prebid-server/privacy/lmt"
 	"github.com/prebid/prebid-server/schain"
 	"github.com/prebid/prebid-server/stored_responses"
+	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
@@ -38,12 +39,13 @@ var channelTypeMap = map[metrics.RequestType]config.ChannelType{
 const unknownBidder string = ""
 
 type requestSplitter struct {
-	bidderToSyncerKey map[string]string
+	// bidderToSyncerKey map[string]string
+	bidderToSyncerKey usersync.BidderToSyncerKey
 	me                metrics.MetricsEngine
 	privacyConfig     config.Privacy
 	gdprPermsBuilder  gdpr.PermissionsBuilder
 	hostSChainNode    *openrtb2.SupplyChainNode
-	bidderInfo        config.BidderInfos
+	bidderInfo        BidderInfos
 }
 
 // cleanOpenRTBRequests splits the input request into requests which are sanitized for each bidder. Intended behavior is:
@@ -233,8 +235,9 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 	return
 }
 
-func shouldSetLegacyPrivacy(bidderInfo config.BidderInfos, bidder string) bool {
-	binfo, defined := bidderInfo[bidder]
+func shouldSetLegacyPrivacy(bidderInfo BidderInfos, bidder string) bool {
+	// binfo, defined := bidderInfo[bidder]
+	binfo, defined := bidderInfo.Get(bidder)
 
 	if !defined || binfo.OpenRTB == nil {
 		return true
@@ -305,7 +308,8 @@ func ExtractReqExtBidderParamsMap(bidRequest *openrtb2.BidRequest) (map[string]j
 
 func getAuctionBidderRequests(auctionRequest AuctionRequest,
 	requestExt *openrtb_ext.ExtRequest,
-	bidderToSyncerKey map[string]string,
+	// bidderToSyncerKey map[string]string,
+	bidderToSyncerKey usersync.BidderToSyncerKey,
 	impsByBidder map[string][]openrtb2.Imp,
 	aliases map[string]string,
 	hostSChainNode *openrtb2.SupplyChainNode) ([]BidderRequest, []error) {
@@ -360,7 +364,8 @@ func getAuctionBidderRequests(auctionRequest AuctionRequest,
 			},
 		}
 
-		syncerKey := bidderToSyncerKey[string(coreBidder)]
+		// syncerKey := bidderToSyncerKey[string(coreBidder)]
+		syncerKey, _ := bidderToSyncerKey.Get(string(coreBidder))
 		if hadSync := prepareUser(&reqCopy, bidder, syncerKey, explicitBuyerUIDs, auctionRequest.UserSyncs); !hadSync && req.BidRequest.App == nil {
 			bidderRequest.BidderLabels.CookieFlag = metrics.CookieFlagNo
 		} else {

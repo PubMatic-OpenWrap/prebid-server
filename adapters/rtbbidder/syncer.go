@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/prebid/prebid-server/usersync"
 
 	"github.com/prebid/prebid-server/config"
 
@@ -16,10 +19,13 @@ import (
 )
 
 type Syncer struct {
-	syncedBidders    []string
-	syncedBiddersMap map[string]struct{}
-	BidderInfos      config.BidderInfos
-	InfoAwareBidders map[string]adapters.Bidder
+	syncedBidders           []string
+	syncedBiddersMap        map[string]struct{}
+	BidderInfos             config.BidderInfos
+	InfoAwareBidders        map[string]adapters.Bidder
+	UserSyncData            *sync.Map
+	RTBBidderToSyncerKey    *sync.Map
+	RTBBidderGVLVEndorIDMap *sync.Map
 
 	tasks        []func() bool
 	syncPath     string
@@ -116,7 +122,16 @@ func syncBiddersInfos() func() bool {
 		if errs == nil {
 			// will need mutex here since auction pkg refers the same
 			GetSyncer().BidderInfos = rtbBidderInfos
+			vendorIDMap := rtbBidderInfos.ToGVLVendorIDMap()
+			for k, v := range vendorIDMap {
+				GetSyncer().RTBBidderGVLVEndorIDMap.Store(k, v)
+			}
+			userSyncData, _ := usersync.BuildSyncers(GetSyncer().HostCfg, rtbBidderInfos)
 
+			for k, v := range userSyncData {
+				GetSyncer().UserSyncData.Store(k, v)
+				GetSyncer().RTBBidderToSyncerKey.Store(k, v.Key())
+			}
 			for bidder, info := range rtbBidderInfos {
 				GetSyncer().InfoAwareBidders[bidder] = adapters.BuildInfoAwareBidder(getInstance(), info)
 			}

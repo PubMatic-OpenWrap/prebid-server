@@ -12,8 +12,9 @@ type Ejector interface {
 type OldestEjector struct{}
 
 type PriorityBidderEjector struct {
-	PriorityGroups   [][]string
-	SyncersByBidder  map[string]Syncer
+	PriorityGroups [][]string
+	// SyncersByBidder  map[string]Syncer
+	SyncersByBidder  AdapterSyncerMap
 	IsSyncerPriority bool
 	TieEjector       Ejector
 }
@@ -76,7 +77,7 @@ func removeElementFromPriorityGroup(priorityGroups [][]string, oldestElement str
 	return priorityGroups
 }
 
-func getNonPriorityUids(uids map[string]UIDEntry, priorityGroups [][]string, syncersByBidder map[string]Syncer) map[string]UIDEntry {
+func getNonPriorityUids(uids map[string]UIDEntry, priorityGroups [][]string, syncersByBidder AdapterSyncerMap) map[string]UIDEntry {
 	// If no priority groups, then all keys in uids are non-priority
 	if len(priorityGroups) == 0 {
 		return uids
@@ -87,7 +88,7 @@ func getNonPriorityUids(uids map[string]UIDEntry, priorityGroups [][]string, syn
 	for _, group := range priorityGroups {
 		for _, bidder := range group {
 			// RTBBidders: need to add fallback
-			if bidderSyncer, ok := syncersByBidder[bidder]; ok {
+			if bidderSyncer, ok := syncersByBidder.Get(bidder); ok {
 				isPriority[bidderSyncer.Key()] = true
 			}
 		}
@@ -106,13 +107,13 @@ func getNonPriorityUids(uids map[string]UIDEntry, priorityGroups [][]string, syn
 	return nonPriorityUIDs
 }
 
-func getPriorityUids(lowestPriorityGroup []string, uids map[string]UIDEntry, syncersByBidder map[string]Syncer) map[string]UIDEntry {
+func getPriorityUids(lowestPriorityGroup []string, uids map[string]UIDEntry, syncersByBidder AdapterSyncerMap) map[string]UIDEntry {
 	lowestPriorityUIDs := make(map[string]UIDEntry)
 
 	// Loop over lowestPriorityGroup and populate the lowestPriorityUIDs map
 	for _, bidder := range lowestPriorityGroup {
 		// RTBBidders: need to add fallback
-		if bidderSyncer, ok := syncersByBidder[bidder]; ok {
+		if bidderSyncer, ok := syncersByBidder.Get(bidder); ok {
 			if uidEntry, exists := uids[bidderSyncer.Key()]; exists {
 				lowestPriorityUIDs[bidderSyncer.Key()] = uidEntry
 			}

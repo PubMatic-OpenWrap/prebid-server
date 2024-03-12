@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/adapters/rtbbidder"
+
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -129,6 +130,7 @@ type Router struct {
 }
 
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
+	rtbbidder.StoreHostConfig(cfg)
 	const schemaDirectory = "./static/bidder-params"
 
 	r = &Router{
@@ -181,6 +183,13 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if len(errs) > 0 {
 		return nil, errortypes.NewAggregateError("user sync", errs)
 	}
+
+	// RTBBidder : required for UserSync data
+	object := usersync.AdapterSyncerMap{
+		PrebidBidder: syncersByBidder,
+		RTBBidder:    rtbbidder.GetSyncer().UserSyncData,
+	}
+
 	// set the syncerMap for pubmatic ow module
 	models.SetSyncerMap(syncersByBidder)
 
@@ -201,6 +210,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	}
 
 	// Metrics engine
+	// For RTB-Bidders, its OK even if we dont add labels during application startup
 	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 	// todo(zachbadgett): better shutdown
@@ -225,7 +235,10 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		return nil, err
 	}
 
-	gvlVendorIDs := cfg.BidderInfos.ToGVLVendorIDMap() // stores bidder-name to GVL-ID
+	gvlVendorIDs := gdpr.GVLVendorIDMap{
+		PrebidAdapter: cfg.BidderInfos.ToGVLVendorIDMap(), // stores bidder-name to GVL-ID,
+		RTBAdapter:    rtbbidder.GetSyncer().BidderInfos.ToGVLVendorIDMap(),
+	}
 	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), cfg.GDPR, generalHttpClient, gdpr.VendorListURLMaker)
 	gdprPermsBuilder := gdpr.NewPermissionsBuilder(cfg.GDPR, gvlVendorIDs, vendorListFetcher)
 	tcf2CfgBuilder := gdpr.NewTCF2Config
@@ -276,7 +289,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	tmaxAdjustments := exchange.ProcessTMaxAdjustments(cfg.TmaxAdjustments)
 	planBuilder := hooks.NewExecutionPlanBuilder(cfg.Hooks, repo)
 	macroReplacer := macros.NewStringIndexBasedReplacer()
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, &object, r.MetricsEngine, exchange.BidderInfos{PrebidBidderInfos: cfg.BidderInfos}, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
 	var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, pbsAnalytics, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
 	if err != nil {
@@ -304,7 +317,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.GET("/info/bidders", infoEndpoints.NewBiddersEndpoint(cfg.BidderInfos, defaultAliases))
 	r.GET("/info/bidders/:bidderName", infoEndpoints.NewBiddersDetailEndpoint(cfg.BidderInfos, defaultAliases))
 	r.GET("/bidders/params", NewJsonDirectoryServer(schemaDirectory, paramsValidator, defaultAliases))
-	r.POST("/cookie_sync", endpoints.NewCookieSyncEndpoint(syncersByBidder, cfg, gdprPermsBuilder, tcf2CfgBuilder, r.MetricsEngine, pbsAnalytics, accounts, activeBidders).Handle)
+	r.POST("/cookie_sync", endpoints.NewCookieSyncEndpoint(object, cfg, gdprPermsBuilder, tcf2CfgBuilder, r.MetricsEngine, pbsAnalytics, accounts, activeBidders).Handle)
 	r.GET("/status", endpoints.NewStatusEndpoint(cfg.StatusResponse))
 	r.GET("/", serveIndex)
 	r.Handler("GET", "/version", endpoints.NewVersionEndpoint(version.Ver, version.Rev))
@@ -327,14 +340,13 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		PriorityGroups:   cfg.UserSync.PriorityGroups,
 	}
 
-	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg, syncersByBidder, gdprPermsBuilder, tcf2CfgBuilder, pbsAnalytics, accounts, r.MetricsEngine))
+	r.GET("/setuid", endpoints.NewSetUIDEndpoint(cfg, object, gdprPermsBuilder, tcf2CfgBuilder, pbsAnalytics, accounts, r.MetricsEngine))
 	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
 	r.POST("/optout", userSyncDeps.OptOut)
 	r.GET("/optout", userSyncDeps.OptOut)
 
 	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
-	rtbbidder.StoreHostConfig(cfg)
 	g_syncers = syncersByBidder
 	g_metrics = r.MetricsEngine
 	g_cfg = cfg
@@ -354,6 +366,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_planBuilder = &planBuilder
 	g_currencyConversions = rateConvertor.Rates()
 	g_tmaxAdjustments = tmaxAdjustments
+	g_test = object
 
 	return r, nil
 }

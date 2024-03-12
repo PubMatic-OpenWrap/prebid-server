@@ -30,6 +30,7 @@ import (
 
 var (
 	g_syncers             map[string]usersync.Syncer
+	g_test                usersync.AdapterSyncerMap
 	g_cfg                 *config.Configuration
 	g_ex                  *exchange.Exchange
 	g_accounts            *stored_requests.AccountFetcher
@@ -108,13 +109,13 @@ func GetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
 
 // SetUIDSWrapper Openwrap wrapper method for calling /setuid endpoint
 func SetUIDSWrapper(w http.ResponseWriter, r *http.Request) {
-	setUID := endpoints.NewSetUIDEndpoint(g_cfg, g_syncers, g_gdprPermsBuilder, g_tcf2CfgBuilder, *g_analytics, *g_accounts, g_metrics)
+	setUID := endpoints.NewSetUIDEndpoint(g_cfg, g_test, g_gdprPermsBuilder, g_tcf2CfgBuilder, *g_analytics, *g_accounts, g_metrics)
 	setUID(w, r, nil)
 }
 
 // CookieSync Openwrap wrapper method for calling /cookie_sync endpoint
 func CookieSync(w http.ResponseWriter, r *http.Request) {
-	cookiesync := endpoints.NewCookieSyncEndpoint(g_syncers, g_cfg, g_gdprPermsBuilder, g_tcf2CfgBuilder, g_metrics, *g_analytics, *g_accounts, g_activeBidders)
+	cookiesync := endpoints.NewCookieSyncEndpoint(g_test, g_cfg, g_gdprPermsBuilder, g_tcf2CfgBuilder, g_metrics, *g_analytics, *g_accounts, g_activeBidders)
 	cookiesync.Handle(w, r, nil)
 }
 

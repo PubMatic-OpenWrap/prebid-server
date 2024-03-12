@@ -46,7 +46,7 @@ var (
 var cookieSyncBidderFilterAllowAll = usersync.NewUniformBidderFilter(usersync.BidderFilterModeInclude)
 
 func NewCookieSyncEndpoint(
-	syncersByBidder map[string]usersync.Syncer,
+	syncersByBidder usersync.AdapterSyncerMap,
 	config *config.Configuration,
 	gdprPermsBuilder gdpr.PermissionsBuilder,
 	tcf2CfgBuilder gdpr.TCF2ConfigBuilder,

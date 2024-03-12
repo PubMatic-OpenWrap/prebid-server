@@ -40,6 +40,7 @@ func (c standardBidderChooser) chooseCooperative(requested, available []string, 
 		bidders = c.shuffledAppend(bidders, group)
 	}
 
+	// available should contain available RTB bidders as well
 	// available
 	bidders = c.shuffledAppend(bidders, available)
 

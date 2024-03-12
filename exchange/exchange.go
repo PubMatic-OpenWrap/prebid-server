@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/usersync"
+
 	"github.com/prebid/prebid-server/privacy"
 
 	"github.com/prebid/prebid-server/adapters"
@@ -34,7 +36,6 @@ import (
 	"github.com/prebid/prebid-server/prebid_cache_client"
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/stored_responses"
-	"github.com/prebid/prebid-server/usersync"
 	"github.com/prebid/prebid-server/util/maputil"
 
 	"github.com/buger/jsonparser"
@@ -61,9 +62,11 @@ type IdFetcher interface {
 }
 
 type exchange struct {
-	adapterMap               map[openrtb_ext.BidderName]AdaptedBidder
-	bidderInfo               config.BidderInfos
-	bidderToSyncerKey        map[string]string
+	adapterMap map[openrtb_ext.BidderName]AdaptedBidder
+	bidderInfo BidderInfos
+
+	// bidderToSyncerKey        map[string]string
+	bidderToSyncerKey        usersync.BidderToSyncerKey
 	me                       metrics.MetricsEngine
 	cache                    prebid_cache_client.Client
 	cacheTime                time.Duration
@@ -131,9 +134,9 @@ func (randomDeduplicateBidBooleanGenerator) Generate() bool {
 	return rand.Intn(100) < 50
 }
 
-func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, macroReplacer macros.Replacer, floorFetcher *floors.PriceFloorFetcher) Exchange {
+func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder *usersync.AdapterSyncerMap, metricsEngine metrics.MetricsEngine, infos BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, macroReplacer macros.Replacer, floorFetcher *floors.PriceFloorFetcher) Exchange {
 	bidderToSyncerKey := map[string]string{}
-	for bidder, syncer := range syncersByBidder {
+	for bidder, syncer := range syncersByBidder.PrebidBidder {
 		bidderToSyncerKey[bidder] = syncer.Key()
 	}
 
@@ -148,7 +151,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 		LMT:  cfg.LMT,
 	}
 	requestSplitter := requestSplitter{
-		bidderToSyncerKey: bidderToSyncerKey,
+		bidderToSyncerKey: usersync.BidderToSyncerKey{PrebidBidderToSyncerKey: bidderToSyncerKey},
 		me:                metricsEngine,
 		privacyConfig:     privacyConfig,
 		gdprPermsBuilder:  gdprPermsBuilder,
@@ -159,7 +162,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 	return &exchange{
 		adapterMap:               adapters,
 		bidderInfo:               infos,
-		bidderToSyncerKey:        bidderToSyncerKey,
+		bidderToSyncerKey:        usersync.BidderToSyncerKey{PrebidBidderToSyncerKey: bidderToSyncerKey},
 		cache:                    cache,
 		cacheTime:                time.Duration(cfg.CacheURL.ExpectedTimeMillis) * time.Millisecond,
 		categoriesFetcher:        categoriesFetcher,
@@ -740,11 +743,11 @@ func (e *exchange) getAllBids(
 			reqInfo.BidderName = string(bidderRequest.BidderName) // RTBBidder -> magnite, magnite-1
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			reqInfo.GlobalPrivacyControlHeader = globalPrivacyControlHeader
-
+			info, _ := e.bidderInfo.Get(string(bidderRequest.BidderName))
 			bidReqOptions := bidRequestOptions{
 				accountDebugAllowed:    accountDebugAllowed,
 				headerDebugAllowed:     headerDebugAllowed,
-				addCallSignHeader:      isAdsCertEnabled(experiment, e.bidderInfo[string(bidderRequest.BidderName)]),
+				addCallSignHeader:      isAdsCertEnabled(experiment, info),
 				bidAdjustments:         bidAdjustments,
 				tmaxAdjustments:        tmaxAdjustments,
 				bidderRequestStartTime: start,

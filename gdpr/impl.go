@@ -21,7 +21,7 @@ type permissionsImpl struct {
 	hostVendorID           int
 	nonStandardPublishers  map[string]struct{}
 	purposeEnforcerBuilder PurposeEnforcerBuilder
-	vendorIDs              map[openrtb_ext.BidderName]uint16
+	vendorIDs              GVLVendorIDMap
 	// request-specific
 	aliasGVLIDs map[string]uint16
 	cfg         TCF2ConfigReader
@@ -45,7 +45,8 @@ func (p *permissionsImpl) BidderSyncAllowed(ctx context.Context, bidder openrtb_
 		return true, nil
 	}
 
-	id, ok := p.vendorIDs[bidder]
+	// id, ok := p.vendorIDs[bidder]
+	id, ok := p.vendorIDs.Get(bidder.String())
 	if ok {
 		vendorExceptions := p.cfg.PurposeVendorExceptions(consentconstants.Purpose(1))
 		_, vendorException := vendorExceptions[bidder]
@@ -108,7 +109,7 @@ func (p *permissionsImpl) resolveVendorID(bidderCoreName openrtb_ext.BidderName,
 		return id, ok
 	}
 
-	id, ok = p.vendorIDs[bidderCoreName]
+	id, ok = p.vendorIDs.Get(bidderCoreName.String())
 
 	return id, ok
 }

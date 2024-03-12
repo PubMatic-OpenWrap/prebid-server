@@ -21,12 +21,36 @@ type eventTracking struct {
 	enabledForRequest  bool
 	auctionTimestampMs int64
 	integrationType    string
-	bidderInfos        config.BidderInfos
-	externalURL        string
+	// bidderInfos        config.BidderInfos
+	bidderInfos BidderInfos
+	externalURL string
+}
+
+type BidderInfos struct {
+	PrebidBidderInfos config.BidderInfos
+	RTBBidderInfos    config.BidderInfos
+}
+
+func (b BidderInfos) Get(key string) (config.BidderInfo, bool) {
+	value, present := b.PrebidBidderInfos[key]
+	if !present {
+		// mutex
+		value, present = b.RTBBidderInfos[key]
+	}
+	return value, present
+}
+
+func (b BidderInfos) GetModifyingVastXmlAllowed(key string) bool {
+	value, present := b.PrebidBidderInfos[key]
+	if !present {
+		// mutex
+		value, present = b.RTBBidderInfos[key]
+	}
+	return value.ModifyingVastXmlAllowed
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
 		enabledForAccount:  account.Events.IsEnabled(),
@@ -58,7 +82,8 @@ func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName
 
 // isModifyingVASTXMLAllowed returns true if this bidder config allows modifying VAST XML for event tracking
 func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
-	return ev.bidderInfos[bidderName].ModifyingVastXmlAllowed && ev.isEventAllowed()
+	// return ev.bidderInfos[bidderName].ModifyingVastXmlAllowed  && ev.isEventAllowed()
+	return ev.bidderInfos.GetModifyingVastXmlAllowed(bidderName) && ev.isEventAllowed()
 	// ** RTBBidders = need to add fallback on rtbbidders.bidderInfos **
 }
 

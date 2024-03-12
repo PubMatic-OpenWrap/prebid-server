@@ -33,8 +33,23 @@ type RequestInfo struct {
 	PublisherID string
 }
 
+type GVLVendorIDMap struct {
+	PrebidAdapter map[openrtb_ext.BidderName]uint16
+	RTBAdapter    map[openrtb_ext.BidderName]uint16
+}
+
+func (g *GVLVendorIDMap) Get(bidder string) (uint16, bool) {
+	val, present := g.PrebidAdapter[openrtb_ext.BidderName(bidder)]
+	if !present {
+		var ival any
+		ival, present = g.RTBAdapter[openrtb_ext.BidderName(bidder)]
+		val = (ival).(uint16)
+	}
+	return val, present
+}
+
 // NewPermissionsBuilder takes host config data used to configure the builder function it returns
-func NewPermissionsBuilder(cfg config.GDPR, gvlVendorIDs map[openrtb_ext.BidderName]uint16, vendorListFetcher VendorListFetcher) PermissionsBuilder {
+func NewPermissionsBuilder(cfg config.GDPR, gvlVendorIDs GVLVendorIDMap, vendorListFetcher VendorListFetcher) PermissionsBuilder {
 	return func(tcf2Cfg TCF2ConfigReader, requestInfo RequestInfo) Permissions {
 		purposeEnforcerBuilder := NewPurposeEnforcerBuilder(tcf2Cfg)
 
@@ -43,7 +58,7 @@ func NewPermissionsBuilder(cfg config.GDPR, gvlVendorIDs map[openrtb_ext.BidderN
 }
 
 // NewPermissions gets a per-request Permissions object that can then be used to check GDPR permissions for a given bidder.
-func NewPermissions(cfg config.GDPR, tcf2Config TCF2ConfigReader, vendorIDs map[openrtb_ext.BidderName]uint16, fetcher VendorListFetcher, purposeEnforcerBuilder PurposeEnforcerBuilder, requestInfo RequestInfo) Permissions {
+func NewPermissions(cfg config.GDPR, tcf2Config TCF2ConfigReader, vendorIDs GVLVendorIDMap, fetcher VendorListFetcher, purposeEnforcerBuilder PurposeEnforcerBuilder, requestInfo RequestInfo) Permissions {
 	if !cfg.Enabled {
 		return &AlwaysAllow{}
 	}

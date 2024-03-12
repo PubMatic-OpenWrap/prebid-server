@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/prebid/prebid-server/adapters/rtbbidder"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
@@ -33,6 +34,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
+	RTBBidderSyncer    *rtbbidder.OWSyncer
 }
 
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
@@ -80,6 +82,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		cache:              owCache,
 		metricEngine:       &metricEngine,
 		currencyConversion: moduleDeps.CurrencyConversion,
+		RTBBidderSyncer:    rtbbidder.NewOWSyncer(owCache),
 	}, nil
 }
 

@@ -36,7 +36,7 @@ const (
 
 const uidCookieName = "uids"
 
-func NewSetUIDEndpoint(cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, gdprPermsBuilder gdpr.PermissionsBuilder, tcf2CfgBuilder gdpr.TCF2ConfigBuilder, pbsanalytics analytics.PBSAnalyticsModule, accountsFetcher stored_requests.AccountFetcher, metricsEngine metrics.MetricsEngine) httprouter.Handle {
+func NewSetUIDEndpoint(cfg *config.Configuration, syncersByBidder usersync.AdapterSyncerMap, gdprPermsBuilder gdpr.PermissionsBuilder, tcf2CfgBuilder gdpr.TCF2ConfigBuilder, pbsanalytics analytics.PBSAnalyticsModule, accountsFetcher stored_requests.AccountFetcher, metricsEngine metrics.MetricsEngine) httprouter.Handle {
 	encoder := usersync.Base64Encoder{}
 	decoder := usersync.Base64Decoder{}
 
@@ -327,7 +327,7 @@ func parseConsentFromGppStr(gppQueryValue string) (string, error) {
 	return gdprConsent, nil
 }
 
-func getSyncer(query url.Values, syncersByBidder map[string]usersync.Syncer) (usersync.Syncer, string, error) {
+func getSyncer(query url.Values, syncersByBidder usersync.AdapterSyncerMap) (usersync.Syncer, string, error) {
 	bidder := query.Get("bidder")
 
 	if bidder == "" {
@@ -335,7 +335,8 @@ func getSyncer(query url.Values, syncersByBidder map[string]usersync.Syncer) (us
 	}
 
 	// syncer, syncerExists := syncersByBidder[bidder]
-	syncer, syncerExists := syncersByBidder[bidder]
+
+	syncer, syncerExists := syncersByBidder.Get(bidder)
 	if !syncerExists {
 		return nil, "", errors.New("The bidder name provided is not supported by Prebid Server")
 	}

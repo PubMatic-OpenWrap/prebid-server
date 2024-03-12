@@ -17,6 +17,7 @@ type Cache interface {
 	GetFSCThresholdPerDSP() (map[int]int, error)
 
 	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
+	GetRTBBidders() (map[string]models.RTBBidderData, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)

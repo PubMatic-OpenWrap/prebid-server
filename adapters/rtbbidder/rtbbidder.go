@@ -3,6 +3,7 @@ package rtbbidder
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -124,9 +125,12 @@ var singleTonbidder *RTBBidder = &RTBBidder{
 			"rtb_magnite_core":  "rtb_magnite",
 			"rtb_magnite_alias": "rtb_magnite",
 			"rtb_magnite_bc":    "rtb_magnite",
-			"magnite_demo":      "rtb_magnite",
+			"rtb_magnite_demo":  "rtb_magnite",
 			"magnite_abcd":      "rtb_magnite",
 		},
+		UserSyncData:            &sync.Map{},
+		RTBBidderToSyncerKey:    &sync.Map{},
+		RTBBidderGVLVEndorIDMap: &sync.Map{},
 	},
 }
 
