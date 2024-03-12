@@ -52,6 +52,6 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 		respBody := httpResp.Body.Bytes()
 		bid.Bid.AdM = string(respBody)
 	}
-	glog.Infof("\n UnWrap Response isStatsEnabled = %v for pubID = %s bidder = %s ImpID = %s BidId = %s  respStatus = %s http code = %d",
+	glog.Infof("UnWrap Response isStatsEnabled = %v for pubID = %s bidder = %s ImpID = %s BidId = %s  respStatus = %s http code = %d",
 		isStatsEnabled, accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, respStatus, httpResp.Code)
 }
