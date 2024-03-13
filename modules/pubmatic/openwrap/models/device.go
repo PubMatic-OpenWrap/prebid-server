@@ -99,7 +99,11 @@ func (e *ExtDevice) getStringValue(key string) (value string, found bool) {
 	if !found {
 		return "", found
 	}
-	value, _ = val.(string)
+	var ok bool
+	value, ok = val.(string)
+	if !ok {
+		delete(e.data, key)
+	}
 	return strings.TrimSpace(value), found
 }
 
