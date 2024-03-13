@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -755,6 +755,34 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				}
 				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("123", "12", nil)
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 2, 5890).WillReturnRows(rowsWrapperVersion)
+				return db
+			},
+		},
+		{
+			name: "Platform is empty string",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						LiveVersionInnerQuery: models.TestQuery,
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
+			},
+			expectedVersionID:              251,
+			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", "")
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 				return db
 			},
 		},
