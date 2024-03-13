@@ -53,8 +53,9 @@ type NativeConfig struct {
 }
 
 type Video struct {
-	Enabled *bool        `json:"enabled,omitempty"`
-	Config  *VideoConfig `json:"config,omitempty"`
+	Enabled              *bool        `json:"enabled,omitempty"`
+	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
+	Config               *VideoConfig `json:"config,omitempty"`
 }
 
 // Struct for UniversalPixel
