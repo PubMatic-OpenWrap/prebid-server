@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"math/rand"
 	"os"
 	"regexp"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 )
 
@@ -309,4 +311,19 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
+}
+
+// for AMP requests based on traffic percentage, we will decide to send video or not
+// if traffic percentage is not defined then send video
+// if traffic percentage is defined then send video based on percentage
+func checkIsVideoEnabledForAMP(endpont string, adUnitConfig *adunitconfig.AdConfig) bool {
+	if adUnitConfig == nil || adUnitConfig.Video == nil || adUnitConfig.Video.Enabled == nil || !*adUnitConfig.Video.Enabled {
+		return false
+	}
+	if endpont == models.EndpointAMP {
+		if adUnitConfig.Video.AmpTrafficPercentage == nil || rand.Intn(100) < *adUnitConfig.Video.AmpTrafficPercentage {
+			return true
+		}
+	}
+	return false
 }
