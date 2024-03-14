@@ -55,6 +55,8 @@ git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240215114830-026b72bf5a2f h1:nCrSz
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240215114830-026b72bf5a2f/go.mod h1:dgTumQ6/KYeLbpWq3HVOaqkZos6Q0QGwZmQmEIhQ3To=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240314073537-3d509a39c7d3 h1:MRuY2vSVOLeO1QdSMI+m9I06l7jKwOV5pI+ntEMatp8=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240314073537-3d509a39c7d3/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240314123642-8a380e78e281 h1:9orT+Dljy2DRGWZvLqK96HObhfsVNedRfGHv+h/agH4=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240314123642-8a380e78e281/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
