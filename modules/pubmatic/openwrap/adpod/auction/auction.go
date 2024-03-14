@@ -134,7 +134,11 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 
 			//get duration of creative
 			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, sequence)
-
+			if eachImpCtx.BidIDToDur == nil {
+				eachImpCtx.BidIDToDur = map[string]int64{}
+			}
+			eachImpCtx.BidIDToDur[bid.ID] = duration
+			impCtx[impId] = eachImpCtx
 			eachImpBid := Bid{
 				Bid:               bid,
 				ExtBid:            ext,
