@@ -1159,3 +1159,139 @@ func TestCheckIsVideoEnabledForAMP(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRequestIP(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		request *http.Request
+		body    []byte
+		want    string
+	}{
+		{
+			name: "Vaild IP present in device ip only",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.23.14.71","ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "10.23.14.71",
+		},
+		{
+			name: "Vaild IP present in device ip and X-FORWARDED-FOR",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				r.Header.Add("X-FORWARDED-FOR", "10.12.13.14")
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.23.14.71","ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "10.23.14.71",
+		},
+		{
+			name: "Vaild IP present X-FORWARDED-FOR",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				r.Header.Add("X-FORWARDED-FOR", "10.12.13.14")
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "10.12.13.14",
+		},
+		{
+			name: "No Vaild IP present",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetRequestIP(tt.body, tt.request); got != tt.want {
+				t.Errorf("GetRequestIP() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetRequestUserAgent(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		request *http.Request
+		body    []byte
+		want    string
+	}{
+		{
+			name: "Vaild IP present in device UA only",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.23.14.71","ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
+		},
+		{
+			name: "Vaild IP present in device ua and header",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				r.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36")
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.23.14.71","ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
+		},
+		{
+			name: "Vaild IP present header only",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				r.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36")
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.20.12.45"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+		},
+		{
+			name: "No Vaild UA present",
+			request: func() *http.Request {
+				r, err := http.NewRequest("POST", "http://localhost/openrtb/2.5?sshb=1", nil)
+				if err != nil {
+					panic(err)
+				}
+				return r
+			}(),
+			body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","id":"div-gpt-ad-1460505748561-0","banner":{"format":[{"w":300,"h":250}]}}],"device":{"ip":"10.20.12.45"},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3"}`),
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetRequestUserAgent(tt.body, tt.request); got != tt.want {
+				t.Errorf("GetRequestUserAgent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

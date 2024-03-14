@@ -2,10 +2,12 @@ package openwrap
 
 import (
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
@@ -323,4 +325,22 @@ func isVideoEnabledForAMP(adUnitConfig *adunitconfig.AdConfig) bool {
 		return true
 	}
 	return false
+}
+
+func GetRequestIP(body []byte, request *http.Request) string {
+	ipBytes, _, _, _ := jsonparser.Get(body, "device", "ip")
+	reqIP := string(ipBytes)
+	if len(reqIP) > 0 {
+		return reqIP
+	}
+	return models.GetIP(request)
+}
+
+func GetRequestUserAgent(body []byte, request *http.Request) string {
+	uaBytes, _, _, _ := jsonparser.Get(body, "device", "ua")
+	reqUa := string(uaBytes)
+	if len(reqUa) > 0 {
+		return reqUa
+	}
+	return request.Header.Get("User-Agent")
 }

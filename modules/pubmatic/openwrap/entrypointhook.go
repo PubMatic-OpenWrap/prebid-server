@@ -185,23 +185,3 @@ func GetEndpoint(path, source string) string {
 	}
 	return ""
 }
-
-func GetRequestIP(payload hookstage.EntrypointPayload) string {
-	ipBytes, _, _, _ := jsonparser.Get(payload.Body, "device", "ip")
-	reqIP := string(ipBytes)
-	if len(reqIP) > 0 {
-		return reqIP
-	} else {
-		return models.GetIP(payload.Request)
-	}
-}
-
-func GetRequestUserAgent(payload hookstage.EntrypointPayload) string {
-	uaBytes, _, _, _ := jsonparser.Get(payload.Body, "device", "ua")
-	reqUa := string(uaBytes)
-	if len(reqUa) > 0 {
-		return reqUa
-	} else {
-		return payload.Request.Header.Get("User-Agent")
-	}
-}
