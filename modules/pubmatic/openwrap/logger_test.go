@@ -4,13 +4,16 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getIncomingSlots(t *testing.T) {
+func TestGetIncomingSlots(t *testing.T) {
 	type args struct {
-		imp openrtb2.Imp
+		imp            openrtb2.Imp
+		videoAdUnitCtx models.AdUnitCtx
 	}
 	tests := []struct {
 		name string
@@ -135,10 +138,121 @@ func Test_getIncomingSlots(t *testing.T) {
 			},
 			want: []string{"300x250"},
 		},
+		{
+			name: "video sizes from adunit config, sizes not present in request",
+			args: args{
+				imp: openrtb2.Imp{
+					ID:    "1",
+					Video: &openrtb2.Video{},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(true),
+							Config: &adunitconfig.VideoConfig{
+								Video: openrtb2.Video{
+									W: 640,
+									H: 480,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"640x480"},
+		},
+		{
+			name: "video sizes from request, sizes present in adunit and request",
+			args: args{
+				imp: openrtb2.Imp{
+					ID: "1",
+					Video: &openrtb2.Video{
+						W: 380,
+						H: 120,
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(true),
+							Config: &adunitconfig.VideoConfig{
+								Video: openrtb2.Video{
+									W: 640,
+									H: 480,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"380x120"},
+		},
+		{
+			name: "video object presnt but sizes not provided",
+			args: args{
+				imp: openrtb2.Imp{
+					ID:    "1",
+					Video: &openrtb2.Video{},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{},
+			},
+			want: []string{"0x0"},
+		},
+		{
+			name: "No sizes as video slot disabled from adunit",
+			args: args{
+				imp: openrtb2.Imp{
+					ID: "1",
+					Video: &openrtb2.Video{
+						W: 380,
+						H: 120,
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Enabled: ptrutil.ToPtr(false),
+							Config: &adunitconfig.VideoConfig{
+								Video: openrtb2.Video{
+									W: 640,
+									H: 480,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "slot from adunit, enabled is not specified",
+			args: args{
+				imp: openrtb2.Imp{
+					ID: "1",
+					Video: &openrtb2.Video{
+						W: 0,
+						H: 0,
+					},
+				},
+				videoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{
+							Config: &adunitconfig.VideoConfig{
+								Video: openrtb2.Video{
+									W: 640,
+									H: 480,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"640x480"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			slots := getIncomingSlots(tt.args.imp)
+			slots := getIncomingSlots(tt.args.imp, tt.args.videoAdUnitCtx)
 			assert.ElementsMatch(t, tt.want, slots, "mismatched slots")
 		})
 	}

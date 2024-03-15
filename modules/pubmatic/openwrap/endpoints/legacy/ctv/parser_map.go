@@ -241,6 +241,7 @@ var ortbMapper = &ParserMap{
 		//Device.Ext.IfaType
 		ORTBDeviceExtIfaType:   Parser.ORTBDeviceExtIfaType,
 		ORTBDeviceExtSessionID: Parser.ORTBDeviceExtSessionID,
+		ORTBDeviceExtATTS:      Parser.ORTBDeviceExtATTS,
 
 		//User
 		ORTBUserID:         Parser.ORTBUserID,
@@ -550,6 +551,7 @@ type Parser interface {
 	//DeviceExtIfaType
 	ORTBDeviceExtIfaType() error
 	ORTBDeviceExtSessionID() error
+	ORTBDeviceExtATTS() error
 
 	//Device.Geo
 	ORTBDeviceGeoLat() error

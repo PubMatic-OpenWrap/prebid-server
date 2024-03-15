@@ -298,10 +298,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Data.PbAdslot = imp.TagID
 		}
 
-		incomingSlots := getIncomingSlots(imp)
-		slotName := getSlotName(imp.TagID, impExt)
-		adUnitName := getAdunitName(imp.TagID, impExt)
-
 		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
 			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
@@ -320,6 +316,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, connectionType)
 			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 		}
+
+		incomingSlots := getIncomingSlots(imp, videoAdUnitCtx)
+		slotName := getSlotName(imp.TagID, impExt)
+		adUnitName := getAdunitName(imp.TagID, impExt)
 
 		// ignore adunit config status for native as it is not supported for native
 		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx) {

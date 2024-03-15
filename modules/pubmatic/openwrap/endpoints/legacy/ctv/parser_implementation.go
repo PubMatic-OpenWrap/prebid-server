@@ -2078,7 +2078,7 @@ func (o *OpenRTB) ORTBImpExtPrebid() (err error) {
 		return
 	}
 
-	o.ortb.Imp[0].Ext = json.RawMessage(data)
+	o.ortb.Imp[0].Ext = data
 	return
 }
 
@@ -3330,7 +3330,7 @@ func (o *OpenRTB) ORTBRegsExtGdpr() (err error) {
 
 	regsExt := map[string]interface{}{}
 	if o.ortb.Regs.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &regsExt)
+		err = json.Unmarshal(o.ortb.Regs.Ext, &regsExt)
 		if err != nil {
 			return
 		}
@@ -3358,7 +3358,7 @@ func (o *OpenRTB) ORTBRegsExtUSPrivacy() (err error) {
 
 	regsExt := map[string]interface{}{}
 	if o.ortb.Regs.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &regsExt)
+		err = json.Unmarshal(o.ortb.Regs.Ext, &regsExt)
 		if err != nil {
 			return
 		}
@@ -4191,7 +4191,7 @@ func (o *OpenRTB) ORTBAppContentExt(key string, value *string) (err error) {
 	}
 
 	cntExt := JSONNode{}
-	if o.ortb.App.Content.Producer.Ext != nil {
+	if o.ortb.App.Content.Ext != nil {
 		err = json.Unmarshal(o.ortb.App.Content.Ext, &cntExt)
 		if err != nil {
 			return
@@ -4246,7 +4246,7 @@ func (o *OpenRTB) ORTBDeviceExt(key string, value *string) (err error) {
 
 	deviceExt := JSONNode{}
 	if o.ortb.Device.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Geo.Ext, &deviceExt)
+		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
 		if err != nil {
 			return
 		}
@@ -4273,7 +4273,7 @@ func (o *OpenRTB) ORTBDeviceGeoExt(key string, value *string) (err error) {
 
 	deviceGeoExt := JSONNode{}
 	if o.ortb.Device.Geo.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Geo.Ext, &deviceGeoExt)
+		err = json.Unmarshal(o.ortb.Device.Geo.Ext, &deviceGeoExt)
 		if err != nil {
 			return
 		}
@@ -4296,7 +4296,7 @@ func (o *OpenRTB) ORTBUserExt(key string, value *string) (err error) {
 	}
 	userExt := JSONNode{}
 	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Geo.Ext, &userExt)
+		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
 		if err != nil {
 			return
 		}
@@ -4385,6 +4385,34 @@ func (o *OpenRTB) ORTBDeviceExtSessionID() (err error) {
 		}
 	}
 	deviceExt[ORTBExtSessionID] = val
+
+	data, err := json.Marshal(deviceExt)
+	if err != nil {
+		return
+	}
+	o.ortb.Device.Ext = data
+	return
+}
+
+// ORTBDeviceExtATTS will read and set ortb device.ext.atts parameter
+func (o *OpenRTB) ORTBDeviceExtATTS() (err error) {
+	value, ok, err := o.values.GetFloat64(ORTBDeviceExtATTS)
+	if !ok || err != nil {
+		return
+	}
+
+	if o.ortb.Device == nil {
+		o.ortb.Device = &openrtb2.Device{}
+	}
+
+	deviceExt := map[string]interface{}{}
+	if o.ortb.Device.Ext != nil {
+		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
+		if err != nil {
+			return
+		}
+	}
+	deviceExt[ORTBExtATTS] = value
 
 	data, err := json.Marshal(deviceExt)
 	if err != nil {
