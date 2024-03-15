@@ -577,7 +577,12 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-	if imp.Video == nil && !rCtx.AmpVideoEnabled {
+	//For AMP request, if AMPVideoEnabled is true then crate a empty video object and update with adunitConfigs
+	if rCtx.AmpVideoEnabled {
+		imp.Video = &openrtb2.Video{}
+	}
+
+	if imp.Video == nil {
 		return
 	}
 
@@ -614,7 +619,6 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 
 	//For AMP request, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
 	if rCtx.AmpVideoEnabled {
-		imp.Video = &openrtb2.Video{}
 		if adUnitCfg.Video.Config != nil {
 			updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 		}
