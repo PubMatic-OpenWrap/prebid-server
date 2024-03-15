@@ -31,7 +31,9 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	}
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
-	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
+	if !vastUnwrapEnabled {
+		vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
+	}
 
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
 		result.DebugMessages = append(result.DebugMessages,
