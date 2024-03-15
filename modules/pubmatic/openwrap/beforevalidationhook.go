@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/boolutil"
@@ -269,7 +270,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
-			if checkIsVideoEnabledForAMP(rCtx.Endpoint, videoAdUnitCtx.AppliedSlotAdUnitConfig) {
+			if rCtx.Endpoint == models.EndpointAMP && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
+				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
 				rCtx.AmpVideoEnabled = true
 				imp.Video = &openrtb2.Video{}
 			}
@@ -633,10 +635,11 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		return
 	}
 
+	//For AMP request, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
 	if rCtx.AmpVideoEnabled {
 		imp.Video = &openrtb2.Video{}
 		if adUnitCfg.Video.Config != nil {
-			updateImpVideoWithVideoConfig(rCtx, imp)
+			updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 		}
 		updateAmpImpVideoWithDefault(imp)
 		return
@@ -645,7 +648,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	if adUnitCfg.Video.Config == nil {
 		return
 	}
-	updateImpVideoWithVideoConfig(rCtx, imp)
+	updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 }
 
 func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
@@ -925,9 +928,7 @@ func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 	return impExt.Data.PbAdslot
 }
 
-func updateImpVideoWithVideoConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-
-	configObjInVideoConfig := rCtx.ImpBidCtx[imp.ID].VideoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config
+func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {
 
 	if len(imp.Video.MIMEs) == 0 {
 		imp.Video.MIMEs = configObjInVideoConfig.MIMEs
@@ -1072,15 +1073,6 @@ func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
 	}
 	if imp.Video.Skip == nil {
 		imp.Video.Skip = ptrutil.ToPtr[int8](0)
-	}
-	if imp.Video.SkipMin == 0 {
-		imp.Video.SkipMin = 0
-	}
-	if imp.Video.SkipAfter == 0 {
-		imp.Video.SkipAfter = 0
-	}
-	if imp.Video.BoxingAllowed == 0 {
-		imp.Video.BoxingAllowed = 0
 	}
 	if imp.Video.PlaybackMethod == nil {
 		imp.Video.PlaybackMethod = []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff}

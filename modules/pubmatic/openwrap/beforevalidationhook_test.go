@@ -21,6 +21,7 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
@@ -3979,8 +3980,8 @@ func TestGetTagID(t *testing.T) {
 
 func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 	type args struct {
-		rCtx models.RequestCtx
-		imp  *openrtb2.Imp
+		imp                    *openrtb2.Imp
+		configObjInVideoConfig *modelsAdunitConfig.VideoConfig
 	}
 	tests := []struct {
 		name         string
@@ -3994,45 +3995,33 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 					ID:    "123",
 					Video: &openrtb2.Video{},
 				},
-				rCtx: models.RequestCtx{
-					ImpBidCtx: map[string]models.ImpCtx{
-						"123": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Config: &adunitconfig.VideoConfig{
-											Video: openrtb2.Video{
-												W:              300,
-												H:              250,
-												MIMEs:          []string{"MP4"},
-												Linearity:      adcom1.LinearityNonLinear,
-												StartDelay:     adcom1.StartMidRoll.Ptr(),
-												MinDuration:    20,
-												MaxDuration:    50,
-												Placement:      adcom1.VideoPlacementInStream,
-												Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
-												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
-												Skip:           ptrutil.ToPtr(int8(1)),
-												SkipMin:        10,
-												SkipAfter:      5,
-												BoxingAllowed:  2,
-												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
-												PlaybackEnd:    adcom1.PlaybackCompletion,
-												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												Protocol:       adcom1.CreativeVAST10,
-												Sequence:       1,
-												CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
-												Pos:            adcom1.PositionAboveFold.Ptr(),
-												API:            []adcom1.APIFramework{adcom1.APIVPAID10},
-												CompanionAd:    []openrtb2.Banner{},
-												BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
-												MaxExtended:    100,
-											},
-										},
-									},
-								},
-							},
-						},
+				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+					Video: openrtb2.Video{
+						W:              300,
+						H:              250,
+						MIMEs:          []string{"MP4"},
+						Linearity:      adcom1.LinearityNonLinear,
+						StartDelay:     adcom1.StartMidRoll.Ptr(),
+						MinDuration:    20,
+						MaxDuration:    50,
+						Placement:      adcom1.VideoPlacementInStream,
+						Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        10,
+						SkipAfter:      5,
+						BoxingAllowed:  2,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+						PlaybackEnd:    adcom1.PlaybackCompletion,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+						Protocol:       adcom1.CreativeVAST10,
+						Sequence:       1,
+						CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+						Pos:            adcom1.PositionAboveFold.Ptr(),
+						API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+						CompanionAd:    []openrtb2.Banner{},
+						BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+						MaxExtended:    100,
 					},
 				},
 			},
@@ -4075,45 +4064,33 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 					},
 				},
 
-				rCtx: models.RequestCtx{
-					ImpBidCtx: map[string]models.ImpCtx{
-						"123": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Config: &adunitconfig.VideoConfig{
-											Video: openrtb2.Video{
-												W:              400,
-												H:              300,
-												MIMEs:          []string{"MP4"},
-												Linearity:      adcom1.LinearityNonLinear,
-												StartDelay:     adcom1.StartMidRoll.Ptr(),
-												MinDuration:    20,
-												MaxDuration:    50,
-												Placement:      adcom1.VideoPlacementInStream,
-												Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
-												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
-												Skip:           ptrutil.ToPtr(int8(1)),
-												SkipMin:        10,
-												SkipAfter:      5,
-												BoxingAllowed:  2,
-												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
-												PlaybackEnd:    adcom1.PlaybackCompletion,
-												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												Protocol:       adcom1.CreativeVAST10,
-												Sequence:       1,
-												CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
-												Pos:            adcom1.PositionAboveFold.Ptr(),
-												API:            []adcom1.APIFramework{adcom1.APIVPAID10},
-												CompanionAd:    []openrtb2.Banner{},
-												BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
-												MaxExtended:    100,
-											},
-										},
-									},
-								},
-							},
-						},
+				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+					Video: openrtb2.Video{
+						W:              400,
+						H:              300,
+						MIMEs:          []string{"MP4"},
+						Linearity:      adcom1.LinearityNonLinear,
+						StartDelay:     adcom1.StartMidRoll.Ptr(),
+						MinDuration:    20,
+						MaxDuration:    50,
+						Placement:      adcom1.VideoPlacementInStream,
+						Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        10,
+						SkipAfter:      5,
+						BoxingAllowed:  2,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+						PlaybackEnd:    adcom1.PlaybackCompletion,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+						Protocol:       adcom1.CreativeVAST10,
+						Sequence:       1,
+						CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+						Pos:            adcom1.PositionAboveFold.Ptr(),
+						API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+						CompanionAd:    []openrtb2.Banner{},
+						BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+						MaxExtended:    100,
 					},
 				},
 			},
@@ -4147,7 +4124,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		updateImpVideoWithVideoConfig(tt.args.rCtx, tt.args.imp)
+		updateImpVideoWithVideoConfig(tt.args.imp, tt.args.configObjInVideoConfig)
 		assert.Equal(t, tt.wantImpVideo, tt.args.imp.Video, tt.name)
 	}
 }

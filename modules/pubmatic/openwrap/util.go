@@ -316,14 +316,11 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 // for AMP requests based on traffic percentage, we will decide to send video or not
 // if traffic percentage is not defined then send video
 // if traffic percentage is defined then send video based on percentage
-func checkIsVideoEnabledForAMP(endpont string, adUnitConfig *adunitconfig.AdConfig) bool {
+func isVideoEnabledForAMP(adUnitConfig *adunitconfig.AdConfig) bool {
 	if adUnitConfig == nil || adUnitConfig.Video == nil || adUnitConfig.Video.Enabled == nil || !*adUnitConfig.Video.Enabled {
 		return false
-	}
-	if endpont == models.EndpointAMP {
-		if adUnitConfig.Video.AmpTrafficPercentage == nil || rand.Intn(100) < *adUnitConfig.Video.AmpTrafficPercentage {
-			return true
-		}
+	} else if adUnitConfig.Video.AmpTrafficPercentage == nil || rand.Intn(100) < *adUnitConfig.Video.AmpTrafficPercentage {
+		return true
 	}
 	return false
 }

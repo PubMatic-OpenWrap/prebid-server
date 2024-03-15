@@ -1079,9 +1079,8 @@ func Test_getIP(t *testing.T) {
 	}
 }
 
-func Test_checkIsVideoEnabledForAMP(t *testing.T) {
+func TestCheckIsVideoEnabledForAMP(t *testing.T) {
 	type args struct {
-		endpont      string
 		adUnitConfig *adunitconfig.AdConfig
 	}
 	tests := []struct {
@@ -1092,7 +1091,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "empty_adunitConfig",
 			args: args{
-				endpont:      models.EndpointAMP,
 				adUnitConfig: nil,
 			},
 			want: false,
@@ -1100,7 +1098,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "adunitConfig_video_is_nil",
 			args: args{
-				endpont: models.EndpointAMP,
 				adUnitConfig: &adunitconfig.AdConfig{
 					Video: nil,
 				},
@@ -1110,7 +1107,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "adunitConfig_video_is_disabled",
 			args: args{
-				endpont: models.EndpointAMP,
 				adUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
 						Enabled: ptrutil.ToPtr(false),
@@ -1122,7 +1118,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "adunitConfig_video_is_enabled_but_empty_AmptrafficPercentage",
 			args: args{
-				endpont: models.EndpointAMP,
 				adUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
 						Enabled:              ptrutil.ToPtr(true),
@@ -1135,7 +1130,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "adunitConfig_video_is_enabled_but_and_AmptrafficPercentage_is_0",
 			args: args{
-				endpont: models.EndpointAMP,
 				adUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
 						Enabled:              ptrutil.ToPtr(true),
@@ -1148,7 +1142,6 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 		{
 			name: "adunitConfig_video_is_enabled_but_and_AmptrafficPercentage_is_100",
 			args: args{
-				endpont: models.EndpointAMP,
 				adUnitConfig: &adunitconfig.AdConfig{
 					Video: &adunitconfig.Video{
 						Enabled:              ptrutil.ToPtr(true),
@@ -1161,7 +1154,7 @@ func Test_checkIsVideoEnabledForAMP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := checkIsVideoEnabledForAMP(tt.args.endpont, tt.args.adUnitConfig)
+			got := isVideoEnabledForAMP(tt.args.adUnitConfig)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
