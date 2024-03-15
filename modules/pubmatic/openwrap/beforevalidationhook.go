@@ -217,29 +217,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			return result, err
 		}
 
-		if imp.Video != nil {
-			slotType = "video"
-
-			//add stats for video instl impressions
-			if imp.Instl == 1 {
-				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
-			}
-			if len(requestExt.Prebid.Macros) == 0 {
-				// provide custom macros for video event trackers
-				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
-			}
-
-			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
-				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					isAdPodImpression = true
-					if !isAdPodRequest {
-						isAdPodRequest = true
-						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
-					}
-				}
-			}
-		}
-
 		div := ""
 		if impExt.Wrapper != nil {
 			div = impExt.Wrapper.Div
