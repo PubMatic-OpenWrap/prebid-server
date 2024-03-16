@@ -272,8 +272,16 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 	rejectedBids := []*entities.PbsOrtbSeatBid{}
 	if account.BidPriceThreshold != 0 {
 		for bidderName, seatBid := range seatBids {
+			if seatBid.Bids == nil {
+				continue
+			}
+
 			eligibleBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
 			for _, bid := range seatBid.Bids {
+				if bid.Bid == nil {
+					continue
+				}
+
 				rate, err := conversions.GetRate(seatBid.Currency, "USD")
 				if err != nil {
 					continue
