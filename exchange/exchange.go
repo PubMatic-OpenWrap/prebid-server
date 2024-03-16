@@ -385,11 +385,20 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		r.BidderResponseStartTime = extraRespInfo.bidderResponseStartTime
 	}
 
+	var seatNonBids = nonBids{}
+
+	if anyBidsReturned {
+		var rejectedBids []*entities.PbsOrtbSeatBid
+		adapterBids, rejectedBids = applyBidPriceThreshold(adapterBids, r.Account, conversions)
+		if len(rejectedBids) > 0 {
+			e.updateSeatNonBidsPriceThreshold(&seatNonBids, rejectedBids)
+		}
+	}
+
 	var (
 		auc            *auction
 		cacheErrs      []error
 		bidResponseExt *openrtb_ext.ExtBidResponse
-		seatNonBids    = nonBids{}
 	)
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)

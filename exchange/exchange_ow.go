@@ -11,6 +11,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange/entities"
 	"github.com/prebid/prebid-server/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/metrics/pubmatic_stats"
@@ -264,4 +266,36 @@ func setPriceGranularityOW(pg *openrtb_ext.PriceGranularity) *openrtb_ext.PriceG
 	}
 
 	return pg
+}
+
+func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, account config.Account, conversions currency.Conversions) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []*entities.PbsOrtbSeatBid) {
+	rejectedBids := []*entities.PbsOrtbSeatBid{}
+	if account.BidPriceThreshold != 0 {
+		for bidderName, seatBid := range seatBids {
+			eligibleBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
+			for _, bid := range seatBid.Bids {
+				rate, err := conversions.GetRate(seatBid.Currency, "USD")
+				if err != nil {
+					continue
+				}
+				price := rate * bid.Bid.Price
+				if price >= account.BidPriceThreshold {
+					eligibleBids = append(eligibleBids, bid)
+				} else {
+					rejectedBids = append(rejectedBids, seatBid)
+				}
+			}
+			seatBid.Bids = eligibleBids
+			seatBids[bidderName] = seatBid
+		}
+	}
+	return seatBids, rejectedBids
+}
+
+func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
+	for _, pbsRejSeatBid := range rejectedBids {
+		for _, pbsRejBid := range pbsRejSeatBid.Bids {
+			seatNonBids.addBid(pbsRejBid, int(ResponseRejectedBidPriceTooHigh), pbsRejSeatBid.Seat)
+		}
+	}
 }
