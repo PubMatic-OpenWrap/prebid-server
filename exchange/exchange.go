@@ -782,11 +782,7 @@ func (e *exchange) getAllBids(
 						if seatBid.Currency != "" {
 							rate, err := conversions.GetRate(seatBid.Currency, "USD")
 							if err != nil {
-								logBidsAbovePriceThreshold([]*entities.PbsOrtbSeatBid{{
-									Bids:      []*entities.PbsOrtbBid{bid},
-									HttpCalls: seatBid.HttpCalls,
-								}})
-								continue
+								glog.Error("currencyconversionfailed getAllBids", bid.Bid.ID, seatBid.Currency, err.Error())
 							}
 							cpm = cpm * rate
 						}
