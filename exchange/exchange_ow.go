@@ -291,6 +291,7 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 				if price <= account.BidPriceThreshold {
 					eligibleBids = append(eligibleBids, bid)
 				} else {
+					bid.Bid.Price = 0
 					rejectedBids = append(rejectedBids, &entities.PbsOrtbSeatBid{
 						Seat:      seatBid.Seat,
 						Currency:  seatBid.Currency,
