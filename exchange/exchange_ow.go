@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -291,9 +292,10 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 					eligibleBids = append(eligibleBids, bid)
 				} else {
 					rejectedBids = append(rejectedBids, &entities.PbsOrtbSeatBid{
-						Currency: seatBid.Currency,
-						Seat:     seatBid.Seat,
-						Bids:     []*entities.PbsOrtbBid{bid},
+						Seat:      seatBid.Seat,
+						Currency:  seatBid.Currency,
+						HttpCalls: seatBid.HttpCalls,
+						Bids:      []*entities.PbsOrtbBid{bid},
 					})
 				}
 			}
@@ -304,8 +306,30 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 				delete(seatBids, bidderName)
 			}
 		}
+		logRejectedBidPriceThreshold(rejectedBids)
 	}
 	return seatBids, rejectedBids
+}
+
+func logRejectedBidPriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
+	if len(rejectedBids) == 0 {
+		return
+	}
+
+	var httpCalls []*openrtb_ext.ExtHttpCall
+	for i := range rejectedBids {
+		httpCalls = append(httpCalls, rejectedBids[i].HttpCalls...)
+		rejectedBids[i].HttpCalls = nil
+	}
+
+	if len(httpCalls) > 0 {
+		jsonBytes, err := json.Marshal(struct {
+			ExtHttpCall []*openrtb_ext.ExtHttpCall
+		}{
+			ExtHttpCall: httpCalls,
+		})
+		glog.Error("owbidrejected due to price threshold:", string(jsonBytes), err)
+	}
 }
 
 func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
