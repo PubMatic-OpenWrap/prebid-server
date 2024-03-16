@@ -287,9 +287,7 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 				if seatBid.Currency != "" {
 					rate, err := conversions.GetRate(seatBid.Currency, "USD")
 					if err != nil {
-						eligibleBids = append(eligibleBids, bid)
 						glog.Error("currencyconversionfailed applyBidPriceThreshold", bid.Bid.ID, seatBid.Currency, err.Error())
-						continue
 					} else {
 						price = rate * bid.Bid.Price
 					}
