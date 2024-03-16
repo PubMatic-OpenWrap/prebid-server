@@ -283,11 +283,15 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 					continue
 				}
 
-				rate, err := conversions.GetRate(seatBid.Currency, "USD")
-				if err != nil {
-					continue
+				price := bid.Bid.Price
+				if seatBid.Currency != "" {
+					rate, err := conversions.GetRate(seatBid.Currency, "USD")
+					if err != nil {
+						continue
+					}
+					price = rate * bid.Bid.Price
 				}
-				price := rate * bid.Bid.Price
+
 				if price <= account.BidPriceThreshold {
 					eligibleBids = append(eligibleBids, bid)
 				} else {
@@ -307,12 +311,16 @@ func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrt
 				delete(seatBids, bidderName)
 			}
 		}
-		logRejectedBidPriceThreshold(rejectedBids)
+		logBidsAbovePriceThreshold(rejectedBids)
+		for i := range rejectedBids {
+			rejectedBids[i].HttpCalls = nil
+		}
+
 	}
 	return seatBids, rejectedBids
 }
 
-func logRejectedBidPriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
+func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 	if len(rejectedBids) == 0 {
 		return
 	}
@@ -320,7 +328,6 @@ func logRejectedBidPriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 	var httpCalls []*openrtb_ext.ExtHttpCall
 	for i := range rejectedBids {
 		httpCalls = append(httpCalls, rejectedBids[i].HttpCalls...)
-		rejectedBids[i].HttpCalls = nil
 	}
 
 	if len(httpCalls) > 0 {
@@ -330,6 +337,7 @@ func logRejectedBidPriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 			ExtHttpCall: httpCalls,
 		})
 		glog.Error("owbidrejected due to price threshold:", string(jsonBytes), err)
+		fmt.Println("owbidrejected due to price threshold:", string(jsonBytes), err)
 	}
 }
 

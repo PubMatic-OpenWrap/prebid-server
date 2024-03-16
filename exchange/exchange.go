@@ -779,6 +779,23 @@ func (e *exchange) getAllBids(
 					for _, bid := range seatBid.Bids {
 						var cpm = float64(bid.Bid.Price * 1000)
 
+						if seatBid.Currency != "" {
+							rate, err := conversions.GetRate(seatBid.Currency, "USD")
+							if err != nil {
+								logBidsAbovePriceThreshold([]*entities.PbsOrtbSeatBid{{
+									Bids:      []*entities.PbsOrtbBid{bid},
+									HttpCalls: seatBid.HttpCalls,
+								}})
+								continue
+							}
+							cpm = cpm * rate
+						}
+
+						logBidsAbovePriceThreshold([]*entities.PbsOrtbSeatBid{{
+							Bids:      []*entities.PbsOrtbBid{bid},
+							HttpCalls: seatBid.HttpCalls,
+						}})
+
 						e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 						e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.BidType, bid.Bid.AdM != "")
 						if bid.BidType == openrtb_ext.BidTypeVideo && bid.BidVideo != nil && bid.BidVideo.Duration > 0 {
