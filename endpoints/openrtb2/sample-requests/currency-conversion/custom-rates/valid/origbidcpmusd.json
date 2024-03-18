@@ -59,6 +59,9 @@
                 "origbidcpm": 5,
                 "origbidcur": "MXN",
                 "prebid": {
+                  "meta": {
+                    "adaptercode": "pubmatic"
+                  },
                   "type": "banner"
                 },
                 "origbidcpmusd": 0.2491280518186348
