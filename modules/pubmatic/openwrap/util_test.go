@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -17,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
