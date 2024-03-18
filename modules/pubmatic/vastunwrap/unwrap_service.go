@@ -53,7 +53,7 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 		bid.Bid.AdM = string(respBody)
 	}
 
-	glog.Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] statsEnabled:[%v]",
+	glog.V(3).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] statsEnabled:[%v]",
 		accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, respStatus, httpResp.Code, isStatsEnabled)
 
 }
