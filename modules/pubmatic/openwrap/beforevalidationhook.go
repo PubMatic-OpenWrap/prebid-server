@@ -626,10 +626,9 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		return
 	}
 
-	if adUnitCfg.Video.Config == nil {
-		return
+	if adUnitCfg.Video.Config != nil {
+		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 	}
-	updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 }
 
 func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
