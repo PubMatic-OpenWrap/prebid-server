@@ -97,6 +97,7 @@ type RequestCtx struct {
 	CurrencyConversion func(from string, to string, value float64) (float64, error) `json:"-"`
 	MatchedImpression  map[string]int
 	CustomDimensions   map[string]CustomDimension
+	AmpVideoEnabled    bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 }
 
 type OwBid struct {
