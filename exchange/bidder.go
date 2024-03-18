@@ -406,18 +406,22 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 								Seat:      bidderName.String(),
 							}
 						}
+						alternateBidderCode := ""
+						if !strings.EqualFold(bidderRequest.BidderName.String(), bidderName.String()) {
+							alternateBidderCode = bidderRequest.BidderName.String()
+						}
 
 						seatBidMap[bidderName].Bids = append(seatBidMap[bidderName].Bids, &entities.PbsOrtbBid{
-							Bid:            bidResponse.Bids[i].Bid,
-							BidMeta:        bidResponse.Bids[i].BidMeta,
-							BidType:        bidResponse.Bids[i].BidType,
-							BidVideo:       bidResponse.Bids[i].BidVideo,
-							DealPriority:   bidResponse.Bids[i].DealPriority,
-							OriginalBidCPM: originalBidCpm,
-							OriginalBidCur: bidResponse.Currency,
-							BidTargets:     bidResponse.Bids[i].BidTargets,
-
-							OriginalBidCPMUSD: originalBidCPMUSD,
+							Bid:                 bidResponse.Bids[i].Bid,
+							BidMeta:             bidResponse.Bids[i].BidMeta,
+							BidType:             bidResponse.Bids[i].BidType,
+							BidVideo:            bidResponse.Bids[i].BidVideo,
+							DealPriority:        bidResponse.Bids[i].DealPriority,
+							OriginalBidCPM:      originalBidCpm,
+							OriginalBidCur:      bidResponse.Currency,
+							BidTargets:          bidResponse.Bids[i].BidTargets,
+							OriginalBidCPMUSD:   originalBidCPMUSD,
+							AlternateBidderCode: alternateBidderCode,
 						})
 						seatBidMap[bidderName].Currency = currencyAfterAdjustments
 					}

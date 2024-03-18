@@ -1384,8 +1384,11 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 				Bids: &cacheInfo,
 			}
 		}
-
-		if bidExtJSON, err := makeBidExtJSON(bid.Bid.Ext, bidExtPrebid, impExtInfoMap, bid.Bid.ImpID, bid.OriginalBidCPM, bid.OriginalBidCur, bid.OriginalBidCPMUSD, adapter); err != nil {
+		adapterCode := adapter
+		if bid.AlternateBidderCode != "" {
+			adapterCode = openrtb_ext.BidderName(bid.AlternateBidderCode)
+		}
+		if bidExtJSON, err := makeBidExtJSON(bid.Bid.Ext, bidExtPrebid, impExtInfoMap, bid.Bid.ImpID, bid.OriginalBidCPM, bid.OriginalBidCur, bid.OriginalBidCPMUSD, adapterCode); err != nil {
 			errs = append(errs, err)
 		} else {
 			result = append(result, *bid.Bid)
@@ -1437,6 +1440,11 @@ func makeBidExtJSON(ext json.RawMessage, prebid *openrtb_ext.ExtBidPrebid, impEx
 		}
 		prebid.Meta = &metaContainer.Prebid.Meta
 	}
+	if prebid.Meta == nil {
+		prebid.Meta = &openrtb_ext.ExtBidPrebidMeta{}
+	}
+
+	prebid.Meta.AdapterCode = adapter.String()
 
 	// ext.prebid.storedrequestattributes and ext.prebid.passthrough
 	if impExtInfo, ok := impExtInfoMap[impId]; ok {

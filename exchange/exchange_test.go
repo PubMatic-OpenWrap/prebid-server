@@ -1640,7 +1640,7 @@ func TestBidResponseCurrency(t *testing.T) {
 					Price: 9.517803,
 					W:     300,
 					H:     250,
-					Ext:   json.RawMessage(`{"origbidcpm":9.517803,"prebid":{"type":"banner"}}`),
+					Ext:   json.RawMessage(`{"origbidcpm":9.517803,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"banner"}}`),
 				},
 			},
 		},
@@ -1783,7 +1783,7 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 		true,
 		[]byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`),
 		json.RawMessage(`{"imp_passthrough_val":1}`)}
-	expectedBidResponseExt := `{"origbidcpm":0,"prebid":{"type":"video","passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`
+	expectedBidResponseExt := `{"origbidcpm":0,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"video","passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`
 
 	actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, nil, nil, nil, true, impExtInfo, "", errList, &nonBids{})
 
@@ -2071,7 +2071,7 @@ func TestTimeoutComputation(t *testing.T) {
 	}
 }
 
-// TestExchangeJSON executes tests for all the *.json files in exchangetest.
+//TestExchangeJSON executes tests for all the *.json files in exchangetest.
 func TestExchangeJSON(t *testing.T) {
 	if specFiles, err := os.ReadDir("./exchangetest"); err == nil {
 		for _, specFile := range specFiles {
@@ -4175,7 +4175,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo","adaptercode": "adapter"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4185,7 +4185,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), nil}},
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo","adaptercode": "adapter"}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4194,7 +4194,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("video")},
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
 			origbidcpm:         0,
-			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"passthrough":{"imp_passthrough_val":1}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`,
+			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"meta":{"adaptercode": "adapter"},"passthrough":{"imp_passthrough_val":1}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4204,7 +4204,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         map[string]ImpExtInfo{"another_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4214,7 +4214,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
-			expectedBidExt:     `{"prebid":{"passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4224,7 +4224,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			impExtInfo:         nil,
-			expectedBidExt:     `{"prebid":{"type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4234,7 +4234,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"banner":{"h":480}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
-			expectedBidExt:     `{"prebid":{"passthrough":{"imp_passthrough_val":1}, "type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"passthrough":{"imp_passthrough_val":1}, "type":"video"},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4244,7 +4244,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"banner":{"h":480}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
-			expectedBidExt:     `{"prebid":{"passthrough":{"imp_passthrough_val":1}, "type":"video"}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"passthrough":{"imp_passthrough_val":1}, "type":"video"}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4254,7 +4254,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
-			expectedBidExt:     `{"prebid":{"passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"adaptercode": "adapter"},"passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4264,7 +4264,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         map[string]ImpExtInfo{},
 			origbidcpm:         0,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"meta":{"brandName":"foo"},"type":"banner"}, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"meta":{"brandName":"foo","adaptercode": "adapter"},"type":"banner"}, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4274,7 +4274,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         nil,
 			origbidcpm:         0,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"meta":{"brandName":"foo"},"type":"banner"}, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"meta":{"brandName":"foo","adaptercode": "adapter"},"type":"banner"}, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4284,7 +4284,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         nil,
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo","adaptercode": "adapter"},"type":"banner"}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4294,7 +4294,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         nil,
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo","adaptercode": "adapter"},"type":"banner"}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4304,7 +4304,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         nil,
 			origbidcpm:         -1,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo","adaptercode":"adapter"},"type":"banner"}, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -4314,7 +4314,7 @@ func TestMakeBidExtJSON(t *testing.T) {
 			impExtInfo:         nil,
 			origbidcpm:         0,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"type":"banner"}, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"origbidcpm": 0,"prebid":{"type":"banner","meta":{"adaptercode":"adapter"}}, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		//Error cases
@@ -4381,7 +4381,7 @@ func TestStoredAuctionResponses(t *testing.T) {
 		SeatBid: []openrtb2.SeatBid{
 			{
 				Bid: []openrtb2.Bid{
-					{ID: "bid_id", ImpID: "impression-id", Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"type":"video"}}`)},
+					{ID: "bid_id", ImpID: "impression-id", Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"video"}}`)},
 				},
 				Seat: "appnexus",
 			},
@@ -5561,7 +5561,8 @@ func TestGetAllBids(t *testing.T) {
 								Bid: &openrtb2.Bid{
 									ID: "2",
 								},
-								OriginalBidCur: "USD",
+								OriginalBidCur:      "USD",
+								AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 							},
 						},
 						Currency:       "USD",
@@ -5629,7 +5630,8 @@ func TestGetAllBids(t *testing.T) {
 								Bid: &openrtb2.Bid{
 									ID: "2",
 								},
-								OriginalBidCur: "USD",
+								OriginalBidCur:      "USD",
+								AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 							},
 						},
 						Currency:       "USD",
