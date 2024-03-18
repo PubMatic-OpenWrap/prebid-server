@@ -329,18 +329,16 @@ func isVideoEnabledForAMP(adUnitConfig *adunitconfig.AdConfig) bool {
 
 func GetRequestIP(body []byte, request *http.Request) string {
 	ipBytes, _, _, _ := jsonparser.Get(body, "device", "ip")
-	reqIP := string(ipBytes)
-	if len(reqIP) > 0 {
-		return reqIP
+	if len(ipBytes) > 0 {
+		return string(ipBytes)
 	}
 	return models.GetIP(request)
 }
 
 func GetRequestUserAgent(body []byte, request *http.Request) string {
 	uaBytes, _, _, _ := jsonparser.Get(body, "device", "ua")
-	reqUa := string(uaBytes)
-	if len(reqUa) > 0 {
-		return reqUa
+	if len(uaBytes) > 0 {
+		return string(uaBytes)
 	}
 	return request.Header.Get("User-Agent")
 }
