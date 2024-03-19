@@ -13,6 +13,7 @@ const (
 	BidderDistrictmDMXAlias      = "districtmDMX"
 	BidderPubMaticSecondaryAlias = "pubmatic2"
 	BidderMediaFuseAlias         = "mediafuse"
+	BidderAdformAdfAlias         = "adform"
 )
 
 const (
