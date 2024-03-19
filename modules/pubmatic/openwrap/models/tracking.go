@@ -45,6 +45,7 @@ const (
 	TRKDealID            = "di"
 	TRKCustomDimensions  = "cds"
 	TRKATTS              = "atts"
+	TRKPIID              = "piid"
 )
 
 // video error tracker url parameters
