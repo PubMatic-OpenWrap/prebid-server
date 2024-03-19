@@ -160,8 +160,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:      partnerID,
 				BidderCode:     seatBid.Seat,
-				BidID:          utils.GetOriginalBidId(bid.ID),
-				OrigBidID:      utils.GetOriginalBidId(bid.ID),
+				BidID:          bid.ImpID,
+				OrigBidID:      bid.ImpID,
 				KGPV:           kgpv,
 				NetECPM:        en,
 				GrossECPM:      eg,
@@ -172,6 +172,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorValue:     floorValue,
 				FloorRuleValue: floorRuleValue,
 				DealID:         "-1",
+				Piid:           utils.GetOriginalBidId(bid.ID),
 			}
 			if len(bidId) > 0 {
 				tracker.PartnerInfo.BidID = bidId
@@ -274,6 +275,7 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.ATTS != nil {
 		v.Set(models.TRKATTS, strconv.Itoa(int(*tracker.ATTS)))
 	}
+	v.Set(models.TRKPIID, partner.Piid)
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform
