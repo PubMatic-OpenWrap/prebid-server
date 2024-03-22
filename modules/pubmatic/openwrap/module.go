@@ -10,6 +10,10 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 )
 
+const (
+	UnwrapURL = "http://localhost:8003/unwrap" // TBDJ
+)
+
 // init openwrap module and its dependecies like config, cache, db connection, bidder cfg, etc.
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
 	return initOpenWrap(rawCfg, deps)
@@ -90,4 +94,19 @@ func (m OpenWrap) HandleAuctionResponseHook(
 	}()
 
 	return m.handleAuctionResponseHook(ctx, miCtx, payload)
+}
+
+// HandleRawBidderResponseHook fetches rCtx and check for vast unwrapper flag to enable/disable vast unwrapping feature
+func (m OpenWrap) HandleRawBidderResponseHook(
+	_ context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.RawBidderResponsePayload,
+) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+
+	if m.cfg.VastUnwrapCfg.Enabled {
+		return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
+
+	}
+
+	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
 }

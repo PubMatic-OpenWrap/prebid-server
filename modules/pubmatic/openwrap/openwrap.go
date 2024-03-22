@@ -10,6 +10,7 @@ import (
 
 	"sync"
 
+	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/v2/currency"
@@ -77,6 +78,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	// Init Feature reloader service
 	featureConfig := publisherfeature.New(owCache, cfg.Cache.CacheDefaultExpiry)
 	featureConfig.Start()
+
+	// Init VAST Unwrap
+	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
 
 	once.Do(func() {
 		ow = &OpenWrap{

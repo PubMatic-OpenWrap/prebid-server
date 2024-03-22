@@ -52,6 +52,7 @@ func (m OpenWrap) handleEntrypointHook(
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
 	if queryParams.Get("sshb") == "1" {
+		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapEnabled)
 		return result, nil
 	}
 	endpoint = GetEndpoint(payload.Request.URL.Path, source)
@@ -134,6 +135,11 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 	return result, nil
+}
+
+func getVastUnwrapperEnable(ctx context.Context, field string) bool {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper == "1"
 }
 
 func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {

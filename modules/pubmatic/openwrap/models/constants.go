@@ -360,6 +360,22 @@ const (
 	HardFloor = 1
 
 	CustomDimensions = "cds"
+
+	// VAST Unwrap
+	RequestContext      = "rctx"
+	UnwrapCount         = "unwrap-count"
+	UnwrapStatus        = "unwrap-status"
+	SuccessStatus       = "Success"
+	FailureStatus       = "Failure"
+	Timeout             = "Timeout"
+	UnwrapStatusTimeout = "2"
+	UnwrapURL           = "http://localhost:8003/unwrap"
+	UnwrapTimeout       = "unwrap-timeout"
+	MediaTypeVideo      = "video"
+	ProfileId           = "profileID"
+	VersionId           = "versionID"
+	DisplayId           = "DisplayID"
+	Endpoint            = "Endpoint"
 )
 
 const (
@@ -439,6 +455,8 @@ const (
 	ImpTypeVideo      = "video"
 	ContentTypeSite   = "site"
 	ContentTypeApp    = "app"
+
+	VastUnwrapEnabled = "enableVastUnwrapper"
 )
 
 const (

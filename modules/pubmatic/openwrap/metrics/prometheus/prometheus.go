@@ -258,6 +258,23 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, profileIDLabel},
 	)
 
+	// metrics.requests = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
+	// 	"vastunwrap_status",
+	// 	"Count of vast unwrap requests labeled by status",
+	//	[]string{pubIdLabel, bidderLabel, statusLabel})
+	//metrics.wrapperCount = newCounter(cfg.MetricsCfg.Prometheus, metrics.Registry,
+	//	"vastunwrap_wrapper_count",
+	//	"Count of vast unwrap levels labeled by bidder",
+	//	[]string{pubIdLabel, bidderLabel, wrapperCountLabel})
+	//metrics.requestTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
+	//	"vastunwrap_request_time",
+	//	"Time taken to serve the vast unwrap request in Milliseconds", []string{pubIdLabel, bidderLabel},
+	//	[]float64{50, 100, 200, 300, 500})
+	//metrics.unwrapRespTime = newHistogramVec(cfg.MetricsCfg.Prometheus, metrics.Registry,
+	//	"vastunwrap_resp_time",
+	//	"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
+	//	[]float64{50, 100, 150, 200})
+
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics

@@ -153,6 +153,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	// Re-use AB Test flag for VAST unwrap feature
+	if models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1" {
+		randomNumber := GetRandomNumberIn1To100()
+		if randomNumber <= m.cfg.Features.VASTUnwrapPecent {
+			rCtx.ABTestConfigApplied = 1
+			rCtx.VastUnwrapEnabled = true
+		} else {
+			rCtx.PartnerConfigMap = DisableVASTUnwrapConfigForRequest(rCtx.PartnerConfigMap)
+			result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap for VAST Disable")
+		}
+	}
+
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
