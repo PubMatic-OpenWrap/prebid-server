@@ -496,9 +496,3 @@ const (
 	Pbadslot    = "pbadslot"
 	GamAdServer = "gam"
 )
-
-// Constants for AMP multiformat support(in-banner video)
-const (
-	AmpVideoAdmTemplate = `<div id="UNIQUE_IMPRESSION_ID"></div><script>window.bbwAdUnitCode = "AD_UNIT_CODE_FOR_PUBLISHER";window.inBannerVideoConfig = { behaviour: "REPLAY" };window.uniqueElementId = "UNIQUE_IMPRESSION_ID";window.vast_xml = VAST_RESPONSE_RECEIVED_FROM_SSP</script><script src="https://ads.pubmatic.com/AdServer/js/vastTemplate/vastRenderer_v2.js"></script>`
-	BbwAdUnitCodeTag    = "ow_amp_"
-)
