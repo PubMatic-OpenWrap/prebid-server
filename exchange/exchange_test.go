@@ -2005,6 +2005,7 @@ func TestRaceIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ortbbidder.InitORTBAdapter(biddersInfo)
 	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
