@@ -22,6 +22,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters/ortbbidder"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/errortypes"
@@ -70,6 +71,7 @@ func TestNewExchange(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ortbbidder.InitORTBAdapter(biddersInfo) // OW specific: required for oRTB bidder
 	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)

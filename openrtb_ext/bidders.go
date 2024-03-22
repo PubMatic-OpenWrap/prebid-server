@@ -159,6 +159,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderOpenx,
 	BidderOperaads,
 	BidderOrbidder,
+	BidderORTBMagnite,
 	BidderOutbrain,
 	BidderOwnAdx,
 	BidderPangle,
@@ -456,6 +457,7 @@ const (
 	BidderOpenx             BidderName = "openx"
 	BidderOperaads          BidderName = "operaads"
 	BidderOrbidder          BidderName = "orbidder"
+	BidderORTBMagnite       BidderName = "ortb_magnite" // OW specific: oRTB bidder for magnite
 	BidderOutbrain          BidderName = "outbrain"
 	BidderOwnAdx            BidderName = "ownadx"
 	BidderPangle            BidderName = "pangle"

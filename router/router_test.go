@@ -54,7 +54,8 @@ func TestNewJsonDirectoryServer(t *testing.T) {
 	}
 
 	for _, adapterFile := range adapterFiles {
-		if adapterFile.IsDir() && adapterFile.Name() != "adapterstest" {
+		// OW specific: ignore ortbbidder because we are maintaining single adapterFile for multiple bidders
+		if adapterFile.IsDir() && adapterFile.Name() != "adapterstest" && adapterFile.Name() != "ortbbidder" {
 			ensureHasKey(t, data, adapterFile.Name())
 		}
 	}

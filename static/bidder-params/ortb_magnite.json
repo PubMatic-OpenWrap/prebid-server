@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "magnite (oRTB Integration) Adapter Params",
+    "description": "A schema which validates params accepted by the magnite (oRTB Integration) adapter",
+    "type": "object",
+    "properties": {
+      "bidder-param": {
+        "type": "string",
+        "description": "Example of bidder-param"
+      }
+    },
+    "required": ["bidder-param"]
+  }

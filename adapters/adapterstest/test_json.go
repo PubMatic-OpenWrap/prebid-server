@@ -162,6 +162,7 @@ func getTestExtraRequestInfo(t *testing.T, filename string, spec *testSpec, isAm
 	} else if isVideoTest {
 		reqInfo.PbsEntryPoint = "video"
 	}
+	reqInfo = updateRequestInfoForOW(reqInfo, filename) // OW specific : required for oRTB bidder
 
 	return &reqInfo
 }
