@@ -2616,6 +2616,7 @@ func TestCategoryMapping(t *testing.T) {
 								Video: &openrtb_ext.ExtBidPrebidVideo{
 									Duration: 30,
 								},
+								Meta: &openrtb_ext.ExtBidPrebidMeta{},
 							},
 						},
 					},
@@ -2766,6 +2767,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 								Video: &openrtb_ext.ExtBidPrebidVideo{
 									Duration: 30,
 								},
+								Meta: &openrtb_ext.ExtBidPrebidMeta{},
 							},
 						},
 					},
@@ -3229,6 +3231,7 @@ func TestBidRejectionErrors(t *testing.T) {
 										Video: &openrtb_ext.ExtBidPrebidVideo{
 											Duration: 30,
 										},
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
 									},
 								},
 							},
@@ -3269,6 +3272,7 @@ func TestBidRejectionErrors(t *testing.T) {
 										Video: &openrtb_ext.ExtBidPrebidVideo{
 											Duration: 30,
 										},
+										Meta: &openrtb_ext.ExtBidPrebidMeta{},
 									},
 								},
 							},
@@ -3309,6 +3313,7 @@ func TestBidRejectionErrors(t *testing.T) {
 										Video: &openrtb_ext.ExtBidPrebidVideo{
 											Duration: 70,
 										},
+										Meta: &openrtb_ext.ExtBidPrebidMeta{},
 									},
 								},
 							},
@@ -3351,6 +3356,7 @@ func TestBidRejectionErrors(t *testing.T) {
 										Video: &openrtb_ext.ExtBidPrebidVideo{
 											Duration: 30,
 										},
+										Meta: &openrtb_ext.ExtBidPrebidMeta{},
 									},
 								},
 							},
@@ -5020,7 +5026,9 @@ func TestMakeBidWithValidation(t *testing.T) {
 							StatusCode: 300,
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-									Bid: openrtb_ext.NonBidObject{},
+									Bid: openrtb_ext.NonBidObject{
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
+									},
 								},
 							},
 						},
@@ -5046,6 +5054,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 										W:    200,
 										H:    200,
 										Type: "banner",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -5080,6 +5089,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
 										Type: "banner",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},

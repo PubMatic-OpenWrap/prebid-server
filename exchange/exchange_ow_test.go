@@ -99,6 +99,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 										Bid: openrtb_ext.NonBidObject{
 											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
 											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
+											Meta:    &openrtb_ext.ExtBidPrebidMeta{},
 										},
 									},
 								},
@@ -110,6 +111,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 										Bid: openrtb_ext.NonBidObject{
 											ID:      "a.com_bid",
 											ADomain: []string{"a.com"},
+											Meta:    &openrtb_ext.ExtBidPrebidMeta{},
 										},
 									},
 								},
@@ -561,6 +563,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			seatNonBids := nonBids{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
+
 			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
@@ -1497,7 +1500,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1509,6 +1513,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1564,7 +1569,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1576,6 +1582,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1587,7 +1594,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
 									},
 								},
 							},
@@ -1599,6 +1607,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
 									},
 								},
 							},

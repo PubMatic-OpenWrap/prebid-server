@@ -208,7 +208,10 @@
                                             "h": 500,
                                             "origbidcpm": 0.3,
                                             "id": "apn-bid",
-                                            "type": "banner"
+                                            "type": "banner",
+                                            "meta": {
+                                                "adaptercode":"appnexus"
+                                            } 
                                         }
                                     }
                                 }
