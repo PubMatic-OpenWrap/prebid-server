@@ -387,3 +387,63 @@ func TestRegisterLabelPermutations(t *testing.T) {
 		assert.ElementsMatch(t, test.expectedLabels, resultLabels)
 	}
 }
+
+func TestMetrics_RecordAmpVideoRequets(t *testing.T) {
+	m := createMetricsForTesting()
+
+	type args struct {
+		pubid     string
+		profileid string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Record Amp Video Requests",
+			args: args{
+				pubid:     "1010",
+				profileid: "11",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m.RecordAmpVideoRequests(tt.args.pubid, tt.args.profileid)
+			assertCounterVecValue(t, "", "sshb_amp_video_requests", m.ampVidoeRequests, float64(1), prometheus.Labels{
+				pubIDLabel:     tt.args.pubid,
+				profileIDLabel: tt.args.profileid,
+			})
+		})
+	}
+}
+
+func TestMetrics_RecordAmpVideoResponses(t *testing.T) {
+	m := createMetricsForTesting()
+
+	type args struct {
+		pubid     string
+		profileid string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Record Amp Video Requests",
+			args: args{
+				pubid:     "1010",
+				profileid: "11",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m.RecordAmpVideoResponses(tt.args.pubid, tt.args.profileid)
+			assertCounterVecValue(t, "", "sshb_amp_video_responses", m.ampVideoResponses, float64(1), prometheus.Labels{
+				pubIDLabel:     tt.args.pubid,
+				profileIDLabel: tt.args.profileid,
+			})
+		})
+	}
+}

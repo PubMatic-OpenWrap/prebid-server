@@ -72,4 +72,6 @@ type MetricsEngine interface {
 	RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration)
 	RecordRequestTime(requestType string, requestTime time.Duration)
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
+	RecordAmpVideoRequests(pubid, profileid string)
+	RecordAmpVideoResponses(pubid, profileid string)
 }
