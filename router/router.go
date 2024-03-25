@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prebid/prebid-server/adapters/ortbbidder"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -240,7 +239,6 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	cacheClient := pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, r.MetricsEngine)
 
-	ortbbidder.InitORTBAdapter(cfg.BidderInfos) // OW specific : required for oRTB adapter
 	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine)
 	if len(adaptersErrs) > 0 {
 		errs := errortypes.NewAggregateError("Failed to initialize adapters", adaptersErrs)

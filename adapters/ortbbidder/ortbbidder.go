@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -13,31 +12,51 @@ import (
 )
 
 // oRTBAdapter implements adapters.Bidder interface
-// Note: Single instance of oRTBAdapter can run concurrently for multiple oRTB bidders;
-// hence, do not store any bidder-specific data in this structure.
 type oRTBAdapter struct {
-	BidderInfo config.BidderInfos
+	oRTBAdapterInfo
 }
 
-var ortbAdapter *oRTBAdapter
-var once sync.Once
+const (
+	RequestModeSingle string = "single"
+)
 
-// InitORTBAdapter initialises the instance of oRTBAdapter
-func InitORTBAdapter(infos config.BidderInfos) {
-	once.Do(func() {
-		ortbAdapter = &oRTBAdapter{
-			BidderInfo: infos,
-		}
-	})
+// oRTBAdapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
+type oRTBAdapterInfo struct {
+	config.Adapter
+	requestMode string
+}
+type ExtraAdapterInfo struct {
+	RequestMode string `json:"requestMode"`
 }
 
-// Builder returns an instance of oRTB adapter initialised by InitORTBAdapter,
-// it returns an error if InitORTBAdapter is not called yet.
-func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
-	if ortbAdapter == nil {
-		return nil, fmt.Errorf("oRTB bidder is not initialised")
+// prepareRequestData generates the RequestData by marshalling the request and returns it
+func (o oRTBAdapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
+	if request == nil {
+		return nil, fmt.Errorf("found nil request")
 	}
-	return ortbAdapter, nil
+	body, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
+	}
+	return &adapters.RequestData{
+		Method: http.MethodPost,
+		Uri:    o.Endpoint,
+		Body:   body,
+	}, nil
+}
+
+// Builder returns an instance of oRTB adapter
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
+	extraAdapterInfo := ExtraAdapterInfo{}
+	if len(config.ExtraAdapterInfo) > 0 {
+		err := json.Unmarshal([]byte(config.ExtraAdapterInfo), &extraAdapterInfo)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to parse extra_info for bidder:[%s] err:[%s]", bidderName, err.Error())
+		}
+	}
+	return &oRTBAdapter{
+		oRTBAdapterInfo: oRTBAdapterInfo{config, extraAdapterInfo.RequestMode},
+	}, nil
 }
 
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
@@ -45,19 +64,14 @@ func (o *oRTBAdapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *ad
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
 	}
-	// fetch bidder specific info from bidder-info.yaml
-	bidderInfo, found := o.BidderInfo[string(requestInfo.BidderCoreName)]
-	if !found {
-		return nil, []error{fmt.Errorf("bidder-info not found for bidder-[%s]", requestInfo.BidderCoreName)}
-	}
-
+	adapterInfo := o.oRTBAdapterInfo
 	// bidder request supports single impression in single HTTP call.
-	if bidderInfo.OpenWrap.RequestMode == config.RequestModeSingle {
+	if adapterInfo.requestMode == RequestModeSingle {
 		requestData := make([]*adapters.RequestData, 0, len(request.Imp))
 		requestCopy := *request
 		for _, imp := range request.Imp {
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := prepareRequestData(&requestCopy, bidderInfo.Endpoint)
+			reqData, err := adapterInfo.prepareRequestData(&requestCopy)
 			if err != nil {
 				return nil, []error{err}
 			}
@@ -65,29 +79,12 @@ func (o *oRTBAdapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *ad
 		}
 		return requestData, nil
 	}
-
 	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := prepareRequestData(request, bidderInfo.Endpoint)
+	requestData, err := adapterInfo.prepareRequestData(request)
 	if err != nil {
 		return nil, []error{err}
 	}
 	return []*adapters.RequestData{requestData}, nil
-}
-
-// prepareRequestData generates the RequestData by marshalling the request and returns it
-func prepareRequestData(request *openrtb2.BidRequest, endpoint string) (*adapters.RequestData, error) {
-	if request == nil {
-		return nil, fmt.Errorf("found nil request")
-	}
-	body, err := json.Marshal(request)
-	if err != nil {
-		return nil, err
-	}
-	return &adapters.RequestData{
-		Method: http.MethodPost,
-		Uri:    endpoint,
-		Body:   body,
-	}, nil
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
@@ -105,7 +102,6 @@ func (o *oRTBAdapter) MakeBids(request *openrtb2.BidRequest, requestData *adapte
 		return nil, []error{err}
 	}
 
-	// initialise bidResponse with zero bids
 	bidResponse := adapters.BidderResponse{
 		Bids: make([]*adapters.TypedBid, 0),
 	}
@@ -127,17 +123,31 @@ func (o *oRTBAdapter) MakeBids(request *openrtb2.BidRequest, requestData *adapte
 }
 
 // getMediaTypeForBid returns the BidType as per the bid.MType field
-// bidExt.Prebid.Type has high priority over bid.MType
+// bid.MType has high priority over bidExt.Prebid.Type
 func getMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
 	var bidType openrtb_ext.BidType
-	if bid.Ext != nil {
-		var bidExt openrtb_ext.ExtBid
-		err := json.Unmarshal(bid.Ext, &bidExt)
-		if err == nil && bidExt.Prebid != nil {
-			return openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
+	if bid.MType > 0 {
+		bidType = getMediaTypeForBidFromMType(bid.MType)
+	} else {
+		if bid.Ext != nil {
+			var bidExt openrtb_ext.ExtBid
+			err := json.Unmarshal(bid.Ext, &bidExt)
+			if err == nil && bidExt.Prebid != nil {
+				bidType, _ = openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
+			}
 		}
 	}
-	switch bid.MType {
+	// TODO : detect mediatype from bid.AdM and request.imp parameter
+	if bidType == "" {
+		return bidType, fmt.Errorf("Failed to parse bid mType for bidID \"%s\"", bid.ID)
+	}
+	return bidType, nil
+}
+
+// getMediaTypeForBidFromMType returns the bidType from the MarkupType field
+func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType {
+	var bidType openrtb_ext.BidType
+	switch mtype {
 	case openrtb2.MarkupBanner:
 		bidType = openrtb_ext.BidTypeBanner
 	case openrtb2.MarkupVideo:
@@ -146,8 +156,6 @@ func getMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
 		bidType = openrtb_ext.BidTypeAudio
 	case openrtb2.MarkupNative:
 		bidType = openrtb_ext.BidTypeNative
-	default:
-		return bidType, fmt.Errorf("Failed to parse bid mType for bidID \"%s\"", bid.ID)
 	}
-	return bidType, nil
+	return bidType
 }

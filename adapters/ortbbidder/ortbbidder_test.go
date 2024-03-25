@@ -15,107 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPrepareRequestData(t *testing.T) {
-	type args struct {
-		request  *openrtb2.BidRequest
-		endpoint string
-	}
-	type want struct {
-		requestData *adapters.RequestData
-		err         error
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: "Valid_Request",
-			args: args{
-				request: &openrtb2.BidRequest{
-					ID:  "123",
-					Imp: []openrtb2.Imp{{ID: "imp1"}},
-				},
-				endpoint: "https://example.com",
-			},
-			want: want{
-				requestData: &adapters.RequestData{
-					Method: http.MethodPost,
-					Uri:    "https://example.com",
-					Body:   []byte(`{"id":"123","imp":[{"id":"imp1"}]}`),
-				},
-				err: nil,
-			},
-		},
-		{
-			name: "Nil_Request",
-			args: args{
-				request:  nil,
-				endpoint: "https://example.com",
-			},
-			want: want{
-				requestData: nil,
-				err:         fmt.Errorf("found nil request"),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			reqData, err := prepareRequestData(tt.args.request, tt.args.endpoint)
-			assert.Equal(t, reqData, tt.want.requestData, "mismatched requestData")
-			assert.Equal(t, err, tt.want.err, "mismatched error")
-		})
-	}
-}
-
-func TestBuilder(t *testing.T) {
-	originalAdapter := ortbAdapter
-	defer func() {
-		ortbAdapter = originalAdapter
-	}()
-	type args struct {
-		bidderName openrtb_ext.BidderName
-		config     config.Adapter
-		server     config.Server
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    adapters.Bidder
-		wantErr error
-		setup   func()
-	}{
-		{
-			name:    "ortbBidder_is_nil",
-			args:    args{},
-			want:    nil,
-			wantErr: fmt.Errorf("oRTB bidder is not initialised"),
-			setup: func() {
-				ortbAdapter = nil
-			},
-		},
-		{
-			name:    "ortbBidder_is_not_nil",
-			args:    args{},
-			want:    &oRTBAdapter{},
-			wantErr: nil,
-			setup: func() {
-				ortbAdapter = &oRTBAdapter{}
-			},
-		},
-	}
-	for _, tt := range tests {
-		tt.setup()
-		got, err := Builder(tt.args.bidderName, tt.args.config, tt.args.server)
-		assert.Equal(t, got, tt.want, "mismatched adapter for %v", tt.name)
-		assert.Equal(t, err, tt.wantErr, "mismatched error for %v", tt.name)
-	}
-}
-
 func TestMakeRequests(t *testing.T) {
 	type args struct {
 		request     *openrtb2.BidRequest
 		requestInfo *adapters.ExtraRequestInfo
+		adapterInfo oRTBAdapterInfo
 	}
 	type want struct {
 		requestData []*adapters.RequestData
@@ -141,18 +45,6 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "bidderInfo_absent",
-			args: args{
-				request: &openrtb2.BidRequest{},
-				requestInfo: &adapters.ExtraRequestInfo{
-					BidderCoreName: "xyz",
-				},
-			},
-			want: want{
-				errors: []error{fmt.Errorf("bidder-info not found for bidder-[xyz]")},
-			},
-		},
-		{
 			name: "multi_requestmode_to_form_requestdata",
 			args: args{
 				request: &openrtb2.BidRequest{
@@ -165,6 +57,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_multi_requestmode"),
 				},
+				adapterInfo: oRTBAdapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, ""},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -189,6 +82,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
 				},
+				adapterInfo: oRTBAdapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, "single"},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -208,9 +102,7 @@ func TestMakeRequests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &oRTBAdapter{
-				BidderInfo: getBidderInfos(),
-			}
+			adapter := &oRTBAdapter{oRTBAdapterInfo: tt.args.adapterInfo}
 			requestData, errors := adapter.MakeRequests(tt.args.request, tt.args.requestInfo)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errors, errors, "mismatched errors")
@@ -313,9 +205,7 @@ func TestMakeBids(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &oRTBAdapter{
-				BidderInfo: getBidderInfos(),
-			}
+			adapter := &oRTBAdapter{}
 			response, errs := adapter.MakeBids(tt.args.request, tt.args.requestData, tt.args.responseData)
 			assert.Equalf(t, tt.want.response, response, "mismatched response")
 			assert.Equalf(t, tt.want.errors, errs, "mismatched errors")
@@ -337,7 +227,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 		want want
 	}{
 		{
-			name: "Valid_Banner_Bid",
+			name: "valid_banner_bid",
 			args: args{
 				bid: openrtb2.Bid{ID: "1", MType: openrtb2.MarkupBanner},
 			},
@@ -347,7 +237,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid_Video_Bid",
+			name: "valid_video_bid",
 			args: args{
 				bid: openrtb2.Bid{ID: "2", MType: openrtb2.MarkupVideo},
 			},
@@ -357,7 +247,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid_Audio_Bid",
+			name: "valid_audio_bid",
 			args: args{
 				bid: openrtb2.Bid{ID: "3", MType: openrtb2.MarkupAudio},
 			},
@@ -367,7 +257,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid_Native_Bid",
+			name: "valid_native_bid",
 			args: args{
 				bid: openrtb2.Bid{ID: "4", MType: openrtb2.MarkupNative},
 			},
@@ -377,7 +267,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid_Bid_Type",
+			name: "invalid_bid_type",
 			args: args{
 				bid: openrtb2.Bid{ID: "5", MType: 123},
 			},
@@ -387,7 +277,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "bidExt.prebid.type_has_high_priority",
+			name: "bid.MType_has_high_priority",
 			args: args{
 				bid: openrtb2.Bid{ID: "5", MType: openrtb2.MarkupVideo, Ext: json.RawMessage(`{"prebid":{"type":"video"}}`)},
 			},
@@ -397,12 +287,32 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 		},
 		{
-			name: "bidExt.prebid_is_missing_fallback_to_bid.mtype",
+			name: "bid.ext.prebid.type_is_absent",
 			args: args{
-				bid: openrtb2.Bid{ID: "5", MType: openrtb2.MarkupVideo, Ext: json.RawMessage(`{}`)},
+				bid: openrtb2.Bid{ID: "5", Ext: json.RawMessage(`{"prebid":{}}`)},
 			},
 			want: want{
-				bidType: "video",
+				bidType: "",
+				err:     fmt.Errorf("Failed to parse bid mType for bidID \"5\""),
+			},
+		},
+		{
+			name: "bid.ext.prebid.type_json_unmarshal_fails",
+			args: args{
+				bid: openrtb2.Bid{ID: "5", Ext: json.RawMessage(`{"prebid":{invalid-json}}`)},
+			},
+			want: want{
+				bidType: "",
+				err:     fmt.Errorf("Failed to parse bid mType for bidID \"5\""),
+			},
+		},
+		{
+			name: "bid.ext.prebid.type_is_valid",
+			args: args{
+				bid: openrtb2.Bid{ID: "5", Ext: json.RawMessage(`{"prebid":{"type":"banner"}}`)},
+			},
+			want: want{
+				bidType: "banner",
 				err:     nil,
 			},
 		},
@@ -416,42 +326,172 @@ func TestGetMediaTypeForBid(t *testing.T) {
 	}
 }
 
-func TestJsonSamplesForTestBidder(t *testing.T) {
-	originalAdapter := ortbAdapter
-	defer func() {
-		ortbAdapter = originalAdapter
-	}()
-	ortbAdapter = &oRTBAdapter{
-		BidderInfo: getBidderInfos(),
-	}
-	bidder, buildErr := Builder("", config.Adapter{}, config.Server{})
+func TestJsonSamplesForSingleRequestMode(t *testing.T) {
+	bidder, buildErr := Builder("ortb_test_single_requestmode",
+		config.Adapter{
+			Endpoint:         "http://test_bidder.com",
+			ExtraAdapterInfo: `{"requestMode":"single"}`,
+		}, config.Server{})
 	if buildErr != nil {
 		t.Fatalf("Builder returned unexpected error %v", buildErr)
 	}
 	adapterstest.RunJSONBidderTest(t, "ortb_test_single_requestmode", bidder)
+}
+
+func TestJsonSamplesForMultiRequestMode(t *testing.T) {
+	bidder, buildErr := Builder("ortb_test_multi_requestmode",
+		config.Adapter{
+			Endpoint:         "http://test_bidder.com",
+			ExtraAdapterInfo: ``,
+		}, config.Server{})
+	if buildErr != nil {
+		t.Fatalf("Builder returned unexpected error %v", buildErr)
+	}
 	adapterstest.RunJSONBidderTest(t, "ortb_test_multi_requestmode", bidder)
 }
 
-func getBidderInfos() config.BidderInfos {
-	return config.BidderInfos{
-		"ortb_test_single_requestmode": config.BidderInfo{
-			Endpoint: "http://test_bidder.com",
-			OpenWrap: config.OpenWrap{
-				RequestMode: "single",
+func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
+	type fields struct {
+		Adapter     config.Adapter
+		requestMode string
+	}
+	type args struct {
+		request *openrtb2.BidRequest
+	}
+	type want struct {
+		requestData *adapters.RequestData
+		err         error
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			name: "valid_request",
+			fields: fields{
+				Adapter: config.Adapter{Endpoint: "https://example.com"},
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID:  "123",
+					Imp: []openrtb2.Imp{{ID: "imp1"}},
+				},
+			},
+			want: want{
+				requestData: &adapters.RequestData{
+					Method: http.MethodPost,
+					Uri:    "https://example.com",
+					Body:   []byte(`{"id":"123","imp":[{"id":"imp1"}]}`),
+				},
+				err: nil,
 			},
 		},
-		"ortb_test_multi_requestmode": config.BidderInfo{
-			Endpoint: "http://test_bidder.com",
-			OpenWrap: config.OpenWrap{
-				RequestMode: "multi",
+		{
+			name: "nil_request",
+			fields: fields{
+				Adapter: config.Adapter{Endpoint: "https://example.com"},
+			},
+			args: args{
+				request: nil,
+			},
+			want: want{
+				requestData: nil,
+				err:         fmt.Errorf("found nil request"),
 			},
 		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := oRTBAdapterInfo{
+				Adapter:     tt.fields.Adapter,
+				requestMode: tt.fields.requestMode,
+			}
+			got, err := o.prepareRequestData(tt.args.request)
+			assert.Equal(t, tt.want.requestData, got, "mismatched requestData")
+			assert.Equal(t, tt.want.err, err, "mismatched error")
+		})
+	}
 }
 
-func TestInitORTBAdapter(t *testing.T) {
-	t.Run("init_ortb_adapter", func(t *testing.T) {
-		InitORTBAdapter(config.BidderInfos{})
-		assert.NotNilf(t, ortbAdapter, "ortbAdapter should not be nil")
-	})
+func TestBuilder(t *testing.T) {
+	type args struct {
+		bidderName openrtb_ext.BidderName
+		config     config.Adapter
+		server     config.Server
+	}
+	type want struct {
+		err    error
+		bidder adapters.Bidder
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "fails_to_parse_extra_info",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: "invalid-string",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: nil,
+				err:    fmt.Errorf("Failed to parse extra_info for bidder:[ortbbidder] err:[invalid character 'i' looking for beginning of value]"),
+			},
+		},
+		{
+			name: "bidder_with_requestMode",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: `{"requestMode":"single"}`,
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: &oRTBAdapter{
+					oRTBAdapterInfo: oRTBAdapterInfo{
+						requestMode: "single",
+						Adapter: config.Adapter{
+							ExtraAdapterInfo: `{"requestMode":"single"}`,
+						},
+					},
+				},
+				err: nil,
+			},
+		},
+		{
+			name: "bidder_without_requestMode",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: "",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: &oRTBAdapter{
+					oRTBAdapterInfo: oRTBAdapterInfo{
+						Adapter: config.Adapter{
+							ExtraAdapterInfo: ``,
+						},
+					},
+				},
+				err: nil,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Builder(tt.args.bidderName, tt.args.config, tt.args.server)
+			assert.Equal(t, tt.want.bidder, got, "mismatched bidder")
+			assert.Equal(t, tt.want.err, err, "mismatched error")
+		})
+	}
 }
