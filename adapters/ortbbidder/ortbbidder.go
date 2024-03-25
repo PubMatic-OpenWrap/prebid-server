@@ -11,17 +11,17 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-// oRTBAdapter implements adapters.Bidder interface
-type oRTBAdapter struct {
-	oRTBAdapterInfo
+// adapter implements adapters.Bidder interface
+type adapter struct {
+	adapterInfo
 }
 
 const (
 	RequestModeSingle string = "single"
 )
 
-// oRTBAdapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
-type oRTBAdapterInfo struct {
+// adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
+type adapterInfo struct {
 	config.Adapter
 	requestMode string
 }
@@ -30,7 +30,7 @@ type ExtraAdapterInfo struct {
 }
 
 // prepareRequestData generates the RequestData by marshalling the request and returns it
-func (o oRTBAdapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
+func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
@@ -54,17 +54,17 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 			return nil, fmt.Errorf("Failed to parse extra_info for bidder:[%s] err:[%s]", bidderName, err.Error())
 		}
 	}
-	return &oRTBAdapter{
-		oRTBAdapterInfo: oRTBAdapterInfo{config, extraAdapterInfo.RequestMode},
+	return &adapter{
+		adapterInfo: adapterInfo{config, extraAdapterInfo.RequestMode},
 	}, nil
 }
 
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
-func (o *oRTBAdapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
 	}
-	adapterInfo := o.oRTBAdapterInfo
+	adapterInfo := o.adapterInfo
 	// bidder request supports single impression in single HTTP call.
 	if adapterInfo.requestMode == RequestModeSingle {
 		requestData := make([]*adapters.RequestData, 0, len(request.Imp))
@@ -88,7 +88,7 @@ func (o *oRTBAdapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *ad
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
-func (o *oRTBAdapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if responseData == nil || adapters.IsResponseStatusCodeNoContent(responseData) {
 		return nil, nil
 	}

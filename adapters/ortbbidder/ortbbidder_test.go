@@ -19,7 +19,7 @@ func TestMakeRequests(t *testing.T) {
 	type args struct {
 		request     *openrtb2.BidRequest
 		requestInfo *adapters.ExtraRequestInfo
-		adapterInfo oRTBAdapterInfo
+		adapterInfo adapterInfo
 	}
 	type want struct {
 		requestData []*adapters.RequestData
@@ -57,7 +57,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_multi_requestmode"),
 				},
-				adapterInfo: oRTBAdapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, ""},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, ""},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -82,7 +82,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
 				},
-				adapterInfo: oRTBAdapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, "single"},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, "single"},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -102,7 +102,7 @@ func TestMakeRequests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &oRTBAdapter{oRTBAdapterInfo: tt.args.adapterInfo}
+			adapter := &adapter{adapterInfo: tt.args.adapterInfo}
 			requestData, errors := adapter.MakeRequests(tt.args.request, tt.args.requestInfo)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errors, errors, "mismatched errors")
@@ -205,7 +205,7 @@ func TestMakeBids(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &oRTBAdapter{}
+			adapter := &adapter{}
 			response, errs := adapter.MakeBids(tt.args.request, tt.args.requestData, tt.args.responseData)
 			assert.Equalf(t, tt.want.response, response, "mismatched response")
 			assert.Equalf(t, tt.want.errors, errs, "mismatched errors")
@@ -404,7 +404,7 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := oRTBAdapterInfo{
+			o := adapterInfo{
 				Adapter:     tt.fields.Adapter,
 				requestMode: tt.fields.requestMode,
 			}
@@ -454,8 +454,8 @@ func TestBuilder(t *testing.T) {
 				server: config.Server{},
 			},
 			want: want{
-				bidder: &oRTBAdapter{
-					oRTBAdapterInfo: oRTBAdapterInfo{
+				bidder: &adapter{
+					adapterInfo: adapterInfo{
 						requestMode: "single",
 						Adapter: config.Adapter{
 							ExtraAdapterInfo: `{"requestMode":"single"}`,
@@ -475,8 +475,8 @@ func TestBuilder(t *testing.T) {
 				server: config.Server{},
 			},
 			want: want{
-				bidder: &oRTBAdapter{
-					oRTBAdapterInfo: oRTBAdapterInfo{
+				bidder: &adapter{
+					adapterInfo: adapterInfo{
 						Adapter: config.Adapter{
 							ExtraAdapterInfo: ``,
 						},
