@@ -103,10 +103,5 @@ func (m OpenWrap) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 
-	if m.cfg.VastUnwrapCfg.Enabled {
-		return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
-
-	}
-
-	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
+	return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
 }

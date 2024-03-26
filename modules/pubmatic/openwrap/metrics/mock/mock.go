@@ -718,3 +718,23 @@ func (mr *MockMetricsEngineMockRecorder) RecordHTTPCounter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPCounter", reflect.TypeOf((*MockMetricsEngine)(nil).RecordHTTPCounter))
 }
+
+func (m *MockMetricsEngine) RecordUnwrapRequestStatus(arg0, arg1, arg2  interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRequestStatus", arg0, arg1, arg2)
+}
+
+func (m *MockMetricsEngine) RecordUnwrapWrapperCount(arg0, arg1, arg2  interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapWrapperCount", arg0, arg1, arg2)
+}
+
+func (m *MockMetricsEngine) RecordUnwrapRequestTime(arg0, arg1, arg2  interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRequestTime", arg0, arg1, arg2)
+}
+
+func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1, arg2  interface{}){
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRespTime", arg0, arg1, arg2)
+}

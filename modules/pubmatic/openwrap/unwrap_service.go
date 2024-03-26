@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
@@ -13,7 +14,7 @@ import (
 )
 
 func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
-	// startTime := time.Now()
+	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
 	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
@@ -23,16 +24,16 @@ func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedB
 		if r := recover(); r != nil {
 			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))
 		}
-		// TBDJ
-		// respTime := time.Since(startTime)
-		// // m.metricEngine.RecordRequestTime(accountID, bidder, respTime)
-		// // m.metricEngine.RecordRequestStatus(accountID, bidder, respStatus)
-		// // if respStatus == "0" {
-		// // 	m.metricEngine.RecordWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
-		// // 	m.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
-		// // }
-		respStatus = respStatus
-		wrapperCnt = wrapperCnt
+
+		respTime := time.Since(startTime)
+		m.metricEngine.RecordUnwrapRequestTime(accountID, bidder, respTime)
+		m.metricEngine.RecordUnwrapRequestStatus(accountID, bidder, respStatus)
+		if respStatus == "0" {
+			m.metricEngine.RecordUnwrapWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
+			m.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
+		}
+		// respStatus = respStatus
+		// wrapperCnt = wrapperCnt
 	}()
 	headers := http.Header{}
 	headers.Add(models.ContentType, "application/xml; charset=utf-8")
