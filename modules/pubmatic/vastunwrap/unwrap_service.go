@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters"
 )
 
-func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, unwrapURL string, accountID string, bidder string) {
+func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, ip string, unwrapURL string, accountID string, bidder string) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -33,7 +33,12 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 	headers := http.Header{}
 	headers.Add(ContentType, "application/xml; charset=utf-8")
 	headers.Add(UserAgent, userAgent)
+	headers.Add(XUserAgent, userAgent)
+	headers.Add(XUserIP, ip)
+	headers.Add(CreativeID, bid.Bid.ID)
 	headers.Add(UnwrapTimeout, strconv.Itoa(m.Cfg.APPConfig.UnwrapDefaultTimeout))
+
+	unwrapURL = unwrapURL + "?" + PubID + "=" + accountID + "&" + ImpressionID + "=" + bid.Bid.ImpID
 	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
 	if err != nil {
 		return
@@ -46,8 +51,9 @@ func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapter
 	if !isStatsEnabled && httpResp.Code == http.StatusOK {
 		respBody := httpResp.Body.Bytes()
 		bid.Bid.AdM = string(respBody)
-		return
 	}
-	glog.Infof("\n UnWrap Response code = %d for BidId = %s ", httpResp.Code, bid.Bid.ID)
-	return
+
+	glog.V(3).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] httpRespCode= [%v] statsEnabled:[%v]",
+		accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, respStatus, httpResp.Code, isStatsEnabled)
+
 }

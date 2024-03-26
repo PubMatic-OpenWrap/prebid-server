@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -11,6 +12,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
@@ -264,4 +267,85 @@ func setPriceGranularityOW(pg *openrtb_ext.PriceGranularity) *openrtb_ext.PriceG
 	}
 
 	return pg
+}
+
+func applyBidPriceThreshold(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, account config.Account, conversions currency.Conversions) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []*entities.PbsOrtbSeatBid) {
+	rejectedBids := []*entities.PbsOrtbSeatBid{}
+	if account.BidPriceThreshold != 0 {
+		for bidderName, seatBid := range seatBids {
+			if seatBid.Bids == nil {
+				continue
+			}
+
+			eligibleBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
+			for _, bid := range seatBid.Bids {
+				if bid.Bid == nil {
+					continue
+				}
+
+				price := bid.Bid.Price
+				if seatBid.Currency != "" {
+					rate, err := conversions.GetRate(seatBid.Currency, "USD")
+					if err != nil {
+						glog.Error("currencyconversionfailed applyBidPriceThreshold", bid.Bid.ID, seatBid.Currency, err.Error())
+					} else {
+						price = rate * bid.Bid.Price
+					}
+				}
+
+				if price <= account.BidPriceThreshold {
+					eligibleBids = append(eligibleBids, bid)
+				} else {
+					bid.Bid.Price = 0
+					rejectedBids = append(rejectedBids, &entities.PbsOrtbSeatBid{
+						Seat:      seatBid.Seat,
+						Currency:  seatBid.Currency,
+						HttpCalls: seatBid.HttpCalls,
+						Bids:      []*entities.PbsOrtbBid{bid},
+					})
+				}
+			}
+			seatBid.Bids = eligibleBids
+			seatBids[bidderName] = seatBid
+
+			if len(seatBid.Bids) == 0 {
+				delete(seatBids, bidderName)
+			}
+		}
+		logBidsAbovePriceThreshold(rejectedBids)
+		for i := range rejectedBids {
+			rejectedBids[i].HttpCalls = nil
+		}
+
+	}
+	return seatBids, rejectedBids
+}
+
+func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
+	if len(rejectedBids) == 0 {
+		return
+	}
+
+	var httpCalls []*openrtb_ext.ExtHttpCall
+	for i := range rejectedBids {
+		httpCalls = append(httpCalls, rejectedBids[i].HttpCalls...)
+	}
+
+	if len(httpCalls) > 0 {
+		jsonBytes, err := json.Marshal(struct {
+			ExtHttpCall []*openrtb_ext.ExtHttpCall
+		}{
+			ExtHttpCall: httpCalls,
+		})
+		glog.Error("owbidrejected due to price threshold:", string(jsonBytes), err)
+		fmt.Println("owbidrejected due to price threshold:", string(jsonBytes), err)
+	}
+}
+
+func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
+	for _, pbsRejSeatBid := range rejectedBids {
+		for _, pbsRejBid := range pbsRejSeatBid.Bids {
+			seatNonBids.addBid(pbsRejBid, int(ResponseRejectedBidPriceTooHigh), pbsRejSeatBid.Seat)
+		}
+	}
 }

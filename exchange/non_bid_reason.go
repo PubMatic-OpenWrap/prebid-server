@@ -36,4 +36,5 @@ const (
 	ResponseRejectedCreativeAdvertiserExclusions openrtb3.NoBidReason = 355 // Creative Filtered - Advertiser Exclusions
 	ResponseRejectedCreativeAdvertiserBlocking   openrtb3.NoBidReason = 356 // Creative Filtered - Advertiser Blocking
 	ResponseRejectedCreativeCategoryExclusions   openrtb3.NoBidReason = 357 // Creative Filtered - Category Exclusions
+	ResponseRejectedBidPriceTooHigh              openrtb3.NoBidReason = 701 // Bid Price too high
 )

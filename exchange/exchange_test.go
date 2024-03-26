@@ -5423,6 +5423,7 @@ func TestGetAllBids(t *testing.T) {
 		bidAdjustmentRules         map[string][]openrtb_ext.Adjustment
 		tmaxAdjustments            *TmaxAdjustmentsPreprocessed
 		adapterMap                 map[openrtb_ext.BidderName]AdaptedBidder
+		account                    config.Account
 	}
 	type testResults struct {
 		adapterBids   map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
@@ -5466,6 +5467,7 @@ func TestGetAllBids(t *testing.T) {
 						},
 					}, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderPubmatic, nil, ""),
 				},
+				account: config.Account{BidPriceThreshold: 10.00},
 			},
 			expected: testResults{
 				extraRespInfo: extraAuctionResponseInfo{
@@ -5717,7 +5719,7 @@ func TestGetAllBids(t *testing.T) {
 
 			adapterBids, adapterExtra, extraRespInfo := e.getAllBids(context.Background(), test.in.bidderRequests, test.in.bidAdjustments,
 				test.in.conversions, test.in.accountDebugAllowed, test.in.globalPrivacyControlHeader, test.in.headerDebugAllowed, test.in.alternateBidderCodes, test.in.experiment,
-				test.in.hookExecutor, test.in.pbsRequestStartTime, test.in.bidAdjustmentRules, test.in.tmaxAdjustments, false)
+				test.in.hookExecutor, test.in.pbsRequestStartTime, test.in.bidAdjustmentRules, test.in.tmaxAdjustments, false, test.in.account)
 
 			assert.Equalf(t, test.expected.extraRespInfo.bidsFound, extraRespInfo.bidsFound, "extraRespInfo.bidsFound mismatch")
 			assert.Equalf(t, test.expected.adapterBids, adapterBids, "adapterBids mismatch")

@@ -383,17 +383,26 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			alternateBidderCodes = *r.Account.AlternateBidderCodes
 		}
 		var extraRespInfo extraAuctionResponseInfo
-		adapterBids, adapterExtra, extraRespInfo = e.getAllBids(auctionCtx, bidderRequests, bidAdjustmentFactors, conversions, accountDebugAllow, r.GlobalPrivacyControlHeader, debugLog.DebugOverride, alternateBidderCodes, requestExtLegacy.Prebid.Experiment, r.HookExecutor, r.StartTime, bidAdjustmentRules, r.TmaxAdjustments, responseDebugAllow)
+		adapterBids, adapterExtra, extraRespInfo = e.getAllBids(auctionCtx, bidderRequests, bidAdjustmentFactors, conversions, accountDebugAllow, r.GlobalPrivacyControlHeader, debugLog.DebugOverride, alternateBidderCodes, requestExtLegacy.Prebid.Experiment, r.HookExecutor, r.StartTime, bidAdjustmentRules, r.TmaxAdjustments, responseDebugAllow, r.Account)
 		fledge = extraRespInfo.fledge
 		anyBidsReturned = extraRespInfo.bidsFound
 		r.BidderResponseStartTime = extraRespInfo.bidderResponseStartTime
+	}
+
+	var seatNonBids = nonBids{}
+
+	if anyBidsReturned {
+		var rejectedBids []*entities.PbsOrtbSeatBid
+		adapterBids, rejectedBids = applyBidPriceThreshold(adapterBids, r.Account, conversions)
+		if len(rejectedBids) > 0 {
+			e.updateSeatNonBidsPriceThreshold(&seatNonBids, rejectedBids)
+		}
 	}
 
 	var (
 		auc            *auction
 		cacheErrs      []error
 		bidResponseExt *openrtb_ext.ExtBidResponse
-		seatNonBids    = nonBids{}
 	)
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
@@ -715,7 +724,9 @@ func (e *exchange) getAllBids(
 	pbsRequestStartTime time.Time,
 	bidAdjustmentRules map[string][]openrtb_ext.Adjustment,
 	tmaxAdjustments *TmaxAdjustmentsPreprocessed,
-	responseDebugAllowed bool) (
+	responseDebugAllowed bool,
+	account config.Account) (
+
 	map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid,
 	map[openrtb_ext.BidderName]*seatResponseExtra,
 	extraAuctionResponseInfo) {
@@ -780,8 +791,24 @@ func (e *exchange) getAllBids(
 			for _, seatBid := range seatBids {
 				if seatBid != nil {
 					for _, bid := range seatBid.Bids {
-						var cpm = float64(bid.Bid.Price * 1000)
+						priceUSD := bid.Bid.Price
 
+						if seatBid.Currency != "" {
+							rate, err := conversions.GetRate(seatBid.Currency, "USD")
+							if err != nil {
+								glog.Error("currencyconversionfailed getAllBids", bid.Bid.ID, seatBid.Currency, err.Error())
+							} else {
+								priceUSD = priceUSD * rate
+							}
+						}
+
+						if priceUSD > account.BidPriceThreshold {
+							logBidsAbovePriceThreshold([]*entities.PbsOrtbSeatBid{{
+								Bids:      []*entities.PbsOrtbBid{bid},
+								HttpCalls: seatBid.HttpCalls,
+							}})
+						}
+						var cpm = float64(priceUSD * 1000)
 						e.me.RecordAdapterPrice(bidderRequest.BidderLabels, cpm)
 						e.me.RecordAdapterBidReceived(bidderRequest.BidderLabels, bid.BidType, bid.Bid.AdM != "")
 						if bid.BidType == openrtb_ext.BidTypeVideo && bid.BidVideo != nil && bid.BidVideo.Duration > 0 {

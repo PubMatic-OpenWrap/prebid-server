@@ -24,6 +24,7 @@ func TestDoUnwrap(t *testing.T) {
 		statsEnabled         bool
 		bid                  *adapters.TypedBid
 		userAgent            string
+		ip                   string
 		unwrapDefaultTimeout int
 		url                  string
 		wantAdM              bool
@@ -37,7 +38,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with Empty Bid",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{},
 				},
@@ -48,7 +49,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with Empty ADM",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -67,7 +68,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with invalid URL and timeout",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 2}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 2}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -96,7 +97,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1500}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -129,7 +130,7 @@ func TestDoUnwrap(t *testing.T) {
 		{
 			name: "doUnwrap for adtype video with invalid vast xml",
 			args: args{
-				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", RefershIntervalInSec: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
+				module: VastUnwrapModule{Cfg: config.VastUnWrapCfg{MaxWrapperSupport: 5, StatConfig: unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1}, APPConfig: config.AppConfig{UnwrapDefaultTimeout: 1000}}, MetricsEngine: mockMetricsEngine},
 				bid: &adapters.TypedBid{
 					Bid: &openrtb2.Bid{
 						ID:    "Bid-123",
@@ -169,7 +170,7 @@ func TestDoUnwrap(t *testing.T) {
 				MetricsEngine: mockMetricsEngine,
 				unwrapRequest: tt.unwrapRequest,
 			}
-			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.url, "5890", "pubmatic")
+			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.ip, tt.args.url, "5890", "pubmatic")
 			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM {
 				assert.Equal(t, inlineXMLAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}

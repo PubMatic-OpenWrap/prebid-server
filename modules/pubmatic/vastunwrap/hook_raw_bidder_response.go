@@ -31,7 +31,9 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	}
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
-	vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
+	if !vastUnwrapEnabled {
+		vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() < m.StatTrafficPercentage
+	}
 
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
 		result.DebugMessages = append(result.DebugMessages,
@@ -44,7 +46,7 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		for _, bid := range payload.Bids {
 			if string(bid.BidType) == MediaTypeVideo {
 				go func(bid *adapters.TypedBid) {
-					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
 				}(bid)
 			}
 		}
@@ -55,7 +57,7 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 				wg.Add(1)
 				go func(bid *adapters.TypedBid) {
 					defer wg.Done()
-					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, unwrapURL, miCtx.AccountID, payload.Bidder)
+					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
 				}(bid)
 			}
 		}
