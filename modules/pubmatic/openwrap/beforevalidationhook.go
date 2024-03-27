@@ -387,7 +387,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 		}
 		for bidder, meta := range bidderMeta {
-			impExt.Prebid.Bidder[bidder] = meta.Params
+			if bidder != string(openrtb_ext.BidderPubmatic) && bidder != string(models.BidderPubMaticSecondaryAlias) {
+				impExt.Prebid.Bidder[bidder] = meta.Params
+			} else {
+				updateRequestExtBidderParamsPubmatic1(&requestExt.Prebid.BidderParams, string(openrtb_ext.BidderPubmatic), meta.Params)
+			}
 		}
 
 		impExt.Wrapper = nil
@@ -471,12 +475,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+		updateRequestExtBidderParamsPubmatic(&requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
 	}
 
 	if _, ok := requestExt.Prebid.Aliases[string(models.BidderPubMaticSecondaryAlias)]; ok {
 		if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
-			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
+			updateRequestExtBidderParamsPubmatic(&requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
 		}
 	}
 
@@ -736,19 +740,34 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams *json.RawMessage, cookie, loggerID, bidderCode string) {
 	bidderParamsMap := make(map[string]map[string]interface{})
-	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
+	_ = json.Unmarshal(*bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
-	bidderParamsMap[bidderCode] = map[string]interface{}{
-		models.WrapperLoggerImpID: loggerID,
+	existingParams, exists := bidderParamsMap[bidderCode]
+	if !exists {
+		existingParams = make(map[string]interface{})
 	}
+
+	existingParams[models.WrapperLoggerImpID] = loggerID
 
 	if len(cookie) != 0 {
-		bidderParamsMap[bidderCode][models.COOKIE] = cookie
+		existingParams[models.COOKIE] = cookie
 	}
 
-	return json.Marshal(bidderParamsMap)
+	bidderParamsMap[bidderCode] = existingParams
+
+	*bidderParams, _ = json.Marshal(bidderParamsMap)
+}
+
+func updateRequestExtBidderParamsPubmatic1(bidderParams *json.RawMessage, bidderCode string, pubmaticBidderParams json.RawMessage) {
+	bidderParamsMap := make(map[string]map[string]interface{})
+
+	params := make(map[string]interface{})
+	_ = json.Unmarshal(pubmaticBidderParams, &params)
+	bidderParamsMap[bidderCode] = params
+
+	*bidderParams, _ = json.Marshal(bidderParamsMap)
 }
 
 func getPageURL(bidRequest *openrtb2.BidRequest) string {
