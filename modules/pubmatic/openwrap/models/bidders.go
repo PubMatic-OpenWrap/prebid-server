@@ -14,6 +14,9 @@ const (
 	BidderPubMaticSecondaryAlias = "pubmatic2"
 	BidderMediaFuseAlias         = "mediafuse"
 	BidderAdformAdfAlias         = "adform"
+	BidderTrustxAlias            = "trustx"
+	BidderSynacormediaAlias      = "synacormedia"
+	BidderViewDeos               = "viewdeos"
 )
 
 const (

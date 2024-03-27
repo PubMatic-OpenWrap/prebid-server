@@ -36,6 +36,12 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderAdkernel)
 	case models.BidderAdformAdfAlias:
 		coreBidderName = string(openrtb_ext.BidderAdf)
+	case models.BidderTrustxAlias:
+		coreBidderName = string(openrtb_ext.BidderGrid)
+	case models.BidderSynacormediaAlias:
+		coreBidderName = string(openrtb_ext.BidderImds)
+	case models.BidderViewDeos:
+		coreBidderName = string(openrtb_ext.BidderAdtelligent)
 	default:
 		coreBidderName = bidderName
 	}
