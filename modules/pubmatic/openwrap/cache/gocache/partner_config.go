@@ -1,13 +1,12 @@
 package gocache
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
@@ -89,8 +88,10 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if errors.Is(errAdunitConfig, adunitconfig.ErrAdUnitUnmarshal) {
-			queryType = models.AdUnitFailUnmarshal
+		if cause := errors.Cause(errAdunitConfig); cause != nil {
+			if cause.Error() == "ErrAdUnitUnmarshal" {
+				queryType = models.AdUnitFailUnmarshal
+			}
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		err = models.ErrorWrap(err, errAdunitConfig)

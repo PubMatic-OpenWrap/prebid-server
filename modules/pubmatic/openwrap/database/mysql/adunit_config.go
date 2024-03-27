@@ -3,9 +3,11 @@ package mysql
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 )
@@ -31,7 +33,7 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	adunitConfig := &adunitconfig.AdUnitConfig{}
 	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
 	if err != nil {
-		return nil, adunitconfig.ErrAdUnitUnmarshal
+		return nil, errors.Wrap(fmt.Errorf("ErrAdUnitUnmarshal"), err.Error())
 	}
 
 	for k, v := range adunitConfig.Config {
