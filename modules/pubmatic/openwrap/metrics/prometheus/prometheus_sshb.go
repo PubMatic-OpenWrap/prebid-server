@@ -107,6 +107,16 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Counts the header-bidding server panic.",
 		[]string{nodeNameLabel, podNameLabel, methodNameLabel, endpointLabel})
 
+	metrics.ampVideoRequests = newCounter(cfg, promRegistry,
+		"sshb_amp_video_requests",
+		"Counts the AMP video requests labeled by pub id and profile id.",
+		[]string{pubIDLabel, profileIDLabel})
+
+	metrics.ampVideoResponses = newCounter(cfg, promRegistry,
+		"sshb_amp_video_responses",
+		"Counts the AMP video responses labeled by pub id and profile id.",
+		[]string{pubIDLabel, profileIDLabel})
+
 	preloadLabelValues(metrics)
 }
 
@@ -191,6 +201,22 @@ func (m *Metrics) RecordOWServerPanic(endpoint, methodName, nodeName, podName st
 		methodNameLabel: methodName,
 		nodeNameLabel:   nodeName,
 		podNameLabel:    podName,
+	}).Inc()
+}
+
+// RecordAmpVideoResponses counts the AMP Video requests
+func (m *Metrics) RecordAmpVideoRequests(pubid, profileid string) {
+	m.ampVideoRequests.With(prometheus.Labels{
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
+	}).Inc()
+}
+
+// RecordAmpVideoResponses counts the AMP Video responses
+func (m *Metrics) RecordAmpVideoResponses(pubid, profileid string) {
+	m.ampVideoResponses.With(prometheus.Labels{
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
 	}).Inc()
 }
 
