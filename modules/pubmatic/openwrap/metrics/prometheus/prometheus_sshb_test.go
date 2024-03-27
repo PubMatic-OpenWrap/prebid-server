@@ -410,7 +410,7 @@ func TestMetrics_RecordAmpVideoRequets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m.RecordAmpVideoRequests(tt.args.pubid, tt.args.profileid)
-			assertCounterVecValue(t, "", "sshb_amp_video_requests", m.ampVidoeRequests, float64(1), prometheus.Labels{
+			assertCounterVecValue(t, "", "sshb_amp_video_requests", m.ampVideoRequests, float64(1), prometheus.Labels{
 				pubIDLabel:     tt.args.pubid,
 				profileIDLabel: tt.args.profileid,
 			})
