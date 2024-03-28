@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 
 	"github.com/prebid/prebid-server/hooks/hookstage"

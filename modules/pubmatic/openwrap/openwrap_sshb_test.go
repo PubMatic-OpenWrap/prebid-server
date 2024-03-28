@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	mock_cache "github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/golang/mock/gomock"
 	"github.com/magiconair/properties/assert"
+	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	vastmodels "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
