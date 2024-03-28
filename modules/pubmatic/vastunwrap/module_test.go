@@ -51,8 +51,8 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
-					return true, "2"
+				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+					return true
 				},
 			}},
 			args: args{
@@ -75,8 +75,8 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 					StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 					ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
-					getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
-						return false, "2"
+					getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+						return false
 					},
 				}},
 			args: args{
@@ -94,9 +94,9 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := VastUnwrapModule{
-				Cfg:               tt.fields.cfg.Cfg,
-				Enabled:           tt.fields.cfg.Enabled,
-				getVastUnwrapInfo: tt.fields.cfg.getVastUnwrapInfo,
+				Cfg:                  tt.fields.cfg.Cfg,
+				Enabled:              tt.fields.cfg.Enabled,
+				getVastUnwrapEnabled: tt.fields.cfg.getVastUnwrapEnabled,
 			}
 			got, err := m.HandleEntrypointHook(tt.args.ctx, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
@@ -141,8 +141,8 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
-					return true, "2"
+				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+					return true
 				},
 			}},
 			args: args{
@@ -190,8 +190,8 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
-					return false, "2"
+				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+					return true
 				},
 			}},
 			args: args{
@@ -223,11 +223,11 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				return tt.args.randomNumber
 			}
 			m := VastUnwrapModule{
-				Cfg:               tt.fields.cfg.Cfg,
-				Enabled:           tt.fields.cfg.Enabled,
-				MetricsEngine:     mockMetricsEngine,
-				unwrapRequest:     tt.unwrapRequest,
-				getVastUnwrapInfo: tt.fields.cfg.getVastUnwrapInfo,
+				Cfg:                  tt.fields.cfg.Cfg,
+				Enabled:              tt.fields.cfg.Enabled,
+				MetricsEngine:        mockMetricsEngine,
+				unwrapRequest:        tt.unwrapRequest,
+				getVastUnwrapEnabled: tt.fields.cfg.getVastUnwrapEnabled,
 			}
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {

@@ -30,18 +30,17 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		url                   string
 		wantAdM               bool
 		randomNumber          int
-		trafficPercentage     int
 		statTrafficPercentage int
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantResult        hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		expectedBids      []*adapters.TypedBid
-		setup             func()
-		wantErr           bool
-		unwrapRequest     func(w http.ResponseWriter, req *http.Request)
-		getVastUnwrapInfo func(rctx models.RequestCtx) (bool, string)
+		name                 string
+		args                 args
+		wantResult           hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		expectedBids         []*adapters.TypedBid
+		setup                func()
+		wantErr              bool
+		unwrapRequest        func(w http.ResponseWriter, req *http.Request)
+		getVastUnwrapEnabled func(rctx models.RequestCtx) bool
 	}{
 		{
 			name: "Empty Request Context",
@@ -353,8 +352,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(inlineXMLAdM))
 			},
-			getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
-				return true, "80"
+			getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+				return true
 			},
 
 			wantErr: false,
@@ -373,7 +372,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				Enabled:               true,
 				MetricsEngine:         mockMetricsEngine,
 				unwrapRequest:         tt.unwrapRequest,
-				getVastUnwrapInfo:     tt.getVastUnwrapInfo,
+				getVastUnwrapEnabled:  tt.getVastUnwrapEnabled,
 				StatTrafficPercentage: tt.args.statTrafficPercentage,
 			}
 			_, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload, "test")

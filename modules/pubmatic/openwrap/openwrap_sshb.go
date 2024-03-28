@@ -1,6 +1,8 @@
 package openwrap
 
 import (
+	"strconv"
+
 	"github.com/prebid/openrtb/v19/openrtb2"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
@@ -45,7 +47,7 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 }
 
 // GetVastUnwrapInfo returns vastunwrap flag and traffic percent from the database
-func GetVastUnwrapInfo(rctx vastmodels.RequestCtx) (bool, string) {
+func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
 		PubID:     rctx.PubID,
@@ -54,10 +56,16 @@ func GetVastUnwrapInfo(rctx vastmodels.RequestCtx) (bool, string) {
 	}
 	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
 	if err != nil || len(partnerConfigMap) == 0 {
-		return false, ""
+		return false
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
 	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey)
-	trafficPercent := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey)
-	return unwrapEnabled == VastUnwrapperEnableValue, trafficPercent
+	if unwrapEnabled == VastUnwrapperEnableValue {
+		trafficPercentage, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey))
+		if err == nil {
+			return GetRandomNumberIn1To100() <= trafficPercentage
+
+		}
+	}
+	return false
 }

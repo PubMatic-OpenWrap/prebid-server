@@ -14,7 +14,7 @@ import (
 )
 
 var getRandomNumber = func() int {
-	return rand.Intn(100)
+	return rand.Intn(100) + 1
 }
 
 // supportedEndpoints holds the list of endpoints which supports VAST-unwrap feature
