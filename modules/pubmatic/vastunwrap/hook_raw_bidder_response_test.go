@@ -34,14 +34,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		statTrafficPercentage int
 	}
 	tests := []struct {
-		name                string
-		args                args
-		wantResult          hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		expectedBids        []*adapters.TypedBid
-		setup               func()
-		wantErr             bool
-		unwrapRequest       func(w http.ResponseWriter, req *http.Request)
-		getVastUnwrapEnable func(rctx models.RequestCtx) bool
+		name              string
+		args              args
+		wantResult        hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		expectedBids      []*adapters.TypedBid
+		setup             func()
+		wantErr           bool
+		unwrapRequest     func(w http.ResponseWriter, req *http.Request)
+		getVastUnwrapInfo func(rctx models.RequestCtx) (bool, string)
 	}{
 		{
 			name: "Empty Request Context",
@@ -224,7 +224,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				url:                 UnwrapURL,
 				wantAdM:             true,
 				randomNumber:        10,
-				trafficPercentage:   100,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -354,9 +353,10 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(inlineXMLAdM))
 			},
-			getVastUnwrapEnable: func(rctx models.RequestCtx) bool {
-				return true
+			getVastUnwrapInfo: func(rctx models.RequestCtx) (bool, string) {
+				return true, "80"
 			},
+
 			wantErr: false,
 		},
 	}
@@ -373,8 +373,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				Enabled:               true,
 				MetricsEngine:         mockMetricsEngine,
 				unwrapRequest:         tt.unwrapRequest,
-				getVastUnwrapEnable:   tt.getVastUnwrapEnable,
-				TrafficPercentage:     tt.args.trafficPercentage,
+				getVastUnwrapInfo:     tt.getVastUnwrapInfo,
 				StatTrafficPercentage: tt.args.statTrafficPercentage,
 			}
 			_, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload, "test")

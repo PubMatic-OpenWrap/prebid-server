@@ -44,8 +44,8 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
 }
 
-// GetVastUnwrapEnabled function return vastunwrap flag from the database
-func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
+// GetVastUnwrapInfo returns vastunwrap flag and traffic percent from the database
+func GetVastUnwrapInfo(rctx vastmodels.RequestCtx) (bool, string) {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
 		PubID:     rctx.PubID,
@@ -54,8 +54,10 @@ func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 	}
 	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
 	if err != nil || len(partnerConfigMap) == 0 {
-		return false
+		return false, ""
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
-	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey)
+	trafficPercent := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey)
+	return unwrapEnabled == VastUnwrapperEnableValue, trafficPercent
 }
