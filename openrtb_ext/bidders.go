@@ -159,7 +159,6 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderOpenx,
 	BidderOperaads,
 	BidderOrbidder,
-	BidderORTBMagnite,
 	BidderOutbrain,
 	BidderOwnAdx,
 	BidderPangle,
@@ -229,6 +228,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderYieldone,
 	BidderZeroClickFraud,
 	BidderZetaGlobalSsp,
+	BidderORTBMagnite, // maintained by OW
 }
 
 func GetAliasBidderToParent() map[BidderName]BidderName {
@@ -457,7 +457,6 @@ const (
 	BidderOpenx             BidderName = "openx"
 	BidderOperaads          BidderName = "operaads"
 	BidderOrbidder          BidderName = "orbidder"
-	BidderORTBMagnite       BidderName = "ortb_magnite" // OW specific: oRTB bidder for magnite
 	BidderOutbrain          BidderName = "outbrain"
 	BidderOwnAdx            BidderName = "ownadx"
 	BidderPangle            BidderName = "pangle"
@@ -527,6 +526,7 @@ const (
 	BidderYieldone          BidderName = "yieldone"
 	BidderZeroClickFraud    BidderName = "zeroclickfraud"
 	BidderZetaGlobalSsp     BidderName = "zeta_global_ssp"
+	BidderORTBMagnite       BidderName = "owortb_magnite" // OW specific: oRTB bidder for magnite
 )
 
 // CoreBidderNames returns a slice of all core bidders.

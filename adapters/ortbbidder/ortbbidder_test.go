@@ -158,29 +158,6 @@ func TestMakeBids(t *testing.T) {
 			},
 		},
 		{
-			name: "getMediaTypeForBid_returns_error",
-			args: args{
-				responseData: &adapters.ResponseData{
-					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id":"bid-resp-id","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1","mtype":2},{"id":"bid-2","mtype":5}]}]}`),
-				},
-			},
-			want: want{
-				response: &adapters.BidderResponse{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "bid-1",
-								MType: 2,
-							},
-							BidType: "video",
-						},
-					},
-				},
-				errors: []error{fmt.Errorf("Failed to parse bid mType for bidID \"bid-2\"")},
-			},
-		},
-		{
 			name: "valid_response",
 			args: args{
 				responseData: &adapters.ResponseData{
@@ -219,7 +196,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 	}
 	type want struct {
 		bidType openrtb_ext.BidType
-		err     error
 	}
 	tests := []struct {
 		name string
@@ -233,7 +209,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: openrtb_ext.BidTypeBanner,
-				err:     nil,
 			},
 		},
 		{
@@ -243,7 +218,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: openrtb_ext.BidTypeVideo,
-				err:     nil,
 			},
 		},
 		{
@@ -253,7 +227,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: openrtb_ext.BidTypeAudio,
-				err:     nil,
 			},
 		},
 		{
@@ -263,7 +236,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: openrtb_ext.BidTypeNative,
-				err:     nil,
 			},
 		},
 		{
@@ -273,7 +245,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: "",
-				err:     fmt.Errorf("Failed to parse bid mType for bidID \"5\""),
 			},
 		},
 		{
@@ -283,7 +254,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: "video",
-				err:     nil,
 			},
 		},
 		{
@@ -293,7 +263,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: "",
-				err:     fmt.Errorf("Failed to parse bid mType for bidID \"5\""),
 			},
 		},
 		{
@@ -303,7 +272,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: "",
-				err:     fmt.Errorf("Failed to parse bid mType for bidID \"5\""),
 			},
 		},
 		{
@@ -313,15 +281,13 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			},
 			want: want{
 				bidType: "banner",
-				err:     nil,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bidType, err := getMediaTypeForBid(tt.args.bid)
+			bidType := getMediaTypeForBid(tt.args.bid)
 			assert.Equal(t, tt.want.bidType, bidType, "mismatched bidType")
-			assert.Equal(t, tt.want.err, err, "mismatched error")
 		})
 	}
 }

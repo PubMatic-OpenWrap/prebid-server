@@ -64,6 +64,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
 	}
+	var errs []error
 	adapterInfo := o.adapterInfo
 	// bidder request supports single impression in single HTTP call.
 	if adapterInfo.requestMode == RequestModeSingle {
@@ -73,11 +74,12 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
 			reqData, err := adapterInfo.prepareRequestData(&requestCopy)
 			if err != nil {
-				return nil, []error{err}
+				errs = append(errs, err)
+				continue
 			}
 			requestData = append(requestData, reqData)
 		}
-		return requestData, nil
+		return requestData, errs
 	}
 	// bidder request supports multi impressions in single HTTP call.
 	requestData, err := adapterInfo.prepareRequestData(request)
@@ -108,14 +110,9 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	var errs []error
 	for _, seatBid := range response.SeatBid {
 		for bidInd, bid := range seatBid.Bid {
-			bidType, err := getMediaTypeForBid(bid)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:     &seatBid.Bid[bidInd],
-				BidType: bidType,
+				BidType: getMediaTypeForBid(bid),
 			})
 		}
 	}
@@ -124,7 +121,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 
 // getMediaTypeForBid returns the BidType as per the bid.MType field
 // bid.MType has high priority over bidExt.Prebid.Type
-func getMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
+func getMediaTypeForBid(bid openrtb2.Bid) openrtb_ext.BidType {
 	var bidType openrtb_ext.BidType
 	if bid.MType > 0 {
 		bidType = getMediaTypeForBidFromMType(bid.MType)
@@ -137,11 +134,10 @@ func getMediaTypeForBid(bid openrtb2.Bid) (openrtb_ext.BidType, error) {
 			}
 		}
 	}
-	// TODO : detect mediatype from bid.AdM and request.imp parameter
 	if bidType == "" {
-		return bidType, fmt.Errorf("Failed to parse bid mType for bidID \"%s\"", bid.ID)
+		// TODO : detect mediatype from bid.AdM and request.imp parameter
 	}
-	return bidType, nil
+	return bidType
 }
 
 // getMediaTypeForBidFromMType returns the bidType from the MarkupType field
