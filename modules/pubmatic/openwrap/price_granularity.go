@@ -7,28 +7,26 @@ import (
 )
 
 func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranularity, error) {
-	//Get the value of priceGranularity from config
-	priceGranularity := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityKey)
+	var priceGranularity string
 
-	if priceGranularity == "" || (priceGranularity == models.PriceGranularityCustom && !rctx.IsCTVRequest) {
-		// If it is empty then use default value as 'auto'
-		// If it is custom but not CTV request then use default value as 'a
+	//Get the value of priceGranularity from config otherwise set "auto"
+	if priceGranularity = models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityKey); priceGranularity == "" {
 		priceGranularity = "auto"
 	}
-	if rctx.IsTestRequest > 0 && rctx.IsCTVRequest {
-		//OTT-603: Adding test flag check
+
+	//incase of test request
+	if rctx.IsTestRequest > 0 {
 		priceGranularity = "testpg"
 	}
 
-	//  OTT-769: determine custom pg object based on customPriceGranularityValue config
-	//  Expected that this check with be true iff platform is video / isCTVAPIRequest
+	//Get custom price granularity object
 	if priceGranularity == models.PriceGranularityCustom {
 		customPriceGranularityValue := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityCustomConfig)
 		pgObject, err := newCustomPriceGranuality(customPriceGranularityValue)
 		return pgObject, err
 	}
 
-	// OTT-769: (Backword compatibilty) compute based on legacy string (auto, med)
+	//compute pg obj based on legacy string (auto, med/medium, low, high, dense, ow-ctv-med, testpg)
 	pgObject, _ := openrtb_ext.NewPriceGranularityFromLegacyID(priceGranularity)
 
 	return pgObject, nil
