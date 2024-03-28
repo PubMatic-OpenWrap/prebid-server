@@ -69,13 +69,17 @@ func newJsonDirectoryServer(schemaDirectory string, validator openrtb_ext.Bidder
 	}
 
 	bidderMap := openrtb_ext.BuildBidderMap()
+	// bidderMap = openrtb_ext.AppendORTBBidderMap(bidderMap) // OW specific: required for oRTB bidders
 
 	data := make(map[string]json.RawMessage, len(files))
 	for _, file := range files {
 		bidder := strings.TrimSuffix(file.Name(), ".json")
 		bidderName, isValid := bidderMap[bidder]
 		if !isValid {
-			glog.Fatalf("Schema exists for an unknown bidder: %s", bidder)
+			if !openrtb_ext.IsORTBBidder(bidder) {
+				glog.Fatalf("Schema exists for an unknown bidder: %s", bidder)
+			}
+			bidderName = openrtb_ext.BidderName(bidder)
 		}
 		data[bidder] = json.RawMessage(validator.Schema(bidderName))
 	}

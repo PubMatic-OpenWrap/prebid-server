@@ -746,6 +746,7 @@ func (e *exchange) getAllBids(
 			reqInfo := adapters.NewExtraRequestInfo(conversions)
 			reqInfo.PbsEntryPoint = bidderRequest.BidderLabels.RType
 			reqInfo.GlobalPrivacyControlHeader = globalPrivacyControlHeader
+			reqInfo.BidderCoreName = string(bidderRequest.BidderCoreName) // OW specific: required for oRTB bidders
 
 			bidReqOptions := bidRequestOptions{
 				accountDebugAllowed:    accountDebugAllowed,

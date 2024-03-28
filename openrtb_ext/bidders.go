@@ -626,12 +626,13 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 	}
 
 	bidderMap := BuildBidderMap()
+	// bidderMap = AppendORTBBidderMapFromFiles(bidderMap, fileInfos) // OW specific: required for oRTB bidders
 
 	schemaContents := make(map[BidderName]string, 50)
 	schemas := make(map[BidderName]*gojsonschema.Schema, 50)
 	for _, fileInfo := range fileInfos {
 		bidderName := strings.TrimSuffix(fileInfo.Name(), ".json")
-		if _, ok := bidderMap[bidderName]; !ok {
+		if _, ok := bidderMap[bidderName]; !ok && !IsORTBBidder(bidderName) {
 			return nil, fmt.Errorf("File %s/%s does not match a valid BidderName.", schemaDirectory, fileInfo.Name())
 		}
 		toOpen, err := paramsValidator.abs(filepath.Join(schemaDirectory, fileInfo.Name()))

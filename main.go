@@ -1,4 +1,4 @@
-package main_ow
+package main
 
 import (
 	"flag"
@@ -24,7 +24,7 @@ func init() {
 }
 
 // TODO: revert this after PBS-OpenWrap module
-func Main() {
+func main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
@@ -32,6 +32,12 @@ func Main() {
 		glog.Exitf("Unable to build configuration directory path: %v", err)
 	}
 
+	// bidderList, err := ortbbidder.ReadORTBBidderList(infoDirectory)
+	// if err != nil {
+	// 	glog.Exitf("Unable to get oRTB bidders list: %v", err)
+	// }
+	// ortbbidder.InitORTBAdapter(bidderList)
+	// openrtb_ext.RegisterORTBBidderNames(bidderList)
 	bidderInfos, err := config.LoadBidderInfoFromDisk(bidderInfoPath)
 	if err != nil {
 		glog.Exitf("Unable to load bidder configurations: %v", err)
@@ -61,7 +67,7 @@ const infoDirectory = "./static/bidder-info"
 func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {
 	v := viper.New()
 	config.SetupViper(v, configFileName, bidderInfos)
-	return config.New(v, bidderInfos, openrtb_ext.NormalizeBidderName)
+	return config.New(v, bidderInfos, openrtb_ext.NormalizeBidderNameWithORTBBidder)
 }
 
 func serve(cfg *config.Configuration) error {

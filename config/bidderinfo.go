@@ -227,7 +227,7 @@ func LoadBidderInfoFromDisk(path string) (BidderInfos, error) {
 }
 
 func LoadBidderInfo(reader InfoReader) (BidderInfos, error) {
-	return processBidderInfos(reader, openrtb_ext.NormalizeBidderName)
+	return processBidderInfos(reader, openrtb_ext.NormalizeBidderNameWithORTBBidder)
 }
 
 func processBidderInfos(reader InfoReader, normalizeBidderName func(string) (openrtb_ext.BidderName, bool)) (BidderInfos, error) {

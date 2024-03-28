@@ -1524,7 +1524,7 @@ func (deps *endpointDeps) validateImpExt(imp *openrtb_ext.ImpWrapper, aliases ma
 	errL := []error{}
 
 	for bidder, ext := range prebid.Bidder {
-		coreBidder, _ := openrtb_ext.NormalizeBidderName(bidder)
+		coreBidder, _ := openrtb_ext.NormalizeBidderNameWithORTBBidder(bidder)
 		if tmp, isAlias := aliases[bidder]; isAlias {
 			coreBidder = openrtb_ext.BidderName(tmp)
 		}
@@ -1594,7 +1594,7 @@ func (deps *endpointDeps) parseBidExt(req *openrtb_ext.RequestWrapper) error {
 
 func (deps *endpointDeps) validateAliases(aliases map[string]string) error {
 	for alias, bidderName := range aliases {
-		normalisedBidderName, _ := openrtb_ext.NormalizeBidderName(bidderName)
+		normalisedBidderName, _ := openrtb_ext.NormalizeBidderNameWithORTBBidder(bidderName)
 		coreBidderName := normalisedBidderName.String()
 		if _, isCoreBidderDisabled := deps.disabledBidders[coreBidderName]; isCoreBidderDisabled {
 			return fmt.Errorf("request.ext.prebid.aliases.%s refers to disabled bidder: %s", alias, bidderName)

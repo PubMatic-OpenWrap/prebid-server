@@ -3,8 +3,10 @@ package exchange
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/adapters/ortbbidder"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -37,7 +39,7 @@ func buildBidders(infos config.BidderInfos, builders map[openrtb_ext.BidderName]
 			errs = append(errs, fmt.Errorf("This feature is currently under development"))
 			continue
 		}
-		bidderName, bidderNameFound := openrtb_ext.NormalizeBidderName(bidder)
+		bidderName, bidderNameFound := openrtb_ext.NormalizeBidderNameWithORTBBidder(bidder)
 		if !bidderNameFound {
 			errs = append(errs, fmt.Errorf("%v: unknown bidder", bidder))
 			continue
@@ -52,8 +54,12 @@ func buildBidders(infos config.BidderInfos, builders map[openrtb_ext.BidderName]
 
 		builder, builderFound := builders[bidderName]
 		if !builderFound {
-			errs = append(errs, fmt.Errorf("%v: builder not registered", bidder))
-			continue
+			if strings.HasPrefix(string(bidderName), "owortb_") {
+				builder = ortbbidder.Builder
+			} else {
+				errs = append(errs, fmt.Errorf("%v: builder not registered", bidder))
+				continue
+			}
 		}
 
 		if info.IsEnabled() {
@@ -71,7 +77,7 @@ func buildBidders(infos config.BidderInfos, builders map[openrtb_ext.BidderName]
 }
 
 func setAliasBuilder(info config.BidderInfo, builders map[openrtb_ext.BidderName]adapters.Builder, bidderName openrtb_ext.BidderName) error {
-	parentBidderName, parentBidderFound := openrtb_ext.NormalizeBidderName(info.AliasOf)
+	parentBidderName, parentBidderFound := openrtb_ext.NormalizeBidderNameWithORTBBidder(info.AliasOf)
 	if !parentBidderFound {
 		return fmt.Errorf("unknown parent bidder: %v for alias: %v", info.AliasOf, bidderName)
 	}
