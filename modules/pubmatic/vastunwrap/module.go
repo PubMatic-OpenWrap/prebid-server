@@ -40,6 +40,10 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 	if err != nil {
 		return vastUnwrapModuleCfg, fmt.Errorf("invalid vastunwrap config: %v", err)
 	}
+
+	if vastUnwrapModuleCfg.Cfg.StatConfig.UseHostName {
+		vastUnwrapModuleCfg.Cfg.ServerConfig.ServerName = openwrap.GetHostName()
+	}
 	vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
 	metricEngine, err := metrics.NewMetricsEngine(deps)
 	if err != nil {
