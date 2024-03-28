@@ -32,26 +32,8 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	}
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
-	if !vastUnwrapEnabled {
-		vastRequestContext.VastUnwrapStatsEnabled = openwrap.GetRandomNumberIn1To100() <= m.StatTrafficPercentage
-	}
-
-	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
-		result.DebugMessages = append(result.DebugMessages,
-			fmt.Sprintf("error: vast unwrap flag is not enabled in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
-		return result, nil
-	}
-
-	// Below code collects stats only
-	if vastRequestContext.VastUnwrapStatsEnabled {
-		for _, bid := range payload.Bids {
-			if string(bid.BidType) == MediaTypeVideo {
-				go func(bid *adapters.TypedBid) {
-					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
-				}(bid)
-			}
-		}
-	} else {
+	if vastRequestContext.VastUnwrapEnabled {
+		// Do Unwrap and Update Adm
 		wg := new(sync.WaitGroup)
 		for _, bid := range payload.Bids {
 			if string(bid.BidType) == MediaTypeVideo {
@@ -66,6 +48,24 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 		changeSet.RawBidderResponse().Bids().Update(payload.Bids)
 		result.ChangeSet = changeSet
+	} else {
+		vastRequestContext.VastUnwrapStatsEnabled = openwrap.GetRandomNumberIn1To100() <= m.StatTrafficPercentage
+		if vastRequestContext.VastUnwrapStatsEnabled {
+			// Do Unwrap and Collect stats only
+			for _, bid := range payload.Bids {
+				if string(bid.BidType) == MediaTypeVideo {
+					go func(bid *adapters.TypedBid) {
+						m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
+					}(bid)
+				}
+			}
+		}
 	}
+
+	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
+		result.DebugMessages = append(result.DebugMessages,
+			fmt.Sprintf("error: vast unwrap flag is not enabled in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
+	}
+
 	return result, nil
 }
