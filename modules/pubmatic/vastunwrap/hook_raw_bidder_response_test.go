@@ -8,6 +8,7 @@ import (
 
 	"git.pubmatic.com/vastunwrap/config"
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -69,6 +70,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							BidType: "video",
 						}}},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: true}}},
+				randomNumber:        1,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantErr:    false,
@@ -364,7 +366,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			getRandomNumber = func() int {
+			openwrap.GetRandomNumberIn1To100 = func() int {
 				return tt.args.randomNumber
 			}
 			m := VastUnwrapModule{

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 
@@ -32,7 +33,7 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 
 	vastRequestContext.VastUnwrapEnabled = vastUnwrapEnabled
 	if !vastUnwrapEnabled {
-		vastRequestContext.VastUnwrapStatsEnabled = getRandomNumber() <= m.StatTrafficPercentage
+		vastRequestContext.VastUnwrapStatsEnabled = openwrap.GetRandomNumberIn1To100() <= m.StatTrafficPercentage
 	}
 
 	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {

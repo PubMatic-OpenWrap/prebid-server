@@ -10,6 +10,7 @@ import (
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -219,7 +220,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			getRandomNumber = func() int {
+			openwrap.GetRandomNumberIn1To100 = func() int {
 				return tt.args.randomNumber
 			}
 			m := VastUnwrapModule{
