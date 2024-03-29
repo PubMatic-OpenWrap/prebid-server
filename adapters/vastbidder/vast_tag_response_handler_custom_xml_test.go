@@ -91,30 +91,33 @@ func TestVASTTagResponseHandler_getBidResponse(t *testing.T) {
 }
 
 var (
-	vastTagResponseHandler *VASTTagResponseHandler
-	internalRequest        *openrtb2.BidRequest
-	externalRequest        *adapters.RequestData
-	response               *adapters.ResponseData
+	fastXMLResponseHandler *responseHandler
+	etreeResponseHandler   *responseHandler
 )
 
 func init() {
 	vastTagResponseHandler = NewVASTTagResponseHandler()
 	vastTagResponseHandler.VASTTag = &openrtb_ext.ExtImpVASTBidderTag{TagID: "101", Duration: 15}
-	internalRequest = &openrtb2.BidRequest{ID: `request_id_1`, Imp: []openrtb2.Imp{{ID: `imp_id_1`}}}
-	externalRequest = &adapters.RequestData{Params: &adapters.BidRequestParams{ImpIndex: 0}}
-	response = &adapters.ResponseData{
+	internalRequest := &openrtb2.BidRequest{ID: `request_id_1`, Imp: []openrtb2.Imp{{ID: `imp_id_1`}}}
+	externalRequest := &adapters.RequestData{Params: &adapters.BidRequestParams{ImpIndex: 0}}
+	response := &adapters.ResponseData{
 		Body: []byte(`<VAST version="2.0"> <Ad id="1"> <InLine> <Creatives> <Creative sequence="1"> <Linear> <MediaFiles> <MediaFile><![CDATA[ad.mp4]]></MediaFile> </MediaFiles> </Linear> </Creative> </Creatives> <Extensions> <Extension type="LR-Pricing"> <Price model="CPM" currency="USD"><![CDATA[0.05]]></Price> </Extension> </Extensions> </InLine> </Ad> </VAST>`),
 	}
+
+	fastXMLResponseHandler = newResponseHandler(internalRequest, externalRequest, response)
+	//fastXMLResponseHandler.vastTag
 }
 
 func BenchmarkGetBidResponse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		vastTagResponseHandler.getBidResponse(internalRequest, externalRequest, response)
+		fastXMLResponseHandler.Validate()
+		fastXMLResponseHandler.MakeBids()
 	}
 }
 
 func BenchmarkVASTTagToBidderResponse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		vastTagResponseHandler.vastTagToBidderResponse(internalRequest, externalRequest, response)
+		etreeResponseHandler.Validate()
+		etreeResponseHandler.MakeBids()
 	}
 }
