@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/prebid-server/exchange"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -28,13 +29,18 @@ func allowTargetingKey(key string) bool {
 	return strings.HasPrefix(key, models.HbBuyIdPrefix)
 }
 
-func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float64, bid *openrtb2.Bid, isWinningBid bool) {
+func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float64, bid *openrtb2.Bid, isWinningBid bool, priceGranularity *openrtb_ext.PriceGranularity) {
 	targeting[models.CreatePartnerKey(seat, models.PWT_SLOTID)] = utils.GetOriginalBidId(bid.ID)
 	targeting[models.CreatePartnerKey(seat, models.PWT_SZ)] = models.GetSize(bid.W, bid.H)
 	targeting[models.CreatePartnerKey(seat, models.PWT_PARTNERID)] = seat
 	targeting[models.CreatePartnerKey(seat, models.PWT_ECPM)] = fmt.Sprintf("%.2f", ecpm)
 	targeting[models.CreatePartnerKey(seat, models.PWT_PLATFORM)] = getPlatformName(models.PLATFORM_APP)
 	targeting[models.CreatePartnerKey(seat, models.PWT_BIDSTATUS)] = "1"
+	var priceBucketKey string
+	if priceGranularity != nil {
+		priceBucketKey = exchange.GetPriceBucketOW(bid.Price, *priceGranularity)
+	}
+	targeting[models.CreatePartnerKey(seat, models.PwtPb)] = priceBucketKey
 	if len(bid.DealID) != 0 {
 		targeting[models.CreatePartnerKey(seat, models.PWT_DEALID)] = bid.DealID
 	}
@@ -49,6 +55,7 @@ func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float
 		if len(bid.DealID) != 0 {
 			targeting[models.PWT_DEALID] = bid.DealID
 		}
+		targeting[models.PwtPb] = priceBucketKey
 	}
 }
 
@@ -94,7 +101,7 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 			}
 
 			if rctx.Platform == models.PLATFORM_APP {
-				addInAppTargettingKeys(newTargeting, seatBid.Seat, bidCtx.NetECPM, &bid, isWinningBid)
+				addInAppTargettingKeys(newTargeting, seatBid.Seat, bidCtx.NetECPM, &bid, isWinningBid, rctx.PriceGranularity)
 			}
 			for key, value := range rctx.CustomDimensions {
 				//append cds key-val if sendToGAM is true or not present

@@ -103,25 +103,32 @@ func TestComputePriceGranularity(t *testing.T) {
 			want:    priceGranularityAuto, // auto PG Object
 			wantErr: false,
 		}, {
-			name: "custompg_OpenRTB_V25_API_defaults_to_auto",
+			name: "custompg_OpenRTB_V25_API",
 			args: args{
 				rctx: models.RequestCtx{
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.PriceGranularityKey: "custom",
+							models.PriceGranularityKey:          "custom",
+							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
 						},
 					},
-					IsCTVRequest: false,
 				},
 			},
-			want:    priceGranularityAuto,
+			want: openrtb_ext.PriceGranularity{
+				Test:      false,
+				Precision: ptrutil.ToPtr(2),
+				Ranges: []openrtb_ext.GranularityRange{
+					{
+						Min: 0, Max: 2, Increment: 1,
+					},
+				},
+			},
 			wantErr: false,
 		}, {
 			name: "testreq_ctv_expect_testpg",
 			args: args{
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
-					IsCTVRequest:  true,
 				},
 			},
 			want:    priceGranularityTestPG,
