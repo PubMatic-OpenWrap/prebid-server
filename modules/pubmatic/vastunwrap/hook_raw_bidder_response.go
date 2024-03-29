@@ -62,9 +62,10 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 		}
 	}
 
-	if !vastRequestContext.VastUnwrapEnabled && !vastRequestContext.VastUnwrapStatsEnabled {
+	if vastRequestContext.VastUnwrapEnabled || vastRequestContext.VastUnwrapStatsEnabled {
 		result.DebugMessages = append(result.DebugMessages,
-			fmt.Sprintf("error: vast unwrap flag is not enabled in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
+			fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] VastUnwrapStatsEnabled:[%v] ",
+				vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, vastRequestContext.VastUnwrapStatsEnabled))
 	}
 
 	return result, nil
