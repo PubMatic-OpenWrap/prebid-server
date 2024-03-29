@@ -162,6 +162,7 @@ func getTestExtraRequestInfo(t *testing.T, filename string, spec *testSpec, isAm
 	} else if isVideoTest {
 		reqInfo.PbsEntryPoint = "video"
 	}
+
 	return &reqInfo
 }
 
