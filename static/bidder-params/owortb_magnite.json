@@ -4,10 +4,10 @@
     "description": "A schema which validates params accepted by the magnite (oRTB Integration) adapter",
     "type": "object",
     "properties": {
-      "bidder-param": {
+      "adunitID": {
         "type": "string",
-        "description": "Example of bidder-param"
+        "description": "adunitID param"
       }
     },
-    "required": ["bidder-param"]
+    "required": ["adunitID"]
   }

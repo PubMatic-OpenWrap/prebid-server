@@ -57,7 +57,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_multi_requestmode"),
 				},
-				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, ""},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: ""}},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -82,7 +82,7 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
 				},
-				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, "single"},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -293,7 +293,7 @@ func TestGetMediaTypeForBid(t *testing.T) {
 }
 
 func TestJsonSamplesForSingleRequestMode(t *testing.T) {
-	bidder, buildErr := Builder("ortb_test_single_requestmode",
+	bidder, buildErr := Builder("owgeneric_single_requestmode",
 		config.Adapter{
 			Endpoint:         "http://test_bidder.com",
 			ExtraAdapterInfo: `{"requestMode":"single"}`,
@@ -301,11 +301,11 @@ func TestJsonSamplesForSingleRequestMode(t *testing.T) {
 	if buildErr != nil {
 		t.Fatalf("Builder returned unexpected error %v", buildErr)
 	}
-	adapterstest.RunJSONBidderTest(t, "ortb_test_single_requestmode", bidder)
+	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_single_requestmode", bidder)
 }
 
 func TestJsonSamplesForMultiRequestMode(t *testing.T) {
-	bidder, buildErr := Builder("ortb_test_multi_requestmode",
+	bidder, buildErr := Builder("owgeneric_multi_requestmode",
 		config.Adapter{
 			Endpoint:         "http://test_bidder.com",
 			ExtraAdapterInfo: ``,
@@ -313,13 +313,12 @@ func TestJsonSamplesForMultiRequestMode(t *testing.T) {
 	if buildErr != nil {
 		t.Fatalf("Builder returned unexpected error %v", buildErr)
 	}
-	adapterstest.RunJSONBidderTest(t, "ortb_test_multi_requestmode", bidder)
+	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_multi_requestmode", bidder)
 }
 
 func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 	type fields struct {
-		Adapter     config.Adapter
-		requestMode string
+		Adapter config.Adapter
 	}
 	type args struct {
 		request *openrtb2.BidRequest
@@ -371,8 +370,7 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := adapterInfo{
-				Adapter:     tt.fields.Adapter,
-				requestMode: tt.fields.requestMode,
+				Adapter: tt.fields.Adapter,
 			}
 			got, err := o.prepareRequestData(tt.args.request)
 			assert.Equal(t, tt.want.requestData, got, "mismatched requestData")
@@ -422,7 +420,9 @@ func TestBuilder(t *testing.T) {
 			want: want{
 				bidder: &adapter{
 					adapterInfo: adapterInfo{
-						requestMode: "single",
+						extraInfo: extraAdapterInfo{
+							RequestMode: "single",
+						},
 						Adapter: config.Adapter{
 							ExtraAdapterInfo: `{"requestMode":"single"}`,
 						},

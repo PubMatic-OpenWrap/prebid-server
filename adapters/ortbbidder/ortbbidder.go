@@ -23,9 +23,9 @@ const (
 // adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
 type adapterInfo struct {
 	config.Adapter
-	requestMode string
+	extraInfo extraAdapterInfo
 }
-type ExtraAdapterInfo struct {
+type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
@@ -47,7 +47,7 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters
 
 // Builder returns an instance of oRTB adapter
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
-	extraAdapterInfo := ExtraAdapterInfo{}
+	extraAdapterInfo := extraAdapterInfo{}
 	if len(config.ExtraAdapterInfo) > 0 {
 		err := json.Unmarshal([]byte(config.ExtraAdapterInfo), &extraAdapterInfo)
 		if err != nil {
@@ -55,7 +55,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		}
 	}
 	return &adapter{
-		adapterInfo: adapterInfo{config, extraAdapterInfo.RequestMode},
+		adapterInfo: adapterInfo{config, extraAdapterInfo},
 	}, nil
 }
 
@@ -67,7 +67,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	var errs []error
 	adapterInfo := o.adapterInfo
 	// bidder request supports single impression in single HTTP call.
-	if adapterInfo.requestMode == RequestModeSingle {
+	if adapterInfo.extraInfo.RequestMode == RequestModeSingle {
 		requestData := make([]*adapters.RequestData, 0, len(request.Imp))
 		requestCopy := *request
 		for _, imp := range request.Imp {
@@ -107,7 +107,6 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	bidResponse := adapters.BidderResponse{
 		Bids: make([]*adapters.TypedBid, 0),
 	}
-	var errs []error
 	for _, seatBid := range response.SeatBid {
 		for bidInd, bid := range seatBid.Bid {
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
@@ -116,7 +115,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 			})
 		}
 	}
-	return &bidResponse, errs
+	return &bidResponse, nil
 }
 
 // getMediaTypeForBid returns the BidType as per the bid.MType field
