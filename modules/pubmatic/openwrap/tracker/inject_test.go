@@ -8,10 +8,10 @@ import (
 	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 func TestInjectTrackers(t *testing.T) {
@@ -19,7 +19,7 @@ func TestInjectTrackers(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockCache := mock_cache.NewMockCache(ctrl)
 	defer ctrl.Finish()
-	tbf.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
+	featurereloader.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
 		5890: {1234: 100},
 	})
 	models.TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`

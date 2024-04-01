@@ -1,52 +1,14 @@
-package tbf
+package featurereloader
 
 import (
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestInitAndReloader(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockCache := mock_cache.NewMockCache(ctrl)
-	defer SetAndResetTBFConfig(mockCache, nil)()
-
-	type args struct {
-		defaultExpiry int
-		cache         cache.Cache
-	}
-
-	tests := []struct {
-		name      string
-		args      args
-		runBefore func()
-	}{
-		{
-			name: "test_cache_call_through_init",
-			args: args{
-				defaultExpiry: 1,
-				cache:         mockCache,
-			},
-			runBefore: func() {
-				mockCache.EXPECT().GetTBFTrafficForPublishers().Return(map[int]map[int]int{}, nil).AnyTimes()
-			},
-		},
-	}
-	for _, tt := range tests {
-		tt.runBefore()
-		Init(tt.args.defaultExpiry, tt.args.cache)
-		time.Sleep(2 * time.Second)
-		StopTBFReloaderService()
-		time.Sleep(250 * time.Millisecond)
-	}
-}
 
 func TestPredictTBFValue(t *testing.T) {
 	type args struct {

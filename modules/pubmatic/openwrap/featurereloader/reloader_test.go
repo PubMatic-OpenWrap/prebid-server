@@ -1,4 +1,4 @@
-package fullscreenclickability
+package featurereloader
 
 import (
 	"testing"
@@ -13,12 +13,12 @@ func TestInitiateReloader(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_dbcache.NewMockCache(ctrl)
 	defer SetAndResetFscWithMockCache(mockCache, nil)()
-	currentChan := fscConfigs.serviceStop
+	currentChan := reloaderConfig.serviceStop
 	defer func() {
 		ctrl.Finish()
-		fscConfigs.serviceStop = currentChan
+		reloaderConfig.serviceStop = currentChan
 	}()
-	fscConfigs.serviceStop = make(chan struct{})
+	reloaderConfig.serviceStop = make(chan struct{})
 	type args struct {
 		defaultExpiry int
 		cache         cache.Cache
@@ -49,10 +49,39 @@ func TestInitiateReloader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt.setup()
-		fscConfigs.serviceStop = make(chan struct{})
+		reloaderConfig.serviceStop = make(chan struct{})
 		go initiateReloader(tt.args.cache, tt.args.defaultExpiry)
 		//closing channel to avoid infinite loop
 		StopReloaderService()
 		time.Sleep(1 * time.Millisecond)
 	}
+}
+
+func TestInit(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_dbcache.NewMockCache(ctrl)
+	var defCpy = initiateReloader
+	initiateReloader = func(c cache.Cache, expiryTime int) {}
+	defer func() {
+		initiateReloader = defCpy
+	}()
+	type args struct {
+		defaultExpiry int
+		cache         cache.Cache
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{name: "test Init with valid args",
+			args: args{defaultExpiry: 1,
+				cache: mockCache,
+			},
+		},
+	}
+	for _, tt := range tests {
+		Init(tt.args.cache, tt.args.defaultExpiry)
+	}
+
 }

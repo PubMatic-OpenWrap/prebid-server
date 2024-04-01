@@ -5,14 +5,14 @@ import (
 
 	"github.com/prebid/openrtb/v19/openrtb2"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_injectBannerTracker(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
+	featurereloader.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
 		5890: {1234: 100},
 	})
 	type args struct {
@@ -169,7 +169,7 @@ func Test_trackerWithOM(t *testing.T) {
 }
 
 func Test_applyTBFFeature(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
+	featurereloader.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
 		5890: {1234: 100},
 	})
 

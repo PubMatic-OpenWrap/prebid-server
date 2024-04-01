@@ -11,10 +11,10 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1419,7 +1419,7 @@ func TestResetBidIdtoOriginal(t *testing.T) {
 func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
-	tbf.SetAndResetTBFConfig(mockCache, nil)
+	featurereloader.SetAndResetTBFConfig(mockCache, nil)
 	defer ctrl.Finish()
 
 	type args struct {
@@ -1568,7 +1568,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
-	tbf.SetAndResetTBFConfig(mockCache, nil)
+	featurereloader.SetAndResetTBFConfig(mockCache, nil)
 	defer ctrl.Finish()
 
 	type want struct {

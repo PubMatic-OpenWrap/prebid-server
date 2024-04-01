@@ -1,4 +1,4 @@
-package fullscreenclickability
+package featurereloader
 
 import (
 	"errors"
@@ -36,35 +36,6 @@ func TestPredictFscValue(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestInit(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockCache := mock_dbcache.NewMockCache(ctrl)
-	var defCpy = initiateReloader
-	initiateReloader = func(c cache.Cache, expiryTime int) {}
-	defer func() {
-		initiateReloader = defCpy
-	}()
-	type args struct {
-		defaultExpiry int
-		cache         cache.Cache
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{name: "test Init with valid args",
-			args: args{defaultExpiry: 1,
-				cache: mockCache,
-			},
-		},
-	}
-	for _, tt := range tests {
-		Init(tt.args.cache, tt.args.defaultExpiry)
-	}
-
 }
 
 func TestIsUnderFSCThreshold(t *testing.T) {
@@ -140,10 +111,12 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := fsc{
-				cache:              tt.fields.cache,
-				disabledPublishers: tt.fields.disabledPublishers,
-				thresholdsPerDsp:   tt.fields.thresholdsPerDsp,
+			f := reloader{
+				cache: tt.fields.cache,
+				fsc: fsc{
+					disabledPublishers: tt.fields.disabledPublishers,
+					thresholdsPerDsp:   tt.fields.thresholdsPerDsp,
+				},
 			}
 			tt.setup()
 			if got := f.IsUnderFSCThreshold(tt.args.pubid, tt.args.dspid); got != tt.want {
@@ -158,7 +131,8 @@ func TestUpdateFscConfigMapsFromCache(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_dbcache.NewMockCache(ctrl)
 	type args struct {
-		cache cache.Cache
+		cache               cache.Cache
+		publisherFeatureMap map[int]int
 	}
 	type wantMaps struct {
 		fscDsp map[int]int
@@ -205,30 +179,14 @@ func TestUpdateFscConfigMapsFromCache(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 
-			updateFscConfigMapsFromCache(tt.args.cache)
-			if !reflect.DeepEqual(fscConfigs.disabledPublishers, tt.want.fscPub) {
-				t.Errorf("updateFscConfigMapsFromCache() for FscDisabledPublishers = %v, %v", fscConfigs.disabledPublishers, tt.want.fscPub)
+			updateFscConfigMapsFromCache(tt.args.cache, tt.args.publisherFeatureMap)
+			if !reflect.DeepEqual(reloaderConfig.fsc.disabledPublishers, tt.want.fscPub) {
+				t.Errorf("updateFscConfigMapsFromCache() for FscDisabledPublishers = %v, %v", reloaderConfig.fsc.disabledPublishers, tt.want.fscPub)
 			}
-			if !reflect.DeepEqual(fscConfigs.thresholdsPerDsp, tt.want.fscDsp) {
-				t.Errorf("updateFscConfigMapsFromCache() for FscDspThresholds= %v, %v", fscConfigs.disabledPublishers, tt.want.fscDsp)
+			if !reflect.DeepEqual(reloaderConfig.fsc.thresholdsPerDsp, tt.want.fscDsp) {
+				t.Errorf("updateFscConfigMapsFromCache() for FscDspThresholds= %v, %v", reloaderConfig.fsc.disabledPublishers, tt.want.fscDsp)
 			}
 			SetAndResetFscWithMockCache(mockCache, nil)()
-		})
-	}
-}
-
-func TestGetFscInstance(t *testing.T) {
-	tests := []struct {
-		name string
-		want *fsc
-	}{
-		{name: "Return single FSC instance"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetFscInstance(); reflect.TypeOf(got) == reflect.TypeOf(fsc{}) {
-				t.Errorf("GetFscInstance() gotType = %v, wantedType %v", reflect.TypeOf(got), reflect.TypeOf(fsc{}))
-			}
 		})
 	}
 }

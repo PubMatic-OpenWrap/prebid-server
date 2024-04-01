@@ -19,11 +19,10 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 )
 
 const (
@@ -74,11 +73,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
-	// Init FSC and related services
-	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
-
-	// Init TBF (tracking-beacon-first) feature related services
-	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
+	// Init Feature reloader service
+	featurereloader.Init(owCache, cfg.Cache.CacheDefaultExpiry)
 
 	once.Do(func() {
 		ow = &OpenWrap{
