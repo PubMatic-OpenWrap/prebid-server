@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
@@ -88,6 +87,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
+
+	rCtx.IsTBFFeatureEnabled = m.featureConfig.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -248,7 +249,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
-			if rCtx.Endpoint == models.EndpointAMP && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) && featurereloader.IsAmpMultformatEnabled(rCtx.PubID) {
+			if rCtx.Endpoint == models.EndpointAMP && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) && m.featureConfig.IsAmpMultformatEnabled(rCtx.PubID) {
 				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
 				rCtx.AmpVideoEnabled = true
 				imp.Video = &openrtb2.Video{}
@@ -579,7 +580,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 	//For AMP request, if AmpVideoEnabled is true then crate a empty video object and update with adunitConfigs
-	if rCtx.AmpVideoEnabled && featurereloader.IsAmpMultformatEnabled(rCtx.PubID) {
+	if rCtx.AmpVideoEnabled && m.featureConfig.IsAmpMultformatEnabled(rCtx.PubID) {
 		imp.Video = &openrtb2.Video{}
 	}
 
@@ -619,7 +620,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	//For AMP request if AmpVideoEnabled is true then, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
-	if rCtx.AmpVideoEnabled && featurereloader.IsAmpMultformatEnabled(rCtx.PubID) {
+	if rCtx.AmpVideoEnabled && m.featureConfig.IsAmpMultformatEnabled(rCtx.PubID) {
 		if adUnitCfg.Video.Config != nil {
 			updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 		}

@@ -8,6 +8,7 @@ import (
 
 var errorPubFeatureUpdate = "[ErrorPubFeatureUpdate]:%w"
 
+// We are not saving data in cache here
 func (c *cache) GetPublisherFeatureMap() (map[int]int, error) {
 	publisherFeatureMap, err := c.db.GetPublisherFeatureMap()
 	if err != nil {

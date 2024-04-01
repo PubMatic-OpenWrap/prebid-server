@@ -7,8 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v19/openrtb2"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
@@ -17,11 +15,8 @@ import (
 func TestInjectTrackers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-	mockCache := mock_cache.NewMockCache(ctrl)
 	defer ctrl.Finish()
-	featurereloader.SetAndResetTBFConfig(mockCache, map[int]map[int]int{
-		5890: {1234: 100},
-	})
+
 	models.TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`
 
 	type args struct {

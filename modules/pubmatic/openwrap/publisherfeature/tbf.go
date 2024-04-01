@@ -1,13 +1,11 @@
 // Package tbf provides functionalities related to the Tracking-Beacon-First (TBF) feature.
 // The package manages the configuration of the TBF feature, which includes publisher-profile-level
 // traffic data, caching, and service reloader functionality.
-package featurereloader
+package publisherfeature
 
 import (
 	"math/rand"
 	"sync"
-
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 )
 
 // tbf structure holds the configuration of Tracking-Beacon-First feature
@@ -34,17 +32,17 @@ func limitTBFTrafficValues(pubProfTraffic map[int]map[int]int) {
 // updateTBFConfigMapsFromCache loads the TBF traffic data from cache/database and updates the configuration map.
 // If execution of db-query-fails then this function will not update the old config-values.
 // This function is safe for concurrent access.
-func updateTBFConfigMapsFromCache() error {
+func (fe *feature) updateTBFConfigMapsFromCache() error {
 
-	pubProfileTrafficRate, err := reloaderConfig.cache.GetTBFTrafficForPublishers()
+	pubProfileTrafficRate, err := fe.cache.GetTBFTrafficForPublishers()
 	if err != nil {
 		return err
 	}
 	limitTBFTrafficValues(pubProfileTrafficRate)
 
-	reloaderConfig.Lock()
-	reloaderConfig.tbf.pubProfileTraffic = pubProfileTrafficRate
-	reloaderConfig.Unlock()
+	fe.Lock()
+	fe.tbf.pubProfileTraffic = pubProfileTrafficRate
+	fe.Unlock()
 
 	return nil
 }
@@ -53,16 +51,16 @@ func updateTBFConfigMapsFromCache() error {
 // It makes use of predictTBFValue function to predict whether the request is eligible
 // to track beacon first before adm based on the provided traffic percentage.
 // This function is safe for concurrent access.
-func IsEnabledTBFFeature(pubid int, profid int) bool {
+func (fe *feature) IsTBFFeatureEnabled(pubid int, profid int) bool {
 
 	var trafficRate int
 	var present bool
 
-	reloaderConfig.RLock()
+	fe.RLock()
 	if tbfConfigs.pubProfileTraffic != nil {
 		trafficRate, present = tbfConfigs.pubProfileTraffic[pubid][profid]
 	}
-	reloaderConfig.RUnlock()
+	fe.RUnlock()
 
 	if !present {
 		return false
@@ -75,15 +73,4 @@ func IsEnabledTBFFeature(pubid int, profid int) bool {
 // based on the provided trafficRate value.“
 func predictTBFValue(trafficRate int) bool {
 	return rand.Intn(100) < trafficRate
-}
-
-// SetAndResetTBFConfig is exposed for test cases
-func SetAndResetTBFConfig(mockDb cache.Cache, pubProfileTraffic map[int]map[int]int) func() {
-	reloaderConfig.tbf.RWMutex = &sync.RWMutex{}
-	reloaderConfig.cache = mockDb
-	tbfConfigs.pubProfileTraffic = pubProfileTraffic
-	return func() {
-		reloaderConfig.cache = nil
-		tbfConfigs.pubProfileTraffic = make(map[int]map[int]int)
-	}
 }

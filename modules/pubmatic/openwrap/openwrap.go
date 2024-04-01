@@ -10,6 +10,7 @@ import (
 
 	"sync"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/publisherfeature"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/currency"
@@ -19,7 +20,6 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
@@ -34,6 +34,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
+	featureConfig      publisherfeature.Feature
 }
 
 var ow *OpenWrap
@@ -74,7 +75,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
 	// Init Feature reloader service
-	featurereloader.Init(owCache, cfg.Cache.CacheDefaultExpiry)
+	featureConfig := publisherfeature.New(owCache, cfg.Cache.CacheDefaultExpiry)
+	featureConfig.Start()
 
 	once.Do(func() {
 		ow = &OpenWrap{
@@ -82,6 +84,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
+			featureConfig:      featureConfig,
 		}
 	})
 	return *ow, nil

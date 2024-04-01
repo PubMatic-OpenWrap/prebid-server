@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/featurereloader"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
@@ -52,7 +51,7 @@ func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float
 	}
 }
 
-func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (droppedBids map[string][]openrtb2.Bid, warnings []string) {
+func (m OpenWrap) addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (droppedBids map[string][]openrtb2.Bid, warnings []string) {
 	if !rctx.SendAllBids {
 		droppedBids = make(map[string][]openrtb2.Bid)
 	}
@@ -108,7 +107,7 @@ func addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResp
 				if rctx.SendAllBids {
 					bidCtx.Winner = 1
 				}
-				if featurereloader.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
+				if m.featureConfig.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
 					bidCtx.Fsc = 1
 				}
 			} else if !rctx.SendAllBids {

@@ -50,21 +50,6 @@ func (mr *MockCacheMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), arg0)
 }
 
-// GetAMPMultiFormatEnabledPubliahers mocks base method
-func (m *MockCache) GetAMPMultiFormatEnabledPubliahers() (map[int]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAMPMultiFormatEnabledPubliahers")
-	ret0, _ := ret[0].(map[int]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAMPMultiFormatEnabledPubliahers indicates an expected call of GetAMPMultiFormatEnabledPubliahers
-func (mr *MockCacheMockRecorder) GetAMPMultiFormatEnabledPubliahers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMPMultiFormatEnabledPubliahers", reflect.TypeOf((*MockCache)(nil).GetAMPMultiFormatEnabledPubliahers))
-}
-
 // GetAdunitConfigFromCache mocks base method
 func (m *MockCache) GetAdunitConfigFromCache(arg0 *openrtb2.BidRequest, arg1, arg2, arg3 int) *adunitconfig.AdUnitConfig {
 	m.ctrl.T.Helper()
@@ -77,21 +62,6 @@ func (m *MockCache) GetAdunitConfigFromCache(arg0 *openrtb2.BidRequest, arg1, ar
 func (mr *MockCacheMockRecorder) GetAdunitConfigFromCache(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfigFromCache", reflect.TypeOf((*MockCache)(nil).GetAdunitConfigFromCache), arg0, arg1, arg2, arg3)
-}
-
-// GetFSCDisabledPublishers mocks base method
-func (m *MockCache) GetFSCDisabledPublishers() (map[int]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFSCDisabledPublishers")
-	ret0, _ := ret[0].(map[int]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFSCDisabledPublishers indicates an expected call of GetFSCDisabledPublishers
-func (mr *MockCacheMockRecorder) GetFSCDisabledPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCDisabledPublishers", reflect.TypeOf((*MockCache)(nil).GetFSCDisabledPublishers))
 }
 
 // GetFSCThresholdPerDSP mocks base method

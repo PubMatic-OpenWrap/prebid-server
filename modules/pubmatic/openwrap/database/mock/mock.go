@@ -34,21 +34,6 @@ func (m *MockDatabase) EXPECT() *MockDatabaseMockRecorder {
 	return m.recorder
 }
 
-// GetAMPMultiFormatEnabledPubliahers mocks base method
-func (m *MockDatabase) GetAMPMultiFormatEnabledPubliahers() (map[int]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAMPMultiFormatEnabledPubliahers")
-	ret0, _ := ret[0].(map[int]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAMPMultiFormatEnabledPubliahers indicates an expected call of GetAMPMultiFormatEnabledPubliahers
-func (mr *MockDatabaseMockRecorder) GetAMPMultiFormatEnabledPubliahers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMPMultiFormatEnabledPubliahers", reflect.TypeOf((*MockDatabase)(nil).GetAMPMultiFormatEnabledPubliahers))
-}
-
 // GetActivePartnerConfigurations mocks base method
 func (m *MockDatabase) GetActivePartnerConfigurations(arg0, arg1, arg2 int) (map[int]map[string]string, error) {
 	m.ctrl.T.Helper()
@@ -77,21 +62,6 @@ func (m *MockDatabase) GetAdunitConfig(arg0, arg1 int) (*adunitconfig.AdUnitConf
 func (mr *MockDatabaseMockRecorder) GetAdunitConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfig", reflect.TypeOf((*MockDatabase)(nil).GetAdunitConfig), arg0, arg1)
-}
-
-// GetFSCDisabledPublishers mocks base method
-func (m *MockDatabase) GetFSCDisabledPublishers() (map[int]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFSCDisabledPublishers")
-	ret0, _ := ret[0].(map[int]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFSCDisabledPublishers indicates an expected call of GetFSCDisabledPublishers
-func (mr *MockDatabaseMockRecorder) GetFSCDisabledPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCDisabledPublishers", reflect.TypeOf((*MockDatabase)(nil).GetFSCDisabledPublishers))
 }
 
 // GetFSCThresholdPerDSP mocks base method
