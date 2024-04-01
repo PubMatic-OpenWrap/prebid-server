@@ -488,7 +488,6 @@ const (
 	BidderSonobi            BidderName = "sonobi"
 	BidderSovrn             BidderName = "sovrn"
 	BidderSspBC             BidderName = "sspBC"
-	BidderSpotX             BidderName = "spotx"
 	BidderStreamkey         BidderName = "streamkey"
 	BidderStroeerCore       BidderName = "stroeerCore"
 	BidderSuntContent       BidderName = "suntContent"
@@ -506,7 +505,6 @@ const (
 	BidderUnicorn           BidderName = "unicorn"
 	BidderUnruly            BidderName = "unruly"
 	BidderValueImpression   BidderName = "valueimpression"
-	BidderVASTBidder        BidderName = "vastbidder"
 	BidderVideoByte         BidderName = "videobyte"
 	BidderVideoHeroes       BidderName = "videoheroes"
 	BidderVidoomy           BidderName = "vidoomy"
@@ -526,7 +524,6 @@ const (
 	BidderYieldone          BidderName = "yieldone"
 	BidderZeroClickFraud    BidderName = "zeroclickfraud"
 	BidderZetaGlobalSsp     BidderName = "zeta_global_ssp"
-	BidderORTBMagnite       BidderName = "owortb_magnite" // OW specific: oRTB bidder for magnite
 )
 
 // CoreBidderNames returns a slice of all core bidders.
