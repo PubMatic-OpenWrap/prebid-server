@@ -67,6 +67,8 @@ type Metrics struct {
 	panicCounts           *prometheus.CounterVec
 	sendLoggerData        *prometheus.HistogramVec
 	owRequestTime         *prometheus.HistogramVec
+	ampVideoRequests      *prometheus.CounterVec
+	ampVideoResponses     *prometheus.CounterVec
 }
 
 const (

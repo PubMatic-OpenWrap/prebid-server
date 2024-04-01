@@ -89,6 +89,30 @@ func (m *MockMetricsEngine) RecordBidResponseByDealCountInPBS(arg0, arg1, arg2, 
 	m.ctrl.Call(m, "RecordBidResponseByDealCountInPBS", arg0, arg1, arg2, arg3)
 }
 
+// RecordAmpVideoRequests mocks base method
+func (m *MockMetricsEngine) RecordAmpVideoRequests(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAmpVideoRequests", arg0, arg1)
+}
+
+// RecordAmpVideoRequests indicates an expected call of RecordAmpVideoRequests
+func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoRequests(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoRequests), arg0, arg1)
+}
+
+// RecordAmpVideoResponses mocks base method
+func (m *MockMetricsEngine) RecordAmpVideoResponses(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAmpVideoResponses", arg0, arg1)
+}
+
+// RecordAmpVideoResponses indicates an expected call of RecordAmpVideoResponses
+func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
+}
+
 // RecordBidResponseByDealCountInPBS indicates an expected call of RecordBidResponseByDealCountInPBS.
 func (mr *MockMetricsEngineMockRecorder) RecordBidResponseByDealCountInPBS(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

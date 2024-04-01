@@ -445,3 +445,17 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 		thisME.RecordOWServerPanic(endpoint, methodName, nodeName, podName)
 	}
 }
+
+// RecordAmpVideoRequests across all engines
+func (me *MultiMetricsEngine) RecordAmpVideoRequests(pubid, profileid string) {
+	for _, thisME := range *me {
+		thisME.RecordAmpVideoRequests(pubid, profileid)
+	}
+}
+
+// RecordAmpVideoResponses across all engines
+func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
+	for _, thisME := range *me {
+		thisME.RecordAmpVideoResponses(pubid, profileid)
+	}
+}
