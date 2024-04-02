@@ -62,8 +62,10 @@ func initBidderBuilderFactory() {
 func GetBuilder(adapterName string) builder {
 	//resolve hardcoded bidder alias
 	adapterName = ResolveOWBidder(adapterName)
+	normalisedBidderName, _ := openrtb_ext.NormalizeBidderName(adapterName)
+	coreBidderName := normalisedBidderName.String()
 
-	if callback, ok := _bidderBuilderFactory[adapterName]; ok {
+	if callback, ok := _bidderBuilderFactory[coreBidderName]; ok {
 		return callback
 	}
 	return defaultBuilder
