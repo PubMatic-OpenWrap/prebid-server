@@ -46,7 +46,7 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
 }
 
-// GetVastUnwrapEnabled returns whether to enable vastunwrap o
+// GetVastUnwrapEnabled return whether to enable vastunwrap or not
 func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
