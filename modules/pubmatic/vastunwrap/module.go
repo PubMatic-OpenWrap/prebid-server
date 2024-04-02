@@ -20,12 +20,11 @@ import (
 
 type VastUnwrapModule struct {
 	Cfg                   unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
-	TrafficPercentage     int                     `mapstructure:"traffic_percentage" json:"traffic_percentage"`
 	StatTrafficPercentage int                     `mapstructure:"stat_traffic_percentage" json:"stat_traffic_percentage"`
 	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine         metrics.MetricsEngine
 	unwrapRequest         func(w http.ResponseWriter, r *http.Request)
-	getVastUnwrapEnable   func(rctx models.RequestCtx) bool
+	getVastUnwrapEnabled  func(rctx models.RequestCtx) bool
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -51,12 +50,11 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 	}
 	return VastUnwrapModule{
 		Cfg:                   vastUnwrapModuleCfg.Cfg,
-		TrafficPercentage:     vastUnwrapModuleCfg.TrafficPercentage,
 		StatTrafficPercentage: vastUnwrapModuleCfg.StatTrafficPercentage,
 		Enabled:               vastUnwrapModuleCfg.Enabled,
 		MetricsEngine:         metricEngine,
 		unwrapRequest:         vastunwrap.UnwrapRequest,
-		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnabled,
+		getVastUnwrapEnabled:  openwrap.GetVastUnwrapEnabled,
 	}, nil
 }
 
