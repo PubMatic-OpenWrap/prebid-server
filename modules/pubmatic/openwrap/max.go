@@ -8,9 +8,14 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 )
 
-func addSignalDataInRequest(requestBody []byte) []byte {
+func getSignalData(requestBody []byte) string {
 	var signal string
+	var signalReceived bool
 	jsonparser.ArrayEach(requestBody, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if signalReceived {
+			return
+		}
+
 		name, err := jsonparser.GetString(value, "name")
 		if err != nil {
 			return
@@ -21,46 +26,36 @@ func addSignalDataInRequest(requestBody []byte) []byte {
 			if err != nil {
 				return
 			}
+			signalReceived = true
 		}
 	}, "user", "data")
 
+	return signal
+}
+
+func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 	if len(signal) == 0 {
-		return requestBody
+		return
 	}
 
-	var maxRequest, sdkRequest openrtb2.BidRequest
+	var sdkRequest openrtb2.BidRequest
 	if err := json.Unmarshal([]byte(signal), &sdkRequest); err != nil {
-		return requestBody
-	}
-
-	if err := json.Unmarshal(requestBody, &maxRequest); err != nil {
-		return requestBody
+		return
 	}
 
 	if len(sdkRequest.Imp) == 0 || len(maxRequest.Imp) == 0 {
-		return requestBody
+		return
 	}
 
-	updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
+	updateImpression(sdkRequest.Imp[0], maxRequest.Imp[0])
 	updateDevice(sdkRequest.Device, maxRequest.Device)
 	updateApp(sdkRequest.App, maxRequest.App)
 	updateRegs(sdkRequest.Regs, maxRequest.Regs)
 	updateSource(sdkRequest.Source, maxRequest.Source)
 	updateUser(sdkRequest.User, maxRequest.User)
-
-	if len(sdkRequest.Imp) > 0 && len(maxRequest.Imp) > 0 {
-		updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
-	}
-	if maxRequestBody, err := json.Marshal(maxRequest); err == nil {
-		return maxRequestBody
-	}
-	return requestBody
 }
 
-func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
-	if maxImpression == nil {
-		return
-	}
+func updateImpression(sdkImpression openrtb2.Imp, maxImpression openrtb2.Imp) {
 
 	maxImpression.DisplayManager = sdkImpression.DisplayManager
 	maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer

@@ -100,6 +100,7 @@ type RequestCtx struct {
 	AmpVideoEnabled    bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	MaxSignal          string
 	IsMaxRequest       bool
+	SignalData         string
 }
 
 type OwBid struct {

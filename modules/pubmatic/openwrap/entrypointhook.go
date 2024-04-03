@@ -63,12 +63,6 @@ func (m OpenWrap) handleEntrypointHook(
 	// init default for all modules
 	result.Reject = true
 
-	var isMaxRequest bool
-	if queryParams.Get("agent") == "max" {
-		isMaxRequest = true
-		payload.Body = addSignalDataInRequest(payload.Body)
-	}
-
 	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
@@ -120,7 +114,11 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
-		IsMaxRequest: isMaxRequest,
+	}
+
+	if queryParams.Get("agent") == "max" {
+		rCtx.IsMaxRequest = true
+		rCtx.SignalData = getSignalData(payload.Body)
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
