@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
 	"github.com/stretchr/testify/assert"
@@ -30,18 +31,17 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		url                   string
 		wantAdM               bool
 		randomNumber          int
-		trafficPercentage     int
 		statTrafficPercentage int
 	}
 	tests := []struct {
-		name                string
-		args                args
-		wantResult          hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		expectedBids        []*adapters.TypedBid
-		setup               func()
-		wantErr             bool
-		unwrapRequest       func(w http.ResponseWriter, req *http.Request)
-		getVastUnwrapEnable func(rctx models.RequestCtx) bool
+		name                 string
+		args                 args
+		wantResult           hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		expectedBids         []*adapters.TypedBid
+		setup                func()
+		wantErr              bool
+		unwrapRequest        func(w http.ResponseWriter, req *http.Request)
+		getVastUnwrapEnabled func(rctx models.RequestCtx) bool
 	}{
 		{
 			name: "Empty Request Context",
@@ -70,6 +70,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							BidType: "video",
 						}}},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false, Redirect: true}}},
+				randomNumber:        1,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantErr:    false,
@@ -224,7 +225,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				url:                 UnwrapURL,
 				wantAdM:             true,
 				randomNumber:        10,
-				trafficPercentage:   100,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
@@ -354,9 +354,10 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(inlineXMLAdM))
 			},
-			getVastUnwrapEnable: func(rctx models.RequestCtx) bool {
+			getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
 				return true
 			},
+
 			wantErr: false,
 		},
 	}
@@ -365,7 +366,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			getRandomNumber = func() int {
+			openwrap.GetRandomNumberIn1To100 = func() int {
 				return tt.args.randomNumber
 			}
 			m := VastUnwrapModule{
@@ -373,8 +374,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				Enabled:               true,
 				MetricsEngine:         mockMetricsEngine,
 				unwrapRequest:         tt.unwrapRequest,
-				getVastUnwrapEnable:   tt.getVastUnwrapEnable,
-				TrafficPercentage:     tt.args.trafficPercentage,
+				getVastUnwrapEnabled:  tt.getVastUnwrapEnabled,
 				StatTrafficPercentage: tt.args.statTrafficPercentage,
 			}
 			_, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload, "test")
