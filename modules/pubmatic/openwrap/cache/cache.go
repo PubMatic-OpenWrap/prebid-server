@@ -14,8 +14,7 @@ type Cache interface {
 	GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags
 
 	GetFSCThresholdPerDSP() (map[int]int, error)
-	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
-	GetPublisherFeatureMap() (map[int]int, error)
+	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)

@@ -8,13 +8,18 @@ type ampMultiformat struct {
 	enabledPublishers map[int]struct{}
 }
 
-// fetch and update fsc config maps from DB
-func (fe *feature) updateAmpMutiformatConfigFromCache() {
+// updateAmpMutiformatEnabledPublishers updates the ampMultiformat enabled publishers
+func (fe *feature) updateAmpMutiformatEnabledPublishers() {
+	if fe.publisherFeature == nil {
+		return
+	}
 
 	enabledPublishers := make(map[int]struct{})
-	for pubID, featureID := range fe.publisherFeature {
-		if featureID == models.FeatureAMPMultiFormat {
-			enabledPublishers[pubID] = struct{}{}
+	for pubID, feature := range fe.publisherFeature {
+		for featureID, featureDetails := range feature {
+			if featureID == models.FeatureAMPMultiFormat && featureDetails.Enabled == 1 {
+				enabledPublishers[pubID] = struct{}{}
+			}
 		}
 	}
 

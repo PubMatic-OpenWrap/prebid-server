@@ -95,10 +95,10 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 }
 
 // GetPublisherFeatureMap mocks base method
-func (m *MockDatabase) GetPublisherFeatureMap() (map[int]int, error) {
+func (m *MockDatabase) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
-	ret0, _ := ret[0].(map[int]int)
+	ret0, _ := ret[0].(map[int]map[int]models.FeatureData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -137,21 +137,6 @@ func (m *MockDatabase) GetPublisherVASTTags(arg0 int) (map[int]*models.VASTTag, 
 func (mr *MockDatabaseMockRecorder) GetPublisherVASTTags(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTags", reflect.TypeOf((*MockDatabase)(nil).GetPublisherVASTTags), arg0)
-}
-
-// GetTBFTrafficForPublishers mocks base method
-func (m *MockDatabase) GetTBFTrafficForPublishers() (map[int]map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTBFTrafficForPublishers")
-	ret0, _ := ret[0].(map[int]map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTBFTrafficForPublishers indicates an expected call of GetTBFTrafficForPublishers
-func (mr *MockDatabaseMockRecorder) GetTBFTrafficForPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTBFTrafficForPublishers", reflect.TypeOf((*MockDatabase)(nil).GetTBFTrafficForPublishers))
 }
 
 // GetWrapperSlotMappings mocks base method

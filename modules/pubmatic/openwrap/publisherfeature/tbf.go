@@ -4,8 +4,12 @@
 package publisherfeature
 
 import (
+	"encoding/json"
 	"math/rand"
 	"sync"
+
+	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
 // tbf structure holds the configuration of Tracking-Beacon-First feature
@@ -13,8 +17,6 @@ type tbf struct {
 	pubProfileTraffic map[int]map[int]int
 	*sync.RWMutex
 }
-
-var tbfConfigs tbf
 
 // limitTBFTrafficValues validates the traffic values from the given map of pub-prof-traffic
 // to ensure they are constrained between 0 and 100 (inclusive).
@@ -29,22 +31,33 @@ func limitTBFTrafficValues(pubProfTraffic map[int]map[int]int) {
 	}
 }
 
-// updateTBFConfigMapsFromCache loads the TBF traffic data from cache/database and updates the configuration map.
-// If execution of db-query-fails then this function will not update the old config-values.
-// This function is safe for concurrent access.
-func (fe *feature) updateTBFConfigMapsFromCache() error {
-
-	pubProfileTrafficRate, err := fe.cache.GetTBFTrafficForPublishers()
-	if err != nil {
-		return err
+// updateTBFConfigMap updates the TBF configuration maps from the publisher-feature data.
+func (fe *feature) updateTBFConfigMap() {
+	if fe.publisherFeature == nil {
+		return
 	}
+
+	pubProfileTrafficRate := make(map[int]map[int]int)
+
+	for pubID, feature := range fe.publisherFeature {
+		for featureID, featureDetails := range feature {
+			if featureID == models.FeatureTBF && featureDetails.Enabled == 1 && len(featureDetails.Value) > 0 {
+				// convert trafficDetails into map[profileId]traffic
+				var profileTrafficRate map[int]int
+				if err := json.Unmarshal([]byte(featureDetails.Value), &profileTrafficRate); err != nil {
+					glog.Error("ErrJSONUnmarshalFailed TBFProfileTrafficRate pubid: ", pubID, " trafficDetails: ", featureDetails.Value, " err: ", err.Error())
+					continue
+				}
+				pubProfileTrafficRate[pubID] = profileTrafficRate
+			}
+		}
+	}
+
 	limitTBFTrafficValues(pubProfileTrafficRate)
 
 	fe.Lock()
 	fe.tbf.pubProfileTraffic = pubProfileTrafficRate
 	fe.Unlock()
-
-	return nil
 }
 
 // IsEnabledTBFFeature returns false if TBF feature is disabled for pub-profile combination
@@ -57,8 +70,8 @@ func (fe *feature) IsTBFFeatureEnabled(pubid int, profid int) bool {
 	var present bool
 
 	fe.RLock()
-	if tbfConfigs.pubProfileTraffic != nil {
-		trafficRate, present = tbfConfigs.pubProfileTraffic[pubid][profid]
+	if fe.tbf.pubProfileTraffic != nil {
+		trafficRate, present = fe.tbf.pubProfileTraffic[pubid][profid]
 	}
 	fe.RUnlock()
 

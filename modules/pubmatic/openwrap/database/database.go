@@ -13,6 +13,5 @@ type Database interface {
 	GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, error)
 	GetMappings(slotKey string, slotMap map[string]models.SlotMapping) (map[string]interface{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
-	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
-	GetPublisherFeatureMap() (map[int]int, error)
+	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 }

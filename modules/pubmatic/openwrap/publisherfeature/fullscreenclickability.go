@@ -11,21 +11,23 @@ type fsc struct {
 	thresholdsPerDsp   map[int]int
 }
 
-// fetch and update fsc config maps from DB
+// updateFscConfigMapsFromCache update the fsc disabled publishers and thresholds per dsp
 func (fe *feature) updateFscConfigMapsFromCache() error {
-	var err error
-	thresholdsPerDsp, errDspFsc := fe.cache.GetFSCThresholdPerDSP()
-	if errDspFsc != nil {
-		err = models.ErrorWrap(err, errDspFsc)
+	if fe.publisherFeature == nil {
+		return nil
 	}
+
+	thresholdsPerDsp, err := fe.cache.GetFSCThresholdPerDSP()
 	if err != nil {
 		return err
 	}
 
 	disabledPublishers := make(map[int]struct{})
-	for pubID, featureID := range fe.publisherFeature {
-		if featureID == models.FeatureFSC {
-			disabledPublishers[pubID] = struct{}{}
+	for pubID, feature := range fe.publisherFeature {
+		for featureID, featureDetails := range feature {
+			if featureID == models.FeatureFSC && featureDetails.Enabled == 0 {
+				disabledPublishers[pubID] = struct{}{}
+			}
 		}
 	}
 
@@ -42,15 +44,15 @@ IsUnderFSCThreshold:- returns fsc 1/0 based on:
 2. If FSC is enabled for publisher(default), consider DSP-threshold , and predict value of fsc 0 or 1.
 3. If dspId is not present return 0
 */
-func (re *feature) isUnderFSCThreshold(pubid int, dspid int) int {
-	re.RLock()
-	defer re.RUnlock()
+func (fe *feature) isUnderFSCThreshold(pubid int, dspid int) int {
+	fe.RLock()
+	defer fe.RUnlock()
 
-	if _, isPresent := re.fsc.disabledPublishers[pubid]; isPresent {
+	if _, isPresent := fe.fsc.disabledPublishers[pubid]; isPresent {
 		return 0
 	}
 
-	if dspThreshold, isPresent := re.fsc.thresholdsPerDsp[dspid]; isPresent && predictFscValue(dspThreshold) {
+	if dspThreshold, isPresent := fe.fsc.thresholdsPerDsp[dspid]; isPresent && predictFscValue(dspThreshold) {
 		return 1
 	}
 	return 0

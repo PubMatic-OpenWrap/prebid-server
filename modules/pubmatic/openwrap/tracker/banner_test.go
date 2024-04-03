@@ -76,8 +76,9 @@ func Test_injectBannerTracker(t *testing.T) {
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
@@ -178,8 +179,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_disabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 100,
+					PubID:               5890,
+					ProfileID:           100,
+					IsTBFFeatureEnabled: false,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -192,8 +194,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -201,20 +204,6 @@ func Test_applyTBFFeature(t *testing.T) {
 				tracker: "<start>tracker_url<end>",
 			},
 			want: "<start>tracker_url<end><start>bid_AdM<end>",
-		},
-		{
-			name: "invalid_pubid",
-			args: args{
-				rctx: models.RequestCtx{
-					PubID:     -1,
-					ProfileID: 1234,
-				},
-				bid: openrtb2.Bid{
-					AdM: "<start>bid_AdM<end>",
-				},
-				tracker: "<start>tracker_url<end>",
-			},
-			want: "<start>bid_AdM<end><start>tracker_url<end>",
 		},
 	}
 	for _, tt := range tests {

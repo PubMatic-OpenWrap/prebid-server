@@ -188,3 +188,9 @@ type CustomDimension struct {
 	Value     string `json:"value,omitempty"`
 	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }
+
+// FeatureData struct to hold feature data from cache
+type FeatureData struct {
+	Enabled int    // feature enabled/disabled
+	Value   string // feature value if any
+}

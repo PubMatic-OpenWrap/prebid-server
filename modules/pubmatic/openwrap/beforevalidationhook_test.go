@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
 	"testing"
@@ -24,6 +23,7 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1104,6 +1104,7 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 
 	type fields struct {
 		cfg          config.Config
@@ -1122,6 +1123,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 		name   string
 		fields fields
 		args   args
+		setup  func()
 		want   want
 	}{
 		{
@@ -1589,6 +1591,9 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					AmpVideoEnabled: true,
 				},
 			},
+			setup: func() {
+				mockFeature.EXPECT().IsAmpMultformatEnabled(5890).Return(true).Times(2)
+			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID: "testImp",
@@ -1678,6 +1683,9 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					AmpVideoEnabled: true,
 				},
 			},
+			setup: func() {
+				mockFeature.EXPECT().IsAmpMultformatEnabled(5890).Return(true).Times(2)
+			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID: "testImp",
@@ -1724,11 +1732,14 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
+			if tt.setup != nil {
+				tt.setup()
+			}
 			m := &OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
 			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
@@ -2120,6 +2131,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
 
 	type fields struct {
@@ -2263,6 +2275,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2307,6 +2320,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2338,6 +2353,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2381,6 +2398,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2425,6 +2444,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2469,6 +2489,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2517,6 +2538,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2561,6 +2583,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2649,6 +2672,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2751,6 +2775,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -2827,6 +2852,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2936,6 +2963,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "pub2-alias")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "dm-alias")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -3026,6 +3054,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -3184,6 +3213,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
+				mockFeature.EXPECT().IsAmpMultformatEnabled(5890).Return(true).Times(3)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -3203,9 +3235,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				tt.setup()
 			}
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 
 			bidrequest := &openrtb2.BidRequest{}
@@ -3215,7 +3248,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.Reject, got.Reject)
 			assert.Equal(t, tt.want.NbrCode, got.NbrCode)
-			fmt.Println("got:", got.DebugMessages)
 			for i := 0; i < len(got.DebugMessages); i++ {
 				gotDebugMessage, _ := json.Marshal(got.DebugMessages[i])
 				wantDebugMessage, _ := json.Marshal(tt.want.DebugMessages[i])
@@ -3247,6 +3279,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 
 	type fields struct {
 		cfg          config.Config
@@ -3289,6 +3322,8 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3316,6 +3351,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3333,9 +3369,10 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -3355,6 +3392,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -3412,6 +3450,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3463,6 +3502,8 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3515,6 +3556,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				error: false,
@@ -3567,6 +3609,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3611,6 +3654,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3627,9 +3671,10 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)

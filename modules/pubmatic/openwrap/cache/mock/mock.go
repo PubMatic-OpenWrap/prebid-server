@@ -109,10 +109,10 @@ func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2, arg3 inte
 }
 
 // GetPublisherFeatureMap mocks base method
-func (m *MockCache) GetPublisherFeatureMap() (map[int]int, error) {
+func (m *MockCache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
-	ret0, _ := ret[0].(map[int]int)
+	ret0, _ := ret[0].(map[int]map[int]models.FeatureData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -149,21 +149,6 @@ func (m *MockCache) GetSlotToHashValueMapFromCacheV25(arg0 models.RequestCtx, ar
 func (mr *MockCacheMockRecorder) GetSlotToHashValueMapFromCacheV25(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotToHashValueMapFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetSlotToHashValueMapFromCacheV25), arg0, arg1)
-}
-
-// GetTBFTrafficForPublishers mocks base method
-func (m *MockCache) GetTBFTrafficForPublishers() (map[int]map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTBFTrafficForPublishers")
-	ret0, _ := ret[0].(map[int]map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTBFTrafficForPublishers indicates an expected call of GetTBFTrafficForPublishers
-func (mr *MockCacheMockRecorder) GetTBFTrafficForPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTBFTrafficForPublishers", reflect.TypeOf((*MockCache)(nil).GetTBFTrafficForPublishers))
 }
 
 // Set mocks base method

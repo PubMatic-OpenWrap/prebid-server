@@ -10,7 +10,6 @@ import (
 
 	"sync"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/publisherfeature"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/currency"
@@ -23,6 +22,7 @@ import (
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature"
 )
 
 const (

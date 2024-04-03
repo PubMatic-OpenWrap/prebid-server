@@ -9,7 +9,7 @@ import (
 var errorPubFeatureUpdate = "[ErrorPubFeatureUpdate]:%w"
 
 // We are not saving data in cache here
-func (c *cache) GetPublisherFeatureMap() (map[int]int, error) {
+func (c *cache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
 	publisherFeatureMap, err := c.db.GetPublisherFeatureMap()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.PublisherFeatureMapQuery, "", "")

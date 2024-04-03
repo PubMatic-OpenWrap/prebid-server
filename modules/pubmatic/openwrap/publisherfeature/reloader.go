@@ -14,7 +14,7 @@ type feature struct {
 	serviceStop chan struct{}
 	sync.RWMutex
 	defaultExpiry    int
-	publisherFeature map[int]int
+	publisherFeature map[int]map[int]models.FeatureData
 	fsc              fsc
 	tbf              tbf
 	ampMultiformat   ampMultiformat
@@ -29,7 +29,7 @@ func New(c cache.Cache, defaultExpiry int) *feature {
 			cache:            c,
 			serviceStop:      make(chan struct{}),
 			defaultExpiry:    defaultExpiry,
-			publisherFeature: make(map[int]int),
+			publisherFeature: make(map[int]map[int]models.FeatureData),
 			fsc: fsc{
 				disabledPublishers: make(map[int]struct{}),
 				thresholdsPerDsp:   make(map[int]int),
@@ -46,7 +46,7 @@ func New(c cache.Cache, defaultExpiry int) *feature {
 }
 
 func (fe *feature) Start() {
-	go fe.init()
+	go initReloader(fe)
 	glog.Info("Initialized feature reloader")
 }
 
@@ -56,7 +56,7 @@ func (fe *feature) Stop() {
 }
 
 // Initializing reloader with cache-refresh default-expiry + 30 mins (to avoid DB load post cache refresh)
-func (fe *feature) init() {
+var initReloader = func(fe *feature) {
 	if fe.defaultExpiry <= 0 {
 		return
 	}
@@ -77,24 +77,22 @@ func (fe *feature) init() {
 func (fe *feature) updateFeatureConfigMaps() {
 	var err error
 	var errFscUpdate error
+
 	publisherFeatureMap, errPubFeature := fe.cache.GetPublisherFeatureMap()
 	if errPubFeature != nil {
 		err = models.ErrorWrap(err, errPubFeature)
 	}
-	if err == nil {
-		fe.Lock()
-		fe.publisherFeature = publisherFeatureMap
-		fe.Unlock()
-		errFscUpdate = fe.updateFscConfigMapsFromCache()
-	}
-	if errFscUpdate != nil {
+
+	fe.publisherFeature = publisherFeatureMap
+
+	if errFscUpdate = fe.updateFscConfigMapsFromCache(); errFscUpdate != nil {
 		err = models.ErrorWrap(err, errFscUpdate)
 	}
 
-	errTbfUpdate := fe.updateTBFConfigMapsFromCache()
-	if errTbfUpdate != nil {
-		err = models.ErrorWrap(err, errTbfUpdate)
+	fe.updateTBFConfigMap()
+	fe.updateAmpMutiformatEnabledPublishers()
+
+	if err != nil {
+		glog.Error(err.Error())
 	}
-	glog.Error(err.Error())
-	fe.updateAmpMutiformatConfigFromCache()
 }
