@@ -3,7 +3,6 @@ package vastunwrap
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"runtime/debug"
 
 	"github.com/golang/glog"
@@ -12,10 +11,6 @@ import (
 	ow_models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
-
-var getRandomNumber = func() int {
-	return rand.Intn(100)
-}
 
 // supportedEndpoints holds the list of endpoints which supports VAST-unwrap feature
 var supportedEndpoints = map[string]struct{}{
