@@ -47,7 +47,7 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 }
 
 // GetVastUnwrapEnabled return whether to enable vastunwrap or not
-func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
+func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx, VASTUnwrapTraffic int) bool {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
 		PubID:     rctx.PubID,
@@ -62,10 +62,12 @@ func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey)
 	if unwrapEnabled == VastUnwrapperEnableValue {
 		trafficPercentage, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey))
-		if err == nil {
-			return GetRandomNumberIn1To100() <= trafficPercentage
-
+		if err != nil {
+			trafficPercentage = VASTUnwrapTraffic
 		}
+
+		return GetRandomNumberIn1To100() <= trafficPercentage
+
 	}
 	return false
 }

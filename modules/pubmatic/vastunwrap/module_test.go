@@ -52,7 +52,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
 					return true
 				},
 			}},
@@ -76,7 +76,7 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 					StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 					ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
-					getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+					getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
 						return false
 					},
 				}},
@@ -142,7 +142,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
 					return true
 				},
 			}},
@@ -191,7 +191,7 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
 					return true
 				},
 			}},

@@ -41,7 +41,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		setup                func()
 		wantErr              bool
 		unwrapRequest        func(w http.ResponseWriter, req *http.Request)
-		getVastUnwrapEnabled func(rctx models.RequestCtx) bool
+		getVastUnwrapEnabled func(rctx models.RequestCtx, vastunwraptraffic int) bool
 	}{
 		{
 			name: "Empty Request Context",
@@ -354,7 +354,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(inlineXMLAdM))
 			},
-			getVastUnwrapEnabled: func(rctx models.RequestCtx) bool {
+			getVastUnwrapEnabled: func(rctx models.RequestCtx, vastinwraptraffic int) bool {
 				return true
 			},
 
