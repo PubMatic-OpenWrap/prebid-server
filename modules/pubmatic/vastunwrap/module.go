@@ -25,7 +25,7 @@ type VastUnwrapModule struct {
 	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine         metrics.MetricsEngine
 	unwrapRequest         func(w http.ResponseWriter, r *http.Request)
-	getVastUnwrapEnabled  func(rctx models.RequestCtx, vastunwraptrafffic int) bool
+	getVastUnwrapEnabled  func(rctx models.RequestCtx, vastunwraptraffic int) bool
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
