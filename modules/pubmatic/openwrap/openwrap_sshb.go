@@ -59,15 +59,14 @@ func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx, VASTUnwrapTraffic int) boo
 		return false
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
-	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey)
-	if unwrapEnabled == VastUnwrapperEnableValue {
-		trafficPercentage, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey))
-		if err != nil {
-			trafficPercentage = VASTUnwrapTraffic
+	trafficPercentage := VASTUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
 		}
-
-		return GetRandomNumberIn1To100() <= trafficPercentage
-
 	}
-	return false
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
 }
