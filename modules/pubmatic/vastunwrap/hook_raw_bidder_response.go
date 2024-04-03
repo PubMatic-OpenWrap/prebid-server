@@ -26,7 +26,7 @@ func (m VastUnwrapModule) handleRawBidderResponseHook(
 	if !vastRequestContext.Redirect {
 		pubId, _ := strconv.Atoi(miCtx.AccountID)
 		vastRequestContext.PubID = pubId
-		vastUnwrapEnabled = m.getVastUnwrapEnabled(vastRequestContext)
+		vastUnwrapEnabled = m.getVastUnwrapEnabled(vastRequestContext, m.TrafficPercentage)
 		result.DebugMessages = append(result.DebugMessages,
 			fmt.Sprintf("found request without sshb=1 in handleRawBidderResponseHook() for pubid:[%d]", vastRequestContext.PubID))
 	}
