@@ -74,6 +74,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	if rCtx.IsMaxRequest {
 		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest)
+		rCtx.SignalData = ""
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)

@@ -47,7 +47,7 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 		return
 	}
 
-	updateImpression(sdkRequest.Imp[0], maxRequest.Imp[0])
+	updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
 	updateDevice(sdkRequest.Device, maxRequest.Device)
 	updateApp(sdkRequest.App, maxRequest.App)
 	updateRegs(sdkRequest.Regs, maxRequest.Regs)
@@ -55,19 +55,19 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 	updateUser(sdkRequest.User, maxRequest.User)
 }
 
-func updateImpression(sdkImpression openrtb2.Imp, maxImpression openrtb2.Imp) {
+func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
+	if maxImpression == nil {
+		return
+	}
 
 	maxImpression.DisplayManager = sdkImpression.DisplayManager
 	maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
 	maxImpression.ClickBrowser = sdkImpression.ClickBrowser
 
 	var blockedAttributes []adcom1.CreativeAttribute
-	if maxImpression.Video != nil {
+	if maxImpression.Video != nil && sdkImpression.Video != nil {
 		blockedAttributes = maxImpression.Video.BAttr
-	}
-
-	maxImpression.Video = sdkImpression.Video
-	if maxImpression.Video != nil {
+		maxImpression.Video = sdkImpression.Video
 		maxImpression.Video.BAttr = blockedAttributes
 	}
 
@@ -75,6 +75,7 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression openrtb2.Imp) {
 		if sdkImpression.Banner != nil {
 			maxImpression.Banner.API = sdkImpression.Banner.API
 		}
+
 		bannertype, _ := jsonparser.GetString(maxImpression.Banner.Ext, "bannertype")
 		if bannertype == "rewarded" {
 			maxImpression.Banner = nil
@@ -87,24 +88,16 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression openrtb2.Imp) {
 	}
 
 	var maxImpExt map[string]interface{}
-	if err := json.Unmarshal(maxImpression.Ext, &maxImpExt); err != nil {
-		return
-	}
+	json.Unmarshal(maxImpression.Ext, &maxImpExt)
 
 	if reward, ok := sdkImpExt["reward"]; ok {
 		maxImpExt["reward"] = reward
 	}
 
-	skadn, ok := sdkImpExt["skadn"]
-	if !ok {
-		return
+	if skadn, ok := sdkImpExt["skadn"]; ok {
+		maxImpExt["skadn"] = skadn
 	}
 
-	if _, ok := maxImpExt["skadn"]; !ok {
-		maxImpExt["skadn"] = map[string]interface{}{}
-	}
-
-	maxImpExt["skadn"] = skadn
 	maxImpression.Ext, _ = json.Marshal(maxImpExt)
 }
 
@@ -120,6 +113,11 @@ func updateDevice(sdkDevice *openrtb2.Device, maxDevice *openrtb2.Device) {
 	maxDevice.MCCMNC = sdkDevice.MCCMNC
 	maxDevice.ConnectionType = sdkDevice.ConnectionType
 
+	sdkAtts, _, _, err := jsonparser.Get(sdkDevice.Ext, "atts")
+	if err == nil {
+		jsonparser.Set(maxDevice.Ext, sdkAtts, "atts")
+	}
+
 	if sdkDevice.Geo == nil {
 		return
 	}
@@ -132,12 +130,6 @@ func updateDevice(sdkDevice *openrtb2.Device, maxDevice *openrtb2.Device) {
 	maxDevice.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
 
 	// for geo.dma which is non-ortb parameter add it to prebid-openrtb fork
-
-	sdkAtts, _, _, err := jsonparser.Get(sdkDevice.Ext, "atts")
-	if err != nil {
-		return
-	}
-	jsonparser.Set(maxDevice.Ext, sdkAtts, "atts")
 }
 
 func updateApp(sdkApp *openrtb2.App, maxApp *openrtb2.App) {
@@ -169,9 +161,7 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRegs *openrtb2.Regs) {
 	}
 
 	var maxRegsExt map[string]interface{}
-	if err := json.Unmarshal(maxRegs.Ext, &maxRegsExt); err != nil {
-		return
-	}
+	json.Unmarshal(maxRegs.Ext, &maxRegsExt)
 
 	if gdpr, ok := sdkRegsExt["gdpr"]; ok {
 		maxRegsExt["gdpr"] = gdpr
@@ -207,9 +197,7 @@ func updateSource(sdkSource *openrtb2.Source, maxSource *openrtb2.Source) {
 	}
 
 	var maxSourceExt map[string]interface{}
-	if err := json.Unmarshal(maxSource.Ext, &maxSourceExt); err != nil {
-		return
-	}
+	json.Unmarshal(maxSource.Ext, &maxSourceExt)
 
 	if omidpn, ok := sdkSourceExt["omidpn"]; ok {
 		maxSourceExt["omidpn"] = omidpn
@@ -244,9 +232,7 @@ func updateUser(sdkUser *openrtb2.User, maxUser *openrtb2.User) {
 	}
 
 	var maxUserExt map[string]interface{}
-	if err := json.Unmarshal(maxUser.Ext, &maxUserExt); err != nil {
-		return
-	}
+	json.Unmarshal(maxUser.Ext, &maxUserExt)
 
 	if consent, ok := sdkUserExt["consent"]; ok {
 		maxUserExt["consent"] = consent
