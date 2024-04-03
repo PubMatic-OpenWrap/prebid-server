@@ -66,7 +66,7 @@ func (m OpenWrap) handleEntrypointHook(
 	var isMaxRequest bool
 	if queryParams.Get("agent") == "max" {
 		isMaxRequest = true
-		addSignalDataInRequest(payload.Body)
+		payload.Body = addSignalDataInRequest(payload.Body)
 	}
 
 	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)

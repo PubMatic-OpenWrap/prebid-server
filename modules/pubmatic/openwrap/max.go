@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 )
 
-func addSignalDataInRequest(requestBody []byte) {
+func addSignalDataInRequest(requestBody []byte) []byte {
 	var signal string
 	jsonparser.ArrayEach(requestBody, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		name, err := jsonparser.GetString(value, "name")
@@ -25,63 +25,74 @@ func addSignalDataInRequest(requestBody []byte) {
 	}, "user", "data")
 
 	if len(signal) == 0 {
-		return
+		return requestBody
 	}
 
 	var maxRequest, sdkRequest openrtb2.BidRequest
 	if err := json.Unmarshal([]byte(signal), &sdkRequest); err != nil {
-		return
+		return requestBody
 	}
+
 	if err := json.Unmarshal(requestBody, &maxRequest); err != nil {
-		return
+		return requestBody
 	}
+
+	if len(sdkRequest.Imp) == 0 || len(maxRequest.Imp) == 0 {
+		return requestBody
+	}
+
+	updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
+	updateDevice(sdkRequest.Device, maxRequest.Device)
+	updateApp(sdkRequest.App, maxRequest.App)
 	updateRegs(sdkRequest.Regs, maxRequest.Regs)
 	updateSource(sdkRequest.Source, maxRequest.Source)
 	updateUser(sdkRequest.User, maxRequest.User)
-	updateApp(sdkRequest.App, maxRequest.App)
-	updateDevice(sdkRequest.Device, maxRequest.Device)
-	updateImpression(sdkRequest.Imp, maxRequest.Imp)
+
+	if len(sdkRequest.Imp) > 0 && len(maxRequest.Imp) > 0 {
+		updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
+	}
+	if maxRequestBody, err := json.Marshal(maxRequest); err == nil {
+		return maxRequestBody
+	}
+	return requestBody
 }
 
-func updateImpression(sdkImpression []openrtb2.Imp, maxImpression []openrtb2.Imp) {
-	if sdkImpression == nil || maxImpression == nil {
+func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
+	if maxImpression == nil {
 		return
 	}
 
-	sdkImp := sdkImpression[0]
-	maxImp := maxImpression[0]
-
-	maxImp.DisplayManager = sdkImp.DisplayManager
-	maxImp.DisplayManagerVer = sdkImp.DisplayManagerVer
-	maxImp.ClickBrowser = sdkImp.ClickBrowser
+	maxImpression.DisplayManager = sdkImpression.DisplayManager
+	maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
+	maxImpression.ClickBrowser = sdkImpression.ClickBrowser
 
 	var blockedAttributes []adcom1.CreativeAttribute
-	if maxImp.Video != nil {
-		blockedAttributes = maxImp.Video.BAttr
+	if maxImpression.Video != nil {
+		blockedAttributes = maxImpression.Video.BAttr
 	}
 
-	maxImp.Video = sdkImp.Video
-	if maxImp.Video != nil {
-		maxImp.Video.BAttr = blockedAttributes
+	maxImpression.Video = sdkImpression.Video
+	if maxImpression.Video != nil {
+		maxImpression.Video.BAttr = blockedAttributes
 	}
 
-	if maxImp.Banner != nil {
-		if sdkImp.Banner != nil {
-			maxImp.Banner.API = sdkImp.Banner.API
+	if maxImpression.Banner != nil {
+		if sdkImpression.Banner != nil {
+			maxImpression.Banner.API = sdkImpression.Banner.API
 		}
-		bannertype, _ := jsonparser.GetString(maxImp.Banner.Ext, "bannertype")
+		bannertype, _ := jsonparser.GetString(maxImpression.Banner.Ext, "bannertype")
 		if bannertype == "rewarded" {
-			maxImp.Banner = nil
+			maxImpression.Banner = nil
 		}
 	}
 
 	var sdkImpExt map[string]interface{}
-	if err := json.Unmarshal(sdkImp.Ext, &sdkImpExt); err != nil {
+	if err := json.Unmarshal(sdkImpression.Ext, &sdkImpExt); err != nil {
 		return
 	}
 
 	var maxImpExt map[string]interface{}
-	if err := json.Unmarshal(maxImp.Ext, &maxImpExt); err != nil {
+	if err := json.Unmarshal(maxImpression.Ext, &maxImpExt); err != nil {
 		return
 	}
 
@@ -99,7 +110,7 @@ func updateImpression(sdkImpression []openrtb2.Imp, maxImpression []openrtb2.Imp
 	}
 
 	maxImpExt["skadn"] = skadn
-	maxImp.Ext, _ = json.Marshal(maxImpExt)
+	maxImpression.Ext, _ = json.Marshal(maxImpExt)
 }
 
 func updateDevice(sdkDevice *openrtb2.Device, maxDevice *openrtb2.Device) {
