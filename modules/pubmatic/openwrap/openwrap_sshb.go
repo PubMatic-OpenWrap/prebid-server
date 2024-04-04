@@ -3,6 +3,7 @@ package openwrap
 import (
 	"strconv"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/publisherfeature"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
@@ -44,6 +45,11 @@ func (ow *OpenWrap) SetCache(c cache.Cache) {
 // GetMetricEngine Temporary function to expose mertics to SSHB
 func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
+}
+
+// GetFeature Temporary function to expose feature to SSHB
+func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
+	return ow.featureConfig
 }
 
 // GetVastUnwrapEnabled return whether to enable vastunwrap or not
