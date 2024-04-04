@@ -17,6 +17,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/moduledeps"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 	mock_stats "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/stats/mock"
 	"github.com/prometheus/client_golang/prometheus"
@@ -51,7 +52,10 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				TrafficPercentage: 2}},
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
+					return true
+				},
+			}},
 			args: args{
 				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				payload: hookstage.EntrypointPayload{
@@ -72,7 +76,10 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 					StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 					ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 				},
-					TrafficPercentage: 2}},
+					getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
+						return false
+					},
+				}},
 			args: args{
 				miCtx: hookstage.ModuleInvocationContext{},
 				payload: hookstage.EntrypointPayload{
@@ -88,9 +95,9 @@ func TestVastUnwrapModuleHandleEntrypointHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := VastUnwrapModule{
-				Cfg:               tt.fields.cfg.Cfg,
-				Enabled:           tt.fields.cfg.Enabled,
-				TrafficPercentage: tt.fields.cfg.TrafficPercentage,
+				Cfg:                  tt.fields.cfg.Cfg,
+				Enabled:              tt.fields.cfg.Enabled,
+				getVastUnwrapEnabled: tt.fields.cfg.getVastUnwrapEnabled,
 			}
 			got, err := m.HandleEntrypointHook(tt.args.ctx, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {
@@ -135,7 +142,10 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig:      unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				TrafficPercentage: 100}},
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
+					return true
+				},
+			}},
 			args: args{
 				miCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true, Redirect: true}}},
 				payload: hookstage.RawBidderResponsePayload{
@@ -181,7 +191,10 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 				StatConfig:   unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
 				ServerConfig: unWrapCfg.ServerConfig{ServerName: "", DCName: "OW_DC"},
 			},
-				TrafficPercentage: 2}},
+				getVastUnwrapEnabled: func(rctx models.RequestCtx, vastunwraptraffic int) bool {
+					return true
+				},
+			}},
 			args: args{
 				miCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
 				payload: hookstage.RawBidderResponsePayload{
@@ -207,15 +220,15 @@ func TestVastUnwrapModuleHandleRawBidderResponseHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			getRandomNumber = func() int {
+			openwrap.GetRandomNumberIn1To100 = func() int {
 				return tt.args.randomNumber
 			}
 			m := VastUnwrapModule{
-				Cfg:               tt.fields.cfg.Cfg,
-				Enabled:           tt.fields.cfg.Enabled,
-				MetricsEngine:     mockMetricsEngine,
-				unwrapRequest:     tt.unwrapRequest,
-				TrafficPercentage: tt.fields.cfg.TrafficPercentage,
+				Cfg:                  tt.fields.cfg.Cfg,
+				Enabled:              tt.fields.cfg.Enabled,
+				MetricsEngine:        mockMetricsEngine,
+				unwrapRequest:        tt.unwrapRequest,
+				getVastUnwrapEnabled: tt.fields.cfg.getVastUnwrapEnabled,
 			}
 			_, err := m.HandleRawBidderResponseHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			if !assert.NoError(t, err, tt.wantErr) {

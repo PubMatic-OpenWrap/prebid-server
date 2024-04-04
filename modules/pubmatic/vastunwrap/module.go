@@ -25,7 +25,7 @@ type VastUnwrapModule struct {
 	Enabled               bool                    `mapstructure:"enabled" json:"enabled"`
 	MetricsEngine         metrics.MetricsEngine
 	unwrapRequest         func(w http.ResponseWriter, r *http.Request)
-	getVastUnwrapEnable   func(rctx models.RequestCtx) bool
+	getVastUnwrapEnabled  func(rctx models.RequestCtx, vastunwraptraffic int) bool
 }
 
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
@@ -56,7 +56,7 @@ func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnw
 		Enabled:               vastUnwrapModuleCfg.Enabled,
 		MetricsEngine:         metricEngine,
 		unwrapRequest:         vastunwrap.UnwrapRequest,
-		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnabled,
+		getVastUnwrapEnabled:  openwrap.GetVastUnwrapEnabled,
 	}, nil
 }
 

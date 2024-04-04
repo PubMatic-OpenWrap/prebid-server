@@ -1,6 +1,8 @@
 package openwrap
 
 import (
+	"strconv"
+
 	"github.com/prebid/openrtb/v20/openrtb2"
 	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
@@ -44,8 +46,8 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
 }
 
-// GetVastUnwrapEnabled function return vastunwrap flag from the database
-func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
+// GetVastUnwrapEnabled return whether to enable vastunwrap or not
+func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx, VASTUnwrapTraffic int) bool {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
 		PubID:     rctx.PubID,
@@ -57,5 +59,14 @@ func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
 		return false
 	}
 	rCtx.PartnerConfigMap = partnerConfigMap
-	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+	trafficPercentage := VASTUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
+		}
+	}
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
 }
