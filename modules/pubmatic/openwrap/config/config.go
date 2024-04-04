@@ -54,7 +54,6 @@ type Queries struct {
 	GetSlotNameHash                   string
 	GetPublisherVASTTagsQuery         string
 	GetAllDspFscPcntQuery             string
-	GetTBFRateQuery                   string
 	GetPublisherFeatureMapQuery       string
 }
 
