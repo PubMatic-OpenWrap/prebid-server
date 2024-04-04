@@ -13,7 +13,8 @@ import (
 
 func TestGetVastUnwrapEnabled(t *testing.T) {
 	type args struct {
-		rctx vastmodels.RequestCtx
+		rctx              vastmodels.RequestCtx
+		vastunwraptraffic int
 	}
 
 	ctrl := gomock.NewController(t)
@@ -33,7 +34,9 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
-			}},
+			},
+				vastunwraptraffic: 10,
+			},
 			setup: func() {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					-1: {
@@ -51,7 +54,9 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
-			}},
+			},
+				vastunwraptraffic: 0,
+			},
 			setup: func() {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					-1: {
@@ -106,6 +111,25 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 			randomNumber: 91,
 			want:         false,
 		},
+		{
+			name: "vastunwrap is enabled and trafficpercent not present in DB ",
+			args: args{rctx: vastmodels.RequestCtx{
+				PubID:     5890,
+				ProfileID: 123,
+				DisplayID: 1,
+			},
+				vastunwraptraffic: 10,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "1",
+					},
+				}, nil)
+			},
+			randomNumber: 9,
+			want:         true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,7 +140,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 			ow = &OpenWrap{
 				cache: mockCache,
 			}
-			got := GetVastUnwrapEnabled(tt.args.rctx)
+			got := GetVastUnwrapEnabled(tt.args.rctx, tt.args.vastunwraptraffic)
 			assert.Equal(t, got, tt.want)
 		})
 	}
