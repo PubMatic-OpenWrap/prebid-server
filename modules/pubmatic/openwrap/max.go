@@ -43,16 +43,14 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 		return
 	}
 
-	if len(sdkRequest.Imp) == 0 || len(maxRequest.Imp) == 0 {
-		return
+	if len(sdkRequest.Imp) > 0 {
+		updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
 	}
-
-	updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
-	updateDevice(sdkRequest.Device, maxRequest.Device)
-	updateApp(sdkRequest.App, maxRequest.App)
-	updateRegs(sdkRequest.Regs, maxRequest.Regs)
-	updateSource(sdkRequest.Source, maxRequest.Source)
-	updateUser(sdkRequest.User, maxRequest.User)
+	updateDevice(sdkRequest.Device, maxRequest)
+	updateApp(sdkRequest.App, maxRequest)
+	updateRegs(sdkRequest.Regs, maxRequest)
+	updateSource(sdkRequest.Source, maxRequest)
+	updateUser(sdkRequest.User, maxRequest)
 }
 
 func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
@@ -82,12 +80,12 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 		}
 	}
 
-	var sdkImpExt map[string]interface{}
+	var sdkImpExt map[string]any
 	if err := json.Unmarshal(sdkImpression.Ext, &sdkImpExt); err != nil {
 		return
 	}
 
-	var maxImpExt map[string]interface{}
+	var maxImpExt map[string]any
 	json.Unmarshal(maxImpression.Ext, &maxImpExt)
 
 	if reward, ok := sdkImpExt["reward"]; ok {
@@ -101,67 +99,72 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 	maxImpression.Ext, _ = json.Marshal(maxImpExt)
 }
 
-func updateDevice(sdkDevice *openrtb2.Device, maxDevice *openrtb2.Device) {
+func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 	if sdkDevice == nil {
 		return
 	}
 
-	if maxDevice == nil {
-		maxDevice = &openrtb2.Device{}
+	if maxRequest.Device == nil {
+		maxRequest.Device = &openrtb2.Device{}
 	}
 
-	maxDevice.MCCMNC = sdkDevice.MCCMNC
-	maxDevice.ConnectionType = sdkDevice.ConnectionType
+	maxRequest.Device.MCCMNC = sdkDevice.MCCMNC
+	maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
 
 	sdkAtts, _, _, err := jsonparser.Get(sdkDevice.Ext, "atts")
 	if err == nil {
-		jsonparser.Set(maxDevice.Ext, sdkAtts, "atts")
+		if len(maxRequest.Device.Ext) == 0 {
+			maxRequest.Device.Ext = json.RawMessage(`{}`)
+		}
+		maxRequest.Device.Ext, _ = jsonparser.Set(maxRequest.Device.Ext, sdkAtts, "atts")
 	}
 
 	if sdkDevice.Geo == nil {
 		return
 	}
 
-	if maxDevice.Geo == nil {
-		maxDevice.Geo = &openrtb2.Geo{}
+	if maxRequest.Device.Geo == nil {
+		maxRequest.Device.Geo = &openrtb2.Geo{}
 	}
 
-	maxDevice.Geo.City = sdkDevice.Geo.City
-	maxDevice.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
+	maxRequest.Device.Geo.City = sdkDevice.Geo.City
+	maxRequest.Device.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
 
 	// for geo.dma which is non-ortb parameter add it to prebid-openrtb fork
 }
 
-func updateApp(sdkApp *openrtb2.App, maxApp *openrtb2.App) {
+func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if sdkApp == nil {
 		return
 	}
 
-	if maxApp == nil {
-		maxApp = &openrtb2.App{}
+	if maxRequest.App == nil {
+		maxRequest.App = &openrtb2.App{}
 	}
 
-	maxApp.Paid = sdkApp.Paid
-	maxApp.Keywords = sdkApp.Keywords
-	maxApp.Domain = sdkApp.Domain
+	maxRequest.App.Paid = sdkApp.Paid
+	maxRequest.App.Keywords = sdkApp.Keywords
+	maxRequest.App.Domain = sdkApp.Domain
 }
 
-func updateRegs(sdkRegs *openrtb2.Regs, maxRegs *openrtb2.Regs) {
+func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 	if sdkRegs == nil || len(sdkRegs.Ext) == 0 {
 		return
 	}
 
-	var sdkRegsExt map[string]interface{}
+	var sdkRegsExt map[string]any
 	if err := json.Unmarshal(sdkRegs.Ext, &sdkRegsExt); err != nil {
 		return
 	}
 
-	if maxRegs == nil {
-		maxRegs = &openrtb2.Regs{}
+	if maxRequest.Regs == nil {
+		maxRequest.Regs = &openrtb2.Regs{}
 	}
 
-	var maxRegsExt map[string]interface{}
-	json.Unmarshal(maxRegs.Ext, &maxRegsExt)
+	var maxRegsExt map[string]any
+	if err := json.Unmarshal(maxRequest.Regs.Ext, &maxRegsExt); err != nil {
+		maxRegsExt = make(map[string]any)
+	}
 
 	if gdpr, ok := sdkRegsExt["gdpr"]; ok {
 		maxRegsExt["gdpr"] = gdpr
@@ -176,28 +179,30 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRegs *openrtb2.Regs) {
 	}
 
 	if us_privacy, ok := sdkRegsExt["us_privacy"]; ok {
-		maxRegsExt["gdpr"] = us_privacy
+		maxRegsExt["us_privacy"] = us_privacy
 	}
 
-	maxRegs.Ext, _ = json.Marshal(maxRegsExt)
+	maxRequest.Regs.Ext, _ = json.Marshal(maxRegsExt)
 }
 
-func updateSource(sdkSource *openrtb2.Source, maxSource *openrtb2.Source) {
+func updateSource(sdkSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
 	if sdkSource == nil || len(sdkSource.Ext) == 0 {
 		return
 	}
 
-	var sdkSourceExt map[string]interface{}
+	var sdkSourceExt map[string]any
 	if err := json.Unmarshal(sdkSource.Ext, &sdkSourceExt); err != nil {
 		return
 	}
 
-	if maxSource == nil {
-		maxSource = &openrtb2.Source{}
+	if maxRequest.Source == nil {
+		maxRequest.Source = &openrtb2.Source{}
 	}
 
-	var maxSourceExt map[string]interface{}
-	json.Unmarshal(maxSource.Ext, &maxSourceExt)
+	var maxSourceExt map[string]any
+	if err := json.Unmarshal(maxRequest.Source.Ext, &maxSourceExt); err != nil {
+		maxSourceExt = make(map[string]any)
+	}
 
 	if omidpn, ok := sdkSourceExt["omidpn"]; ok {
 		maxSourceExt["omidpn"] = omidpn
@@ -207,32 +212,34 @@ func updateSource(sdkSource *openrtb2.Source, maxSource *openrtb2.Source) {
 		maxSourceExt["omidpv"] = omidpv
 	}
 
-	maxSource.Ext, _ = json.Marshal(maxSourceExt)
+	maxRequest.Source.Ext, _ = json.Marshal(maxSourceExt)
 }
 
-func updateUser(sdkUser *openrtb2.User, maxUser *openrtb2.User) {
+func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	if sdkUser == nil {
 		return
 	}
 
-	if maxUser == nil {
-		maxUser = &openrtb2.User{}
+	if maxRequest.User == nil {
+		maxRequest.User = &openrtb2.User{}
 	}
 
-	maxUser.Yob = sdkUser.Yob
-	maxUser.Gender = sdkUser.Gender
-	maxUser.Keywords = sdkUser.Keywords
+	maxRequest.User.Yob = sdkUser.Yob
+	maxRequest.User.Gender = sdkUser.Gender
+	maxRequest.User.Keywords = sdkUser.Keywords
 
 	//Is this correct? Why doc says to set data.id, data.name separately
-	maxUser.Data = append(maxUser.Data, sdkUser.Data...)
+	maxRequest.User.Data = append(maxRequest.User.Data, sdkUser.Data...)
 
-	var sdkUserExt map[string]interface{}
+	var sdkUserExt map[string]any
 	if err := json.Unmarshal(sdkUser.Ext, &sdkUserExt); err != nil {
 		return
 	}
 
-	var maxUserExt map[string]interface{}
-	json.Unmarshal(maxUser.Ext, &maxUserExt)
+	var maxUserExt map[string]any
+	if err := json.Unmarshal(maxRequest.User.Ext, &maxUserExt); err != nil {
+		maxUserExt = make(map[string]any)
+	}
 
 	if consent, ok := sdkUserExt["consent"]; ok {
 		maxUserExt["consent"] = consent
@@ -242,5 +249,5 @@ func updateUser(sdkUser *openrtb2.User, maxUser *openrtb2.User) {
 		maxUserExt["eids"] = eids
 	}
 
-	maxUser.Ext, _ = json.Marshal(maxUserExt)
+	maxRequest.User.Ext, _ = json.Marshal(maxUserExt)
 }

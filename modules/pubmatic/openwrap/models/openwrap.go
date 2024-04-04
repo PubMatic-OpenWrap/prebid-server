@@ -98,7 +98,6 @@ type RequestCtx struct {
 	MatchedImpression  map[string]int
 	CustomDimensions   map[string]CustomDimension
 	AmpVideoEnabled    bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
-	MaxSignal          string
 	IsMaxRequest       bool
 	SignalData         string
 }
