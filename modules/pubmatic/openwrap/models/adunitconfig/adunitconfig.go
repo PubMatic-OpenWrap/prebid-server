@@ -77,6 +77,7 @@ type AdConfig struct {
 	Banner             *Banner          `json:"banner,omitempty"`
 	Native             *Native          `json:"native,omitempty"`
 	Video              *Video           `json:"video,omitempty"`
+	Adrule             []*openrtb.Video `json:"adrule,omitempty"`
 	App                *openrtb2.App    `json:"app,omitempty"`
 	Device             *openrtb2.Device `json:"device,omitempty"`
 	Transparency       *Transparency    `json:"transparency,omitempty"`
