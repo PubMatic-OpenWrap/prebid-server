@@ -86,7 +86,9 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 	}
 
 	var maxImpExt map[string]any
-	json.Unmarshal(maxImpression.Ext, &maxImpExt)
+	if err := json.Unmarshal(maxImpression.Ext, &maxImpExt); err != nil {
+		maxImpExt = make(map[string]any)
+	}
 
 	if reward, ok := sdkImpExt["reward"]; ok {
 		maxImpExt["reward"] = reward
