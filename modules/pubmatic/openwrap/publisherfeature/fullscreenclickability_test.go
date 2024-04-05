@@ -2,7 +2,6 @@ package publisherfeature
 
 import (
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -219,8 +218,7 @@ func TestIsFscApplicable(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type fields struct {
-		RWMutex sync.RWMutex
-		fsc     fsc
+		fsc fsc
 	}
 	type args struct {
 		pubId int
