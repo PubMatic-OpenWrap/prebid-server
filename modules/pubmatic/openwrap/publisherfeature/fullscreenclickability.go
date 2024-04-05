@@ -13,25 +13,25 @@ type fsc struct {
 
 // updateFscConfigMapsFromCache update the fsc disabled publishers and thresholds per dsp
 func (fe *feature) updateFscConfigMapsFromCache() error {
-	if fe.publisherFeature == nil {
-		return nil
-	}
-
 	thresholdsPerDsp, err := fe.cache.GetFSCThresholdPerDSP()
 	if err != nil {
 		return err
 	}
 
 	disabledPublishers := make(map[int]struct{})
-	for pubID, feature := range fe.publisherFeature {
-		if feature[models.FeatureFSC].Enabled == 0 {
-			disabledPublishers[pubID] = struct{}{}
+	if fe.publisherFeature != nil {
+		for pubID, feature := range fe.publisherFeature {
+			if val, ok := feature[models.FeatureFSC]; ok && val.Enabled == 0 {
+				disabledPublishers[pubID] = struct{}{}
+			}
 		}
 	}
 
 	fe.Lock()
 	fe.fsc.disabledPublishers = disabledPublishers
-	fe.fsc.thresholdsPerDsp = thresholdsPerDsp
+	if thresholdsPerDsp != nil {
+		fe.fsc.thresholdsPerDsp = thresholdsPerDsp
+	}
 	fe.Unlock()
 	return nil
 }

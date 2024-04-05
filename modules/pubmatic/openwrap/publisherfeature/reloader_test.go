@@ -129,17 +129,22 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 		want   want
 	}{
 		{
-			name: "publisher feature map query failed",
+			name: "publisher feature map query failed and fsc threshold per DSP query success",
 			fields: fields{
 				cache: mockCache,
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(nil, errors.New("QUERY FAILED"))
+				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+					6: 100,
+				}, nil)
 			},
 			want: want{
 				fsc: fsc{
 					disabledPublishers: map[int]struct{}{},
-					thresholdsPerDsp:   map[int]int{},
+					thresholdsPerDsp: map[int]int{
+						6: 100,
+					},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{},

@@ -75,7 +75,7 @@ func TestFeature_updateAmpMutiformatEnabledPublishers(t *testing.T) {
 	}
 }
 
-func TestFeature_IsAmpMultformatEnabled(t *testing.T) {
+func TestFeature_IsAmpMultiformatEnabled(t *testing.T) {
 	type fields struct {
 		ampMultiformat ampMultiformat
 	}
@@ -122,7 +122,7 @@ func TestFeature_IsAmpMultformatEnabled(t *testing.T) {
 			fe := &feature{
 				ampMultiformat: tt.fields.ampMultiformat,
 			}
-			got := fe.IsAmpMultformatEnabled(tt.args.pubid)
+			got := fe.IsAmpMultiformatEnabled(tt.args.pubid)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

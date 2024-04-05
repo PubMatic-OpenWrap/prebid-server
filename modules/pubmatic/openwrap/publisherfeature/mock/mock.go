@@ -32,18 +32,18 @@ func (m *MockFeature) EXPECT() *MockFeatureMockRecorder {
 	return m.recorder
 }
 
-// IsAmpMultformatEnabled mocks base method
-func (m *MockFeature) IsAmpMultformatEnabled(arg0 int) bool {
+// IsAmpMultiformatEnabled mocks base method
+func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAmpMultformatEnabled", arg0)
+	ret := m.ctrl.Call(m, "IsAmpMultiformatEnabled", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsAmpMultformatEnabled indicates an expected call of IsAmpMultformatEnabled
-func (mr *MockFeatureMockRecorder) IsAmpMultformatEnabled(arg0 interface{}) *gomock.Call {
+// IsAmpMultiformatEnabled indicates an expected call of IsAmpMultiformatEnabled
+func (mr *MockFeatureMockRecorder) IsAmpMultiformatEnabled(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAmpMultformatEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultformatEnabled), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAmpMultiformatEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultiformatEnabled), arg0)
 }
 
 // IsFscApplicable mocks base method

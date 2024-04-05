@@ -30,21 +30,6 @@ func TestFeature_updateFscConfigMapsFromCache(t *testing.T) {
 		want    wantMaps
 	}{
 		{
-			name: "publisherFeature map is nil",
-			fields: fields{
-				publisherFeature: nil,
-				fsc: fsc{
-					disabledPublishers: make(map[int]struct{}),
-					thresholdsPerDsp:   make(map[int]int),
-				},
-			},
-			wantErr: false,
-			want: wantMaps{
-				disabledPublishers: map[int]struct{}{},
-				thresholdsPerDsp:   map[int]int{},
-			},
-		},
-		{
 			name: "Cache returns valid thresholdsPerDsp and disabled publishers updated from publisherFeature map",
 			fields: fields{
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -86,6 +71,54 @@ func TestFeature_updateFscConfigMapsFromCache(t *testing.T) {
 			want: wantMaps{
 				disabledPublishers: map[int]struct{}{},
 				thresholdsPerDsp:   map[int]int{},
+			},
+		},
+		{
+			name: "publisherFeature map is empty and cache returns valid thresholdsPerDsp",
+			fields: fields{
+				publisherFeature: map[int]map[int]models.FeatureData{},
+				fsc: fsc{
+					disabledPublishers: make(map[int]struct{}),
+					thresholdsPerDsp:   make(map[int]int),
+				},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+					6: 70,
+				}, nil)
+			},
+			wantErr: false,
+			want: wantMaps{
+				disabledPublishers: map[int]struct{}{},
+				thresholdsPerDsp: map[int]int{
+					6: 70,
+				},
+			},
+		},
+		{
+			name: "cache returns nil thresholdsPerDsp and publisherFeature map is not empty",
+			fields: fields{
+				publisherFeature: map[int]map[int]models.FeatureData{
+					5890: {
+						1: models.FeatureData{
+							Enabled: 0,
+						},
+					},
+				},
+				fsc: fsc{
+					disabledPublishers: make(map[int]struct{}),
+					thresholdsPerDsp:   make(map[int]int),
+				},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, nil)
+			},
+			wantErr: false,
+			want: wantMaps{
+				disabledPublishers: map[int]struct{}{
+					5890: {},
+				},
+				thresholdsPerDsp: map[int]int{},
 			},
 		},
 	}

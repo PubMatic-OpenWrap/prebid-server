@@ -26,12 +26,11 @@ func (fe *feature) updateAmpMutiformatEnabledPublishers() {
 	fe.Unlock()
 }
 
-func (fe *feature) IsAmpMultformatEnabled(pubid int) bool {
+func (fe *feature) IsAmpMultiformatEnabled(pubid int) bool {
 	fe.RLock()
 	defer fe.RUnlock()
 
-	if _, isPresent := fe.ampMultiformat.enabledPublishers[pubid]; isPresent {
-		return true
-	}
-	return false
+	_, isPresent := fe.ampMultiformat.enabledPublishers[pubid]
+	return isPresent
+
 }

@@ -83,7 +83,9 @@ func (fe *feature) updateFeatureConfigMaps() {
 		err = models.ErrorWrap(err, errPubFeature)
 	}
 
-	fe.publisherFeature = publisherFeatureMap
+	if publisherFeatureMap != nil {
+		fe.publisherFeature = publisherFeatureMap
+	}
 
 	if errFscUpdate = fe.updateFscConfigMapsFromCache(); errFscUpdate != nil {
 		err = models.ErrorWrap(err, errFscUpdate)
