@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -22,7 +21,6 @@ func Test_cache_GetPublisherFeatureMap(t *testing.T) {
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type fields struct {
-		Map          sync.Map
 		cache        *gocache.Cache
 		cfg          config.Cache
 		db           database.Database
@@ -98,7 +96,6 @@ func Test_cache_GetPublisherFeatureMap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			c := &cache{
-				Map:          tt.fields.Map,
 				cache:        tt.fields.cache,
 				cfg:          tt.fields.cfg,
 				db:           tt.fields.db,

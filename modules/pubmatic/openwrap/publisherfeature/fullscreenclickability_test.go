@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,6 @@ func TestFeature_updateFscConfigMapsFromCache(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	type fields struct {
-		RWMutex          sync.RWMutex
 		publisherFeature map[int]map[int]models.FeatureData
 		fsc              fsc
 	}
@@ -142,14 +140,7 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	type fields struct {
-		cache            cache.Cache
-		serviceStop      chan struct{}
-		RWMutex          sync.RWMutex
-		defaultExpiry    int
-		publisherFeature map[int]int
-		fsc              fsc
-		tbf              tbf
-		ampMultiformat   ampMultiformat
+		fsc fsc
 	}
 	type args struct {
 		pubid int
@@ -228,14 +219,8 @@ func TestIsFscApplicable(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type fields struct {
-		cache            cache.Cache
-		serviceStop      chan struct{}
-		RWMutex          sync.RWMutex
-		defaultExpiry    int
-		publisherFeature map[int]int
-		fsc              fsc
-		tbf              tbf
-		ampMultiformat   ampMultiformat
+		RWMutex sync.RWMutex
+		fsc     fsc
 	}
 	type args struct {
 		pubId int

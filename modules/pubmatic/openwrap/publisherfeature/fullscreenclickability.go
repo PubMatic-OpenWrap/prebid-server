@@ -24,10 +24,8 @@ func (fe *feature) updateFscConfigMapsFromCache() error {
 
 	disabledPublishers := make(map[int]struct{})
 	for pubID, feature := range fe.publisherFeature {
-		for featureID, featureDetails := range feature {
-			if featureID == models.FeatureFSC && featureDetails.Enabled == 0 {
-				disabledPublishers[pubID] = struct{}{}
-			}
+		if feature[models.FeatureFSC].Enabled == 0 {
+			disabledPublishers[pubID] = struct{}{}
 		}
 	}
 

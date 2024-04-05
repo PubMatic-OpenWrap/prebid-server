@@ -40,16 +40,14 @@ func (fe *feature) updateTBFConfigMap() {
 	pubProfileTrafficRate := make(map[int]map[int]int)
 
 	for pubID, feature := range fe.publisherFeature {
-		for featureID, featureDetails := range feature {
-			if featureID == models.FeatureTBF && featureDetails.Enabled == 1 && len(featureDetails.Value) > 0 {
-				// convert trafficDetails into map[profileId]traffic
-				var profileTrafficRate map[int]int
-				if err := json.Unmarshal([]byte(featureDetails.Value), &profileTrafficRate); err != nil {
-					glog.Error("ErrJSONUnmarshalFailed TBFProfileTrafficRate pubid: ", pubID, " trafficDetails: ", featureDetails.Value, " err: ", err.Error())
-					continue
-				}
-				pubProfileTrafficRate[pubID] = profileTrafficRate
+		featureDetails, ok := feature[models.FeatureTBF]
+		if ok && featureDetails.Enabled == 1 && len(featureDetails.Value) > 0 {
+			var profileTrafficRate map[int]int
+			if err := json.Unmarshal([]byte(featureDetails.Value), &profileTrafficRate); err != nil {
+				glog.Error("ErrJSONUnmarshalFailed TBFProfileTrafficRate pubid: ", pubID, " trafficDetails: ", featureDetails.Value, " err: ", err.Error())
+				continue
 			}
+			pubProfileTrafficRate[pubID] = profileTrafficRate
 		}
 	}
 

@@ -13,8 +13,7 @@ import (
 
 func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 	type fields struct {
-		conn *sql.DB
-		cfg  config.Database
+		cfg config.Database
 	}
 	tests := []struct {
 		name    string
@@ -40,7 +39,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)",
+						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
 					},
 				},
 			},
@@ -52,7 +51,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"pub_id", "feature_id", "is_enabled", "value"}).AddRow(`5890`, `3.5`, `1`, `24`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM test_wrapper_table (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -61,7 +60,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)",
+						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
 					},
 				},
 			},
@@ -89,7 +88,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					AddRow(`5890`, `1`, `0`, sql.NullString{}).
 					AddRow(`5890`, `2`, `1`, `{"1234": 100}`).
 					AddRow(`5890`, `3`, `1`, sql.NullString{})
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM test_wrapper_table (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},

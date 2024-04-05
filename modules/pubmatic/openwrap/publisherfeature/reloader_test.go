@@ -2,7 +2,6 @@ package publisherfeature
 
 import (
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
@@ -89,14 +88,9 @@ func TestInitiateReloader(t *testing.T) {
 
 func Test_feature_Start(t *testing.T) {
 
-	type fields struct {
-		RWMutex sync.RWMutex
-	}
-
 	tests := []struct {
-		name   string
-		fields fields
-		setup  func()
+		name  string
+		setup func()
 	}{
 		{
 			name: "test",
@@ -121,8 +115,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type fields struct {
-		cache   cache.Cache
-		RWMutex sync.RWMutex
+		cache cache.Cache
 	}
 	type want struct {
 		fsc            fsc

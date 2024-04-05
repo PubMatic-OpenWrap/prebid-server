@@ -16,10 +16,8 @@ func (fe *feature) updateAmpMutiformatEnabledPublishers() {
 
 	enabledPublishers := make(map[int]struct{})
 	for pubID, feature := range fe.publisherFeature {
-		for featureID, featureDetails := range feature {
-			if featureID == models.FeatureAMPMultiFormat && featureDetails.Enabled == 1 {
-				enabledPublishers[pubID] = struct{}{}
-			}
+		if feature[models.FeatureAMPMultiFormat].Enabled == 1 {
+			enabledPublishers[pubID] = struct{}{}
 		}
 	}
 

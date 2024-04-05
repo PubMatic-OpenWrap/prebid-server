@@ -1,7 +1,6 @@
 package publisherfeature
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -16,7 +15,6 @@ func TestUpdateTBFConfigMapsFromCache(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type feilds struct {
-		RWMutex          sync.RWMutex
 		publisherFeature map[int]map[int]models.FeatureData
 		tbf              tbf
 	}
@@ -174,8 +172,7 @@ func TestPredictTBFValue(t *testing.T) {
 
 func TestIsEnabledTBFFeature(t *testing.T) {
 	type feilds struct {
-		RWMutex sync.RWMutex
-		tbf     tbf
+		tbf tbf
 	}
 	type args struct {
 		pubidstr int
