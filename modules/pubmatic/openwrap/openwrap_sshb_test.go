@@ -8,12 +8,11 @@ import (
 	"github.com/magiconair/properties/assert"
 	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	vastmodels "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 )
 
 func TestGetVastUnwrapEnabled(t *testing.T) {
 	type args struct {
-		rctx              vastmodels.RequestCtx
+		rctx              models.RequestCtx
 		vastunwraptraffic int
 	}
 
@@ -30,7 +29,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 	}{
 		{
 			name: "vastunwrap is enabled and trafficpercent is greater than random number",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
@@ -50,7 +49,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 		},
 		{
 			name: "vastunwrap is enabled and trafficpercent is less than random number",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
@@ -70,7 +69,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 		},
 		{
 			name: "vastunwrap is dissabled and trafficpercent is less than random number",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
@@ -87,7 +86,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 		},
 		{
 			name: "partnerconfigmap not found",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
@@ -100,7 +99,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 		},
 		{
 			name: "error while fetching partnerconfigmap ",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
@@ -113,7 +112,7 @@ func TestGetVastUnwrapEnabled(t *testing.T) {
 		},
 		{
 			name: "vastunwrap is enabled and trafficpercent not present in DB ",
-			args: args{rctx: vastmodels.RequestCtx{
+			args: args{rctx: models.RequestCtx{
 				PubID:     5890,
 				ProfileID: 123,
 				DisplayID: 1,
