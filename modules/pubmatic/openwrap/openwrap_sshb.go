@@ -9,7 +9,6 @@ import (
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
-	vastmodels "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 )
 
 const (
@@ -53,7 +52,7 @@ func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
 }
 
 // GetVastUnwrapEnabled return whether to enable vastunwrap or not
-func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx, VASTUnwrapTraffic int) bool {
+func GetVastUnwrapEnabled(rctx models.RequestCtx, VASTUnwrapTraffic int) bool {
 	rCtx := models.RequestCtx{
 		Endpoint:  rctx.Endpoint,
 		PubID:     rctx.PubID,
