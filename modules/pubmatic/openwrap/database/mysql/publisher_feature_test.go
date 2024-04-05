@@ -86,9 +86,9 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"pub_id", "feature_id", "is_enabled", "value"}).
-					AddRow(`5890`, `1`, `0`, ``).
+					AddRow(`5890`, `1`, `0`, sql.NullString{}).
 					AddRow(`5890`, `2`, `1`, `{"1234": 100}`).
-					AddRow(`5890`, `3`, `1`, ``)
+					AddRow(`5890`, `3`, `1`, sql.NullString{})
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)")).WillReturnRows(rows)
 				return db
 			},
