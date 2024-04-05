@@ -56,6 +56,25 @@ package vastunwrap
 // 		Enabled:               vastUnwrapModuleCfg.Enabled,
 // 		MetricsEngine:         metricEngine,
 // 		unwrapRequest:         vastunwrap.UnwrapRequest,
+// 		getVastUnwrapEnabled:  openwrap.GetVastUnwrapEnabled,
+// 	}, nil
+// }
+
+// 	if vastUnwrapModuleCfg.Cfg.StatConfig.UseHostName {
+// 		vastUnwrapModuleCfg.Cfg.ServerConfig.ServerName = openwrap.GetHostName()
+// 	}
+// 	vastunwrap.InitUnWrapperConfig(vastUnwrapModuleCfg.Cfg)
+// 	metricEngine, err := metrics.NewMetricsEngine(deps)
+// 	if err != nil {
+// 		return vastUnwrapModuleCfg, fmt.Errorf("Prometheus registry is nil")
+// 	}
+// 	return VastUnwrapModule{
+// 		Cfg:                   vastUnwrapModuleCfg.Cfg,
+// 		TrafficPercentage:     vastUnwrapModuleCfg.TrafficPercentage,
+// 		StatTrafficPercentage: vastUnwrapModuleCfg.StatTrafficPercentage,
+// 		Enabled:               vastUnwrapModuleCfg.Enabled,
+// 		MetricsEngine:         metricEngine,
+// 		unwrapRequest:         vastunwrap.UnwrapRequest,
 // 		getVastUnwrapEnable:   openwrap.GetVastUnwrapEnabled,
 // 	}, nil
 // }
