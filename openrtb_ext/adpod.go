@@ -186,6 +186,10 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 
 // Validate will validate video extension object
 func (ext *ExtVideoAdPod) Validate() (err []error) {
+	if ext == nil {
+		return
+	}
+
 	if nil != ext.Offset && *ext.Offset < 0 {
 		err = append(err, errInvalidAdPodOffset)
 	}
