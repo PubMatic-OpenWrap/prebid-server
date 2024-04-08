@@ -1123,7 +1123,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		setup  func()
 		want   want
 	}{
 		{
@@ -1591,9 +1590,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					AmpVideoEnabled: true,
 				},
 			},
-			setup: func() {
-				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true).Times(2)
-			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID: "testImp",
@@ -1683,9 +1679,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					AmpVideoEnabled: true,
 				},
 			},
-			setup: func() {
-				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true).Times(2)
-			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID: "testImp",
@@ -1732,9 +1725,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
 			m := &OpenWrap{
 				cfg:           tt.fields.cfg,
 				cache:         tt.fields.cache,
@@ -3213,9 +3203,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
-				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true).Times(3)
+				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
