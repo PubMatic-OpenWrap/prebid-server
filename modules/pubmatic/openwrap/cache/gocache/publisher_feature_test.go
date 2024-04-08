@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -10,40 +9,60 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFSCThresholdPerDSP(t *testing.T) {
+func Test_cache_GetPublisherFeatureMap(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type fields struct {
-		Map   sync.Map
-		cache *gocache.Cache
-		cfg   config.Cache
-		db    database.Database
+		cache        *gocache.Cache
+		cfg          config.Cache
+		db           database.Database
+		metricEngine metrics.MetricsEngine
 	}
 	tests := []struct {
 		name    string
-		want    map[int]int
-		wantErr bool
-		setup   func()
 		fields  fields
+		want    map[int]map[int]models.FeatureData
+		setup   func()
+		wantErr bool
 	}{
 		{
 			name: "Valid Data present in DB, return same",
-			want: map[int]int{
-				6: 100,
-				5: 45,
+			want: map[int]map[int]models.FeatureData{
+				5890: {
+					models.FeatureFSC: {
+						Enabled: 0,
+					},
+					models.FeatureTBF: {
+						Enabled: 1,
+						Value:   `{"1234": 100}`,
+					},
+					models.FeatureAMPMultiFormat: {
+						Enabled: 1,
+					},
+				},
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
-					6: 100,
-					5: 45,
+				mockDatabase.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{
+					5890: {
+						models.FeatureFSC: {
+							Enabled: 0,
+						},
+						models.FeatureTBF: {
+							Enabled: 1,
+							Value:   `{"1234": 100}`,
+						},
+						models.FeatureAMPMultiFormat: {
+							Enabled: 1,
+						},
+					},
 				}, nil)
 			},
 			fields: fields{
@@ -57,10 +76,10 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 		},
 		{
 			name: "Error In DB, Set Empty",
-			want: map[int]int{},
+			want: map[int]map[int]models.FeatureData{},
 			setup: func() {
-				mockDatabase.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, errors.New("QUERY FAILD"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AllDspFscPcntQuery, "", "").Return()
+				mockDatabase.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, errors.New("QUERY FAILD"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.PublisherFeatureMapQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),
@@ -68,29 +87,26 @@ func TestGetFSCThresholdPerDSP(t *testing.T) {
 				cfg: config.Cache{
 					CacheDefaultExpiry: 1000,
 				},
+				metricEngine: mockEngine,
 			},
 			wantErr: true,
 		},
 	}
-	for ind := range tests {
-		tt := &tests[ind]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
+			tt.setup()
 			c := &cache{
 				cache:        tt.fields.cache,
 				cfg:          tt.fields.cfg,
 				db:           tt.fields.db,
-				metricEngine: mockEngine,
+				metricEngine: tt.fields.metricEngine,
 			}
-			got, err := c.GetFSCThresholdPerDSP()
+			got, err := c.GetPublisherFeatureMap()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetFSCThresholdPerDSP() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("cache.GetPublisherFeatureMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.want, got)
-
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
