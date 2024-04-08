@@ -723,7 +723,7 @@ func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse) 
 		ID:         resp.ID,
 		Cur:        resp.Cur,
 		CustomData: resp.CustomData,
-		SeatBid:    seatbids,
+		SeatBid:    deps.combineBidsSeatWise(seatbids),
 	}
 	return bidResp
 }
@@ -733,11 +733,14 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 	var err error
 	adpodExt := types.BidResponseAdPodExt{
 		Response: *resp,
-		Config:   make(map[string]*types.ImpData, len(deps.podCtx)),
+		Config:   make(map[string]*types.ImpData),
 	}
 
 	for podId, adpodCtx := range deps.podCtx {
-		adpodExt.Config[podId] = adpodCtx.GetAdpodExtension(deps.impPartnerBlockedTagIDMap)
+		ext := adpodCtx.GetAdpodExtension(deps.impPartnerBlockedTagIDMap)
+		if ext != nil {
+			adpodExt.Config[podId] = ext
+		}
 	}
 
 	//Remove extension parameter
@@ -767,4 +770,26 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 		}
 	}
 	return data
+}
+
+func (deps *ctvEndpointDeps) combineBidsSeatWise(seatBids []openrtb2.SeatBid) []openrtb2.SeatBid {
+	if len(seatBids) == 0 {
+		return nil
+	}
+
+	seatMap := map[string][]openrtb2.Bid{}
+	for _, seatBid := range seatBids {
+		seatMap[seatBid.Seat] = append(seatMap[seatBid.Seat], seatBid.Bid...)
+	}
+
+	var responseSeatBids []openrtb2.SeatBid
+	for seat, bids := range seatMap {
+		seat := openrtb2.SeatBid{
+			Bid:  bids,
+			Seat: seat,
+		}
+		responseSeatBids = append(responseSeatBids, seat)
+	}
+
+	return responseSeatBids
 }

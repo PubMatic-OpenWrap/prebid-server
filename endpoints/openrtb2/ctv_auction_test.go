@@ -543,12 +543,16 @@ func TestCTVAuctionEndpointAdpod(t *testing.T) {
 		modifyResponse func(resp1, resp2 json.RawMessage) (json.RawMessage, error)
 	}{
 		{
-			name: "dynamic_adpod_request",
-			args: args{
-				w: httptest.NewRecorder(),
-			},
+			name:      "dynamic_adpod_request",
+			args:      args{},
 			directory: "sample-requests/ctv/valid-requests/",
 			fileName:  "dynamic-adpod.json",
+		},
+		{
+			name:      "structured_adpod_request",
+			args:      args{},
+			directory: "sample-requests/ctv/valid-requests/",
+			fileName:  "structured-adpod.json",
 		},
 	}
 	for _, tt := range tests {

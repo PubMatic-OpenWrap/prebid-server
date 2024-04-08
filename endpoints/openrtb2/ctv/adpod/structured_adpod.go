@@ -72,21 +72,16 @@ func (sa *StructuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 		return nil
 	}
 
-	seatBidMap := make(map[string][]openrtb2.Bid)
+	var seatBid []openrtb2.SeatBid
 	for _, bid := range sa.WinningBid {
-		seatBidMap[bid.Seat] = append(seatBidMap[bid.Seat], *bid.Bid)
-	}
-
-	var seatBids []openrtb2.SeatBid
-	for seat, bids := range seatBidMap {
 		adpodSeat := openrtb2.SeatBid{
-			Bid:  bids,
-			Seat: seat,
+			Bid:  []openrtb2.Bid{*bid.Bid},
+			Seat: bid.Seat,
 		}
-		seatBids = append(seatBids, adpodSeat)
+		seatBid = append(seatBid, adpodSeat)
 	}
 
-	return seatBids
+	return seatBid
 }
 
 func (sa *StructuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
