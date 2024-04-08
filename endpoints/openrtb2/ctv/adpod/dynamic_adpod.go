@@ -100,7 +100,7 @@ func (da *DynamicAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 }
 
 func (da *DynamicAdpod) PerformAuctionAndExclusion() {
-	if len(da.AdpodBid.Bids) == 0 {
+	if da.AdpodBid == nil || len(da.AdpodBid.Bids) == 0 {
 		return
 	}
 
@@ -277,7 +277,7 @@ func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext
 /***************************Bid Response Processing************************/
 
 func (da *DynamicAdpod) getBidResponseSeatBids() []openrtb2.SeatBid {
-	if len(da.AdpodBid.Bids) == 0 {
+	if da.AdpodBid == nil || len(da.AdpodBid.Bids) == 0 {
 		return nil
 	}
 

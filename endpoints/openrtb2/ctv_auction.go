@@ -405,6 +405,8 @@ func (deps *ctvEndpointDeps) createStructuredAdpodCtx(imp openrtb2.Imp) {
 				ReqExt:        deps.reqExt,
 				MetricsEngine: deps.metricsEngine,
 			},
+			ImpBidMap:  make(map[string][]*types.Bid),
+			WinningBid: make(map[string]types.Bid),
 		}
 	}
 
