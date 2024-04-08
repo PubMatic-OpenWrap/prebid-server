@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/util/ptrutil"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/config"
@@ -17,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/metrics"
 	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -536,10 +536,11 @@ func TestCTVAuctionEndpointAdpod(t *testing.T) {
 		params httprouter.Params
 	}
 	tests := []struct {
-		name      string
-		directory string
-		fileName  string
-		args      args
+		name           string
+		directory      string
+		fileName       string
+		args           args
+		modifyResponse func(resp1, resp2 json.RawMessage) (json.RawMessage, error)
 	}{
 		{
 			name: "dynamic_adpod_request",
