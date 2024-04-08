@@ -60,3 +60,7 @@ mockgenmetrics:
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock
 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
+
+mockgenpublisherfeature:
+	mkdir -p modules/pubmatic/openwrap/publisherfeature
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature Feature > modules/pubmatic/openwrap/publisherfeature/mock/mock.go

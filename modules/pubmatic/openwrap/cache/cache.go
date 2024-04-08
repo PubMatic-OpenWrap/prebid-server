@@ -13,10 +13,8 @@ type Cache interface {
 	GetSlotToHashValueMapFromCacheV25(rctx models.RequestCtx, partnerID int) models.SlotMappingInfo
 	GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags
 
-	GetFSCDisabledPublishers() (map[int]struct{}, error)
 	GetFSCThresholdPerDSP() (map[int]int, error)
-
-	GetTBFTrafficForPublishers() (map[int]map[int]int, error)
+	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
