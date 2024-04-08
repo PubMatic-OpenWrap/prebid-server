@@ -69,9 +69,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 			partnerConfigMap[partnerID][models.PREBID_PARTNER_NAME] = prebidPartnerName
 			partnerConfigMap[partnerID][models.BidderCode] = bidderCode
 			partnerConfigMap[partnerID][models.IsAlias] = strconv.Itoa(isAlias)
-			if prebidPartnerName != models.BidderVASTBidder {
-				partnerConfigMap[partnerID][models.VENDORID] = strconv.Itoa(vendorID)
-			}
+			partnerConfigMap[partnerID][models.VENDORID] = strconv.Itoa(vendorID)
 		}
 	}
 

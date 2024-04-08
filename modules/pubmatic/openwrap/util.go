@@ -1,15 +1,19 @@
 package openwrap
 
 import (
+	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 )
 
@@ -309,4 +313,32 @@ func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 		return models.PLATFORM_APP
 	}
 	return platform
+}
+
+// for AMP requests based on traffic percentage, we will decide to send video or not
+// if traffic percentage is not defined then send video
+// if traffic percentage is defined then send video based on percentage
+func isVideoEnabledForAMP(adUnitConfig *adunitconfig.AdConfig) bool {
+	if adUnitConfig == nil || adUnitConfig.Video == nil || adUnitConfig.Video.Enabled == nil || !*adUnitConfig.Video.Enabled {
+		return false
+	} else if adUnitConfig.Video.AmpTrafficPercentage == nil || rand.Intn(100) < *adUnitConfig.Video.AmpTrafficPercentage {
+		return true
+	}
+	return false
+}
+
+func GetRequestIP(body []byte, request *http.Request) string {
+	ipBytes, _, _, _ := jsonparser.Get(body, "device", "ip")
+	if len(ipBytes) > 0 {
+		return string(ipBytes)
+	}
+	return models.GetIP(request)
+}
+
+func GetRequestUserAgent(body []byte, request *http.Request) string {
+	uaBytes, _, _, _ := jsonparser.Get(body, "device", "ua")
+	if len(uaBytes) > 0 {
+		return string(uaBytes)
+	}
+	return request.Header.Get("User-Agent")
 }

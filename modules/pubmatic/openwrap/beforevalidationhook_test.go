@@ -21,7 +21,9 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -736,11 +738,16 @@ func TestIsSlotEnabled(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "both_banner_and_video_context_are empty",
+			args: args{},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := isSlotEnabled(tt.args.videoAdUnitCtx, tt.args.bannerAdUnitCtx)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
@@ -1001,6 +1008,81 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "For_amp_request_banner_can_not_be_disabled_through_adunit_config",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Banner: &adunitconfig.Banner{
+										Enabled: ptrutil.ToPtr(false),
+									},
+								},
+							},
+						},
+					},
+					Endpoint: models.EndpointAMP,
+				},
+				bidRequest: getTestBidRequest(true),
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](200),
+							H: ptrutil.ToPtr[int64](300),
+						},
+						Video: &openrtb2.Video{
+							W:     200,
+							H:     300,
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1020,6 +1102,10 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 }
 
 func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -1458,13 +1544,192 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_no_video_config_update_imp.Video_to_default_video",
+			args: args{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](250),
+						H: ptrutil.ToPtr[int64](300),
+					},
+				},
+				rCtx: models.RequestCtx{
+					PubID: 5890,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MIMEs:          []string{"video/mpev"},
+												MinDuration:    10,
+												MaxDuration:    50,
+												StartDelay:     adcom1.StartMidRoll.Ptr(),
+												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+												Placement:      adcom1.VideoPlacementInArticle,
+												Plcmt:          adcom1.VideoPlcmtInstream,
+												Linearity:      adcom1.LinearityNonLinear,
+												Skip:           ptrutil.ToPtr[int8](1),
+												SkipMin:        1,
+												SkipAfter:      1,
+												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+												PlaybackEnd:    adcom1.PlaybackFloating,
+												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+												W:              300,
+												H:              400,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					AmpVideoEnabled: true,
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](250),
+						H: ptrutil.ToPtr[int64](300),
+					},
+					Video: &openrtb2.Video{
+						MIMEs:          []string{"video/mpev"},
+						MinDuration:    10,
+						MaxDuration:    50,
+						StartDelay:     adcom1.StartMidRoll.Ptr(),
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+						Placement:      adcom1.VideoPlacementInArticle,
+						Plcmt:          adcom1.VideoPlcmtInstream,
+						Linearity:      adcom1.LinearityNonLinear,
+						Skip:           ptrutil.ToPtr[int8](1),
+						SkipMin:        1,
+						SkipAfter:      1,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+						PlaybackEnd:    adcom1.PlaybackFloating,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+						W:              300,
+						H:              400,
+					},
+				},
+				rCtx: models.RequestCtx{
+					PubID: 5890,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+										Config: &adunitconfig.VideoConfig{
+											Video: openrtb2.Video{
+												MIMEs:          []string{"video/mpev"},
+												MinDuration:    10,
+												MaxDuration:    50,
+												StartDelay:     adcom1.StartMidRoll.Ptr(),
+												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+												Placement:      adcom1.VideoPlacementInArticle,
+												Plcmt:          adcom1.VideoPlcmtInstream,
+												Linearity:      adcom1.LinearityNonLinear,
+												Skip:           ptrutil.ToPtr[int8](1),
+												SkipMin:        1,
+												SkipAfter:      1,
+												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+												PlaybackEnd:    adcom1.PlaybackFloating,
+												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+												W:              300,
+												H:              400,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					AmpVideoEnabled: true,
+				},
+			},
+		},
+		{
+			name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_video_config_is_also_non_nil_update_imp.Video_to_video_config",
+			args: args{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](250),
+						H: ptrutil.ToPtr[int64](300),
+					},
+				},
+				rCtx: models.RequestCtx{
+					PubID: 5890,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+									},
+								},
+							},
+						},
+					},
+					AmpVideoEnabled: true,
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID: "testImp",
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](250),
+						H: ptrutil.ToPtr[int64](300),
+					},
+					Video: &openrtb2.Video{
+						MIMEs:          []string{"video/mp4"},
+						MinDuration:    0,
+						MaxDuration:    30,
+						StartDelay:     adcom1.StartPreRoll.Ptr(),
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+						Placement:      adcom1.VideoPlacementInBanner,
+						Plcmt:          adcom1.VideoPlcmtNoContent,
+						Linearity:      adcom1.LinearityLinear,
+						Skip:           ptrutil.ToPtr[int8](0),
+						SkipMin:        0,
+						SkipAfter:      0,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
+						PlaybackEnd:    adcom1.PlaybackCompletion,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
+						W:              250,
+						H:              300,
+					},
+				},
+				rCtx: models.RequestCtx{
+					PubID: 5890,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									Video: &adunitconfig.Video{
+										Enabled: ptrutil.ToPtr(true),
+									},
+								},
+							},
+						},
+					},
+					AmpVideoEnabled: true,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
 			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
@@ -1856,6 +2121,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
 
 	type fields struct {
@@ -1999,6 +2265,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2043,6 +2310,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2074,6 +2343,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2117,6 +2388,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2161,6 +2434,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2205,6 +2479,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2253,6 +2528,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2297,6 +2573,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2385,6 +2662,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2487,6 +2765,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -2563,6 +2842,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:  true,
@@ -2672,6 +2953,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "pub2-alias")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "dm-alias")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -2762,6 +3044,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 				Reject:        false,
@@ -2824,6 +3107,116 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			want:    hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{},
 			wantErr: false,
 		},
+		{
+			name: "AMP_request_successfully_update_video_object_from_adunit_config_and_updated_remaining_feilds_from_default",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							ProfileID:                 1234,
+							PubID:                     5890,
+							DisplayID:                 1,
+							SSAuction:                 -1,
+							Platform:                  "amp",
+							Debug:                     true,
+							UA:                        "go-test",
+							IP:                        "127.0.0.1",
+							IsCTVRequest:              false,
+							TrackerEndpoint:           "t.pubmatic.com",
+							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							ProfileIDStr:             "1234",
+							Endpoint:                 models.EndpointAMP,
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_AMP,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
+					ConfigPattern: "_AU_",
+					Config: map[string]*adunitconfig.AdConfig{
+						"adunit": {
+							Video: &adunitconfig.Video{
+								Enabled:              ptrutil.ToPtr(true),
+								AmpTrafficPercentage: ptrutil.ToPtr(100),
+								Config: &adunitconfig.VideoConfig{
+									Video: openrtb2.Video{
+										MIMEs: []string{"video/mp4", "video/mpeg"},
+										W:     640,
+										H:     480,
+									},
+								},
+							},
+						},
+					},
+				})
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
+				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        false,
+				NbrCode:       0,
+				ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
+				DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":null},"Native":null,"IncomingSlots":["700x900","728x90","300x250"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"adtag":"45343","site":"12313"},"VASTTagFlag":false,"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+				AnalyticsTags: hookanalytics.Analytics{},
+			},
+			wantBidRequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"maxduration":30,"startdelay":0,"protocols":[1,2,3,4,5,6,7,8,11,12,13,14],"w":640,"h":480,"placement":2,"plcmt":4,"linearity":1,"skip":0,"playbackmethod":[2],"playbackend":1,"delivery":[2,3]},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+			wantErr:        false,
+			doMutate:       true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2831,9 +3224,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				tt.setup()
 			}
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 
 			bidrequest := &openrtb2.BidRequest{}
@@ -2874,6 +3268,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 
 	type fields struct {
 		cfg          config.Config
@@ -2916,6 +3311,8 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -2943,6 +3340,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -2960,9 +3358,10 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -2982,6 +3381,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -3039,6 +3439,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3090,6 +3491,8 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3142,6 +3545,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				error: false,
@@ -3194,6 +3598,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3238,6 +3643,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InternalError))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3254,9 +3660,10 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -3612,6 +4019,405 @@ func TestGetTagID(t *testing.T) {
 			if got := getTagID(tt.args.imp, tt.args.impExt); got != tt.want {
 				t.Errorf("getTagID() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
+	type args struct {
+		imp                    *openrtb2.Imp
+		configObjInVideoConfig *modelsAdunitConfig.VideoConfig
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantImpVideo *openrtb2.Video
+	}{
+		{
+			name: "imp video object is empty updated from adunit config",
+			args: args{
+				imp: &openrtb2.Imp{
+					ID:    "123",
+					Video: &openrtb2.Video{},
+				},
+				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+					Video: openrtb2.Video{
+						W:              300,
+						H:              250,
+						MIMEs:          []string{"MP4"},
+						Linearity:      adcom1.LinearityNonLinear,
+						StartDelay:     adcom1.StartMidRoll.Ptr(),
+						MinDuration:    20,
+						MaxDuration:    50,
+						Placement:      adcom1.VideoPlacementInStream,
+						Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        10,
+						SkipAfter:      5,
+						BoxingAllowed:  2,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+						PlaybackEnd:    adcom1.PlaybackCompletion,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+						Protocol:       adcom1.CreativeVAST10,
+						Sequence:       1,
+						CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+						Pos:            adcom1.PositionAboveFold.Ptr(),
+						API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+						CompanionAd:    []openrtb2.Banner{},
+						BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+						MaxExtended:    100,
+					},
+				},
+			},
+			wantImpVideo: &openrtb2.Video{
+				W:              300,
+				H:              250,
+				MIMEs:          []string{"MP4"},
+				Linearity:      adcom1.LinearityNonLinear,
+				StartDelay:     adcom1.StartMidRoll.Ptr(),
+				MinDuration:    20,
+				MaxDuration:    50,
+				Placement:      adcom1.VideoPlacementInStream,
+				Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+				Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+				Skip:           ptrutil.ToPtr[int8](1),
+				SkipMin:        10,
+				SkipAfter:      5,
+				BoxingAllowed:  2,
+				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+				PlaybackEnd:    adcom1.PlaybackCompletion,
+				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+				Protocol:       adcom1.CreativeVAST10,
+				Sequence:       1,
+				CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+				Pos:            ptrutil.ToPtr(adcom1.PositionAboveFold),
+				API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+				CompanionAd:    []openrtb2.Banner{},
+				BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+				MaxExtended:    100,
+			},
+		},
+		{
+			name: "imp video object is not empty and adunit config is also not empty priority to request level parameters",
+			args: args{
+				imp: &openrtb2.Imp{
+					ID: "123",
+					Video: &openrtb2.Video{
+						W: 300,
+						H: 250,
+					},
+				},
+
+				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+					Video: openrtb2.Video{
+						W:              400,
+						H:              300,
+						MIMEs:          []string{"MP4"},
+						Linearity:      adcom1.LinearityNonLinear,
+						StartDelay:     adcom1.StartMidRoll.Ptr(),
+						MinDuration:    20,
+						MaxDuration:    50,
+						Placement:      adcom1.VideoPlacementInStream,
+						Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+						Skip:           ptrutil.ToPtr(int8(1)),
+						SkipMin:        10,
+						SkipAfter:      5,
+						BoxingAllowed:  2,
+						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+						PlaybackEnd:    adcom1.PlaybackCompletion,
+						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+						Protocol:       adcom1.CreativeVAST10,
+						Sequence:       1,
+						CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+						Pos:            adcom1.PositionAboveFold.Ptr(),
+						API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+						CompanionAd:    []openrtb2.Banner{},
+						BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+						MaxExtended:    100,
+					},
+				},
+			},
+			wantImpVideo: &openrtb2.Video{
+				W:              300,
+				H:              250,
+				MIMEs:          []string{"MP4"},
+				Linearity:      adcom1.LinearityNonLinear,
+				StartDelay:     adcom1.StartMidRoll.Ptr(),
+				MinDuration:    20,
+				MaxDuration:    50,
+				Placement:      adcom1.VideoPlacementInStream,
+				Plcmt:          adcom1.VideoPlcmtAccompanyingContent,
+				Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+				Skip:           ptrutil.ToPtr[int8](1),
+				SkipMin:        10,
+				SkipAfter:      5,
+				BoxingAllowed:  2,
+				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
+				PlaybackEnd:    adcom1.PlaybackCompletion,
+				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+				Protocol:       adcom1.CreativeVAST10,
+				Sequence:       1,
+				CompanionType:  []adcom1.CompanionType{adcom1.CompanionHTML},
+				Pos:            ptrutil.ToPtr(adcom1.PositionAboveFold),
+				API:            []adcom1.APIFramework{adcom1.APIVPAID10},
+				CompanionAd:    []openrtb2.Banner{},
+				BAttr:          []adcom1.CreativeAttribute{adcom1.AttrAudioAuto},
+				MaxExtended:    100,
+			},
+		},
+	}
+	for _, tt := range tests {
+		updateImpVideoWithVideoConfig(tt.args.imp, tt.args.configObjInVideoConfig)
+		assert.Equal(t, tt.wantImpVideo, tt.args.imp.Video, tt.name)
+	}
+}
+
+func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
+	type args struct {
+		imp *openrtb2.Imp
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.Video
+	}{
+		{
+			name: "banner has the width and height",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
+					},
+					Video: &openrtb2.Video{},
+				},
+			},
+			want: &openrtb2.Video{
+				MIMEs:          []string{"video/mp4"},
+				MinDuration:    0,
+				MaxDuration:    30,
+				StartDelay:     adcom1.StartPreRoll.Ptr(),
+				Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+				Placement:      adcom1.VideoPlacementInBanner,
+				Plcmt:          adcom1.VideoPlcmtNoContent,
+				Linearity:      adcom1.LinearityLinear,
+				Skip:           ptrutil.ToPtr[int8](0),
+				SkipMin:        0,
+				SkipAfter:      0,
+				BoxingAllowed:  1,
+				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
+				PlaybackEnd:    adcom1.PlaybackCompletion,
+				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
+				W:              300,
+				H:              250,
+			},
+		},
+		{
+			name: "banner has the width and height in the banner format object",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						Format: []openrtb2.Format{
+							{
+								W: 300,
+								H: 250,
+							},
+							{
+								W: 400,
+								H: 300,
+							},
+						},
+					},
+					Video: &openrtb2.Video{},
+				},
+			},
+			want: &openrtb2.Video{
+				MIMEs:          []string{"video/mp4"},
+				MinDuration:    0,
+				MaxDuration:    30,
+				StartDelay:     adcom1.StartPreRoll.Ptr(),
+				Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+				Placement:      adcom1.VideoPlacementInBanner,
+				Plcmt:          adcom1.VideoPlcmtNoContent,
+				Linearity:      adcom1.LinearityLinear,
+				Skip:           ptrutil.ToPtr[int8](0),
+				SkipMin:        0,
+				SkipAfter:      0,
+				BoxingAllowed:  1,
+				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
+				PlaybackEnd:    adcom1.PlaybackCompletion,
+				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
+				W:              300,
+				H:              250,
+			},
+		},
+		{
+			name: "banner has the width and height in in the both banner and format object",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
+						Format: []openrtb2.Format{
+							{
+								W: 200,
+								H: 150,
+							},
+							{
+								W: 400,
+								H: 300,
+							},
+						},
+					},
+					Video: &openrtb2.Video{},
+				},
+			},
+			want: &openrtb2.Video{
+				MIMEs:          []string{"video/mp4"},
+				MinDuration:    0,
+				MaxDuration:    30,
+				StartDelay:     adcom1.StartPreRoll.Ptr(),
+				Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+				Placement:      adcom1.VideoPlacementInBanner,
+				Plcmt:          adcom1.VideoPlcmtNoContent,
+				Linearity:      adcom1.LinearityLinear,
+				Skip:           ptrutil.ToPtr[int8](0),
+				SkipMin:        0,
+				SkipAfter:      0,
+				BoxingAllowed:  1,
+				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
+				PlaybackEnd:    adcom1.PlaybackCompletion,
+				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
+				W:              300,
+				H:              250,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateAmpImpVideoWithDefault(tt.args.imp)
+		})
+	}
+}
+
+func TestGetW(t *testing.T) {
+	type args struct {
+		imp *openrtb2.Imp
+	}
+	tests := []struct {
+		name string
+		args args
+		want int64
+	}{
+		{
+			name: "Empty banner and format",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						Format: nil,
+					},
+				},
+			},
+			want: 0,
+		},
+		{
+			name: "both banner and format are present",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						W: ptrutil.ToPtr[int64](300),
+						Format: []openrtb2.Format{
+							{
+								W: 400,
+							},
+						},
+					},
+				},
+			},
+			want: 300,
+		},
+		{
+			name: "only format is present",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						Format: []openrtb2.Format{
+							{
+								W: 400,
+							},
+						},
+					},
+				},
+			},
+			want: 400,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getW(tt.args.imp)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetH(t *testing.T) {
+	type args struct {
+		imp *openrtb2.Imp
+	}
+	tests := []struct {
+		name string
+		args args
+		want int64
+	}{
+		{
+			name: "Empty banner and format",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						Format: nil,
+					},
+				},
+			},
+			want: 0,
+		},
+		{
+			name: "both banner and format are present",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						H: ptrutil.ToPtr[int64](300),
+						Format: []openrtb2.Format{
+							{
+								H: 400,
+							},
+						},
+					},
+				},
+			},
+			want: 300,
+		},
+		{
+			name: "only format is present",
+			args: args{
+				imp: &openrtb2.Imp{
+					Banner: &openrtb2.Banner{
+						Format: []openrtb2.Format{
+							{
+								H: 400,
+							},
+						},
+					},
+				},
+			},
+			want: 400,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getH(tt.args.imp)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }

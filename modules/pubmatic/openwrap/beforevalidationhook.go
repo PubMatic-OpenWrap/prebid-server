@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/openrtb/v19/openrtb3"
 	"github.com/prebid/prebid-server/hooks/hookstage"
@@ -18,9 +19,11 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/util/boolutil"
+	"github.com/prebid/prebid-server/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -84,6 +87,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
+
+	rCtx.IsTBFFeatureEnabled = m.featureConfig.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
@@ -214,29 +219,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			return result, err
 		}
 
-		if imp.Video != nil {
-			slotType = "video"
-
-			//add stats for video instl impressions
-			if imp.Instl == 1 {
-				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
-			}
-			if len(requestExt.Prebid.Macros) == 0 {
-				// provide custom macros for video event trackers
-				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
-			}
-
-			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
-				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					isAdPodImpression = true
-					if !isAdPodRequest {
-						isAdPodRequest = true
-						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
-					}
-				}
-			}
-		}
-
 		div := ""
 		if impExt.Wrapper != nil {
 			div = impExt.Wrapper.Div
@@ -258,7 +240,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
-			// Currently we are supporting Video config via Ad Unit config file for in-app / video / display profiles
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
 				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
 					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeApp)
@@ -268,7 +249,38 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
-			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
+			if rCtx.Endpoint == models.EndpointAMP && m.featureConfig.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
+				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
+				rCtx.AmpVideoEnabled = true
+				imp.Video = &openrtb2.Video{}
+			}
+			//banner can not be disabled for AMP requests through adunit config
+			if rCtx.Endpoint != models.EndpointAMP {
+				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
+			}
+		}
+
+		if imp.Video != nil {
+			slotType = "video"
+
+			//add stats for video instl impressions
+			if imp.Instl == 1 {
+				m.metricEngine.RecordVideoInstlImpsStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+			}
+			if len(requestExt.Prebid.Macros) == 0 {
+				// provide custom macros for video event trackers
+				requestExt.Prebid.Macros = getVASTEventMacros(rCtx)
+			}
+
+			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
+				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
+					isAdPodImpression = true
+					if !isAdPodRequest {
+						isAdPodRequest = true
+						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
+					}
+				}
+			}
 		}
 
 		// ignore adunit config status for native as it is not supported for native
@@ -521,7 +533,9 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			bidRequest.Imp[i].BidFloorCur = "USD"
 		}
 
-		m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
+		if rctx.Endpoint != models.EndpointAMP {
+			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
+		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
 	}
@@ -565,6 +579,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+	//For AMP request, if AmpVideoEnabled is true then crate a empty video object and update with adunitConfigs
+	if rCtx.AmpVideoEnabled {
+		imp.Video = &openrtb2.Video{}
+	}
+
 	if imp.Video == nil {
 		return
 	}
@@ -600,118 +619,17 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		return
 	}
 
-	if adUnitCfg.Video.Config == nil {
+	//For AMP request if AmpVideoEnabled is true then, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
+	if rCtx.AmpVideoEnabled {
+		if adUnitCfg.Video.Config != nil {
+			updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
+		}
+		updateAmpImpVideoWithDefault(imp)
 		return
 	}
 
-	configObjInVideoConfig := adUnitCfg.Video.Config
-
-	if len(imp.Video.MIMEs) == 0 {
-		imp.Video.MIMEs = configObjInVideoConfig.MIMEs
-	}
-
-	if imp.Video.MinDuration == 0 {
-		imp.Video.MinDuration = configObjInVideoConfig.MinDuration
-	}
-
-	if imp.Video.MaxDuration == 0 {
-		imp.Video.MaxDuration = configObjInVideoConfig.MaxDuration
-	}
-
-	if imp.Video.Skip == nil {
-		imp.Video.Skip = configObjInVideoConfig.Skip
-	}
-
-	if imp.Video.SkipMin == 0 {
-		imp.Video.SkipMin = configObjInVideoConfig.SkipMin
-	}
-
-	if imp.Video.SkipAfter == 0 {
-		imp.Video.SkipAfter = configObjInVideoConfig.SkipAfter
-	}
-
-	if len(imp.Video.BAttr) == 0 {
-		imp.Video.BAttr = configObjInVideoConfig.BAttr
-	}
-
-	if imp.Video.MinBitRate == 0 {
-		imp.Video.MinBitRate = configObjInVideoConfig.MinBitRate
-	}
-
-	if imp.Video.MaxBitRate == 0 {
-		imp.Video.MaxBitRate = configObjInVideoConfig.MaxBitRate
-	}
-
-	if imp.Video.MaxExtended == 0 {
-		imp.Video.MaxExtended = configObjInVideoConfig.MaxExtended
-	}
-
-	if imp.Video.StartDelay == nil {
-		imp.Video.StartDelay = configObjInVideoConfig.StartDelay
-	}
-
-	if imp.Video.Placement == 0 {
-		imp.Video.Placement = configObjInVideoConfig.Placement
-	}
-
-	if imp.Video.Plcmt == 0 {
-		imp.Video.Plcmt = configObjInVideoConfig.Plcmt
-	}
-
-	if imp.Video.Linearity == 0 {
-		imp.Video.Linearity = configObjInVideoConfig.Linearity
-	}
-
-	if imp.Video.Protocol == 0 {
-		imp.Video.Protocol = configObjInVideoConfig.Protocol
-	}
-
-	if len(imp.Video.Protocols) == 0 {
-		imp.Video.Protocols = configObjInVideoConfig.Protocols
-	}
-
-	if imp.Video.W == 0 {
-		imp.Video.W = configObjInVideoConfig.W
-	}
-
-	if imp.Video.H == 0 {
-		imp.Video.H = configObjInVideoConfig.H
-	}
-
-	if imp.Video.Sequence == 0 {
-		imp.Video.Sequence = configObjInVideoConfig.Sequence
-	}
-
-	if imp.Video.BoxingAllowed == 0 {
-		imp.Video.BoxingAllowed = configObjInVideoConfig.BoxingAllowed
-	}
-
-	if len(imp.Video.PlaybackMethod) == 0 {
-		imp.Video.PlaybackMethod = configObjInVideoConfig.PlaybackMethod
-	}
-
-	if imp.Video.PlaybackEnd == 0 {
-		imp.Video.PlaybackEnd = configObjInVideoConfig.PlaybackEnd
-	}
-
-	if imp.Video.Delivery == nil {
-		imp.Video.Delivery = configObjInVideoConfig.Delivery
-	}
-
-	if imp.Video.Pos == nil {
-		imp.Video.Pos = configObjInVideoConfig.Pos
-	}
-
-	if len(imp.Video.API) == 0 {
-		imp.Video.API = configObjInVideoConfig.API
-	}
-
-	if len(imp.Video.CompanionType) == 0 {
-		imp.Video.CompanionType = configObjInVideoConfig.CompanionType
-	}
-
-	if imp.Video.CompanionAd == nil {
-		imp.Video.CompanionAd = configObjInVideoConfig.CompanionAd
+	if adUnitCfg.Video.Config != nil {
+		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 	}
 }
 
@@ -990,4 +908,189 @@ func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 		return imp.TagID
 	}
 	return impExt.Data.PbAdslot
+}
+
+func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {
+
+	if len(imp.Video.MIMEs) == 0 {
+		imp.Video.MIMEs = configObjInVideoConfig.MIMEs
+	}
+
+	if imp.Video.MinDuration == 0 {
+		imp.Video.MinDuration = configObjInVideoConfig.MinDuration
+	}
+
+	if imp.Video.MaxDuration == 0 {
+		imp.Video.MaxDuration = configObjInVideoConfig.MaxDuration
+	}
+
+	if imp.Video.Skip == nil {
+		imp.Video.Skip = configObjInVideoConfig.Skip
+	}
+
+	if imp.Video.SkipMin == 0 {
+		imp.Video.SkipMin = configObjInVideoConfig.SkipMin
+	}
+
+	if imp.Video.SkipAfter == 0 {
+		imp.Video.SkipAfter = configObjInVideoConfig.SkipAfter
+	}
+
+	if len(imp.Video.BAttr) == 0 {
+		imp.Video.BAttr = configObjInVideoConfig.BAttr
+	}
+
+	if imp.Video.MinBitRate == 0 {
+		imp.Video.MinBitRate = configObjInVideoConfig.MinBitRate
+	}
+
+	if imp.Video.MaxBitRate == 0 {
+		imp.Video.MaxBitRate = configObjInVideoConfig.MaxBitRate
+	}
+
+	if imp.Video.MaxExtended == 0 {
+		imp.Video.MaxExtended = configObjInVideoConfig.MaxExtended
+	}
+
+	if imp.Video.StartDelay == nil {
+		imp.Video.StartDelay = configObjInVideoConfig.StartDelay
+	}
+
+	if imp.Video.Placement == 0 {
+		imp.Video.Placement = configObjInVideoConfig.Placement
+	}
+
+	if imp.Video.Plcmt == 0 {
+		imp.Video.Plcmt = configObjInVideoConfig.Plcmt
+	}
+
+	if imp.Video.Linearity == 0 {
+		imp.Video.Linearity = configObjInVideoConfig.Linearity
+	}
+
+	if imp.Video.Protocol == 0 {
+		imp.Video.Protocol = configObjInVideoConfig.Protocol
+	}
+
+	if len(imp.Video.Protocols) == 0 {
+		imp.Video.Protocols = configObjInVideoConfig.Protocols
+	}
+
+	if imp.Video.W == 0 {
+		imp.Video.W = configObjInVideoConfig.W
+	}
+
+	if imp.Video.H == 0 {
+		imp.Video.H = configObjInVideoConfig.H
+	}
+
+	if imp.Video.Sequence == 0 {
+		imp.Video.Sequence = configObjInVideoConfig.Sequence
+	}
+
+	if imp.Video.BoxingAllowed == 0 {
+		imp.Video.BoxingAllowed = configObjInVideoConfig.BoxingAllowed
+	}
+
+	if len(imp.Video.PlaybackMethod) == 0 {
+		imp.Video.PlaybackMethod = configObjInVideoConfig.PlaybackMethod
+	}
+
+	if imp.Video.PlaybackEnd == 0 {
+		imp.Video.PlaybackEnd = configObjInVideoConfig.PlaybackEnd
+	}
+
+	if imp.Video.Delivery == nil {
+		imp.Video.Delivery = configObjInVideoConfig.Delivery
+	}
+
+	if imp.Video.Pos == nil {
+		imp.Video.Pos = configObjInVideoConfig.Pos
+	}
+
+	if len(imp.Video.API) == 0 {
+		imp.Video.API = configObjInVideoConfig.API
+	}
+
+	if len(imp.Video.CompanionType) == 0 {
+		imp.Video.CompanionType = configObjInVideoConfig.CompanionType
+	}
+
+	if imp.Video.CompanionAd == nil {
+		imp.Video.CompanionAd = configObjInVideoConfig.CompanionAd
+	}
+}
+
+func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
+
+	if imp.Video.W == 0 {
+		imp.Video.W = getW(imp)
+	}
+	if imp.Video.H == 0 {
+		imp.Video.H = getH(imp)
+	}
+	if imp.Video.MIMEs == nil {
+		imp.Video.MIMEs = []string{"video/mp4"}
+	}
+	if imp.Video.MinDuration == 0 {
+		imp.Video.MinDuration = 0
+	}
+	if imp.Video.MaxDuration == 0 {
+		imp.Video.MaxDuration = 30
+	}
+	if imp.Video.StartDelay == nil {
+		imp.Video.StartDelay = adcom1.StartPreRoll.Ptr()
+	}
+	if imp.Video.Protocols == nil {
+		imp.Video.Protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper}
+	}
+	if imp.Video.Placement == 0 {
+		imp.Video.Placement = adcom1.VideoPlacementInBanner
+	}
+	if imp.Video.Plcmt == 0 {
+		imp.Video.Plcmt = adcom1.VideoPlcmtNoContent
+	}
+	if imp.Video.Linearity == 0 {
+		imp.Video.Linearity = adcom1.LinearityLinear
+	}
+	if imp.Video.Skip == nil {
+		imp.Video.Skip = ptrutil.ToPtr[int8](0)
+	}
+	if imp.Video.PlaybackMethod == nil {
+		imp.Video.PlaybackMethod = []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff}
+	}
+	if imp.Video.PlaybackEnd == 0 {
+		imp.Video.PlaybackEnd = adcom1.PlaybackCompletion
+	}
+	if imp.Video.Delivery == nil {
+		imp.Video.Delivery = []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload}
+	}
+}
+
+func getW(imp *openrtb2.Imp) int64 {
+	if imp.Banner != nil {
+		if imp.Banner.W != nil {
+			return *imp.Banner.W
+		}
+		for _, format := range imp.Banner.Format {
+			if format.W != 0 {
+				return format.W
+			}
+		}
+	}
+	return 0
+}
+
+func getH(imp *openrtb2.Imp) int64 {
+	if imp.Banner != nil {
+		if imp.Banner.H != nil {
+			return *imp.Banner.H
+		}
+		for _, format := range imp.Banner.Format {
+			if format.H != 0 {
+				return format.H
+			}
+		}
+	}
+	return 0
 }
