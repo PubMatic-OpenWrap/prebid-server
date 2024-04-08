@@ -270,9 +270,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		//Create Bid Response
 		adPodBidResponse := deps.createAdPodBidResponse(response)
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
-
-		dt, _ := json.Marshal(adPodBidResponse)
-		fmt.Println(string(dt))
 		response = adPodBidResponse
 	}
 	ao.Response = response
