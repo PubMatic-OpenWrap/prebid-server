@@ -69,6 +69,7 @@ type Metrics struct {
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
+	maxSDKRequests        *prometheus.CounterVec
 }
 
 const (
@@ -248,6 +249,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.loggerFailure = newCounter(cfg, promRegistry,
 		"logger_send_failed",
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
+		[]string{pubIDLabel, profileIDLabel},
+	)
+
+	metrics.maxSDKRequests = newCounter(cfg, promRegistry,
+		"applovin_max_sdk_requests",
+		"Count number of applovin max server requests at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
 
@@ -448,6 +455,14 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
 func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
 	m.loggerFailure.With(prometheus.Labels{
+		pubIDLabel:     publisher,
+		profileIDLabel: profile,
+	}).Inc()
+}
+
+// RecordMaxSDKRequests to record count number of max sdk requests
+func (m *Metrics) RecordMaxSDKRequests(publisher, profile string) {
+	m.maxSDKRequests.With(prometheus.Labels{
 		pubIDLabel:     publisher,
 		profileIDLabel: profile,
 	}).Inc()

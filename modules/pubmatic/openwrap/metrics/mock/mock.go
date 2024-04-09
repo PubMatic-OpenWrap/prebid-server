@@ -113,6 +113,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
 }
 
+// RecordMaxSDKRequests mocks base method
+func (m *MockMetricsEngine) RecordMaxSDKRequests(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordMaxSDKRequests", arg0, arg1)
+}
+
+// RecordMaxSDKRequests indicates an expected call of RecordMaxSDKRequests
+func (mr *MockMetricsEngineMockRecorder) RecordMaxSDKRequests(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordMaxSDKRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordMaxSDKRequests), arg0, arg1)
+}
+
 // RecordBidResponseByDealCountInPBS indicates an expected call of RecordBidResponseByDealCountInPBS.
 func (mr *MockMetricsEngineMockRecorder) RecordBidResponseByDealCountInPBS(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

@@ -75,6 +75,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if rCtx.IsMaxRequest {
 		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest)
 		rCtx.SignalData = ""
+		m.metricEngine.RecordMaxSDKRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	}
 
 	pubID, err := getPubID(*payload.BidRequest)

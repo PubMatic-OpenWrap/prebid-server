@@ -459,3 +459,10 @@ func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 		thisME.RecordAmpVideoResponses(pubid, profileid)
 	}
 }
+
+// RecordMaxSDKRequests records number of request from max sdk
+func (me *MultiMetricsEngine) RecordMaxSDKRequests(pubid, profileid string) {
+	for _, thisME := range *me {
+		thisME.RecordMaxSDKRequests(pubid, profileid)
+	}
+}

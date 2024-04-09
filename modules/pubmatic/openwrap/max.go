@@ -74,31 +74,13 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 			maxImpression.Banner.API = sdkImpression.Banner.API
 		}
 
-		bannertype, _ := jsonparser.GetString(maxImpression.Banner.Ext, "bannertype")
-		if bannertype == "rewarded" {
+		bannertype, err := jsonparser.GetString(maxImpression.Banner.Ext, "bannertype")
+		if err == nil && bannertype == "rewarded" {
 			maxImpression.Banner = nil
 		}
 	}
 
-	var sdkImpExt map[string]any
-	if err := json.Unmarshal(sdkImpression.Ext, &sdkImpExt); err != nil {
-		return
-	}
-
-	var maxImpExt map[string]any
-	if err := json.Unmarshal(maxImpression.Ext, &maxImpExt); err != nil {
-		maxImpExt = make(map[string]any)
-	}
-
-	if reward, ok := sdkImpExt["reward"]; ok {
-		maxImpExt["reward"] = reward
-	}
-
-	if skadn, ok := sdkImpExt["skadn"]; ok {
-		maxImpExt["skadn"] = skadn
-	}
-
-	maxImpression.Ext, _ = json.Marshal(maxImpExt)
+	maxImpression.Ext = setIfKeysExists(sdkImpression.Ext, maxImpression.Ext, "reward", "skadn")
 }
 
 func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
@@ -113,13 +95,7 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 	maxRequest.Device.MCCMNC = sdkDevice.MCCMNC
 	maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
 
-	sdkAtts, _, _, err := jsonparser.Get(sdkDevice.Ext, "atts")
-	if err == nil {
-		if len(maxRequest.Device.Ext) == 0 {
-			maxRequest.Device.Ext = json.RawMessage(`{}`)
-		}
-		maxRequest.Device.Ext, _ = jsonparser.Set(maxRequest.Device.Ext, sdkAtts, "atts")
-	}
+	maxRequest.Device.Ext = setIfKeysExists(sdkDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if sdkDevice.Geo == nil {
 		return
@@ -154,37 +130,11 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 		return
 	}
 
-	var sdkRegsExt map[string]any
-	if err := json.Unmarshal(sdkRegs.Ext, &sdkRegsExt); err != nil {
-		return
-	}
-
 	if maxRequest.Regs == nil {
 		maxRequest.Regs = &openrtb2.Regs{}
 	}
 
-	var maxRegsExt map[string]any
-	if err := json.Unmarshal(maxRequest.Regs.Ext, &maxRegsExt); err != nil {
-		maxRegsExt = make(map[string]any)
-	}
-
-	if gdpr, ok := sdkRegsExt["gdpr"]; ok {
-		maxRegsExt["gdpr"] = gdpr
-	}
-
-	if gpp, ok := sdkRegsExt["gpp"]; ok {
-		maxRegsExt["gpp"] = gpp
-	}
-
-	if gpp_sid, ok := sdkRegsExt["gpp_sid"]; ok {
-		maxRegsExt["gpp_sid"] = gpp_sid
-	}
-
-	if us_privacy, ok := sdkRegsExt["us_privacy"]; ok {
-		maxRegsExt["us_privacy"] = us_privacy
-	}
-
-	maxRequest.Regs.Ext, _ = json.Marshal(maxRegsExt)
+	maxRequest.Regs.Ext = setIfKeysExists(sdkRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
 }
 
 func updateSource(sdkSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
@@ -192,29 +142,11 @@ func updateSource(sdkSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
 		return
 	}
 
-	var sdkSourceExt map[string]any
-	if err := json.Unmarshal(sdkSource.Ext, &sdkSourceExt); err != nil {
-		return
-	}
-
 	if maxRequest.Source == nil {
 		maxRequest.Source = &openrtb2.Source{}
 	}
 
-	var maxSourceExt map[string]any
-	if err := json.Unmarshal(maxRequest.Source.Ext, &maxSourceExt); err != nil {
-		maxSourceExt = make(map[string]any)
-	}
-
-	if omidpn, ok := sdkSourceExt["omidpn"]; ok {
-		maxSourceExt["omidpn"] = omidpn
-	}
-
-	if omidpv, ok := sdkSourceExt["omidpv"]; ok {
-		maxSourceExt["omidpv"] = omidpv
-	}
-
-	maxRequest.Source.Ext, _ = json.Marshal(maxSourceExt)
+	maxRequest.Source.Ext = setIfKeysExists(sdkSource.Ext, maxRequest.Source.Ext, "omidpn", "omidpv")
 }
 
 func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
@@ -233,23 +165,25 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	//Is this correct? Why doc says to set data.id, data.name separately
 	maxRequest.User.Data = append(maxRequest.User.Data, sdkUser.Data...)
 
-	var sdkUserExt map[string]any
-	if err := json.Unmarshal(sdkUser.Ext, &sdkUserExt); err != nil {
-		return
-	}
+	maxRequest.User.Ext = setIfKeysExists(sdkUser.Ext, maxRequest.User.Ext, "consent", "eids")
+}
 
-	var maxUserExt map[string]any
-	if err := json.Unmarshal(maxRequest.User.Ext, &maxUserExt); err != nil {
-		maxUserExt = make(map[string]any)
-	}
+func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
+	oldTarget := target
+	for _, key := range keys {
+		field, _, _, err := jsonparser.Get(source, key)
+		if err != nil {
+			continue
+		}
 
-	if consent, ok := sdkUserExt["consent"]; ok {
-		maxUserExt["consent"] = consent
-	}
+		if len(target) == 0 {
+			target = []byte(`{}`)
+		}
 
-	if eids, ok := sdkUserExt["eids"]; ok {
-		maxUserExt["eids"] = eids
+		target, err = jsonparser.Set(target, field, key)
+		if err != nil {
+			return oldTarget
+		}
 	}
-
-	maxRequest.User.Ext, _ = json.Marshal(maxUserExt)
+	return target
 }
