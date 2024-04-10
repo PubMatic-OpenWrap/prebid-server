@@ -225,7 +225,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		addLostToDealBidNonBRCode(&rctx)
 	}
 
-	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
+	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse)
 	if len(droppedBids) != 0 {
 		rctx.DroppedBids = droppedBids
 	}
