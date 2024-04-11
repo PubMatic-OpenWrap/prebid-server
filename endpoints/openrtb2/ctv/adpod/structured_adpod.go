@@ -12,8 +12,15 @@ import (
 
 type StructuredAdpod struct {
 	AdpodCtx
-	ImpBidMap  map[string][]*types.Bid
-	WinningBid map[string]types.Bid
+	ImpBidMap         map[string][]*types.Bid
+	WinningBid        map[string]types.Bid
+	CategoryExclusion bool
+}
+
+type Slot struct {
+	ImpId     string
+	Index     int
+	TotalBids int
 }
 
 func (da *StructuredAdpod) GetPodType() PodType {
@@ -51,14 +58,35 @@ func (sa *StructuredAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 }
 
 func (sa *StructuredAdpod) PerformAuctionAndExclusion() {
-	// Sort Bids
+	if len(sa.ImpBidMap) == 0 {
+		return
+	}
+
+	// Sort Bids impression wise
 	for impId, bids := range sa.ImpBidMap {
 		util.SortBids(bids)
 		sa.ImpBidMap[impId] = bids
 	}
 
+	// Create Slots
+	slots := make([]Slot, 0)
+
 	for impId, bids := range sa.ImpBidMap {
-		sa.WinningBid[impId] = *bids[0]
+		slot := Slot{
+			ImpId:     impId,
+			Index:     0,
+			TotalBids: len(bids),
+		}
+		slots = append(slots, slot)
+	}
+
+	sa.selectBidForSlot(slots)
+
+	// Select Winning bids
+	for i := range slots {
+		bids := sa.ImpBidMap[slots[i].ImpId]
+		// Add validations on len of array and index chosen
+		sa.WinningBid[slots[i].ImpId] = *bids[slots[i].Index]
 	}
 
 }
@@ -86,4 +114,199 @@ func (sa *StructuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 
 func (sa *StructuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
 	return nil
+}
+
+/************Structured Adpod Auction Methods***********************/
+
+func (sa *StructuredAdpod) selectBidForSlot(slots []Slot) {
+	if len(slots) == 0 {
+		return
+	}
+
+	slotIndex := sa.getSlotIndexWithHighestBid(slots)
+
+	// Get current bid for selected slot
+	selectedSlot := slots[slotIndex]
+	slotBids := sa.ImpBidMap[selectedSlot.ImpId]
+	selectedBid := slotBids[selectedSlot.Index]
+
+	if sa.shouldApplyExclusion() {
+		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
+			selectedSlot.Index = bidIndex
+			slots[slotIndex] = selectedSlot
+		} else if sa.isCategoryOverlapping(selectedBid) {
+			// Get bid for current slot for which category is not overlapping
+			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
+				if !sa.isCategoryOverlapping(slotBids[i]) {
+					selectedSlot.Index = i
+					break
+				}
+			}
+
+			// Update selected Slot in slots array
+			slots[slotIndex] = selectedSlot
+		}
+	}
+
+	// Add bid categories to selected categories
+	sa.addCategories(slotBids[selectedSlot.Index].Cat)
+
+	// Swap selected slot at initial position
+	slots[0], slots[slotIndex] = slots[slotIndex], slots[0]
+
+	sa.selectBidForSlot(slots[1:])
+}
+
+func (sa *StructuredAdpod) getSlotIndexWithHighestBid(slots []Slot) int {
+	var index int
+	maxBid := &types.Bid{
+		Bid: &openrtb2.Bid{},
+	}
+
+	for i := range slots {
+		impBids := sa.ImpBidMap[slots[i].ImpId]
+		bid := impBids[slots[i].Index]
+
+		if bid.DealTierSatisfied == maxBid.DealTierSatisfied {
+			if bid.Price > maxBid.Price {
+				maxBid = bid
+				index = i
+			}
+		} else if bid.DealTierSatisfied {
+			maxBid = bid
+			index = i
+		}
+	}
+
+	return index
+}
+
+func isDealBid(bid *types.Bid) bool {
+	return bid.DealTierSatisfied
+}
+
+func (sa *StructuredAdpod) shouldApplyExclusion() bool {
+	return sa.CategoryExclusion
+}
+
+func (sa *StructuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
+	if bid == nil || bid.Cat == nil {
+		return false
+	}
+
+	if sa.Exclusion.SelectedCategories == nil {
+		return false
+	}
+
+	var doesOverlap bool
+	for i := range bid.Cat {
+		_, ok := sa.Exclusion.SelectedCategories[bid.Cat[i]]
+		if ok {
+			doesOverlap = true
+			break
+		}
+	}
+
+	return doesOverlap
+}
+
+func (sa *StructuredAdpod) addCategories(categories []string) {
+	if sa.Exclusion.SelectedCategories == nil {
+		sa.Exclusion.SelectedCategories = make(map[string]bool)
+	}
+
+	for _, cat := range categories {
+		sa.Exclusion.SelectedCategories[cat] = true
+	}
+}
+
+func (sa *StructuredAdpod) isDealBidCatOverlapWithAnotherDealBid(slots []Slot, selectedSlotIndex int, selectedBid *types.Bid) bool {
+	if len(selectedBid.Cat) == 0 {
+		return false
+	}
+
+	catMap := make(map[string]bool)
+	for _, cat := range selectedBid.Cat {
+		catMap[cat] = true
+	}
+
+	var isCatOverlap bool
+	for i := range slots {
+		if selectedSlotIndex == i {
+			continue
+		}
+		slotBids := sa.ImpBidMap[slots[i].ImpId]
+		bid := slotBids[slots[i].Index]
+
+		for _, cat := range bid.Cat {
+			if _, ok := catMap[cat]; ok {
+				isCatOverlap = true
+				break
+			}
+		}
+		if isCatOverlap {
+			break
+		}
+	}
+
+	return isCatOverlap
+
+}
+
+func isBetterBidAvailable(slotBids []*types.Bid, selectedBid *types.Bid, selectedBidtIndex int) (int, bool) {
+	var isBetterBidAvailable bool
+	var betterBidIndex int
+
+	catMap := make(map[string]bool)
+	for _, cat := range selectedBid.Cat {
+		catMap[cat] = true
+	}
+
+	for i := selectedBidtIndex + 1; i < len(slotBids); i++ {
+		bid := slotBids[i]
+
+		// Next bid should not be deal bid
+		if bid.DealTierSatisfied {
+			continue
+		}
+
+		// Category should not be overlaped
+		var isCatOverlap bool
+		for _, cat := range bid.Cat {
+			if _, ok := catMap[cat]; ok {
+				isCatOverlap = true
+				break
+			}
+		}
+		if isCatOverlap {
+			continue
+		}
+
+		// Check for bid price is greater than deal price
+		if bid.Price > selectedBid.Price {
+			isBetterBidAvailable = true
+			betterBidIndex = i
+			break
+		}
+
+	}
+
+	return betterBidIndex, isBetterBidAvailable
+}
+
+func (sa *StructuredAdpod) isBetterBidThanDeal(slots []Slot, selectedSlotIndx int, selectedSlot Slot, selectedBid *types.Bid) (int, bool) {
+	selectedBidIndex := selectedSlot.Index
+
+	if !isDealBid(selectedBid) {
+		return selectedBidIndex, false
+	}
+
+	if !sa.isDealBidCatOverlapWithAnotherDealBid(slots, selectedSlotIndx, selectedBid) {
+		return selectedBidIndex, false
+	}
+
+	var isBetterBid bool
+	selectedBidIndex, isBetterBid = isBetterBidAvailable(sa.ImpBidMap[selectedSlot.ImpId], selectedBid, selectedBidIndex)
+
+	return selectedBidIndex, isBetterBid
 }

@@ -441,11 +441,9 @@ func (deps *ctvEndpointDeps) readVideoAdPodExt(imp openrtb2.Imp) (*openrtb_ext.E
 		if adpodConfigExt.AdPod == nil {
 			adpodConfigExt.AdPod = &openrtb_ext.VideoAdPod{}
 		}
-		//TODO: Here partical values might be filled check if is it okay to fill partial values?
 		adpodConfigExt.AdPod.Merge(&deps.reqExt.VideoAdPod)
 	}
 
-	//TODO: Check if we require to set these default values
 	//Set Default Values
 	adpodConfigExt.SetDefaultValue()
 	adpodConfigExt.AdPod.SetDefaultAdDurations(imp.Video.MinDuration, imp.Video.MaxDuration)

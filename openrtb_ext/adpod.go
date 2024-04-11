@@ -295,6 +295,8 @@ func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
 		pod.MaxAds = parent.MaxAds
 	}
 
+	// Add Min and Max duration from request
+
 	//pod.AdvertiserExclusionPercent setting default value
 	if nil == pod.AdvertiserExclusionPercent {
 		pod.AdvertiserExclusionPercent = parent.AdvertiserExclusionPercent
