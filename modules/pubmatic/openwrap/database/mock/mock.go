@@ -109,6 +109,21 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
 }
 
+// GetPublisherFeatureMap mocks base method
+func (m *MockDatabase) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
+	ret0, _ := ret[0].(map[int]map[int]models.FeatureData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPublisherFeatureMap indicates an expected call of GetPublisherFeatureMap
+func (mr *MockDatabaseMockRecorder) GetPublisherFeatureMap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherFeatureMap", reflect.TypeOf((*MockDatabase)(nil).GetPublisherFeatureMap))
+}
+
 // GetPublisherSlotNameHash mocks base method
 func (m *MockDatabase) GetPublisherSlotNameHash(arg0 int) (map[string]string, error) {
 	m.ctrl.T.Helper()
@@ -137,21 +152,6 @@ func (m *MockDatabase) GetPublisherVASTTags(arg0 int) (map[int]*models.VASTTag, 
 func (mr *MockDatabaseMockRecorder) GetPublisherVASTTags(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTags", reflect.TypeOf((*MockDatabase)(nil).GetPublisherVASTTags), arg0)
-}
-
-// GetTBFTrafficForPublishers mocks base method
-func (m *MockDatabase) GetTBFTrafficForPublishers() (map[int]map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTBFTrafficForPublishers")
-	ret0, _ := ret[0].(map[int]map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTBFTrafficForPublishers indicates an expected call of GetTBFTrafficForPublishers
-func (mr *MockDatabaseMockRecorder) GetTBFTrafficForPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTBFTrafficForPublishers", reflect.TypeOf((*MockDatabase)(nil).GetTBFTrafficForPublishers))
 }
 
 // GetWrapperSlotMappings mocks base method

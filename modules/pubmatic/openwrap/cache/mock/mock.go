@@ -64,21 +64,6 @@ func (mr *MockCacheMockRecorder) GetAdunitConfigFromCache(arg0, arg1, arg2, arg3
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfigFromCache", reflect.TypeOf((*MockCache)(nil).GetAdunitConfigFromCache), arg0, arg1, arg2, arg3)
 }
 
-// GetFSCDisabledPublishers mocks base method
-func (m *MockCache) GetFSCDisabledPublishers() (map[int]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFSCDisabledPublishers")
-	ret0, _ := ret[0].(map[int]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFSCDisabledPublishers indicates an expected call of GetFSCDisabledPublishers
-func (mr *MockCacheMockRecorder) GetFSCDisabledPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCDisabledPublishers", reflect.TypeOf((*MockCache)(nil).GetFSCDisabledPublishers))
-}
-
 // GetFSCThresholdPerDSP mocks base method
 func (m *MockCache) GetFSCThresholdPerDSP() (map[int]int, error) {
 	m.ctrl.T.Helper()
@@ -123,6 +108,21 @@ func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2, arg3 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2, arg3)
 }
 
+// GetPublisherFeatureMap mocks base method
+func (m *MockCache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
+	ret0, _ := ret[0].(map[int]map[int]models.FeatureData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPublisherFeatureMap indicates an expected call of GetPublisherFeatureMap
+func (mr *MockCacheMockRecorder) GetPublisherFeatureMap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherFeatureMap", reflect.TypeOf((*MockCache)(nil).GetPublisherFeatureMap))
+}
+
 // GetPublisherVASTTagsFromCache mocks base method
 func (m *MockCache) GetPublisherVASTTagsFromCache(arg0 int) map[int]*models.VASTTag {
 	m.ctrl.T.Helper()
@@ -149,21 +149,6 @@ func (m *MockCache) GetSlotToHashValueMapFromCacheV25(arg0 models.RequestCtx, ar
 func (mr *MockCacheMockRecorder) GetSlotToHashValueMapFromCacheV25(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotToHashValueMapFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetSlotToHashValueMapFromCacheV25), arg0, arg1)
-}
-
-// GetTBFTrafficForPublishers mocks base method
-func (m *MockCache) GetTBFTrafficForPublishers() (map[int]map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTBFTrafficForPublishers")
-	ret0, _ := ret[0].(map[int]map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTBFTrafficForPublishers indicates an expected call of GetTBFTrafficForPublishers
-func (mr *MockCacheMockRecorder) GetTBFTrafficForPublishers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTBFTrafficForPublishers", reflect.TypeOf((*MockCache)(nil).GetTBFTrafficForPublishers))
 }
 
 // Set mocks base method
