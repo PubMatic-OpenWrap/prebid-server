@@ -4,17 +4,12 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v19/openrtb2"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_injectBannerTracker(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
-		5890: {1234: 100},
-	})
 	type args struct {
 		rctx    models.RequestCtx
 		tracker models.OWTracker
@@ -81,8 +76,9 @@ func Test_injectBannerTracker(t *testing.T) {
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
@@ -169,10 +165,6 @@ func Test_trackerWithOM(t *testing.T) {
 }
 
 func Test_applyTBFFeature(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
-		5890: {1234: 100},
-	})
-
 	type args struct {
 		rctx    models.RequestCtx
 		bid     openrtb2.Bid
@@ -187,8 +179,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_disabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 100,
+					PubID:               5890,
+					ProfileID:           100,
+					IsTBFFeatureEnabled: false,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -201,8 +194,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -210,20 +204,6 @@ func Test_applyTBFFeature(t *testing.T) {
 				tracker: "<start>tracker_url<end>",
 			},
 			want: "<start>tracker_url<end><start>bid_AdM<end>",
-		},
-		{
-			name: "invalid_pubid",
-			args: args{
-				rctx: models.RequestCtx{
-					PubID:     -1,
-					ProfileID: 1234,
-				},
-				bid: openrtb2.Bid{
-					AdM: "<start>bid_AdM<end>",
-				},
-				tracker: "<start>tracker_url<end>",
-			},
-			want: "<start>bid_AdM<end><start>tracker_url<end>",
 		},
 	}
 	for _, tt := range tests {
