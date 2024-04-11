@@ -51,7 +51,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
-	if rCtx.Sshb == "1" {
+	if queryParams.Get("sshb") == "1" {
 		return result, nil
 	}
 	endpoint = GetEndpoint(payload.Request.URL.Path, source)
