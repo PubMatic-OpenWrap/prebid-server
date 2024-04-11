@@ -42,7 +42,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		for _, bid := range payload.Bids {
 			if string(bid.BidType) == "video" { // TBDJ
 				go func(bid *adapters.TypedBid) {
-					m.doUnwrapandUpdateBid(rCtx.VastUnwrapStatsEnabled, bid, rCtx.UA, unwrapURL, fmt.Sprintf("%d", rCtx.PubID), payload.Bidder)
+					m.doUnwrapandUpdateBid(rCtx.VastUnwrapStatsEnabled, bid, rCtx.UA, rCtx.IP, unwrapURL, fmt.Sprintf("%d", rCtx.PubID), payload.Bidder)
 				}(bid)
 			}
 		}
@@ -53,7 +53,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 				wg.Add(1)
 				go func(bid *adapters.TypedBid) {
 					defer wg.Done()
-					m.doUnwrapandUpdateBid(rCtx.VastUnwrapStatsEnabled, bid, rCtx.UA, unwrapURL, fmt.Sprintf("%d", rCtx.PubID), payload.Bidder)
+					m.doUnwrapandUpdateBid(rCtx.VastUnwrapStatsEnabled, bid, rCtx.UA, rCtx.IP, unwrapURL, fmt.Sprintf("%d", rCtx.PubID), payload.Bidder)
 				}(bid)
 			}
 		}

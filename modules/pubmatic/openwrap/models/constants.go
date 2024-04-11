@@ -376,6 +376,11 @@ const (
 	VersionId           = "versionID"
 	DisplayId           = "DisplayID"
 	Endpoint            = "Endpoint"
+	XUserIP             = "X-Forwarded-For"
+	XUserAgent          = "X-Device-User-Agent"
+	CreativeID          = "unwrap-ucrid"
+	PubID               = "pub_id"
+	ImpressionID        = "imr_id"
 )
 
 const (

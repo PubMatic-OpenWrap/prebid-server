@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ type OpenWrap struct {
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
 	featureConfig      publisherfeature.Feature
+	unwrapRequest      func(w http.ResponseWriter, r *http.Request)
 }
 
 var ow *OpenWrap
@@ -89,6 +91,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
 			featureConfig:      featureConfig,
+			unwrapRequest:      vastunwrap.UnwrapRequest,
 		}
 	})
 	return *ow, nil
