@@ -76,11 +76,6 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, err
 	}
 
-	rCtx.IsMaxRequest = queryParams.Get("agent") == "max"
-	if rCtx.IsMaxRequest {
-		rCtx.SignalData = getSignalData(payload.Body)
-	}
-
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
@@ -119,6 +114,11 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
+	}
+
+	rCtx.IsMaxRequest = queryParams.Get("agent") == "max"
+	if rCtx.IsMaxRequest {
+		rCtx.SignalData = getSignalData(payload.Body)
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

@@ -72,12 +72,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	if rCtx.IsMaxRequest {
-		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest)
-		rCtx.SignalData = ""
-		m.metricEngine.RecordMaxSDKRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
-	}
-
 	pubID, err := getPubID(*payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPublisherID)
@@ -86,6 +80,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
+
+	if rCtx.IsMaxRequest {
+		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest)
+		if clientConfigFlag, err := jsonparser.GetInt(payload.BidRequest.Ext, "wrapper", "clientconfig"); err == nil {
+			rCtx.ClientConfigFlag = int(clientConfigFlag)
+		}
+		rCtx.SignalData = ""
+		m.metricEngine.RecordMaxSDKRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
+	}
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)

@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/adcom1"
@@ -10,26 +11,10 @@ import (
 
 func getSignalData(requestBody []byte) string {
 	var signal string
-	var signalReceived bool
-	jsonparser.ArrayEach(requestBody, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		if signalReceived {
-			return
-		}
-
-		name, err := jsonparser.GetString(value, "name")
-		if err != nil {
-			return
-		}
-
-		if name == "Publisher Passed" {
-			signal, err = jsonparser.GetString(value, "segment", "[0]", "signal")
-			if err != nil {
-				return
-			}
-			signalReceived = true
-		}
-	}, "user", "data")
-
+	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
+	if err != nil {
+		signal = ""
+	}
 	return signal
 }
 
@@ -41,6 +26,14 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 	var sdkRequest openrtb2.BidRequest
 	if err := json.Unmarshal([]byte(signal), &sdkRequest); err != nil {
 		return
+	}
+
+	if clientConfigFlag, err := jsonparser.GetInt([]byte(signal), "ext", "wrapper", "clientconfig"); err == nil {
+		flg := []byte(`0`)
+		if clientConfigFlag == 1 {
+			flg = []byte(`1`)
+		}
+		maxRequest.Ext, _ = jsonparser.Set(maxRequest.Ext, flg, "wrapper", "clientconfig")
 	}
 
 	if len(sdkRequest.Imp) > 0 {
@@ -63,8 +56,10 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 	maxImpression.ClickBrowser = sdkImpression.ClickBrowser
 
 	var blockedAttributes []adcom1.CreativeAttribute
-	if maxImpression.Video != nil && sdkImpression.Video != nil {
-		blockedAttributes = maxImpression.Video.BAttr
+	if sdkImpression.Video != nil {
+		if maxImpression.Video != nil {
+			blockedAttributes = maxImpression.Video.BAttr
+		}
 		maxImpression.Video = sdkImpression.Video
 		maxImpression.Video.BAttr = blockedAttributes
 	}
@@ -126,7 +121,7 @@ func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 }
 
 func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
-	if sdkRegs == nil || len(sdkRegs.Ext) == 0 {
+	if sdkRegs == nil {
 		return
 	}
 
@@ -134,6 +129,7 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Regs = &openrtb2.Regs{}
 	}
 
+	maxRequest.Regs.COPPA = sdkRegs.COPPA
 	maxRequest.Regs.Ext = setIfKeysExists(sdkRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
 }
 
@@ -161,9 +157,7 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	maxRequest.User.Yob = sdkUser.Yob
 	maxRequest.User.Gender = sdkUser.Gender
 	maxRequest.User.Keywords = sdkUser.Keywords
-
-	//Is this correct? Why doc says to set data.id, data.name separately
-	maxRequest.User.Data = append(maxRequest.User.Data, sdkUser.Data...)
+	maxRequest.User.Data = sdkUser.Data
 
 	maxRequest.User.Ext = setIfKeysExists(sdkUser.Ext, maxRequest.User.Ext, "consent", "eids")
 }
@@ -171,13 +165,18 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	oldTarget := target
 	for _, key := range keys {
-		field, _, _, err := jsonparser.Get(source, key)
+		field, dataType, _, err := jsonparser.Get(source, key)
 		if err != nil {
 			continue
 		}
 
 		if len(target) == 0 {
 			target = []byte(`{}`)
+		}
+
+		if dataType == jsonparser.String {
+			quotedStr := strconv.Quote(string(field))
+			field = []byte(quotedStr)
 		}
 
 		target, err = jsonparser.Set(target, field, key)
