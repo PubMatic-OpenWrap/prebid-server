@@ -49,7 +49,7 @@ func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedB
 	m.unwrapRequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(models.UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(models.UnwrapCount), 10, 0)
-	if !isStatsEnabled && httpResp.Code == http.StatusOK {
+	if !isStatsEnabled && httpResp.Code == http.StatusOK && respStatus == "0" {
 		respBody := httpResp.Body.Bytes()
 		bid.Bid.AdM = string(respBody)
 	}
