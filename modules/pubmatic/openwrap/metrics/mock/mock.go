@@ -751,7 +751,7 @@ func (m *MockMetricsEngine) RecordUnwrapRequestTime(arg0, arg1 string, arg2 time
 // RecordUnwrapRequestTime indicates an expected call of RecordUnwrapRequestTime
 func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestTime), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestTime), arg0, arg1, arg2)
 }
 
 func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1 string, arg2 time.Duration) {
