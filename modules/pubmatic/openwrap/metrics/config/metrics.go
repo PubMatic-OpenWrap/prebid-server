@@ -459,3 +459,9 @@ func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 		thisME.RecordAmpVideoResponses(pubid, profileid)
 	}
 }
+
+func (me *MultiMetricsEngine) RecordHTTPCounter() {
+	for _, thisME := range *me {
+		thisME.RecordHTTPCounter()
+	}
+}

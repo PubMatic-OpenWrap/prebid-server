@@ -341,3 +341,4 @@ func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Durat
 func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
 func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                                 {}
 func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                                {}
+func (st *StatsTCP) RecordHTTPCounter()                                                             {}
