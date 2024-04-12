@@ -462,9 +462,9 @@ const (
 	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
 	SlotNameHash                   = "GetSlotNameHash"
 	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
+	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
 	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
 	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
-	PublisherFeatureMapQuery       = "GetPublisherFeatureMapQuery"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
@@ -496,12 +496,4 @@ const (
 const (
 	Pbadslot    = "pbadslot"
 	GamAdServer = "gam"
-)
-
-// constants for feature id
-
-const (
-	FeatureFSC            = 1
-	FeatureTBF            = 2
-	FeatureAMPMultiFormat = 3
 )

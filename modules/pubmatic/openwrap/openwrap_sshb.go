@@ -8,7 +8,6 @@ import (
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature"
 	vastmodels "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 )
 
@@ -45,11 +44,6 @@ func (ow *OpenWrap) SetCache(c cache.Cache) {
 // GetMetricEngine Temporary function to expose mertics to SSHB
 func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
-}
-
-// GetFeature Temporary function to expose feature to SSHB
-func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
-	return ow.featureConfig
 }
 
 // GetVastUnwrapEnabled return whether to enable vastunwrap or not

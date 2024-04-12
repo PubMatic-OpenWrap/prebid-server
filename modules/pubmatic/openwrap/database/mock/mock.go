@@ -5,36 +5,37 @@
 package mock_database
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	adunitconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	reflect "reflect"
 )
 
-// MockDatabase is a mock of Database interface
+// MockDatabase is a mock of Database interface.
 type MockDatabase struct {
 	ctrl     *gomock.Controller
 	recorder *MockDatabaseMockRecorder
 }
 
-// MockDatabaseMockRecorder is the mock recorder for MockDatabase
+// MockDatabaseMockRecorder is the mock recorder for MockDatabase.
 type MockDatabaseMockRecorder struct {
 	mock *MockDatabase
 }
 
-// NewMockDatabase creates a new mock instance
+// NewMockDatabase creates a new mock instance.
 func NewMockDatabase(ctrl *gomock.Controller) *MockDatabase {
 	mock := &MockDatabase{ctrl: ctrl}
 	mock.recorder = &MockDatabaseMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDatabase) EXPECT() *MockDatabaseMockRecorder {
 	return m.recorder
 }
 
-// GetActivePartnerConfigurations mocks base method
+// GetActivePartnerConfigurations mocks base method.
 func (m *MockDatabase) GetActivePartnerConfigurations(arg0, arg1, arg2 int) (map[int]map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActivePartnerConfigurations", arg0, arg1, arg2)
@@ -43,13 +44,13 @@ func (m *MockDatabase) GetActivePartnerConfigurations(arg0, arg1, arg2 int) (map
 	return ret0, ret1
 }
 
-// GetActivePartnerConfigurations indicates an expected call of GetActivePartnerConfigurations
+// GetActivePartnerConfigurations indicates an expected call of GetActivePartnerConfigurations.
 func (mr *MockDatabaseMockRecorder) GetActivePartnerConfigurations(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivePartnerConfigurations", reflect.TypeOf((*MockDatabase)(nil).GetActivePartnerConfigurations), arg0, arg1, arg2)
 }
 
-// GetAdunitConfig mocks base method
+// GetAdunitConfig mocks base method.
 func (m *MockDatabase) GetAdunitConfig(arg0, arg1 int) (*adunitconfig.AdUnitConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAdunitConfig", arg0, arg1)
@@ -58,13 +59,28 @@ func (m *MockDatabase) GetAdunitConfig(arg0, arg1 int) (*adunitconfig.AdUnitConf
 	return ret0, ret1
 }
 
-// GetAdunitConfig indicates an expected call of GetAdunitConfig
+// GetAdunitConfig indicates an expected call of GetAdunitConfig.
 func (mr *MockDatabaseMockRecorder) GetAdunitConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfig", reflect.TypeOf((*MockDatabase)(nil).GetAdunitConfig), arg0, arg1)
 }
 
-// GetFSCThresholdPerDSP mocks base method
+// GetFSCDisabledPublishers mocks base method.
+func (m *MockDatabase) GetFSCDisabledPublishers() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSCDisabledPublishers")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFSCDisabledPublishers indicates an expected call of GetFSCDisabledPublishers.
+func (mr *MockDatabaseMockRecorder) GetFSCDisabledPublishers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCDisabledPublishers", reflect.TypeOf((*MockDatabase)(nil).GetFSCDisabledPublishers))
+}
+
+// GetFSCThresholdPerDSP mocks base method.
 func (m *MockDatabase) GetFSCThresholdPerDSP() (map[int]int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFSCThresholdPerDSP")
@@ -73,13 +89,13 @@ func (m *MockDatabase) GetFSCThresholdPerDSP() (map[int]int, error) {
 	return ret0, ret1
 }
 
-// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP
+// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP.
 func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCThresholdPerDSP))
 }
 
-// GetMappings mocks base method
+// GetMappings mocks base method.
 func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMapping) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMappings", arg0, arg1)
@@ -88,28 +104,13 @@ func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMappi
 	return ret0, ret1
 }
 
-// GetMappings indicates an expected call of GetMappings
+// GetMappings indicates an expected call of GetMappings.
 func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
 }
 
-// GetPublisherFeatureMap mocks base method
-func (m *MockDatabase) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
-	ret0, _ := ret[0].(map[int]map[int]models.FeatureData)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPublisherFeatureMap indicates an expected call of GetPublisherFeatureMap
-func (mr *MockDatabaseMockRecorder) GetPublisherFeatureMap() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherFeatureMap", reflect.TypeOf((*MockDatabase)(nil).GetPublisherFeatureMap))
-}
-
-// GetPublisherSlotNameHash mocks base method
+// GetPublisherSlotNameHash mocks base method.
 func (m *MockDatabase) GetPublisherSlotNameHash(arg0 int) (map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPublisherSlotNameHash", arg0)
@@ -118,13 +119,13 @@ func (m *MockDatabase) GetPublisherSlotNameHash(arg0 int) (map[string]string, er
 	return ret0, ret1
 }
 
-// GetPublisherSlotNameHash indicates an expected call of GetPublisherSlotNameHash
+// GetPublisherSlotNameHash indicates an expected call of GetPublisherSlotNameHash.
 func (mr *MockDatabaseMockRecorder) GetPublisherSlotNameHash(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherSlotNameHash", reflect.TypeOf((*MockDatabase)(nil).GetPublisherSlotNameHash), arg0)
 }
 
-// GetPublisherVASTTags mocks base method
+// GetPublisherVASTTags mocks base method.
 func (m *MockDatabase) GetPublisherVASTTags(arg0 int) (map[int]*models.VASTTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPublisherVASTTags", arg0)
@@ -133,13 +134,28 @@ func (m *MockDatabase) GetPublisherVASTTags(arg0 int) (map[int]*models.VASTTag, 
 	return ret0, ret1
 }
 
-// GetPublisherVASTTags indicates an expected call of GetPublisherVASTTags
+// GetPublisherVASTTags indicates an expected call of GetPublisherVASTTags.
 func (mr *MockDatabaseMockRecorder) GetPublisherVASTTags(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTags", reflect.TypeOf((*MockDatabase)(nil).GetPublisherVASTTags), arg0)
 }
 
-// GetWrapperSlotMappings mocks base method
+// GetTBFTrafficForPublishers mocks base method.
+func (m *MockDatabase) GetTBFTrafficForPublishers() (map[int]map[int]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTBFTrafficForPublishers")
+	ret0, _ := ret[0].(map[int]map[int]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTBFTrafficForPublishers indicates an expected call of GetTBFTrafficForPublishers.
+func (mr *MockDatabaseMockRecorder) GetTBFTrafficForPublishers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTBFTrafficForPublishers", reflect.TypeOf((*MockDatabase)(nil).GetTBFTrafficForPublishers))
+}
+
+// GetWrapperSlotMappings mocks base method.
 func (m *MockDatabase) GetWrapperSlotMappings(arg0 map[int]map[string]string, arg1, arg2 int) (map[int][]models.SlotMapping, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWrapperSlotMappings", arg0, arg1, arg2)
@@ -148,7 +164,7 @@ func (m *MockDatabase) GetWrapperSlotMappings(arg0 map[int]map[string]string, ar
 	return ret0, ret1
 }
 
-// GetWrapperSlotMappings indicates an expected call of GetWrapperSlotMappings
+// GetWrapperSlotMappings indicates an expected call of GetWrapperSlotMappings.
 func (mr *MockDatabaseMockRecorder) GetWrapperSlotMappings(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWrapperSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetWrapperSlotMappings), arg0, arg1, arg2)

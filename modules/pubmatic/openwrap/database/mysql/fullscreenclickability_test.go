@@ -10,6 +10,95 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_mySqlDB_GetFSCDisabledPublishers(t *testing.T) {
+	type fields struct {
+		cfg config.Database
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[int]struct{}
+		wantErr bool
+		setup   func() *sql.DB
+	}{
+		{
+			name:    "empty query in config file",
+			want:    nil,
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				return db
+			},
+		},
+		{
+			name: "invalid pubid",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetAllFscDisabledPublishersQuery: "^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)",
+					},
+				},
+			},
+			want:    map[int]struct{}{},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"pub_id"}).AddRow(`5890,5891,5892`)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "Valid rows returned, setting invalid values to 1",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetAllFscDisabledPublishersQuery: "^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)",
+					},
+				},
+			},
+			want: map[int]struct{}{
+				5890: {},
+				5891: {},
+				5892: {},
+			},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"pub_id"}).
+					AddRow(`5890`).
+					AddRow(`5891`).
+					AddRow(`5892`)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_feature_mapping (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &mySqlDB{
+				conn: tt.setup(),
+				cfg:  tt.fields.cfg,
+			}
+			got, err := db.GetFSCDisabledPublishers()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mySqlDB.GetFSCDisabledPublishers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 	type fields struct {
 		cfg config.Database

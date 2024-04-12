@@ -6,6 +6,23 @@ import (
 	"github.com/golang/glog"
 )
 
+func (db *mySqlDB) GetFSCDisabledPublishers() (map[int]struct{}, error) {
+	rows, err := db.conn.Query(db.cfg.Queries.GetAllFscDisabledPublishersQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	fscDisabledPublishers := make(map[int]struct{})
+	for rows.Next() {
+		var pubid int
+		if err := rows.Scan(&pubid); err == nil {
+			fscDisabledPublishers[pubid] = struct{}{}
+		}
+	}
+	return fscDisabledPublishers, nil
+}
+
 func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
 	rows, err := db.conn.Query(db.cfg.Queries.GetAllDspFscPcntQuery)
 	if err != nil {

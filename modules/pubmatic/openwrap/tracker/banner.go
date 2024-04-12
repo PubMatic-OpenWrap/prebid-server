@@ -6,6 +6,7 @@ import (
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -51,7 +52,7 @@ func trackerWithOM(tracker models.OWTracker, platform, bidderCode string) bool {
 // given pub-prof combination then injects the tracker before adm
 // else injects the tracker after adm.
 func applyTBFFeature(rctx models.RequestCtx, bid openrtb2.Bid, tracker string) string {
-	if rctx.IsTBFFeatureEnabled {
+	if tbf.IsEnabledTBFFeature(rctx.PubID, rctx.ProfileID) {
 		return tracker + bid.AdM
 	}
 	return bid.AdM + tracker
