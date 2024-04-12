@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/adcom1"
 	"github.com/prebid/openrtb/v19/openrtb2"
 )
 
@@ -18,7 +17,7 @@ func getSignalData(requestBody []byte) string {
 	return signal
 }
 
-func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
+func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest, clientconfigflag int) {
 	if len(signal) == 0 {
 		return
 	}
@@ -28,12 +27,12 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest) {
 		return
 	}
 
-	if clientConfigFlag, err := jsonparser.GetInt([]byte(signal), "ext", "wrapper", "clientconfig"); err == nil {
-		flg := []byte(`0`)
-		if clientConfigFlag == 1 {
-			flg = []byte(`1`)
-		}
-		maxRequest.Ext, _ = jsonparser.Set(maxRequest.Ext, flg, "wrapper", "clientconfig")
+	flg := []byte(`0`)
+	if clientconfigflag == 1 {
+		flg = []byte(`1`)
+	}
+	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, flg, "wrapper", "clientconfig"); err == nil {
+		maxRequest.Ext = maxReqExt
 	}
 
 	if len(sdkRequest.Imp) > 0 {
@@ -55,13 +54,8 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 	maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
 	maxImpression.ClickBrowser = sdkImpression.ClickBrowser
 
-	var blockedAttributes []adcom1.CreativeAttribute
 	if sdkImpression.Video != nil {
-		if maxImpression.Video != nil {
-			blockedAttributes = maxImpression.Video.BAttr
-		}
 		maxImpression.Video = sdkImpression.Video
-		maxImpression.Video.BAttr = blockedAttributes
 	}
 
 	if maxImpression.Banner != nil {
@@ -102,8 +96,6 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 
 	maxRequest.Device.Geo.City = sdkDevice.Geo.City
 	maxRequest.Device.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
-
-	// for geo.dma which is non-ortb parameter add it to prebid-openrtb fork
 }
 
 func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {

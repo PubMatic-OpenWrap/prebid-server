@@ -82,10 +82,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PubIDStr = strconv.Itoa(pubID)
 
 	if rCtx.IsMaxRequest {
-		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest)
 		if clientConfigFlag, err := jsonparser.GetInt(payload.BidRequest.Ext, "wrapper", "clientconfig"); err == nil {
 			rCtx.ClientConfigFlag = int(clientConfigFlag)
 		}
+		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest, rCtx.ClientConfigFlag)
 		rCtx.SignalData = ""
 		m.metricEngine.RecordMaxSDKRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	}
