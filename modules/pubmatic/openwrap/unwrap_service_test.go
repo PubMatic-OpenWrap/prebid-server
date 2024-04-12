@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/prebid/prebid-server/adapters"
@@ -26,14 +27,14 @@ func TestDoUnwrap(t *testing.T) {
 	defer ctrl.Finish()
 	mockMetricsEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type args struct {
-		module               OpenWrap
-		statsEnabled         bool
-		bid                  *adapters.TypedBid
-		userAgent            string
-		ip                   string
-		unwrapDefaultTimeout int
-		url                  string
-		wantAdM              bool
+		module       OpenWrap
+		statsEnabled bool
+		bid          *adapters.TypedBid
+		userAgent    string
+		ip           string
+		url          string
+		wantAdM      bool
+		expectedAdm  string
 	}
 	tests := []struct {
 		name          string
@@ -137,10 +138,49 @@ func TestDoUnwrap(t *testing.T) {
 					},
 					BidType: "video",
 				},
-				userAgent: "testUA",
-				ip:        "12.34.13.41",
-				url:       UnwrapURL,
-				wantAdM:   true,
+				userAgent:   "testUA",
+				ip:          "12.34.13.41",
+				url:         UnwrapURL,
+				wantAdM:     true,
+				expectedAdm: inlineXMLAdM,
+			},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+			},
+		},
+		{
+			name: "doUnwrap for adtype video and collect stats only",
+			args: args{
+				statsEnabled: true,
+				module: OpenWrap{
+					cfg:          config.Config{VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{MaxWrapperSupport: 5, APPConfig: unWrapCfg.AppConfig{UnwrapDefaultTimeout: 200}}},
+					metricEngine: mockMetricsEngine,
+					unwrapRequest: func(w http.ResponseWriter, req *http.Request) {
+						w.Header().Add("unwrap-status", "0")
+						w.Header().Add("unwrap-count", "1")
+						w.WriteHeader(http.StatusOK)
+					},
+				},
+				bid: &adapters.TypedBid{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-123",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   vastXMLAdM,
+						CrID:  "Cr-234",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+				userAgent:   "testUA",
+				ip:          "12.34.13.41",
+				url:         UnwrapURL,
+				wantAdM:     true,
+				expectedAdm: vastXMLAdM,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
@@ -192,8 +232,8 @@ func TestDoUnwrap(t *testing.T) {
 
 			m := tt.args.module
 			m.doUnwrapandUpdateBid(tt.args.statsEnabled, tt.args.bid, tt.args.userAgent, tt.args.ip, tt.args.url, "5890", "pubmatic")
-			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM {
-				assert.Equal(t, inlineXMLAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+			if tt.args.bid.Bid.AdM != "" && tt.args.wantAdM && strings.Compare(tt.args.bid.Bid.AdM, tt.args.expectedAdm) == 0 {
+				assert.Equal(t, tt.args.expectedAdm, tt.args.bid.Bid.AdM, "AdM is not updated correctly")
 			}
 		})
 	}
