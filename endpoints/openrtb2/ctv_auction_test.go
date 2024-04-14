@@ -850,7 +850,7 @@ func TestGetAdPodBidCreative(t *testing.T) {
 			args: args{
 				adpod: &types.AdPodBid{
 					Bids: []*types.Bid{
-						&types.Bid{
+						{
 							Bid: &openrtb2.Bid{
 								AdM: "<xml>any_creative_without_vast</xml>",
 							},
@@ -866,7 +866,7 @@ func TestGetAdPodBidCreative(t *testing.T) {
 			args: args{
 				adpod: &types.AdPodBid{
 					Bids: []*types.Bid{
-						&types.Bid{
+						{
 							Bid: &openrtb2.Bid{
 								AdM: "<VAST><Ad>url_creative</Ad></VAST>",
 							},
