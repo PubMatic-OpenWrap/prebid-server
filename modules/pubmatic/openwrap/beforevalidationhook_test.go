@@ -4422,3 +4422,96 @@ func TestGetH(t *testing.T) {
 		})
 	}
 }
+
+func TestIsVastUnwrapEnabled(t *testing.T) {
+
+	type args struct {
+		PartnerConfigMap  map[int]map[string]string
+		VASTUnwrapTraffic int
+	}
+	tests := []struct {
+		name         string
+		args         args
+		randomNumber int
+		want         bool
+	}{
+		{
+			name: "vastunwrap is enabled and DB traffic percent is greater than random number",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "90",
+					},
+				},
+				VASTUnwrapTraffic: 10,
+			},
+			randomNumber: 10,
+			want:         true,
+		},
+		{
+			name: "vastunwrap is enabled and DB traffic percent is less than random number",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "90",
+					},
+				},
+				VASTUnwrapTraffic: 0,
+			},
+			randomNumber: 91,
+			want:         false,
+		},
+		{
+			name: "vastunwrap is dissabled and config traffic percent is less than random number",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "0",
+					},
+				},
+				VASTUnwrapTraffic: 5,
+			},
+			randomNumber: 7,
+			want:         false,
+		},
+		{
+			name: "vastunwrap is enabled and traffic percent not present in DB, random num higher than traffic percent",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "1",
+					},
+				},
+				VASTUnwrapTraffic: 5,
+			},
+			randomNumber: 10,
+			want:         false,
+		},
+
+		{
+			name: "vastunwrap is enabled and traffic percent not present in DB, random num less than traffic percent",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "1",
+					},
+				},
+				VASTUnwrapTraffic: 10,
+			},
+			randomNumber: 9,
+			want:         true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			GetRandomNumberIn1To100 = func() int {
+				return tt.randomNumber
+			}
+			if got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic); got != tt.want {
+				t.Errorf("IsVastUnwrapEnabled() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

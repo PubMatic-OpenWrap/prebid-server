@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	UnwrapURL = "http://localhost:8003/unwrap" // TBDJ
+	UnwrapURL = "http://localhost:8003/unwrap"
 )
 
 // init openwrap module and its dependecies like config, cache, db connection, bidder cfg, etc.

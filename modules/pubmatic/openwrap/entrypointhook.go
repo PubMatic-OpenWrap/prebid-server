@@ -137,11 +137,6 @@ func (m OpenWrap) handleEntrypointHook(
 	return result, nil
 }
 
-func getVastUnwrapperEnable(ctx context.Context, field string) bool {
-	vastEnableUnwrapper, _ := ctx.Value(field).(string)
-	return vastEnableUnwrapper == "1"
-}
-
 func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
 	var requestExtWrapper models.RequestExtWrapper
 	var err error

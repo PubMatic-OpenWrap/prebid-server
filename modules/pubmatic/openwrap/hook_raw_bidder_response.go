@@ -15,7 +15,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 	unwrapURL string,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-	vastRequestContext, ok := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+	vastRequestContext, ok := miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
 		return result, nil
@@ -25,7 +25,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		// Do Unwrap and Update Adm
 		wg := new(sync.WaitGroup)
 		for _, bid := range payload.Bids {
-			if string(bid.BidType) == "video" {
+			if string(bid.BidType) == models.MediaTypeVideo {
 				wg.Add(1)
 				go func(bid *adapters.TypedBid) {
 					defer wg.Done()
@@ -42,7 +42,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		if vastRequestContext.VastUnwrapStatsEnabled {
 			// Do Unwrap and Collect stats only
 			for _, bid := range payload.Bids {
-				if string(bid.BidType) == "video" {
+				if string(bid.BidType) == models.MediaTypeVideo {
 					go func(bid *adapters.TypedBid) {
 						m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
 					}(bid)

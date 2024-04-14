@@ -1,13 +1,11 @@
 package openwrap
 
 import (
-	"strconv"
+	"context"
 
-	"github.com/prebid/openrtb/v20/openrtb2"
 	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
 )
 
@@ -51,27 +49,7 @@ func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
 	return ow.featureConfig
 }
 
-// GetVastUnwrapEnabled return whether to enable vastunwrap or not
-func GetVastUnwrapEnabled(rctx models.RequestCtx, VASTUnwrapTraffic int) bool {
-	rCtx := models.RequestCtx{
-		Endpoint:  rctx.Endpoint,
-		PubID:     rctx.PubID,
-		ProfileID: rctx.ProfileID,
-		DisplayID: rctx.DisplayID,
-	}
-	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
-	if err != nil || len(partnerConfigMap) == 0 {
-		return false
-	}
-	rCtx.PartnerConfigMap = partnerConfigMap
-	trafficPercentage := VASTUnwrapTraffic
-	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
-	if unwrapEnabled {
-		if value := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
-			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
-				trafficPercentage = trafficPercentDB
-			}
-		}
-	}
-	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
+func getVastUnwrapperEnable(ctx context.Context, field string) bool {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper == "1"
 }

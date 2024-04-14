@@ -153,16 +153,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
-	// Re-use AB Test flag for VAST unwrap feature
-	if models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == "1" {
-		randomNumber := GetRandomNumberIn1To100()
-		if randomNumber <= m.cfg.Features.VASTUnwrapPecent {
-			rCtx.ABTestConfigApplied = 1
-			rCtx.VastUnwrapEnabled = true
-		} else {
-			rCtx.PartnerConfigMap = DisableVASTUnwrapConfigForRequest(rCtx.PartnerConfigMap)
-			result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap for VAST Disable")
-		}
+	// To check if VAST unwrap needs to be enabled for given request
+	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPecent) {
+		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		rCtx.VastUnwrapEnabled = true
 	}
 
 	//TMax should be updated after ABTest processing
@@ -679,6 +673,20 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Banner = nil
 		return
 	}
+}
+
+// isVastUnwrapEnabled return whether to enable vastunwrap or not
+func isVastUnwrapEnabled(PartnerConfigMap map[int]map[string]string, VASTUnwrapTraffic int) bool {
+	trafficPercentage := VASTUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(PartnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
+		}
+	}
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
 }
 
 /*
