@@ -18,9 +18,8 @@ type StructuredAdpod struct {
 }
 
 type Slot struct {
-	ImpId     string
-	Index     int
-	TotalBids int
+	ImpId string
+	Index int
 }
 
 func (da *StructuredAdpod) GetPodType() PodType {
@@ -68,14 +67,20 @@ func (sa *StructuredAdpod) PerformAuctionAndExclusion() {
 		sa.ImpBidMap[impId] = bids
 	}
 
+	// Fill up exclusion conditions
+	sa.Exclusion.setExclusionConditions(len(sa.ImpBidMap))
+
 	// Create Slots
 	slots := make([]Slot, 0)
 
 	for impId, bids := range sa.ImpBidMap {
+		if len(bids) == 0 {
+			continue
+		}
+
 		slot := Slot{
-			ImpId:     impId,
-			Index:     0,
-			TotalBids: len(bids),
+			ImpId: impId,
+			Index: 0,
 		}
 		slots = append(slots, slot)
 	}
@@ -130,15 +135,16 @@ func (sa *StructuredAdpod) selectBidForSlot(slots []Slot) {
 	slotBids := sa.ImpBidMap[selectedSlot.ImpId]
 	selectedBid := slotBids[selectedSlot.Index]
 
-	if sa.shouldApplyExclusion() {
+	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
-		} else if sa.isCategoryOverlapping(selectedBid) {
+		} else if sa.Exclusion.eitherExclusionNotMetForBid(selectedBid) {
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
-				if !sa.isCategoryOverlapping(slotBids[i]) {
+				if sa.Exclusion.allExclusionConditionsSatified(slotBids[i]) {
 					selectedSlot.Index = i
+					sa.Exclusion.updateExclusionConditions()
 					break
 				}
 			}
@@ -146,10 +152,11 @@ func (sa *StructuredAdpod) selectBidForSlot(slots []Slot) {
 			// Update selected Slot in slots array
 			slots[slotIndex] = selectedSlot
 		}
+	} else {
+		sa.Exclusion.updateExclusionConditions()
 	}
 
-	// Add bid categories to selected categories
-	sa.addCategories(slotBids[selectedSlot.Index].Cat)
+	sa.Exclusion.addExclusionParameters(slotBids[selectedSlot.Index])
 
 	// Swap selected slot at initial position
 	slots[0], slots[slotIndex] = slots[slotIndex], slots[0]
@@ -185,49 +192,19 @@ func isDealBid(bid *types.Bid) bool {
 	return bid.DealTierSatisfied
 }
 
-func (sa *StructuredAdpod) shouldApplyExclusion() bool {
-	return sa.CategoryExclusion
-}
-
-func (sa *StructuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
-	if bid == nil || bid.Cat == nil {
-		return false
-	}
-
-	if sa.Exclusion.SelectedCategories == nil {
-		return false
-	}
-
-	var doesOverlap bool
-	for i := range bid.Cat {
-		_, ok := sa.Exclusion.SelectedCategories[bid.Cat[i]]
-		if ok {
-			doesOverlap = true
-			break
-		}
-	}
-
-	return doesOverlap
-}
-
-func (sa *StructuredAdpod) addCategories(categories []string) {
-	if sa.Exclusion.SelectedCategories == nil {
-		sa.Exclusion.SelectedCategories = make(map[string]bool)
-	}
-
-	for _, cat := range categories {
-		sa.Exclusion.SelectedCategories[cat] = true
-	}
-}
-
 func (sa *StructuredAdpod) isDealBidCatOverlapWithAnotherDealBid(slots []Slot, selectedSlotIndex int, selectedBid *types.Bid) bool {
-	if len(selectedBid.Cat) == 0 {
+	if exclusionParamsNotExists(selectedBid) {
 		return false
 	}
 
 	catMap := make(map[string]bool)
 	for _, cat := range selectedBid.Cat {
 		catMap[cat] = true
+	}
+
+	domainMap := make(map[string]bool)
+	for _, domain := range selectedBid.ADomain {
+		domainMap[domain] = true
 	}
 
 	var isCatOverlap bool

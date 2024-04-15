@@ -35,10 +35,3 @@ type AdpodCtx struct {
 	Exclusion     Exclusion
 	MetricsEngine metrics.MetricsEngine
 }
-
-type Exclusion struct {
-	AdvertiserExclusionPercent  int // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
-	IABCategoryExclusionPercent int // Percent value 0 means all ads should be of different IAB categories.
-	SelectedCategories          map[string]bool
-	SelectedDomains             map[string]bool
-}
