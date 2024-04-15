@@ -725,7 +725,7 @@ func TestPrepareBidParamJSONForPartnerForTripleLiftWhenRequiredParamMissing(t *t
 	}
 }
 
-func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testing.T) {
+func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementIdAndPublisherId(t *testing.T) {
 	type improveDigitalTestObj struct {
 		PlacementID  int    `json:"placementId,omitempty"`
 		PublisherID  int    `json:"publisherId,omitempty"`
@@ -734,6 +734,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 
 	fieldMap := map[string]interface{}{
 		"placementId": "121",
+		"publisherId": "911",
 	}
 
 	width := new(int64)
@@ -753,7 +754,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 		return
 	}
 
-	if obj.PublisherID != 0 {
+	if obj.PublisherID != 911 {
 		t.Error("wrong publisherId value set")
 		return
 	}

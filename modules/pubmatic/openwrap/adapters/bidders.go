@@ -309,16 +309,19 @@ func builderSovrn(params BidderParameters) (json.RawMessage, error) {
 func builderImproveDigital(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
+	var placementID int
+	var ok bool
 
-	if placementID, ok := getInt(params.FieldMap["placementId"]); ok {
+	if placementID, ok = getInt(params.FieldMap["placementId"]); ok {
 		fmt.Fprintf(&jsonStr, `"placementId":%d`, placementID)
-	} else {
-		publisherID, ok1 := getInt(params.FieldMap["publisherId"])
-		placement, ok2 := getString(params.FieldMap["placementKey"])
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId'] or ['publisherId', 'placementKey']")
-		}
-		fmt.Fprintf(&jsonStr, `"publisherId":%d,"placementKey":"%s"`, publisherID, placement)
+	}
+
+	if placementID == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
+	}
+
+	if publisherID, ok1 := getInt(params.FieldMap["publisherId"]); ok1 {
+		fmt.Fprintf(&jsonStr, `,"publisherId":%d`, publisherID)
 	}
 
 	width, height := params.Width, params.Height
