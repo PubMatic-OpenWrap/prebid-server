@@ -1060,8 +1060,8 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("account_defaults.privacy.ipv6.anon_keep_bits", 56)
 	v.SetDefault("account_defaults.privacy.ipv4.anon_keep_bits", 24)
 
-	v.SetDefault("compression.response.enable_gzip", false)
-	v.SetDefault("compression.request.enable_gzip", false)
+	v.SetDefault("compression.response.enable_gzip", true)
+	v.SetDefault("compression.request.enable_gzip", true)
 
 	v.SetDefault("certificates_file", "")
 	v.SetDefault("auto_gen_source_tid", true)

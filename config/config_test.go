@@ -181,8 +181,8 @@ func TestDefaults(t *testing.T) {
 
 	// Assert compression related defaults
 	cmpBools(t, "enable_gzip", false, cfg.EnableGzip)
-	cmpBools(t, "compression.request.enable_gzip", false, cfg.Compression.Request.GZIP)
-	cmpBools(t, "compression.response.enable_gzip", false, cfg.Compression.Response.GZIP)
+	cmpBools(t, "compression.request.enable_gzip", true, cfg.Compression.Request.GZIP)
+	cmpBools(t, "compression.response.enable_gzip", true, cfg.Compression.Response.GZIP)
 
 	cmpBools(t, "account_defaults.price_floors.enabled", true, cfg.AccountDefaults.PriceFloors.Enabled)
 	cmpInts(t, "account_defaults.price_floors.enforce_floors_rate", 100, cfg.AccountDefaults.PriceFloors.EnforceFloorsRate)
