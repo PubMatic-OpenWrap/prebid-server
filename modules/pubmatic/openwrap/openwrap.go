@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	"sync"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
+	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/unwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/v2/currency"
@@ -37,7 +37,7 @@ type OpenWrap struct {
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
 	featureConfig      publisherfeature.Feature
-	unwrapRequest      func(w http.ResponseWriter, r *http.Request)
+	unwrap             unwrap.Unwrap
 }
 
 var ow *OpenWrap
@@ -91,7 +91,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
 			featureConfig:      featureConfig,
-			unwrapRequest:      vastunwrap.UnwrapRequest,
+			unwrap: unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
+				cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine),
 		}
 	})
 	return *ow, nil

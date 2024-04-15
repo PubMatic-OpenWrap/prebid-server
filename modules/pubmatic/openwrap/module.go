@@ -10,10 +10,6 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 )
 
-const (
-	UnwrapURL = "http://localhost:8003/unwrap"
-)
-
 // init openwrap module and its dependecies like config, cache, db connection, bidder cfg, etc.
 func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, error) {
 	return initOpenWrap(rawCfg, deps)
@@ -103,5 +99,5 @@ func (m OpenWrap) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 
-	return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
+	return m.handleRawBidderResponseHook(miCtx, payload)
 }

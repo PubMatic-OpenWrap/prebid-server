@@ -4509,9 +4509,8 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 			GetRandomNumberIn1To100 = func() int {
 				return tt.randomNumber
 			}
-			if got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic); got != tt.want {
-				t.Errorf("IsVastUnwrapEnabled() = %v, want %v", got, tt.want)
-			}
+			got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }

@@ -13,7 +13,6 @@ import (
 func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
-	unwrapURL string,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 	vastRequestContext, ok := miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
 	if !ok {
@@ -29,7 +28,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 				wg.Add(1)
 				go func(bid *adapters.TypedBid) {
 					defer wg.Done()
-					m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
+					m.unwrap.Unwrap(miCtx.AccountID, payload.Bidder, bid, vastRequestContext.UA, vastRequestContext.IP, vastRequestContext.VastUnwrapStatsEnabled)
 				}(bid)
 			}
 		}
@@ -44,7 +43,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 			for _, bid := range payload.Bids {
 				if string(bid.BidType) == models.MediaTypeVideo {
 					go func(bid *adapters.TypedBid) {
-						m.doUnwrapandUpdateBid(vastRequestContext.VastUnwrapStatsEnabled, bid, vastRequestContext.UA, vastRequestContext.IP, unwrapURL, miCtx.AccountID, payload.Bidder)
+						m.unwrap.Unwrap(miCtx.AccountID, payload.Bidder, bid, vastRequestContext.UA, vastRequestContext.IP, vastRequestContext.VastUnwrapStatsEnabled)
 					}(bid)
 				}
 			}

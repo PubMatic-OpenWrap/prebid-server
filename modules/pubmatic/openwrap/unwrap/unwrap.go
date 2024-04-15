@@ -1,4 +1,4 @@
-package openwrap
+package unwrap
 
 import (
 	"net/http"
@@ -7,12 +7,40 @@ import (
 	"strings"
 	"time"
 
+	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/adapters"
+	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 )
 
-func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, ip string, unwrapURL string, accountID string, bidder string) {
+type Unwrap struct {
+	endpoint      string
+	defaultTime   int
+	metricEngine  metrics.MetricsEngine
+	unwrapRequest http.HandlerFunc
+}
+
+type VastUnwrapService interface {
+	Unwrap(accountID string, bidder string, bid *adapters.TypedBid, userAgent string, ip string, isStatsEnabled bool)
+}
+
+func NewUnwrap(Endpoint string, DefaultTime int, handler http.HandlerFunc, MetricEngine metrics.MetricsEngine) Unwrap {
+	uw := Unwrap{
+		endpoint:      Endpoint,
+		defaultTime:   DefaultTime,
+		unwrapRequest: vastunwrap.UnwrapRequest,
+		metricEngine:  MetricEngine,
+	}
+
+	if handler != nil {
+		uw.unwrapRequest = handler
+	}
+	return uw
+
+}
+
+func (uw Unwrap) Unwrap(accountID string, bidder string, bid *adapters.TypedBid, userAgent string, ip string, isStatsEnabled bool) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -24,11 +52,11 @@ func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedB
 			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))
 		}
 		respTime := time.Since(startTime)
-		m.metricEngine.RecordUnwrapRequestTime(accountID, bidder, respTime)
-		m.metricEngine.RecordUnwrapRequestStatus(accountID, bidder, respStatus)
+		uw.metricEngine.RecordUnwrapRequestTime(accountID, bidder, respTime)
+		uw.metricEngine.RecordUnwrapRequestStatus(accountID, bidder, respStatus)
 		if respStatus == "0" {
-			m.metricEngine.RecordUnwrapWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
-			m.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
+			uw.metricEngine.RecordUnwrapWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
+			uw.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
 		}
 	}()
 	headers := http.Header{}
@@ -37,16 +65,16 @@ func (m OpenWrap) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedB
 	headers.Add(models.XUserAgent, userAgent)
 	headers.Add(models.XUserIP, ip)
 	headers.Add(models.CreativeID, bid.Bid.ID)
-	headers.Add(models.UnwrapTimeout, strconv.Itoa(m.cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout))
+	headers.Add(models.UnwrapTimeout, strconv.Itoa(uw.defaultTime))
 
-	unwrapURL = unwrapURL + "?" + models.PubID + "=" + accountID + "&" + models.ImpressionID + "=" + bid.Bid.ImpID
+	unwrapURL := uw.endpoint + "?" + models.PubID + "=" + accountID + "&" + models.ImpressionID + "=" + bid.Bid.ImpID
 	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
 	if err != nil {
 		return
 	}
 	httpReq.Header = headers
 	httpResp := NewCustomRecorder()
-	m.unwrapRequest(httpResp, httpReq)
+	uw.unwrapRequest(httpResp, httpReq)
 	respStatus = httpResp.Header().Get(models.UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(models.UnwrapCount), 10, 0)
 	if !isStatsEnabled && httpResp.Code == http.StatusOK && respStatus == "0" {
