@@ -40,7 +40,7 @@ func NewUnwrap(Endpoint string, DefaultTime int, handler http.HandlerFunc, Metri
 
 }
 
-func (uw Unwrap) Unwrap(accountID string, bidder string, bid *adapters.TypedBid, userAgent string, ip string, isStatsEnabled bool) {
+func (uw Unwrap) Unwrap(accountID, bidder string, bid *adapters.TypedBid, userAgent, ip string, isStatsEnabled bool) {
 	startTime := time.Now()
 	var wrapperCnt int64
 	var respStatus string
@@ -59,6 +59,12 @@ func (uw Unwrap) Unwrap(accountID string, bidder string, bid *adapters.TypedBid,
 			uw.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
 		}
 	}()
+
+	unwrapURL := uw.endpoint + "?" + models.PubID + "=" + accountID + "&" + models.ImpressionID + "=" + bid.Bid.ImpID
+	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
+	if err != nil {
+		return
+	}
 	headers := http.Header{}
 	headers.Add(models.ContentType, "application/xml; charset=utf-8")
 	headers.Add(models.UserAgent, userAgent)
@@ -67,11 +73,6 @@ func (uw Unwrap) Unwrap(accountID string, bidder string, bid *adapters.TypedBid,
 	headers.Add(models.CreativeID, bid.Bid.ID)
 	headers.Add(models.UnwrapTimeout, strconv.Itoa(uw.defaultTime))
 
-	unwrapURL := uw.endpoint + "?" + models.PubID + "=" + accountID + "&" + models.ImpressionID + "=" + bid.Bid.ImpID
-	httpReq, err := http.NewRequest(http.MethodPost, unwrapURL, strings.NewReader(bid.Bid.AdM))
-	if err != nil {
-		return
-	}
 	httpReq.Header = headers
 	httpResp := NewCustomRecorder()
 	uw.unwrapRequest(httpResp, httpReq)

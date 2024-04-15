@@ -89,7 +89,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
+							VASTUnwrapStatsPercent: 2,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -138,8 +138,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
-							VASTUnwrapPecent:      50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -191,8 +191,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
-							VASTUnwrapPecent:      50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -237,8 +237,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
-							VASTUnwrapPecent:      50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -301,8 +301,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
-							VASTUnwrapPecent:      50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -364,8 +364,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPecent: 2,
-							VASTUnwrapPecent:      50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,

@@ -82,8 +82,8 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
-	VASTUnwrapPecent      int
-	VASTUnwrapStatsPecent int
+	VASTUnwrapPercent      int
+	VASTUnwrapStatsPercent int
 }
 
 type Log struct { //Log Details

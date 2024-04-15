@@ -37,7 +37,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		changeSet.RawBidderResponse().Bids().Update(payload.Bids)
 		result.ChangeSet = changeSet
 	} else {
-		vastRequestContext.VastUnwrapStatsEnabled = GetRandomNumberIn1To100() <= m.cfg.Features.VASTUnwrapStatsPecent
+		vastRequestContext.VastUnwrapStatsEnabled = GetRandomNumberIn1To100() <= m.cfg.Features.VASTUnwrapStatsPercent
 		if vastRequestContext.VastUnwrapStatsEnabled {
 			// Do Unwrap and Collect stats only
 			for _, bid := range payload.Bids {

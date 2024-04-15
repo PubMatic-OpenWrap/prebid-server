@@ -154,7 +154,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// To check if VAST unwrap needs to be enabled for given request
-	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPecent) {
+	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
 		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
 		rCtx.VastUnwrapEnabled = true
 	}
