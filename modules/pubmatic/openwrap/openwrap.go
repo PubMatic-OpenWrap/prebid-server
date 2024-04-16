@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/unwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/prebid-server/v2/currency"
@@ -25,6 +24,7 @@ import (
 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
 )
 
 const (

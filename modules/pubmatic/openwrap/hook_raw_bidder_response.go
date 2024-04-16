@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
 func (m OpenWrap) handleRawBidderResponseHook(

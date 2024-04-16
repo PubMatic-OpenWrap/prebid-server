@@ -46,6 +46,7 @@ func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
 	return ow.featureConfig
 }
 
+// getVastUnwrapperEnable checks for Vast unwrp is enabled in given context
 func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	vastEnableUnwrapper, _ := ctx.Value(field).(string)
 	return vastEnableUnwrapper == models.Enabled

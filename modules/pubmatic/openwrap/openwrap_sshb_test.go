@@ -1,146 +1,51 @@
 package openwrap
 
 import (
-	"errors"
+	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/magiconair/properties/assert"
-	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestGetVastUnwrapEnabled(t *testing.T) {
+func TestGetVastUnwrapperEnable(t *testing.T) {
 	type args struct {
-		rctx              models.RequestCtx
-		vastunwraptraffic int
+		ctx   context.Context
+		field string
 	}
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockCache := mock_cache.NewMockCache(ctrl)
-
 	tests := []struct {
-		name         string
-		args         args
-		setup        func()
-		randomNumber int
-		want         bool
+		name string
+		args args
+		want bool
 	}{
 		{
-			name: "vastunwrap is enabled and trafficpercent is greater than random number",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
+			name: "given field present in context",
+			args: args{
+				ctx:   context.WithValue(context.Background(), "abc", "1"),
+				field: "abc",
 			},
-				vastunwraptraffic: 10,
-			},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					-1: {
-						models.VastUnwrapperEnableKey:      "1",
-						models.VastUnwrapTrafficPercentKey: "90",
-					},
-				}, nil)
-			},
-			randomNumber: 80,
-			want:         true,
+			want: true,
 		},
 		{
-			name: "vastunwrap is enabled and trafficpercent is less than random number",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
+			name: "given field is not present in context",
+			args: args{
+				ctx:   context.WithValue(context.Background(), "abc", "1"),
+				field: "xyz",
 			},
-				vastunwraptraffic: 0,
-			},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					-1: {
-						models.VastUnwrapperEnableKey:      "1",
-						models.VastUnwrapTrafficPercentKey: "90",
-					},
-				}, nil)
-			},
-			randomNumber: 91,
-			want:         false,
+			want: false,
 		},
 		{
-			name: "vastunwrap is dissabled and trafficpercent is less than random number",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
-			}},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					-1: {
-						models.VastUnwrapperEnableKey: "0",
-					},
-				}, nil)
+			name: "No field is not present in context",
+			args: args{
+				ctx:   context.Background(),
+				field: "xyz",
 			},
-			randomNumber: 91,
-			want:         false,
-		},
-		{
-			name: "partnerconfigmap not found",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
-			}},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
-			},
-			randomNumber: 91,
-			want:         false,
-		},
-		{
-			name: "error while fetching partnerconfigmap ",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
-			}},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some error"))
-			},
-			randomNumber: 91,
-			want:         false,
-		},
-		{
-			name: "vastunwrap is enabled and trafficpercent not present in DB ",
-			args: args{rctx: models.RequestCtx{
-				PubID:     5890,
-				ProfileID: 123,
-				DisplayID: 1,
-			},
-				vastunwraptraffic: 10,
-			},
-			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					-1: {
-						models.VastUnwrapperEnableKey: "1",
-					},
-				}, nil)
-			},
-			randomNumber: 9,
-			want:         true,
+			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
-			GetRandomNumberIn1To100 = func() int {
-				return tt.randomNumber
-			}
-			ow = &OpenWrap{
-				cache: mockCache,
-			}
-			got := GetVastUnwrapEnabled(tt.args.rctx, tt.args.vastunwraptraffic)
-			assert.Equal(t, got, tt.want)
+			got := getVastUnwrapperEnable(tt.args.ctx, tt.args.field)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
