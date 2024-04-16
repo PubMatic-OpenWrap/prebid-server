@@ -4436,7 +4436,7 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 		want         bool
 	}{
 		{
-			name: "vastunwrap is enabled and DB traffic percent is greater than random number",
+			name: "vastunwrap is enabled and traffic percent in DB and config, DB percent should be preferred",
 			args: args{
 				PartnerConfigMap: map[int]map[string]string{
 					-1: {
@@ -4444,7 +4444,7 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 						models.VastUnwrapTrafficPercentKey: "90",
 					},
 				},
-				VASTUnwrapTraffic: 10,
+				VASTUnwrapTraffic: 9,
 			},
 			randomNumber: 10,
 			want:         true,
