@@ -706,3 +706,15 @@ func (mr *MockMetricsEngineMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockMetricsEngine)(nil).Shutdown))
 }
+
+// RecordHTTPCounter mocks base method.
+func (m *MockMetricsEngine) RecordHTTPCounter() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordHTTPCounter")
+}
+
+// RecordHTTPCounter indicates an expected call of RecordHTTPCounter.
+func (mr *MockMetricsEngineMockRecorder) RecordHTTPCounter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPCounter", reflect.TypeOf((*MockMetricsEngine)(nil).RecordHTTPCounter))
+}
