@@ -52,7 +52,7 @@ func (m OpenWrap) handleEntrypointHook(
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == models.Enabled {
-		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapEnabled)
+		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
 		return result, nil
 	}
 	endpoint = GetEndpoint(payload.Request.URL.Path, source)

@@ -456,8 +456,6 @@ const (
 	ImpTypeVideo      = "video"
 	ContentTypeSite   = "site"
 	ContentTypeApp    = "app"
-
-	VastUnwrapEnabled = "enableVastUnwrapper"
 )
 
 const (
