@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/v2/adapters"
 )
 
 func (m VastUnwrapModule) doUnwrapandUpdateBid(isStatsEnabled bool, bid *adapters.TypedBid, userAgent string, ip string, unwrapURL string, accountID string, bidder string) {

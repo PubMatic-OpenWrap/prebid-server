@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // BidderMacro default implementation
@@ -265,7 +265,7 @@ func (tag *BidderMacro) MacroBlockedApp(key string) string {
 // MacroFD contains definition for FD Parameter
 func (tag *BidderMacro) MacroFD(key string) string {
 	if nil != tag.Request.Source {
-		return strconv.Itoa(int(tag.Request.Source.FD))
+		return strconv.Itoa(int(*tag.Request.Source.FD))
 	}
 	return ""
 }
@@ -417,16 +417,16 @@ func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 
 // MacroVideoPlayerWidth contains definition for VideoPlayerWidth Parameter
 func (tag *BidderMacro) MacroVideoPlayerWidth(key string) string {
-	if nil != tag.Imp.Video && tag.Imp.Video.W > 0 {
-		return strconv.FormatInt(int64(tag.Imp.Video.W), intBase)
+	if nil != tag.Imp.Video && tag.Imp.Video.W != nil && *tag.Imp.Video.W > 0 {
+		return strconv.FormatInt(int64(*tag.Imp.Video.W), intBase)
 	}
 	return ""
 }
 
 // MacroVideoPlayerHeight contains definition for VideoPlayerHeight Parameter
 func (tag *BidderMacro) MacroVideoPlayerHeight(key string) string {
-	if nil != tag.Imp.Video && tag.Imp.Video.H > 0 {
-		return strconv.FormatInt(int64(tag.Imp.Video.H), intBase)
+	if nil != tag.Imp.Video && tag.Imp.Video.H != nil && *tag.Imp.Video.H > 0 {
+		return strconv.FormatInt(int64(*tag.Imp.Video.H), intBase)
 	}
 	return ""
 }
@@ -524,8 +524,8 @@ func (tag *BidderMacro) MacroVideoMaximumBitRate(key string) string {
 
 // MacroVideoBoxing contains definition for VideoBoxing Parameter
 func (tag *BidderMacro) MacroVideoBoxing(key string) string {
-	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed > 0 {
-		return strconv.FormatInt(int64(tag.Imp.Video.BoxingAllowed), intBase)
+	if nil != tag.Imp.Video && tag.Imp.Video.BoxingAllowed != nil && *tag.Imp.Video.BoxingAllowed > 0 {
+		return strconv.FormatInt(int64(*tag.Imp.Video.BoxingAllowed), intBase)
 	}
 	return ""
 }
@@ -615,8 +615,8 @@ func (tag *BidderMacro) MacroSiteSearch(key string) string {
 
 // MacroSiteMobile contains definition for SiteMobile Parameter
 func (tag *BidderMacro) MacroSiteMobile(key string) string {
-	if !tag.IsApp && tag.Request.Site.Mobile > 0 {
-		return strconv.FormatInt(int64(tag.Request.Site.Mobile), intBase)
+	if !tag.IsApp && tag.Request.Site.Mobile != nil && *tag.Request.Site.Mobile > 0 {
+		return strconv.FormatInt(int64(*tag.Request.Site.Mobile), intBase)
 	}
 	return ""
 }
@@ -665,8 +665,8 @@ func (tag *BidderMacro) MacroAppVersion(key string) string {
 
 // MacroAppPaid contains definition for AppPaid Parameter
 func (tag *BidderMacro) MacroAppPaid(key string) string {
-	if tag.IsApp && tag.Request.App.Paid != 0 {
-		return strconv.FormatInt(int64(tag.Request.App.Paid), intBase)
+	if tag.IsApp && tag.Request.App.Paid != nil && *tag.Request.App.Paid != 0 {
+		return strconv.FormatInt(int64(*tag.Request.App.Paid), intBase)
 	}
 	return ""
 }
@@ -708,10 +708,10 @@ func (tag *BidderMacro) MacroPageCategory(key string) string {
 // MacroPrivacyPolicy contains definition for PrivacyPolicy Parameter
 func (tag *BidderMacro) MacroPrivacyPolicy(key string) string {
 	var value int8 = 0
-	if tag.IsApp {
-		value = tag.Request.App.PrivacyPolicy
-	} else {
-		value = tag.Request.Site.PrivacyPolicy
+	if tag.IsApp && tag.Request.App.PrivacyPolicy != nil {
+		value = *tag.Request.App.PrivacyPolicy
+	} else if tag.Request.Site != nil && tag.Request.Site.PrivacyPolicy != nil {
+		value = *tag.Request.Site.PrivacyPolicy
 	}
 	if value > 0 {
 		return strconv.FormatInt(int64(value), intBase)
@@ -902,7 +902,7 @@ func (tag *BidderMacro) MacroContentKeywords(key string) string {
 // MacroContentLiveStream contains definition for ContentLiveStream Parameter
 func (tag *BidderMacro) MacroContentLiveStream(key string) string {
 	if nil != tag.Content {
-		return strconv.FormatInt(int64(tag.Content.LiveStream), intBase)
+		return strconv.FormatInt(int64(*tag.Content.LiveStream), intBase)
 	}
 	return ""
 }
@@ -910,7 +910,7 @@ func (tag *BidderMacro) MacroContentLiveStream(key string) string {
 // MacroContentSourceRelationship contains definition for ContentSourceRelationship Parameter
 func (tag *BidderMacro) MacroContentSourceRelationship(key string) string {
 	if nil != tag.Content {
-		return strconv.FormatInt(int64(tag.Content.SourceRelationship), intBase)
+		return strconv.FormatInt(int64(*tag.Content.SourceRelationship), intBase)
 	}
 	return ""
 }
@@ -934,7 +934,7 @@ func (tag *BidderMacro) MacroContentLanguage(key string) string {
 // MacroContentEmbeddable contains definition for ContentEmbeddable Parameter
 func (tag *BidderMacro) MacroContentEmbeddable(key string) string {
 	if nil != tag.Content {
-		return strconv.FormatInt(int64(tag.Content.Embeddable), intBase)
+		return strconv.FormatInt(int64(*tag.Content.Embeddable), intBase)
 	}
 	return ""
 }
@@ -1054,7 +1054,7 @@ func (tag *BidderMacro) MacroDeviceHeight(key string) string {
 // MacroDeviceJS contains definition for DeviceJS Parameter
 func (tag *BidderMacro) MacroDeviceJS(key string) string {
 	if nil != tag.Request.Device {
-		return strconv.FormatInt(int64(tag.Request.Device.JS), intBase)
+		return strconv.FormatInt(int64(*tag.Request.Device.JS), intBase)
 	}
 	return ""
 }
@@ -1136,7 +1136,7 @@ func (tag *BidderMacro) MacroDeviceMACMD5(key string) string {
 // MacroLatitude contains definition for Latitude Parameter
 func (tag *BidderMacro) MacroLatitude(key string) string {
 	if tag.HasGeo {
-		return fmt.Sprintf("%g", tag.Request.Device.Geo.Lat)
+		return fmt.Sprintf("%g", *tag.Request.Device.Geo.Lat)
 	}
 	return ""
 }
@@ -1144,7 +1144,7 @@ func (tag *BidderMacro) MacroLatitude(key string) string {
 // MacroLongitude contains definition for Longitude Parameter
 func (tag *BidderMacro) MacroLongitude(key string) string {
 	if tag.HasGeo {
-		return fmt.Sprintf("%g", tag.Request.Device.Geo.Lon)
+		return fmt.Sprintf("%g", *tag.Request.Device.Geo.Lon)
 	}
 	return ""
 }

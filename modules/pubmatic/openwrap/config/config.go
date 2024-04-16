@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
 )
 
 // Config contains the values read from the config file at boot time

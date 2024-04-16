@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -195,7 +196,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
 			floorVal:     5.5,
-			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}}},
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)}}},
 			expected:     []byte(`{"prebid":{"floors":{"floorrule":"test|123|xyz","floorrulevalue":5.5,"floorvalue":5.5}}}`),
 		},
 		{
@@ -203,7 +204,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "test|123|xyz",
 			floorRuleVal: 5.5,
 			floorVal:     5.5,
-			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: json.RawMessage{}}},
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)}, Ext: json.RawMessage{}}},
 			expected:     []byte(`{"prebid":{"floors":{"floorrule":"test|123|xyz","floorrulevalue":5.5,"floorvalue":5.5}}}`),
 		},
 		{
@@ -211,7 +212,7 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "banner|www.test.com|*",
 			floorRuleVal: 5.5,
 			floorVal:     15.5,
-			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)}, Ext: []byte(`{"prebid": {"test": true}}`)}},
 			expected:     []byte(`{"prebid":{"floors":{"floorrule":"banner|www.test.com|*","floorrulevalue":5.5,"floorvalue":15.5}}}`),
 		},
 		{
@@ -219,14 +220,14 @@ func TestUpdateImpExtWithFloorDetails(t *testing.T) {
 			matchedRule:  "",
 			floorRuleVal: 5.5,
 			floorVal:     15.5,
-			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250}, Ext: []byte(`{"prebid": {"test": true}}`)}},
+			imp:          &openrtb_ext.ImpWrapper{Imp: &openrtb2.Imp{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)}, Ext: []byte(`{"prebid": {"test": true}}`)}},
 			expected:     []byte(`{"prebid":{"floors":{"floorvalue":15.5}}}`),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			updateImpExtWithFloorDetails(tc.imp, tc.matchedRule, tc.floorRuleVal, tc.floorVal)
-			_ = tc.imp.RebuildImpressionExt()
+			_ = tc.imp.RebuildImp()
 			if tc.imp.Ext != nil {
 				assert.Equal(t, tc.imp.Ext, tc.expected, tc.name)
 			}
@@ -259,7 +260,7 @@ func TestCreateRuleKeys(t *testing.T) {
 				Site: &openrtb2.Site{
 					Domain: "www.test.com",
 				},
-				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 640, H: 480, Placement: 1}}},
+				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](640), H: ptrutil.ToPtr[int64](480), Placement: 1}}},
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
 			out:         []string{"video", "640x480", "www.test.com"},
@@ -270,7 +271,7 @@ func TestCreateRuleKeys(t *testing.T) {
 				Site: &openrtb2.Site{
 					Domain: "www.test.com",
 				},
-				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: 300, H: 250, Placement: 2}}},
+				Imp: []openrtb2.Imp{{ID: "1234", Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250), Placement: 2}}},
 			},
 			floorSchema: openrtb_ext.PriceFloorSchema{Delimiter: "|", Fields: []string{"mediaType", "size", "domain"}},
 			out:         []string{"video-outstream", "300x250", "www.test.com"},
@@ -768,7 +769,7 @@ func TestGetMinFloorValue(t *testing.T) {
 			},
 			want:    0.0,
 			want1:   "",
-			wantErr: errors.New("Error in getting FloorMin value : 'unexpected end of JSON input'"),
+			wantErr: errors.New("Error in getting FloorMin value : 'expects \" or n, but found \x00'"),
 		},
 	}
 	for _, tc := range testCases {
@@ -1023,7 +1024,7 @@ func TestGetSizeValue(t *testing.T) {
 		},
 		{
 			name: "video:  imp.video.w and  imp.video.h present",
-			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240}},
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](120), H: ptrutil.ToPtr[int64](240)}},
 			want: "120x240",
 		},
 		{
@@ -1053,7 +1054,7 @@ func TestGetMediaType(t *testing.T) {
 	}{
 		{
 			name: "more than one of these: imp.banner, imp.video, imp.native, imp.audio present",
-			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240}, Banner: &openrtb2.Banner{W: getInt64Ptr(320), H: getInt64Ptr(240)}},
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](120), H: ptrutil.ToPtr[int64](240)}, Banner: &openrtb2.Banner{W: getInt64Ptr(320), H: getInt64Ptr(240)}},
 			want: "*",
 		},
 		{
@@ -1063,12 +1064,12 @@ func TestGetMediaType(t *testing.T) {
 		},
 		{
 			name: "video-outstream present",
-			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240, Placement: 2}},
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](120), H: ptrutil.ToPtr[int64](240), Placement: 2}},
 			want: "video-outstream",
 		},
 		{
 			name: "video-instream present",
-			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: 120, H: 240, Placement: 1}},
+			imp:  &openrtb2.Imp{Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](120), H: ptrutil.ToPtr[int64](240), Placement: 1}},
 			want: "video",
 		},
 		{

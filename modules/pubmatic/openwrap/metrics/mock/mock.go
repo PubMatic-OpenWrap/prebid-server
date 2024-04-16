@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 )
 
 // MockMetricsEngine is a mock of MetricsEngine interface.

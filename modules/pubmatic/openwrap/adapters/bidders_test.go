@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -339,7 +339,7 @@ func TestPrepareBidParamJSONForPartnerAdform(t *testing.T) {
 					"mid": "1234",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderAdform),
+				adapterName: string(openrtb_ext.BidderAdf),
 			},
 			want: json.RawMessage(`{"mid":1234}`),
 		},
@@ -351,14 +351,14 @@ func TestPrepareBidParamJSONForPartnerAdform(t *testing.T) {
 				height:      nil,
 				fieldMap:    map[string]interface{}{},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderAdform),
+				adapterName: string(openrtb_ext.BidderAdf),
 			},
 			want: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, string(openrtb_ext.BidderAdform), nil)
+			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, string(openrtb_ext.BidderAdf), nil)
 			AssertJSON(t, tt.want, got)
 		})
 	}
@@ -1033,8 +1033,8 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"tagId":  "testTagId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: json.RawMessage(`{"seatId":"testSeatId","tagId":"testTagId"}`),
 		},
@@ -1047,8 +1047,8 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"tagId": "testTagId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: nil,
 		},
@@ -1061,110 +1061,10 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"seatId": "testSeatId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: json.RawMessage(`{"seatId":"testSeatId"}`),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, tt.args.bidderCode, nil)
-			AssertJSON(t, tt.want, got)
-		})
-	}
-}
-
-func TestPrepareBidParamJSONForPartnerRhythmOne(t *testing.T) {
-	type args struct {
-		width       *int64
-		height      *int64
-		fieldMap    map[string]interface{}
-		slotKey     string
-		adapterName string
-		bidderCode  string
-	}
-	tests := []struct {
-		name string
-		args args
-		want json.RawMessage
-	}{
-		{
-			name: "All params present",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"path":        "testPath",
-					"zone":        "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: json.RawMessage(`{"placementId":"testPlacementId","path":"testPath","zone":"testZone"}`),
-		},
-		{
-			name: "placementId param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"path": "testPath",
-					"zone": "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "path param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"zone":        "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "zone param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"path":        "testPath",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "required params are missing",
-			args: args{
-				width:       nil,
-				height:      nil,
-				fieldMap:    nil,
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
 		},
 	}
 	for _, tt := range tests {

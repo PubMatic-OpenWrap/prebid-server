@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	cfg "github.com/prebid/prebid-server/config"
-	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	ow_prometheus "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/prometheus"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	cfg "github.com/prebid/prebid-server/v2/config"
+	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	ow_prometheus "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

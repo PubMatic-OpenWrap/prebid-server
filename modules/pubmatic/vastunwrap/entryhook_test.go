@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	ow_models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	ow_models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -9,12 +9,12 @@ import (
 	"git.pubmatic.com/vastunwrap/config"
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
-	mock_stats "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats/mock"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
+	mock_stats "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/stats/mock"
 	"github.com/stretchr/testify/assert"
 )
 

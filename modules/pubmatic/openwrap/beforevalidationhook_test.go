@@ -9,23 +9,24 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	mock_feature "github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature/mock"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,8 +73,8 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 				H: ptrutil.ToPtr[int64](300),
 			},
 			Video: &openrtb2.Video{
-				W:     200,
-				H:     300,
+				W:     ptrutil.ToPtr[int64](200),
+				H:     ptrutil.ToPtr[int64](300),
 				Plcmt: 1,
 			},
 		},
@@ -919,8 +920,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -982,8 +983,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -1057,8 +1058,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -1271,8 +1272,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1280,8 +1281,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -1316,8 +1317,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1365,10 +1366,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1396,8 +1397,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:              640,
-						H:              480,
+						W:              ptrutil.ToPtr[int64](640),
+						H:              ptrutil.ToPtr[int64](480),
 						MinDuration:    10,
 						MaxDuration:    40,
 						Skip:           ptrutil.ToPtr(int8(1)),
@@ -1411,7 +1412,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						Linearity:      1,
 						Protocol:       1,
 						Sequence:       2,
-						BoxingAllowed:  1,
+						BoxingAllowed:  ptrutil.ToPtr[int8](1),
 						PlaybackEnd:    2,
 						MIMEs:          []string{"mimes"},
 						API:            []adcom1.APIFramework{1, 2},
@@ -1445,10 +1446,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1497,8 +1498,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),
@@ -1511,8 +1512,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),
@@ -1578,8 +1579,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 												PlaybackEnd:    adcom1.PlaybackFloating,
 												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              300,
-												H:              400,
+												W:              ptrutil.ToPtr[int64](300),
+												H:              ptrutil.ToPtr[int64](400),
 											},
 										},
 									},
@@ -1612,8 +1613,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 						PlaybackEnd:    adcom1.PlaybackFloating,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-						W:              300,
-						H:              400,
+						W:              ptrutil.ToPtr[int64](300),
+						H:              ptrutil.ToPtr[int64](400),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -1640,8 +1641,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 												PlaybackEnd:    adcom1.PlaybackFloating,
 												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              300,
-												H:              400,
+												W:              ptrutil.ToPtr[int64](300),
+												H:              ptrutil.ToPtr[int64](400),
 											},
 										},
 									},
@@ -1701,8 +1702,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-						W:              250,
-						H:              300,
+						W:              ptrutil.ToPtr[int64](250),
+						H:              ptrutil.ToPtr[int64](300),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -3191,8 +3192,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 								Config: &adunitconfig.VideoConfig{
 									Video: openrtb2.Video{
 										MIMEs: []string{"video/mp4", "video/mpeg"},
-										W:     640,
-										H:     480,
+										W:     ptrutil.ToPtr[int64](640),
+										H:     ptrutil.ToPtr[int64](480),
 									},
 								},
 							},
@@ -4042,8 +4043,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
 					Video: openrtb2.Video{
-						W:              300,
-						H:              250,
+						W:              ptrutil.ToPtr[int64](300),
+						H:              ptrutil.ToPtr[int64](250),
 						MIMEs:          []string{"MP4"},
 						Linearity:      adcom1.LinearityNonLinear,
 						StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4055,7 +4056,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 						Skip:           ptrutil.ToPtr(int8(1)),
 						SkipMin:        10,
 						SkipAfter:      5,
-						BoxingAllowed:  2,
+						BoxingAllowed:  ptrutil.ToPtr[int8](2),
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4071,8 +4072,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 			},
 			wantImpVideo: &openrtb2.Video{
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 				MIMEs:          []string{"MP4"},
 				Linearity:      adcom1.LinearityNonLinear,
 				StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4084,7 +4085,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](1),
 				SkipMin:        10,
 				SkipAfter:      5,
-				BoxingAllowed:  2,
+				BoxingAllowed:  ptrutil.ToPtr[int8](2),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4104,15 +4105,15 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "123",
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 
 				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
 					Video: openrtb2.Video{
-						W:              400,
-						H:              300,
+						W:              ptrutil.ToPtr[int64](400),
+						H:              ptrutil.ToPtr[int64](300),
 						MIMEs:          []string{"MP4"},
 						Linearity:      adcom1.LinearityNonLinear,
 						StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4124,7 +4125,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 						Skip:           ptrutil.ToPtr(int8(1)),
 						SkipMin:        10,
 						SkipAfter:      5,
-						BoxingAllowed:  2,
+						BoxingAllowed:  ptrutil.ToPtr[int8](2),
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4140,8 +4141,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 			},
 			wantImpVideo: &openrtb2.Video{
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 				MIMEs:          []string{"MP4"},
 				Linearity:      adcom1.LinearityNonLinear,
 				StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4153,7 +4154,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](1),
 				SkipMin:        10,
 				SkipAfter:      5,
-				BoxingAllowed:  2,
+				BoxingAllowed:  ptrutil.ToPtr[int8](2),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4206,12 +4207,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 		{
@@ -4245,12 +4246,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 		{
@@ -4286,12 +4287,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 	}
@@ -4309,7 +4310,7 @@ func TestGetW(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int64
+		want *int64
 	}{
 		{
 			name: "Empty banner and format",
@@ -4320,7 +4321,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 0,
+			want: nil,
 		},
 		{
 			name: "both banner and format are present",
@@ -4336,7 +4337,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 300,
+			want: ptrutil.ToPtr[int64](300),
 		},
 		{
 			name: "only format is present",
@@ -4351,7 +4352,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want: ptrutil.ToPtr[int64](400),
 		},
 	}
 	for _, tt := range tests {
@@ -4369,7 +4370,7 @@ func TestGetH(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int64
+		want *int64
 	}{
 		{
 			name: "Empty banner and format",
@@ -4380,7 +4381,7 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 0,
+			want: nil,
 		},
 		{
 			name: "both banner and format are present",
@@ -4396,7 +4397,7 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 300,
+			want: ptrutil.ToPtr[int64](300),
 		},
 		{
 			name: "only format is present",
@@ -4411,7 +4412,7 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want: ptrutil.ToPtr[int64](400),
 		},
 	}
 	for _, tt := range tests {

@@ -10,12 +10,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
+
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 const MAX_IMPRESSIONS_PUBMATIC = 30
@@ -35,7 +37,8 @@ const (
 )
 
 type PubmaticAdapter struct {
-	URI string
+	URI        string
+	bidderName string
 }
 
 type pubmaticBidExt struct {
@@ -303,8 +306,8 @@ func assignBannerSize(banner *openrtb2.Banner) (*openrtb2.Banner, error) {
 
 func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.Banner {
 	bannerCopy := *banner
-	bannerCopy.W = openrtb2.Int64Ptr(w)
-	bannerCopy.H = openrtb2.Int64Ptr(h)
+	bannerCopy.W = ptrutil.ToPtr(w)
+	bannerCopy.H = ptrutil.ToPtr(h)
 	return &bannerCopy
 }
 
@@ -390,6 +393,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	// If bidViewabilityScore param is populated, pass it to imp[i].ext
 	if pubmaticExt.BidViewabilityScore != nil {
 		extMap[bidViewability] = pubmaticExt.BidViewabilityScore
+	}
+
+	if bidderExt.AE != 0 {
+		extMap[ae] = bidderExt.AE
 	}
 
 	if bidderExt.AE != 0 {
@@ -756,7 +763,8 @@ func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
 	bidder := &PubmaticAdapter{
-		URI: config.Endpoint,
+		URI:        config.Endpoint,
+		bidderName: string(bidderName),
 	}
 	return bidder, nil
 }

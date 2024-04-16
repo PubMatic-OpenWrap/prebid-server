@@ -6,9 +6,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/magiconair/properties/assert"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	vastmodels "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	vastmodels "github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 )
 
 func TestGetVastUnwrapEnabled(t *testing.T) {

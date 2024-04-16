@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/vastunwrap/models"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
 func (m VastUnwrapModule) handleRawBidderResponseHook(

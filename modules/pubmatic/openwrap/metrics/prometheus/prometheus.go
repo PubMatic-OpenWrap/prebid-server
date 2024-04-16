@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
