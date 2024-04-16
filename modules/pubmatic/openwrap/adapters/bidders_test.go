@@ -725,7 +725,7 @@ func TestPrepareBidParamJSONForPartnerForTripleLiftWhenRequiredParamMissing(t *t
 	}
 }
 
-func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testing.T) {
+func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementIdAndPublisherId(t *testing.T) {
 	type improveDigitalTestObj struct {
 		PlacementID  int    `json:"placementId,omitempty"`
 		PublisherID  int    `json:"publisherId,omitempty"`
@@ -734,6 +734,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 
 	fieldMap := map[string]interface{}{
 		"placementId": "121",
+		"publisherId": "911",
 	}
 
 	width := new(int64)
@@ -753,7 +754,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 		return
 	}
 
-	if obj.PublisherID != 0 {
+	if obj.PublisherID != 911 {
 		t.Error("wrong publisherId value set")
 		return
 	}
@@ -2392,7 +2393,23 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"placementId":1234,"size":{"w":300,"h":250}}`),
+			want: nil,
+		},
+		{
+			name: "PlacementId and publisherId present, placementKey missing",
+			args: args{
+
+				width:  ptrutil.ToPtr[int64](300),
+				height: ptrutil.ToPtr[int64](250),
+				fieldMap: map[string]interface{}{
+					"placementId": "1234",
+					"publisherId": "5678",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderImprovedigital),
+				bidderCode:  string(openrtb_ext.BidderImprovedigital),
+			},
+			want: json.RawMessage(`{"placementId":1234,"publisherId":5678,"size":{"w":300,"h":250}}`),
 		},
 		{
 			name: "PlacementId absent, publisherId and placementKey present",
@@ -2465,12 +2482,13 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				height: nil,
 				fieldMap: map[string]interface{}{
 					"placementId": "1234",
+					"publisherId": "5678",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"placementId":1234}`),
+			want: json.RawMessage(`{"placementId":1234, "publisherId":5678}`),
 		},
 	}
 	for _, tt := range tests {
