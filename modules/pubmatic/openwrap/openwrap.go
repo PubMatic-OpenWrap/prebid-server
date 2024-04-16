@@ -83,6 +83,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
+	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
+		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
 	once.Do(func() {
 		ow = &OpenWrap{
@@ -91,8 +93,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
 			featureConfig:      featureConfig,
-			unwrap: unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
-				cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine),
+			unwrap:             uw,
 		}
 	})
 	return *ow, nil

@@ -676,11 +676,11 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 }
 
 // isVastUnwrapEnabled return whether to enable vastunwrap or not
-func isVastUnwrapEnabled(PartnerConfigMap map[int]map[string]string, VASTUnwrapTraffic int) bool {
-	trafficPercentage := VASTUnwrapTraffic
-	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+func isVastUnwrapEnabled(partnerConfigMap map[int]map[string]string, vastUnwrapTraffic int) bool {
+	trafficPercentage := vastUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
 	if unwrapEnabled {
-		if value := models.GetVersionLevelPropertyFromPartnerConfig(PartnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
 			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
 				trafficPercentage = trafficPercentDB
 			}

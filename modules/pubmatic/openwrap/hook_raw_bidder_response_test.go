@@ -77,7 +77,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 							BidType: "video",
 						}}},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
 				randomNumber:        1,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -114,7 +114,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
 				randomNumber:        1,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -165,7 +165,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "1")
@@ -218,7 +218,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 
 				isAdmUpdated: true,
 			},
@@ -275,7 +275,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 				isAdmUpdated:        true,
 				randomNumber:        10,
 			},
@@ -339,7 +339,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 
 				isAdmUpdated: true,
 			},
@@ -391,7 +391,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{"rctx": models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 
 				isAdmUpdated: true,
 			},

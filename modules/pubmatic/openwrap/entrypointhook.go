@@ -51,7 +51,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
-	if queryParams.Get("sshb") == "1" {
+	if rCtx.Sshb == models.Enabled {
 		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapEnabled)
 		return result, nil
 	}

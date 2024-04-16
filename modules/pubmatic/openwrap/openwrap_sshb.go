@@ -6,11 +6,8 @@ import (
 	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
-)
-
-const (
-	VastUnwrapperEnableValue = "1"
 )
 
 // GetConfig Temporary function to expose config to SSHB
@@ -51,5 +48,5 @@ func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
 
 func getVastUnwrapperEnable(ctx context.Context, field string) bool {
 	vastEnableUnwrapper, _ := ctx.Value(field).(string)
-	return vastEnableUnwrapper == "1"
+	return vastEnableUnwrapper == models.Enabled
 }
