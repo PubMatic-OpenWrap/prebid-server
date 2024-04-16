@@ -68,6 +68,7 @@ func Listen(cfg *config.Configuration, handler http.Handler, adminHandler http.H
 			prometheusListener net.Listener
 			prometheusServer   = newPrometheusServer(cfg, metrics)
 		)
+		prometheusServer = getOpenWrapPrometheusServer(cfg, metrics.PrometheusMetrics.Gatherer, prometheusServer)
 		go shutdownAfterSignals(prometheusServer, stopPrometheus, done)
 		if prometheusListener, err = newTCPListener(prometheusServer.Addr, nil); err != nil {
 			glog.Errorf("Error listening for TCP connections on %s: %v for prometheus server", adminServer.Addr, err)
