@@ -12,17 +12,6 @@ func CheckABTestEnabled(rctx models.RequestCtx) bool {
 	return models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.AbTestEnabled) == "1"
 }
 
-// DisableVASTUnwrapConfigForRequest returns the updated partnerconfig with disabled vast unwrapper flag
-// based on random number generation
-func DisableVASTUnwrapConfigForRequest(partnerConfig map[int]map[string]string) map[int]map[string]string {
-	//create copy of the map
-	newPartnerConfig := copyPartnerConfigMap(partnerConfig)
-
-	// Disable enableVastUnwrapper key
-	newPartnerConfig[-1][models.VastUnwrapperEnableKey] = "0"
-	return newPartnerConfig
-}
-
 // ABTestProcessing function checks if test config should be applied and change the partner config accordingly
 func ABTestProcessing(rctx models.RequestCtx) (map[int]map[string]string, bool) {
 	//test config logic
