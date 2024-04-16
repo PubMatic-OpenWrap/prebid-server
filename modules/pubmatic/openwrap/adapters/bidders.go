@@ -320,6 +320,7 @@ func builderImproveDigital(params BidderParameters) (json.RawMessage, error) {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
 	}
 
+	//UOE-10317: Adding change as per discussion with improve digital
 	if publisherID, ok = getInt(params.FieldMap["publisherId"]); ok {
 		fmt.Fprintf(&jsonStr, `,"publisherId":%d`, publisherID)
 	}
