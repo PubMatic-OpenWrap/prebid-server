@@ -1,7 +1,6 @@
 package models
 
 const (
-	DEFAULT_PUB_ID              = 34576 // Default PubID to get generic data like regex for browsers etc
 	PARTNER_ID                  = "partnerId"
 	ADAPTER_ID                  = "adapterId"
 	PARTNER_ACCOUNT_NAME        = "partnerName"
@@ -360,6 +359,24 @@ const (
 	HardFloor = 1
 
 	CustomDimensions = "cds"
+	Enabled          = "1"
+
+	// VAST Unwrap
+	RequestContext     = "rctx"
+	UnwrapCount        = "unwrap-count"
+	UnwrapStatus       = "unwrap-status"
+	Timeout            = "Timeout"
+	UnwrapSucessStatus = "0"
+	UnwrapTimeout      = "unwrap-timeout"
+	MediaTypeVideo     = "video"
+	ProfileId          = "profileID"
+	VersionId          = "versionID"
+	DisplayId          = "DisplayID"
+	XUserIP            = "X-Forwarded-For"
+	XUserAgent         = "X-Device-User-Agent"
+	CreativeID         = "unwrap-ucrid"
+	PubID              = "pub_id"
+	ImpressionID       = "imr_id"
 )
 
 const (

@@ -10,20 +10,20 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/boolutil"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/boolutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -160,6 +160,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ABTestConfigApplied = 1
 		rCtx.PartnerConfigMap = newPartnerConfigMap
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
+	}
+
+	// To check if VAST unwrap needs to be enabled for given request
+	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
+		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		rCtx.VastUnwrapEnabled = true
 	}
 
 	//TMax should be updated after ABTest processing
@@ -678,6 +684,20 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 }
 
+// isVastUnwrapEnabled return whether to enable vastunwrap or not
+func isVastUnwrapEnabled(partnerConfigMap map[int]map[string]string, vastUnwrapTraffic int) bool {
+	trafficPercentage := vastUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapperEnableKey) == models.Enabled
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
+		}
+	}
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
+}
+
 /*
 getSlotName will return slot name according to below priority
  1. imp.ext.gpid
@@ -985,11 +1005,11 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 		imp.Video.Protocols = configObjInVideoConfig.Protocols
 	}
 
-	if imp.Video.W == 0 {
+	if imp.Video.W == nil {
 		imp.Video.W = configObjInVideoConfig.W
 	}
 
-	if imp.Video.H == 0 {
+	if imp.Video.H == nil {
 		imp.Video.H = configObjInVideoConfig.H
 	}
 
@@ -997,7 +1017,7 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 		imp.Video.Sequence = configObjInVideoConfig.Sequence
 	}
 
-	if imp.Video.BoxingAllowed == 0 {
+	if imp.Video.BoxingAllowed == nil {
 		imp.Video.BoxingAllowed = configObjInVideoConfig.BoxingAllowed
 	}
 
@@ -1032,10 +1052,10 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 
 func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
 
-	if imp.Video.W == 0 {
+	if imp.Video.W == nil {
 		imp.Video.W = getW(imp)
 	}
-	if imp.Video.H == 0 {
+	if imp.Video.H == nil {
 		imp.Video.H = getH(imp)
 	}
 	if imp.Video.MIMEs == nil {
@@ -1076,30 +1096,30 @@ func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
 	}
 }
 
-func getW(imp *openrtb2.Imp) int64 {
+func getW(imp *openrtb2.Imp) *int64 {
 	if imp.Banner != nil {
 		if imp.Banner.W != nil {
-			return *imp.Banner.W
+			return imp.Banner.W
 		}
 		for _, format := range imp.Banner.Format {
 			if format.W != 0 {
-				return format.W
+				return &format.W
 			}
 		}
 	}
-	return 0
+	return nil
 }
 
-func getH(imp *openrtb2.Imp) int64 {
+func getH(imp *openrtb2.Imp) *int64 {
 	if imp.Banner != nil {
 		if imp.Banner.H != nil {
-			return *imp.Banner.H
+			return imp.Banner.H
 		}
 		for _, format := range imp.Banner.Format {
 			if format.H != 0 {
-				return format.H
+				return &format.H
 			}
 		}
 	}
-	return 0
+	return nil
 }

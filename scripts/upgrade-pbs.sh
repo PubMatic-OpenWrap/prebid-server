@@ -1,10 +1,5 @@
 #!/bin/bash -e
 
-prefix="v"
-to_major=0
-to_minor=259
-to_patch=0
-upgrade_version="$prefix$to_major.$to_minor.$to_patch"
 
 attempt=1
 
@@ -45,19 +40,14 @@ log () {
 }
 
 clear_log() {
-    major=0
-    minor=0
-    patch=0
-    get_current_tag_version major minor patch
-    current_fork_at_version="$major.$minor.$patch"
-
+    current_fork_at_version=$(git describe --tags --abbrev=0)
     if [ "$current_fork_at_version" == "$upgrade_version" ] ; then
         log "Upgraded to $current_fork_at_version"
         rm -f "$CHECKLOG"
     
         log "Last validation before creating PR"
         go_mod
-        checkpoint_run "./validate.sh --race 5"
+        checkpoint_run "./validate.sh --race 5 --nofmt"
         go_discard
 
         set +e
@@ -70,36 +60,6 @@ clear_log() {
     fi
 }
 
-get_current_tag_version() {
-    log "get_current_tag_version $*"
-
-    local -n _major=$1
-    local -n _minor=$2
-    local -n _patch=$3
-
-    # script will always start from start if origin/master is used.
-    # common_commit=$(git merge-base prebid-upstream/master origin/master)
-    # log "Common commit b/w prebid-upstream/master origin/master: $common_commit"
-
-    # remove origin for master to continue from last fixed tag's rebase.
-    common_commit=$(git merge-base prebid-upstream/master master)
-    log "Common commit b/w prebid-upstream/master master: $common_commit"
-
-    current_version=$(git tag --points-at $common_commit)
-    if [[ $current_version == v* ]] ; then
-        log "Current Version: $current_version"
-    else
-        log "Failed to detected current version. Abort."
-        exit 1
-        # abort
-        # cd prebid-server; git rebase --abort;cd -
-    fi
-
-    IFS='.' read -r -a _current_version <<< "$current_version"
-    _major=${_current_version[0]}
-    _minor=${_current_version[1]}
-    _patch=${_current_version[2]}
-}
 
 clone_repo() {
     if [ -d "/tmp/prebid-server" ]; then
@@ -122,6 +82,7 @@ checkout_branch() {
     # git push origin $tag_base_branch_name
 
     git checkout -b $upgrade_branch_name
+    git checkout $upgrade_branch_name
     # git push origin $upgrade_branch_name
 
     set -e
@@ -146,9 +107,10 @@ checkpoint_run() {
     if [ -f $CHECKLOG ] ; then
         if grep -q "$cmd" "$CHECKLOG"; then
             log "Retry this checkpoint: $cmd"
+            cmd_exe $cmd
             rm "$CHECKLOG"
-        elif grep -q "./validate.sh --race 5" "$CHECKLOG"; then
-            log "Special checkpoint. ./validate.sh --race 5 failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
+        elif grep -q "./validate.sh --race 5 --nofmt" "$CHECKLOG"; then
+            log "Special checkpoint. ./validate.sh --race 5 --nofmt failed for last tag update. Hence, only fixes are expected in successfully upgraded branch. (change in func() def, wrong conflict resolve, etc)"
             cmd_exe $cmd
             rm "$CHECKLOG"
         else
@@ -167,9 +129,6 @@ go_mod() {
 }
 
 go_discard() {
-    # discard local changes if any. manual validate, compile, etc
-    # git checkout master go.mod
-    # git checkout master go.sum
     git checkout go.mod go.sum
 }
 
@@ -188,43 +147,35 @@ checkpoint_run clone_repo
 cd /tmp/prebid-server
 log "At $(pwd)"
 
-# code merged in master
-# if [ "$RESTART" -eq "1" ]; then
-#     # TODO: commit this in origin/master,ci and remove it from here.
-#     git merge --squash origin/UOE-7610-1-upgrade.sh
-#     git commit --no-edit
-# fi
+# Get the latest tag
+latest_tag=$(git describe --tags --abbrev=0)
 
-major=0
-minor=0
-patch=0
+git diff tags/$latest_tag..origin/master > /tmp/pbs-patch/current_ow_patch-$latest_tag-origin_master-$attempt.diff
 
-get_current_tag_version major minor patch
-current_fork_at_version="$major.$minor.$patch"
-git diff tags/$current_fork_at_version..origin/master > /tmp/pbs-patch/current_ow_patch-$current_fork_at_version-origin_master-$attempt.diff
-
-((minor++))
-log "Starting with version split major:$major, minor:$minor, patch:$patch"
-
-# how to validate with this code
-# if [ "$RESTART" -eq "1" ]; then
-#     # Solving go.mod and go.sum conflicts would be easy at last as we would need to only pick the OW-patch entries rather than resolving conflict for every version
-#     log "Using latest go.mod and go.sum. Patch OW changes at last"
-#     git checkout tags/$current_fork_at_version go.mod
-#     git checkout tags/$current_fork_at_version go.sum
-#     git commit go.mod go.sum -m "[upgrade-start-checkpoint] tags/$current_fork_at_version go.mod go.sum"
-# fi
+log "Starting with version :$latest_tag"
 
 log "Checking if last failure was for test case. Need this to pick correct"
 go_mod
-checkpoint_run "./validate.sh --race 5"
+checkpoint_run "./validate.sh --race 5 --nofmt"
 go_discard
 
+# Loop through each tag and merge it
+tags=$(git tag --merged prebid-upstream/master --sort=v:refname)
+
 log "Starting upgrade loop..."
-while [ "$minor" -le "$to_minor" ]; do
-    # _upgrade_version="$prefix$major.$minor.$patch"
-    _upgrade_version="$major.$minor.$patch"
-    ((minor++))
+for tag in $tags
+    do
+    if [[ "$tag" == "$latest_tag" ]]; then
+        found_latest_tag=true
+        if [[ -f $CHECKLOG ]]; then
+            log "At tag: $tag but $CHECKLOG exists. Continue last failed checkpoint."
+        else
+            continue
+        fi
+    fi
+
+    if [[ "$found_latest_tag" = true  && "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    _upgrade_version=$tag
 
     log "Starting upgrade to version $_upgrade_version"
 
@@ -235,11 +186,12 @@ while [ "$minor" -le "$to_minor" ]; do
 
     checkpoint_run checkout_branch
 
+    log "Merging master in $tag_base_branch_name"
     checkpoint_run git merge master --no-edit
     # Use `git commit --amend --no-edit` if you had to fix test cases, etc for wrong merge conflict resolve, etc.
     log "Validating the master merge into current tag. Fix and commit changes if required. Use 'git commit --amend --no-edit' for consistency"
     go_mod
-    checkpoint_run "./validate.sh --race 5"
+    checkpoint_run "./validate.sh --race 5 --nofmt"
     go_discard
 
     checkpoint_run git checkout master
@@ -247,16 +199,5 @@ while [ "$minor" -le "$to_minor" ]; do
 
     log "Generating patch file at /tmp/pbs-patch/ for $_upgrade_version"
     git diff tags/$_upgrade_version..master > /tmp/pbs-patch/new_ow_patch_$upgrade_version-master-1.diff
+    fi
 done
-
-# TODO:
-# diff tags/v0.192.0..origin/master
-# diff tags/v0.207.0..prebid_v0.207.0
-
-# TODO: UPDATE HEADER-BIDDING GO-MOD
-
-
-# TODO: automate go.mod conflicts
-# go mod edit -replace github.com/prebid/prebid-server=./
-# go mod edit -replace github.com/mxmCherry/openrtb/v16=github.com/PubMatic-OpenWrap/openrtb/v15@v15.0.0
-# go mod edit -replace github.com/beevik/etree=github.com/PubMatic-OpenWrap/etree@latest
