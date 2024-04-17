@@ -70,6 +70,12 @@ type Metrics struct {
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
+
+	// VAST Unwrap
+	requests       *prometheus.CounterVec
+	wrapperCount   *prometheus.CounterVec
+	requestTime    *prometheus.HistogramVec
+	unwrapRespTime *prometheus.HistogramVec
 }
 
 const (
@@ -257,6 +263,22 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
+	metrics.requests = newCounter(cfg, promRegistry,
+		"vastunwrap_status",
+		"Count of vast unwrap requests labeled by status",
+		[]string{pubIdLabel, bidderLabel, statusLabel})
+	metrics.wrapperCount = newCounter(cfg, promRegistry,
+		"vastunwrap_wrapper_count",
+		"Count of vast unwrap levels labeled by bidder",
+		[]string{pubIdLabel, bidderLabel, wrapperCountLabel})
+	metrics.requestTime = newHistogramVec(cfg, promRegistry,
+		"vastunwrap_request_time",
+		"Time taken to serve the vast unwrap request in Milliseconds", []string{pubIdLabel, bidderLabel},
+		[]float64{50, 100, 200, 300, 500})
+	metrics.unwrapRespTime = newHistogramVec(cfg, promRegistry,
+		"vastunwrap_resp_time",
+		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
+		[]float64{50, 100, 150, 200})
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 

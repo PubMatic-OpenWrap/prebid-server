@@ -465,3 +465,31 @@ func (me *MultiMetricsEngine) RecordHTTPCounter() {
 		thisME.RecordHTTPCounter()
 	}
 }
+
+// RecordUnwrapRequestStatus record VAST unwrap status
+func (me *MultiMetricsEngine) RecordUnwrapRequestStatus(accountId, bidder, status string) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRequestStatus(accountId, bidder, status)
+	}
+}
+
+// RecordUnwrapWrapperCount record wrapper count
+func (me *MultiMetricsEngine) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapWrapperCount(accountId, bidder, wrapper_count)
+	}
+}
+
+// RecordUnwrapRequestTime record response time
+func (me *MultiMetricsEngine) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRequestTime(accountId, bidder, respTime)
+	}
+}
+
+// RecordUnwrapRespTime record response time for wrapper count wise
+func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
+	}
+}

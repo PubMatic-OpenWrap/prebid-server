@@ -718,3 +718,49 @@ func (mr *MockMetricsEngineMockRecorder) RecordHTTPCounter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPCounter", reflect.TypeOf((*MockMetricsEngine)(nil).RecordHTTPCounter))
 }
+
+// RecordUnwrapRequestStatus mocks base method
+func (m *MockMetricsEngine) RecordUnwrapRequestStatus(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRequestStatus", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRequestStatus indicates an expected call of RecordUnwrapRequestStatus
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRequestStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestStatus), arg0, arg1, arg2)
+}
+
+func (m *MockMetricsEngine) RecordUnwrapWrapperCount(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapWrapperCount", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRequestStatus indicates an expected call of RecordUnwrapRequestStatus
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapWrapperCount(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapWrapperCount), arg0, arg1, arg2)
+}
+
+// accountId string, bidder string, respTime time.Duration
+func (m *MockMetricsEngine) RecordUnwrapRequestTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRequestTime", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRequestTime indicates an expected call of RecordUnwrapRequestTime
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestTime), arg0, arg1, arg2)
+}
+
+func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordUnwrapRespTime", arg0, arg1, arg2)
+}
+
+// RecordUnwrapRespTime indicates an expected call of RecordUnwrapRespTime
+func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRespTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRespTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRespTime), arg0, arg1, arg2)
+}
