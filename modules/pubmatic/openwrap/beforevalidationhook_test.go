@@ -9,23 +9,24 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	mock_feature "github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature/mock"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,8 +73,8 @@ func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
 				H: ptrutil.ToPtr[int64](300),
 			},
 			Video: &openrtb2.Video{
-				W:     200,
-				H:     300,
+				W:     ptrutil.ToPtr[int64](200),
+				H:     ptrutil.ToPtr[int64](300),
 				Plcmt: 1,
 			},
 		},
@@ -919,8 +920,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -982,8 +983,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -1057,8 +1058,8 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 							H: ptrutil.ToPtr[int64](300),
 						},
 						Video: &openrtb2.Video{
-							W:     200,
-							H:     300,
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
 							Plcmt: 1,
 						},
 					},
@@ -1271,8 +1272,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1280,8 +1281,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -1316,8 +1317,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W: 200,
-						H: 300,
+						W: ptrutil.ToPtr[int64](200),
+						H: ptrutil.ToPtr[int64](300),
 					},
 				},
 			},
@@ -1365,10 +1366,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1396,8 +1397,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:              640,
-						H:              480,
+						W:              ptrutil.ToPtr[int64](640),
+						H:              ptrutil.ToPtr[int64](480),
 						MinDuration:    10,
 						MaxDuration:    40,
 						Skip:           ptrutil.ToPtr(int8(1)),
@@ -1411,7 +1412,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						Linearity:      1,
 						Protocol:       1,
 						Sequence:       2,
-						BoxingAllowed:  1,
+						BoxingAllowed:  ptrutil.ToPtr[int8](1),
 						PlaybackEnd:    2,
 						MIMEs:          []string{"mimes"},
 						API:            []adcom1.APIFramework{1, 2},
@@ -1445,10 +1446,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												MaxExtended:    50,
 												Linearity:      1,
 												Protocol:       1,
-												W:              640,
-												H:              480,
+												W:              ptrutil.ToPtr[int64](640),
+												H:              ptrutil.ToPtr[int64](480),
 												Sequence:       2,
-												BoxingAllowed:  1,
+												BoxingAllowed:  ptrutil.ToPtr[int8](1),
 												PlaybackEnd:    2,
 												MIMEs:          []string{"mimes"},
 												API:            []adcom1.APIFramework{1, 2},
@@ -1497,8 +1498,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),
@@ -1511,8 +1512,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "testImp",
 					Video: &openrtb2.Video{
-						W:           640,
-						H:           480,
+						W:           ptrutil.ToPtr[int64](640),
+						H:           ptrutil.ToPtr[int64](480),
 						MinDuration: 20,
 						MaxDuration: 60,
 						Skip:        ptrutil.ToPtr(int8(2)),
@@ -1578,8 +1579,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 												PlaybackEnd:    adcom1.PlaybackFloating,
 												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              300,
-												H:              400,
+												W:              ptrutil.ToPtr[int64](300),
+												H:              ptrutil.ToPtr[int64](400),
 											},
 										},
 									},
@@ -1612,8 +1613,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 						PlaybackEnd:    adcom1.PlaybackFloating,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-						W:              300,
-						H:              400,
+						W:              ptrutil.ToPtr[int64](300),
+						H:              ptrutil.ToPtr[int64](400),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -1640,8 +1641,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
 												PlaybackEnd:    adcom1.PlaybackFloating,
 												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              300,
-												H:              400,
+												W:              ptrutil.ToPtr[int64](300),
+												H:              ptrutil.ToPtr[int64](400),
 											},
 										},
 									},
@@ -1701,8 +1702,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-						W:              250,
-						H:              300,
+						W:              ptrutil.ToPtr[int64](250),
+						H:              ptrutil.ToPtr[int64](300),
 					},
 				},
 				rCtx: models.RequestCtx{
@@ -3191,8 +3192,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 								Config: &adunitconfig.VideoConfig{
 									Video: openrtb2.Video{
 										MIMEs: []string{"video/mp4", "video/mpeg"},
-										W:     640,
-										H:     480,
+										W:     ptrutil.ToPtr[int64](640),
+										H:     ptrutil.ToPtr[int64](480),
 									},
 								},
 							},
@@ -3307,7 +3308,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				DebugMessages: []string{`new imp: {"1":{"ImpID":"1","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":0.01,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/3gpp2","video/quicktime","video/mp4","video/x-m4v","video/3gpp"],"startdelay":0,"protocols":[2,3,5,6,7,8,11,12,13,14],"w":300,"h":250,"placement":2,"linearity":1,"boxingallowed":1,"playbackend":1,"delivery":[2],"pos":0,"companionad":[{"format":[{"w":300,"h":250}],"pos":0,"vcm":1}],"api":[7],"companiontype":[1,2,3]},"Native":null,"IncomingSlots":["300x250","300x250v","700x900","728x90"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlag":false,"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"skadn":{"sourceapp":"406719683","versions":["2.0","2.1","2.2","3.0","4.0"],"skadnetids":["cstr6suwn9.skadnetwork","7ug5zh24hu.skadnetwork","uw77j35x4d.skadnetwork","c6k4g5qg8m.skadnetwork","hs6bdukanm.skadnetwork","yclnxrl5pm.skadnetwork","3sh42y64q3.skadnetwork","cj5566h2ga.skadnetwork","klf5c3l5u5.skadnetwork","8s468mfl3y.skadnetwork","2u9pt9hc89.skadnetwork","7rz58n8ntl.skadnetwork","ppxm28t8ap.skadnetwork","mtkv5xtk9e.skadnetwork","cg4yq2srnc.skadnetwork","wzmmz9fp6w.skadnetwork","k674qkevps.skadnetwork","v72qych5uu.skadnetwork","578prtvx9j.skadnetwork","3rd42ekr43.skadnetwork","g28c52eehv.skadnetwork","2fnua5tdw4.skadnetwork","9nlqeag3gk.skadnetwork","5lm9lj6jb7.skadnetwork","97r2b46745.skadnetwork","e5fvkxwrpn.skadnetwork","4pfyvq9l8r.skadnetwork","tl55sbb4fm.skadnetwork","t38b2kh725.skadnetwork","prcb7njmu6.skadnetwork","mlmmfzh3r3.skadnetwork","9t245vhmpl.skadnetwork","9rd848q2bz.skadnetwork","4fzdc2evr5.skadnetwork","4468km3ulz.skadnetwork","m8dbw4sv7c.skadnetwork","ejvt5qm6ak.skadnetwork","5lm9lj6jb7.skadnetwork","44jx6755aq.skadnetwork","6g9af3uyq4.skadnetwork","u679fj5vs4.skadnetwork","rx5hdcabgc.skadnetwork","275upjj5gd.skadnetwork","p78axxw29g.skadnetwork"],"productpage":1,"version":"2.0"},"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"5","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 				AnalyticsTags: hookanalytics.Analytics{},
 			},
-			wantBidRequest: json.RawMessage(`{"id":"{BID_ID}","imp":[{"id":"1","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900,"api":[5,6,7]},"video":{"mimes":["video/3gpp2","video/quicktime","video/mp4","video/x-m4v","video/3gpp"],"startdelay":0,"protocols":[2,3,5,6,7,8,11,12,13,14],"w":300,"h":250,"placement":2,"linearity":1,"boxingallowed":1,"playbackend":1,"delivery":[2],"pos":0,"companionad":[{"format":[{"w":300,"h":250}],"pos":0,"vcm":1}],"api":[7],"companiontype":[1,2,3]},"displaymanager":"PubMatic_OpenWrap_SDK","displaymanagerver":"3.1.0","tagid":"adunit","bidfloor":0.01,"bidfloorcur":"USD","clickbrowser":1,"secure":0,"exp":14400,"ext":{"skadn":{"sourceapp":"406719683","versions":["2.0","2.1","2.2","3.0","4.0"],"skadnetids":["cstr6suwn9.skadnetwork","7ug5zh24hu.skadnetwork","uw77j35x4d.skadnetwork","c6k4g5qg8m.skadnetwork","hs6bdukanm.skadnetwork","yclnxrl5pm.skadnetwork","3sh42y64q3.skadnetwork","cj5566h2ga.skadnetwork","klf5c3l5u5.skadnetwork","8s468mfl3y.skadnetwork","2u9pt9hc89.skadnetwork","7rz58n8ntl.skadnetwork","ppxm28t8ap.skadnetwork","mtkv5xtk9e.skadnetwork","cg4yq2srnc.skadnetwork","wzmmz9fp6w.skadnetwork","k674qkevps.skadnetwork","v72qych5uu.skadnetwork","578prtvx9j.skadnetwork","3rd42ekr43.skadnetwork","g28c52eehv.skadnetwork","2fnua5tdw4.skadnetwork","9nlqeag3gk.skadnetwork","5lm9lj6jb7.skadnetwork","97r2b46745.skadnetwork","e5fvkxwrpn.skadnetwork","4pfyvq9l8r.skadnetwork","tl55sbb4fm.skadnetwork","t38b2kh725.skadnetwork","prcb7njmu6.skadnetwork","mlmmfzh3r3.skadnetwork","9t245vhmpl.skadnetwork","9rd848q2bz.skadnetwork","4fzdc2evr5.skadnetwork","4468km3ulz.skadnetwork","m8dbw4sv7c.skadnetwork","ejvt5qm6ak.skadnetwork","5lm9lj6jb7.skadnetwork","44jx6755aq.skadnetwork","6g9af3uyq4.skadnetwork","u679fj5vs4.skadnetwork","rx5hdcabgc.skadnetwork","275upjj5gd.skadnetwork","p78axxw29g.skadnetwork"],"productpage":1,"version":"2.0"},"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"app":{"id":"{NETWORK_APP_ID}","name":"DrawHappyAngel","bundle":"com.newstory.DrawHappyAngel","domain":"abc.com","cat":["IAB9-30"],"ver":"0.5.4","paid":1,"publisher":{"id":"5890","name":"New Story Inc.","ext":{"installed_sdk":{"id":"MOLOCO_BIDDING","sdk_version":{"major":1,"minor":0,"micro":0},"adapter_version":{"major":1,"minor":0,"micro":0}}}},"keywords":"k1=v1","ext":{"orientation":1}},"device":{"geo":{"lat":40.7429,"lon":-73.9392,"type":2,"ipservice":3,"country":"USA","region":"ny","metro":"501","zip":"11101","utcoffset":-480,"ext":{"org":"Myanmar Broadband Telecom Co.","isp":"Myanmar Broadband Telecom Co."}},"ua":"Mozilla/5.0 (Linux; Android 13; 22101316C Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.230 Mobile Safari/537.36","ip":"38.158.207.171","devicetype":4,"make":"xiaomi","model":"22101316c","os":"android","osv":"13.0.0","hwv":"ruby","h":2400,"w":1080,"ppi":440,"pxratio":2.75,"js":1,"language":"en","carrier":"MYTEL","mccmnc":"311-480","connectiontype":5,"ifa":"497a10d6-c4dd-4e04-a986-c32b7180d462","ext":{"atts":3}},"user":{"customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","yob":2000,"gender":"M","data":[{"id":"1","name":"PubMatic_SDK","segment":[{"id":"seg_id","name":"segment_sdk","ext":{"segtax":90}}]}],"ext":{"gdpr":0}},"at":1,"tmax":3000,"bcat":["IAB26-4","IAB26-2","IAB25-6","IAB25-5","IAB25-4","IAB25-3","IAB25-1","IAB25-7","IAB8-18","IAB26-3","IAB26-1","IAB8-5","IAB25-2","IAB11-4"],"source":{"tid":"{BID_ID}","ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"applovin.com","sid":"53bf468f18c5a0e2b7d4e3f748c677c1","rid":"494dbe15a3ce08c54f4e456363f35a022247f997","hp":1}]},"omidpn":"Pubmatic","omidpv":"3.1.0"}},"regs":{"coppa":1,"ext":{"ccpa":0,"gdpr":1,"consent":"0","tcf_consent_string":"{TCF_STRING}","gpp":"gpp_string","gpp_sid":[7],"us_privacy":"uspConsentString"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"5","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+			wantBidRequest: json.RawMessage(`{"id":"{BID_ID}","imp":[{"id":"1","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900,"api":[5,6,7]},"video":{"mimes":["video/3gpp2","video/quicktime","video/mp4","video/x-m4v","video/3gpp"],"startdelay":0,"protocols":[2,3,5,6,7,8,11,12,13,14],"w":300,"h":250,"placement":2,"linearity":1,"boxingallowed":1,"playbackend":1,"delivery":[2],"pos":0,"companionad":[{"format":[{"w":300,"h":250}],"pos":0,"vcm":1}],"api":[7],"companiontype":[1,2,3]},"displaymanager":"PubMatic_OpenWrap_SDK","displaymanagerver":"3.1.0","tagid":"adunit","bidfloor":0.01,"bidfloorcur":"USD","clickbrowser":1,"secure":0,"exp":14400,"ext":{"skadn":{"sourceapp":"406719683","versions":["2.0","2.1","2.2","3.0","4.0"],"skadnetids":["cstr6suwn9.skadnetwork","7ug5zh24hu.skadnetwork","uw77j35x4d.skadnetwork","c6k4g5qg8m.skadnetwork","hs6bdukanm.skadnetwork","yclnxrl5pm.skadnetwork","3sh42y64q3.skadnetwork","cj5566h2ga.skadnetwork","klf5c3l5u5.skadnetwork","8s468mfl3y.skadnetwork","2u9pt9hc89.skadnetwork","7rz58n8ntl.skadnetwork","ppxm28t8ap.skadnetwork","mtkv5xtk9e.skadnetwork","cg4yq2srnc.skadnetwork","wzmmz9fp6w.skadnetwork","k674qkevps.skadnetwork","v72qych5uu.skadnetwork","578prtvx9j.skadnetwork","3rd42ekr43.skadnetwork","g28c52eehv.skadnetwork","2fnua5tdw4.skadnetwork","9nlqeag3gk.skadnetwork","5lm9lj6jb7.skadnetwork","97r2b46745.skadnetwork","e5fvkxwrpn.skadnetwork","4pfyvq9l8r.skadnetwork","tl55sbb4fm.skadnetwork","t38b2kh725.skadnetwork","prcb7njmu6.skadnetwork","mlmmfzh3r3.skadnetwork","9t245vhmpl.skadnetwork","9rd848q2bz.skadnetwork","4fzdc2evr5.skadnetwork","4468km3ulz.skadnetwork","m8dbw4sv7c.skadnetwork","ejvt5qm6ak.skadnetwork","5lm9lj6jb7.skadnetwork","44jx6755aq.skadnetwork","6g9af3uyq4.skadnetwork","u679fj5vs4.skadnetwork","rx5hdcabgc.skadnetwork","275upjj5gd.skadnetwork","p78axxw29g.skadnetwork"],"productpage":1,"version":"2.0"},"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"app":{"id":"{NETWORK_APP_ID}","name":"DrawHappyAngel","bundle":"com.newstory.DrawHappyAngel","domain":"abc.com","cat":["IAB9-30"],"ver":"0.5.4","paid":1,"publisher":{"id":"5890","name":"New Story Inc.","ext":{"installed_sdk":{"id":"MOLOCO_BIDDING","sdk_version":{"major":1,"minor":0,"micro":0},"adapter_version":{"major":1,"minor":0,"micro":0}}}},"keywords":"k1=v1","ext":{"orientation":1}},"device":{"geo":{"city":"Queens","lat":40.7429,"lon":-73.9392,"type":2,"ipservice":3,"country":"USA","region":"ny","metro":"501","zip":"11101","utcoffset":-480,"ext":{"org":"Myanmar Broadband Telecom Co.","isp":"Myanmar Broadband Telecom Co."}},"ua":"Mozilla/5.0 (Linux; Android 13; 22101316C Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.230 Mobile Safari/537.36","ip":"38.158.207.171","devicetype":4,"make":"xiaomi","model":"22101316c","os":"android","osv":"13.0.0","hwv":"ruby","h":2400,"w":1080,"ppi":440,"pxratio":2.75,"js":1,"language":"en","carrier":"MYTEL","mccmnc":"311-480","connectiontype":5,"ifa":"497a10d6-c4dd-4e04-a986-c32b7180d462","ext":{"atts":3}},"user":{"customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","yob":2000,"gender":"M","data":[{"id":"1","name":"PubMatic_SDK","segment":[{"id":"seg_id","name":"segment_sdk","ext":{"segtax":90}}]}],"ext":{"gdpr":0}},"at":1,"tmax":3000,"bcat":["IAB26-4","IAB26-2","IAB25-6","IAB25-5","IAB25-4","IAB25-3","IAB25-1","IAB25-7","IAB8-18","IAB26-3","IAB26-1","IAB8-5","IAB25-2","IAB11-4"],"source":{"tid":"{BID_ID}","ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"applovin.com","sid":"53bf468f18c5a0e2b7d4e3f748c677c1","rid":"494dbe15a3ce08c54f4e456363f35a022247f997","hp":1}]},"omidpn":"Pubmatic","omidpv":"3.1.0"}},"regs":{"coppa":1,"ext":{"ccpa":0,"gdpr":1,"consent":"0","tcf_consent_string":"{TCF_STRING}","gpp":"gpp_string","gpp_sid":[7],"us_privacy":"uspConsentString"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"5","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 			wantErr:        false,
 			doMutate:       true,
 		},
@@ -3470,6 +3471,386 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	}
 }
 
+func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	type fields struct {
+		cfg          config.Config
+		cache        cache.Cache
+		metricEngine metrics.MetricsEngine
+	}
+	type args struct {
+		ctx          context.Context
+		moduleCtx    hookstage.ModuleInvocationContext
+		payload      hookstage.BeforeValidationRequestPayload
+		bidrequest   json.RawMessage
+		randomNumber int
+	}
+	type want struct {
+		rctx  *models.RequestCtx
+		error bool
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+		setup  func()
+	}{
+		{
+			name: "VAST Unwrap Disabled in DB, traffic percent  present in config",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+				cfg: config.Config{
+					Features: config.FeatureToggle{
+						VASTUnwrapPercent: 10,
+					},
+				},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID:       "1",
+						models.PLATFORM_KEY:           models.PLATFORM_APP,
+						models.VastUnwrapperEnableKey: "0",
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					VastUnwrapEnabled: false,
+				},
+				error: false,
+			},
+		},
+		{
+			name: "VAST Unwrap Enabled in DB, traffic percent not present in config and DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				randomNumber: 20,
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID:       "1",
+						models.PLATFORM_KEY:           models.PLATFORM_APP,
+						models.VastUnwrapperEnableKey: "1",
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					VastUnwrapEnabled: false,
+				},
+				error: false,
+			},
+		},
+		{
+			name: "VAST Unwrap Enabled in DB, traffic percent present in config",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				randomNumber: 20,
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+				cfg: config.Config{
+					Features: config.FeatureToggle{
+						VASTUnwrapPercent: 100,
+					},
+				},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID:       "1",
+						models.PLATFORM_KEY:           models.PLATFORM_APP,
+						models.VastUnwrapperEnableKey: "1",
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					VastUnwrapEnabled: true,
+				},
+				error: false,
+			},
+		},
+		{
+			name: "VAST Unwrap Enabled in DB, traffic percent present in config and DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				randomNumber: 20,
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+				cfg: config.Config{
+					Features: config.FeatureToggle{
+						VASTUnwrapPercent: 10,
+					},
+				},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID:            "1",
+						models.PLATFORM_KEY:                models.PLATFORM_APP,
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "50",
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					VastUnwrapEnabled: true,
+				},
+				error: false,
+			},
+		},
+		{
+			name: "VAST Unwrap Enabled DB, traffic percent not present in config",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+				randomNumber: 20,
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID:            "1",
+						models.PLATFORM_KEY:                models.PLATFORM_APP,
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "100",
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: want{
+				rctx: &models.RequestCtx{
+					VastUnwrapEnabled: true,
+				},
+				error: false,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			GetRandomNumberIn1To100 = func() int {
+				return tt.args.randomNumber
+			}
+
+			adapters.InitBidders("./static/bidder-params/")
+			m := OpenWrap{
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				featureConfig: mockFeature,
+			}
+			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
+			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
+
+			_, err := m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			assert.Equal(t, tt.want.error, err != nil, "mismatched error received from handleBeforeValidationHook")
+			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+			assert.Equal(t, tt.want.rctx == nil, iRctx == nil, "mismatched rctx received from handleBeforeValidationHook")
+			gotRctx := iRctx.(models.RequestCtx)
+			assert.Equal(t, tt.want.rctx.VastUnwrapEnabled, gotRctx.VastUnwrapEnabled, "mismatched rctx.VastUnwrapEnabled received from handleBeforeValidationHook")
+		})
+	}
+}
 func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -4136,8 +4517,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
 					Video: openrtb2.Video{
-						W:              300,
-						H:              250,
+						W:              ptrutil.ToPtr[int64](300),
+						H:              ptrutil.ToPtr[int64](250),
 						MIMEs:          []string{"MP4"},
 						Linearity:      adcom1.LinearityNonLinear,
 						StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4149,7 +4530,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 						Skip:           ptrutil.ToPtr(int8(1)),
 						SkipMin:        10,
 						SkipAfter:      5,
-						BoxingAllowed:  2,
+						BoxingAllowed:  ptrutil.ToPtr[int8](2),
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4165,8 +4546,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 			},
 			wantImpVideo: &openrtb2.Video{
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 				MIMEs:          []string{"MP4"},
 				Linearity:      adcom1.LinearityNonLinear,
 				StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4178,7 +4559,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](1),
 				SkipMin:        10,
 				SkipAfter:      5,
-				BoxingAllowed:  2,
+				BoxingAllowed:  ptrutil.ToPtr[int8](2),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4198,15 +4579,15 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				imp: &openrtb2.Imp{
 					ID: "123",
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 
 				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
 					Video: openrtb2.Video{
-						W:              400,
-						H:              300,
+						W:              ptrutil.ToPtr[int64](400),
+						H:              ptrutil.ToPtr[int64](300),
 						MIMEs:          []string{"MP4"},
 						Linearity:      adcom1.LinearityNonLinear,
 						StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4218,7 +4599,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 						Skip:           ptrutil.ToPtr(int8(1)),
 						SkipMin:        10,
 						SkipAfter:      5,
-						BoxingAllowed:  2,
+						BoxingAllowed:  ptrutil.ToPtr[int8](2),
 						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 						PlaybackEnd:    adcom1.PlaybackCompletion,
 						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4234,8 +4615,8 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				},
 			},
 			wantImpVideo: &openrtb2.Video{
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 				MIMEs:          []string{"MP4"},
 				Linearity:      adcom1.LinearityNonLinear,
 				StartDelay:     adcom1.StartMidRoll.Ptr(),
@@ -4247,7 +4628,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](1),
 				SkipMin:        10,
 				SkipAfter:      5,
-				BoxingAllowed:  2,
+				BoxingAllowed:  ptrutil.ToPtr[int8](2),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
@@ -4300,12 +4681,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 		{
@@ -4339,12 +4720,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 		{
@@ -4380,12 +4761,12 @@ func TestUpdateAmpImpVideoWithDefault(t *testing.T) {
 				Skip:           ptrutil.ToPtr[int8](0),
 				SkipMin:        0,
 				SkipAfter:      0,
-				BoxingAllowed:  1,
+				BoxingAllowed:  ptrutil.ToPtr[int8](1),
 				PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
 				PlaybackEnd:    adcom1.PlaybackCompletion,
 				Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-				W:              300,
-				H:              250,
+				W:              ptrutil.ToPtr[int64](300),
+				H:              ptrutil.ToPtr[int64](250),
 			},
 		},
 	}
@@ -4403,7 +4784,7 @@ func TestGetW(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int64
+		want *int64
 	}{
 		{
 			name: "Empty banner and format",
@@ -4414,7 +4795,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 0,
+			want: nil,
 		},
 		{
 			name: "both banner and format are present",
@@ -4430,7 +4811,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 300,
+			want: ptrutil.ToPtr[int64](300),
 		},
 		{
 			name: "only format is present",
@@ -4445,7 +4826,7 @@ func TestGetW(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want: ptrutil.ToPtr[int64](400),
 		},
 	}
 	for _, tt := range tests {
@@ -4463,7 +4844,7 @@ func TestGetH(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int64
+		want *int64
 	}{
 		{
 			name: "Empty banner and format",
@@ -4474,7 +4855,7 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 0,
+			want: nil,
 		},
 		{
 			name: "both banner and format are present",
@@ -4490,7 +4871,7 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 300,
+			want: ptrutil.ToPtr[int64](300),
 		},
 		{
 			name: "only format is present",
@@ -4505,12 +4886,104 @@ func TestGetH(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want: ptrutil.ToPtr[int64](400),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getH(tt.args.imp)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestIsVastUnwrapEnabled(t *testing.T) {
+
+	type args struct {
+		PartnerConfigMap  map[int]map[string]string
+		VASTUnwrapTraffic int
+	}
+	tests := []struct {
+		name         string
+		args         args
+		randomNumber int
+		want         bool
+	}{
+		{
+			name: "vastunwrap is enabled and traffic percent in DB and config, DB percent should be preferred",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "90",
+					},
+				},
+				VASTUnwrapTraffic: 9,
+			},
+			randomNumber: 10,
+			want:         true,
+		},
+		{
+			name: "vastunwrap is enabled and DB traffic percent is less than random number",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey:      "1",
+						models.VastUnwrapTrafficPercentKey: "90",
+					},
+				},
+				VASTUnwrapTraffic: 0,
+			},
+			randomNumber: 91,
+			want:         false,
+		},
+		{
+			name: "vastunwrap is dissabled and config traffic percent is less than random number",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "0",
+					},
+				},
+				VASTUnwrapTraffic: 5,
+			},
+			randomNumber: 7,
+			want:         false,
+		},
+		{
+			name: "vastunwrap is enabled and traffic percent not present in DB, random num higher than traffic percent",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "1",
+					},
+				},
+				VASTUnwrapTraffic: 5,
+			},
+			randomNumber: 10,
+			want:         false,
+		},
+
+		{
+			name: "vastunwrap is enabled and traffic percent not present in DB, random num less than traffic percent",
+			args: args{
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.VastUnwrapperEnableKey: "1",
+					},
+				},
+				VASTUnwrapTraffic: 10,
+			},
+			randomNumber: 9,
+			want:         true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			GetRandomNumberIn1To100 = func() int {
+				return tt.randomNumber
+			}
+			got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

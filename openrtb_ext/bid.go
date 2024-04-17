@@ -7,8 +7,8 @@ import (
 
 // ExtBid defines the contract for bidresponse.seatbid.bid[i].ext
 type ExtBid struct {
-	Prebid *ExtBidPrebid   `json:"prebid,omitempty"`
-	Bidder json.RawMessage `json:"bidder,omitempty"`
+	DSA    *ExtBidDSA    `json:"dsa,omitempty"`
+	Prebid *ExtBidPrebid `json:"prebid,omitempty"`
 }
 
 // ExtBidPrebid defines the contract for bidresponse.seatbid.bid[i].ext.prebid
@@ -84,6 +84,13 @@ type ExtBidPrebidVideo struct {
 type ExtBidPrebidEvents struct {
 	Win string `json:"win,omitempty"`
 	Imp string `json:"imp,omitempty"`
+}
+
+// ExtBidDSA defines the contract for bidresponse.seatbid.bid[i].ext.dsa
+type ExtBidDSA struct {
+	AdRender *int8  `json:"adrender,omitempty"`
+	Behalf   string `json:"behalf,omitempty"`
+	Paid     string `json:"paid,omitempty"`
 }
 
 // BidType describes the allowed values for bidresponse.seatbid.bid[i].ext.prebid.type

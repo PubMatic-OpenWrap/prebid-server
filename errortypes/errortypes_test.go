@@ -66,17 +66,6 @@ func TestErrors(t *testing.T) {
 			},
 		},
 		{
-			name: `BlacklistedAcct`,
-			args: args{
-				err: &BlacklistedAcct{Message: `BlacklistedAcct_ErrorMessage`},
-			},
-			want: want{
-				errorMessage: `BlacklistedAcct_ErrorMessage`,
-				code:         BlacklistedAcctErrorCode,
-				severity:     SeverityFatal,
-			},
-		},
-		{
 			name: `AcctRequired`,
 			args: args{
 				err: &AcctRequired{Message: `AcctRequired_ErrorMessage`},

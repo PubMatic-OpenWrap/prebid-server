@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // GetPublisherSlotNameHash Returns a map of all slot names and hashes for a publisher

@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 func getSignalData(requestBody []byte) string {
@@ -22,7 +22,12 @@ func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest, clie
 		return
 	}
 
-	var sdkRequest openrtb2.BidRequest
+	sdkRequest := openrtb2.BidRequest{
+		Regs: &openrtb2.Regs{
+			COPPA: -1,
+		},
+	}
+
 	if err := json.Unmarshal([]byte(signal), &sdkRequest); err != nil {
 		return
 	}
@@ -50,9 +55,17 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 		return
 	}
 
-	maxImpression.DisplayManager = sdkImpression.DisplayManager
-	maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
-	maxImpression.ClickBrowser = sdkImpression.ClickBrowser
+	if sdkImpression.DisplayManager != "" {
+		maxImpression.DisplayManager = sdkImpression.DisplayManager
+	}
+
+	if sdkImpression.DisplayManagerVer != "" {
+		maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
+	}
+
+	if sdkImpression.ClickBrowser != nil {
+		maxImpression.ClickBrowser = sdkImpression.ClickBrowser
+	}
 
 	if sdkImpression.Video != nil {
 		maxImpression.Video = sdkImpression.Video
@@ -81,8 +94,13 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Device = &openrtb2.Device{}
 	}
 
-	maxRequest.Device.MCCMNC = sdkDevice.MCCMNC
-	maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
+	if sdkDevice.MCCMNC != "" {
+		maxRequest.Device.MCCMNC = sdkDevice.MCCMNC
+	}
+
+	if sdkDevice.ConnectionType != nil {
+		maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
+	}
 
 	maxRequest.Device.Ext = setIfKeysExists(sdkDevice.Ext, maxRequest.Device.Ext, "atts")
 
@@ -94,8 +112,13 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Device.Geo = &openrtb2.Geo{}
 	}
 
-	maxRequest.Device.Geo.City = sdkDevice.Geo.City
-	maxRequest.Device.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
+	if sdkDevice.Geo.City != "" {
+		maxRequest.Device.Geo.City = sdkDevice.Geo.City
+	}
+
+	if sdkDevice.Geo.UTCOffset != 0 {
+		maxRequest.Device.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
+	}
 }
 
 func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
@@ -107,9 +130,17 @@ func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 		maxRequest.App = &openrtb2.App{}
 	}
 
-	maxRequest.App.Paid = sdkApp.Paid
-	maxRequest.App.Keywords = sdkApp.Keywords
-	maxRequest.App.Domain = sdkApp.Domain
+	if sdkApp.Paid != nil {
+		maxRequest.App.Paid = sdkApp.Paid
+	}
+
+	if sdkApp.Keywords != "" {
+		maxRequest.App.Keywords = sdkApp.Keywords
+	}
+
+	if sdkApp.Domain != "" {
+		maxRequest.App.Domain = sdkApp.Domain
+	}
 }
 
 func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
@@ -121,7 +152,9 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Regs = &openrtb2.Regs{}
 	}
 
-	maxRequest.Regs.COPPA = sdkRegs.COPPA
+	if sdkRegs.COPPA != -1 {
+		maxRequest.Regs.COPPA = sdkRegs.COPPA
+	}
 	maxRequest.Regs.Ext = setIfKeysExists(sdkRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
 }
 
@@ -146,10 +179,21 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 		maxRequest.User = &openrtb2.User{}
 	}
 
-	maxRequest.User.Yob = sdkUser.Yob
-	maxRequest.User.Gender = sdkUser.Gender
-	maxRequest.User.Keywords = sdkUser.Keywords
-	maxRequest.User.Data = sdkUser.Data
+	if sdkUser.Yob != 0 {
+		maxRequest.User.Yob = sdkUser.Yob
+	}
+
+	if sdkUser.Gender != "" {
+		maxRequest.User.Gender = sdkUser.Gender
+	}
+
+	if sdkUser.Keywords != "" {
+		maxRequest.User.Keywords = sdkUser.Keywords
+	}
+
+	if sdkUser.Data != nil {
+		maxRequest.User.Data = sdkUser.Data
+	}
 
 	maxRequest.User.Ext = setIfKeysExists(sdkUser.Ext, maxRequest.User.Ext, "consent", "eids")
 }

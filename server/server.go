@@ -13,9 +13,9 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	metricsconfig "github.com/prebid/prebid-server/metrics/config"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsconfig "github.com/prebid/prebid-server/v2/metrics/config"
 )
 
 // Listen blocks forever, serving PBS requests on the given port. This will block forever, until the process is shut down.
@@ -68,6 +68,7 @@ func Listen(cfg *config.Configuration, handler http.Handler, adminHandler http.H
 			prometheusListener net.Listener
 			prometheusServer   = newPrometheusServer(cfg, metrics)
 		)
+		prometheusServer = getOpenWrapPrometheusServer(cfg, metrics.PrometheusMetrics.Gatherer, prometheusServer)
 		go shutdownAfterSignals(prometheusServer, stopPrometheus, done)
 		if prometheusListener, err = newTCPListener(prometheusServer.Addr, nil); err != nil {
 			glog.Errorf("Error listening for TCP connections on %s: %v for prometheus server", adminServer.Addr, err)

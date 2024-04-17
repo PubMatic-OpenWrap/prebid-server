@@ -3,7 +3,7 @@ package mysql
 import (
 	"fmt"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // GetPublisherVASTTags - Method to get vast tags associated with publisher id from giym DB

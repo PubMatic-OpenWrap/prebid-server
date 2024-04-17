@@ -25,6 +25,7 @@ type MetricsEngine interface {
 	RecordPublisherRequests(endpoint string, publisher string, platform string)
 	RecordReqImpsWithContentCount(publisher, contentType string)
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
+	RecordHTTPCounter()
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
@@ -75,4 +76,10 @@ type MetricsEngine interface {
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
 	RecordMaxSDKRequests(publisher, profile string)
+
+	// VAST Unwrap metrics
+	RecordUnwrapRequestStatus(accountId, bidder, status string)
+	RecordUnwrapWrapperCount(accountId, bidder string, wrapper_count string)
+	RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)
+	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
 }
