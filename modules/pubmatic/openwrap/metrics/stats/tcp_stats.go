@@ -342,3 +342,7 @@ func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName 
 func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                                 {}
 func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                                {}
 func (st *StatsTCP) RecordHTTPCounter()                                                             {}
+func (st *StatsTCP) RecordUnwrapRequestStatus(accountId, bidder, status string)                     {}
+func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string)               {}
+func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)       {}
+func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)       {}
