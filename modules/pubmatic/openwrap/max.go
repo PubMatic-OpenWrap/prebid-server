@@ -178,3 +178,27 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	}
 	return target
 }
+
+func updateMaxResponse(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+	respString, _ := json.Marshal(bidResponse)
+	signaldata := "signaldata" + ":" + string(respString)
+	newBidResponse := &openrtb2.BidResponse{
+		ID:    bidResponse.ID,
+		BidID: bidResponse.BidID,
+		Cur:   bidResponse.Cur,
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: []openrtb2.Bid{
+					{
+						ID:    bidResponse.SeatBid[0].Bid[0].ID,
+						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
+						Price: bidResponse.SeatBid[0].Bid[0].Price,
+						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						Ext:   json.RawMessage(signaldata),
+					},
+				},
+			},
+		},
+	}
+	return newBidResponse, nil
+}

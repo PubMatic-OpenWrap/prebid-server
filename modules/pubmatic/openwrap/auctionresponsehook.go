@@ -315,6 +315,13 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse.Ext = responseExtjson
 
 		resetBidIdtoOriginal(ap.BidResponse)
+
+		if rctx.IsMaxRequest {
+			ap.BidResponse, err = updateMaxResponse(ap.BidResponse)
+			if err != nil {
+				return ap, err
+			}
+		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
