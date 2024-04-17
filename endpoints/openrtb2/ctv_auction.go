@@ -13,26 +13,27 @@ import (
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	accountService "github.com/prebid/prebid-server/account"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/adpod"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/hooks"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/iputil"
-	"github.com/prebid/prebid-server/util/ptrutil"
-	"github.com/prebid/prebid-server/util/uuidutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	accountService "github.com/prebid/prebid-server/v2/account"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/adpod"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/gdpr"
+	"github.com/prebid/prebid-server/v2/hooks"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/privacy"
+	"github.com/prebid/prebid-server/v2/stored_requests"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/iputil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
 )
 
 // CTV Specific Endpoint
@@ -61,7 +62,7 @@ func NewCTVEndpoint(
 	//categories stored_requests.CategoryFetcher,
 	cfg *config.Configuration,
 	met metrics.MetricsEngine,
-	pbsAnalytics analytics.PBSAnalyticsModule,
+	analyticsRunner analytics.Runner,
 	disabledBidders map[string]string,
 	defReqJSON []byte,
 	bidderMap map[string]openrtb_ext.BidderName,
@@ -88,7 +89,7 @@ func NewCTVEndpoint(
 			accounts,
 			cfg,
 			met,
-			pbsAnalytics,
+			analyticsRunner,
 			disabledBidders,
 			defRequest,
 			defReqJSON,
@@ -99,6 +100,7 @@ func NewCTVEndpoint(
 			nil,
 			planBuilder,
 			tmaxAdjustments,
+			openrtb_ext.NormalizeBidderName,
 		},
 	}).CTVAuctionEndpoint), nil
 }
@@ -116,6 +118,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		Status: http.StatusOK,
 		Errors: make([]error, 0),
 	}
+	activityControl := privacy.ActivityControl{}
 
 	// Prebid Server interprets request.tmax to be the maximum amount of time that a caller is willing
 	// to wait for bids. However, tmax may be defined in the Stored Request data.
@@ -136,7 +139,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.metricsEngine.RecordRequest(deps.labels)
 		recordRejectedBids(deps.labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(deps.labels, time.Since(start))
-		deps.analytics.LogAuctionObject(&ao)
+		deps.analytics.LogAuctionObject(&ao, activityControl)
 	}()
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointCtv, deps.metricsEngine)

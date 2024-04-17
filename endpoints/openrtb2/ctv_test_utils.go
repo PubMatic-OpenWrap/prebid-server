@@ -10,22 +10,22 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	analyticsConf "github.com/prebid/prebid-server/analytics/config"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/experiment/adscert"
-	"github.com/prebid/prebid-server/floors"
-	"github.com/prebid/prebid-server/hooks"
-	"github.com/prebid/prebid-server/macros"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConfig "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/experiment/adscert"
+	"github.com/prebid/prebid-server/v2/floors"
+	"github.com/prebid/prebid-server/v2/hooks"
+	"github.com/prebid/prebid-server/v2/macros"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/stored_requests"
+	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
 )
 
 type ctvtestCase struct {
@@ -43,7 +43,6 @@ type ctvtestCase struct {
 type ctvtestConfigValues struct {
 	AccountRequired     bool                          `json:"accountRequired"`
 	AliasJSON           string                        `json:"aliases"`
-	BlacklistedAccounts []string                      `json:"blacklistedAccts"`
 	BlacklistedApps     []string                      `json:"blacklistedApps"`
 	DisabledAdapters    []string                      `json:"disabledAdapters"`
 	CurrencyRates       map[string]map[string]float64 `json:"currencyRates"`
@@ -62,18 +61,6 @@ func (tc *ctvtestConfigValues) getBlacklistedAppMap() map[string]bool {
 		}
 	}
 	return blacklistedAppMap
-}
-
-func (tc *ctvtestConfigValues) getBlackListedAccountMap() map[string]bool {
-	var blacklistedAccountMap map[string]bool
-
-	if len(tc.BlacklistedAccounts) > 0 {
-		blacklistedAccountMap = make(map[string]bool, len(tc.BlacklistedAccounts))
-		for _, account := range tc.BlacklistedAccounts {
-			blacklistedAccountMap[account] = true
-		}
-	}
-	return blacklistedAccountMap
 }
 
 type ctvMockBidderHandler struct {
@@ -201,7 +188,7 @@ func ctvTestEndpoint(test ctvtestCase, cfg *config.Configuration) (httprouter.Ha
 		&mockAccountFetcher{},
 		cfg,
 		met,
-		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		analyticsBuild.New(&config.Analytics{}),
 		disabledBidders,
 		[]byte(test.Config.AliasJSON),
 		bidderMap,

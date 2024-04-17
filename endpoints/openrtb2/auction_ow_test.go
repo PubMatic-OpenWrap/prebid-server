@@ -6,16 +6,16 @@ import (
 
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	analyticsConf "github.com/prebid/prebid-server/analytics/config"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/hooks"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConfig "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/hooks"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -70,7 +70,6 @@ func TestValidateImpExtOW(t *testing.T) {
 			},
 		},
 	}
-
 	deps := &endpointDeps{
 		fakeUUIDGenerator{},
 		&nobidExchange{},
@@ -80,7 +79,7 @@ func TestValidateImpExtOW(t *testing.T) {
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: int64(8096)},
 		&metricsConfig.NilMetricsEngine{},
-		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
+		analyticsBuild.New(&config.Analytics{}),
 		map[string]string{"disabledbidder": "The bidder 'disabledbidder' has been disabled."},
 		false,
 		[]byte{},
@@ -91,6 +90,7 @@ func TestValidateImpExtOW(t *testing.T) {
 		empty_fetcher.EmptyFetcher{},
 		hooks.EmptyPlanBuilder{},
 		&exchange.TmaxAdjustmentsPreprocessed{},
+		openrtb_ext.NormalizeBidderName,
 	}
 
 	for _, group := range testGroups {

@@ -3,11 +3,10 @@ package adpod
 import (
 	"encoding/json"
 
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
-
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type StructuredAdpod struct {

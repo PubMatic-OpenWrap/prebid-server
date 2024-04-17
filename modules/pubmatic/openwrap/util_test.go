@@ -6,17 +6,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/macros"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/macros"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -173,6 +173,10 @@ func (s fakeSyncer) Key() string {
 }
 
 func (s fakeSyncer) DefaultSyncType() usersync.SyncType {
+	return usersync.SyncType("")
+}
+
+func (s fakeSyncer) DefaultResponseFormat() usersync.SyncType {
 	return usersync.SyncType("")
 }
 

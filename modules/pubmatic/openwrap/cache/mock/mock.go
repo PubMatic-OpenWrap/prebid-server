@@ -6,9 +6,9 @@ package mock_cache
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	openrtb2 "github.com/prebid/openrtb/v19/openrtb2"
-	models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	adunitconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	openrtb2 "github.com/prebid/openrtb/v20/openrtb2"
+	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	adunitconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	reflect "reflect"
 )
 

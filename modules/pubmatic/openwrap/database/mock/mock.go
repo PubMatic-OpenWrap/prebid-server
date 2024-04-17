@@ -6,8 +6,8 @@ package mock_database
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	models "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	adunitconfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	adunitconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	reflect "reflect"
 )
 

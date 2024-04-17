@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/adpod"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/adpod"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -574,8 +574,6 @@ func TestCTVAuctionEndpointAdpod(t *testing.T) {
 			if test.Config != nil {
 				cfg.BlacklistedApps = test.Config.BlacklistedApps
 				cfg.BlacklistedAppMap = test.Config.getBlacklistedAppMap()
-				cfg.BlacklistedAccts = test.Config.BlacklistedAccounts
-				cfg.BlacklistedAcctMap = test.Config.getBlackListedAccountMap()
 				cfg.AccountRequired = test.Config.AccountRequired
 			}
 
