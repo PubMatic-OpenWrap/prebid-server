@@ -153,6 +153,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	// To check if VAST unwrap needs to be enabled for given request
+	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
+		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		rCtx.VastUnwrapEnabled = true
+	}
+
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
@@ -667,6 +673,20 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Banner = nil
 		return
 	}
+}
+
+// isVastUnwrapEnabled return whether to enable vastunwrap or not
+func isVastUnwrapEnabled(partnerConfigMap map[int]map[string]string, vastUnwrapTraffic int) bool {
+	trafficPercentage := vastUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapperEnableKey) == models.Enabled
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
+		}
+	}
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
 }
 
 /*

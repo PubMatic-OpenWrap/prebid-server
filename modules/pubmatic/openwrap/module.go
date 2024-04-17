@@ -91,3 +91,13 @@ func (m OpenWrap) HandleAuctionResponseHook(
 
 	return m.handleAuctionResponseHook(ctx, miCtx, payload)
 }
+
+// HandleRawBidderResponseHook fetches rCtx and check for vast unwrapper flag to enable/disable vast unwrapping feature
+func (m OpenWrap) HandleRawBidderResponseHook(
+	_ context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.RawBidderResponsePayload,
+) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+
+	return m.handleRawBidderResponseHook(miCtx, payload)
+}
