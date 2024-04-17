@@ -6,6 +6,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func getSignalData(requestBody []byte) string {
@@ -223,9 +224,15 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxResponse(bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+	if bidResponse.NBR != nil && *bidResponse.NBR != 0 {
+		if rctx.Debug {
+			return bidResponse, nil
+		}
+		return nil, nil
+	}
 	respString, _ := json.Marshal(bidResponse)
-	signaldata := "signaldata" + ":" + string(respString)
+	signaldata := `{"signaldata":` + strconv.Quote(string(respString)) + `}`
 	newBidResponse := &openrtb2.BidResponse{
 		ID:    bidResponse.ID,
 		BidID: bidResponse.BidID,

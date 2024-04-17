@@ -42,10 +42,12 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
 			}
 
-			if rctx.IsMaxRequest {
-				bidResponse.SeatBid[i].Bid[j].BURL = finalTracker
-			} else {
-				bidResponse.SeatBid[i].Bid[j].AdM = finalTracker
+			if errMsg == "" {
+				if rctx.IsMaxRequest {
+					bidResponse.SeatBid[i].Bid[j].BURL = finalTracker
+				} else {
+					bidResponse.SeatBid[i].Bid[j].AdM = finalTracker
+				}
 			}
 
 			if err != nil {

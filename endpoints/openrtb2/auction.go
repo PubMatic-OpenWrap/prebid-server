@@ -25,6 +25,7 @@ import (
 	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v2/bidadjustment"
 	"github.com/prebid/prebid-server/v2/hooks"
 	"github.com/prebid/prebid-server/v2/ortb"
@@ -380,6 +381,12 @@ func sendAuctionResponse(
 		if len(warns) > 0 {
 			ao.Errors = append(ao.Errors, warns...)
 		}
+	}
+
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx != nil && rCtx.IsMaxRequest && response == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return labels, ao
 	}
 
 	// Fixes #231

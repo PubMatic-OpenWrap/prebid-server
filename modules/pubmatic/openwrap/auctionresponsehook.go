@@ -317,7 +317,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		if rctx.IsMaxRequest {
-			ap.BidResponse, err = updateMaxResponse(ap.BidResponse)
+			ap.BidResponse, err = updateMaxResponse(rctx, ap.BidResponse)
 			if err != nil {
 				return ap, err
 			}

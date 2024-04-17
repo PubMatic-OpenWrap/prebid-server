@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -558,6 +559,105 @@ func Test_getSignalData(t *testing.T) {
 			if got := getSignalData(tt.args.requestBody); got != tt.want {
 				t.Errorf("getSignalData() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_updateMaxResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *openrtb2.BidResponse
+		wantErr bool
+	}{
+		// {
+		// 	name: "bidresponse contains NBR and debug is disabled",
+		// 	args: args{
+		// 		rctx: models.RequestCtx{
+		// 			Debug: false,
+		// 		},
+		// 		bidResponse: &openrtb2.BidResponse{
+		// 			NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+		// 		},
+		// 	},
+		// 	want:    nil,
+		// 	wantErr: false,
+		// },
+		// {
+		// 	name: "bidresponse contains NBR and debug is enabled",
+		// 	args: args{
+		// 		rctx: models.RequestCtx{
+		// 			Debug: true,
+		// 		},
+		// 		bidResponse: &openrtb2.BidResponse{
+		// 			ID:  "123",
+		// 			NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+		// 		},
+		// 	},
+		// 	want: &openrtb2.BidResponse{
+		// 		ID:  "123",
+		// 		NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+		// 	},
+		// 	wantErr: false,
+		// },
+		{
+			name: "valid bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "456",
+					Cur:   "USD",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"key":"value"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "456",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "456",
+								ImpID: "789",
+								Price: 1.0,
+								BURL:  "http://example.com",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\"}"}`),
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := updateMaxResponse(tt.args.rctx, tt.args.bidResponse)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("updateMaxResponse() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
