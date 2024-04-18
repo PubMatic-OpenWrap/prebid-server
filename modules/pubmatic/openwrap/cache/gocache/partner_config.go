@@ -75,7 +75,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
 	}
 
-	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	if errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
 		err = models.ErrorWrap(err, errWrapperSlotMapping)
 		queryType := models.WrapperSlotMappingsQuery
@@ -95,5 +94,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		err = models.ErrorWrap(err, errAdunitConfig)
 	}
+	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
 }
