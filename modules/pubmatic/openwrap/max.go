@@ -191,10 +191,7 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 		maxRequest.User.Keywords = sdkUser.Keywords
 	}
 
-	if sdkUser.Data != nil {
-		maxRequest.User.Data = sdkUser.Data
-	}
-
+	maxRequest.User.Data = sdkUser.Data
 	maxRequest.User.Ext = setIfKeysExists(sdkUser.Ext, maxRequest.User.Ext, "consent", "eids")
 }
 
