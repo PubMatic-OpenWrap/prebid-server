@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -32,7 +31,6 @@ import (
 	"github.com/prebid/prebid-server/v2/stored_requests"
 	"github.com/prebid/prebid-server/v2/usersync"
 	"github.com/prebid/prebid-server/v2/util/iputil"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/prebid/prebid-server/v2/util/uuidutil"
 )
 
@@ -41,10 +39,9 @@ type ctvEndpointDeps struct {
 	endpointDeps
 	request                   *openrtb2.BidRequest
 	reqExt                    *openrtb_ext.ExtRequestAdPod
-	isAdPodRequest            bool
 	impsExtPrebidBidder       map[string]map[string]map[string]interface{}
 	impPartnerBlockedTagIDMap map[string]map[string][]string
-	ImpPodIdMap               map[string]string
+	impToPodId                map[string]string
 	podCtx                    map[string]adpod.Adpod
 	videoImps                 []openrtb2.Imp
 	videoSeats                []*openrtb2.SeatBid //stores pure video impression bids
@@ -156,15 +153,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 	//init
 	if errs := deps.init(request); len(errs) > 0 {
-		errL = append(errL, errs...)
-		writeError(errL, w, &deps.labels)
+		writeError(errs, w, &deps.labels)
 		return
 	}
 
 	// set adpod context
 	if errs := deps.prepareAdpodCtx(request); len(errs) > 0 {
-		errL = append(errL, errs...)
-		writeError(errL, w, &deps.labels)
+		writeError(errs, w, &deps.labels)
 		return
 	}
 
@@ -172,13 +167,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	deps.setDefaultValues()
 
 	//Validate CTV BidRequest
-	if err := deps.ValidateAdpodCtx(); err != nil {
-		errL = append(errL, err...)
-		writeError(errL, w, &deps.labels)
+	if errs := deps.ValidateAdpodCtx(); errs != nil {
+		writeError(errs, w, &deps.labels)
 		return
 	}
 
-	if deps.isAdPodRequest {
+	if len(deps.podCtx) > 0 {
 		request = deps.createBidRequest(request)
 	}
 
@@ -256,19 +250,12 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	response = auctionResponse.BidResponse
 
-	if deps.isAdPodRequest {
-		//Validate Bid Response
-		if err := deps.validateBidResponse(request, response); err != nil {
-			errL = append(errL, err)
-			writeError(errL, w, &deps.labels)
-			return
-		}
-
+	if len(deps.podCtx) > 0 {
 		//Create Impression Bids
 		deps.collectBids(response)
 
-		//Do AdPod Exclusions
-		deps.doAdpodAuctionAndExclusion()
+		//Hold Auction
+		deps.doAdpodAuction()
 
 		//Create Bid Response
 		adPodBidResponse := deps.createAdPodBidResponse(response)
@@ -309,7 +296,7 @@ func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exc
 
 func (deps *ctvEndpointDeps) init(req *openrtb2.BidRequest) (errs []error) {
 	deps.request = req
-	deps.ImpPodIdMap = make(map[string]string)
+	deps.impToPodId = make(map[string]string)
 
 	// Read adpod Object Request extension
 	deps.readRequestExtension()
@@ -334,16 +321,12 @@ func (deps *ctvEndpointDeps) prepareAdpodCtx(request *openrtb2.BidRequest) (errs
 				errs = append(errs, err)
 			}
 
-			if adpodConfigInExt != nil {
-				// Dynamic Adpod
+			switch adpod.GetPodType(imp, adpodConfigInExt) {
+			case adpod.Dynamic:
 				deps.createDynamicAdpodCtx(imp, adpodConfigInExt)
-			} else if len(imp.Video.PodID) > 0 && imp.Video.PodDur > 0 {
-				// Dynamic adpod
-				deps.createDynamicAdpodCtx(imp, adpodConfigInExt)
-			} else if len(imp.Video.PodID) > 0 {
-				// structured adpod
+			case adpod.Structured:
 				deps.createStructuredAdpodCtx(imp)
-			} else {
+			default:
 				// Pure video impressions
 				deps.videoImps = append(deps.videoImps, imp)
 			}
@@ -357,57 +340,17 @@ func (deps *ctvEndpointDeps) createDynamicAdpodCtx(imp openrtb2.Imp, adpodConfig
 	if len(podId) == 0 {
 		podId = imp.ID
 	}
+	deps.impToPodId[imp.ID] = podId
 
-	deps.ImpPodIdMap[imp.ID] = podId
-
-	//set Pod Duration
-	minPodDuration := imp.Video.MinDuration
-	maxPodDuration := imp.Video.MaxDuration
-
-	if adpodConfigExt == nil {
-		adpodConfigExt = &openrtb_ext.ExtVideoAdPod{
-			Offset: ptrutil.ToPtr(0),
-			AdPod: &openrtb_ext.VideoAdPod{
-				MinAds:                      ptrutil.ToPtr(1),
-				MaxAds:                      ptrutil.ToPtr(int(imp.Video.MaxSeq)),
-				MinDuration:                 ptrutil.ToPtr(int(imp.Video.MinDuration)),
-				MaxDuration:                 ptrutil.ToPtr(int(imp.Video.MaxDuration)),
-				AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
-				IABCategoryExclusionPercent: ptrutil.ToPtr(100),
-			},
-		}
-		maxPodDuration = imp.Video.PodDur
-	}
-
-	deps.podCtx[podId] = &adpod.DynamicAdpod{
-		AdpodCtx: adpod.AdpodCtx{
-			PubId:         deps.labels.PubID,
-			Type:          adpod.PodTypeDynamic,
-			ReqExt:        deps.reqExt,
-			MetricsEngine: deps.metricsEngine,
-		},
-		Imp:            imp,
-		VideoExt:       adpodConfigExt,
-		MinPodDuration: minPodDuration,
-		MaxPodDuration: maxPodDuration,
-	}
+	deps.podCtx[podId] = adpod.NewDynamicAdpod(deps.labels.PubID, imp, adpodConfigExt, deps.metricsEngine, deps.reqExt)
 }
 
 func (deps *ctvEndpointDeps) createStructuredAdpodCtx(imp openrtb2.Imp) {
-	deps.ImpPodIdMap[imp.ID] = imp.Video.PodID
+	deps.impToPodId[imp.ID] = imp.Video.PodID
 
 	podContext, ok := deps.podCtx[imp.Video.PodID]
 	if !ok {
-		podContext = &adpod.StructuredAdpod{
-			AdpodCtx: adpod.AdpodCtx{
-				PubId:         deps.labels.PubID,
-				Type:          adpod.PodTypeStructured,
-				ReqExt:        deps.reqExt,
-				MetricsEngine: deps.metricsEngine,
-			},
-			ImpBidMap:  make(map[string][]*types.Bid),
-			WinningBid: make(map[string]types.Bid),
-		}
+		podContext = adpod.NewStructuredAdpod(deps.labels.PubID, deps.metricsEngine, deps.reqExt)
 	}
 
 	podContext.AddImpressions(imp)
@@ -478,19 +421,9 @@ func (deps *ctvEndpointDeps) readRequestExtension() (err []error) {
 	return
 }
 
-func (deps *ctvEndpointDeps) setIsAdPodRequest() {
-	if len(deps.podCtx) > 0 {
-		deps.isAdPodRequest = true
-	}
-}
-
 // setDefaultValues will set adpod and other default values
 func (deps *ctvEndpointDeps) setDefaultValues() {
-
-	//set request is adpod request or normal request
-	deps.setIsAdPodRequest()
-
-	if deps.isAdPodRequest {
+	if len(deps.podCtx) > 0 {
 		deps.readImpExtensionsAndTags()
 	}
 }
@@ -543,16 +476,12 @@ func (deps *ctvEndpointDeps) readImpExtensionsAndTags() (errs []error) {
 // createBidRequest will return new bid request with all things copy from bid request except impression objects
 func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb2.BidRequest {
 	ctvRequest := *req
-
-	for _, adpodCtx := range deps.podCtx {
-		adpodCtx.GenerateImpressions()
-	}
-
-	//createImpressions
 	var imps []openrtb2.Imp
+
 	for _, adpodCtx := range deps.podCtx {
 		imps = append(imps, adpodCtx.GetImpressions()...)
 	}
+
 	if len(deps.videoImps) > 0 {
 		imps = append(imps, deps.videoImps...)
 	}
@@ -560,7 +489,6 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 
 	deps.filterImpsVastTagsByDuration(&ctvRequest)
 
-	//TODO: remove adpod extension if not required to send further
 	return &ctvRequest
 }
 
@@ -649,33 +577,25 @@ func remove(slice []string, item string) []string {
 
 /********************* Prebid BidResponse Processing *********************/
 
-// validateBidResponse
-func (deps *ctvEndpointDeps) validateBidResponse(req *openrtb2.BidRequest, resp *openrtb2.BidResponse) error {
-	//remove bids withoug cat and adomain
-
-	return nil
-}
-
 func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 	var vseat *openrtb2.SeatBid
 
 	for _, seat := range response.SeatBid {
 		vseat = nil
 		for _, bid := range seat.Bid {
-			if len(bid.ID) == 0 {
-				bidID, err := uuid.NewV4()
-				if err != nil {
-					continue
-				}
-				bid.ID = bidID.String()
-			}
-
 			if bid.Price == 0 {
 				continue
 			}
 
-			originalImpID, _ := util.DecodeImpressionID(bid.ImpID)
-			podId, ok := deps.ImpPodIdMap[originalImpID]
+			if len(bid.ID) == 0 {
+				bidId, err := jsonparser.GetString(bid.Ext, "prebid", "bidid")
+				if err == nil {
+					bid.ID = bidId
+				}
+			}
+
+			originalImpID, _ := util.DecodeImpressionID(bid.ImpID) //TODO: check if we can reomove and maintain map
+			podId, ok := deps.impToPodId[originalImpID]
 			if !ok {
 				if vseat == nil {
 					vseat = &openrtb2.SeatBid{
@@ -699,9 +619,9 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 	}
 }
 
-func (deps *ctvEndpointDeps) doAdpodAuctionAndExclusion() {
+func (deps *ctvEndpointDeps) doAdpodAuction() {
 	for _, adpodCtx := range deps.podCtx {
-		adpodCtx.PerformAuctionAndExclusion()
+		adpodCtx.HoldAuction()
 	}
 }
 

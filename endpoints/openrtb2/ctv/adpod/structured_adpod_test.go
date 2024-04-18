@@ -24,7 +24,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "only_price_based_auction_with_no_exclusion",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -106,7 +106,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "only_price_based_auction_with_exclusion",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -202,7 +202,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_no_exclusion",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -298,7 +298,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_exclusion",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -394,7 +394,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_exclusion_better_price_1",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -498,7 +498,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_exclusion_better_price_2",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -610,7 +610,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_exclusion_better_price_3",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -722,7 +722,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			name: "price_and_deal_based_auction_with_exclusion_better_price_4",
 			fields: fields{
 				AdpodCtx: AdpodCtx{
-					Type: PodTypeStructured,
+					Type: Structured,
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -833,13 +833,13 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sa := &StructuredAdpod{
+			sa := &structuredAdpod{
 				AdpodCtx:          tt.fields.AdpodCtx,
 				ImpBidMap:         tt.fields.ImpBidMap,
 				WinningBid:        tt.fields.WinningBid,
 				CategoryExclusion: tt.fields.CategoryExclusion,
 			}
-			sa.PerformAuctionAndExclusion()
+			sa.HoldAuction()
 
 			assert.Equal(t, sa.WinningBid, tt.wantWinningBid, "Auction failed")
 		})

@@ -370,7 +370,7 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 		me := &metrics.MetricsEngineMock{}
 		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
 
-		deps := DynamicAdpod{
+		deps := dynamicAdpod{
 			AdpodCtx: AdpodCtx{
 				MetricsEngine: me,
 			},
@@ -425,7 +425,7 @@ func TestSetBidExtParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adpod := DynamicAdpod{
+			adpod := dynamicAdpod{
 				AdpodBid: tt.args.adpodBid,
 			}
 

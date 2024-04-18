@@ -10,19 +10,19 @@ import (
 type PodType int8
 
 const (
-	PodTypeStructured PodType = 0
-	PodTypeDynamic    PodType = 1
-	PodTypeHybrid     PodType = 2
+	Structured PodType = 0
+	Dynamic    PodType = 1
+	Hybrid     PodType = 2
+	NotAdpod   PodType = -1
 )
 
 type Adpod interface {
 	GetPodType() PodType
 	AddImpressions(imp openrtb2.Imp)
 	Validate() []error
-	GenerateImpressions()
 	GetImpressions() []openrtb2.Imp
 	CollectBid(bid openrtb2.Bid, seat string)
-	PerformAuctionAndExclusion()
+	HoldAuction()
 	GetAdpodSeatBids() []openrtb2.SeatBid
 	GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData
 }
@@ -31,7 +31,7 @@ type AdpodCtx struct {
 	PubId         string
 	Type          PodType
 	Imps          []openrtb2.Imp
-	ReqExt        *openrtb_ext.ExtRequestAdPod
+	AdpodExt      *openrtb_ext.ExtRequestAdPod
 	Exclusion     Exclusion
 	MetricsEngine metrics.MetricsEngine
 }

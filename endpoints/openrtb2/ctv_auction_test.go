@@ -352,24 +352,25 @@ func TestGetAdPodExt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			dynamicAdpod := &adpod.DynamicAdpod{
-				VideoExt: &openrtb_ext.ExtVideoAdPod{
-					AdPod: &openrtb_ext.VideoAdPod{},
-				},
-				AdpodBid: &types.AdPodBid{
-					Bids: []*types.Bid{},
+			req := &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:    "imp1",
+						Video: &openrtb2.Video{},
+					},
 				},
 			}
+
+			videoExt := &openrtb_ext.ExtVideoAdPod{
+				AdPod: &openrtb_ext.VideoAdPod{},
+			}
+			dynamicAdpod := adpod.NewDynamicAdpod("test-pub", req.Imp[0], videoExt, &metrics.MetricsEngineMock{}, nil)
 
 			deps := ctvEndpointDeps{
 				podCtx: map[string]adpod.Adpod{
 					"imp1": dynamicAdpod,
 				},
-				request: &openrtb2.BidRequest{
-					Imp: []openrtb2.Imp{
-						{ID: "imp1"},
-					},
-				},
+				request: req,
 			}
 			actual := deps.getBidResponseExt(tt.args.resp)
 			assert.Equal(t, string(tt.want.data), string(actual))
@@ -511,7 +512,6 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 				request:                   tt.fields.request,
 				reqExt:                    tt.fields.reqExt,
 				videoSeats:                tt.fields.videoSeats,
-				isAdPodRequest:            tt.fields.isAdPodRequest,
 				impsExtPrebidBidder:       tt.fields.impsExtPrebidBidder,
 				impPartnerBlockedTagIDMap: tt.fields.impPartnerBlockedTagIDMap,
 				podCtx:                    tt.fields.podCtx,

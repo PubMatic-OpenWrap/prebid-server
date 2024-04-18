@@ -44,3 +44,19 @@ func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
 	}
 	return &nbrCode
 }
+
+func GetPodType(imp openrtb2.Imp, adpodConfig *openrtb_ext.ExtVideoAdPod) PodType {
+	if adpodConfig != nil {
+		return Dynamic
+	}
+
+	if len(imp.Video.PodID) > 0 && imp.Video.PodDur > 0 {
+		return Dynamic
+	}
+
+	if len(imp.Video.PodID) > 0 {
+		return Structured
+	}
+
+	return NotAdpod
+}

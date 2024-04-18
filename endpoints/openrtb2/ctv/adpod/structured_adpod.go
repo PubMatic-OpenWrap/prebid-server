@@ -6,10 +6,11 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-type StructuredAdpod struct {
+type structuredAdpod struct {
 	AdpodCtx
 	ImpBidMap         map[string][]*types.Bid
 	WinningBid        map[string]types.Bid
@@ -22,23 +23,34 @@ type Slot struct {
 	TotalBids int
 }
 
-func (da *StructuredAdpod) GetPodType() PodType {
+func NewStructuredAdpod(pubId string, metricsEngine metrics.MetricsEngine, adpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
+	adpod := structuredAdpod{
+		AdpodCtx: AdpodCtx{
+			PubId:         pubId,
+			Type:          Structured,
+			AdpodExt:      adpodExt,
+			MetricsEngine: metricsEngine,
+		},
+		ImpBidMap:  make(map[string][]*types.Bid),
+		WinningBid: make(map[string]types.Bid),
+	}
+
+	return &adpod
+}
+
+func (da *structuredAdpod) GetPodType() PodType {
 	return da.Type
 }
 
-func (sa *StructuredAdpod) AddImpressions(imp openrtb2.Imp) {
+func (sa *structuredAdpod) AddImpressions(imp openrtb2.Imp) {
 	sa.Imps = append(sa.Imps, imp)
 }
 
-func (sa *StructuredAdpod) GenerateImpressions() {
-	// We do not generate impressions in case of structured adpod
-}
-
-func (sa *StructuredAdpod) GetImpressions() []openrtb2.Imp {
+func (sa *structuredAdpod) GetImpressions() []openrtb2.Imp {
 	return sa.Imps
 }
 
-func (sa *StructuredAdpod) CollectBid(bid openrtb2.Bid, seat string) {
+func (sa *structuredAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 	ext := openrtb_ext.ExtBid{}
 	if bid.Ext != nil {
 		json.Unmarshal(bid.Ext, &ext)
@@ -56,15 +68,14 @@ func (sa *StructuredAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 	sa.ImpBidMap[bid.ImpID] = bids
 }
 
-func (sa *StructuredAdpod) PerformAuctionAndExclusion() {
+func (sa *structuredAdpod) HoldAuction() {
 	if len(sa.ImpBidMap) == 0 {
 		return
 	}
 
 	// Sort Bids impression wise
-	for impId, bids := range sa.ImpBidMap {
+	for _, bids := range sa.ImpBidMap {
 		util.SortBids(bids)
-		sa.ImpBidMap[impId] = bids
 	}
 
 	// Create Slots
@@ -90,11 +101,11 @@ func (sa *StructuredAdpod) PerformAuctionAndExclusion() {
 
 }
 
-func (sa *StructuredAdpod) Validate() []error {
+func (sa *structuredAdpod) Validate() []error {
 	return nil
 }
 
-func (sa *StructuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
+func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	if len(sa.WinningBid) == 0 {
 		return nil
 	}
@@ -111,13 +122,13 @@ func (sa *StructuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return seatBid
 }
 
-func (sa *StructuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
+func (sa *structuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
 	return nil
 }
 
 /************Structured Adpod Auction Methods***********************/
 
-func (sa *StructuredAdpod) selectBidForSlot(slots []Slot) {
+func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 	if len(slots) == 0 {
 		return
 	}
@@ -156,7 +167,7 @@ func (sa *StructuredAdpod) selectBidForSlot(slots []Slot) {
 	sa.selectBidForSlot(slots[1:])
 }
 
-func (sa *StructuredAdpod) getSlotIndexWithHighestBid(slots []Slot) int {
+func (sa *structuredAdpod) getSlotIndexWithHighestBid(slots []Slot) int {
 	var index int
 	maxBid := &types.Bid{
 		Bid: &openrtb2.Bid{},
@@ -184,11 +195,11 @@ func isDealBid(bid *types.Bid) bool {
 	return bid.DealTierSatisfied
 }
 
-func (sa *StructuredAdpod) shouldApplyExclusion() bool {
+func (sa *structuredAdpod) shouldApplyExclusion() bool {
 	return sa.CategoryExclusion
 }
 
-func (sa *StructuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
+func (sa *structuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
 	if bid == nil || bid.Cat == nil {
 		return false
 	}
@@ -209,7 +220,7 @@ func (sa *StructuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
 	return doesOverlap
 }
 
-func (sa *StructuredAdpod) addCategories(categories []string) {
+func (sa *structuredAdpod) addCategories(categories []string) {
 	if sa.Exclusion.SelectedCategories == nil {
 		sa.Exclusion.SelectedCategories = make(map[string]bool)
 	}
@@ -219,7 +230,7 @@ func (sa *StructuredAdpod) addCategories(categories []string) {
 	}
 }
 
-func (sa *StructuredAdpod) isDealBidCatOverlapWithAnotherDealBid(slots []Slot, selectedSlotIndex int, selectedBid *types.Bid) bool {
+func (sa *structuredAdpod) isDealBidCatOverlapWithAnotherDealBid(slots []Slot, selectedSlotIndex int, selectedBid *types.Bid) bool {
 	if len(selectedBid.Cat) == 0 {
 		return false
 	}
@@ -293,7 +304,7 @@ func isBetterBidAvailable(slotBids []*types.Bid, selectedBid *types.Bid, selecte
 	return betterBidIndex, isBetterBidAvailable
 }
 
-func (sa *StructuredAdpod) isBetterBidThanDeal(slots []Slot, selectedSlotIndx int, selectedSlot Slot, selectedBid *types.Bid) (int, bool) {
+func (sa *structuredAdpod) isBetterBidThanDeal(slots []Slot, selectedSlotIndx int, selectedSlot Slot, selectedBid *types.Bid) (int, bool) {
 	selectedBidIndex := selectedSlot.Index
 
 	if !isDealBid(selectedBid) {
