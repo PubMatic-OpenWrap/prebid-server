@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -388,6 +389,96 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, nil)
 			},
 		},
+		{
+			name: "No partner config in case of error in GetWrapperSlotMappings",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 100,
+				},
+				db: mockDatabase,
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			want: want{
+				cacheEntry:       false,
+				err:              fmt.Errorf("Error from the DB"),
+				partnerConfigMap: nil,
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
+
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, errors.New("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
+			},
+		},
+		{
+			name: "No partner config in case of error in GetAdunitConfig",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 100,
+				},
+				db: mockDatabase,
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			want: want{
+				cacheEntry:       false,
+				err:              fmt.Errorf("Error from the DB"),
+				partnerConfigMap: nil,
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, errors.New("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigQuery, "5890", "123").Return()
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
+					1: {
+						{
+							PartnerId:   testPartnerID,
+							AdapterId:   testAdapterID,
+							VersionId:   testVersionID,
+							SlotName:    testSlotName,
+							MappingJson: "{\"adtag\":\"1405192\",\"site\":\"47124\",\"video\":{\"skippable\":\"TRUE\"}}",
+						},
+					},
+				}, nil)
+			},
+		},
+		{
+			name: "No partner config in case of error in GetAdunitConfig and GetWrapperSlotMappings",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 100,
+				},
+				db: mockDatabase,
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			want: want{
+				cacheEntry:       false,
+				err:              fmt.Errorf("Error from the DB: Error from the DB"),
+				partnerConfigMap: nil,
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigQuery, "5890", "123").Return()
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
+			},
+		},
 	}
 	for ind := range tests {
 		tt := &tests[ind]
@@ -402,13 +493,13 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				metricEngine: mockEngine,
 			}
 			err := c.getActivePartnerConfigAndPopulateWrapperMappings(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PUB_HB_PARTNER, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			partnerConfigMap, found := c.Get(cacheKey)
 			if tt.want.cacheEntry {
 				assert.True(t, found)
 				assert.Equal(t, tt.want.partnerConfigMap, partnerConfigMap)
 			} else {
+				assert.Equal(t, tt.want.err.Error(), err.Error())
 				assert.False(t, found)
 				assert.Nil(t, partnerConfigMap)
 			}
