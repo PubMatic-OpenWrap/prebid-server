@@ -141,17 +141,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				return mockDatabase, mockEngine
 			},
 			wantErr: true,
-			want: map[int]map[string]string{
-				1: {
-					"partnerId":         "1",
-					"prebidPartnerName": "pubmatic",
-					"serverSideEnabled": "1",
-					"level":             "multi",
-					"kgp":               "_AU_@_W_x_H",
-					"timeout":           "220",
-					"bidderCode":        "pubmatic",
-				},
-			},
+			want:    nil,
 		},
 	}
 	for ind := range tests {
