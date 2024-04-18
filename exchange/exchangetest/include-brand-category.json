@@ -134,10 +134,10 @@
               "ext": {
                 "origbidcpm": 0.3,
                 "prebid": {
+                  "type": "video",
                   "meta": {
                     "adaptercode": "appnexus"
                   },
-                  "type": "video",
                   "targeting": {
                     "hb_bidder": "appnexus",
                     "hb_bidder_appnexus": "appnexus",

@@ -89,7 +89,7 @@
                 "prebid": {
                   "meta": {
                     "adaptercode": "appnexus"
-                  },
+                },
                   "type": "banner",
                   "targeting": {
                     "hb_bidder": "appnexus",

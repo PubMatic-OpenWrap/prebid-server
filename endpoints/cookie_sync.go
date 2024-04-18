@@ -40,6 +40,7 @@ var (
 	errCookieSyncBody                              = errors.New("Failed to read request body")
 	errCookieSyncGDPRConsentMissing                = errors.New("gdpr_consent is required if gdpr=1")
 	errCookieSyncGDPRConsentMissingSignalAmbiguous = errors.New("gdpr_consent is required. gdpr is not specified and is assumed to be 1 by the server. set gdpr=0 to exempt this request")
+	errCookieSyncGDPRMandatoryByHost               = errors.New("gdpr_consent is required. gdpr exemption disabled by host")
 	errCookieSyncInvalidBiddersType                = errors.New("invalid bidders type. must either be a string '*' or a string array of bidders")
 	errCookieSyncAccountBlocked                    = errors.New("account is disabled, please reach out to the prebid server host")
 	errCookieSyncAccountConfigMalformed            = errors.New("account config is malformed and could not be read")
@@ -146,6 +147,11 @@ func (c *cookieSyncEndpoint) parseRequest(r *http.Request) (usersync.Request, ma
 	privacyMacros, gdprSignal, privacyPolicies, err := extractPrivacyPolicies(request, c.privacyConfig.gdprConfig.DefaultValue)
 	if err != nil {
 		return usersync.Request{}, macros.UserSyncPrivacy{}, account, err
+	}
+
+	//OpenWrap: do not allow publishers to bypass GDPR
+	if c.privacyConfig.gdprConfig.DefaultValue == "1" && gdprSignal == gdpr.SignalNo {
+		return usersync.Request{}, macros.UserSyncPrivacy{}, account, errCookieSyncGDPRMandatoryByHost
 	}
 
 	ccpaParsedPolicy := ccpa.ParsedPolicy{}
@@ -420,10 +426,16 @@ func (c *cookieSyncEndpoint) handleResponse(w http.ResponseWriter, tf usersync.S
 	}
 
 	for _, syncerChoice := range s {
-		syncTypes := tf.ForBidder(syncerChoice.Bidder)
+		//added hack to support to old wrapper versions having indexExchange as partner
+		//TODO: Remove when a stable version is released
+		bidderName := syncerChoice.Bidder
+		if bidderName == "indexExchange" {
+			bidderName = "ix"
+		}
+		syncTypes := tf.ForBidder(bidderName)
 		sync, err := syncerChoice.Syncer.GetSync(syncTypes, m)
 		if err != nil {
-			glog.Errorf("Failed to get usersync info for %s: %v", syncerChoice.Bidder, err)
+			glog.Errorf("Failed to get usersync info for %s: %v", bidderName, err)
 			continue
 		}
 
@@ -531,6 +543,9 @@ func getDebugMessage(status usersync.Status) string {
 	}
 	return ""
 }
+
+type CookieSyncReq cookieSyncRequest
+type CookieSyncResp cookieSyncResponse
 
 type cookieSyncRequest struct {
 	Bidders         []string                         `json:"bidders"`

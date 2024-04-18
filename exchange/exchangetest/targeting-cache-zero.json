@@ -92,7 +92,7 @@
                 "prebid": {
                   "meta": {
                     "adaptercode": "appnexus"
-                  },
+                },
                   "cache": {
                     "bids": {
                       "cacheId": "0",

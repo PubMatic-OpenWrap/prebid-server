@@ -123,7 +123,7 @@
                                 "prebid": {
                                     "meta": {
                                         "adaptercode": "appnexus"
-                                    },
+                                      },
                                     "type": "banner"
                                 }
                             }

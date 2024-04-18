@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-const xPrebidHeaderVersionPrefix = "pbs-go"
+const xPrebidHeaderVersionPrefix = "owpbs-go"
 
 func BuildXPrebidHeader(version string) string {
 	sb := &strings.Builder{}

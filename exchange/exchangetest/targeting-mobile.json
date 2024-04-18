@@ -184,7 +184,7 @@
                 "prebid": {
                   "meta": {
                     "adaptercode": "appnexus"
-                  },
+                },
                   "type": "video",
                   "targeting": {
                     "hb_bidder": "appnexus",
@@ -215,7 +215,7 @@
                 "prebid": {
                   "meta": {
                     "adaptercode": "appnexus"
-                  },
+                },
                   "type": "video"
                 }
               }
@@ -230,10 +230,10 @@
               "ext": {
                 "origbidcpm": 0.61,
                 "prebid": {
+                  "type": "video",
                   "meta": {
                     "adaptercode": "appnexus"
-                  },
-                  "type": "video",
+                },
                   "targeting": {
                     "hb_bidder": "appnexus",
                     "hb_cache_host": "www.pbcserver.com",

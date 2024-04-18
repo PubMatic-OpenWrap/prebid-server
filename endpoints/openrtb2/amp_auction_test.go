@@ -1939,7 +1939,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "text/plain; charset=utf-8")
 			},
 		},
@@ -1950,7 +1950,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 			expectedHeaders: func(h http.Header) {
 				h.Set("AMP-Access-Control-Allow-Source-Origin", "foo")
 				h.Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 	}

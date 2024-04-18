@@ -17,6 +17,15 @@ func (snb *nonBids) addBid(bid *entities.PbsOrtbBid, nonBidReason int, seat stri
 	if snb.seatNonBidsMap == nil {
 		snb.seatNonBidsMap = make(map[string][]openrtb_ext.NonBid)
 	}
+	if bid.BidMeta == nil {
+		bid.BidMeta = &openrtb_ext.ExtBidPrebidMeta{}
+	}
+	adapterCode := seat
+	if bid.AlternateBidderCode != "" {
+		adapterCode = string(openrtb_ext.BidderName(bid.AlternateBidderCode))
+	}
+	bid.BidMeta.AdapterCode = adapterCode
+
 	nonBid := openrtb_ext.NonBid{
 		ImpId:      bid.Bid.ImpID,
 		StatusCode: nonBidReason,
@@ -33,6 +42,18 @@ func (snb *nonBids) addBid(bid *entities.PbsOrtbBid, nonBidReason int, seat stri
 				MType:          bid.Bid.MType,
 				OriginalBidCPM: bid.OriginalBidCPM,
 				OriginalBidCur: bid.OriginalBidCur,
+
+				//OW specific
+				ID:                bid.Bid.ID,
+				DealPriority:      bid.DealPriority,
+				DealTierSatisfied: bid.DealTierSatisfied,
+				Meta:              bid.BidMeta,
+				Targeting:         bid.BidTargets,
+				Type:              bid.BidType,
+				Video:             bid.BidVideo,
+				BidId:             bid.GeneratedBidID,
+				Floors:            bid.BidFloors,
+				OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
 			}},
 		},
 	}
