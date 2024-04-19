@@ -77,6 +77,9 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
+	if rCtx.IsMaxRequest && !rCtx.Debug {
+		bidResponse.Ext = nil
+	}
 }
 
 // TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505
