@@ -288,30 +288,6 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 		setup  func()
 	}{
 		{
-			name: "error_returning_Active_partner_configuration_from_DB",
-			fields: fields{
-				cache: gocache.New(100, 100),
-				cfg: config.Cache{
-					CacheDefaultExpiry: 100,
-				},
-				db: mockDatabase,
-			},
-			args: args{
-				pubID:          testPubID,
-				profileID:      testProfileID,
-				displayVersion: testVersionID,
-			},
-			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Error from the DB"),
-				partnerConfigMap: nil,
-			},
-			setup: func() {
-				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.PartnerConfigQuery, "5890", "123").Return()
-			},
-		},
-		{
 			name: "non_nil_partnerConfigMap_from_DB",
 			fields: fields{
 				cache: gocache.New(100, 100),
@@ -371,12 +347,34 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
-				partnerConfigMap: nil,
+				cacheEntry: false,
+				err:        fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, nil)
+			},
+		},
+		{
+			name: "error_returning_Active_partner_configuration_from_DB",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 100,
+				},
+				db: mockDatabase,
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			want: want{
+				cacheEntry: false,
+				err:        fmt.Errorf("Error from the DB"),
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
+				mockEngine.EXPECT().RecordDBQueryFailure(models.PartnerConfigQuery, "5890", "123").Return()
 			},
 		},
 		{
@@ -394,14 +392,12 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Error from the DB"),
-				partnerConfigMap: nil,
+				cacheEntry: false,
+				err:        fmt.Errorf("Error from the DB"),
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
 
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, errors.New("Error from the DB"))
 				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
 			},
@@ -421,9 +417,8 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Error from the DB"),
-				partnerConfigMap: nil,
+				cacheEntry: false,
+				err:        fmt.Errorf("Error from the DB"),
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
@@ -443,7 +438,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 			},
 		},
 		{
-			name: "No partner config in case of error in GetAdunitConfig and GetWrapperSlotMappings",
+			name: "Partner config in case of empty adunitConfig and wrapperSlotMappings",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				cfg: config.Cache{
@@ -457,16 +452,24 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry:       false,
-				err:              fmt.Errorf("Error from the DB: Error from the DB"),
-				partnerConfigMap: nil,
+				cacheEntry: true,
+				err:        nil,
+				partnerConfigMap: map[int]map[string]string{
+					1: {
+						"bidderCode":        "pubmatic",
+						"kgp":               "_AU_@_W_x_H",
+						"level":             "multi",
+						"partnerId":         "1",
+						"prebidPartnerName": "pubmatic",
+						"serverSideEnabled": "1",
+						"timeout":           "220",
+					},
+				},
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigQuery, "5890", "123").Return()
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperSlotMappingsQuery, "5890", "123").Return()
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, nil)
 			},
 		},
 	}
