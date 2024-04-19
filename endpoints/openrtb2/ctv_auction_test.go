@@ -834,3 +834,54 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
 	}
 }
+
+func TestGetAdPodBidCreative(t *testing.T) {
+	type args struct {
+		adpod          *types.AdPodBid
+		generatedBidID bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "VAST_element_missing_in_adm",
+			args: args{
+				adpod: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "<xml>any_creative_without_vast</xml>",
+							},
+						},
+					},
+				},
+				generatedBidID: false,
+			},
+			want: "<VAST version=\"2.0\"/>",
+		},
+		{
+			name: "VAST_element_present_in_adm",
+			args: args{
+				adpod: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "<VAST><Ad>url_creative</Ad></VAST>",
+							},
+						},
+					},
+				},
+				generatedBidID: false,
+			},
+			want: "<VAST version=\"2.0\"><Ad sequence=\"1\"><![CDATA[url_creative]]></Ad></VAST>",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAdPodBidCreative(tt.args.adpod, tt.args.generatedBidID)
+			assert.Equalf(t, tt.want, *got, "found incorrect creative")
+		})
+	}
+}
