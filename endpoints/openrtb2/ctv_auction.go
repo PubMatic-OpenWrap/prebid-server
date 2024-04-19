@@ -946,13 +946,13 @@ func (deps *ctvEndpointDeps) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	bid.Price = adpod.Price
 	bid.ADomain = adpod.ADomain[:]
 	bid.Cat = adpod.Cat[:]
-	bid.AdM = *getAdPodBidCreative(deps.request.Imp[deps.impIndices[adpod.OriginalImpID]].Video, adpod, deps.cfg.GenerateBidID)
+	bid.AdM = *getAdPodBidCreative(adpod, deps.cfg.GenerateBidID)
 	bid.Ext = getAdPodBidExtension(adpod)
 	return &bid
 }
 
 // getAdPodBidCreative get commulative adpod bid details
-func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generatedBidID bool) *string {
+func getAdPodBidCreative(adpod *types.AdPodBid, generatedBidID bool) *string {
 	doc := etree.NewDocument()
 	vast := doc.CreateElement(constant.VASTElement)
 	sequenceNumber := 1
@@ -984,6 +984,10 @@ func getAdPodBidCreative(video *openrtb2.Video, adpod *types.AdPodBid, generated
 			}
 
 			vastTag := adDoc.SelectElement(constant.VASTElement)
+			if vastTag == nil {
+				util.Logf("error:[vast_element_missing_in_adm] seat:[%s] adm:[%s]", bid.Seat, bid.AdM)
+				continue
+			}
 
 			//Get Actual VAST Version
 			bidVASTVersion, _ := strconv.ParseFloat(vastTag.SelectAttrValue(constant.VASTVersionAttribute, constant.VASTDefaultVersionStr), 64)
