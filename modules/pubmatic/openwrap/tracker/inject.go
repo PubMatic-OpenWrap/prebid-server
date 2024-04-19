@@ -18,7 +18,6 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 		for j, bid := range seatBid.Bid {
 			var errMsg string
 			var err error
-			var finalTracker string
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {
@@ -28,26 +27,18 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				finalTracker = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
+				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
-				finalTracker, err = injectVideoCreativeTrackers(bid, trackers)
+				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
 			case models.Native:
 				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
-					finalTracker, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
+					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
 				} else {
 					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
 				}
 			default:
 				errMsg = fmt.Sprintf("Invalid adformat %s for bidid %s", adformat, bid.ID)
-			}
-
-			if errMsg == "" {
-				if rctx.IsMaxRequest {
-					bidResponse.SeatBid[i].Bid[j].BURL = finalTracker
-				} else {
-					bidResponse.SeatBid[i].Bid[j].AdM = finalTracker
-				}
 			}
 
 			if err != nil {
