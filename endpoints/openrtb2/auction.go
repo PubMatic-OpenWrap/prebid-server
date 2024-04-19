@@ -384,7 +384,7 @@ func sendAuctionResponse(
 	}
 
 	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
-	if rCtx != nil && rCtx.IsMaxRequest && response == nil {
+	if rCtx != nil && rCtx.IsMaxRequest && response.ID == "max_rejected" {
 		w.WriteHeader(http.StatusNoContent)
 		return labels, ao
 	}

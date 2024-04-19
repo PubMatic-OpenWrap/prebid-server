@@ -230,7 +230,14 @@ func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse
 		}
 		return bidResponse
 	}
-	respString, _ := json.Marshal(bidResponse)
+	respString, err := json.Marshal(bidResponse)
+	if err != nil {
+		*bidResponse = openrtb2.BidResponse{
+			ID: "max_rejected",
+		}
+		return bidResponse
+	}
+
 	signaldata := `{"signaldata":` + strconv.Quote(string(respString)) + `}`
 
 	*bidResponse = openrtb2.BidResponse{

@@ -606,6 +606,22 @@ func Test_updateMaxResponse(t *testing.T) {
 			},
 		},
 		{
+			name: "failed to marshal bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "456",
+					Ext:   json.RawMessage(`{`),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "max_rejected",
+			},
+		},
+		{
 			name: "valid bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
