@@ -224,16 +224,19 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if bidResponse.NBR != nil && *bidResponse.NBR != 0 {
-		if rctx.Debug {
-			return bidResponse, nil
+		if !rctx.Debug {
+			*bidResponse = openrtb2.BidResponse{
+				ID: "max_rejected",
+			}
 		}
-		return nil, nil
+		return bidResponse
 	}
 	respString, _ := json.Marshal(bidResponse)
 	signaldata := `{"signaldata":` + strconv.Quote(string(respString)) + `}`
-	newBidResponse := &openrtb2.BidResponse{
+
+	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
 		BidID: bidResponse.BidID,
 		Cur:   bidResponse.Cur,
@@ -250,6 +253,7 @@ func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse
 				},
 			},
 		},
+		Ext: nil,
 	}
-	return newBidResponse, nil
+	return bidResponse
 }

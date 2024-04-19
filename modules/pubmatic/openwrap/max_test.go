@@ -7,6 +7,8 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -569,41 +571,40 @@ func Test_updateMaxResponse(t *testing.T) {
 		bidResponse *openrtb2.BidResponse
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *openrtb2.BidResponse
-		wantErr bool
+		name string
+		args args
+		want *openrtb2.BidResponse
 	}{
-		// {
-		// 	name: "bidresponse contains NBR and debug is disabled",
-		// 	args: args{
-		// 		rctx: models.RequestCtx{
-		// 			Debug: false,
-		// 		},
-		// 		bidResponse: &openrtb2.BidResponse{
-		// 			NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-		// 		},
-		// 	},
-		// 	want:    nil,
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "bidresponse contains NBR and debug is enabled",
-		// 	args: args{
-		// 		rctx: models.RequestCtx{
-		// 			Debug: true,
-		// 		},
-		// 		bidResponse: &openrtb2.BidResponse{
-		// 			ID:  "123",
-		// 			NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-		// 		},
-		// 	},
-		// 	want: &openrtb2.BidResponse{
-		// 		ID:  "123",
-		// 		NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "bidresponse contains NBR and debug is disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "max_rejected",
+			},
+		},
+		{
+			name: "bidresponse contains NBR and debug is enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "123",
+				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+			},
+		},
 		{
 			name: "valid bidresponse",
 			args: args{
@@ -647,16 +648,11 @@ func Test_updateMaxResponse(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateMaxResponse(tt.args.rctx, tt.args.bidResponse)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("updateMaxResponse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := updateMaxResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
