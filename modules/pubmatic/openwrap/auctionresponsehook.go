@@ -301,7 +301,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
-		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+		if !rctx.IsMaxRequest {
+			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
+		}
 		if err != nil {
 			return ap, err
 		}
