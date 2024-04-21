@@ -179,7 +179,7 @@ func TestRecordRejectedBids(t *testing.T) {
 	}
 }
 
-func Test_upadteResponseExtForMax(t *testing.T) {
+func TestUpadteResponseExtForMax(t *testing.T) {
 	type args struct {
 		bidResponse *openrtb2.BidResponse
 		rCtx        *models.RequestCtx

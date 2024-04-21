@@ -565,7 +565,7 @@ func Test_getSignalData(t *testing.T) {
 	}
 }
 
-func Test_updateMaxResponse(t *testing.T) {
+func TestUpdateMaxResponse(t *testing.T) {
 	type args struct {
 		rctx        models.RequestCtx
 		bidResponse *openrtb2.BidResponse
