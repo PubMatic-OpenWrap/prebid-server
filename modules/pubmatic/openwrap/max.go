@@ -225,39 +225,45 @@ func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse
 	if bidResponse.NBR != nil && *bidResponse.NBR != 0 {
 		if !rctx.Debug {
 			*bidResponse = openrtb2.BidResponse{
-				ID: "max_rejected",
+				ID: models.MaxRejected,
 			}
 		}
 		return bidResponse
 	}
+
 	respString, err := json.Marshal(bidResponse)
 	if err != nil {
 		*bidResponse = openrtb2.BidResponse{
-			ID: "max_rejected",
+			ID: models.MaxRejected,
 		}
 		return bidResponse
 	}
 
 	signaldata := `{"signaldata":` + strconv.Quote(string(respString)) + `}`
 
-	*bidResponse = openrtb2.BidResponse{
-		ID:    bidResponse.ID,
-		BidID: bidResponse.BidID,
-		Cur:   bidResponse.Cur,
-		SeatBid: []openrtb2.SeatBid{
-			{
-				Bid: []openrtb2.Bid{
-					{
-						ID:    bidResponse.SeatBid[0].Bid[0].ID,
-						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
-						Price: bidResponse.SeatBid[0].Bid[0].Price,
-						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
-						Ext:   json.RawMessage(signaldata),
+	if bidResponse != nil && len(bidResponse.SeatBid) > 0 && len(bidResponse.SeatBid[0].Bid) > 0 {
+		*bidResponse = openrtb2.BidResponse{
+			ID:    bidResponse.ID,
+			BidID: bidResponse.BidID,
+			Cur:   bidResponse.Cur,
+			SeatBid: []openrtb2.SeatBid{
+				{
+					Bid: []openrtb2.Bid{
+						{
+							ID:    bidResponse.SeatBid[0].Bid[0].ID,
+							ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
+							Price: bidResponse.SeatBid[0].Bid[0].Price,
+							BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+							Ext:   json.RawMessage(signaldata),
+						},
 					},
 				},
 			},
-		},
-		Ext: nil,
+		}
+	} else {
+		*bidResponse = openrtb2.BidResponse{
+			ID: models.MaxRejected,
+		}
 	}
 	return bidResponse
 }

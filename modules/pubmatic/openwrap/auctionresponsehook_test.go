@@ -3,6 +3,7 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1932,6 +1933,117 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 				return
 			}
 			assert.Equal(t, tt.want.result.DebugMessages, hookResult.DebugMessages, tt.name)
+		})
+	}
+}
+
+func TestAuctionResponseHookForApplovinMax(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockCache := mock_cache.NewMockCache(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+	defer ctrl.Finish()
+
+	type args struct {
+		ctx       context.Context
+		moduleCtx hookstage.ModuleInvocationContext
+		payload   hookstage.AuctionResponsePayload
+	}
+
+	type want struct {
+		bidResponse *openrtb2.BidResponse
+		err         error
+	}
+
+	tests := []struct {
+		name             string
+		args             args
+		want             want
+		getMetricsEngine func() *mock_metrics.MockMetricsEngine
+	}{
+		{
+			name: "update_the_bid_response_in_applovin_max_format",
+			args: args{
+				ctx: nil,
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							IsMaxRequest: true,
+							ImpBidCtx: map[string]models.ImpCtx{
+								"789": {
+									ImpID: "789",
+								},
+							},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "456",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "456",
+										ImpID: "789",
+										Price: 1.0,
+										BURL:  "http://example.com",
+										Ext:   json.RawMessage(`{"key":"value"}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				bidResponse: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "456",
+					Cur:   "USD",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"prebid\":{},\"netecpm\":1}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{}}}"}`),
+								},
+							},
+						},
+					},
+				},
+				err: nil,
+			},
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats(gomock.Any(), gomock.Any(), gomock.Any())
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
+				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				return mockEngine
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := OpenWrap{
+				metricEngine:  tt.getMetricsEngine(),
+				cache:         mockCache,
+				featureConfig: mockFeature,
+			}
+			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			assert.Equal(t, tt.want.err, err, tt.name)
+			mutations := hookResult.ChangeSet.Mutations()
+			assert.NotEmpty(t, mutations, tt.name)
+			for _, mut := range mutations {
+				result, err := mut.Apply(tt.args.payload)
+				assert.Nil(t, err, tt.name)
+				fmt.Println("Ext", string(result.BidResponse.SeatBid[0].Bid[0].Ext))
+				assert.Equal(t, tt.want.bidResponse, result.BidResponse, tt.name)
+			}
 		})
 	}
 }

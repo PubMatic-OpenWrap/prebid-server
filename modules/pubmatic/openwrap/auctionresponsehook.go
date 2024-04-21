@@ -320,9 +320,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 		if rctx.IsMaxRequest {
 			ap.BidResponse = updateMaxResponse(rctx, ap.BidResponse)
-			if err != nil {
-				return ap, err
-			}
 		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")

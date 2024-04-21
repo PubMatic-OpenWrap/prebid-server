@@ -522,3 +522,7 @@ const (
 	FeatureTBF            = 2
 	FeatureAMPMultiFormat = 3
 )
+
+const (
+	MaxRejected = "max_rejected"
+)

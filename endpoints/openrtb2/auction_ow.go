@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -53,6 +54,11 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		return
 	}
 
+	if rCtx.IsMaxRequest {
+		upadteResponseExtForMax(ao, rCtx, bidResponse)
+		return
+	}
+
 	extBidResponse := openrtb_ext.ExtBidResponse{}
 	if len(bidResponse.Ext) != 0 {
 		if err := json.Unmarshal(bidResponse.Ext, &extBidResponse); err != nil {
@@ -80,6 +86,54 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	if rCtx.IsMaxRequest && !rCtx.Debug {
 		bidResponse.Ext = nil
 	}
+}
+
+func upadteResponseExtForMax(ao analytics.AuctionObject, rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse) {
+	if !rCtx.Debug {
+		return
+	}
+
+	maxBidResponse := map[string]string{}
+	maxOrtbBidResponse := openrtb2.BidResponse{}
+	maxBidResponseExt := openrtb_ext.ExtBidResponse{}
+	if bidResponse == nil || len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 || bidResponse.SeatBid[0].Bid[0].Ext == nil {
+		return
+	}
+
+	if err := json.Unmarshal(bidResponse.SeatBid[0].Bid[0].Ext, &maxBidResponse); err != nil {
+		return
+	}
+
+	val, ok := maxBidResponse["signaldata"]
+	if !ok {
+		return
+	}
+
+	if err := json.Unmarshal([]byte(val), &maxOrtbBidResponse); err != nil {
+		return
+	}
+
+	if len(maxOrtbBidResponse.Ext) != 0 {
+		if err := json.Unmarshal(maxOrtbBidResponse.Ext, &maxBidResponseExt); err != nil {
+			return
+		}
+	}
+
+	if rCtx.LogInfoFlag == 1 {
+		maxBidResponseExt.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
+	}
+
+	if rCtx.Debug {
+		maxBidResponseExt.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
+	}
+
+	maxOrtbBidResponse.Ext, _ = json.Marshal(maxBidResponseExt)
+
+	updatedSignalData, _ := json.Marshal(maxOrtbBidResponse)
+
+	maxBidResponse["signaldata"] = string(updatedSignalData)
+
+	bidResponse.SeatBid[0].Bid[0].Ext, _ = json.Marshal(maxBidResponse)
 }
 
 // TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505

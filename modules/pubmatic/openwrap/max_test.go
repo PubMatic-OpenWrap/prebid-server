@@ -576,20 +576,6 @@ func Test_updateMaxResponse(t *testing.T) {
 		want *openrtb2.BidResponse
 	}{
 		{
-			name: "bidresponse contains NBR and debug is disabled",
-			args: args{
-				rctx: models.RequestCtx{
-					Debug: false,
-				},
-				bidResponse: &openrtb2.BidResponse{
-					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-				},
-			},
-			want: &openrtb2.BidResponse{
-				ID: "max_rejected",
-			},
-		},
-		{
 			name: "bidresponse contains NBR and debug is enabled",
 			args: args{
 				rctx: models.RequestCtx{
@@ -598,11 +584,61 @@ func Test_updateMaxResponse(t *testing.T) {
 				bidResponse: &openrtb2.BidResponse{
 					ID:  "123",
 					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+								},
+							},
+						},
+					},
 				},
 			},
 			want: &openrtb2.BidResponse{
 				ID:  "123",
 				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "456",
+								ImpID: "789",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "bidresponse contains NBR and debug is disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: models.MaxRejected,
+			},
+		},
+		{
+			name: "bidresponse with no seatbid",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: models.MaxRejected,
 			},
 		},
 		{

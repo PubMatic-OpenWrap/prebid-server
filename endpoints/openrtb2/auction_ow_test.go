@@ -3,10 +3,10 @@ package openrtb2
 import (
 	"encoding/json"
 	"fmt"
-
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/analytics"
 	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/errortypes"
@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks"
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
 	"github.com/stretchr/testify/assert"
@@ -175,5 +176,177 @@ func TestRecordRejectedBids(t *testing.T) {
 
 		recordRejectedBids(test.args.pubid, test.args.seatNonBids, me)
 		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
+	}
+}
+
+func Test_upadteResponseExtForMax(t *testing.T) {
+	type args struct {
+		bidResponse *openrtb2.BidResponse
+		rCtx        *models.RequestCtx
+		ao          analytics.AuctionObject
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantResponseExt json.RawMessage
+	}{
+		{
+			name: "debug is disabled",
+			args: args{
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					Ext: nil,
+				},
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        false,
+				},
+			},
+		},
+		{
+			name: "empty bid response ext",
+			args: args{
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: nil,
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+			},
+		},
+		{
+			name: "failed to unmarshal SeatBid[0].Bid[0].Ext",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"ID\":\"123\"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantResponseExt: json.RawMessage(`{"signaldata":"{\"ID\":\"123\"}`),
+		},
+		{
+			name: "SeatBid[0].Bid[0].Ext do not contain signaldata",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"matchedimpression":"{}"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantResponseExt: json.RawMessage(`{"matchedimpression":"{}"}`),
+		},
+		{
+			name: "failed to unmarshal SeatBid[0].Bid[0].Ext signaldata response",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"key\":\"value\"}]}],\"bidid\":\"456\",\"cur\":\"USD\"}"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantResponseExt: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"key\":\"value\"}]}],\"bidid\":\"456\",\"cur\":\"USD\"}"}`),
+		},
+		{
+			name: "failed to unmarshal SeatBid[0].Bid[0].Ext signaldata response.Ext",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http:\/\/example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"tmaxrequest\":\"time\"}}"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantResponseExt: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http:\/\/example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"tmaxrequest\":\"time\"}}"}`),
+		},
+		{
+			name: "Successfully updated the logger in response ext",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http:\/\/example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"tmaxrequest\":500}}"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantResponseExt: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"tmaxrequest\":500}}"}`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			upadteResponseExtForMax(tt.args.ao, tt.args.rCtx, tt.args.bidResponse)
+			if tt.args.bidResponse != nil && len(tt.args.bidResponse.SeatBid) > 0 && len(tt.args.bidResponse.SeatBid[0].Bid) > 0 && tt.args.bidResponse.SeatBid[0].Bid[0].Ext != nil {
+				assert.Equal(t, tt.wantResponseExt, tt.args.bidResponse.SeatBid[0].Bid[0].Ext)
+			}
+		})
 	}
 }

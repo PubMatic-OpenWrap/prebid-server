@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/golang/glog"
@@ -383,8 +384,9 @@ func sendAuctionResponse(
 		}
 	}
 
+	//Handling for the Max Applovin Rejected case
 	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
-	if rCtx != nil && rCtx.IsMaxRequest && response.ID == "max_rejected" {
+	if rCtx != nil && rCtx.IsMaxRequest && response.ID == models.MaxRejected {
 		w.WriteHeader(http.StatusNoContent)
 		return labels, ao
 	}
