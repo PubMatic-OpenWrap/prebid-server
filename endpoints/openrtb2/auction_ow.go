@@ -83,9 +83,6 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
-	if rCtx.IsMaxRequest && !rCtx.Debug {
-		bidResponse.Ext = nil
-	}
 }
 
 func upadteResponseExtForMax(ao analytics.AuctionObject, rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse) {
