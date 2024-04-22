@@ -221,28 +221,28 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
-		*bidResponse = openrtb2.BidResponse{
-			ID: models.MaxRejected,
+func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
+	maxAppLovin := models.MaxAppLovin{Reject: false}
+
+	if bidResponse.NBR != nil || len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		if !rctx.Debug {
+			maxAppLovin.Reject = true
 		}
-		return bidResponse
+		return maxAppLovin
 	}
 
-	if bidResponse.NBR != nil {
-		if !rctx.Debug {
-			*bidResponse = openrtb2.BidResponse{
-				ID: models.MaxRejected,
-			}
-		}
+	return maxAppLovin
+}
+
+func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if rctx.MaxAppLovin.Reject {
+		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 
 	resp, err := json.Marshal(bidResponse)
 	if err != nil {
-		*bidResponse = openrtb2.BidResponse{
-			ID: models.MaxRejected,
-		}
+		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 

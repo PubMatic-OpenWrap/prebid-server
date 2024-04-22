@@ -103,6 +103,12 @@ type RequestCtx struct {
 	SignalData             string
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
+
+	MaxAppLovin MaxAppLovin
+}
+
+type MaxAppLovin struct {
+	Reject bool
 }
 
 type OwBid struct {

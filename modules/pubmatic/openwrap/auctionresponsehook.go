@@ -275,6 +275,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 		addSeatNonBidsInResponseExt(rctx, &responseExt)
 	}
 
+	rctx.MaxAppLovin = updateMaxApplovinResponse(rctx, payload.BidResponse)
+
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
@@ -319,7 +321,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		if rctx.IsMaxRequest {
-			ap.BidResponse = updateMaxApplovinResponse(rctx, ap.BidResponse)
+			ap.BidResponse = applyMaxAppLovinResponse(rctx, ap.BidResponse)
 		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
