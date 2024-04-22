@@ -642,7 +642,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateMaxApplovinResponse(tt.args.rctx, tt.args.bidResponse)
+			got := updateMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -728,12 +728,15 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 									ID:    "456",
 									ImpID: "789",
 									Price: 1.0,
+									AdM:   "<img src=\"http://example.com\"></img>",
 									BURL:  "http://example.com",
 									Ext:   json.RawMessage(`{"key":"value"}`),
 								},
 							},
+							Seat: "pubmatic",
 						},
 					},
+					Ext: json.RawMessage(`{"key":"value"}`),
 				},
 			},
 			want: &openrtb2.BidResponse{
@@ -748,7 +751,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 								ImpID: "789",
 								Price: 1.0,
 								BURL:  "http://example.com",
-								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"ext\":{\"key\":\"value\"}}]}],\"bidid\":\"456\",\"cur\":\"USD\"}"}`),
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
 							},
 						},
 					},

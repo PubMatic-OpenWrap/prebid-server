@@ -221,7 +221,7 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
+func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
 	maxAppLovin := models.MaxAppLovin{Reject: false}
 
 	if bidResponse.NBR != nil {

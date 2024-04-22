@@ -3,7 +3,6 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -1997,7 +1996,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 								Seat: "pubmatic",
 							},
 						},
-						Ext: json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"prebid\":{},\"crtype\":\"banner\",\"netecpm\":1}}]}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"warnings\":{\"general\":[{\"code\":10002,\"message\":\"debug turned off for account\"}]},\"responsetimemillis\":{\"appnexus\":1742,\"pubmatic\":1000},\"tmaxrequest\":194999,\"prebid\":{\"auctiontimestamp\":1713784260435,\"floors\":{\"enforcement\":{\"enforcepbs\":true},\"fetchstatus\":\"none\",\"location\":\"noData\"}},\"matchedimpression\":{},\"sendallbids\":1}}"}`),
+						Ext: json.RawMessage(`{"key":"value"}`),
 					},
 				},
 			},
@@ -2046,7 +2045,6 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 			for _, mut := range mutations {
 				result, err := mut.Apply(tt.args.payload)
 				assert.Nil(t, err, tt.name)
-				fmt.Println("Ext", string(result.BidResponse.SeatBid[0].Bid[0].Ext))
 				assert.Equal(t, tt.want.bidResponse, result.BidResponse, tt.name)
 			}
 		})
