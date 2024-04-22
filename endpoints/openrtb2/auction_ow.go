@@ -2,6 +2,7 @@ package openrtb2
 
 import (
 	"encoding/json"
+	"net/http"
 	"runtime/debug"
 	"strconv"
 
@@ -54,11 +55,6 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		return
 	}
 
-	if rCtx.IsMaxRequest {
-		upadteResponseExtForMax(ao, rCtx, bidResponse)
-		return
-	}
-
 	extBidResponse := openrtb_ext.ExtBidResponse{}
 	if len(bidResponse.Ext) != 0 {
 		if err := json.Unmarshal(bidResponse.Ext, &extBidResponse); err != nil {
@@ -83,54 +79,19 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
+	if rCtx.IsMaxRequest && !rCtx.Debug {
+		bidResponse.Ext = nil
+	}
 }
 
-func upadteResponseExtForMax(ao analytics.AuctionObject, rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse) {
-	if !rCtx.Debug {
-		return
+func ApplyMaxAppLovinResponseHeader(w http.ResponseWriter, bidResponse *openrtb2.BidResponse, ao analytics.AuctionObject) bool {
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	isRejected := false
+	if rCtx != nil && rCtx.IsMaxRequest && bidResponse.ID == models.MaxRejected {
+		w.WriteHeader(http.StatusNoContent)
+		isRejected = true
 	}
-
-	maxBidResponse := map[string]string{}
-	maxOrtbBidResponse := openrtb2.BidResponse{}
-	maxBidResponseExt := openrtb_ext.ExtBidResponse{}
-	if bidResponse == nil || len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 || bidResponse.SeatBid[0].Bid[0].Ext == nil {
-		return
-	}
-
-	if err := json.Unmarshal(bidResponse.SeatBid[0].Bid[0].Ext, &maxBidResponse); err != nil {
-		return
-	}
-
-	val, ok := maxBidResponse["signaldata"]
-	if !ok {
-		return
-	}
-
-	if err := json.Unmarshal([]byte(val), &maxOrtbBidResponse); err != nil {
-		return
-	}
-
-	if len(maxOrtbBidResponse.Ext) != 0 {
-		if err := json.Unmarshal(maxOrtbBidResponse.Ext, &maxBidResponseExt); err != nil {
-			return
-		}
-	}
-
-	if rCtx.LogInfoFlag == 1 {
-		maxBidResponseExt.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
-	}
-
-	if rCtx.Debug {
-		maxBidResponseExt.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
-	}
-
-	maxOrtbBidResponse.Ext, _ = json.Marshal(maxBidResponseExt)
-
-	updatedSignalData, _ := json.Marshal(maxOrtbBidResponse)
-
-	maxBidResponse["signaldata"] = string(updatedSignalData)
-
-	bidResponse.SeatBid[0].Bid[0].Ext, _ = json.Marshal(maxBidResponse)
+	return isRejected
 }
 
 // TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505

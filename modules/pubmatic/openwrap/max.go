@@ -221,8 +221,15 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	if bidResponse.NBR != nil && *bidResponse.NBR != 0 {
+func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		*bidResponse = openrtb2.BidResponse{
+			ID: models.MaxRejected,
+		}
+		return bidResponse
+	}
+
+	if bidResponse.NBR != nil {
 		if !rctx.Debug {
 			*bidResponse = openrtb2.BidResponse{
 				ID: models.MaxRejected,
@@ -231,7 +238,7 @@ func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse
 		return bidResponse
 	}
 
-	respString, err := json.Marshal(bidResponse)
+	resp, err := json.Marshal(bidResponse)
 	if err != nil {
 		*bidResponse = openrtb2.BidResponse{
 			ID: models.MaxRejected,
@@ -239,31 +246,25 @@ func updateMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse
 		return bidResponse
 	}
 
-	signaldata := `{"signaldata":` + strconv.Quote(string(respString)) + `}`
+	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
 
-	if bidResponse != nil && len(bidResponse.SeatBid) > 0 && len(bidResponse.SeatBid[0].Bid) > 0 {
-		*bidResponse = openrtb2.BidResponse{
-			ID:    bidResponse.ID,
-			BidID: bidResponse.BidID,
-			Cur:   bidResponse.Cur,
-			SeatBid: []openrtb2.SeatBid{
-				{
-					Bid: []openrtb2.Bid{
-						{
-							ID:    bidResponse.SeatBid[0].Bid[0].ID,
-							ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
-							Price: bidResponse.SeatBid[0].Bid[0].Price,
-							BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
-							Ext:   json.RawMessage(signaldata),
-						},
+	*bidResponse = openrtb2.BidResponse{
+		ID:    bidResponse.ID,
+		BidID: bidResponse.BidID,
+		Cur:   bidResponse.Cur,
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: []openrtb2.Bid{
+					{
+						ID:    bidResponse.SeatBid[0].Bid[0].ID,
+						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
+						Price: bidResponse.SeatBid[0].Bid[0].Price,
+						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						Ext:   json.RawMessage(signaldata),
 					},
 				},
 			},
-		}
-	} else {
-		*bidResponse = openrtb2.BidResponse{
-			ID: models.MaxRejected,
-		}
+		},
 	}
 	return bidResponse
 }

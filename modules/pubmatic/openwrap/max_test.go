@@ -576,6 +576,20 @@ func TestUpdateMaxResponse(t *testing.T) {
 		want *openrtb2.BidResponse
 	}{
 		{
+			name: "bidresponse seatbid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: models.MaxRejected,
+			},
+		},
+		{
 			name: "bidresponse contains NBR and debug is enabled",
 			args: args{
 				rctx: models.RequestCtx{
@@ -704,7 +718,7 @@ func TestUpdateMaxResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateMaxResponse(tt.args.rctx, tt.args.bidResponse)
+			got := updateMaxApplovinResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

@@ -342,3 +342,7 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 	}
 	return request.Header.Get("User-Agent")
 }
+
+func isMaxRequestDebugEnabled(rctx models.RequestCtx) bool {
+	return rctx.IsMaxRequest && rctx.Debug
+}

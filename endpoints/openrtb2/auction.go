@@ -25,10 +25,8 @@ import (
 	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v2/bidadjustment"
 	"github.com/prebid/prebid-server/v2/hooks"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/privacy"
 	"golang.org/x/net/publicsuffix"
@@ -385,9 +383,7 @@ func sendAuctionResponse(
 	}
 
 	//Handling for the Max Applovin Rejected case
-	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
-	if rCtx != nil && rCtx.IsMaxRequest && response.ID == models.MaxRejected {
-		w.WriteHeader(http.StatusNoContent)
+	if rejected := ApplyMaxAppLovinResponseHeader(w, response, ao); rejected {
 		return labels, ao
 	}
 

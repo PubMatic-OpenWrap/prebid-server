@@ -110,7 +110,7 @@ func (m OpenWrap) addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *ope
 				if m.featureConfig.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
 					bidCtx.Fsc = 1
 				}
-			} else if !rctx.SendAllBids && !rctx.IsMaxRequest {
+			} else if !rctx.SendAllBids && isMaxRequestDebugEnabled(rctx) {
 				warnings = append(warnings, "dropping bid "+utils.GetOriginalBidId(bid.ID)+" as sendAllBids is disabled")
 			}
 
