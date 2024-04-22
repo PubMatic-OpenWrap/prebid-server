@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	cfg "github.com/prebid/prebid-server/config"
-	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	mock "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	cfg "github.com/prebid/prebid-server/v2/config"
+	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	mock "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
@@ -219,6 +219,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	mockEngine.EXPECT().RecordAmpVideoRequests("pubid", "profileid")
 	mockEngine.EXPECT().RecordAmpVideoResponses("pubid", "profileid")
+	mockEngine.EXPECT().RecordHTTPCounter()
 
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
@@ -283,4 +284,5 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	multiMetricEngine.RecordAmpVideoRequests("pubid", "profileid")
 	multiMetricEngine.RecordAmpVideoResponses("pubid", "profileid")
+	multiMetricEngine.RecordHTTPCounter()
 }

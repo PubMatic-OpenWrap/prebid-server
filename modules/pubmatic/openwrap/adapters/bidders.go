@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // PrepareBidParamJSONForPartner preparing bid params json for partner
@@ -309,16 +309,24 @@ func builderSovrn(params BidderParameters) (json.RawMessage, error) {
 func builderImproveDigital(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
+	var placementID, publisherID int
+	var ok bool
 
-	if placementID, ok := getInt(params.FieldMap["placementId"]); ok {
+	if placementID, ok = getInt(params.FieldMap["placementId"]); ok {
 		fmt.Fprintf(&jsonStr, `"placementId":%d`, placementID)
-	} else {
-		publisherID, ok1 := getInt(params.FieldMap["publisherId"])
-		placement, ok2 := getString(params.FieldMap["placementKey"])
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId'] or ['publisherId', 'placementKey']")
-		}
-		fmt.Fprintf(&jsonStr, `"publisherId":%d,"placementKey":"%s"`, publisherID, placement)
+	}
+
+	if placementID == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
+	}
+
+	//UOE-10317: Adding change as per discussion with improve digital
+	if publisherID, ok = getInt(params.FieldMap["publisherId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"publisherId":%d`, publisherID)
+	}
+
+	if publisherID == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['publisherId']")
 	}
 
 	width, height := params.Width, params.Height

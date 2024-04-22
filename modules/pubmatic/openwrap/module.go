@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/moduledeps"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 )
 
 // init openwrap module and its dependecies like config, cache, db connection, bidder cfg, etc.
@@ -90,4 +90,14 @@ func (m OpenWrap) HandleAuctionResponseHook(
 	}()
 
 	return m.handleAuctionResponseHook(ctx, miCtx, payload)
+}
+
+// HandleRawBidderResponseHook fetches rCtx and check for vast unwrapper flag to enable/disable vast unwrapping feature
+func (m OpenWrap) HandleRawBidderResponseHook(
+	_ context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.RawBidderResponsePayload,
+) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+
+	return m.handleRawBidderResponseHook(miCtx, payload)
 }

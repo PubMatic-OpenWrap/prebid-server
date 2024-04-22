@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -324,6 +324,16 @@ func TestRecordDBQueryFailure(t *testing.T) {
 			pubIDLabel:     "5890",
 			profileIDLabel: "59201",
 		})
+}
+
+func TestRecordHTTPCounter(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordHTTPCounter()
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "httpCounter", m.httpCounter,
+		expectedCount, nil)
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {

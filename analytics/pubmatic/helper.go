@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/analytics/pubmatic/mhttp"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // PrepareLoggerURL returns the url for OW logger call

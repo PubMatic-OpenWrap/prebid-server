@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	cfg "github.com/prebid/prebid-server/config"
-	metrics_cfg "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	ow_prometheus "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/prometheus"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	cfg "github.com/prebid/prebid-server/v2/config"
+	metrics_cfg "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	ow_prometheus "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -457,5 +457,39 @@ func (me *MultiMetricsEngine) RecordAmpVideoRequests(pubid, profileid string) {
 func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 	for _, thisME := range *me {
 		thisME.RecordAmpVideoResponses(pubid, profileid)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordHTTPCounter() {
+	for _, thisME := range *me {
+		thisME.RecordHTTPCounter()
+	}
+}
+
+// RecordUnwrapRequestStatus record VAST unwrap status
+func (me *MultiMetricsEngine) RecordUnwrapRequestStatus(accountId, bidder, status string) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRequestStatus(accountId, bidder, status)
+	}
+}
+
+// RecordUnwrapWrapperCount record wrapper count
+func (me *MultiMetricsEngine) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapWrapperCount(accountId, bidder, wrapper_count)
+	}
+}
+
+// RecordUnwrapRequestTime record response time
+func (me *MultiMetricsEngine) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRequestTime(accountId, bidder, respTime)
+	}
+}
+
+// RecordUnwrapRespTime record response time for wrapper count wise
+func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
 	}
 }

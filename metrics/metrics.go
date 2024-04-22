@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // Labels defines the labels that can be attached to the metrics.
@@ -173,6 +173,7 @@ const PublisherUnknown = "unknown"
 const (
 	DemandWeb     DemandSource = "web"
 	DemandApp     DemandSource = "app"
+	DemandDOOH    DemandSource = "dooh"
 	DemandUnknown DemandSource = "unknown"
 )
 
@@ -180,22 +181,25 @@ func DemandTypes() []DemandSource {
 	return []DemandSource{
 		DemandWeb,
 		DemandApp,
+		DemandDOOH,
 		DemandUnknown,
 	}
 }
 
 // The request types (endpoints)
 const (
-	ReqTypeORTB2Web RequestType = "openrtb2-web"
-	ReqTypeORTB2App RequestType = "openrtb2-app"
-	ReqTypeAMP      RequestType = "amp"
-	ReqTypeVideo    RequestType = "video"
+	ReqTypeORTB2Web  RequestType = "openrtb2-web"
+	ReqTypeORTB2App  RequestType = "openrtb2-app"
+	ReqTypeORTB2DOOH RequestType = "openrtb2-dooh"
+	ReqTypeAMP       RequestType = "amp"
+	ReqTypeVideo     RequestType = "video"
 )
 
 func RequestTypes() []RequestType {
 	return []RequestType{
 		ReqTypeORTB2Web,
 		ReqTypeORTB2App,
+		ReqTypeORTB2DOOH,
 		ReqTypeAMP,
 		ReqTypeVideo,
 	}
@@ -276,6 +280,7 @@ const (
 	AdapterErrorTimeout             AdapterError = "timeout"
 	AdapterErrorFailedToRequestBids AdapterError = "failedtorequestbid"
 	AdapterErrorValidation          AdapterError = "validation"
+	AdapterErrorTmaxTimeout         AdapterError = "tmaxtimeout"
 	AdapterErrorUnknown             AdapterError = "unknown_error"
 )
 
@@ -286,6 +291,7 @@ func AdapterErrors() []AdapterError {
 		AdapterErrorTimeout,
 		AdapterErrorFailedToRequestBids,
 		AdapterErrorValidation,
+		AdapterErrorTmaxTimeout,
 		AdapterErrorUnknown,
 	}
 }
@@ -478,10 +484,6 @@ type MetricsEngine interface {
 	RecordModuleSuccessRejected(labels ModuleLabels)
 	RecordModuleExecutionError(labels ModuleLabels)
 	RecordModuleTimeout(labels ModuleLabels)
-	RecordAccountGDPRPurposeWarning(account string, purposeName string)
-	RecordAccountGDPRChannelEnabledWarning(account string)
-	RecordAccountCCPAChannelEnabledWarning(account string)
-	RecordAccountUpgradeStatus(account string)
 
 	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 	// gives the bid response with multiple bids containing  same bid.ID
