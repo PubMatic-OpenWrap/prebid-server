@@ -264,6 +264,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
+
+	metrics.maxSDKRequests = newCounter(cfg, promRegistry,
+		"applovin_max_sdk_requests",
+		"Count number of applovin max server requests at publisher and profile level",
+		[]string{pubIDLabel, profileIDLabel},
+	)
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",

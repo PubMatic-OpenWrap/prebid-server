@@ -340,6 +340,20 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
+func TestRecordMaxSDKRequests(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordMaxSDKRequests("5890", "12345")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "applovin_max_sdk_requests", m.maxSDKRequests,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:     "5890",
+			profileIDLabel: "12345",
+		})
+}
+
 func TestRecordHTTPCounter(t *testing.T) {
 	m := createMetricsForTesting()
 

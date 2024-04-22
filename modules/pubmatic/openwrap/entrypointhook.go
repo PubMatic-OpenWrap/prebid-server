@@ -55,7 +55,7 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
 		return result, nil
 	}
-	endpoint = GetEndpoint(payload.Request.URL.Path, source)
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
 	if endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
@@ -117,11 +117,9 @@ func (m OpenWrap) handleEntrypointHook(
 		},
 	}
 
-	rCtx.IsMaxRequest = queryParams.Get("agent") == "max"
-	if rCtx.IsMaxRequest {
+	if rCtx.Endpoint == models.EndpointApplovinMax {
 		rCtx.SignalData = getSignalData(payload.Body)
 	}
-
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
@@ -156,6 +154,8 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointWebS2S:
 		fallthrough
+	case models.EndpointApplovinMax:
+		fallthrough
 	default:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
 	}
@@ -163,9 +163,14 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	return requestExtWrapper, err
 }
 
-func GetEndpoint(path, source string) string {
+func GetEndpoint(path, source string, agent string) string {
 	switch path {
 	case hookexecution.EndpointAuction:
+		switch agent {
+		case models.Applovinmax:
+			return models.EndpointApplovinMax
+		}
+
 		switch source {
 		case "pbjs":
 			return models.EndpointWebS2S
