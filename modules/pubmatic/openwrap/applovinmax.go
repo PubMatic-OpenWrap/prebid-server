@@ -212,9 +212,6 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 }
 
 func updateImpressionExt(signalDataImpExt json.RawMessage, impExt *models.ImpExtension) {
-	if len(signalDataImpExt) == 0 {
-		signalDataImpExt = json.RawMessage(`{}`)
-	}
 	if skdan, _, _, err := jsonparser.Get(signalDataImpExt, "skadn"); err == nil {
 		impExt.SKAdnetwork = skdan
 	}

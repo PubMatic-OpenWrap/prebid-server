@@ -6,10 +6,11 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_updateImpression(t *testing.T) {
+func TestUpdateImpression(t *testing.T) {
 	type args struct {
 		sdkImpression openrtb2.Imp
 		maxImpression *openrtb2.Imp
@@ -75,7 +76,7 @@ func Test_updateImpression(t *testing.T) {
 	}
 }
 
-func Test_updateDevice(t *testing.T) {
+func TestUpdateDevice(t *testing.T) {
 	type args struct {
 		sdkDevice  *openrtb2.Device
 		maxRequest *openrtb2.BidRequest
@@ -118,7 +119,7 @@ func Test_updateDevice(t *testing.T) {
 	}
 }
 
-func Test_updateApp(t *testing.T) {
+func TestUpdateApp(t *testing.T) {
 	type args struct {
 		sdkApp     *openrtb2.App
 		maxRequest *openrtb2.BidRequest
@@ -161,7 +162,7 @@ func Test_updateApp(t *testing.T) {
 	}
 }
 
-func Test_updateRegs(t *testing.T) {
+func TestUpdateRegs(t *testing.T) {
 	type args struct {
 		sdkRegs    *openrtb2.Regs
 		maxRequest *openrtb2.BidRequest
@@ -220,7 +221,7 @@ func Test_updateRegs(t *testing.T) {
 	}
 }
 
-func Test_updateSource(t *testing.T) {
+func TestUpdateSource(t *testing.T) {
 	type args struct {
 		sdkSource  *openrtb2.Source
 		maxRequest *openrtb2.BidRequest
@@ -271,7 +272,7 @@ func Test_updateSource(t *testing.T) {
 	}
 }
 
-func Test_updateUser(t *testing.T) {
+func TestUpdateUser(t *testing.T) {
 	type args struct {
 		sdkUser    *openrtb2.User
 		maxRequest *openrtb2.BidRequest
@@ -338,7 +339,7 @@ func Test_updateUser(t *testing.T) {
 	}
 }
 
-func Test_setIfKeysExists(t *testing.T) {
+func TestSetIfKeysExists(t *testing.T) {
 	type args struct {
 		source []byte
 		target []byte
@@ -421,7 +422,7 @@ func Test_setIfKeysExists(t *testing.T) {
 	}
 }
 
-func Test_addSignalDataInRequest(t *testing.T) {
+func TestAddSignalDataInRequest(t *testing.T) {
 	type args struct {
 		signal           string
 		maxRequest       json.RawMessage
@@ -484,7 +485,7 @@ func Test_addSignalDataInRequest(t *testing.T) {
 	}
 }
 
-func Test_getSignalData(t *testing.T) {
+func TestGetSignalData(t *testing.T) {
 	type args struct {
 		requestBody []byte
 	}
@@ -497,6 +498,13 @@ func Test_getSignalData(t *testing.T) {
 			name: "incorrect body",
 			args: args{
 				requestBody: []byte(`{"id":"123","user":Passed","segment":[{"signal":{BIDDING_SIGNA}]}],"ext":{"gdpr":0}}}`),
+			},
+			want: nil,
+		},
+		{
+			name: "signal parsing fail",
+			args: args{
+				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{BIDDING_SIGNA}"]}],"ext":{"gdpr":0}}}`),
 			},
 			want: nil,
 		},
@@ -528,6 +536,51 @@ func Test_getSignalData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getSignalData(tt.args.requestBody)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestUpdateImpressionExt(t *testing.T) {
+	type args struct {
+		signalDataImpExt json.RawMessage
+		impExt           *models.ImpExtension
+	}
+	tests := []struct {
+		name string
+		args args
+		want *models.ImpExtension
+	}{
+		{
+			name: "empty signalDataImpExt",
+			args: args{},
+			want: nil,
+		},
+		{
+			name: "skadn present",
+			args: args{
+				signalDataImpExt: json.RawMessage(`{"skadn":{"sourceapp":1,"productpage":"abc"}}`),
+				impExt:           &models.ImpExtension{},
+			},
+			want: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{"sourceapp":1,"productpage":"abc"}`),
+			},
+		},
+		{
+			name: "skadn,reward present",
+			args: args{
+				signalDataImpExt: json.RawMessage(`{"skadn":{"sourceapp":1,"productpage":"abc"},"reward":1,"key1":123}`),
+				impExt:           &models.ImpExtension{},
+			},
+			want: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{"sourceapp":1,"productpage":"abc"}`),
+				Reward:      openrtb2.Int8Ptr(1),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateImpressionExt(tt.args.signalDataImpExt, tt.args.impExt)
+			assert.Equal(t, tt.want, tt.args.impExt, tt.name)
 		})
 	}
 }
