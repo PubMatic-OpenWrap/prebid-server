@@ -103,6 +103,7 @@ type RequestCtx struct {
 	SignalData             string
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
+	MaxAppLovin            MaxAppLovin
 }
 
 type OwBid struct {
@@ -197,4 +198,8 @@ type CustomDimension struct {
 type FeatureData struct {
 	Enabled int    // feature enabled/disabled
 	Value   string // feature value if any
+}
+
+type MaxAppLovin struct {
+	Reject bool
 }

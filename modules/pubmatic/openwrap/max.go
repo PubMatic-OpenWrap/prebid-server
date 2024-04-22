@@ -221,33 +221,36 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
-		*bidResponse = openrtb2.BidResponse{
-			ID: models.MaxRejected,
-		}
-		return bidResponse
-	}
+func updateMaxApplovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
+	maxAppLovin := models.MaxAppLovin{Reject: false}
 
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
-			*bidResponse = openrtb2.BidResponse{
-				ID: models.MaxRejected,
-			}
+			maxAppLovin.Reject = true
 		}
+		return maxAppLovin
+	}
+
+	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		maxAppLovin.Reject = true
+		return maxAppLovin
+	}
+	return maxAppLovin
+}
+
+func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if rctx.MaxAppLovin.Reject {
+		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 
 	resp, err := json.Marshal(bidResponse)
 	if err != nil {
-		*bidResponse = openrtb2.BidResponse{
-			ID: models.MaxRejected,
-		}
+		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 
 	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
-
 	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
 		BidID: bidResponse.BidID,

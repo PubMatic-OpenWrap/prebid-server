@@ -8,14 +8,11 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/analytics"
 	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/hooks"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -183,110 +180,179 @@ func TestRecordRejectedBids(t *testing.T) {
 	}
 }
 
-func TestApplyMaxAppLovinResponseHeader(t *testing.T) {
+func TestUpdateMaxAppLovinResponse(t *testing.T) {
 	type args struct {
+		rCtx        *models.RequestCtx
 		w           http.ResponseWriter
 		bidResponse *openrtb2.BidResponse
-		ao          analytics.AuctionObject
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name            string
+		args            args
+		wantBidResponse *openrtb2.BidResponse
+		updateHeader    bool
 	}{
 		{
-			name: "Max Applovin rejected bid response",
+			name: "Non Max Applovin request",
 			args: args{
-				w: httptest.NewRecorder(),
-				bidResponse: &openrtb2.BidResponse{
-					ID: models.MaxRejected,
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: false,
 				},
-				ao: analytics.AuctionObject{
-					HookExecutionOutcome: []hookexecution.StageOutcome{
-						{
-							Groups: []hookexecution.GroupOutcome{
-								{
-									InvocationResults: []hookexecution.HookOutcome{
-										{
-											AnalyticsTags: hookanalytics.Analytics{
-												Activities: []hookanalytics.Activity{
-													{
-														Results: []hookanalytics.Result{
-															{
-																Values: map[string]interface{}{
-																	"request-ctx": &models.RequestCtx{
-																		IsMaxRequest: true,
-																	},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "Max Applovin non rejected bid response",
-			args: args{
-				w: httptest.NewRecorder(),
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",
 					SeatBid: []openrtb2.SeatBid{
 						{
 							Bid: []openrtb2.Bid{
 								{
-									ID: "123",
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
 								},
 							},
 						},
 					},
-				},
-				ao: analytics.AuctionObject{
-					HookExecutionOutcome: []hookexecution.StageOutcome{
-						{
-							Groups: []hookexecution.GroupOutcome{
-								{
-									InvocationResults: []hookexecution.HookOutcome{
-										{
-											AnalyticsTags: hookanalytics.Analytics{
-												Activities: []hookanalytics.Activity{
-													{
-														Results: []hookanalytics.Result{
-															{
-																Values: map[string]interface{}{
-																	"request-ctx": &models.RequestCtx{
-																		IsMaxRequest: true,
-																	},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
+					Ext: json.RawMessage(`{"key":"value"}`),
 				},
 			},
-			want: false,
+			wantBidResponse: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+							},
+						},
+					},
+				},
+				Ext: json.RawMessage(`{"key":"value"}`),
+			},
+			updateHeader: false,
+		},
+		{
+			name: "Max Applovin request with debug enabled",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+			},
+			wantBidResponse: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+							},
+						},
+					},
+				},
+				Ext: json.RawMessage(`{"key":"value"}`),
+			},
+			updateHeader: false,
+		},
+		{
+			name: "Max Applovin request with debug disabled",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+			},
+			wantBidResponse: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+							},
+						},
+					},
+				},
+				Ext: nil,
+			},
+			updateHeader: false,
+		},
+		{
+			name: "Max Applovin request with debug disabled and max applovin rejected",
+			args: args{
+				rCtx: &models.RequestCtx{
+					IsMaxRequest: true,
+					Debug:        false,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: true,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "123",
+									Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+				w: httptest.NewRecorder(),
+			},
+			wantBidResponse: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`{"signaldata":"{\"signaldata\":\"{\\\"id\\\":\\\"123\\\"}\"}"}`),
+							},
+						},
+					},
+				},
+				Ext: nil,
+			},
+			updateHeader: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ApplyMaxAppLovinResponseHeader(tt.args.w, tt.args.bidResponse, tt.args.ao)
-			assert.Equal(t, tt.want, got, tt.name)
-			if got {
+			updateMaxAppLovinResponse(tt.args.rCtx, tt.args.w, tt.args.bidResponse)
+			assert.Equal(t, tt.wantBidResponse, tt.args.bidResponse, tt.name)
+			if tt.updateHeader {
 				assert.Equal(t, http.StatusNoContent, tt.args.w.(*httptest.ResponseRecorder).Code, tt.name)
 			}
 		})

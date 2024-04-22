@@ -565,7 +565,7 @@ func Test_getSignalData(t *testing.T) {
 	}
 }
 
-func TestUpdateMaxResponse(t *testing.T) {
+func TestUpdateMaxApplovinResponse(t *testing.T) {
 	type args struct {
 		rctx        models.RequestCtx
 		bidResponse *openrtb2.BidResponse
@@ -573,20 +573,21 @@ func TestUpdateMaxResponse(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *openrtb2.BidResponse
+		want models.MaxAppLovin
 	}{
 		{
-			name: "bidresponse seatbid is empty",
+			name: "bidresponse contains NBR and debug is disabled",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: true,
+					Debug: false,
 				},
 				bidResponse: &openrtb2.BidResponse{
-					ID: "123",
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
 				},
 			},
-			want: &openrtb2.BidResponse{
-				ID: models.MaxRejected,
+			want: models.MaxAppLovin{
+				Reject: true,
 			},
 		},
 		{
@@ -598,6 +599,76 @@ func TestUpdateMaxResponse(t *testing.T) {
 				bidResponse: &openrtb2.BidResponse{
 					ID:  "123",
 					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: false,
+			},
+		},
+		{
+			name: "bidresponse seatbid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "123",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: true,
+			},
+		},
+		{
+			name: "bidresponse seatbid.bid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{},
+						},
+					},
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := updateMaxApplovinResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestApplyMaxAppLovinResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "maxAppLovin.Reject is true",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: true,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
 					SeatBid: []openrtb2.SeatBid{
 						{
 							Bid: []openrtb2.Bid{
@@ -610,72 +681,41 @@ func TestUpdateMaxResponse(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.BidResponse{
-				ID:  "123",
-				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-				SeatBid: []openrtb2.SeatBid{
-					{
-						Bid: []openrtb2.Bid{
-							{
-								ID:    "456",
-								ImpID: "789",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "bidresponse contains NBR and debug is disabled",
-			args: args{
-				rctx: models.RequestCtx{
-					Debug: false,
-				},
-				bidResponse: &openrtb2.BidResponse{
-					ID:  "123",
-					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
-				},
-			},
-			want: &openrtb2.BidResponse{
-				ID: models.MaxRejected,
-			},
-		},
-		{
-			name: "bidresponse with no seatbid",
-			args: args{
-				rctx: models.RequestCtx{
-					Debug: true,
-				},
-				bidResponse: &openrtb2.BidResponse{
-					ID:  "123",
-					Ext: json.RawMessage(`{"key":"value"}`),
-				},
-			},
-			want: &openrtb2.BidResponse{
-				ID: models.MaxRejected,
-			},
+			want: &openrtb2.BidResponse{},
 		},
 		{
 			name: "failed to marshal bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: true,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
 				},
 				bidResponse: &openrtb2.BidResponse{
-					ID:    "123",
-					BidID: "456",
-					Ext:   json.RawMessage(`{`),
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "123",
+									ImpID: "789",
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{`),
 				},
 			},
-			want: &openrtb2.BidResponse{
-				ID: "max_rejected",
-			},
+			want: &openrtb2.BidResponse{},
 		},
 		{
 			name: "valid bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: true,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID:    "123",
@@ -718,7 +758,7 @@ func TestUpdateMaxResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateMaxApplovinResponse(tt.args.rctx, tt.args.bidResponse)
+			got := applyMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

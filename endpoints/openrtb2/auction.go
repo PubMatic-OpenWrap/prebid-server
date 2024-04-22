@@ -344,7 +344,7 @@ func rejectAuctionRequest(
 	// TODO merge this with success case
 	stageOutcomes := hookExecutor.GetOutcomes()
 	ao.HookExecutionOutcome = stageOutcomes
-	UpdateResponseExtOW(response, ao)
+	UpdateResponseExtOW(w, response, ao)
 
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
@@ -366,7 +366,7 @@ func sendAuctionResponse(
 	if response != nil {
 		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
-		UpdateResponseExtOW(response, ao)
+		UpdateResponseExtOW(w, response, ao)
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -380,11 +380,6 @@ func sendAuctionResponse(
 		if len(warns) > 0 {
 			ao.Errors = append(ao.Errors, warns...)
 		}
-	}
-
-	//Handling for the Max Applovin Rejected case
-	if rejected := ApplyMaxAppLovinResponseHeader(w, response, ao); rejected {
-		return labels, ao
 	}
 
 	// Fixes #231
