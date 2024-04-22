@@ -2291,7 +2291,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2337,7 +2337,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
@@ -2370,7 +2370,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2415,7 +2415,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2460,7 +2460,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2509,7 +2509,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2554,7 +2554,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2627,7 +2627,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2716,7 +2716,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -2824,7 +2824,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PREBID_PARTNER_NAME: "appnexus",
 						models.BidderCode:          "appnexus",
@@ -2912,7 +2912,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				}).Times(3)
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					1: {
 						models.PARTNER_ID:          "1",
 						models.PREBID_PARTNER_NAME: "pubmatic2",
@@ -3026,7 +3026,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3168,7 +3168,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3443,7 +3443,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3504,7 +3504,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3570,7 +3570,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3636,7 +3636,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3698,7 +3698,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3801,7 +3801,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3853,7 +3853,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3906,7 +3906,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -3959,7 +3959,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -4004,7 +4004,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
 						models.PREBID_PARTNER_NAME: "appnexus",

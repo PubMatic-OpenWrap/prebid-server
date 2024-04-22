@@ -363,9 +363,9 @@ func (me *MultiMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(publisher, 
 }
 
 // RecordGetProfileDataTime across all engines
-func (me *MultiMetricsEngine) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {
+func (me *MultiMetricsEngine) RecordGetProfileDataTime(getTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordGetProfileDataTime(requestType, profileid, getTime)
+		thisME.RecordGetProfileDataTime(getTime)
 	}
 }
 
@@ -426,9 +426,9 @@ func (me *MultiMetricsEngine) RecordCtvUaAccuracy(pubId, status string) {
 }
 
 // RecordSendLoggerDataTime across all engines
-func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
+func (me *MultiMetricsEngine) RecordSendLoggerDataTime(sendTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+		thisME.RecordSendLoggerDataTime(sendTime)
 	}
 }
 

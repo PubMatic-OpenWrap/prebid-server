@@ -70,10 +70,9 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Count of total requests to header-bidding server labeled by type and status.",
 		[]string{requestTypeLabel, requestStatusLabel})
 
-	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
+	metrics.sendLoggerData = newHistogram(cfg, promRegistry,
 		"sshb_logger_data_send_time",
-		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
-		standardTimeBuckets)
+		"Time taken to send the wrapper logger body in seconds", standardTimeBuckets)
 
 	metrics.owRequestTime = newHistogramVec(cfg, promRegistry,
 		"sshb_request_time",
@@ -182,11 +181,8 @@ func (m *Metrics) RecordCtvUaAccuracy(pubId, status string) {
 }
 
 // RecordSendLoggerDataTime as a noop
-func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime time.Duration) {
-	m.sendLoggerData.With(prometheus.Labels{
-		endpointLabel:  endpoint,
-		profileIDLabel: profileID,
-	}).Observe(float64(sendTime.Seconds()))
+func (m *Metrics) RecordSendLoggerDataTime(sendTime time.Duration) {
+	m.sendLoggerData.Observe(float64(sendTime.Seconds()))
 }
 
 // RecordSendLoggerDataTime as a noop

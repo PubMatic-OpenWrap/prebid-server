@@ -286,7 +286,7 @@ func (st *StatsTCP) RecordCacheErrorRequests(endpoint, publisher, profileID stri
 	}
 }
 
-func (st *StatsTCP) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {}
+func (st *StatsTCP) RecordGetProfileDataTime(getTime time.Duration) {}
 
 func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
 
@@ -330,19 +330,19 @@ func (st *StatsTCP) Shutdown() {
 	st.statsClient.ShutdownProcess()
 }
 
-func (st *StatsTCP) RecordRequest(labels metrics.Labels)                                            {}
-func (st *StatsTCP) RecordLurlSent(labels metrics.LurlStatusLabels)                                 {}
-func (st *StatsTCP) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels)                       {}
-func (st *StatsTCP) RecordBids(pubid, profileid, biddder, deal string)                              {}
-func (st *StatsTCP) RecordPartnerTimeoutRequests(pubid, profileid, bidder string)                   {}
-func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                                       {}
-func (st *StatsTCP) RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration) {}
-func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
-func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
-func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                                 {}
-func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                                {}
-func (st *StatsTCP) RecordHTTPCounter()                                                             {}
-func (st *StatsTCP) RecordUnwrapRequestStatus(accountId, bidder, status string)                     {}
-func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string)               {}
-func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)       {}
-func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)       {}
+func (st *StatsTCP) RecordRequest(labels metrics.Labels)                                      {}
+func (st *StatsTCP) RecordLurlSent(labels metrics.LurlStatusLabels)                           {}
+func (st *StatsTCP) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels)                 {}
+func (st *StatsTCP) RecordBids(pubid, profileid, biddder, deal string)                        {}
+func (st *StatsTCP) RecordPartnerTimeoutRequests(pubid, profileid, bidder string)             {}
+func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                                 {}
+func (st *StatsTCP) RecordSendLoggerDataTime(sendTime time.Duration)                          {}
+func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)          {}
+func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)       {}
+func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                           {}
+func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                          {}
+func (st *StatsTCP) RecordHTTPCounter()                                                       {}
+func (st *StatsTCP) RecordUnwrapRequestStatus(accountId, bidder, status string)               {}
+func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string)         {}
+func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {}
+func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {}
