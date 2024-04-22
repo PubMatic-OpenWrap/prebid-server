@@ -441,21 +441,22 @@ const (
 )
 
 const (
-	EndpointV25       = "v25"
-	EndpointAMP       = "amp"
-	EndpintInappVideo = "inappvideo"
-	EndpointVideo     = "video"
-	EndpointJson      = "json"
-	EndpointORTB      = "ortb"
-	EndpointVAST      = "vast"
-	EndpointWebS2S    = "webs2s"
-	EndPointCTV       = "ctv"
-	EndpointHybrid    = "hybrid"
-	Openwrap          = "openwrap"
-	ImpTypeBanner     = "banner"
-	ImpTypeVideo      = "video"
-	ContentTypeSite   = "site"
-	ContentTypeApp    = "app"
+	EndpointV25         = "v25"
+	EndpointAMP         = "amp"
+	EndpintInappVideo   = "inappvideo"
+	EndpointVideo       = "video"
+	EndpointJson        = "json"
+	EndpointORTB        = "ortb"
+	EndpointVAST        = "vast"
+	EndpointWebS2S      = "webs2s"
+	EndPointCTV         = "ctv"
+	EndpointHybrid      = "hybrid"
+	EndpointApplovinMax = "applovinmax"
+	Openwrap            = "openwrap"
+	ImpTypeBanner       = "banner"
+	ImpTypeVideo        = "video"
+	ContentTypeSite     = "site"
+	ContentTypeApp      = "app"
 )
 
 const (
@@ -521,4 +522,10 @@ const (
 	FeatureFSC            = 1
 	FeatureTBF            = 2
 	FeatureAMPMultiFormat = 3
+)
+
+// constants for applovinmax requests
+const (
+	Agent       = "agent"
+	Applovinmax = "max"
 )

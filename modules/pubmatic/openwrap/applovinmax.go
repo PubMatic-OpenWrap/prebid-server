@@ -9,10 +9,9 @@ import (
 )
 
 func getSignalData(requestBody []byte) string {
-	var signal string
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
-		signal = ""
+		return ""
 	}
 	return signal
 }
