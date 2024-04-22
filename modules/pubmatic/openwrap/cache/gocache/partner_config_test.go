@@ -114,7 +114,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 			want:    nil,
 		},
 		{
-			name: "db_queries_failed_getting_adunitconfig",
+			name: "error_in_adunitconfig_unmarshal",
 			fields: fields{
 				cache: gocache.New(100, 100),
 				cfg: config.Cache{
@@ -139,9 +139,48 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123").Return().Times(1)
 				return mockDatabase, mockEngine
 			},
-			wantErr: true,
-			want:    nil,
+			wantErr: false,
+			want: map[int]map[string]string{
+				1: {
+					"partnerId":         "1",
+					"prebidPartnerName": "pubmatic",
+					"serverSideEnabled": "1",
+					"level":             "multi",
+					"kgp":               "_AU_@_W_x_H",
+					"timeout":           "220",
+					"bidderCode":        "pubmatic",
+				},
+			},
 		},
+		{
+			name: "db_queries_failed_getting_adunitconfig",
+			fields: fields{
+				cache: gocache.New(100, 100),
+				cfg: config.Cache{
+					CacheDefaultExpiry: 1000,
+					VASTTagCacheExpiry: 1000,
+				},
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: 0,
+				endpoint:       models.EndpointAMP,
+			},
+			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
+				mockDatabase := mock_database.NewMockDatabase(ctrl)
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, 0).Return(formTestPartnerConfig(), nil)
+				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
+				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, errors.New("Failed to connect DB"))
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, nil)
+				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigForLiveVersion, "5890", "123").Return().Times(1)
+				return mockDatabase, mockEngine
+			},
+			wantErr: true,
+			want:    nil},
 		{
 			name: "db_queries_failed_getting_wrapper_slotmappings",
 			fields: fields{
@@ -375,7 +414,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry: false,
+				cacheEntry: true,
 				err:        fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
 			},
 			setup: func() {

@@ -64,7 +64,6 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 }
 
 func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion int) (err error) {
-
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
 	if err != nil {
@@ -73,32 +72,36 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	if len(partnerConfigMap) == 0 {
+		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry)) // Setting empty partner Config map
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
 	}
 
-	errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
-	if errWrapperSlotMapping != nil {
+	err = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
+	if err != nil {
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
 			queryType = models.WrapperLiveVersionSlotMappings
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		return errWrapperSlotMapping
+		return err
 	}
 
-	errAdunitConfig := c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
-	if errAdunitConfig != nil {
+	err = c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
+	if err != nil {
 		queryType := models.AdunitConfigQuery
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if errors.Is(errAdunitConfig, adunitconfig.ErrAdUnitUnmarshal) {
+		if errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		return errAdunitConfig
+		// In case of Error in AdUnit Unmarshal, push PartnerConfig and process request
+		if !errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
+			return err
+		}
 	}
 
 	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-	return
+	return nil
 }
