@@ -186,6 +186,10 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 
 // Validate will validate video extension object
 func (ext *ExtVideoAdPod) Validate() (err []error) {
+	if ext == nil {
+		return
+	}
+
 	if nil != ext.Offset && *ext.Offset < 0 {
 		err = append(err, errInvalidAdPodOffset)
 	}
@@ -290,6 +294,8 @@ func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
 	if nil == pod.MaxAds {
 		pod.MaxAds = parent.MaxAds
 	}
+
+	// Add Min and Max duration from request
 
 	//pod.AdvertiserExclusionPercent setting default value
 	if nil == pod.AdvertiserExclusionPercent {
