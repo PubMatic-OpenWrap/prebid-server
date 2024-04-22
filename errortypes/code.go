@@ -28,6 +28,8 @@ const (
 	DisabledCurrencyConversionWarningCode
 	AlternateBidderCodeWarningCode
 	AdpodPostFilteringWarningCode
+	InvalidSourceWarningCode
+	InvalidCatalogWarningCode
 )
 
 // Coder provides an error or warning code with severity.

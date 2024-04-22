@@ -236,6 +236,57 @@ func (err *NoValidBid) Severity() Severity {
 	return SeverityWarning
 }
 
+// InvalidSource should be used when responded with invalid source error code
+type InvalidSource struct {
+	Message string
+}
+
+func (err *InvalidSource) Error() string {
+	return err.Message
+}
+
+func (err *InvalidSource) Code() int {
+	return InvalidSourceWarningCode
+}
+
+func (err *InvalidSource) Severity() Severity {
+	return SeverityWarning
+}
+
+// InvalidCatalog should be used when responded with invalid catalog error code
+type InvalidCatalog struct {
+	Message string
+}
+
+func (err *InvalidCatalog) Error() string {
+	return err.Message
+}
+
+func (err *InvalidCatalog) Code() int {
+	return InvalidCatalogWarningCode
+}
+
+func (err *InvalidCatalog) Severity() Severity {
+	return SeverityWarning
+}
+
+// UnknownError should be used when responded with unknown error code
+type UnknownError struct {
+	Message string
+}
+
+func (err *UnknownError) Error() string {
+	return err.Message
+}
+
+func (err *UnknownError) Code() int {
+	return UnknownWarningCode
+}
+
+func (err *UnknownError) Severity() Severity {
+	return SeverityWarning
+}
+
 // AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
 type AdpodPrefiltering struct {
 	Message string
