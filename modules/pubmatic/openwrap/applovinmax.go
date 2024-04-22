@@ -6,47 +6,43 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func getSignalData(requestBody []byte) string {
+func getSignalData(requestBody []byte) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
-		return ""
-	}
-	return signal
-}
-
-func addSignalDataInRequest(signal string, maxRequest *openrtb2.BidRequest, clientconfigflag int) {
-	if len(signal) == 0 {
-		return
+		return nil
 	}
 
-	sdkRequest := openrtb2.BidRequest{
+	signalData := &openrtb2.BidRequest{
 		Regs: &openrtb2.Regs{
 			COPPA: -1,
 		},
 	}
-
-	if err := json.Unmarshal([]byte(signal), &sdkRequest); err != nil {
-		return
+	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
+		return nil
 	}
+	return signalData
+}
 
+func addSignalDataInRequest(signalData *openrtb2.BidRequest, maxRequest *openrtb2.BidRequest, clientconfigflag int) {
 	flg := []byte(`0`)
 	if clientconfigflag == 1 {
 		flg = []byte(`1`)
 	}
-	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, flg, "wrapper", "clientconfig"); err == nil {
+	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, flg, "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
 		maxRequest.Ext = maxReqExt
 	}
 
-	if len(sdkRequest.Imp) > 0 {
-		updateImpression(sdkRequest.Imp[0], &maxRequest.Imp[0])
+	if len(signalData.Imp) > 0 {
+		updateImpression(signalData.Imp[0], &maxRequest.Imp[0])
 	}
-	updateDevice(sdkRequest.Device, maxRequest)
-	updateApp(sdkRequest.App, maxRequest)
-	updateRegs(sdkRequest.Regs, maxRequest)
-	updateSource(sdkRequest.Source, maxRequest)
-	updateUser(sdkRequest.User, maxRequest)
+	updateDevice(signalData.Device, maxRequest)
+	updateApp(signalData.App, maxRequest)
+	updateRegs(signalData.Regs, maxRequest)
+	updateSource(signalData.Source, maxRequest)
+	updateUser(signalData.User, maxRequest)
 }
 
 func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
@@ -80,8 +76,6 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 			maxImpression.Banner = nil
 		}
 	}
-
-	maxImpression.Ext = setIfKeysExists(sdkImpression.Ext, maxImpression.Ext, "reward", "skadn")
 }
 
 func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
@@ -100,8 +94,6 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 	if sdkDevice.ConnectionType != nil {
 		maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
 	}
-
-	maxRequest.Device.Ext = setIfKeysExists(sdkDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if sdkDevice.Geo == nil {
 		return
@@ -217,4 +209,16 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 		}
 	}
 	return target
+}
+
+func updateImpressionExt(signalDataImpExt json.RawMessage, impExt *models.ImpExtension) {
+	if len(signalDataImpExt) == 0 {
+		signalDataImpExt = json.RawMessage(`{}`)
+	}
+	if skdan, _, _, err := jsonparser.Get(signalDataImpExt, "skadn"); err == nil {
+		impExt.SKAdnetwork = skdan
+	}
+	if reward, err := jsonparser.GetInt(signalDataImpExt, "reward"); err == nil {
+		impExt.Reward = openrtb2.Int8Ptr(int8(reward))
+	}
 }

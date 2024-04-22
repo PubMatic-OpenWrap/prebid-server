@@ -80,21 +80,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	rCtx.PubID = pubID
 	rCtx.PubIDStr = strconv.Itoa(pubID)
-	if rCtx.Endpoint == models.EndpointApplovinMax {
-		if clientConfigFlag, err := jsonparser.GetInt(payload.BidRequest.Ext, "wrapper", "clientconfig"); err == nil {
-			rCtx.ClientConfigFlag = int(clientConfigFlag)
-		}
-		addSignalDataInRequest(rCtx.SignalData, payload.BidRequest, rCtx.ClientConfigFlag)
-		rCtx.SignalData = ""
-		//m.metricEngine.RecordMaxSDKRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
-	}
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
-	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
+	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device, rCtx.SignalData)
 
 	rCtx.IsTBFFeatureEnabled = m.featureConfig.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 
@@ -409,6 +401,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
+		if rCtx.Endpoint == models.EndpointApplovinMax && rCtx.SignalData != nil && len(rCtx.SignalData.Imp) > 0 {
+			updateImpressionExt(rCtx.SignalData.Imp[0].Ext, impExt)
+		}
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
@@ -532,6 +527,14 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 	if bidRequest.TMax == 0 {
 		bidRequest.TMax = rctx.TMax
+	}
+
+	if rctx.Endpoint == models.EndpointApplovinMax && rctx.SignalData != nil {
+		if clientConfigFlag, err := jsonparser.GetInt(rctx.SignalData.Ext, "wrapper", "clientconfig"); err == nil {
+			rctx.ClientConfigFlag = int(clientConfigFlag)
+		}
+		addSignalDataInRequest(rctx.SignalData, bidRequest, rctx.ClientConfigFlag)
+		rctx.SignalData = nil
 	}
 
 	if bidRequest.Source == nil {
