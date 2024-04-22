@@ -11,7 +11,7 @@ import (
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
-func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoint string) (map[int]map[string]string, error) {
+func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[int]map[string]string, error) {
 	dbAccessed := false
 	var err error
 	startTime := time.Now()
@@ -58,7 +58,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 	}
 
 	if dbAccessed {
-		c.metricEngine.RecordGetProfileDataTime(endpoint, strconv.Itoa(profileID), time.Since(startTime))
+		c.metricEngine.RecordGetProfileDataTime(time.Since(startTime))
 	}
 	return partnerConfigMap, err
 }

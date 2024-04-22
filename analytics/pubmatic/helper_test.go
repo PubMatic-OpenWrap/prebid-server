@@ -176,7 +176,7 @@ func TestSendMethod(t *testing.T) {
 			},
 			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
 				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordSendLoggerDataTime(models.EndpointV25, "1", gomock.Any())
+				mockEngine.EXPECT().RecordSendLoggerDataTime(gomock.Any())
 				return mockEngine
 			},
 			getMockMultiHttpContext: func() *mock_mhttp.MockMultiHttpContextInterface {
