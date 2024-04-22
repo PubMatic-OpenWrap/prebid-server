@@ -117,6 +117,10 @@ func (m OpenWrap) handleEntrypointHook(
 		},
 	}
 
+	rCtx.IsMaxRequest = queryParams.Get("agent") == "max"
+	if rCtx.IsMaxRequest {
+		rCtx.SignalData = getSignalData(payload.Body)
+	}
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)

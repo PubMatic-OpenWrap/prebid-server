@@ -99,6 +99,8 @@ type RequestCtx struct {
 	CustomDimensions       map[string]CustomDimension
 	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled    bool
+	IsMaxRequest           bool
+	SignalData             string
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
 }

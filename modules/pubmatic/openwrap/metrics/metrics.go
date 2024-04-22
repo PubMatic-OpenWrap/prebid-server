@@ -75,6 +75,7 @@ type MetricsEngine interface {
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
+	RecordMaxSDKRequests(publisher, profile string)
 
 	// VAST Unwrap metrics
 	RecordUnwrapRequestStatus(accountId, bidder, status string)
