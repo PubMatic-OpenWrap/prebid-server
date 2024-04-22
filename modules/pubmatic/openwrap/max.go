@@ -244,6 +244,10 @@ func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 		return bidResponse
 	}
 
+	if bidResponse.NBR != nil {
+		return bidResponse
+	}
+
 	resp, err := json.Marshal(bidResponse)
 	if err != nil {
 		*bidResponse = openrtb2.BidResponse{}

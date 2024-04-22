@@ -684,6 +684,25 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			want: &openrtb2.BidResponse{},
 		},
 		{
+			name: "bidresponse contains NBR and maxAppLovin.Reject is false",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "123",
+				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+			},
+		},
+		{
 			name: "failed to marshal bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
