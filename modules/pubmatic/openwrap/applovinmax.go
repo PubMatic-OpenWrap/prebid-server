@@ -256,7 +256,7 @@ func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
 	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
-		BidID: bidResponse.BidID,
+		BidID: bidResponse.SeatBid[0].Bid[0].ID,
 		Cur:   bidResponse.Cur,
 		SeatBid: []openrtb2.SeatBid{
 			{

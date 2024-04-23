@@ -760,7 +760,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID:    "123",
-					BidID: "456",
+					BidID: "",
 					Cur:   "USD",
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -792,7 +792,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 								ImpID: "789",
 								Price: 1.0,
 								BURL:  "http://example.com",
-								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
 							},
 						},
 					},
