@@ -196,7 +196,7 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 			name: "Non Max Applovin request",
 			args: args{
 				rCtx: &models.RequestCtx{
-					IsMaxRequest: false,
+					Endpoint: models.EndpointWebS2S,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",
@@ -233,8 +233,8 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 			name: "Max Applovin request with debug enabled",
 			args: args{
 				rCtx: &models.RequestCtx{
-					IsMaxRequest: true,
-					Debug:        true,
+					Endpoint: models.EndpointApplovinMax,
+					Debug:    true,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",
@@ -271,8 +271,8 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 			name: "Max Applovin request with debug disabled",
 			args: args{
 				rCtx: &models.RequestCtx{
-					IsMaxRequest: true,
-					Debug:        false,
+					Endpoint: models.EndpointApplovinMax,
+					Debug:    false,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",
@@ -309,8 +309,8 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 			name: "Max Applovin request with debug disabled and max applovin rejected",
 			args: args{
 				rCtx: &models.RequestCtx{
-					IsMaxRequest: true,
-					Debug:        false,
+					Endpoint: models.EndpointApplovinMax,
+					Debug:    false,
 					MaxAppLovin: models.MaxAppLovin{
 						Reject: true,
 					},

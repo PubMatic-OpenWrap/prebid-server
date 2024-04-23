@@ -6,6 +6,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func getSignalData(requestBody []byte) string {
@@ -217,4 +218,59 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 		}
 	}
 	return target
+}
+
+func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
+	maxAppLovin := models.MaxAppLovin{Reject: false}
+
+	if bidResponse.NBR != nil {
+		if !rctx.Debug {
+			maxAppLovin.Reject = true
+		}
+		return maxAppLovin
+	}
+
+	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		maxAppLovin.Reject = true
+		return maxAppLovin
+	}
+	return maxAppLovin
+}
+
+func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if rctx.MaxAppLovin.Reject {
+		*bidResponse = openrtb2.BidResponse{}
+		return bidResponse
+	}
+
+	if bidResponse.NBR != nil {
+		return bidResponse
+	}
+
+	resp, err := json.Marshal(bidResponse)
+	if err != nil {
+		*bidResponse = openrtb2.BidResponse{}
+		return bidResponse
+	}
+
+	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
+	*bidResponse = openrtb2.BidResponse{
+		ID:    bidResponse.ID,
+		BidID: bidResponse.BidID,
+		Cur:   bidResponse.Cur,
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: []openrtb2.Bid{
+					{
+						ID:    bidResponse.SeatBid[0].Bid[0].ID,
+						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
+						Price: bidResponse.SeatBid[0].Bid[0].Price,
+						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						Ext:   json.RawMessage(signaldata),
+					},
+				},
+			},
+		},
+	}
+	return bidResponse
 }

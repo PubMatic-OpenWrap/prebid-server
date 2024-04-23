@@ -84,7 +84,7 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 
 // Handling for the Max Applovin Rejected case
 func updateMaxAppLovinResponse(rCtx *models.RequestCtx, w http.ResponseWriter, bidResponse *openrtb2.BidResponse) {
-	if !rCtx.IsMaxRequest || rCtx.Debug {
+	if rCtx.Endpoint != models.EndpointApplovinMax || rCtx.Debug {
 		return
 	}
 	bidResponse.Ext = nil

@@ -344,5 +344,5 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 }
 
 func isMaxRequestDebugEnabled(rctx models.RequestCtx) bool {
-	return rctx.IsMaxRequest && rctx.Debug
+	return rctx.Endpoint == models.EndpointApplovinMax && rctx.Debug
 }

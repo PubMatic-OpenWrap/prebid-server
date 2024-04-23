@@ -6,6 +6,9 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -558,6 +561,227 @@ func Test_getSignalData(t *testing.T) {
 			if got := getSignalData(tt.args.requestBody); got != tt.want {
 				t.Errorf("getSignalData() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestUpdateMaxApplovinResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want models.MaxAppLovin
+	}{
+		{
+			name: "bidresponse contains NBR and debug is disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: true,
+			},
+		},
+		{
+			name: "bidresponse contains NBR and debug is enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: false,
+			},
+		},
+		{
+			name: "bidresponse seatbid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "123",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: true,
+			},
+		},
+		{
+			name: "bidresponse seatbid.bid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{},
+						},
+					},
+				},
+			},
+			want: models.MaxAppLovin{
+				Reject: true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := updateMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestApplyMaxAppLovinResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "maxAppLovin.Reject is true",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: true,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{},
+		},
+		{
+			name: "bidresponse contains NBR and maxAppLovin.Reject is false",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "123",
+				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+			},
+		},
+		{
+			name: "failed to marshal bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "123",
+									ImpID: "789",
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{`),
+				},
+			},
+			want: &openrtb2.BidResponse{},
+		},
+		{
+			name: "valid bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					MaxAppLovin: models.MaxAppLovin{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "456",
+					Cur:   "USD",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									AdM:   "<img src=\"http://example.com\"></img>",
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"key":"value"}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "456",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "456",
+								ImpID: "789",
+								Price: 1.0,
+								BURL:  "http://example.com",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := applyMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
