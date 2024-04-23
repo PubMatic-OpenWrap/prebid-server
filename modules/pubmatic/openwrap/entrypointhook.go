@@ -124,6 +124,7 @@ func (m OpenWrap) handleEntrypointHook(
 			return 0, err
 		},
 	}
+
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)

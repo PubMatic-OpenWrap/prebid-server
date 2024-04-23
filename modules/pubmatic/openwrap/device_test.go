@@ -13,8 +13,7 @@ import (
 
 func TestPopulateDeviceExt(t *testing.T) {
 	type args struct {
-		device     *openrtb2.Device
-		signalData *openrtb2.BidRequest
+		device *openrtb2.Device
 	}
 
 	type want struct {
