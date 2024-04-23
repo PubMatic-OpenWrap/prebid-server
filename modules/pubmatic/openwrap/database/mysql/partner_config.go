@@ -33,7 +33,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 	defer cancel()
 	rows, err := db.conn.QueryContext(ctx, getActivePartnersQuery)
 	if err != nil {
-		return nil, err
+		return nil, &models.DBError{Message: err.Error()}
 	}
 	defer rows.Close()
 

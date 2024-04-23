@@ -2,13 +2,10 @@ package adunitconfig
 
 import (
 	"encoding/json"
-	"errors"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
-
-var ErrAdUnitUnmarshal = errors.New("unmarshal error adunitconfig")
 
 // AdUnitConfig type definition for Ad Unit config parsed from stored config JSON
 type AdUnitConfig struct {

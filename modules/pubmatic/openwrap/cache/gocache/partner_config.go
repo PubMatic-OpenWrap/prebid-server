@@ -1,13 +1,11 @@
 package gocache
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
@@ -66,7 +64,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion int) (err error) {
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
-	if err != nil {
+	if models.GetErrorCode(err) == models.DBErrorCode {
 		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		return
 	}
@@ -77,7 +75,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	err = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
-	if err != nil {
+	if models.GetErrorCode(err) == models.DBErrorCode {
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
 			queryType = models.WrapperLiveVersionSlotMappings
@@ -92,12 +90,12 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
+		if models.GetErrorCode(err) == models.AdUnitUnmarshalErrorCode {
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		// In case of Error in AdUnit Unmarshal, push PartnerConfig and process request
-		if !errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
+		if models.GetErrorCode(err) == models.DBErrorCode {
 			return err
 		}
 	}
