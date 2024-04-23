@@ -61,6 +61,14 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	if endpoint == models.EndpointApplovinMax {
+		payload.Body = updateMaxAppLovinRequest(rCtx, payload.Body)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
+	}
+
 	// init default for all modules
 	result.Reject = true
 
@@ -117,9 +125,6 @@ func (m OpenWrap) handleEntrypointHook(
 		},
 	}
 
-	if rCtx.Endpoint == models.EndpointApplovinMax {
-		rCtx.SignalData = getSignalData(payload.Body)
-	}
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
@@ -166,15 +171,14 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 func GetEndpoint(path, source string, agent string) string {
 	switch path {
 	case hookexecution.EndpointAuction:
-		switch agent {
-		case models.Applovinmax:
-			return models.EndpointApplovinMax
-		}
-
 		switch source {
 		case "pbjs":
 			return models.EndpointWebS2S
 		case "owsdk":
+			switch agent {
+			case models.Applovinmax:
+				return models.EndpointApplovinMax
+			}
 			return models.EndpointV25
 		default:
 			return models.EndpointHybrid

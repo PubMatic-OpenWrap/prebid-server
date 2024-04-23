@@ -101,7 +101,6 @@ type RequestCtx struct {
 	IsTBFFeatureEnabled    bool
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
-	SignalData             *openrtb2.BidRequest
 	MaxAppLovin            MaxAppLovin
 }
 
