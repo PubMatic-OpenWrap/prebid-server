@@ -1,0 +1,13 @@
+# oRTB Adapter is a generic adapter; hence, ideally, it should not contain any bidder information.
+# However, just to satisfy the requirement of the bidder-info validation framework, the following data is being added.
+# Please refer to the YAML file of the actual instance of the oRTB Adapter (example-ortb_magnite.yaml) placed in the static/bidder-info-ortb directory.
+endpoint: "https://hbopenbid.pubmatic.com/translator"
+maintainer:
+  email: "header-bidding@pubmatic.com"
+capabilities:
+  app:
+    mediaTypes:
+      - video
+  site:
+    mediaTypes:
+      - banner

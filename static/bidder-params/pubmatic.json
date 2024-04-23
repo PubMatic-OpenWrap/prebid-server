@@ -6,7 +6,10 @@
 	"properties": {
 		"publisherId": {
 			"type": "string",
-			"description": "An ID which identifies the publisher"
+			"description": "An ID which identifies the publisher",
+			"location": {
+				"level": "request"
+			}
 		},
 		"adSlot": {
 			"type": "string",
@@ -37,7 +40,8 @@
 			"properties": {
 				"profile": {
 					"type": "integer",
-					"description": "An ID which identifies the openwrap profile of publisher"
+					"description": "An ID which identifies the openwrap profile of publisher",
+					"loc": "i.size"
 				},
 				"version": {
 					"type": "integer",

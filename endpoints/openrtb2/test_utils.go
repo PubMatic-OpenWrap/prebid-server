@@ -1328,6 +1328,9 @@ func (v mockBidderParamValidator) Validate(name openrtb_ext.BidderName, ext json
 	return nil
 }
 func (v mockBidderParamValidator) Schema(name openrtb_ext.BidderName) string { return "" }
+func (v mockBidderParamValidator) PropertyLocation(name openrtb_ext.BidderName) map[string]openrtb_ext.Property {
+	return map[string]openrtb_ext.Property{}
+}
 
 type mockAccountFetcher struct {
 	data map[string]json.RawMessage

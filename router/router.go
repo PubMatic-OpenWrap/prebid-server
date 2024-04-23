@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/adapters/ortbbidder"
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -215,6 +216,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if err != nil {
 		glog.Fatalf("Failed to create the bidder params validator. %v", err)
 	}
+
+	ortbbidder.SaveBidderParam(paramsValidator)
 
 	activeBidders := exchange.GetActiveBidders(cfg.BidderInfos)
 	disabledBidders := exchange.GetDisabledBidderWarningMessages(cfg.BidderInfos)

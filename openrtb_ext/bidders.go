@@ -582,8 +582,12 @@ type BidderParamValidator interface {
 	Validate(name BidderName, ext json.RawMessage) error
 	// Schema returns the JSON schema used to perform validation.
 	Schema(name BidderName) string
+	PropertyLocation(name BidderName) map[string]Property
 }
-
+type Property struct {
+	Location string
+	Type     string
+}
 type bidderParamsFileSystem interface {
 	readDir(name string) ([]os.DirEntry, error)
 	readFile(name string) ([]byte, error)
@@ -607,7 +611,11 @@ func (standardBidderParamsFileSystem) newReferenceLoader(source string) gojsonsc
 }
 
 func (standardBidderParamsFileSystem) newSchema(l gojsonschema.JSONLoader) (*gojsonschema.Schema, error) {
-	return gojsonschema.NewSchema(l)
+	a, err := gojsonschema.NewSchema(l)
+	// a.
+	// a.SetRootSchemaName("A")
+
+	return a, err
 }
 
 func (standardBidderParamsFileSystem) abs(path string) (string, error) {
@@ -628,6 +636,8 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 
 	schemaContents := make(map[BidderName]string, 50)
 	schemas := make(map[BidderName]*gojsonschema.Schema, 50)
+	// Extract property names and locations
+	locationMap := make(map[BidderName]map[string]Property, 50)
 	for _, fileInfo := range fileInfos {
 		bidderName := strings.TrimSuffix(fileInfo.Name(), ".json")
 		if _, ok := bidderMap[bidderName]; !ok {
@@ -648,8 +658,40 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 			return nil, fmt.Errorf("Failed to read file %s/%s: %v", schemaDirectory, fileInfo.Name(), err)
 		}
 
+		if bidderName == "owortb_magnite" {
+			var rawSchema map[string]interface{}
+			if err := json.Unmarshal(fileBytes, &rawSchema); err != nil {
+				fmt.Printf("Error unmarshalling JSON schema: %s\n", err)
+				continue
+			}
+
+			properties := rawSchema["properties"].(map[string]interface{})
+			locationMap[BidderName(bidderName)] = map[string]Property{}
+			for propertyName, propertyDatai := range properties {
+				propertyData := propertyDatai.(map[string]interface{})
+				if loc, found := propertyData["location"]; found {
+					if dtype, found := propertyData["type"]; found {
+						p := Property{
+							Location: loc.(string),
+							Type:     dtype.(string),
+						}
+						locationMap[BidderName(bidderName)][propertyName] = p
+					}
+				}
+			}
+
+		}
+
+		// // Extract property names and locations
+		// locationMap := make(map[string]string)
+		// for propertyName, propertySchema := range result.Schema.JsonSource().(map[string]interface{})["properties"].(map[string]interface{}) {
+		// 	location := propertySchema.(map[string]interface{})["location"].(string)
+		// 	locationMap[propertyName] = location
+		// }
+
 		schemas[BidderName(bidderName)] = loadedSchema
 		schemaContents[BidderName(bidderName)] = string(fileBytes)
+		//
 	}
 
 	//set alias bidder params schema to its parent
@@ -659,17 +701,21 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 
 		parentSchemaContents := schemaContents[parent]
 		schemaContents[alias] = parentSchemaContents
+
+		locationMap[alias] = locationMap[parent]
 	}
 
 	return &bidderParamValidator{
 		schemaContents: schemaContents,
 		parsedSchemas:  schemas,
+		locationMap:    locationMap,
 	}, nil
 }
 
 type bidderParamValidator struct {
 	schemaContents map[BidderName]string
 	parsedSchemas  map[BidderName]*gojsonschema.Schema
+	locationMap    map[BidderName]map[string]Property
 }
 
 func (validator *bidderParamValidator) Validate(name BidderName, ext json.RawMessage) error {
@@ -689,4 +735,8 @@ func (validator *bidderParamValidator) Validate(name BidderName, ext json.RawMes
 
 func (validator *bidderParamValidator) Schema(name BidderName) string {
 	return validator.schemaContents[name]
+}
+
+func (validator *bidderParamValidator) PropertyLocation(name BidderName) map[string]Property {
+	return validator.locationMap[name]
 }

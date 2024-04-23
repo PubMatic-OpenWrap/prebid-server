@@ -6,8 +6,26 @@
     "properties": {
       "adunitID": {
         "type": "string",
-        "description": "adunitID param"
+        "description": "adunitID param",
+        "location": "app.MyAdunitID"
+      },
+      "mykey": {
+        "type": "string",
+        "description": "mykey param",
+        "location": "site.myKey"
+      },
+      "BidResponse": {
+        "BidType": {
+            "location": "resp.seatbid.bid.ext.bidtype"
+         }
       }
     },
-    "required": ["adunitID"]
+    "required": ["adunitID"],
+    "responseMapper": {
+      "bidtype":
+        {
+          "level": "bid",
+          "location": "ext.mtype"
+        }
+    }
   }

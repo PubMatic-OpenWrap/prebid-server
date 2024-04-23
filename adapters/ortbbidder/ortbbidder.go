@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -14,6 +16,7 @@ import (
 // adapter implements adapters.Bidder interface
 type adapter struct {
 	adapterInfo
+	responseMapper
 }
 
 const (
@@ -23,10 +26,28 @@ const (
 // adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
 type adapterInfo struct {
 	config.Adapter
-	extraInfo extraAdapterInfo
+	extraInfo  extraAdapterInfo
+	bidderName openrtb_ext.BidderName
 }
 type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
+}
+
+var bidderParam openrtb_ext.BidderParamValidator
+
+func SaveBidderParam(v openrtb_ext.BidderParamValidator) {
+	bidderParam = v
+}
+
+func getAllFields(ext []byte, path string) (map[string][]byte, error) {
+	fields := make(map[string][]byte)
+
+	// Parse the ext JSON object
+	err := jsonparser.ObjectEach(ext, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		fields[string(key)] = value
+		return nil
+	}, path)
+	return fields, err
 }
 
 // prepareRequestData generates the RequestData by marshalling the request and returns it
@@ -38,6 +59,28 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
+
+	fieldLocation := bidderParam.PropertyLocation(o.bidderName)
+	fields, err := getAllFields(request.Imp[0].Ext, "bidder")
+	if err != nil {
+		fmt.Print("err-", err)
+		return nil, err
+	}
+	for field, fieldVal := range fields {
+		property := fieldLocation[field]
+		if property.Location == "" {
+			continue
+		}
+		keys := strings.Split(property.Location, ".")
+		if property.Type == "string" {
+			fieldVal = []byte(fmt.Sprintf(`"%s"`, fieldVal))
+		}
+		body, err = jsonparser.Set(body, fieldVal, keys...)
+		if err != nil {
+			fmt.Println("err-", err)
+		}
+	}
+
 	return &adapters.RequestData{
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
@@ -55,7 +98,8 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		}
 	}
 	return &adapter{
-		adapterInfo: adapterInfo{config, extraAdapterInfo},
+		adapterInfo:    adapterInfo{config, extraAdapterInfo, bidderName},
+		responseMapper: NewResponseMapper(),
 	}, nil
 }
 
