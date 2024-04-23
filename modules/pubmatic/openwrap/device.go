@@ -7,12 +7,16 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
+func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device, signalData *openrtb2.BidRequest) {
 	if device == nil {
 		return
 	}
 	//this is needed in determine ifa_type parameter
 	dvc.DeviceIFA = device.IFA
+
+	if signalData != nil && signalData.Device != nil {
+		device.Ext = setIfKeysExists(signalData.Device.Ext, device.Ext, "atts")
+	}
 
 	if device.Ext == nil {
 		return

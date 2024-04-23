@@ -70,7 +70,6 @@ type Metrics struct {
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
-	maxSDKRequests        *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
@@ -264,12 +263,6 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
-
-	metrics.maxSDKRequests = newCounter(cfg, promRegistry,
-		"applovin_max_sdk_requests",
-		"Count number of applovin max server requests at publisher and profile level",
-		[]string{pubIDLabel, profileIDLabel},
-	)
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
@@ -286,12 +279,6 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"vastunwrap_resp_time",
 		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
 		[]float64{50, 100, 150, 200})
-
-	metrics.maxSDKRequests = newCounter(cfg, promRegistry,
-		"applovin_max_sdk_requests",
-		"Count number of applovin max server requests at publisher and profile level",
-		[]string{pubIDLabel, profileIDLabel},
-	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
@@ -490,14 +477,6 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
 func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
 	m.loggerFailure.With(prometheus.Labels{
-		pubIDLabel:     publisher,
-		profileIDLabel: profile,
-	}).Inc()
-}
-
-// RecordMaxSDKRequests to record count number of max sdk requests
-func (m *Metrics) RecordMaxSDKRequests(publisher, profile string) {
-	m.maxSDKRequests.With(prometheus.Labels{
 		pubIDLabel:     publisher,
 		profileIDLabel: profile,
 	}).Inc()

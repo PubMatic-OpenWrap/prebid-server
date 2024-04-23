@@ -13,7 +13,8 @@ import (
 
 func TestPopulateDeviceExt(t *testing.T) {
 	type args struct {
-		device *openrtb2.Device
+		device     *openrtb2.Device
+		signalData *openrtb2.BidRequest
 	}
 
 	type want struct {
@@ -215,11 +216,33 @@ func TestPopulateDeviceExt(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: `populate_atts_from_signal`,
+			args: args{
+				device: &openrtb2.Device{
+					Ext: json.RawMessage(`{}`),
+				},
+				signalData: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Ext: json.RawMessage(`{"atts":1}`),
+					},
+				},
+			},
+			want: want{
+				deviceCtx: models.DeviceCtx{
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"atts":1}`))
+						return deviceExt
+					}(),
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dvc := models.DeviceCtx{}
-			populateDeviceContext(&dvc, tt.args.device)
+			populateDeviceContext(&dvc, tt.args.device, tt.args.signalData)
 			assert.Equal(t, tt.want.deviceCtx, dvc)
 		})
 	}
