@@ -86,7 +86,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
-	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device, rCtx.SignalData)
+	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	rCtx.IsTBFFeatureEnabled = m.featureConfig.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 
@@ -401,9 +401,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
-		if rCtx.Endpoint == models.EndpointApplovinMax && rCtx.SignalData != nil && len(rCtx.SignalData.Imp) > 0 {
-			updateImpressionExt(rCtx.SignalData.Imp[0].Ext, impExt)
-		}
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
@@ -527,14 +524,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 	if bidRequest.TMax == 0 {
 		bidRequest.TMax = rctx.TMax
-	}
-
-	if rctx.Endpoint == models.EndpointApplovinMax && rctx.SignalData != nil {
-		if clientConfigFlag, err := jsonparser.GetInt(rctx.SignalData.Ext, "wrapper", "clientconfig"); err == nil {
-			rctx.ClientConfigFlag = int(clientConfigFlag)
-		}
-		addSignalDataInRequest(rctx.SignalData, bidRequest, rctx.ClientConfigFlag)
-		rctx.SignalData = nil
 	}
 
 	if bidRequest.Source == nil {

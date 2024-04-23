@@ -76,6 +76,8 @@ func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
 			maxImpression.Banner = nil
 		}
 	}
+
+	maxImpression.Ext = setIfKeysExists(sdkImpression.Ext, maxImpression.Ext, "reward", "skadn")
 }
 
 func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
@@ -94,6 +96,8 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 	if sdkDevice.ConnectionType != nil {
 		maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
 	}
+
+	maxRequest.Device.Ext = setIfKeysExists(sdkDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if sdkDevice.Geo == nil {
 		return
@@ -211,11 +215,23 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 	return target
 }
 
-func updateImpressionExt(signalDataImpExt json.RawMessage, impExt *models.ImpExtension) {
-	if skdan, _, _, err := jsonparser.Get(signalDataImpExt, "skadn"); err == nil {
-		impExt.SKAdnetwork = skdan
+func updateMaxAppLovinRequest(rctx models.RequestCtx, requestBody []byte) []byte {
+	signalData := getSignalData(requestBody)
+	if signalData == nil {
+		return requestBody
 	}
-	if reward, err := jsonparser.GetInt(signalDataImpExt, "reward"); err == nil {
-		impExt.Reward = openrtb2.Int8Ptr(int8(reward))
+
+	maxRequest := &openrtb2.BidRequest{}
+	if err := json.Unmarshal(requestBody, maxRequest); err != nil {
+		return requestBody
 	}
+
+	if clientConfigFlag, err := jsonparser.GetInt(signalData.Ext, "wrapper", "clientconfig"); err == nil {
+		rctx.ClientConfigFlag = int(clientConfigFlag)
+	}
+
+	addSignalDataInRequest(signalData, maxRequest, rctx.ClientConfigFlag)
+
+	maxRequestbytes, _ := json.Marshal(maxRequest)
+	return maxRequestbytes
 }
