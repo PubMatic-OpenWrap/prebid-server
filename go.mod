@@ -17,7 +17,6 @@ require (
 	github.com/coocood/freecache v1.2.1
 	github.com/docker/go-units v0.4.0
 	github.com/gofrs/uuid v4.2.0+incompatible
-	github.com/golang/glog v1.1.0
 	github.com/json-iterator/go v1.1.12
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.4
@@ -49,6 +48,7 @@ require (
 require (
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/golang/glog v1.1.0
 	github.com/golang/mock v1.6.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/satori/go.uuid v1.2.0
@@ -96,3 +96,5 @@ replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-ope
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
 
 replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0
+
+replace github.com/golang/glog => github.com/golang/glog v1.0.0
