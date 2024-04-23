@@ -451,12 +451,13 @@ const (
 	EndpointWebS2S      = "webs2s"
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
-	EndpointApplovinMax = "applovinmax"
-	Openwrap            = "openwrap"
-	ImpTypeBanner       = "banner"
-	ImpTypeVideo        = "video"
-	ContentTypeSite     = "site"
-	ContentTypeApp      = "app"
+	EndpointAppLovinMax = "applovinmax"
+
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
 )
 
 const (
@@ -527,5 +528,5 @@ const (
 // constants for applovinmax requests
 const (
 	Agent       = "agent"
-	Applovinmax = "max"
+	AppLovinMax = "max"
 )

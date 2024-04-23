@@ -551,7 +551,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						PrebidBidderCode:         make(map[string]string),
 						BidderResponseTimeMillis: make(map[string]int),
 						ProfileIDStr:             "123456",
-						Endpoint:                 models.EndpointApplovinMax,
+						Endpoint:                 models.EndpointAppLovinMax,
 						MetricsEngine:            mockEngine,
 						SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 					},
@@ -618,7 +618,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						PrebidBidderCode:         make(map[string]string),
 						BidderResponseTimeMillis: make(map[string]int),
 						ProfileIDStr:             "12929",
-						Endpoint:                 models.EndpointApplovinMax,
+						Endpoint:                 models.EndpointAppLovinMax,
 						MetricsEngine:            mockEngine,
 						SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 					},
@@ -818,9 +818,9 @@ func TestGetEndpoint(t *testing.T) {
 			args: args{
 				path:   hookexecution.EndpointAuction,
 				source: "owsdk",
-				agent:  models.Applovinmax,
+				agent:  models.AppLovinMax,
 			},
-			want: models.EndpointApplovinMax,
+			want: models.EndpointAppLovinMax,
 		},
 	}
 	for _, tt := range tests {
