@@ -134,7 +134,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
 				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, adunitconfig.ErrAdUnitUnmarshal)
-				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, fmt.Errorf("Error from the DB"))
+				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, nil)
 				mockEngine.EXPECT().RecordGetProfileDataTime(gomock.Any()).Return().Times(1)
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123").Return().Times(1)
 				return mockDatabase, mockEngine
@@ -165,7 +165,6 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				pubID:          testPubID,
 				profileID:      testProfileID,
 				displayVersion: 0,
-				endpoint:       models.EndpointAMP,
 			},
 			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
 				mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -175,7 +174,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, 0).Return(nil, errors.New("Failed to connect DB"))
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, nil)
-				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
+				mockEngine.EXPECT().RecordGetProfileDataTime(gomock.Any()).Return().Times(1)
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AdunitConfigForLiveVersion, "5890", "123").Return().Times(1)
 				return mockDatabase, mockEngine
 			},
@@ -194,7 +193,6 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				pubID:          testPubID,
 				profileID:      testProfileID,
 				displayVersion: 0,
-				endpoint:       models.EndpointAMP,
 			},
 			setup: func(ctrl *gomock.Controller) (*mock_database.MockDatabase, *mock_metrics.MockMetricsEngine) {
 				mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -203,7 +201,7 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
 				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, 0).Return(nil, fmt.Errorf("Error from the DB"))
-				mockEngine.EXPECT().RecordGetProfileDataTime(models.EndpointAMP, "123", gomock.Any()).Return().Times(1)
+				mockEngine.EXPECT().RecordGetProfileDataTime(gomock.Any()).Return().Times(1)
 				mockEngine.EXPECT().RecordDBQueryFailure(models.WrapperLiveVersionSlotMappings, "5890", "123").Return().Times(1)
 				return mockDatabase, mockEngine
 			},
