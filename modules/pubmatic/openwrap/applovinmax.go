@@ -15,29 +15,16 @@ func getSignalData(requestBody []byte) *openrtb2.BidRequest {
 		return nil
 	}
 
-	signalData := &openrtb2.BidRequest{
-		Regs: &openrtb2.Regs{
-			COPPA: -1,
-		},
-	}
+	signalData := &openrtb2.BidRequest{}
 	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
 		return nil
 	}
 	return signalData
 }
 
-func addSignalDataInRequest(signalData *openrtb2.BidRequest, maxRequest *openrtb2.BidRequest, clientconfigflag int) {
-	flg := []byte(`0`)
-	if clientconfigflag == 1 {
-		flg = []byte(`1`)
-	}
-	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, flg, "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
-		maxRequest.Ext = maxReqExt
-	}
-
-	if len(signalData.Imp) > 0 {
-		updateImpression(signalData.Imp[0], &maxRequest.Imp[0])
-	}
+func addSignalDataInRequest(signalData *openrtb2.BidRequest, maxRequest *openrtb2.BidRequest) {
+	updateRequestWrapper(signalData.Ext, maxRequest)
+	updateImpression(signalData.Imp, maxRequest.Imp)
 	updateDevice(signalData.Device, maxRequest)
 	updateApp(signalData.App, maxRequest)
 	updateRegs(signalData.Regs, maxRequest)
@@ -45,43 +32,44 @@ func addSignalDataInRequest(signalData *openrtb2.BidRequest, maxRequest *openrtb
 	updateUser(signalData.User, maxRequest)
 }
 
-func updateImpression(sdkImpression openrtb2.Imp, maxImpression *openrtb2.Imp) {
-	if maxImpression == nil {
+func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
+	if len(maxImps) == 0 || len(signalImps) == 0 {
 		return
 	}
 
-	if sdkImpression.DisplayManager != "" {
-		maxImpression.DisplayManager = sdkImpression.DisplayManager
+	signalImp := signalImps[0]
+	if signalImp.DisplayManager != "" {
+		maxImps[0].DisplayManager = signalImp.DisplayManager
 	}
 
-	if sdkImpression.DisplayManagerVer != "" {
-		maxImpression.DisplayManagerVer = sdkImpression.DisplayManagerVer
+	if signalImp.DisplayManagerVer != "" {
+		maxImps[0].DisplayManagerVer = signalImp.DisplayManagerVer
 	}
 
-	if sdkImpression.ClickBrowser != nil {
-		maxImpression.ClickBrowser = sdkImpression.ClickBrowser
+	if signalImp.ClickBrowser != nil {
+		maxImps[0].ClickBrowser = signalImp.ClickBrowser
 	}
 
-	if sdkImpression.Video != nil {
-		maxImpression.Video = sdkImpression.Video
+	if signalImp.Video != nil {
+		maxImps[0].Video = signalImp.Video
 	}
 
-	if maxImpression.Banner != nil {
-		if sdkImpression.Banner != nil {
-			maxImpression.Banner.API = sdkImpression.Banner.API
+	if maxImps[0].Banner != nil {
+		if signalImp.Banner != nil {
+			maxImps[0].Banner.API = signalImp.Banner.API
 		}
 
-		bannertype, err := jsonparser.GetString(maxImpression.Banner.Ext, "bannertype")
-		if err == nil && bannertype == "rewarded" {
-			maxImpression.Banner = nil
+		bannertype, err := jsonparser.GetString(maxImps[0].Banner.Ext, "bannertype")
+		if err == nil && bannertype == models.TypeRewarded {
+			maxImps[0].Banner = nil
 		}
 	}
 
-	maxImpression.Ext = setIfKeysExists(sdkImpression.Ext, maxImpression.Ext, "reward", "skadn")
+	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn")
 }
 
-func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
-	if sdkDevice == nil {
+func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
+	if signalDevice == nil {
 		return
 	}
 
@@ -89,17 +77,17 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Device = &openrtb2.Device{}
 	}
 
-	if sdkDevice.MCCMNC != "" {
-		maxRequest.Device.MCCMNC = sdkDevice.MCCMNC
+	if signalDevice.MCCMNC != "" {
+		maxRequest.Device.MCCMNC = signalDevice.MCCMNC
 	}
 
-	if sdkDevice.ConnectionType != nil {
-		maxRequest.Device.ConnectionType = sdkDevice.ConnectionType
+	if signalDevice.ConnectionType != nil {
+		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
 	}
 
-	maxRequest.Device.Ext = setIfKeysExists(sdkDevice.Ext, maxRequest.Device.Ext, "atts")
+	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
-	if sdkDevice.Geo == nil {
+	if signalDevice.Geo == nil {
 		return
 	}
 
@@ -107,17 +95,17 @@ func updateDevice(sdkDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Device.Geo = &openrtb2.Geo{}
 	}
 
-	if sdkDevice.Geo.City != "" {
-		maxRequest.Device.Geo.City = sdkDevice.Geo.City
+	if signalDevice.Geo.City != "" {
+		maxRequest.Device.Geo.City = signalDevice.Geo.City
 	}
 
-	if sdkDevice.Geo.UTCOffset != 0 {
-		maxRequest.Device.Geo.UTCOffset = sdkDevice.Geo.UTCOffset
+	if signalDevice.Geo.UTCOffset != 0 {
+		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
 	}
 }
 
-func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
-	if sdkApp == nil {
+func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
+	if signalApp == nil {
 		return
 	}
 
@@ -125,21 +113,21 @@ func updateApp(sdkApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 		maxRequest.App = &openrtb2.App{}
 	}
 
-	if sdkApp.Paid != nil {
-		maxRequest.App.Paid = sdkApp.Paid
+	if signalApp.Paid != nil {
+		maxRequest.App.Paid = signalApp.Paid
 	}
 
-	if sdkApp.Keywords != "" {
-		maxRequest.App.Keywords = sdkApp.Keywords
+	if signalApp.Keywords != "" {
+		maxRequest.App.Keywords = signalApp.Keywords
 	}
 
-	if sdkApp.Domain != "" {
-		maxRequest.App.Domain = sdkApp.Domain
+	if signalApp.Domain != "" {
+		maxRequest.App.Domain = signalApp.Domain
 	}
 }
 
-func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
-	if sdkRegs == nil {
+func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
+	if signalRegs == nil {
 		return
 	}
 
@@ -147,14 +135,14 @@ func updateRegs(sdkRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Regs = &openrtb2.Regs{}
 	}
 
-	if sdkRegs.COPPA != -1 {
-		maxRequest.Regs.COPPA = sdkRegs.COPPA
+	if signalRegs.COPPA != -1 {
+		maxRequest.Regs.COPPA = signalRegs.COPPA
 	}
-	maxRequest.Regs.Ext = setIfKeysExists(sdkRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
+	maxRequest.Regs.Ext = setIfKeysExists(signalRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
 }
 
-func updateSource(sdkSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
-	if sdkSource == nil || len(sdkSource.Ext) == 0 {
+func updateSource(signalSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
+	if signalSource == nil || len(signalSource.Ext) == 0 {
 		return
 	}
 
@@ -162,11 +150,11 @@ func updateSource(sdkSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
 		maxRequest.Source = &openrtb2.Source{}
 	}
 
-	maxRequest.Source.Ext = setIfKeysExists(sdkSource.Ext, maxRequest.Source.Ext, "omidpn", "omidpv")
+	maxRequest.Source.Ext = setIfKeysExists(signalSource.Ext, maxRequest.Source.Ext, "omidpn", "omidpv")
 }
 
-func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
-	if sdkUser == nil {
+func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
+	if signalUser == nil {
 		return
 	}
 
@@ -174,32 +162,32 @@ func updateUser(sdkUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 		maxRequest.User = &openrtb2.User{}
 	}
 
-	if sdkUser.Yob != 0 {
-		maxRequest.User.Yob = sdkUser.Yob
+	if signalUser.Yob != 0 {
+		maxRequest.User.Yob = signalUser.Yob
 	}
 
-	if sdkUser.Gender != "" {
-		maxRequest.User.Gender = sdkUser.Gender
+	if signalUser.Gender != "" {
+		maxRequest.User.Gender = signalUser.Gender
 	}
 
-	if sdkUser.Keywords != "" {
-		maxRequest.User.Keywords = sdkUser.Keywords
+	if signalUser.Keywords != "" {
+		maxRequest.User.Keywords = signalUser.Keywords
 	}
 
-	maxRequest.User.Data = sdkUser.Data
-	maxRequest.User.Ext = setIfKeysExists(sdkUser.Ext, maxRequest.User.Ext, "consent", "eids")
+	maxRequest.User.Data = signalUser.Data
+	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids")
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
-	oldTarget := target
+	newTarget := target
+	if len(keys) > 0 && len(newTarget) == 0 {
+		newTarget = []byte(`{}`)
+	}
+
 	for _, key := range keys {
 		field, dataType, _, err := jsonparser.Get(source, key)
 		if err != nil {
 			continue
-		}
-
-		if len(target) == 0 {
-			target = []byte(`{}`)
 		}
 
 		if dataType == jsonparser.String {
@@ -207,15 +195,30 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 			field = []byte(quotedStr)
 		}
 
-		target, err = jsonparser.Set(target, field, key)
+		newTarget, err = jsonparser.Set(newTarget, field, key)
 		if err != nil {
-			return oldTarget
+			return target
 		}
 	}
-	return target
+
+	if len(newTarget) == 2 {
+		return target
+	}
+	return newTarget
 }
 
-func updateMaxAppLovinRequest(rctx models.RequestCtx, requestBody []byte) []byte {
+func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidRequest) {
+	clientConfigFlag, err := jsonparser.GetInt(signalExt, "wrapper", "clientconfig")
+	if err != nil || clientConfigFlag != 1 {
+		return
+	}
+
+	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, []byte(`1`), "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
+		maxRequest.Ext = maxReqExt
+	}
+}
+
+func updateAppLovinMaxRequest(requestBody []byte) []byte {
 	signalData := getSignalData(requestBody)
 	if signalData == nil {
 		return requestBody
@@ -226,12 +229,9 @@ func updateMaxAppLovinRequest(rctx models.RequestCtx, requestBody []byte) []byte
 		return requestBody
 	}
 
-	if clientConfigFlag, err := jsonparser.GetInt(signalData.Ext, "wrapper", "clientconfig"); err == nil {
-		rctx.ClientConfigFlag = int(clientConfigFlag)
+	addSignalDataInRequest(signalData, maxRequest)
+	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
+		return maxRequestbytes
 	}
-
-	addSignalDataInRequest(signalData, maxRequest, rctx.ClientConfigFlag)
-
-	maxRequestbytes, _ := json.Marshal(maxRequest)
-	return maxRequestbytes
+	return requestBody
 }

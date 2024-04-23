@@ -62,7 +62,8 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	if endpoint == models.EndpointAppLovinMax {
-		payload.Body = updateMaxAppLovinRequest(rCtx, payload.Body)
+		// updating body locally to access updated fields from signal
+		payload.Body = updateAppLovinMaxRequest(payload.Body)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
