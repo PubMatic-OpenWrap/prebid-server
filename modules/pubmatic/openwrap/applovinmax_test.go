@@ -260,6 +260,14 @@ func TestUpdateRegs(t *testing.T) {
 			want: &openrtb2.Regs{COPPA: 1, Ext: json.RawMessage(`{"gdpr":1,"gpp":"sdfewe3cer"}`)},
 		},
 		{
+			name: "signalRegs has coppa as 0, signalRegsExt has gdpr, gpp",
+			args: args{
+				signalRegs: &openrtb2.Regs{COPPA: 0, Ext: json.RawMessage(`{"gdpr":1,"gpp":"sdfewe3cer"}`)},
+				maxRequest: &openrtb2.BidRequest{},
+			},
+			want: &openrtb2.Regs{Ext: json.RawMessage(`{"gdpr":1,"gpp":"sdfewe3cer"}`)},
+		},
+		{
 			name: "signalRegsExt has gdpr, gpp, gpp_sid, us_privacy and maxRegsExt has gpp",
 			args: args{
 				signalRegs: &openrtb2.Regs{Ext: json.RawMessage(`{"gdpr":1,"gpp":"sdfewe3cer","gpp_sid":[6],"us_privacy":"uspConsentString"}`)},
@@ -621,6 +629,49 @@ func TestUpdateMaxAppLovinRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := updateAppLovinMaxRequest(tt.args.requestBody)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestUpdateRequestWrapper(t *testing.T) {
+	type args struct {
+		signalExt  json.RawMessage
+		maxRequest *openrtb2.BidRequest
+	}
+	tests := []struct {
+		name string
+		args args
+		want json.RawMessage
+	}{
+		{
+			name: "clientconfig not present",
+			args: args{
+				signalExt:  json.RawMessage(`{"ssauction":1}`),
+				maxRequest: &openrtb2.BidRequest{Ext: json.RawMessage(``)},
+			},
+			want: json.RawMessage(``),
+		},
+		{
+			name: "clientconfig is 0",
+			args: args{
+				signalExt:  json.RawMessage(`{"wrapper":{"ssauction":1,"clientconfig":0}}`),
+				maxRequest: &openrtb2.BidRequest{Ext: json.RawMessage(``)},
+			},
+			want: json.RawMessage(``),
+		},
+		{
+			name: "clientconfig is 1",
+			args: args{
+				signalExt:  json.RawMessage(`{"wrapper":{"ssauction":1,"clientconfig":1}}`),
+				maxRequest: &openrtb2.BidRequest{Ext: json.RawMessage(`{}`)},
+			},
+			want: json.RawMessage(`{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"clientconfig":1}}}}}`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateRequestWrapper(tt.args.signalExt, tt.args.maxRequest)
+			assert.Equal(t, tt.want, tt.args.maxRequest.Ext)
 		})
 	}
 }
