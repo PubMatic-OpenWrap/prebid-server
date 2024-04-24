@@ -55,10 +55,19 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
 		return result, nil
 	}
-	endpoint = GetEndpoint(payload.Request.URL.Path, source)
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
 	if endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
+	}
+
+	if endpoint == models.EndpointAppLovinMax {
+		// updating body locally to access updated fields from signal
+		payload.Body = updateAppLovinMaxRequest(payload.Body)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
 	}
 
 	// init default for all modules
@@ -149,7 +158,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		fallthrough
 	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case models.EndpointWebS2S:
+	case models.EndpointWebS2S, models.EndpointAppLovinMax:
 		fallthrough
 	default:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
@@ -158,13 +167,17 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	return requestExtWrapper, err
 }
 
-func GetEndpoint(path, source string) string {
+func GetEndpoint(path, source string, agent string) string {
 	switch path {
 	case hookexecution.EndpointAuction:
 		switch source {
 		case "pbjs":
 			return models.EndpointWebS2S
 		case "owsdk":
+			switch agent {
+			case models.AppLovinMax:
+				return models.EndpointAppLovinMax
+			}
 			return models.EndpointV25
 		default:
 			return models.EndpointHybrid
