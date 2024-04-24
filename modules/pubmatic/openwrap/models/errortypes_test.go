@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,42 +22,41 @@ func TestErrors(t *testing.T) {
 		want want
 	}{
 		{
-			name: `normal_error`,
+			name: `DBError`,
 			args: args{
-				err: fmt.Errorf(`normal_error`),
+				err: models.NewError(DBErrorType, "Error from the DB"),
 			},
 			want: want{
-				errorMessage: `normal_error`,
-				code:         UnknownErrorCode,
+				errorMessage: `Error from the DB`,
+				code:         DBErrorType,
 			},
 		},
 		{
-			name: `DBError`,
+			name: `NormalError `,
 			args: args{
-				err: &DBError{Message: `DBError_ErrorMessage`},
+				err: fmt.Errorf("Normal Error"),
 			},
 			want: want{
-				errorMessage: `DBError_ErrorMessage`,
-				code:         DBErrorCode,
+				errorMessage: `Normal Error`,
+				code:         UnknownErrorType,
 			},
 		},
 		{
 			name: `AdUnitUnmarshal`,
 			args: args{
-				err: &AdUnitUnmarshalError{Message: `AdUnitUnmarshal_ErrorMessage`},
+				err: models.NewError(AdUnitUnmarshalErrorType, "Error in adUnitConfig Unmarshal"),
 			},
 			want: want{
-				errorMessage: `AdUnitUnmarshal_ErrorMessage`,
-				code:         AdUnitUnmarshalErrorCode,
+				errorMessage: `Error in adUnitConfig Unmarshal`,
+				code:         AdUnitUnmarshalErrorType,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want.errorMessage, tt.args.err.Error())
-			if code, ok := tt.args.err.(Coder); ok {
-				assert.Equal(t, tt.want.code, code.Code())
-			}
+			code := GetErrorCode(tt.args.err)
+			assert.Equal(t, tt.want.code, code)
 		})
 	}
 }

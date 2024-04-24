@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -187,10 +187,33 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, fmt.Errorf("Invalid json"))
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, models.NewError(models.DBErrorType, "Error from the DB"))
 			},
 			want: want{
-				err:          fmt.Errorf("Invalid json"),
+				err:          models.NewError(models.DBErrorType, "Error from the DB"),
+				adunitConfig: nil,
+				cacheEntry:   false,
+			},
+		},
+		{
+			name: "error_in_adUnitunmwrshall",
+			fields: fields{
+				cache: gocache.New(10, 10),
+				db:    mockDatabase,
+				cfg: config.Cache{
+					CacheDefaultExpiry: 1000,
+				},
+			},
+			args: args{
+				pubID:          testPubID,
+				profileID:      testProfileID,
+				displayVersion: testVersionID,
+			},
+			setup: func() {
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, models.NewError(models.AdUnitUnmarshalErrorType, "Error in adUnit unmarshal"))
+			},
+			want: want{
+				err:          models.NewError(models.AdUnitUnmarshalErrorType, "Error in adUnit unmarshal"),
 				adunitConfig: nil,
 				cacheEntry:   false,
 			},

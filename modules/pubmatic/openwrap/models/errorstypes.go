@@ -2,47 +2,46 @@ package models
 
 // Defines numeric codes for OW specific Errors
 const (
-	UnknownErrorCode = 999
-	NorErrorCode     = iota
-	DBErrorCode
-	AdUnitUnmarshalErrorCode
+	UnknownErrorType = 999
+	NorErrorType     = iota
+	DBErrorType
+	AdUnitUnmarshalErrorType
 )
 
-// DBError is used to in case of DB query gives error.
-type DBError struct {
-	Message string
+// ErrorCode new type defined for wrapper errors
+type ErrorCode = int
+
+// IError Interface for Custom Errors
+type IError interface {
+	error
+	Code() ErrorCode
 }
 
-func (err *DBError) Error() string {
-	return err.Message
+// Error Structure for Custom Errors
+type Error struct {
+	code    ErrorCode
+	message string
 }
 
-func (err *DBError) Code() int {
-	return DBErrorCode
+// NewError New Object
+func NewError(code ErrorCode, message string) *Error {
+	return &Error{code: code, message: message}
 }
 
-// AdUnitUnmarshalError is used to in case of Invalid adUnitConfig is present
-type AdUnitUnmarshalError struct {
-	Message string
+// Code Returns Error Code
+func (e *Error) Code() ErrorCode {
+	return e.code
 }
 
-func (err *AdUnitUnmarshalError) Error() string {
-	return err.Message
-}
-
-func (err *AdUnitUnmarshalError) Code() int {
-	return AdUnitUnmarshalErrorCode
-}
-
-// Coder provides an error or warning code with severity.
-type Coder interface {
-	Code() int
+// Error Returns Error Message
+func (e *Error) Error() string {
+	return e.message
 }
 
 // GetErrorCode returns the error code, or UnknownErrorCode if unavailable.
 func GetErrorCode(err error) int {
-	if e, ok := err.(Coder); ok {
+	if e, ok := err.(IError); ok {
 		return e.Code()
 	}
-	return UnknownErrorCode
+	return UnknownErrorType
 }

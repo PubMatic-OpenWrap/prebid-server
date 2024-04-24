@@ -64,7 +64,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[i
 func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileID, displayVersion int) (err error) {
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
-	if models.GetErrorCode(err) == models.DBErrorCode {
+	if err != nil && models.GetErrorCode(err) == models.DBErrorType {
 		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		return
 	}
@@ -75,7 +75,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	err = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
-	if models.GetErrorCode(err) == models.DBErrorCode {
+	if err != nil && models.GetErrorCode(err) == models.DBErrorType {
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
 			queryType = models.WrapperLiveVersionSlotMappings
@@ -90,12 +90,12 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if models.GetErrorCode(err) == models.AdUnitUnmarshalErrorCode {
+
+		if models.GetErrorCode(err) == models.AdUnitUnmarshalErrorType {
 			queryType = models.AdUnitFailUnmarshal
-		}
-		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		// In case of Error in AdUnit Unmarshal, push PartnerConfig and process request
-		if models.GetErrorCode(err) == models.DBErrorCode {
+			c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		} else {
+			c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
 			return err
 		}
 	}
