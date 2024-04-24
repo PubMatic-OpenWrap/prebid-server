@@ -180,7 +180,7 @@ func TestRecordRejectedBids(t *testing.T) {
 	}
 }
 
-func TestUpdateMaxAppLovinResponse(t *testing.T) {
+func TestUpdateAppLovinMaxResponse(t *testing.T) {
 	type args struct {
 		rCtx        *models.RequestCtx
 		w           http.ResponseWriter
