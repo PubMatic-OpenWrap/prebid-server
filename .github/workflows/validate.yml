@@ -2,15 +2,21 @@ name: Validate
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - main
+      - ci
   pull_request:
-    branches: [master]
+    branches:
+      - master
+      - main
+      - ci
 
 jobs:
   validate:
     strategy:
       matrix:
-        go-version: [1.19.x, 1.20.x]
+        go-version: [1.20.x]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     
