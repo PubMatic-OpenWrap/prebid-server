@@ -88,7 +88,7 @@ func updateMaxAppLovinResponse(rCtx *models.RequestCtx, w http.ResponseWriter, b
 		return
 	}
 	bidResponse.Ext = nil
-	if rCtx.MaxAppLovin.Reject {
+	if rCtx.AppLovinMax.Reject {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

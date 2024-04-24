@@ -175,7 +175,7 @@ func GetEndpoint(path, source string, agent string) string {
 			return models.EndpointWebS2S
 		case "owsdk":
 			switch agent {
-			case models.AppLovinMax:
+			case models.AppLovinMaxAgent:
 				return models.EndpointAppLovinMax
 			}
 			return models.EndpointV25

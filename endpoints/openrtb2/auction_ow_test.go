@@ -311,7 +311,7 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					Endpoint: models.EndpointAppLovinMax,
 					Debug:    false,
-					MaxAppLovin: models.MaxAppLovin{
+					AppLovinMax: models.AppLovinMax{
 						Reject: true,
 					},
 				},

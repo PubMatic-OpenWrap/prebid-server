@@ -236,25 +236,21 @@ func updateAppLovinMaxRequest(requestBody []byte) []byte {
 	return requestBody
 }
 
-func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.MaxAppLovin {
-	maxAppLovin := models.MaxAppLovin{Reject: false}
+func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
+	maxAppLovin := models.AppLovinMax{Reject: false}
 
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
 			maxAppLovin.Reject = true
 		}
-		return maxAppLovin
-	}
-
-	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+	} else if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
 		maxAppLovin.Reject = true
-		return maxAppLovin
 	}
 	return maxAppLovin
 }
 
 func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	if rctx.MaxAppLovin.Reject {
+	if rctx.AppLovinMax.Reject {
 		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}

@@ -280,7 +280,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
 	}
 
-	rctx.MaxAppLovin = updateMaxAppLovinResponse(rctx, payload.BidResponse)
+	rctx.AppLovinMax = updateMaxAppLovinResponse(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {

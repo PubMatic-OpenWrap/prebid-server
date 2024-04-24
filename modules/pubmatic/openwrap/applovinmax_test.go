@@ -687,7 +687,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want models.MaxAppLovin
+		want models.AppLovinMax
 	}{
 		{
 			name: "bidresponse contains NBR and debug is disabled",
@@ -700,7 +700,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
 				},
 			},
-			want: models.MaxAppLovin{
+			want: models.AppLovinMax{
 				Reject: true,
 			},
 		},
@@ -715,7 +715,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
 				},
 			},
-			want: models.MaxAppLovin{
+			want: models.AppLovinMax{
 				Reject: false,
 			},
 		},
@@ -730,7 +730,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 					SeatBid: []openrtb2.SeatBid{},
 				},
 			},
-			want: models.MaxAppLovin{
+			want: models.AppLovinMax{
 				Reject: true,
 			},
 		},
@@ -749,7 +749,7 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 					},
 				},
 			},
-			want: models.MaxAppLovin{
+			want: models.AppLovinMax{
 				Reject: true,
 			},
 		},
@@ -777,7 +777,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: true,
-					MaxAppLovin: models.MaxAppLovin{
+					AppLovinMax: models.AppLovinMax{
 						Reject: true,
 					},
 				},
@@ -802,7 +802,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: false,
-					MaxAppLovin: models.MaxAppLovin{
+					AppLovinMax: models.AppLovinMax{
 						Reject: false,
 					},
 				},
@@ -821,7 +821,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: true,
-					MaxAppLovin: models.MaxAppLovin{
+					AppLovinMax: models.AppLovinMax{
 						Reject: false,
 					},
 				},
@@ -846,7 +846,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			name: "valid bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
-					MaxAppLovin: models.MaxAppLovin{
+					AppLovinMax: models.AppLovinMax{
 						Reject: false,
 					},
 				},

@@ -101,7 +101,7 @@ type RequestCtx struct {
 	IsTBFFeatureEnabled    bool
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
-	MaxAppLovin            MaxAppLovin
+	AppLovinMax            AppLovinMax
 }
 
 type OwBid struct {
@@ -198,6 +198,6 @@ type FeatureData struct {
 	Value   string // feature value if any
 }
 
-type MaxAppLovin struct {
+type AppLovinMax struct {
 	Reject bool
 }
