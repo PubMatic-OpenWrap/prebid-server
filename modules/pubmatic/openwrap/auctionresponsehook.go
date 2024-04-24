@@ -280,7 +280,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
 	}
 
-	rctx.AppLovinMax = updateMaxAppLovinResponse(rctx, payload.BidResponse)
+	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -321,7 +321,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax {
-			ap.BidResponse = applyMaxAppLovinResponse(rctx, ap.BidResponse)
+			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")

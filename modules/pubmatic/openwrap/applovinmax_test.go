@@ -753,10 +753,39 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 				Reject: true,
 			},
 		},
+		{
+			name: "No NBR and valid bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									AdM:   "<img src=\"http://example.com\"></img>",
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"key":"value"}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
+			got := updateAppLovinMaxResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -773,7 +802,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 		want *openrtb2.BidResponse
 	}{
 		{
-			name: "maxAppLovin.Reject is true",
+			name: "AppLovinMax.Reject is true",
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: true,
@@ -798,7 +827,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 			want: &openrtb2.BidResponse{},
 		},
 		{
-			name: "bidresponse contains NBR and maxAppLovin.Reject is false",
+			name: "bidresponse contains NBR and AppLovinMax.Reject is false",
 			args: args{
 				rctx: models.RequestCtx{
 					Debug: false,
@@ -894,7 +923,7 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := applyMaxAppLovinResponse(tt.args.rctx, tt.args.bidResponse)
+			got := applyAppLovinMaxResponse(tt.args.rctx, tt.args.bidResponse)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

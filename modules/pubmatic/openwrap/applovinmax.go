@@ -236,7 +236,7 @@ func updateAppLovinMaxRequest(requestBody []byte) []byte {
 	return requestBody
 }
 
-func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
+func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
 	maxAppLovin := models.AppLovinMax{Reject: false}
 
 	if bidResponse.NBR != nil {
@@ -249,7 +249,7 @@ func updateMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.Bid
 	return maxAppLovin
 }
 
-func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if rctx.AppLovinMax.Reject {
 		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
