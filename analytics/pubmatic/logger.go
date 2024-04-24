@@ -386,8 +386,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				Latency1:          rCtx.BidderResponseTimeMillis[seat], // it is set inside auctionresponsehook for all bidders
 				KGPV:              kgpv,
 				KGPSV:             kgpsv,
-				BidID:             utils.GetOriginalBidId(bid.ID),
-				OrigBidID:         utils.GetOriginalBidId(bid.ID),
+				BidID:             bid.ImpID,
+				OrigBidID:         bid.ImpID,
 				DefaultBidStatus:  0, // this will be always 0 , decide whether to drop this field in future
 				ServerSide:        1,
 				MatchedImpression: rCtx.MatchedImpression[seat],
@@ -400,6 +400,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				GrossECPM:         tracker.Tracker.PartnerInfo.GrossECPM,
 				PartnerSize:       tracker.Tracker.PartnerInfo.AdSize,
 				ADomain:           tracker.Tracker.PartnerInfo.Advertiser,
+				Piid:              utils.GetOriginalBidId(bid.ID),
 			}
 
 			if pr.NetECPM == 0 {

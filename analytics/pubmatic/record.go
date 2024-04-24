@@ -119,6 +119,7 @@ type PartnerRecord struct {
 	WinningBidStaus      int     `json:"wb"`
 	BidID                string  `json:"bidid"`
 	OrigBidID            string  `json:"origbidid"`
+	Piid                 string  `json:"piid"`
 	DealID               string  `json:"di"`
 	DealChannel          string  `json:"dc"`
 	DealPriority         int     `json:"dp,omitempty"`
