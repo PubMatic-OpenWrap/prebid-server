@@ -303,7 +303,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 
-		if rctx.Endpoint != models.EndpointApplovinMax {
+		if rctx.Endpoint != models.EndpointAppLovinMax {
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 		}
 		if err != nil {
@@ -320,7 +320,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 		resetBidIdtoOriginal(ap.BidResponse)
 
-		if rctx.Endpoint == models.EndpointApplovinMax {
+		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyMaxAppLovinResponse(rctx, ap.BidResponse)
 		}
 		return ap, err

@@ -61,8 +61,9 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
-	if endpoint == models.EndpointApplovinMax {
-		payload.Body = updateMaxAppLovinRequest(rCtx, payload.Body)
+	if endpoint == models.EndpointAppLovinMax {
+		// updating body locally to access updated fields from signal
+		payload.Body = updateAppLovinMaxRequest(payload.Body)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -157,9 +158,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		fallthrough
 	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case models.EndpointWebS2S:
-		fallthrough
-	case models.EndpointApplovinMax:
+	case models.EndpointWebS2S, models.EndpointAppLovinMax:
 		fallthrough
 	default:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
@@ -176,8 +175,8 @@ func GetEndpoint(path, source string, agent string) string {
 			return models.EndpointWebS2S
 		case "owsdk":
 			switch agent {
-			case models.Applovinmax:
-				return models.EndpointApplovinMax
+			case models.AppLovinMax:
+				return models.EndpointAppLovinMax
 			}
 			return models.EndpointV25
 		default:

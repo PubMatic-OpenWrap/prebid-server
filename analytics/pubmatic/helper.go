@@ -69,6 +69,6 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
 		return
 	}
-	rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
+	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))
 	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
 }

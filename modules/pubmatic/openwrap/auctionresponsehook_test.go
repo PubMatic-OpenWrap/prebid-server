@@ -1966,7 +1966,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				moduleCtx: hookstage.ModuleInvocationContext{
 					ModuleContext: hookstage.ModuleContext{
 						"rctx": models.RequestCtx{
-							Endpoint: models.EndpointApplovinMax,
+							Endpoint: models.EndpointAppLovinMax,
 							ImpBidCtx: map[string]models.ImpCtx{
 								"789": {
 									ImpID: "789",
