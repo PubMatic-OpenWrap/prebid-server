@@ -527,7 +527,6 @@ const (
 
 // constants for applovinmax requests
 const (
-	MaxRejected      = "max_rejected"
 	Agent            = "agent"
 	AppLovinMaxAgent = "max"
 	TypeRewarded     = "rewarded"
