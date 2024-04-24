@@ -752,7 +752,7 @@ func TestGetEndpoint(t *testing.T) {
 			args: args{
 				path:   hookexecution.EndpointAuction,
 				source: "owsdk",
-				agent:  models.AppLovinMax,
+				agent:  models.AppLovinMaxAgent,
 			},
 			want: models.EndpointAppLovinMax,
 		},

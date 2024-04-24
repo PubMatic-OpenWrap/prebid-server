@@ -2,6 +2,7 @@ package openrtb2
 
 import (
 	"encoding/json"
+	"net/http"
 	"runtime/debug"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -32,7 +34,7 @@ func recordRejectedBids(pubID string, seatNonBids []openrtb_ext.SeatNonBid, metr
 	}
 }
 
-func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.AuctionObject) {
+func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidResponse, ao analytics.AuctionObject) {
 	defer func() {
 		if r := recover(); r != nil {
 			response, err := json.Marshal(bidResponse)
@@ -77,6 +79,18 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
+	updateAppLovinMaxResponse(rCtx, w, bidResponse)
+}
+
+// Handling for the Max Applovin Rejected case
+func updateAppLovinMaxResponse(rCtx *models.RequestCtx, w http.ResponseWriter, bidResponse *openrtb2.BidResponse) {
+	if rCtx.Endpoint != models.EndpointAppLovinMax || rCtx.Debug {
+		return
+	}
+	bidResponse.Ext = nil
+	if rCtx.AppLovinMax.Reject {
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 // TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505

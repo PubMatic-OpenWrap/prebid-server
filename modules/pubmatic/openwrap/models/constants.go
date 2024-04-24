@@ -527,7 +527,7 @@ const (
 
 // constants for applovinmax requests
 const (
-	Agent        = "agent"
-	AppLovinMax  = "max"
-	TypeRewarded = "rewarded"
+	Agent            = "agent"
+	AppLovinMaxAgent = "max"
+	TypeRewarded     = "rewarded"
 )

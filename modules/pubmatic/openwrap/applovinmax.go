@@ -235,3 +235,55 @@ func updateAppLovinMaxRequest(requestBody []byte) []byte {
 	}
 	return requestBody
 }
+
+func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
+	maxAppLovin := models.AppLovinMax{Reject: false}
+
+	if bidResponse.NBR != nil {
+		if !rctx.Debug {
+			maxAppLovin.Reject = true
+		}
+	} else if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		maxAppLovin.Reject = true
+	}
+	return maxAppLovin
+}
+
+func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if rctx.AppLovinMax.Reject {
+		*bidResponse = openrtb2.BidResponse{}
+		return bidResponse
+	}
+
+	//This condition is applied only in case if debug=1 refer func updateMaxAppLovinResponse
+	if bidResponse.NBR != nil {
+		return bidResponse
+	}
+
+	resp, err := json.Marshal(bidResponse)
+	if err != nil {
+		*bidResponse = openrtb2.BidResponse{}
+		return bidResponse
+	}
+
+	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
+	*bidResponse = openrtb2.BidResponse{
+		ID:    bidResponse.ID,
+		BidID: bidResponse.SeatBid[0].Bid[0].ID,
+		Cur:   bidResponse.Cur,
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: []openrtb2.Bid{
+					{
+						ID:    bidResponse.SeatBid[0].Bid[0].ID,
+						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
+						Price: bidResponse.SeatBid[0].Bid[0].Price,
+						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						Ext:   json.RawMessage(signaldata),
+					},
+				},
+			},
+		},
+	}
+	return bidResponse
+}

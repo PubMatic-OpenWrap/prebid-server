@@ -6,6 +6,9 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -672,6 +675,256 @@ func TestUpdateRequestWrapper(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			updateRequestWrapper(tt.args.signalExt, tt.args.maxRequest)
 			assert.Equal(t, tt.want, tt.args.maxRequest.Ext)
+		})
+	}
+}
+
+func TestUpdateMaxApplovinResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want models.AppLovinMax
+	}{
+		{
+			name: "bidresponse contains NBR and debug is disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: true,
+			},
+		},
+		{
+			name: "bidresponse contains NBR and debug is enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: false,
+			},
+		},
+		{
+			name: "bidresponse seatbid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "123",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: true,
+			},
+		},
+		{
+			name: "bidresponse seatbid.bid is empty",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{},
+						},
+					},
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: true,
+			},
+		},
+		{
+			name: "No NBR and valid bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									AdM:   "<img src=\"http://example.com\"></img>",
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"key":"value"}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+			},
+			want: models.AppLovinMax{
+				Reject: false,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := updateAppLovinMaxResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestApplyMaxAppLovinResponse(t *testing.T) {
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "AppLovinMax.Reject is true",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+					AppLovinMax: models.AppLovinMax{
+						Reject: true,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{},
+		},
+		{
+			name: "bidresponse contains NBR and AppLovinMax.Reject is false",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: false,
+					AppLovinMax: models.AppLovinMax{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:  "123",
+					NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "123",
+				NBR: ptrutil.ToPtr(nbr.InvalidPlatform),
+			},
+		},
+		{
+			name: "failed to marshal bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					Debug: true,
+					AppLovinMax: models.AppLovinMax{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "123",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "123",
+									ImpID: "789",
+								},
+							},
+						},
+					},
+					Ext: json.RawMessage(`{`),
+				},
+			},
+			want: &openrtb2.BidResponse{},
+		},
+		{
+			name: "valid bidresponse",
+			args: args{
+				rctx: models.RequestCtx{
+					AppLovinMax: models.AppLovinMax{
+						Reject: false,
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "",
+					Cur:   "USD",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "456",
+									ImpID: "789",
+									Price: 1.0,
+									AdM:   "<img src=\"http://example.com\"></img>",
+									BURL:  "http://example.com",
+									Ext:   json.RawMessage(`{"key":"value"}`),
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Ext: json.RawMessage(`{"key":"value"}`),
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "456",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "456",
+								ImpID: "789",
+								Price: 1.0,
+								BURL:  "http://example.com",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := applyAppLovinMaxResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
