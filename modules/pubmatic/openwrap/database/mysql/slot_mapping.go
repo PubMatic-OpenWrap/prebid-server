@@ -39,7 +39,7 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 	query := db.formWrapperSlotMappingQuery(profileID, displayVersion, partnerConfigMap)
 	rows, err := db.conn.Query(query)
 	if err != nil {
-		return partnerSlotMappingMap, &models.DBError{Message: err.Error()}
+		return partnerSlotMappingMap, err
 	}
 	defer rows.Close()
 

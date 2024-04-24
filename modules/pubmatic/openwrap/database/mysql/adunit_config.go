@@ -25,13 +25,13 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		return nil, &models.DBError{Message: err.Error()}
+		return nil, err
 	}
 
 	adunitConfig := &adunitconfig.AdUnitConfig{}
 	err = json.Unmarshal([]byte(adunitConfigJSON), &adunitConfig)
 	if err != nil {
-		return nil, &models.AdUnitUnmarshalError{Message: "Error in AdUnitConfig unmarshal "}
+		return nil, adunitconfig.ErrAdUnitUnmarshal
 	}
 
 	for k, v := range adunitConfig.Config {
