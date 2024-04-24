@@ -350,7 +350,7 @@ func TestUpdateMaxAppLovinResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateMaxAppLovinResponse(tt.args.rCtx, tt.args.w, tt.args.bidResponse)
+			updateAppLovinMaxResponse(tt.args.rCtx, tt.args.w, tt.args.bidResponse)
 			assert.Equal(t, tt.wantBidResponse, tt.args.bidResponse, tt.name)
 			if tt.updateHeader {
 				assert.Equal(t, http.StatusNoContent, tt.args.w.(*httptest.ResponseRecorder).Code, tt.name)

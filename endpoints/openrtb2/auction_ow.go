@@ -79,11 +79,11 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	}
 
 	bidResponse.Ext, _ = json.Marshal(extBidResponse)
-	updateMaxAppLovinResponse(rCtx, w, bidResponse)
+	updateAppLovinMaxResponse(rCtx, w, bidResponse)
 }
 
 // Handling for the Max Applovin Rejected case
-func updateMaxAppLovinResponse(rCtx *models.RequestCtx, w http.ResponseWriter, bidResponse *openrtb2.BidResponse) {
+func updateAppLovinMaxResponse(rCtx *models.RequestCtx, w http.ResponseWriter, bidResponse *openrtb2.BidResponse) {
 	if rCtx.Endpoint != models.EndpointAppLovinMax || rCtx.Debug {
 		return
 	}
