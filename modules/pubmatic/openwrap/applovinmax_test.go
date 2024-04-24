@@ -99,6 +99,14 @@ func TestUpdateImpression(t *testing.T) {
 			want: []openrtb2.Imp{{}},
 		},
 		{
+			name: "Banner API not present in signalImp",
+			args: args{
+				signalImps: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "sdk_banner"}}},
+				maxImps:    []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", API: []adcom1.APIFramework{1, 2}, Ext: json.RawMessage(`{"bannertype":"not-rewarded"}`)}}},
+			},
+			want: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", API: []adcom1.APIFramework{1, 2}, Ext: json.RawMessage(`{"bannertype":"not-rewarded"}`)}}},
+		},
+		{
 			name: "maxImp has no ext, signalImp has reward in ext",
 			args: args{
 				signalImps: []openrtb2.Imp{{Ext: json.RawMessage(`{"reward":1}`)}},

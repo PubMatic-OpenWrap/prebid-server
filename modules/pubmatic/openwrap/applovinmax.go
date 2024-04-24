@@ -55,7 +55,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	}
 
 	if maxImps[0].Banner != nil {
-		if signalImp.Banner != nil {
+		if signalImp.Banner != nil && len(signalImp.Banner.API) > 0 {
 			maxImps[0].Banner.API = signalImp.Banner.API
 		}
 
