@@ -255,6 +255,7 @@ func applyMaxAppLovinResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 		return bidResponse
 	}
 
+	//This condition is applied only in case if debug=1 refer func updateMaxAppLovinResponse
 	if bidResponse.NBR != nil {
 		return bidResponse
 	}
