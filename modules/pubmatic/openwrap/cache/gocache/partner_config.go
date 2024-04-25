@@ -72,7 +72,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	}
 
 	if len(partnerConfigMap) == 0 {
-		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry)) // Setting empty partner Config map
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
 	}
 
@@ -96,12 +95,9 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		// In case of Error in AdUnit Unmarshal, push PartnerConfig and process request
-		if !errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
-			return err
-		}
+		return err
 	}
 
 	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-	return nil
+	return
 }

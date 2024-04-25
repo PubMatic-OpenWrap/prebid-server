@@ -139,18 +139,8 @@ func Test_cache_GetPartnerConfigMap(t *testing.T) {
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AdUnitFailUnmarshal, "5890", "123").Return().Times(1)
 				return mockDatabase, mockEngine
 			},
-			wantErr: false,
-			want: map[int]map[string]string{
-				1: {
-					"partnerId":         "1",
-					"prebidPartnerName": "pubmatic",
-					"serverSideEnabled": "1",
-					"level":             "multi",
-					"kgp":               "_AU_@_W_x_H",
-					"timeout":           "220",
-					"bidderCode":        "pubmatic",
-				},
-			},
+			wantErr: true,
+			want:    nil,
 		},
 		{
 			name: "db_queries_failed_getting_adunitconfig",
@@ -412,7 +402,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry: true,
+				cacheEntry: false,
 				err:        fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
 			},
 			setup: func() {
