@@ -37,13 +37,13 @@ type dynamicAdpod struct {
 	Error          *openrtb_ext.ExtBidderMessage `json:"ec,omitempty"`
 }
 
-func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodConfigExt *openrtb_ext.ExtVideoAdPod, metricsEngine metrics.MetricsEngine, adpodExt *openrtb_ext.ExtRequestAdPod) *dynamicAdpod {
+func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodExt openrtb_ext.ExtVideoAdPod, metricsEngine metrics.MetricsEngine, reqAdpodExt *openrtb_ext.ExtRequestAdPod) *dynamicAdpod {
 	//set Pod Duration
 	minPodDuration := imp.Video.MinDuration
 	maxPodDuration := imp.Video.MaxDuration
 
-	if adpodConfigExt == nil {
-		adpodConfigExt = &openrtb_ext.ExtVideoAdPod{
+	if adpodExt.AdPod == nil {
+		adpodExt = openrtb_ext.ExtVideoAdPod{
 			Offset: ptrutil.ToPtr(0),
 			AdPod: &openrtb_ext.VideoAdPod{
 				MinAds:                      ptrutil.ToPtr(1),
@@ -61,11 +61,11 @@ func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodConfigExt *openrtb_ext
 		AdpodCtx: AdpodCtx{
 			PubId:         pubId,
 			Type:          Dynamic,
-			AdpodExt:      adpodExt,
+			ReqAdpodExt:   reqAdpodExt,
 			MetricsEngine: metricsEngine,
 		},
 		Imp:            imp,
-		VideoExt:       adpodConfigExt,
+		VideoExt:       &adpodExt,
 		MinPodDuration: minPodDuration,
 		MaxPodDuration: maxPodDuration,
 	}
@@ -103,25 +103,13 @@ func (da *dynamicAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 		}
 	}
 
-	value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat), bid)
-	if err == nil {
-		// ignore error
-		addTargetingKey(&bid, openrtb_ext.HbCategoryDurationKey, value)
-	}
-
-	value, err = util.GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat), bid)
-	if err == nil {
-		// ignore error
-		addTargetingKey(&bid, openrtb_ext.HbpbConstantKey, value)
-	}
-
 	ext := openrtb_ext.ExtBid{}
 	if bid.Ext != nil {
 		json.Unmarshal(bid.Ext, &ext)
 	}
 
 	//get duration of creative
-	duration, status := getBidDuration(&bid, da.AdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
+	duration, status := getBidDuration(&bid, da.ReqAdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
 
 	da.AdpodBid.Bids = append(da.AdpodBid.Bids, &types.Bid{
 		Bid:               &bid,
@@ -214,8 +202,8 @@ func (da *dynamicAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string
 func (da *dynamicAdpod) getAdPodImpConfigs() {
 	// monitor
 	start := time.Now()
-	selectedAlgorithm := impressions.SelectAlgorithm(da.AdpodExt)
-	impGen := impressions.NewImpressions(da.MinPodDuration, da.MaxPodDuration, da.AdpodExt, da.VideoExt.AdPod, selectedAlgorithm)
+	selectedAlgorithm := impressions.SelectAlgorithm(da.ReqAdpodExt)
+	impGen := impressions.NewImpressions(da.MinPodDuration, da.MaxPodDuration, da.ReqAdpodExt, da.VideoExt.AdPod, selectedAlgorithm)
 	impRanges := impGen.Get()
 	labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
 

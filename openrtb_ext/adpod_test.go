@@ -246,7 +246,7 @@ func TestExtRequestAdPod_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ext := &ExtRequestAdPod{
-				VideoAdPod:                          tt.fields.VideoAdPod,
+				VideoAdPod:                          &tt.fields.VideoAdPod,
 				CrossPodAdvertiserExclusionPercent:  tt.fields.CrossPodAdvertiserExclusionPercent,
 				CrossPodIABCategoryExclusionPercent: tt.fields.CrossPodIABCategoryExclusionPercent,
 				IABCategoryExclusionWindow:          tt.fields.IABCategoryExclusionWindow,

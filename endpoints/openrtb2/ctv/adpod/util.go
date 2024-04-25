@@ -13,7 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value string) error {
+func AddTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value string) error {
 	if nil == bid {
 		return errors.New("Invalid bid")
 	}
@@ -45,8 +45,8 @@ func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
 	return &nbrCode
 }
 
-func GetPodType(imp openrtb2.Imp, adpodConfig *openrtb_ext.ExtVideoAdPod) PodType {
-	if adpodConfig != nil {
+func GetPodType(imp openrtb2.Imp, extAdpod openrtb_ext.ExtVideoAdPod) PodType {
+	if extAdpod.AdPod != nil {
 		return Dynamic
 	}
 

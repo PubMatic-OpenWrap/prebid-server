@@ -25,11 +25,11 @@ func TestAddTargetingKeys(t *testing.T) {
 			bid := new(openrtb2.Bid)
 			bid.Ext = []byte(test.bidExt)
 			key := openrtb_ext.TargetingKey(test.key)
-			assert.Nil(t, addTargetingKey(bid, key, test.value))
+			assert.Nil(t, AddTargetingKey(bid, key, test.value))
 			extBid := openrtb_ext.ExtBid{}
 			json.Unmarshal(bid.Ext, &extBid)
 			assert.Equal(t, test.expect, extBid.Prebid.Targeting)
 		})
 	}
-	assert.Equal(t, "Invalid bid", addTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
+	assert.Equal(t, "Invalid bid", AddTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
 }

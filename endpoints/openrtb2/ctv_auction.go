@@ -152,7 +152,10 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	request = reqWrapper.BidRequest
 
 	//init
-	if errs := deps.init(request); len(errs) > 0 {
+	deps.init(request)
+
+	// Read Request extension
+	if errs := deps.readRequestExtension(); len(errs) > 0 {
 		writeError(errs, w, &deps.labels)
 		return
 	}
@@ -294,16 +297,9 @@ func (deps *ctvEndpointDeps) holdAuction(ctx context.Context, auctionRequest exc
 
 /********************* BidRequest Processing *********************/
 
-func (deps *ctvEndpointDeps) init(req *openrtb2.BidRequest) (errs []error) {
+func (deps *ctvEndpointDeps) init(req *openrtb2.BidRequest) {
 	deps.request = req
 	deps.impToPodId = make(map[string]string)
-
-	// Read adpod Object Request extension
-	deps.readRequestExtension()
-
-	//validate request extension
-	errs = deps.reqExt.Validate()
-	return
 }
 
 /*
@@ -316,14 +312,14 @@ func (deps *ctvEndpointDeps) prepareAdpodCtx(request *openrtb2.BidRequest) (errs
 	for _, imp := range request.Imp {
 		if imp.Video != nil {
 			// check for adpod in the extension
-			adpodConfigInExt, err := deps.readVideoAdPodExt(imp)
+			extAdpod, err := deps.readVideoAdPodExt(imp)
 			if err != nil {
 				errs = append(errs, err)
 			}
 
-			switch adpod.GetPodType(imp, adpodConfigInExt) {
+			switch adpod.GetPodType(imp, extAdpod) {
 			case adpod.Dynamic:
-				deps.createDynamicAdpodCtx(imp, adpodConfigInExt)
+				deps.createDynamicAdpodCtx(imp, extAdpod)
 			case adpod.Structured:
 				deps.createStructuredAdpodCtx(imp)
 			default:
@@ -335,14 +331,14 @@ func (deps *ctvEndpointDeps) prepareAdpodCtx(request *openrtb2.BidRequest) (errs
 	return
 }
 
-func (deps *ctvEndpointDeps) createDynamicAdpodCtx(imp openrtb2.Imp, adpodConfigExt *openrtb_ext.ExtVideoAdPod) {
+func (deps *ctvEndpointDeps) createDynamicAdpodCtx(imp openrtb2.Imp, adpodExt openrtb_ext.ExtVideoAdPod) {
 	podId := imp.Video.PodID
 	if len(podId) == 0 {
 		podId = imp.ID
 	}
 	deps.impToPodId[imp.ID] = podId
 
-	deps.podCtx[podId] = adpod.NewDynamicAdpod(deps.labels.PubID, imp, adpodConfigExt, deps.metricsEngine, deps.reqExt)
+	deps.podCtx[podId] = adpod.NewDynamicAdpod(deps.labels.PubID, imp, adpodExt, deps.metricsEngine, deps.reqExt)
 }
 
 func (deps *ctvEndpointDeps) createStructuredAdpodCtx(imp openrtb2.Imp) {
@@ -369,32 +365,34 @@ func (deps *ctvEndpointDeps) ValidateAdpodCtx() []error {
 	return errs
 }
 
-func (deps *ctvEndpointDeps) readVideoAdPodExt(imp openrtb2.Imp) (*openrtb_ext.ExtVideoAdPod, error) {
-	var adpodConfigExt openrtb_ext.ExtVideoAdPod
+func (deps *ctvEndpointDeps) readVideoAdPodExt(imp openrtb2.Imp) (openrtb_ext.ExtVideoAdPod, error) {
+	var adpodExt openrtb_ext.ExtVideoAdPod
 
 	if imp.Video != nil && len(imp.Video.Ext) > 0 {
-		err := json.Unmarshal(imp.Video.Ext, &adpodConfigExt)
+		err := json.Unmarshal(imp.Video.Ext, &adpodExt)
 		if err != nil {
-			return nil, err
+			return adpodExt, err
 		}
 	}
 
-	if adpodConfigExt.AdPod == nil && deps.reqExt == nil {
-		return nil, nil
+	if adpodExt.AdPod == nil && deps.reqExt == nil {
+		return adpodExt, nil
 	}
 
-	if deps.reqExt != nil {
-		if adpodConfigExt.AdPod == nil {
-			adpodConfigExt.AdPod = &openrtb_ext.VideoAdPod{}
+	if deps.reqExt != nil && deps.reqExt.VideoAdPod != nil {
+		if adpodExt.AdPod == nil {
+			adpodExt.AdPod = &openrtb_ext.VideoAdPod{}
 		}
-		adpodConfigExt.AdPod.Merge(&deps.reqExt.VideoAdPod)
+		adpodExt.AdPod.Merge(deps.reqExt.VideoAdPod)
 	}
 
 	//Set Default Values
-	adpodConfigExt.SetDefaultValue()
-	adpodConfigExt.AdPod.SetDefaultAdDurations(imp.Video.MinDuration, imp.Video.MaxDuration)
+	if adpodExt.AdPod != nil {
+		adpodExt.SetDefaultValue()
+		adpodExt.AdPod.SetDefaultAdDurations(imp.Video.MinDuration, imp.Video.MaxDuration)
+	}
 
-	return &adpodConfigExt, nil
+	return adpodExt, nil
 }
 
 func (deps *ctvEndpointDeps) readRequestExtension() (err []error) {
@@ -417,6 +415,8 @@ func (deps *ctvEndpointDeps) readRequestExtension() (err []error) {
 
 			deps.reqExt.SetDefaultValue()
 		}
+
+		err = deps.reqExt.Validate()
 	}
 	return
 }
@@ -580,9 +580,12 @@ func remove(slice []string, item string) []string {
 func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 	var vseat *openrtb2.SeatBid
 
-	for _, seat := range response.SeatBid {
+	for i := range response.SeatBid {
+		seat := response.SeatBid[i]
 		vseat = nil
-		for _, bid := range seat.Bid {
+		for j := range seat.Bid {
+			bid := &seat.Bid[j]
+
 			if bid.Price == 0 {
 				continue
 			}
@@ -595,6 +598,19 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 			}
 
 			originalImpID, _ := util.DecodeImpressionID(bid.ImpID) //TODO: check if we can reomove and maintain map
+
+			value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				adpod.AddTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+			}
+
+			value, err = util.GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			if nil == err {
+				// ignore error
+				adpod.AddTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
+			}
+
 			podId, ok := deps.impToPodId[originalImpID]
 			if !ok {
 				if vseat == nil {
@@ -605,7 +621,7 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 					}
 					deps.videoSeats = append(deps.videoSeats, vseat)
 				}
-				vseat.Bid = append(vseat.Bid, bid)
+				vseat.Bid = append(vseat.Bid, *bid)
 				continue
 			}
 
@@ -614,7 +630,7 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 				continue
 			}
 
-			adpodCtx.CollectBid(bid, seat.Seat)
+			adpodCtx.CollectBid(*bid, seat.Seat)
 		}
 	}
 }

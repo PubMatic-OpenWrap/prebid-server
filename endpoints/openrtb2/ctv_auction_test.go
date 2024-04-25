@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
@@ -361,7 +360,7 @@ func TestGetAdPodExt(t *testing.T) {
 				},
 			}
 
-			videoExt := &openrtb_ext.ExtVideoAdPod{
+			videoExt := openrtb_ext.ExtVideoAdPod{
 				AdPod: &openrtb_ext.VideoAdPod{},
 			}
 			dynamicAdpod := adpod.NewDynamicAdpod("test-pub", req.Imp[0], videoExt, &metrics.MetricsEngineMock{}, nil)
@@ -384,7 +383,6 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 		request                   *openrtb2.BidRequest
 		reqExt                    *openrtb_ext.ExtRequestAdPod
 		videoSeats                []*openrtb2.SeatBid
-		isAdPodRequest            bool
 		impsExtPrebidBidder       map[string]map[string]map[string]interface{}
 		impPartnerBlockedTagIDMap map[string]map[string][]string
 		podCtx                    map[string]adpod.Adpod
@@ -397,7 +395,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *openrtb_ext.ExtVideoAdPod
+		want    openrtb_ext.ExtVideoAdPod
 		wantErr bool
 	}{
 		{
@@ -417,7 +415,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb_ext.ExtVideoAdPod{
+			want: openrtb_ext.ExtVideoAdPod{
 				Offset: ptrutil.ToPtr(20),
 				AdPod: &openrtb_ext.VideoAdPod{
 					MinAds:                      ptrutil.ToPtr(2),
@@ -446,7 +444,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want: openrtb_ext.ExtVideoAdPod{},
 		},
 		{
 			name: "adpod_configuration_present_in_request_extension",
@@ -454,7 +452,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 				endpointDeps: endpointDeps{},
 				request:      &openrtb2.BidRequest{},
 				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoAdPod: openrtb_ext.VideoAdPod{
+					VideoAdPod: &openrtb_ext.VideoAdPod{
 						MinAds:                      ptrutil.ToPtr(1),
 						MaxAds:                      ptrutil.ToPtr(3),
 						MinDuration:                 ptrutil.ToPtr(10),
@@ -474,7 +472,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb_ext.ExtVideoAdPod{
+			want: openrtb_ext.ExtVideoAdPod{
 				Offset: ptrutil.ToPtr(0),
 				AdPod: &openrtb_ext.VideoAdPod{
 					MinAds:                      ptrutil.ToPtr(1),
@@ -502,7 +500,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want: openrtb_ext.ExtVideoAdPod{},
 		},
 	}
 	for _, tt := range tests {
@@ -522,9 +520,7 @@ func TestGetAdpodConfigFromExtension(t *testing.T) {
 				t.Errorf("ctvEndpointDeps.getAdpodConfigFromExtension() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ctvEndpointDeps.getAdpodConfigFromExtension() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got, "Adpod config does not match")
 		})
 	}
 }

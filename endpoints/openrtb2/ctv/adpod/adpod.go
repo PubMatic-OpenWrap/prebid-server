@@ -31,7 +31,7 @@ type AdpodCtx struct {
 	PubId         string
 	Type          PodType
 	Imps          []openrtb2.Imp
-	AdpodExt      *openrtb_ext.ExtRequestAdPod
+	ReqAdpodExt   *openrtb_ext.ExtRequestAdPod
 	Exclusion     Exclusion
 	MetricsEngine metrics.MetricsEngine
 }

@@ -23,12 +23,12 @@ type Slot struct {
 	TotalBids int
 }
 
-func NewStructuredAdpod(pubId string, metricsEngine metrics.MetricsEngine, adpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
+func NewStructuredAdpod(pubId string, metricsEngine metrics.MetricsEngine, reqAdpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
 	adpod := structuredAdpod{
 		AdpodCtx: AdpodCtx{
 			PubId:         pubId,
 			Type:          Structured,
-			AdpodExt:      adpodExt,
+			ReqAdpodExt:   reqAdpodExt,
 			MetricsEngine: metricsEngine,
 		},
 		ImpBidMap:  make(map[string][]*types.Bid),
