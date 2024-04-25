@@ -54,6 +54,10 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	if rCtx.Endpoint == models.EndpointAppLovinMax && !rCtx.Debug {
+		RestoreBidResponse(*ao)
+	}
+
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",

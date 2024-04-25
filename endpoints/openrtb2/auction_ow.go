@@ -55,17 +55,6 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		return
 	}
 
-	extBidResponse := openrtb_ext.ExtBidResponse{}
-	if len(bidResponse.Ext) != 0 {
-		if err := json.Unmarshal(bidResponse.Ext, &extBidResponse); err != nil {
-			return
-		}
-	}
-
-	if rCtx.LogInfoFlag == 1 {
-		extBidResponse.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
-	}
-
 	// TODO: uncomment after seatnonbid PR is merged https://github.com/prebid/prebid-server/v2/pull/2505
 	// if seatNonBids := updateSeatNoBid(rCtx, ao); len(seatNonBids) != 0 {
 	// 	if extBidResponse.Prebid == nil {
@@ -75,21 +64,24 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	// }
 
 	if rCtx.Debug {
+		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			pubmatic.RestoreBidResponse(ao)
+		}
+
+		extBidResponse := openrtb_ext.ExtBidResponse{}
+		if len(ao.Response.Ext) != 0 {
+			if err := json.Unmarshal(ao.Response.Ext, &extBidResponse); err != nil {
+				return
+			}
+		}
+
 		extBidResponse.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
-	}
-
-	bidResponse.Ext, _ = json.Marshal(extBidResponse)
-	updateAppLovinMaxResponse(rCtx, w, bidResponse)
-}
-
-// Handling for the Max Applovin Rejected case
-func updateAppLovinMaxResponse(rCtx *models.RequestCtx, w http.ResponseWriter, bidResponse *openrtb2.BidResponse) {
-	if rCtx.Endpoint != models.EndpointAppLovinMax || rCtx.Debug {
-		return
-	}
-	bidResponse.Ext = nil
-	if rCtx.AppLovinMax.Reject {
-		w.WriteHeader(http.StatusNoContent)
+		bidResponse.Ext, _ = json.Marshal(extBidResponse)
+	} else if rCtx.Endpoint == models.EndpointAppLovinMax {
+		bidResponse.Ext = nil
+		if rCtx.AppLovinMax.Reject {
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}
 }
 

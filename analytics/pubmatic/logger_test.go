@@ -3989,13 +3989,13 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 }
 func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string { return "uuid" }
+	GetUUID = func() string { return "uuid" }
 	ow.cfg.Endpoint = "http://10.172.141.11/wl"
 	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
 
@@ -4182,13 +4182,13 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 }
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string {
+	GetUUID = func() string {
 		return "sid"
 	}
 

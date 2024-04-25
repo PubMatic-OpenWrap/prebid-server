@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
@@ -71,4 +73,23 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 	}
 	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))
 	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
+}
+
+// RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
+func RestoreBidResponse(ao analytics.AuctionObject) {
+	if ao.Response.NBR != nil {
+		return
+	}
+	signalData := map[string]string{}
+	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
+		return
+	}
+
+	orignalResponse := &openrtb2.BidResponse{}
+	if val, ok := signalData[models.SignalData]; !ok || val == "" {
+		return
+	}
+	if err := json.Unmarshal([]byte(signalData["signaldata"]), orignalResponse); err == nil {
+		*ao.Response = *orignalResponse
+	}
 }

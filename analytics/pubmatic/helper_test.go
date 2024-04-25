@@ -1,15 +1,20 @@
 package pubmatic
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	mock_mhttp "github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp/mock"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -217,6 +222,146 @@ func TestSendMethod(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.rctx.MetricsEngine = tt.getMetricsEngine()
 			send(tt.args.rctx, tt.args.url, tt.args.headers, tt.getMockMultiHttpContext())
+		})
+	}
+}
+
+func TestRestoreBidResponse(t *testing.T) {
+	type args struct {
+		ao analytics.AuctionObject
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "NBR is not nil",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:  "test-case-1",
+						NBR: ptrutil.ToPtr(nbr.InvalidProfileConfiguration),
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "test-case-1",
+				NBR: ptrutil.ToPtr(nbr.InvalidProfileConfiguration),
+			},
+		},
+		{
+			name: "failed to unmarshal BidResponse.SeatBid[0].Bid[0].Ext",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-case-1",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:  "123",
+										Ext: json.RawMessage(`{`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-case-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`{`),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "signaldata not present in ext",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-case-1",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:  "123",
+										Ext: json.RawMessage(`"signalData": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-case-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "123",
+								Ext: json.RawMessage(`"signalData": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"`),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "valid AppLovinMax Response",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp_1",
+										Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "bid-id-1",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-id-1",
+								ImpID: "imp_1",
+							},
+						},
+					},
+				},
+				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			RestoreBidResponse(tt.args.ao)
+			assert.Equal(t, tt.want, tt.args.ao.Response)
 		})
 	}
 }
