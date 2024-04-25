@@ -22,6 +22,11 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeSDK,
 		},
 		{
+			name:            "applovinmax",
+			endpoint:        models.EndpointAppLovinMax,
+			integrationType: models.TypeSDK,
+		},
+		{
 			name:            "amp",
 			endpoint:        models.EndpointAMP,
 			integrationType: models.TypeAmp,
