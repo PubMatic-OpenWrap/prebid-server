@@ -130,7 +130,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1, models.PLATFORM_APP).Return(
+				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1).Return(
 					map[int]map[string]string{
 						1: {
 							models.PARTNER_ID:          "2",
@@ -185,7 +185,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1, models.PLATFORM_APP).Return(
+				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1).Return(
 					nil, fmt.Errorf("error GetPartnerConfigMap"))
 			},
 			want:    nil,

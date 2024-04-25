@@ -49,7 +49,8 @@ type Metrics struct {
 	// publisher-platform-endpoint level metrics
 	pubPlatformEndpointRequests *prometheus.CounterVec
 
-	getProfileData *prometheus.HistogramVec
+	getProfileData prometheus.Histogram
+	sendLoggerData prometheus.Histogram
 
 	dbQueryError *prometheus.CounterVec
 
@@ -66,7 +67,6 @@ type Metrics struct {
 	prebidTimeoutRequests *prometheus.CounterVec
 	partnerTimeoutRequest *prometheus.CounterVec
 	panicCounts           *prometheus.CounterVec
-	sendLoggerData        *prometheus.HistogramVec
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
@@ -95,7 +95,7 @@ const (
 	queryTypeLabel = "query_type"
 )
 
-var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
+var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
 var once sync.Once
 var metric *Metrics
 
@@ -247,10 +247,9 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, platformLabel, endpointLabel},
 	)
 
-	metrics.getProfileData = newHistogramVec(cfg, promRegistry,
+	metrics.getProfileData = newHistogram(cfg, promRegistry,
 		"profile_data_get_time",
-		"Time taken to get the profile data in seconds", []string{endpointLabel, profileIDLabel},
-		standardTimeBuckets)
+		"Time taken to get the profile data in seconds", standardTimeBuckets)
 
 	metrics.dbQueryError = newCounter(cfg, promRegistry,
 		"db_query_failed",
@@ -295,6 +294,19 @@ func newCounter(cfg *config.PrometheusMetrics, registry *prometheus.Registry, na
 	counter := prometheus.NewCounterVec(opts, labels)
 	registry.MustRegister(counter)
 	return counter
+}
+
+func newHistogram(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, buckets []float64) prometheus.Histogram {
+	opts := prometheus.HistogramOpts{
+		Namespace: cfg.Namespace,
+		Subsystem: cfg.Subsystem,
+		Name:      name,
+		Help:      help,
+		Buckets:   buckets,
+	}
+	histogram := prometheus.NewHistogram(opts)
+	registry.MustRegister(histogram)
+	return histogram
 }
 
 func newHistogramVec(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string, buckets []float64) *prometheus.HistogramVec {
@@ -458,11 +470,8 @@ func (m *Metrics) RecordInjectTrackerErrorCount(adformat, publisherID, partner s
 }
 
 // RecordGetProfileDataTime as a noop
-func (m *Metrics) RecordGetProfileDataTime(endpoint, profileID string, getTime time.Duration) {
-	m.getProfileData.With(prometheus.Labels{
-		endpointLabel:  endpoint,
-		profileIDLabel: profileID,
-	}).Observe(float64(getTime.Seconds()))
+func (m *Metrics) RecordGetProfileDataTime(getTime time.Duration) {
+	m.getProfileData.Observe(float64(getTime.Seconds()))
 }
 
 // RecordDBQueryFailure as a noop
