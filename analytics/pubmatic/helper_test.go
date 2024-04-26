@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
@@ -13,7 +14,6 @@ import (
 	mock_mhttp "github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp/mock"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -228,13 +228,31 @@ func TestSendMethod(t *testing.T) {
 
 func TestRestoreBidResponse(t *testing.T) {
 	type args struct {
-		ao analytics.AuctionObject
+		ao   analytics.AuctionObject
+		rctx *models.RequestCtx
 	}
 	tests := []struct {
-		name string
-		args args
-		want *openrtb2.BidResponse
+		name    string
+		args    args
+		want    *openrtb2.BidResponse
+		WantErr bool
 	}{
+		{
+			name: "Endpoint is not AppLovinMax",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-case-1",
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-case-1",
+			},
+		},
 		{
 			name: "NBR is not nil",
 			args: args{
@@ -243,6 +261,9 @@ func TestRestoreBidResponse(t *testing.T) {
 						ID:  "test-case-1",
 						NBR: ptrutil.ToPtr(nbr.InvalidProfileConfiguration),
 					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
 				},
 			},
 			want: &openrtb2.BidResponse{
@@ -268,6 +289,9 @@ func TestRestoreBidResponse(t *testing.T) {
 						},
 					},
 				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
 			},
 			want: &openrtb2.BidResponse{
 				ID: "test-case-1",
@@ -282,6 +306,7 @@ func TestRestoreBidResponse(t *testing.T) {
 					},
 				},
 			},
+			WantErr: true,
 		},
 		{
 			name: "signaldata not present in ext",
@@ -301,6 +326,9 @@ func TestRestoreBidResponse(t *testing.T) {
 						},
 					},
 				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
 			},
 			want: &openrtb2.BidResponse{
 				ID: "test-case-1",
@@ -315,6 +343,51 @@ func TestRestoreBidResponse(t *testing.T) {
 					},
 				},
 			},
+			WantErr: true,
+		},
+		{
+			name: "failed to unmarshal signaldata",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp_1",
+										Ext:   json.RawMessage(`{"signaldata":{"id":123}"}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "bid-id-1",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-id-1",
+								ImpID: "imp_1",
+								Ext:   json.RawMessage(`{"signaldata":{"id":123}"}`)},
+						},
+					},
+				},
+			},
+			WantErr: true,
 		},
 		{
 			name: "valid AppLovinMax Response",
@@ -338,6 +411,9 @@ func TestRestoreBidResponse(t *testing.T) {
 						},
 					},
 				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
 			},
 			want: &openrtb2.BidResponse{
 				ID:    "123",
@@ -360,7 +436,8 @@ func TestRestoreBidResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			RestoreBidResponse(tt.args.ao)
+			err := RestoreBidResponse(tt.args.rctx, tt.args.ao)
+			assert.Equal(t, tt.WantErr, err != nil)
 			assert.Equal(t, tt.want, tt.args.ao.Response)
 		})
 	}

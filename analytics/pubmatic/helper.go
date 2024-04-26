@@ -2,6 +2,7 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -76,20 +77,26 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 }
 
 // RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
-func RestoreBidResponse(ao analytics.AuctionObject) {
+func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
+
 	if ao.Response.NBR != nil {
-		return
+		return nil
 	}
 	signalData := map[string]string{}
 	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
-		return
+		return err
 	}
 
-	orignalResponse := &openrtb2.BidResponse{}
 	if val, ok := signalData[models.SignalData]; !ok || val == "" {
-		return
+		return fmt.Errorf("signal data not found in the response")
 	}
-	if err := json.Unmarshal([]byte(signalData["signaldata"]), orignalResponse); err == nil {
-		*ao.Response = *orignalResponse
+	orignalResponse := &openrtb2.BidResponse{}
+	if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
+		return err
 	}
+	*ao.Response = *orignalResponse
+	return nil
 }
