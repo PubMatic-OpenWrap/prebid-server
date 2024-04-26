@@ -78,7 +78,6 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	} else if rCtx.Endpoint == models.EndpointAppLovinMax {
 		bidResponse.Ext = nil
 		if rCtx.AppLovinMax.Reject {
-			*bidResponse = openrtb2.BidResponse{}
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}

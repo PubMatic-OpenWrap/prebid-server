@@ -798,7 +798,22 @@ func TestUpdateResponseExtOW(t *testing.T) {
 				},
 			},
 			rejectResponse: true,
-			want:           &openrtb2.BidResponse{},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "bid-id-1",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-id-1",
+								ImpID: "imp_1",
+							},
+						},
+					},
+				},
+			},
 			RestoredResponse: &openrtb2.BidResponse{
 				ID:    "123",
 				BidID: "bid-id-1",
