@@ -179,10 +179,6 @@ func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
 	}
 }
 
-func (m *Metrics) RecordHttpCounter() {
-	m.httpCounter.Inc()
-}
-
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
 	m.httpCounter = newHttpCounter(cfg, reg)
 	m.rejectedBids = newCounter(cfg, reg,

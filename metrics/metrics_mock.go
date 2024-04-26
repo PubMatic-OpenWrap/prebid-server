@@ -241,6 +241,3 @@ func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId, code string) {
 	me.Called(pubId, code)
 }
-
-func (me *MetricsEngineMock) RecordHttpCounter() {
-}

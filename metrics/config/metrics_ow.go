@@ -39,8 +39,6 @@ func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string)
 		thisME.RecordBids(pubid, profileid, biddder, deal)
 	}
 }
-func (me *MultiMetricsEngine) RecordHttpCounter() {
-}
 
 func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 	for _, thisME := range *me {
@@ -80,9 +78,6 @@ func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 
 // RecordVastVersion as a noop
 func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
-}
-
-func (m *NilMetricsEngine) RecordHttpCounter() {
 }
 
 // RecordRejectedBidsForBidder as a noop

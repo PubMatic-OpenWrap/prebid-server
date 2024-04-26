@@ -251,18 +251,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0)
 }
 
-// RecordHTTPCounter mocks base method.
-func (m *MockMetricsEngine) RecordHTTPCounter() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordHTTPCounter")
-}
-
-// RecordHTTPCounter indicates an expected call of RecordHTTPCounter.
-func (mr *MockMetricsEngineMockRecorder) RecordHTTPCounter() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPCounter", reflect.TypeOf((*MockMetricsEngine)(nil).RecordHTTPCounter))
-}
-
 // RecordImpDisabledViaConfigStats mocks base method.
 func (m *MockMetricsEngine) RecordImpDisabledViaConfigStats(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()

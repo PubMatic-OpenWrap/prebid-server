@@ -13,8 +13,7 @@ import (
 type Metrics struct {
 
 	// general metrics
-	panics      *prometheus.CounterVec
-	httpCounter *prometheus.CounterVec
+	panics *prometheus.CounterVec
 
 	// publisher-partner level metrics
 	pubPartnerNoCookie            *prometheus.CounterVec
@@ -115,12 +114,6 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"panics",
 		"Count of prebid server panics in openwrap module.",
 		[]string{hostLabel, methodLabel},
-	)
-
-	metrics.httpCounter = newCounter(cfg, promRegistry,
-		"total_http_request",
-		"Count of total http requests",
-		[]string{},
 	)
 
 	// publisher-partner level metrics
@@ -489,10 +482,6 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 		pubIDLabel:     publisher,
 		profileIDLabel: profile,
 	}).Inc()
-}
-
-func (m *Metrics) RecordHTTPCounter() {
-	m.httpCounter.With(nil).Inc()
 }
 
 // TODO - really need ?
