@@ -206,6 +206,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordGetProfileDataTime(endpoint, profile, getTime)
 	mockEngine.EXPECT().RecordSendLoggerDataTime(endpoint, profile, sendTime)
 	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
+	mockEngine.EXPECT().RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	mockEngine.EXPECT().Shutdown()
 
 	mockEngine.EXPECT().RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
@@ -271,6 +272,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordGetProfileDataTime(endpoint, profile, getTime)
 	multiMetricEngine.RecordSendLoggerDataTime(endpoint, profile, sendTime)
 	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
+	multiMetricEngine.RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	multiMetricEngine.Shutdown()
 
 	multiMetricEngine.RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})

@@ -57,6 +57,7 @@ type Queries struct {
 	GetPublisherVASTTagsQuery         string
 	GetAllDspFscPcntQuery             string
 	GetPublisherFeatureMapQuery       string
+	GetAnalyticsThrottlingQuery       string
 }
 
 type Cache struct {
@@ -82,8 +83,9 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
-	VASTUnwrapPercent      int
-	VASTUnwrapStatsPercent int
+	VASTUnwrapPercent             int
+	VASTUnwrapStatsPercent        int
+	AnalyticsThrottlingPercentage string
 }
 
 type Log struct { //Log Details

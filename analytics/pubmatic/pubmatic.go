@@ -54,6 +54,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	if rCtx.LoggerDisabled {
+		// logger disabled explicitly for publisher,profile request
+		return
+	}
+
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
