@@ -530,4 +530,5 @@ const (
 	Agent            = "agent"
 	AppLovinMaxAgent = "max"
 	TypeRewarded     = "rewarded"
+	SignalData       = "signaldata"
 )
