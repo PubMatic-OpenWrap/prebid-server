@@ -1727,10 +1727,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				featureConfig: mockFeature,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+				pubFeatures:  mockFeature,
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
 			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
@@ -3225,10 +3225,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				tt.setup()
 			}
 			m := OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				featureConfig: mockFeature,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+				pubFeatures:  mockFeature,
 			}
 
 			bidrequest := &openrtb2.BidRequest{}
@@ -3359,10 +3359,10 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				featureConfig: mockFeature,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+				pubFeatures:  mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -3740,10 +3740,10 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				featureConfig: mockFeature,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+				pubFeatures:  mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -4041,10 +4041,10 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				featureConfig: mockFeature,
+				cfg:          tt.fields.cfg,
+				cache:        tt.fields.cache,
+				metricEngine: tt.fields.metricEngine,
+				pubFeatures:  mockFeature,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)

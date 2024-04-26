@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockMetricsEngine is a mock of MetricsEngine interface.
@@ -81,6 +81,18 @@ func (m *MockMetricsEngine) RecordAmpVideoResponses(arg0, arg1 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
+}
+
+// RecordAnalyticsTrackingThrottled mocks base method.
+func (m *MockMetricsEngine) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAnalyticsTrackingThrottled", arg0, arg1, arg2)
+}
+
+// RecordAnalyticsTrackingThrottled indicates an expected call of RecordAnalyticsTrackingThrottled.
+func (mr *MockMetricsEngineMockRecorder) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAnalyticsTrackingThrottled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAnalyticsTrackingThrottled), arg0, arg1, arg2)
 }
 
 // RecordBadRequests mocks base method.

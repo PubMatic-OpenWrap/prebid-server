@@ -37,6 +37,40 @@ func TestInjectTrackers(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "tracker_disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:        "video",
+					TrackerDisabled: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `creative`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `creative`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "tracker_params_missing",
 			args: args{
 				rctx: models.RequestCtx{

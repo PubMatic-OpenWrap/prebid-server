@@ -13,6 +13,7 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	mock_publisherfeatures "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,6 +21,7 @@ import (
 func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
 	defer ctrl.Finish()
 
 	type fields struct {
@@ -30,7 +32,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 		in0     context.Context
 		miCtx   hookstage.ModuleInvocationContext
 		payload hookstage.EntrypointPayload
-		setup   func(*mock_metrics.MockMetricsEngine)
+		setup   func(*mock_metrics.MockMetricsEngine, *mock_publisherfeatures.MockFeature)
 	}
 	tests := []struct {
 		name     string
@@ -59,7 +61,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -96,7 +98,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -159,7 +163,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1,"wiid":"4df09505-d0b2-4d70-94d9-dc41e8e777f7"}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -207,7 +213,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileids":5890,"versionid":1}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
 					mme.EXPECT().RecordBadRequests(gomock.Any(), 700)
 				},
 			},
@@ -240,7 +246,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","ext":{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890"}},"adunitcode":"div-gpt-ad-1460505748561-0"}},"id":"div-gpt-ad-1460505748561-0","banner":{"topframe":1,"format":[{"w":300,"h":250}]}}],"site":{"domain":"localhost:9999","publisher":{"domain":"localhost:9999","id":"5890"},"page":"http://localhost:9999/integrationExamples/gpt/owServer_example.html"},"device":{"w":1792,"h":446,"dnt":0,"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36","language":"en","sua":{"source":1,"platform":{"brand":"macOS"},"browsers":[{"brand":"Google Chrome","version":["117"]},{"brand":"Not;A=Brand","version":["8"]},{"brand":"Chromium","version":["117"]}],"mobile":0}},"ext":{"prebid":{"auctiontimestamp":1697191822565,"targeting":{"includewinners":true,"includebidderkeys":true},"bidderparams":{"pubmatic":{"publisherId":"5890","wrapper":{"profileid":43563,"versionid":1}}},"channel":{"name":"pbjs","version":"v8.7.0-pre"},"createtids":false}},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3","test":0,"tmax":3000}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -299,7 +307,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","ext":{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890"}},"adunitcode":"div-gpt-ad-1460505748561-0"}},"id":"div-gpt-ad-1460505748561-0","banner":{"topframe":1,"format":[{"w":300,"h":250}]}}],"site":{"domain":"localhost:9999","publisher":{"domain":"localhost:9999","id":"5890"},"page":"http://localhost:9999/integrationExamples/gpt/owServer_example.html"},"device":{"w":1792,"h":446,"dnt":0,"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36","language":"en","sua":{"source":1,"platform":{"brand":"macOS"},"browsers":[{"brand":"Google Chrome","version":["117"]},{"brand":"Not;A=Brand","version":["8"]},{"brand":"Chromium","version":["117"]}],"mobile":0}},"ext":{"prebid":{"auctiontimestamp":1697191822565,"targeting":{"includewinners":true,"includebidderkeys":true},"bidderparams":{"pubmatic":{"publisherId":"5890","wrapper":{"profileid":43563,"versionid":1}}},"channel":{"name":"pbjs","version":"v8.7.0-pre"},"createtids":false,"debug":true}},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3","test":0,"tmax":3000}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -358,7 +368,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","ext":{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890"}},"adunitcode":"div-gpt-ad-1460505748561-0"}},"id":"div-gpt-ad-1460505748561-0","banner":{"topframe":1,"format":[{"w":300,"h":250}]}}],"site":{"domain":"localhost:9999","publisher":{"domain":"localhost:9999","id":"5890"},"page":"http://localhost:9999/integrationExamples/gpt/owServer_example.html"},"device":{"w":1792,"h":446,"dnt":0,"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36","language":"en","sua":{"source":1,"platform":{"brand":"macOS"},"browsers":[{"brand":"Google Chrome","version":["117"]},{"brand":"Not;A=Brand","version":["8"]},{"brand":"Chromium","version":["117"]}],"mobile":0}},"ext":{"prebid":{"auctiontimestamp":1697191822565,"targeting":{"includewinners":true,"includebidderkeys":true},"bidderparams":{"pubmatic":{"publisherId":"5890","wrapper":{}}},"channel":{"name":"pbjs","version":"v8.7.0-pre"},"createtids":false}},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3","test":0,"tmax":3000}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
 					mme.EXPECT().RecordBadRequests(gomock.Any(), 700)
 				},
 			},
@@ -391,7 +401,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","ext":{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890"}},"adunitcode":"div-gpt-ad-1460505748561-0"}},"id":"div-gpt-ad-1460505748561-0","banner":{"topframe":1,"format":[{"w":300,"h":250}]}}],"site":{"domain":"localhost:9999","publisher":{"domain":"localhost:9999","id":"5890"},"page":"http://localhost:9999/integrationExamples/gpt/owServer_example.html"},"device":{"w":1792,"h":446,"dnt":0,"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36","language":"en","sua":{"source":1,"platform":{"brand":"macOS"},"browsers":[{"brand":"Google Chrome","version":["117"]},{"brand":"Not;A=Brand","version":["8"]},{"brand":"Chromium","version":["117"]}],"mobile":0}},"ext":{"prebid":{"auctiontimestamp":1697191822565,"targeting":{"includewinners":true,"includebidderkeys":true},"bidderparams":{"pubmatic":{"publisherId":"5890","wrapper":{}}},"channel":{"name":"pbjs","version":"v8.7.0-pre"},"createtids":false}},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3","test":0,"tmax":3000}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -420,7 +430,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -458,7 +468,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"ext":{"wrapper":{"profileid":5890,"versionid":1}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -522,7 +534,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					}(),
 					Body: []byte(`{"id":"test-case-1","at":1,"bcat":["IAB26-4","IAB26-2","IAB25-6","IAB25-5","IAB25-4","IAB25-3","IAB25-1","IAB25-7","IAB8-18","IAB26-3","IAB26-1","IAB8-5","IAB25-2","IAB11-4"],"tmax":1000,"app":{"publisher":{"name":"New Story Inc.","id":"5890","ext":{"installed_sdk":{"id":"MOLOCO_BIDDING","sdk_version":{"major":1,"minor":0,"micro":0},"adapter_version":{"major":1,"minor":0,"micro":0}}}},"paid":0,"name":"DrawHappyAngel","ver":"0.5.4","bundle":"com.newstory.DrawHappyAngel","cat":["IAB9-30"],"id":"1234567","ext":{"orientation":1}},"device":{"ifa":"497a10d6-c4dd-4e04-a986-c32b7180d462","ip":"38.158.207.171","carrier":"MYTEL","language":"en_US","hwv":"ruby","ppi":440,"pxratio":2.75,"devicetype":4,"connectiontype":2,"js":1,"h":2400,"w":1080,"geo":{"type":2,"ipservice":3,"lat":40.7429,"lon":-73.9392,"long":-73.9392,"city":"Queens","country":"USA","region":"ny","dma":"501","metro":"501","zip":"11101","ext":{"org":"Myanmar Broadband Telecom Co.","isp":"Myanmar Broadband Telecom Co."}},"ext":{},"osv":"13.0.0","ua":"Mozilla/5.0 (Linux; Android 13; 22101316C Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.230 Mobile Safari/537.36","make":"xiaomi","model":"22101316c","os":"android"},"imp":[{"id":"1","displaymanager":"applovin_mediation","displaymanagerver":"11.8.2","instl":0,"secure":0,"tagid":"/43743431/DMDemo","bidfloor":0.01,"bidfloorcur":"USD","exp":14400,"banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"rwdd":0}],"user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{\"id\":\"95d6643c-3da6-40a2-b9ca-12279393ffbf\",\"at\":1,\"tmax\":500,\"cur\":[\"USD\"],\"imp\":[{\"id\":\"imp176227948\",\"clickbrowser\":0,\"displaymanager\":\"PubMatic_OpenBid_SDK\",\"displaymanagerver\":\"1.4.0\",\"tagid\":\"\/43743431\/DMDemo\",\"secure\":0,\"banner\":{\"pos\":7,\"format\":[{\"w\":300,\"h\":250}],\"api\":[5,6,7]},\"instl\":1}],\"app\":{\"paid\":4,\"name\":\"OpenWrapperSample\",\"bundle\":\"com.pubmatic.openbid.app\",\"storeurl\":\"https:\/\/itunes.apple.com\/us\/app\/pubmatic-sdk-app\/id1175273098?appnexus_banner_fixedbid=1&fixedbid=1\",\"ver\":\"1.0\",\"publisher\":{\"id\":\"5890\"}},\"device\":{\"geo\":{\"type\":1,\"lat\":37.421998333333335,\"lon\":-122.08400000000002},\"pxratio\":2.625,\"mccmnc\":\"310-260\",\"lmt\":0,\"ifa\":\"07c387f2-e030-428f-8336-42f682150759\",\"connectiontype\":5,\"carrier\":\"Android\",\"js\":1,\"ua\":\"Mozilla\/5.0(Linux;Android9;AndroidSDKbuiltforx86Build\/PSR1.180720.075;wv)AppleWebKit\/537.36(KHTML,likeGecko)Version\/4.0Chrome\/69.0.3497.100MobileSafari\/537.36\",\"make\":\"Google\",\"model\":\"AndroidSDKbuiltforx86\",\"os\":\"Android\",\"osv\":\"9\",\"h\":1794,\"w\":1080,\"language\":\"en-US\",\"devicetype\":4,\"ext\":{\"atts\":3}},\"source\":{\"ext\":{\"omidpn\":\"PubMatic\",\"omidpv\":\"1.2.11-Pubmatic\"}},\"user\":{\"data\":[{\"id\":\"1234\"}]},\"ext\":{\"wrapper\":{\"ssauction\":1,\"sumry_disable\":0,\"profileid\":58135,\"versionid\":1,\"clientconfig\":1}}}"}]}],"ext":{"gdpr":0}},"regs":{"coppa":0,"ext":{"gdpr":0}},"source":{"ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"applovin.com","sid":"53bf468f18c5a0e2b7d4e3f748c677c1","rid":"494dbe15a3ce08c54f4e456363f35a022247f997","hp":1}]}}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":12929,"versionid":1}}}}}}`),
 				},
-				setup: func(mme *mock_metrics.MockMetricsEngine) {},
+				setup: func(mme *mock_metrics.MockMetricsEngine, mpf *mock_publisherfeatures.MockFeature) {
+					mpf.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any())
+				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
@@ -565,12 +579,14 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockPubFeature := mock_publisherfeatures.NewMockFeature(ctrl)
 
-			tt.args.setup(mockEngine)
+			tt.args.setup(mockEngine, mockPubFeature)
 			m := OpenWrap{
 				cfg:          tt.fields.cfg,
 				cache:        tt.fields.cache,
 				metricEngine: mockEngine,
+				pubFeatures:  mockPubFeature,
 			}
 			got, err := m.handleEntrypointHook(tt.args.in0, tt.args.miCtx, tt.args.payload)
 			assert.Equal(t, err, tt.wantErr)

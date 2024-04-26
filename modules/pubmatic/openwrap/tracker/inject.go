@@ -13,6 +13,10 @@ import (
 )
 
 func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+	if rctx.TrackerDisabled {
+		return bidResponse, nil
+	}
+	
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
