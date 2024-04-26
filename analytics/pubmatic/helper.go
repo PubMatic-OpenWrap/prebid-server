@@ -2,7 +2,7 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -85,18 +85,21 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	if ao.Response.NBR != nil {
 		return nil
 	}
+
 	signalData := map[string]string{}
 	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
 		return err
 	}
 
 	if val, ok := signalData[models.SignalData]; !ok || val == "" {
-		return fmt.Errorf("signal data not found in the response")
+		return errors.New("signal data not found in the response")
 	}
+
 	orignalResponse := &openrtb2.BidResponse{}
 	if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
 		return err
 	}
+
 	*ao.Response = *orignalResponse
 	return nil
 }

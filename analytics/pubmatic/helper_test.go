@@ -235,7 +235,7 @@ func TestRestoreBidResponse(t *testing.T) {
 		name    string
 		args    args
 		want    *openrtb2.BidResponse
-		WantErr bool
+		wantErr string
 	}{
 		{
 			name: "Endpoint is not AppLovinMax",
@@ -306,7 +306,7 @@ func TestRestoreBidResponse(t *testing.T) {
 					},
 				},
 			},
-			WantErr: true,
+			wantErr: "unexpected end of JSON input",
 		},
 		{
 			name: "signaldata not present in ext",
@@ -319,7 +319,7 @@ func TestRestoreBidResponse(t *testing.T) {
 								Bid: []openrtb2.Bid{
 									{
 										ID:  "123",
-										Ext: json.RawMessage(`"signalData": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"`),
+										Ext: json.RawMessage(`{"signalData1": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"}`),
 									},
 								},
 							},
@@ -337,13 +337,13 @@ func TestRestoreBidResponse(t *testing.T) {
 						Bid: []openrtb2.Bid{
 							{
 								ID:  "123",
-								Ext: json.RawMessage(`"signalData": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"`),
+								Ext: json.RawMessage(`{"signalData1": "{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}\r\n"}`),
 							},
 						},
 					},
 				},
 			},
-			WantErr: true,
+			wantErr: "signal data not found in the response",
 		},
 		{
 			name: "failed to unmarshal signaldata",
@@ -360,7 +360,7 @@ func TestRestoreBidResponse(t *testing.T) {
 									{
 										ID:    "bid-id-1",
 										ImpID: "imp_1",
-										Ext:   json.RawMessage(`{"signaldata":{"id":123}"}`),
+										Ext:   json.RawMessage(`{"signaldata": "{"id":123}"}"`),
 									},
 								},
 							},
@@ -382,12 +382,13 @@ func TestRestoreBidResponse(t *testing.T) {
 							{
 								ID:    "bid-id-1",
 								ImpID: "imp_1",
-								Ext:   json.RawMessage(`{"signaldata":{"id":123}"}`)},
+								Ext:   json.RawMessage(`{"signaldata": "{"id":123}"}"`),
+							},
 						},
 					},
 				},
 			},
-			WantErr: true,
+			wantErr: `invalid character 'i' after object key:value pair`,
 		},
 		{
 			name: "valid AppLovinMax Response",
@@ -437,8 +438,10 @@ func TestRestoreBidResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := RestoreBidResponse(tt.args.rctx, tt.args.ao)
-			assert.Equal(t, tt.WantErr, err != nil)
-			assert.Equal(t, tt.want, tt.args.ao.Response)
+			if err != nil {
+				assert.Equal(t, tt.wantErr, err.Error(), tt.name)
+			}
+			assert.Equal(t, tt.want, tt.args.ao.Response, tt.name)
 		})
 	}
 }
