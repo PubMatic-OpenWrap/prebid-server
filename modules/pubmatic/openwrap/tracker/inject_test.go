@@ -1,15 +1,14 @@
 package tracker
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInjectTrackers(t *testing.T) {
@@ -493,9 +492,7 @@ func TestInjectTrackers(t *testing.T) {
 				t.Errorf("InjectTrackers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InjectTrackers() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, got, tt.want, tt.name)
 		})
 	}
 }
