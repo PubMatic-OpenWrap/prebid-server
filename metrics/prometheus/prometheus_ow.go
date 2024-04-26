@@ -45,16 +45,6 @@ type OWMetrics struct {
 	// podCompExclTimer indicates time taken by compititve exclusion
 	// algorithm to generate final pod response based on bid response and ad pod request
 	podCompExclTimer *prometheus.HistogramVec
-	httpCounter      prometheus.Counter
-}
-
-func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
-	httpCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "Number of http requests.",
-	})
-	registry.MustRegister(httpCounter)
-	return httpCounter
 }
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
@@ -180,7 +170,6 @@ func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
 }
 
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
-	m.httpCounter = newHttpCounter(cfg, reg)
 	m.rejectedBids = newCounter(cfg, reg,
 		"rejected_bids",
 		"Count of rejected bids by publisher id, bidder and rejection reason code",
