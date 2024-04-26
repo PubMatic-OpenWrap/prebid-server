@@ -429,7 +429,7 @@ func TestUpdateResponseExtOW(t *testing.T) {
 			},
 		},
 		{
-			name: "debug is enabled and endpoint is applovinmax",
+			name: "debug is enabled and endpoint is AppLovinMax",
 			args: args{
 				bidResponse: &openrtb2.BidResponse{
 					ID:    "123",
@@ -785,11 +785,11 @@ func TestUpdateResponseExtOW(t *testing.T) {
 								{
 									ID:    "bid-id-1",
 									ImpID: "imp_1",
+									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
 								},
 							},
 						},
 					},
-					Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
 				},
 				ao: analytics.AuctionObject{
 					HookExecutionOutcome: []hookexecution.StageOutcome{
@@ -835,11 +835,11 @@ func TestUpdateResponseExtOW(t *testing.T) {
 									{
 										ID:    "bid-id-1",
 										ImpID: "imp_1",
+										Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
 									},
 								},
 							},
 						},
-						Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
 					},
 				},
 			},
@@ -855,11 +855,11 @@ func TestUpdateResponseExtOW(t *testing.T) {
 							{
 								ID:    "bid-id-1",
 								ImpID: "imp_1",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
 							},
 						},
 					},
 				},
-				Ext: nil,
 			},
 			RestoredResponse: &openrtb2.BidResponse{
 				ID:    "123",
@@ -872,11 +872,11 @@ func TestUpdateResponseExtOW(t *testing.T) {
 							{
 								ID:    "bid-id-1",
 								ImpID: "imp_1",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
 							},
 						},
 					},
 				},
-				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
 			},
 		},
 	}

@@ -54,7 +54,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax && !rCtx.Debug {
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
 		RestoreBidResponse(*ao)
 	}
 

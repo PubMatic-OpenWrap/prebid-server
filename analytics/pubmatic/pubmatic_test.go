@@ -76,7 +76,7 @@ func TestLogAuctionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "AppLovinMax request with debug disabled. RestoreBidResponse for logger",
+			name: "AppLovinMax request . RestoreBidResponse for logger",
 			ao: &analytics.AuctionObject{
 				HookExecutionOutcome: []hookexecution.StageOutcome{
 					{

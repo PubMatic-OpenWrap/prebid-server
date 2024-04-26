@@ -63,8 +63,12 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	// 	extBidResponse.Prebid.SeatNonBid = seatNonBids
 	// }
 
+	var orignalMaxBidResponse *openrtb2.BidResponse
+
 	if rCtx.Debug {
 		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			orignalMaxBidResponse = new(openrtb2.BidResponse)
+			*orignalMaxBidResponse = *bidResponse
 			pubmatic.RestoreBidResponse(ao)
 		}
 
@@ -76,6 +80,9 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		}
 
 		extBidResponse.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
+		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			*bidResponse = *orignalMaxBidResponse
+		}
 		bidResponse.Ext, _ = json.Marshal(extBidResponse)
 	} else if rCtx.Endpoint == models.EndpointAppLovinMax {
 		bidResponse.Ext = nil
