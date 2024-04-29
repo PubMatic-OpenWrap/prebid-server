@@ -487,6 +487,8 @@ func (deps *ctvEndpointDeps) createBidRequest(req *openrtb2.BidRequest) *openrtb
 	}
 	ctvRequest.Imp = imps
 
+	adpod.ConvertToV25VideoRequest(&ctvRequest)
+
 	deps.filterImpsVastTagsByDuration(&ctvRequest)
 
 	return &ctvRequest

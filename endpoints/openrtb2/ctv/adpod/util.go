@@ -60,3 +60,18 @@ func GetPodType(imp openrtb2.Imp, extAdpod openrtb_ext.ExtVideoAdPod) PodType {
 
 	return NotAdpod
 }
+
+func ConvertToV25VideoRequest(request *openrtb2.BidRequest) {
+	for i := range request.Imp {
+		imp := request.Imp[i]
+
+		if imp.Video == nil {
+			continue
+		}
+
+		// Remove 2.6 Adpod parameters
+		imp.Video.PodID = ""
+		imp.Video.PodDur = 0
+		imp.Video.MaxSeq = 0
+	}
+}
