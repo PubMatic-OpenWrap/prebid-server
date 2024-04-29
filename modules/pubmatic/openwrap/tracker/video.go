@@ -56,7 +56,7 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 					return bid.AdM, errors.New("video creative not in required VAST format")
 				}
 
-				if len(videoParams[i].TrackerURL) > 0 && injectImpressionTracker {
+				if len(videoParams[i].TrackerURL) > 0 {
 					// set tracker URL
 					newElement := etree.NewElement(models.ImpressionElement)
 					if injectImpressionTracker {
@@ -162,70 +162,4 @@ func newPricingNode(price float64, model string, currency string) *etree.Element
 	}
 	pricing.CreateAttr(models.VideoPricingCurrency, currencyStr)
 	return pricing
-}
-
-func injectVideoErrorTrackerAppLovinMax(bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
-	if bid.AdM == "" || len(videoParams) == 0 {
-		return "", errors.New("bid is nil or tracker data is missing")
-	}
-
-	originalCreativeStr := bid.AdM
-	if strings.HasPrefix(originalCreativeStr, models.HTTPProtocol) {
-		originalCreativeStr = strings.Replace(models.VastWrapper, models.PartnerURLPlaceholder, originalCreativeStr, -1)
-		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
-		bid.AdM = originalCreativeStr
-	} else {
-		originalCreativeStr = strings.TrimSpace(originalCreativeStr)
-		doc := etree.NewDocument()
-		if err := doc.ReadFromString(originalCreativeStr); err != nil {
-			return bid.AdM, errors.New("invalid creative format")
-		}
-
-		//Check VAST Object
-		vast := doc.Element.FindElement(models.VideoVASTTag)
-		if vast == nil {
-			return bid.AdM, errors.New("VAST Tag Not Found")
-		}
-
-		//GetVersion
-		version := vast.SelectAttrValue(models.VideoVASTVersion, models.VideoVASTVersion2_0)
-
-		adElements := doc.FindElements(models.VASTAdElement)
-		for i, adElement := range adElements {
-			if i < len(videoParams) {
-				element := adElement.FindElement(models.AdWrapperElement)
-				isWrapper := (nil != element)
-
-				if element == nil {
-					element = adElement.FindElement(models.AdInlineElement)
-				}
-
-				if element == nil {
-					return bid.AdM, errors.New("video creative not in required VAST format")
-				}
-
-				if len(videoParams[i].ErrorURL) > 0 {
-					// set error URL
-					newElement := etree.NewElement(models.ErrorElement)
-					newElement.SetText(videoParams[i].ErrorURL)
-					element.InsertChild(element.SelectElement(models.ErrorElement), newElement)
-				}
-
-				if !isWrapper && videoParams[i].Price != 0 {
-					if models.VideoVASTVersion2_0 == version {
-						injectPricingNodeVAST20(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-					} else {
-						injectPricingNodeVAST3x(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-					}
-				}
-			}
-		}
-
-		updatedVastStr, err := doc.WriteToString()
-		if err != nil {
-			return bid.AdM, err
-		}
-		return updatedVastStr, nil
-	}
-	return bid.AdM, nil
 }
