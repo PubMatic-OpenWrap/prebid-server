@@ -481,6 +481,137 @@ func TestInjectTrackers(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "adformat_is_banner_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: "",
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `sample_creative`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `sample_creative`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "adformat_is_video_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: "",
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "video",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `<VAST version="3.0"><Ad><Wrapper><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "adformat_is_native_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "native",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp123": {
+							Native: &openrtb2.Native{
+								Request: "{\"context\":1,\"plcmttype\":1,\"eventtrackers\":[{\"event\":1,\"methods\":[1]}],\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":0,\"img\":{\"type\":3,\"w\":300,\"h\":250}},{\"id\":1,\"required\":0,\"data\":{\"type\":1,\"len\":2}},{\"id\":2,\"required\":0,\"img\":{\"type\":1,\"w\":50,\"h\":50}},{\"id\":3,\"required\":0,\"title\":{\"len\":80}},{\"id\":4,\"required\":0,\"data\":{\"type\":2,\"len\":2}}]}",
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "12345",
+									ImpID: "imp123",
+									AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "12345",
+								ImpID: "imp123",
+								AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
