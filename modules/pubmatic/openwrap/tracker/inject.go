@@ -27,21 +27,13 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				if rctx.Endpoint != models.EndpointAppLovinMax {
-					bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
-				}
+				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
-				if rctx.Endpoint == models.EndpointAppLovinMax {
-					bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers, false)
-				} else {
-					bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers, true)
-				}
+				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(rctx, bid, trackers)
 			case models.Native:
 				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
-					if rctx.Endpoint != models.EndpointAppLovinMax {
-						bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
-					}
+					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker, rctx.Endpoint)
 				} else {
 					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
 				}

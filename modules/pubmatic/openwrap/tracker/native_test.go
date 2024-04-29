@@ -10,9 +10,10 @@ import (
 
 func Test_injectNativeCreativeTrackers(t *testing.T) {
 	type args struct {
-		native  *openrtb2.Native
-		adm     string
-		tracker models.OWTracker
+		native   *openrtb2.Native
+		adm      string
+		tracker  models.OWTracker
+		endpoint string
 	}
 	tests := []struct {
 		name    string
@@ -21,12 +22,24 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "AppLovinMax_endpoint_request",
+			args: args{
+				native:   &openrtb2.Native{},
+				adm:      `creative`,
+				tracker:  models.OWTracker{},
+				endpoint: models.EndpointAppLovinMax,
+			},
+			want:    `creative`,
+			wantErr: false,
+		},
+		{
 			name: "native_object_nil",
 			args: args{
 				adm: `creative`,
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `creative`,
 			wantErr: true,
@@ -39,6 +52,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `creative`,
 			wantErr: true,
@@ -53,6 +67,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `creative`,
 			wantErr: true,
@@ -67,6 +82,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35","Tracking URL"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
 			wantErr: false,
@@ -81,6 +97,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}],"imptrackers":["Tracking URL"]}`,
 			wantErr: false,
@@ -95,6 +112,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":2,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet.js"}],"imptrackers":["Tracking URL"]}`,
 			wantErr: false,
@@ -109,6 +127,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["abc.com","Tracking URL"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":2,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet.php"}]}`,
 			wantErr: false,
@@ -123,6 +142,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"},{"event":1,"method":1,"url":"Tracking URL"}]}`,
 			wantErr: false,
@@ -137,6 +157,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"},{"event":1,"method":1,"url":"Tracking URL"}]}`,
 			wantErr: false,
@@ -151,6 +172,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"Tracking URL"}]}`,
 			wantErr: false,
@@ -165,6 +187,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
 				},
+				endpoint: models.EndpointV25,
 			},
 			want:    `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"},{"event":1,"method":1,"url":"abc.com"},{"event":1,"method":1,"url":"Tracking URL"}]}`,
 			wantErr: false,
@@ -172,7 +195,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := injectNativeCreativeTrackers(tt.args.native, tt.args.adm, tt.args.tracker)
+			got, err := injectNativeCreativeTrackers(tt.args.native, tt.args.adm, tt.args.tracker, tt.args.endpoint)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("injectNativeCreativeTrackers() error = %v, wantErr %v", err, tt.wantErr)
 				return

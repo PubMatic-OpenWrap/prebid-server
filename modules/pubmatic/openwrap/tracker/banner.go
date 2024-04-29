@@ -10,6 +10,10 @@ import (
 )
 
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) string {
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		return bid.AdM
+	}
+
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
 	if trackerWithOM(tracker, rctx.Platform, seat) {

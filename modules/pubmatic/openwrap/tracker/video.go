@@ -11,9 +11,14 @@ import (
 )
 
 // Inject Trackers in Video Creative
-func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracker, injectImpressionTracker bool) (string, error) {
+func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
 	if bid.AdM == "" || len(videoParams) == 0 {
 		return "", errors.New("bid is nil or tracker data is missing")
+	}
+
+	injectImpressionTracker := true
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		injectImpressionTracker = false
 	}
 
 	originalCreativeStr := bid.AdM
@@ -22,7 +27,7 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 		if injectImpressionTracker {
 			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
 		} else {
-			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, "", -1)
+			originalCreativeStr = strings.Replace(originalCreativeStr, models.VASTImpressionURLTemplate, "", -1)
 		}
 		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		bid.AdM = originalCreativeStr
@@ -58,13 +63,11 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 
 				if len(videoParams[i].TrackerURL) > 0 {
 					// set tracker URL
-					newElement := etree.NewElement(models.ImpressionElement)
 					if injectImpressionTracker {
+						newElement := etree.NewElement(models.ImpressionElement)
 						newElement.SetText(videoParams[i].TrackerURL)
-					} else {
-						newElement.SetText("")
+						element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
 					}
-					element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
 				}
 
 				if len(videoParams[i].ErrorURL) > 0 {
