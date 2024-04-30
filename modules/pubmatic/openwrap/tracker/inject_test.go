@@ -815,3 +815,46 @@ func Test_getUniversalPixels(t *testing.T) {
 		})
 	}
 }
+
+func Test_getBurlAppLovinMax(t *testing.T) {
+	type args struct {
+		burl       string
+		TrackerURL string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "empty_burl",
+			args: args{
+				burl:       "",
+				TrackerURL: `sample.com`,
+			},
+			want: `sample.com`,
+		},
+		{
+			name: "empty_tracker_url",
+			args: args{
+				burl:       `sample.com`,
+				TrackerURL: "",
+			},
+			want: `sample.com`,
+		},
+		{
+			name: "valid_burl_and_tracker_url",
+			args: args{
+				burl:       `sampleBurl.com`,
+				TrackerURL: `sampleTracker.com?id=123`,
+			},
+			want: `sampleTracker.com?id=123&ssp_burl=sampleBurl.com`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getBurlAppLovinMax(tt.args.burl, tt.args.TrackerURL)
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}

@@ -31,7 +31,7 @@ func Test_injectBannerTracker(t *testing.T) {
 					Endpoint: models.EndpointAppLovinMax,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `t.pubmatic.com/track?tid=1234`,
+					TrackerURL: `sample.com/track?tid=1234`,
 				},
 				bid: openrtb2.Bid{
 					AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
@@ -40,7 +40,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				seat: "pubmatic",
 			},
 			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
-			wantBurl: `t.pubmatic.com/track?tid=1234&ssp_burl=http://burl.com`,
+			wantBurl: `sample.com/track?tid=1234&ssp_burl=http://burl.com`,
 		},
 		{
 			name: "app_platform",

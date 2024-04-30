@@ -79,6 +79,10 @@ func getUniversalPixels(rctx models.RequestCtx, adformat string, bidderCode stri
 }
 
 func getBurlAppLovinMax(burl, TrackerURL string) string {
+	if TrackerURL == "" {
+		return burl
+	}
+
 	if burl != "" {
 		sspBurl := burl
 		burl = TrackerURL + "&" + models.SspBurl + "=" + sspBurl
