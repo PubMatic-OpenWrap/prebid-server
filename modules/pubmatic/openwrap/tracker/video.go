@@ -61,13 +61,11 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 					return bid.AdM, errors.New("video creative not in required VAST format")
 				}
 
-				if len(videoParams[i].TrackerURL) > 0 {
+				if len(videoParams[i].TrackerURL) > 0 && injectImpressionTracker {
 					// set tracker URL
-					if injectImpressionTracker {
-						newElement := etree.NewElement(models.ImpressionElement)
-						newElement.SetText(videoParams[i].TrackerURL)
-						element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
-					}
+					newElement := etree.NewElement(models.ImpressionElement)
+					newElement.SetText(videoParams[i].TrackerURL)
+					element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
 				}
 
 				if len(videoParams[i].ErrorURL) > 0 {

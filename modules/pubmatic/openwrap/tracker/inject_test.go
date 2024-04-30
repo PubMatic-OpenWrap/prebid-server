@@ -500,7 +500,7 @@ func TestInjectTrackers(t *testing.T) {
 							Bid: []openrtb2.Bid{
 								{
 									ID:  "12345",
-									AdM: `sample_creative`,
+									AdM: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 								},
 							},
 						},
@@ -513,7 +513,7 @@ func TestInjectTrackers(t *testing.T) {
 						Bid: []openrtb2.Bid{
 							{
 								ID:  "12345",
-								AdM: `sample_creative`,
+								AdM: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 							},
 						},
 					},

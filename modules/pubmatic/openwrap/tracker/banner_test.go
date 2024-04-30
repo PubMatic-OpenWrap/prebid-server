@@ -33,11 +33,11 @@ func Test_injectBannerTracker(t *testing.T) {
 					TrackerURL: `Tracking URL`,
 				},
 				bid: openrtb2.Bid{
-					AdM: `sample_creative`,
+					AdM: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 				},
-				seat: "test",
+				seat: "pubmatic",
 			},
-			want: `sample_creative`,
+			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 		},
 		{
 			name: "app_platform",

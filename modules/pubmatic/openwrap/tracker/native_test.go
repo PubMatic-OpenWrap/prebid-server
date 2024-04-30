@@ -25,11 +25,11 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 			name: "AppLovinMax_endpoint_request",
 			args: args{
 				native:   &openrtb2.Native{},
-				adm:      `creative`,
+				adm:      `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 				tracker:  models.OWTracker{},
 				endpoint: models.EndpointAppLovinMax,
 			},
-			want:    `creative`,
+			want:    `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 			wantErr: false,
 		},
 		{
