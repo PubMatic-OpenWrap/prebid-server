@@ -72,6 +72,38 @@ func TestLogAuctionObject(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "logger_disabled",
+			ao: &analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	LoggerDisabled: true,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		HTTPLogger{}.LogAuctionObject(tt.ao)

@@ -101,6 +101,8 @@ type RequestCtx struct {
 	IsTBFFeatureEnabled    bool
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
+	LoggerDisabled         bool
+	TrackerDisabled        bool
 }
 
 type OwBid struct {

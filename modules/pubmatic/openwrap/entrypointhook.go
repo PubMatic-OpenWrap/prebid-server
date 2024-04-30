@@ -133,6 +133,8 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.PubID = pubid
 	}
 
+	rCtx.LoggerDisabled, rCtx.TrackerDisabled = m.pubFeatures.IsAnalyticsTrackingThrottled(rCtx.PubID, rCtx.ProfileID)
+
 	result.Reject = false
 	return result, nil
 }

@@ -3369,6 +3369,28 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 		want want
 	}{
 		{
+			name: "logger_disabled",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint:       models.EndpointV25,
+					LoggerDisabled: true,
+					PubID:          5890,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: "",
+				header: nil,
+			},
+		},
+		{
 			name: "do not prepare owlogger if pubid is missing",
 			args: args{
 				ao: analytics.AuctionObject{
