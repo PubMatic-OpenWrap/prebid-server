@@ -23,6 +23,23 @@ func Test_injectBannerTracker(t *testing.T) {
 		want string
 	}{
 		{
+			name: "endpoint_applovinmax",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Endpoint: models.EndpointAppLovinMax,
+				},
+				tracker: models.OWTracker{
+					TrackerURL: `Tracking URL`,
+				},
+				bid: openrtb2.Bid{
+					AdM: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+				},
+				seat: "pubmatic",
+			},
+			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+		},
+		{
 			name: "app_platform",
 			args: args{
 				rctx: models.RequestCtx{

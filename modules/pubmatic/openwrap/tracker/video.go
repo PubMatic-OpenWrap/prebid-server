@@ -11,15 +11,24 @@ import (
 )
 
 // Inject Trackers in Video Creative
-func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
+func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
 	if bid.AdM == "" || len(videoParams) == 0 {
 		return "", errors.New("bid is nil or tracker data is missing")
+	}
+
+	injectImpressionTracker := true
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		injectImpressionTracker = false
 	}
 
 	originalCreativeStr := bid.AdM
 	if strings.HasPrefix(originalCreativeStr, models.HTTPProtocol) {
 		originalCreativeStr = strings.Replace(models.VastWrapper, models.PartnerURLPlaceholder, originalCreativeStr, -1)
-		originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
+		if injectImpressionTracker {
+			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
+		} else {
+			originalCreativeStr = strings.Replace(originalCreativeStr, models.VASTImpressionURLTemplate, "", -1)
+		}
 		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		bid.AdM = originalCreativeStr
 	} else {
@@ -44,15 +53,15 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 				element := adElement.FindElement(models.AdWrapperElement)
 				isWrapper := (nil != element)
 
-				if nil == element {
+				if element == nil {
 					element = adElement.FindElement(models.AdInlineElement)
 				}
 
-				if nil == element {
+				if element == nil {
 					return bid.AdM, errors.New("video creative not in required VAST format")
 				}
 
-				if len(videoParams[i].TrackerURL) > 0 {
+				if len(videoParams[i].TrackerURL) > 0 && injectImpressionTracker {
 					// set tracker URL
 					newElement := etree.NewElement(models.ImpressionElement)
 					newElement.SetText(videoParams[i].TrackerURL)
@@ -66,7 +75,7 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 					element.InsertChild(element.SelectElement(models.ErrorElement), newElement)
 				}
 
-				if false == isWrapper && videoParams[i].Price != 0 {
+				if !isWrapper && videoParams[i].Price != 0 {
 					if models.VideoVASTVersion2_0 == version {
 						injectPricingNodeVAST20(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					} else {

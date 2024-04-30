@@ -30,10 +30,10 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
-				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
+				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(rctx, bid, trackers)
 			case models.Native:
 				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
-					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
+					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker, rctx.Endpoint)
 				} else {
 					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
 				}

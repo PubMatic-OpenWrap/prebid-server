@@ -10,9 +10,10 @@ import (
 
 func Test_injectNativeCreativeTrackers(t *testing.T) {
 	type args struct {
-		native  *openrtb2.Native
-		adm     string
-		tracker models.OWTracker
+		native   *openrtb2.Native
+		adm      string
+		tracker  models.OWTracker
+		endpoint string
 	}
 	tests := []struct {
 		name    string
@@ -20,6 +21,17 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
+		{
+			name: "AppLovinMax_endpoint_request",
+			args: args{
+				native:   &openrtb2.Native{},
+				adm:      `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+				tracker:  models.OWTracker{},
+				endpoint: models.EndpointAppLovinMax,
+			},
+			want:    `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+			wantErr: false,
+		},
 		{
 			name: "native_object_nil",
 			args: args{
@@ -172,7 +184,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := injectNativeCreativeTrackers(tt.args.native, tt.args.adm, tt.args.tracker)
+			got, err := injectNativeCreativeTrackers(tt.args.native, tt.args.adm, tt.args.tracker, tt.args.endpoint)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("injectNativeCreativeTrackers() error = %v, wantErr %v", err, tt.wantErr)
 				return

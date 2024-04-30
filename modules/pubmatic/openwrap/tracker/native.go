@@ -11,7 +11,10 @@ import (
 )
 
 // Inject TrackerCall in Native Adm
-func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker models.OWTracker) (string, error) {
+func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker models.OWTracker, endpoint string) (string, error) {
+	if endpoint == models.EndpointAppLovinMax {
+		return adm, nil
+	}
 	if native == nil {
 		return adm, errors.New("native object is missing")
 	}
