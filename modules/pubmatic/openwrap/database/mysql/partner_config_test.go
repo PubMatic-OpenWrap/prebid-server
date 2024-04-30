@@ -34,6 +34,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -63,6 +64,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{

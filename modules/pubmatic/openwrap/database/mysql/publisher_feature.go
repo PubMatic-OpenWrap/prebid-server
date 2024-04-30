@@ -1,14 +1,19 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func (db *mySqlDB) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
-	rows, err := db.conn.Query(db.cfg.Queries.GetPublisherFeatureMapQuery)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
+	defer cancel()
+
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetPublisherFeatureMapQuery)
 	if err != nil {
 		return nil, err
 	}

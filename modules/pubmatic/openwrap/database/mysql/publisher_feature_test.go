@@ -41,6 +41,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					Queries: config.Queries{
 						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			want:    map[int]map[int]models.FeatureData{},
@@ -62,6 +63,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					Queries: config.Queries{
 						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			want: map[int]map[int]models.FeatureData{
@@ -99,6 +101,7 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 					Queries: config.Queries{
 						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			want:    map[int]map[int]models.FeatureData{},

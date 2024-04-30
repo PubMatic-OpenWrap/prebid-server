@@ -105,6 +105,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
+	m.setAnanlyticsFlags(&rCtx)
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
 	if payload.BidRequest.Test != 0 {
@@ -929,6 +930,18 @@ func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 		return imp.TagID
 	}
 	return impExt.Data.PbAdslot
+}
+
+func (m OpenWrap) setAnanlyticsFlags(rCtx *models.RequestCtx) {
+	rCtx.LoggerDisabled, rCtx.TrackerDisabled = m.pubFeatures.IsAnalyticsTrackingThrottled(rCtx.PubID, rCtx.ProfileID)
+
+	if rCtx.LoggerDisabled {
+		rCtx.MetricsEngine.RecordAnalyticsTrackingThrottled(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID), models.AnanlyticsThrottlingLoggerType)
+	}
+
+	if rCtx.TrackerDisabled {
+		rCtx.MetricsEngine.RecordAnalyticsTrackingThrottled(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID), models.AnanlyticsThrottlingTrackerType)
+	}
 }
 
 func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {

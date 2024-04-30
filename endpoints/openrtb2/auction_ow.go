@@ -60,7 +60,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 		}
 	}
 
-	if rCtx.LogInfoFlag == 1 {
+	if rCtx.LogInfoFlag == 1 && !rCtx.LoggerDisabled {
 		extBidResponse.OwLogInfo.Logger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, true, true)
 	}
 
@@ -72,7 +72,7 @@ func UpdateResponseExtOW(bidResponse *openrtb2.BidResponse, ao analytics.Auction
 	// 	extBidResponse.Prebid.SeatNonBid = seatNonBids
 	// }
 
-	if rCtx.Debug {
+	if rCtx.Debug && !rCtx.LoggerDisabled {
 		extBidResponse.OwLogger, _ = pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
 	}
 

@@ -436,6 +436,11 @@ const (
 )
 
 const (
+	AnanlyticsThrottlingLoggerType  = "wl"
+	AnanlyticsThrottlingTrackerType = "wt"
+)
+
+const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
 )
