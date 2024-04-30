@@ -11,9 +11,9 @@ import (
 )
 
 // Inject Trackers in Video Creative
-func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
+func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, videoParams []models.OWTracker) (string, string, error) {
 	if bid.AdM == "" || len(videoParams) == 0 {
-		return "", errors.New("bid is nil or tracker data is missing")
+		return "", bid.BURL, errors.New("bid is nil or tracker data is missing")
 	}
 
 	injectImpressionTracker := true
@@ -28,6 +28,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
 		} else {
 			originalCreativeStr = strings.Replace(originalCreativeStr, models.VASTImpressionURLTemplate, "", -1)
+			bid.BURL = getBurlAppLovinMax(bid.BURL, videoParams[0].TrackerURL)
 		}
 		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		bid.AdM = originalCreativeStr
@@ -35,13 +36,13 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 		originalCreativeStr = strings.TrimSpace(originalCreativeStr)
 		doc := etree.NewDocument()
 		if err := doc.ReadFromString(originalCreativeStr); err != nil {
-			return bid.AdM, errors.New("invalid creative format")
+			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
 
 		//Check VAST Object
 		vast := doc.Element.FindElement(models.VideoVASTTag)
 		if vast == nil {
-			return bid.AdM, errors.New("VAST Tag Not Found")
+			return bid.AdM, bid.BURL, errors.New("VAST Tag Not Found")
 		}
 
 		//GetVersion
@@ -58,14 +59,18 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 				}
 
 				if element == nil {
-					return bid.AdM, errors.New("video creative not in required VAST format")
+					return bid.AdM, bid.BURL, errors.New("video creative not in required VAST format")
 				}
 
-				if len(videoParams[i].TrackerURL) > 0 && injectImpressionTracker {
+				if len(videoParams[i].TrackerURL) > 0 {
 					// set tracker URL
-					newElement := etree.NewElement(models.ImpressionElement)
-					newElement.SetText(videoParams[i].TrackerURL)
-					element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
+					if injectImpressionTracker {
+						newElement := etree.NewElement(models.ImpressionElement)
+						newElement.SetText(videoParams[i].TrackerURL)
+						element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
+					} else {
+						bid.BURL = getBurlAppLovinMax(bid.BURL, videoParams[i].TrackerURL)
+					}
 				}
 
 				if len(videoParams[i].ErrorURL) > 0 {
@@ -87,11 +92,11 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 
 		updatedVastStr, err := doc.WriteToString()
 		if err != nil {
-			return bid.AdM, err
+			return bid.AdM, bid.BURL, err
 		}
-		return updatedVastStr, nil
+		return updatedVastStr, bid.BURL, nil
 	}
-	return bid.AdM, nil
+	return bid.AdM, bid.BURL, nil
 }
 
 func injectPricingNodeVAST20(parent *etree.Element, price float64, model string, currency string) {
