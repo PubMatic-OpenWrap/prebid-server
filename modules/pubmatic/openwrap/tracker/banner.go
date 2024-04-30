@@ -11,7 +11,7 @@ import (
 
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
 	if rctx.Endpoint == models.EndpointAppLovinMax {
-		return bid.AdM, getBurlAppLovinMax(bid.BURL, tracker.TrackerURL)
+		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
 	}
 
 	var replacedTrackerStr, trackerFormat string

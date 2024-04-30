@@ -15,7 +15,7 @@ func injectNativeCreativeTrackers(native *openrtb2.Native, bid openrtb2.Bid, tra
 	adm := bid.AdM
 	var err error
 	if endpoint == models.EndpointAppLovinMax {
-		return adm, getBurlAppLovinMax(bid.BURL, tracker.TrackerURL), nil
+		return adm, getBURL(bid.BURL, tracker.TrackerURL), nil
 	}
 	if native == nil {
 		return adm, bid.BURL, errors.New("native object is missing")

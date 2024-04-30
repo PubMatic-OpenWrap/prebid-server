@@ -28,7 +28,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
 		} else {
 			originalCreativeStr = strings.Replace(originalCreativeStr, models.VASTImpressionURLTemplate, "", -1)
-			bid.BURL = getBurlAppLovinMax(bid.BURL, videoParams[0].TrackerURL)
+			bid.BURL = getBURL(bid.BURL, videoParams[0].TrackerURL)
 		}
 		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		bid.AdM = originalCreativeStr
@@ -69,7 +69,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 						newElement.SetText(videoParams[i].TrackerURL)
 						element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
 					} else {
-						bid.BURL = getBurlAppLovinMax(bid.BURL, videoParams[i].TrackerURL)
+						bid.BURL = getBURL(bid.BURL, videoParams[i].TrackerURL)
 					}
 				}
 

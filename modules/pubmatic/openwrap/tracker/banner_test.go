@@ -40,7 +40,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				seat: "pubmatic",
 			},
 			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
-			wantBurl: `sample.com/track?tid=1234&ssp_burl=http://burl.com`,
+			wantBurl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
 		},
 		{
 			name: "app_platform",
