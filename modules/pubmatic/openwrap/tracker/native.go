@@ -11,15 +11,17 @@ import (
 )
 
 // Inject TrackerCall in Native Adm
-func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker models.OWTracker, endpoint string) (string, error) {
+func injectNativeCreativeTrackers(native *openrtb2.Native, bid openrtb2.Bid, tracker models.OWTracker, endpoint string) (string, string, error) {
+	adm := bid.AdM
+	var err error
 	if endpoint == models.EndpointAppLovinMax {
-		return adm, nil
+		return adm, getBURL(bid.BURL, tracker.TrackerURL), nil
 	}
 	if native == nil {
-		return adm, errors.New("native object is missing")
+		return adm, bid.BURL, errors.New("native object is missing")
 	}
 	if len(native.Request) == 0 {
-		return adm, errors.New("native request is empty")
+		return adm, bid.BURL, errors.New("native request is empty")
 	}
 	setTrackerURL := false
 	callback := func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
@@ -34,9 +36,10 @@ func injectNativeCreativeTrackers(native *openrtb2.Native, adm string, tracker m
 	jsonparser.ArrayEach([]byte(native.Request), callback, models.EventTrackers)
 
 	if setTrackerURL {
-		return adm, nil
+		return adm, bid.BURL, nil
 	}
-	return injectNativeImpressionTracker(&adm, tracker)
+	adm, err = injectNativeImpressionTracker(&adm, tracker)
+	return adm, bid.BURL, err
 }
 
 // inject tracker in EventTracker Object

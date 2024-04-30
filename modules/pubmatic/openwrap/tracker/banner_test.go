@@ -18,9 +18,10 @@ func Test_injectBannerTracker(t *testing.T) {
 		pixels  []adunitconfig.UniversalPixel
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name     string
+		args     args
+		wantAdm  string
+		wantBurl string
 	}{
 		{
 			name: "endpoint_applovinmax",
@@ -30,14 +31,16 @@ func Test_injectBannerTracker(t *testing.T) {
 					Endpoint: models.EndpointAppLovinMax,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
+					TrackerURL: `sample.com/track?tid=1234`,
 				},
 				bid: openrtb2.Bid{
-					AdM: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					BURL: `http://burl.com`,
 				},
 				seat: "pubmatic",
 			},
-			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+			wantBurl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
 		},
 		{
 			name: "app_platform",
@@ -53,7 +56,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: "test",
 			},
-			want: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 		},
 		{
 			name: "app_platform_OM_Inactive_pubmatic",
@@ -70,7 +73,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: models.BidderPubMatic,
 			},
-			want: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 		},
 		{
 			name: "app_platform_OM_Active_pubmatic",
@@ -87,7 +90,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: models.BidderPubMatic,
 			},
-			want: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+			wantAdm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
 		},
 		{
 			name: "tbf_feature_enabled",
@@ -104,14 +107,14 @@ func Test_injectBannerTracker(t *testing.T) {
 					AdM: `sample_creative`,
 				},
 			},
-			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
+			wantAdm: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels); got != tt.want {
-				t.Errorf("injectBannerTracker() = %v, want %v", got, tt.want)
-			}
+			gotAdm, gotBurl := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels)
+			assert.Equal(t, tt.wantAdm, gotAdm)
+			assert.Equal(t, tt.wantBurl, gotBurl)
 		})
 	}
 }

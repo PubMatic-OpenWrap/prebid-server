@@ -531,4 +531,5 @@ const (
 	AppLovinMaxAgent = "max"
 	TypeRewarded     = "rewarded"
 	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
 )

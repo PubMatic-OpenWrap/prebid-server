@@ -27,13 +27,13 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
+				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
-				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(rctx, bid, trackers)
+				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, err = injectVideoCreativeTrackers(rctx, bid, trackers)
 			case models.Native:
 				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
-					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker, rctx.Endpoint)
+					bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, err = injectNativeCreativeTrackers(impBidCtx.Native, bid, tracker, rctx.Endpoint)
 				} else {
 					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
 				}
@@ -76,4 +76,16 @@ func getUniversalPixels(rctx models.RequestCtx, adformat string, bidderCode stri
 		pixels = append(pixels, pixelVal)
 	}
 	return pixels
+}
+
+func getBURL(burl, trackerURL string) string {
+	if trackerURL == "" {
+		return burl
+	}
+
+	if burl == "" {
+		return trackerURL
+	}
+
+	return trackerURL + "&" + models.OwSspBurl + "=" + burl
 }
