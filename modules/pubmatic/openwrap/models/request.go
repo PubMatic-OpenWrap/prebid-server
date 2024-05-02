@@ -106,7 +106,10 @@ type RequestExtWrapper struct {
 	ABTestConfig         int    `json:"abtest,omitempty"`
 	LoggerImpressionID   string `json:"wiid,omitempty"`
 	SSAI                 string `json:"ssai,omitempty"`
+
+	// for amp
 	PubId                int    `json:"-"`
+	Debug                bool    `json:"-"`
 }
 
 type BidderWrapper struct {

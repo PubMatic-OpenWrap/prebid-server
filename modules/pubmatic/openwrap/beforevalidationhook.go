@@ -72,7 +72,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	pubID, err := getPubID(*payload.BidRequest)
+	pubID, err := getPubID(rCtx, *payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
@@ -96,7 +96,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
-	if err != nil {
+	if err != nil && rCtx.Endpoint != models.EndpointAMP {
 		result.NbrCode = int(nbr.InvalidRequestExt)
 		err = errors.New("failed to get request ext: " + err.Error())
 		result.Errors = append(result.Errors, err.Error())
@@ -203,6 +203,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		var isAdPodImpression bool
 		imp := payload.BidRequest.Imp[i]
 
+		if rCtx.AmpParams.ImpID != "" {
+			imp.ID = rCtx.AmpParams.ImpID
+			imp.BidFloor = rCtx.AmpParams.BidFloor
+			imp.BidFloorCur = rCtx.AmpParams.BidFloorCur
+		}
+
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
@@ -214,9 +220,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == models.EndpointWebS2S {
+
+		switch rCtx.Endpoint {
+		case models.EndpointAMP:
+			imp.TagID = rCtx.AmpParams.Slot
+		case models.EndpointWebS2S:
 			imp.TagID = getTagID(imp, impExt)
 		}
+
 		if imp.TagID == "" {
 			result.NbrCode = int(nbr.InvalidImpressionTagID)
 			err = errors.New("tagid missing for imp: " + imp.ID)
@@ -515,6 +526,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
 func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
+	m.applyAmpChanges(rctx, bidRequest)
+
 	if rctx.IsTestRequest > 0 {
 		bidRequest.Test = 1
 	}
@@ -908,7 +921,11 @@ func isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
 	return videoEnabled || bannerEnabled
 }
 
-func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
+func getPubID(rctx models.RequestCtx, bidRequest openrtb2.BidRequest) (pubID int, err error) {
+	if rctx.PubID != 0 {
+		return rctx.PubID, nil
+	}
+
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil {
 		pubID, err = strconv.Atoi(bidRequest.Site.Publisher.ID)
 	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil {
