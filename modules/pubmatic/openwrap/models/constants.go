@@ -244,6 +244,8 @@ const (
 	LogInfoTrackerKey  = "tracker"
 	SendAllBidsFlagKey = "sendallbids"
 	LoggerKey          = "owlogger"
+	QADebug            = "qadebug"
+	ReturnAllBidStatus = "returnallbidstatus"
 
 	//keys for reading values from Impression Extension JSON
 	SKAdnetwork = "skadn"

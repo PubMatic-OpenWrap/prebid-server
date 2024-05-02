@@ -102,6 +102,20 @@ type RequestCtx struct {
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
 	AppLovinMax            AppLovinMax
+	AmpParams              AmpParams
+}
+
+type AmpParams struct {
+	Slot        string
+	Width       string
+	Height      string
+	Multisize   string
+	ImpID       string
+	BidFloor    float64
+	BidFloorCur string
+	Origin      string
+	Curl        string
+	Purl        string
 }
 
 type OwBid struct {
