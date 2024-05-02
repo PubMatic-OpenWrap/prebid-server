@@ -183,7 +183,7 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 		want want
 	}{
 		{
-			name: "record_vast_tag",
+			name: "record_dynamic_fetch_failure",
 			args: args{
 				account: "5890",
 				code:    "1",

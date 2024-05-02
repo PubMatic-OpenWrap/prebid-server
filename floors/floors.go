@@ -105,7 +105,6 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				if floorMinVal > 0.0 && floorVal < floorMinVal {
 					bidFloor = floorMinVal
 				}
-				// bidFloor compare for negative and more than 200 use add 2 stats
 				if bidFloor < 0 {
 					metricEngine.RecordDynamicFetchFailure(accountID, negativeFloor, extFloorRules.PriceFloorLocation)
 				}
