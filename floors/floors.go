@@ -210,7 +210,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, account config.Accoun
 		if floors.Data != nil {
 			validModelGroups, floorModelErrList := selectValidFloorModelGroups(floors.Data.ModelGroups, account)
 			if len(floorModelErrList) > 0 {
-				metricsEngine.RecordDynamicFetchFailure(account.ID, skipRateFailure, floorLocation)
+				metricsEngine.RecordDynamicFetchFailure(account.ID, invalidFloors, floorLocation)
 			}
 			if len(validModelGroups) == 0 {
 				return finalFloors, floorModelErrList

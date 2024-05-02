@@ -102,6 +102,8 @@ type RequestCtx struct {
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
 	AppLovinMax            AppLovinMax
+	LoggerDisabled         bool
+	TrackerDisabled        bool
 }
 
 type OwBid struct {

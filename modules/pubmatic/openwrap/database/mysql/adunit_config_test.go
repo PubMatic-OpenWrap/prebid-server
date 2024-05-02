@@ -47,6 +47,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -72,6 +73,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -102,6 +104,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -132,6 +135,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -157,6 +161,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -187,6 +192,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -218,6 +224,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
