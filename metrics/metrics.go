@@ -520,7 +520,7 @@ type MetricsEngine interface {
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 
 	//RecordDynamicFetchFailure records the dynamic fetch failure labeled by pubid and reason code
-	RecordDynamicFetchFailure(pubId, code string)
+	RecordDynamicFetchFailure(pubId, code, source string)
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
 	RecordRejectedBids(pubid, bidder, code string)

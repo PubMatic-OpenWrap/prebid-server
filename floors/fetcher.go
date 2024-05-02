@@ -38,6 +38,7 @@ type WorkerPool interface {
 type FloorFetcher interface {
 	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
 	Stop()
+	GetMetricsEngine() metrics.MetricsEngine
 }
 
 type PriceFloorFetcher struct {
@@ -116,6 +117,10 @@ func NewPriceFloorFetcher(config config.PriceFloors, httpClient *http.Client, me
 	return &floorFetcher
 }
 
+func (f *PriceFloorFetcher) GetMetricsEngine() metrics.MetricsEngine {
+	return f.metricEngine
+}
+
 func (f *PriceFloorFetcher) SetWithExpiry(key string, value json.RawMessage, cacheExpiry int) {
 	f.cache.Set([]byte(key), value, cacheExpiry)
 }
@@ -153,7 +158,7 @@ func (f *PriceFloorFetcher) Fetch(config config.AccountPriceFloors) (*openrtb_ex
 }
 
 func (f *PriceFloorFetcher) worker(fetchConfig fetchInfo) {
-	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch)
+	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch, f.metricEngine)
 	if floorData != nil {
 		// Reset retry count when data is successfully fetched
 		fetchConfig.retryCount = 0
@@ -230,9 +235,10 @@ func (f *PriceFloorFetcher) Fetcher() {
 	}
 }
 
-func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
+func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
 	floorResp, maxAge, err := f.fetchFloorRulesFromURL(config)
 	if floorResp == nil || err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, fetchFailure, openrtb_ext.FetchLocation)
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", config.URL, err.Error())
 		return nil, 0
 	}
@@ -244,11 +250,13 @@ func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch) (*
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, unmarshalFailure, openrtb_ext.FetchLocation)
 		glog.Errorf("Recieved invalid price floor json from URL: %s", config.URL)
 		return nil, 0
 	}
 
 	if err := validateRules(config, &priceFloors); err != nil {
+		metricEngine.RecordDynamicFetchFailure(config.AccountID, invalidFloors, openrtb_ext.FetchLocation)
 		glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", config.URL, err.Error())
 		return nil, 0
 	}

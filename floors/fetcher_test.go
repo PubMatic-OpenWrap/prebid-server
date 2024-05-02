@@ -758,7 +758,7 @@ func TestFetchAndValidate(t *testing.T) {
 				httpClient: mockHttpServer.Client(),
 			}
 			tt.args.configs.URL = mockHttpServer.URL
-			got, got1 := ppf.fetchAndValidate(tt.args.configs)
+			got, got1 := ppf.fetchAndValidate(tt.args.configs, &metricsConf.NilMetricsEngine{})
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("fetchAndValidate() got = %v, want %v", got, tt.want)
 			}

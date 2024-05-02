@@ -651,7 +651,7 @@ func (me *Metrics) RecordRejectedBidsForAccount(pubId string) {
 }
 
 // RecordDynamicFetchFailure implements a part of the MetricsEngine interface. Records dynamic fetch failure
-func (me *Metrics) RecordDynamicFetchFailure(pubId, code string) {
+func (me *Metrics) RecordDynamicFetchFailure(pubId, code, source string) {
 	if pubId != PublisherUnknown {
 		me.getAccountMetrics(pubId).dynamicFetchFailureMeter.Mark(1)
 	}

@@ -9,6 +9,8 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -53,6 +55,10 @@ func getCurrencyRates(rates map[string]map[string]float64) currency.Conversions 
 }
 
 type mockPriceFloorFetcher struct{}
+
+func (m *mockPriceFloorFetcher) GetMetricsEngine() metrics.MetricsEngine {
+	return &metricsConf.NilMetricsEngine{}
+}
 
 func (mpf *mockPriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 	return nil, openrtb_ext.FetchNone
@@ -414,6 +420,10 @@ type MockFetch struct {
 
 func (m *MockFetch) Stop() {}
 
+func (m *MockFetch) GetMetricsEngine() metrics.MetricsEngine {
+	return &metricsConf.NilMetricsEngine{}
+}
+
 func (m *MockFetch) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
 	if !configs.UseDynamicData {
@@ -635,7 +645,7 @@ func TestResolveFloors(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), &MockFetch{})
+			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), &MockFetch{}, &metricsConf.NilMetricsEngine{})
 			if !reflect.DeepEqual(resolvedFloors, tc.expFloors) {
 				t.Errorf("resolveFloors  error: \nreturn:\t%v\nwant:\t%v", printFloors(resolvedFloors), printFloors(tc.expFloors))
 			}
@@ -872,7 +882,7 @@ func TestResolveFloorsWithUseDataRate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), tc.fetcher)
+			resolvedFloors, _ := resolveFloors(tc.account, tc.bidRequestWrapper, getCurrencyRates(rates), tc.fetcher, &metricsConf.NilMetricsEngine{})
 			assert.Equal(t, resolvedFloors, tc.expFloors, tc.name)
 		})
 	}
@@ -916,6 +926,12 @@ func (m *MockFetchDataRate0) Fetch(configs config.AccountPriceFloors) (*openrtb_
 
 func (m *MockFetchDataRate0) Stop() {
 
+}
+func (m *MockFetchDataRate0) GetMetricsEngine() metrics.MetricsEngine {
+	return &metricsConf.NilMetricsEngine{}
+}
+func (m *MockFetchDataRate100) GetMetricsEngine() metrics.MetricsEngine {
+	return &metricsConf.NilMetricsEngine{}
 }
 
 type MockFetchDataRate100 struct{}
@@ -1216,7 +1232,7 @@ func TestCreateFloorsFrom(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, got1 := createFloorsFrom(tc.args.floors, tc.args.account, tc.args.fetchStatus, tc.args.floorLocation)
+			got, got1 := createFloorsFrom(tc.args.floors, tc.args.account, tc.args.fetchStatus, tc.args.floorLocation, &metricsConf.NilMetricsEngine{})
 			assert.Equal(t, got1, tc.want1, tc.name)
 			assert.Equal(t, got, tc.want, tc.name)
 		})

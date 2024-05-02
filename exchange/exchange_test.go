@@ -825,6 +825,9 @@ func (mpf *mockPriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*ope
 }
 
 func (mpf *mockPriceFloorFetcher) Stop() {}
+func (m *mockPriceFloorFetcher) GetMetricsEngine() metrics.MetricsEngine {
+	return &metricsConf.NilMetricsEngine{}
+}
 
 func TestFloorsSignalling(t *testing.T) {
 	mockCurrencyClient := &currency.MockCurrencyRatesHttpClient{
