@@ -83,6 +83,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
 }
 
+// RecordAnalyticsTrackingThrottled mocks base method.
+func (m *MockMetricsEngine) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAnalyticsTrackingThrottled", arg0, arg1, arg2)
+}
+
+// RecordAnalyticsTrackingThrottled indicates an expected call of RecordAnalyticsTrackingThrottled.
+func (mr *MockMetricsEngineMockRecorder) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAnalyticsTrackingThrottled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAnalyticsTrackingThrottled), arg0, arg1, arg2)
+}
+
 // RecordBadRequests mocks base method.
 func (m *MockMetricsEngine) RecordBadRequests(arg0 string, arg1 int) {
 	m.ctrl.T.Helper()

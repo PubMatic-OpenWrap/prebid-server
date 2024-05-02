@@ -1077,8 +1077,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				pubFeatures:  mockFeature,
 			}
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1360,8 +1360,8 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				pubFeatures:  mockFeature,
 			}
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1906,9 +1906,9 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 				mockEngine = tt.setup()
 			}
 			m := OpenWrap{
-				cache:         mockCache,
-				metricEngine:  mockEngine,
-				featureConfig: mockFeature,
+				cache:        mockCache,
+				metricEngine: mockEngine,
+				pubFeatures:  mockFeature,
 			}
 			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
 			if ok {
@@ -1966,6 +1966,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				moduleCtx: hookstage.ModuleInvocationContext{
 					ModuleContext: hookstage.ModuleContext{
 						"rctx": models.RequestCtx{
+							Platform: models.PLATFORM_VIDEO,
 							Endpoint: models.EndpointAppLovinMax,
 							ImpBidCtx: map[string]models.ImpCtx{
 								"789": {
@@ -1973,6 +1974,13 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 								},
 							},
 							BidderResponseTimeMillis: map[string]int{},
+							Trackers: map[string]models.OWTracker{
+								"456": {
+									TrackerURL: `Tracker URL`,
+									ErrorURL:   `Error URL`,
+									Price:      1.2,
+								},
+							},
 						},
 					},
 				},
@@ -1988,7 +1996,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 										ID:    "456",
 										ImpID: "789",
 										Price: 1.0,
-										AdM:   "<img src=\"http://example.com\"></img>",
+										AdM:   `<VAST version='3.0'><Ad id='601364'><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Impression><![CDATA[http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1&pubId=5890&siteId=47163&adId=1405268&adType=13&adServerId=243&kefact=70.000000&kaxefact=70.000000&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=97&kltstamp=1529929473&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=100.000000&dcId=1&tldId=0&passback=0&svr=MADS1107&ekefact=Ad8wW91TCwCmdG0jlfjXn7Tyzh20hnTVx-m5DoNSep-RXGDr&ekaxefact=Ad8wWwRUCwAGir4Zzl1eF0bKiC-qrCV0D0yp_eE7YizB_BQk&ekpbmtpfact=Ad8wWxRUCwD7qgzwwPE2LnS5-Ou19uO5amJl1YT6-XVFvQ41&imprId=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&oid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&crID=creative-1_1_2&ucrid=160175026529250297&campaignId=17050&creativeId=0&pctr=0.000000&wDSPByrId=511&wDspId=6&wbId=0&wrId=0&wAdvID=3170&isRTB=1&rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1&pmZoneId=zone1&pageURL=www.yahoo.com&lpu=ae.com]]></Impression><Impression>https://dsptracker.com/{PSPM}</Impression><Error><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&er=[ERRORCODE]]]></Error><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID='601364'><Linear skipoffset='20%'><Duration>00:00:04</Duration><VideoClicks><ClickTracking><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=99]]></ClickTracking><ClickThrough>https://www.sample.com</ClickThrough></VideoClicks><MediaFiles><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-1.mp4]]></MediaFile><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>`,
 										BURL:  "http://example.com",
 										Ext:   json.RawMessage(`{"key":"value"}`),
 									},
@@ -2012,8 +2020,8 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 									ID:    "456",
 									ImpID: "789",
 									Price: 1.0,
-									BURL:  "http://example.com",
-									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"prebid\":{},\"crtype\":\"banner\",\"netecpm\":1}}],\"seat\":\"pubmatic\"}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{}}}"}`),
+									BURL:  `https:?adv=&af=video&aps=0&au=&bc=pubmatic&bidid=456&di=-1&eg=1&en=1&ft=0&iid=&kgpv=&orig=&origbidid=456&pdvid=0&pid=0&plt=0&pn=pubmatic&psz=0x0v&pubid=0&purl=&sl=1&slot=&ss=1&tgid=0&tst=0&owsspburl=http://example.com`,
+									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"https:?adv=\\u0026af=video\\u0026aps=0\\u0026au=\\u0026bc=pubmatic\\u0026bidid=456\\u0026di=-1\\u0026eg=1\\u0026en=1\\u0026ft=0\\u0026iid=\\u0026kgpv=\\u0026orig=\\u0026origbidid=456\\u0026pdvid=0\\u0026pid=0\\u0026plt=0\\u0026pn=pubmatic\\u0026psz=0x0v\\u0026pubid=0\\u0026purl=\\u0026sl=1\\u0026slot=\\u0026ss=1\\u0026tgid=0\\u0026tst=0\\u0026owsspburl=http://example.com\",\"adm\":\"\\u003cVAST version=\\\"3.0\\\"\\u003e\\u003cAd id=\\\"601364\\\"\\u003e\\u003cInLine\\u003e\\u003cAdSystem\\u003e\\u003c![CDATA[Acudeo Compatible]]\\u003e\\u003c/AdSystem\\u003e\\u003cAdTitle\\u003e\\u003c![CDATA[VAST 2.0 Instream Test 1]]\\u003e\\u003c/AdTitle\\u003e\\u003cDescription\\u003e\\u003c![CDATA[VAST 2.0 Instream Test 1]]\\u003e\\u003c/Description\\u003e\\u003cImpression\\u003e\\u003c![CDATA[http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1\\u0026pubId=5890\\u0026siteId=47163\\u0026adId=1405268\\u0026adType=13\\u0026adServerId=243\\u0026kefact=70.000000\\u0026kaxefact=70.000000\\u0026kadNetFrequecy=0\\u0026kadwidth=0\\u0026kadheight=0\\u0026kadsizeid=97\\u0026kltstamp=1529929473\\u0026indirectAdId=0\\u0026adServerOptimizerId=2\\u0026ranreq=0.1\\u0026kpbmtpfact=100.000000\\u0026dcId=1\\u0026tldId=0\\u0026passback=0\\u0026svr=MADS1107\\u0026ekefact=Ad8wW91TCwCmdG0jlfjXn7Tyzh20hnTVx-m5DoNSep-RXGDr\\u0026ekaxefact=Ad8wWwRUCwAGir4Zzl1eF0bKiC-qrCV0D0yp_eE7YizB_BQk\\u0026ekpbmtpfact=Ad8wWxRUCwD7qgzwwPE2LnS5-Ou19uO5amJl1YT6-XVFvQ41\\u0026imprId=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F\\u0026oid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F\\u0026crID=creative-1_1_2\\u0026ucrid=160175026529250297\\u0026campaignId=17050\\u0026creativeId=0\\u0026pctr=0.000000\\u0026wDSPByrId=511\\u0026wDspId=6\\u0026wbId=0\\u0026wrId=0\\u0026wAdvID=3170\\u0026isRTB=1\\u0026rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1\\u0026pmZoneId=zone1\\u0026pageURL=www.yahoo.com\\u0026lpu=ae.com]]\\u003e\\u003c/Impression\\u003e\\u003cImpression\\u003e\\u003c![CDATA[https://dsptracker.com/{PSPM}]]\\u003e\\u003c/Impression\\u003e\\u003cError\\u003e\\u003c![CDATA[http://172.16.4.213/track?operId=7\\u0026p=5890\\u0026s=47163\\u0026a=1405268\\u0026wa=243\\u0026ts=1529929473\\u0026wc=17050\\u0026crId=creative-1_1_2\\u0026ucrid=160175026529250297\\u0026impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F\\u0026advertiser_id=3170\\u0026ecpm=70.000000\\u0026er=[ERRORCODE]]]\\u003e\\u003c/Error\\u003e\\u003cError\\u003e\\u003c![CDATA[https://Errortrack.com?p=1234\\u0026er=[ERRORCODE]]]\\u003e\\u003c/Error\\u003e\\u003cCreatives\\u003e\\u003cCreative AdID=\\\"601364\\\"\\u003e\\u003cLinear skipoffset=\\\"20%\\\"\\u003e\\u003cDuration\\u003e\\u003c![CDATA[00:00:04]]\\u003e\\u003c/Duration\\u003e\\u003cVideoClicks\\u003e\\u003cClickTracking\\u003e\\u003c![CDATA[http://172.16.4.213/track?operId=7\\u0026p=5890\\u0026s=47163\\u0026a=1405268\\u0026wa=243\\u0026ts=1529929473\\u0026wc=17050\\u0026crId=creative-1_1_2\\u0026ucrid=160175026529250297\\u0026impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F\\u0026advertiser_id=3170\\u0026ecpm=70.000000\\u0026e=99]]\\u003e\\u003c/ClickTracking\\u003e\\u003cClickThrough\\u003e\\u003c![CDATA[https://www.sample.com]]\\u003e\\u003c/ClickThrough\\u003e\\u003c/VideoClicks\\u003e\\u003cMediaFiles\\u003e\\u003cMediaFile delivery=\\\"progressive\\\" type=\\\"video/mp4\\\" bitrate=\\\"500\\\" width=\\\"400\\\" height=\\\"300\\\" scalable=\\\"true\\\" maintainAspectRatio=\\\"true\\\"\\u003e\\u003c![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-1.mp4]]\\u003e\\u003c/MediaFile\\u003e\\u003cMediaFile delivery=\\\"progressive\\\" type=\\\"video/mp4\\\" bitrate=\\\"500\\\" width=\\\"400\\\" height=\\\"300\\\" scalable=\\\"true\\\" maintainAspectRatio=\\\"true\\\"\\u003e\\u003c![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-2.mp4]]\\u003e\\u003c/MediaFile\\u003e\\u003c/MediaFiles\\u003e\\u003c/Linear\\u003e\\u003c/Creative\\u003e\\u003c/Creatives\\u003e\\u003cPricing model=\\\"CPM\\\" currency=\\\"USD\\\"\\u003e\\u003c![CDATA[1]]\\u003e\\u003c/Pricing\\u003e\\u003c/InLine\\u003e\\u003c/Ad\\u003e\\u003c/VAST\\u003e\",\"ext\":{\"prebid\":{},\"crtype\":\"video\",\"netecpm\":1}}],\"seat\":\"pubmatic\"}],\"bidid\":\"456\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{}}}"}`),
 								},
 							},
 						},
@@ -2034,9 +2042,9 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				cache:         mockCache,
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				cache:        mockCache,
+				pubFeatures:  mockFeature,
 			}
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)

@@ -832,7 +832,19 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 					},
 				},
 			},
-			want: &openrtb2.BidResponse{},
+			want: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "456",
+								ImpID: "789",
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "bidresponse contains NBR and AppLovinMax.Reject is false",
@@ -877,7 +889,20 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 					Ext: json.RawMessage(`{`),
 				},
 			},
-			want: &openrtb2.BidResponse{},
+			want: &openrtb2.BidResponse{
+				ID: "123",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "123",
+								ImpID: "789",
+							},
+						},
+					},
+				},
+				Ext: json.RawMessage(`{`),
+			},
 		},
 		{
 			name: "valid bidresponse",

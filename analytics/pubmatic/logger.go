@@ -25,14 +25,14 @@ type bidWrapper struct {
 	Nbr *openrtb3.NoBidReason
 }
 
-// getUUID is a function variable which will return uuid
-var getUUID = func() string {
+// GetUUID is a function variable which will return uuid
+var GetUUID = func() string {
 	return uuid.NewV4().String()
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
-	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
 
@@ -103,7 +103,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(),
+			SlotId:            GetUUID(),
 			SlotName:          impCtx.SlotName,
 			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,

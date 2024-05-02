@@ -336,8 +336,10 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 		ExtRequest: openrtb_ext.ExtRequest{
 			Prebid: openrtb_ext.ExtRequestPrebid{
 				Debug: getValueForKeyFromParams(models.DEBUG_KEY, appReq, values, redirectQueryParams) == "1",
-				Transparency: &openrtb_ext.TransparencyExt{
-					Content: transparency,
+				ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+					Transparency: &openrtb_ext.TransparencyExt{
+						Content: transparency,
+					},
 				},
 			},
 		},

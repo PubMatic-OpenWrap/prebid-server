@@ -251,7 +251,6 @@ func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.Bid
 
 func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if rctx.AppLovinMax.Reject {
-		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 
@@ -262,11 +261,10 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 
 	resp, err := json.Marshal(bidResponse)
 	if err != nil {
-		*bidResponse = openrtb2.BidResponse{}
 		return bidResponse
 	}
 
-	signaldata := `{"signaldata":` + strconv.Quote(string(resp)) + `}`
+	signaldata := `{"` + models.SignalData + `":` + strconv.Quote(string(resp)) + `}`
 	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
 		BidID: bidResponse.SeatBid[0].Bid[0].ID,
