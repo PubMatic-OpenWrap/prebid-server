@@ -493,3 +493,10 @@ func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, 
 		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
 	}
 }
+
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (me *MultiMetricsEngine) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	for _, thisME := range *me {
+		thisME.RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType)
+	}
+}

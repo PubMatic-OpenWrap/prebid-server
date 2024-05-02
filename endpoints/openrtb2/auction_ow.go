@@ -65,15 +65,17 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 			pubmatic.RestoreBidResponse(rCtx, ao)
 		}
 
-		owlogger, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
-			*bidResponse = *orignalMaxBidResponse
-		}
-		if len(bidResponse.Ext) == 0 {
-			bidResponse.Ext = []byte("{}")
-		}
-		if updatedExt, err := jsonparser.Set([]byte(bidResponse.Ext), []byte(strconv.Quote(owlogger)), "owlogger"); err == nil {
-			bidResponse.Ext = updatedExt
+		if !rCtx.LoggerDisabled {
+			owlogger, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
+			if rCtx.Endpoint == models.EndpointAppLovinMax {
+				*bidResponse = *orignalMaxBidResponse
+			}
+			if len(bidResponse.Ext) == 0 {
+				bidResponse.Ext = []byte("{}")
+			}
+			if updatedExt, err := jsonparser.Set([]byte(bidResponse.Ext), []byte(strconv.Quote(owlogger)), "owlogger"); err == nil {
+				bidResponse.Ext = updatedExt
+			}
 		}
 	} else if rCtx.Endpoint == models.EndpointAppLovinMax {
 		bidResponse.Ext = nil
