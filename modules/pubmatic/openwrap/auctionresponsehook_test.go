@@ -1077,8 +1077,8 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				pubFeatures:  mockFeature,
 			}
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1360,8 +1360,8 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				pubFeatures:  mockFeature,
 			}
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1906,9 +1906,9 @@ func TestOpenWrap_handleAuctionResponseHook(t *testing.T) {
 				mockEngine = tt.setup()
 			}
 			m := OpenWrap{
-				cache:         mockCache,
-				metricEngine:  mockEngine,
-				featureConfig: mockFeature,
+				cache:        mockCache,
+				metricEngine: mockEngine,
+				pubFeatures:  mockFeature,
 			}
 			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
 			if ok {
@@ -2042,9 +2042,9 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := OpenWrap{
-				metricEngine:  tt.getMetricsEngine(),
-				cache:         mockCache,
-				featureConfig: mockFeature,
+				metricEngine: tt.getMetricsEngine(),
+				cache:        mockCache,
+				pubFeatures:  mockFeature,
 			}
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)

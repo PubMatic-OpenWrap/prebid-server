@@ -36,7 +36,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
-	featureConfig      publisherfeature.Feature
+	pubFeatures        publisherfeature.Feature
 	unwrap             unwrap.Unwrap
 }
 
@@ -78,8 +78,12 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
 	// Init Feature reloader service
-	featureConfig := publisherfeature.New(owCache, cfg.Cache.CacheDefaultExpiry)
-	featureConfig.Start()
+	pubFeatures := publisherfeature.New(publisherfeature.Config{
+		Cache:                 owCache,
+		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
+		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
+	})
+	pubFeatures.Start()
 
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
@@ -92,7 +96,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
-			featureConfig:      featureConfig,
+			pubFeatures:        pubFeatures,
 			unwrap:             uw,
 		}
 	})
