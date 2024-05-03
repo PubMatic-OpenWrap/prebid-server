@@ -65,9 +65,23 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	//fmt.Println(string(u))
 
 	if adButlerResp.Status == RESPONSE_NOADS {
-		return nil, []error{&errortypes.BidderFailedSchemaValidation{
-			Message: fmt.Sprintf("Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
-		}}
+		if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_REQUEST {
+			return nil, []error{&errortypes.BidderFailedSchemaValidation{
+				Message: fmt.Sprintf("Invalid Request Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
+			}}
+		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_SOURCE {
+			return nil, []error{&errortypes.InvalidSource{
+				Message: fmt.Sprintf("Invalid Source Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
+			}}
+		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_CATALOG {
+			return nil, []error{&errortypes.InvalidCatalog{
+				Message: fmt.Sprintf("Invalid Catalog Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
+			}}
+		} else {
+			return nil, []error{&errortypes.UnknownError{
+				Message: fmt.Sprintf("Unknown Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
+			}}
+		}
 	}
 
 	if adButlerResp.Status == RESPONSE_SUCCESS && (adButlerResp.Bids == nil ||
@@ -109,12 +123,12 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			configValueMap[obj.Key] = obj.Value
 		}
 
-		val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ACCOUNT_ID]
+		val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
 		if ok {
 			adbutlerID = val
 		}
 
-		val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX + BD_ZONE_ID]
+		val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ZONE_ID]
 		if ok {
 			zoneID = val
 		}
@@ -147,13 +161,13 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		}
 
 		bidderExtendedDetails := false
-		val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX + adapters.AD_BIDDER_EXTEN_DETAILS]
+		val, ok = configValueMap[adapters.AUCTIONDETAILS_PREFIX+adapters.AD_BIDDER_EXTEN_DETAILS]
 		if ok {
 			if val == adapters.STRING_TRUE {
 				bidderExtendedDetails = true
 			}
 		}
-	
+
 		if bidderExtendedDetails {
 			for key, value := range adButlerBid.ProductData {
 				productDetails[key] = value
@@ -162,7 +176,6 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 			// Delete the "Product Id" key if present
 			delete(productDetails, keyToRemove)
 		}
-
 
 		var impressionUrl, clickUrl, conversionUrl string
 		for _, beacon := range adButlerBid.Beacons {
@@ -241,4 +254,3 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
-
