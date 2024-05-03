@@ -170,12 +170,12 @@ func (m *Metrics) RecordFloorsRequestForAccount(pubId string) {
 		}).Inc()
 	}
 }
-func (m *Metrics) RecordDynamicFetchFailure(pubId, code, source string) {
+func (m *Metrics) RecordFloorStatus(pubId, source, code string) {
 	if pubId != metrics.PublisherUnknown {
 		m.dynamicFetchFailure.With(prometheus.Labels{
 			accountLabel: pubId,
-			codeLabel:    code,
 			sourceLabel:  source,
+			codeLabel:    code,
 		}).Inc()
 	}
 }

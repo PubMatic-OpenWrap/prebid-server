@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestIsRequestEnabledWithFloor(t *testing.T) {
@@ -1036,10 +1037,11 @@ func TestCreateFloorsFrom(t *testing.T) {
 		floorLocation string
 	}
 	testCases := []struct {
-		name  string
-		args  args
-		want  *openrtb_ext.PriceFloorRules
-		want1 []error
+		name              string
+		args              args
+		want              *openrtb_ext.PriceFloorRules
+		want1             []error
+		expectedStatsCall int
 	}{
 		{
 			name: "floor provider should be selected from floor json",
@@ -1228,13 +1230,53 @@ func TestCreateFloorsFrom(t *testing.T) {
 			want1: []error{
 				errors.New("Invalid Floor Model = 'model from fetched' due to SkipRate = '110' is out of range (1-100)"),
 			},
+			expectedStatsCall: 1,
+		},
+		{
+			name: "Invalid floors",
+			args: args{
+				account: testAccountConfig,
+				floors: &openrtb_ext.PriceFloorRules{
+					FloorMin: -1,
+					Enabled:  getTrue(),
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model from fetched",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 15,
+									"*|*|*":                           25,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields: []string{"mediaType", "size", "domain"},
+								},
+							},
+						},
+					},
+				},
+				fetchStatus:   openrtb_ext.FetchNone,
+				floorLocation: openrtb_ext.RequestLocation,
+			},
+			want: &openrtb_ext.PriceFloorRules{
+				FetchStatus:        openrtb_ext.FetchNone,
+				PriceFloorLocation: openrtb_ext.RequestLocation,
+			},
+			want1: []error{
+				errors.New("Invalid FloorMin = '-1', value should be >= 0"),
+			},
+			expectedStatsCall: 1,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, got1 := createFloorsFrom(tc.args.floors, tc.args.account, tc.args.fetchStatus, tc.args.floorLocation, &metricsConf.NilMetricsEngine{})
+			me := &metrics.MetricsEngineMock{}
+			me.On("RecordFloorStatus", mock.Anything, mock.Anything, mock.Anything).Return()
+			got, got1 := createFloorsFrom(tc.args.floors, tc.args.account, tc.args.fetchStatus, tc.args.floorLocation, me)
 			assert.Equal(t, got1, tc.want1, tc.name)
 			assert.Equal(t, got, tc.want, tc.name)
+			me.AssertNumberOfCalls(t, "RecordFloorStatus", tc.expectedStatsCall)
 		})
 	}
 }
@@ -1904,5 +1946,267 @@ func TestMergeFloors(t *testing.T) {
 				t.Errorf("mergeFloors() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestUpdateBidRequestWithFloors(t *testing.T) {
+	type args struct {
+		extFloorRules *openrtb_ext.PriceFloorRules
+		request       *openrtb_ext.RequestWrapper
+		conversions   currency.Conversions
+		metricEngine  metrics.MetricsEngine
+		accountID     string
+	}
+
+	type want struct {
+		expectedCalls int
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+
+		{
+			name: "test record floor status with no failures",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMin:           5,
+					FloorMinCur:        "USD",
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           7,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			want: want{
+				expectedCalls: 0,
+			},
+		},
+		{
+			name: "test record floor status with skiprate 100",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMin:           5,
+					FloorMinCur:        "USD",
+					SkipRate:           100,
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           7,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			want: want{
+				expectedCalls: 1,
+			},
+		},
+		{
+			name: "test record floor status with negative floor value, rule matched",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMinCur:        "USD",
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           -7,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			want: want{
+				expectedCalls: 1,
+			},
+		},
+		{
+			name: "test record floor status with high floor value, rule matched",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMinCur:        "USD",
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           201,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			want: want{
+				expectedCalls: 1,
+			},
+		},
+		{
+			name: "test record floor status with high floor value ih the request, rule not matched",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMin:           201,
+					FloorMinCur:        "USD",
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           201,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			want: want{
+				expectedCalls: 1,
+			},
+		},
+	}
+	for _, test := range tests {
+		me := &metrics.MetricsEngineMock{}
+		me.On("RecordFloorStatus", mock.Anything, mock.Anything, mock.Anything).Return()
+		updateBidRequestWithFloors(test.args.extFloorRules, test.args.request, test.args.conversions, me, test.args.accountID)
+		me.AssertNumberOfCalls(t, "RecordFloorStatus", test.want.expectedCalls)
 	}
 }

@@ -38,8 +38,8 @@ const (
 	unmarshalFailure = "2"
 	invalidFloors    = "3"
 	skipRateFailure  = "4"
-	negativeFloor    = "5"
-	highFloor        = "6"
+	zeroFloorValue   = "5"
+	highFloorValue   = "6"
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -79,7 +79,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	extFloorRules.Skipped = new(bool)
 	if shouldSkipFloors(modelGroup.SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		metricEngine.RecordDynamicFetchFailure(accountID, skipRateFailure, extFloorRules.PriceFloorLocation)
+		metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, skipRateFailure)
 		return []error{}
 	}
 
@@ -106,10 +106,10 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 					bidFloor = floorMinVal
 				}
 				if bidFloor < 0 {
-					metricEngine.RecordDynamicFetchFailure(accountID, negativeFloor, extFloorRules.PriceFloorLocation)
+					metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, zeroFloorValue)
 				}
 				if bidFloor > 200 {
-					metricEngine.RecordDynamicFetchFailure(accountID, highFloor, extFloorRules.PriceFloorLocation)
+					metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, highFloorValue)
 				}
 				imp.BidFloor = bidFloor
 				imp.BidFloorCur = floorCur
@@ -202,7 +202,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, account config.Accoun
 	if floors != nil {
 		floorValidationErr := validateFloorParams(floors)
 		if floorValidationErr != nil {
-			metricsEngine.RecordDynamicFetchFailure(account.ID, invalidFloors, floorLocation)
+			metricsEngine.RecordFloorStatus(account.ID, floorLocation, invalidFloors)
 			return finalFloors, append(floorModelErrList, floorValidationErr)
 		}
 
@@ -210,7 +210,7 @@ func createFloorsFrom(floors *openrtb_ext.PriceFloorRules, account config.Accoun
 		if floors.Data != nil {
 			validModelGroups, floorModelErrList := selectValidFloorModelGroups(floors.Data.ModelGroups, account)
 			if len(floorModelErrList) > 0 {
-				metricsEngine.RecordDynamicFetchFailure(account.ID, invalidFloors, floorLocation)
+				metricsEngine.RecordFloorStatus(account.ID, floorLocation, invalidFloors)
 			}
 			if len(validModelGroups) == 0 {
 				return finalFloors, floorModelErrList

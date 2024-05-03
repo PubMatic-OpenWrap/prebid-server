@@ -55,10 +55,10 @@ func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.Bid
 	}
 }
 
-// RecordDynamicFetchFailure across all engines
-func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code, source string) {
+// RecordFloorStatus across all engines
+func (me *MultiMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 	for _, thisME := range *me {
-		thisME.RecordDynamicFetchFailure(pubId, code, source)
+		thisME.RecordFloorStatus(pubId, source, code)
 	}
 }
 
@@ -66,8 +66,8 @@ func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code, source stri
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
 
-// RecordDynamicFetchFailure as a noop
-func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code, source string) {
+// RecordFloorStatus as a noop
+func (me *NilMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 }
 
 // RecordRejectedBids as a noop

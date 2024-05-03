@@ -170,7 +170,7 @@ func TestRecordVASTTagType(t *testing.T) {
 	}
 }
 
-func TestRecordDynamicFetchFailure(t *testing.T) {
+func TestRecordFloorStatus(t *testing.T) {
 	type args struct {
 		code, account, source string
 	}
@@ -183,7 +183,7 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 		want want
 	}{
 		{
-			name: "record_dynamic_fetch_failure",
+			name: "record_floor_status",
 			args: args{
 				account: "5890",
 				code:    "1",
@@ -198,7 +198,7 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			pm := createMetricsForTesting()
-			pm.RecordDynamicFetchFailure(tt.args.account, tt.args.code, tt.args.source)
+			pm.RecordFloorStatus(tt.args.account, tt.args.source, tt.args.code)
 			assertCounterVecValue(t,
 				"",
 				"record dynamic fetch failure",
@@ -206,8 +206,8 @@ func TestRecordDynamicFetchFailure(t *testing.T) {
 				float64(tt.want.expCount),
 				prometheus.Labels{
 					accountLabel: tt.args.account,
-					codeLabel:    tt.args.code,
 					sourceLabel:  tt.args.source,
+					codeLabel:    tt.args.code,
 				})
 		})
 	}
