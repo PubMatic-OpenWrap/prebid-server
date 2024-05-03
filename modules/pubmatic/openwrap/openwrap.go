@@ -100,6 +100,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			unwrap:             uw,
 		}
 	})
+	initOpenWrapServer(cfg)
 	return *ow, nil
 }
 

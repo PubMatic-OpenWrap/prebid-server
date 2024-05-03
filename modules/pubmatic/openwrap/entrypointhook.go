@@ -13,6 +13,7 @@ import (
 	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
@@ -124,6 +125,9 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
+		WakandaDebug: wakanda.Debug{
+			Config: m.cfg.Wakanda,
+		},
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
@@ -152,7 +156,6 @@ func (m OpenWrap) handleEntrypointHook(
 	if rCtx.WakandaDebug.Enabled {
 		rCtx.WakandaDebug.DebugData.HTTPRequest = payload.Request
 		rCtx.WakandaDebug.DebugData.HTTPRequestBody = payload.Body
-		defer rCtx.WakandaDebug.WriteLogToFiles()
 	}
 
 	result.Reject = false

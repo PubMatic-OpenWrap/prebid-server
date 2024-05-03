@@ -1,12 +1,15 @@
 package pubmatic
 
 import (
+	"encoding/json"
 	"runtime/debug"
 	"sync"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
@@ -64,7 +67,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
 	}
 
-	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
+	url, headers, wlog := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
@@ -72,6 +75,23 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}
 
 	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
+	if rCtx.WakandaDebug.Enabled {
+		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
+		rCtx.WakandaDebug.DebugData.Logger, _ = json.Marshal(wlog)
+		rCtx.WakandaDebug.DebugData.OpenRTB = ao.RequestWrapper.BidRequest
+		defer rCtx.WakandaDebug.WriteLogToFiles()
+	}
+}
+
+// setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
+func setWakandaWinningBidFlag(debug *wakanda.Debug, response *openrtb2.BidResponse) {
+	if debug != nil && debug.Enabled && response != nil {
+		if len(response.SeatBid) > 0 &&
+			len(response.SeatBid[0].Bid) > 0 &&
+			response.SeatBid[0].Bid[0].Price > 0 {
+			debug.DebugData.WinningBid = true
+		}
+	}
 }
 
 // Writes VideoObject to file

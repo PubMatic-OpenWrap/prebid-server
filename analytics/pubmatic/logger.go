@@ -31,9 +31,9 @@ var GetUUID = func() string {
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
-func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
+func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header, *WloggerRecord) {
 	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
-		return "", nil
+		return "", nil, nil
 	}
 
 	wlog := WloggerRecord{
@@ -164,7 +164,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		url = ow.cfg.PublicEndpoint
 	}
 
-	return PrepareLoggerURL(&wlog, url, getGdprEnabledFlag(rCtx.PartnerConfigMap)), headers
+	return PrepareLoggerURL(&wlog, url, getGdprEnabledFlag(rCtx.PartnerConfigMap)), headers, &wlog
 }
 
 // TODO filter by name. (*stageOutcomes[8].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(data))

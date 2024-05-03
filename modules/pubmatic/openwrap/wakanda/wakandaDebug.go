@@ -16,7 +16,7 @@ type Debug struct {
 	FolderPaths []string
 	DebugLevel  int
 	DebugData   DebugData
-	config      Wakanda
+	Config      Wakanda
 }
 
 // EnableIfRequired will check if rule is applicable or not
@@ -65,11 +65,11 @@ func (wD *Debug) WriteLogToFiles() {
 			// <POD_NAME>-<UNIX_TIME_NANO_SEC>.json
 			var sftpDestinationFile string
 			if wD.DebugData.WinningBid {
-				sftpDestinationFile = fmt.Sprintf("%s-%d.json.winningbid", wD.config.PodName, time.Now().UnixNano())
+				sftpDestinationFile = fmt.Sprintf("%s-%d.json.winningbid", wD.Config.PodName, time.Now().UnixNano())
 			} else {
-				sftpDestinationFile = fmt.Sprintf("%s-%d.json", wD.config.PodName, time.Now().UnixNano())
+				sftpDestinationFile = fmt.Sprintf("%s-%d.json", wD.Config.PodName, time.Now().UnixNano())
 			}
-			if ok, err := send(sftpDestinationFile, logDir, recordBytes, wD.config.SFTP); !ok {
+			if ok, err := send(sftpDestinationFile, logDir, recordBytes, wD.Config.SFTP); !ok {
 				logger.Error("Wakanda '%s' SFTP Error : %s", sftpDestinationFile, err.Error())
 			}
 		}
