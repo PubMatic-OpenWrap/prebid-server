@@ -17,6 +17,8 @@ const (
 	AdpodPrefilteringErrorCode
 	BidRejectionFloorsErrorCode
 	NoValidBidErrorCode
+	InvalidSourceErrorCode
+	InvalidCatalogErrorCode
 )
 
 // Defines numeric codes for well-known warnings.
@@ -28,8 +30,6 @@ const (
 	DisabledCurrencyConversionWarningCode
 	AlternateBidderCodeWarningCode
 	AdpodPostFilteringWarningCode
-	InvalidSourceWarningCode
-	InvalidCatalogWarningCode
 )
 
 // Coder provides an error or warning code with severity.

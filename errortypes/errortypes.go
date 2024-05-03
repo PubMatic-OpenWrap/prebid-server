@@ -146,6 +146,23 @@ func (err *FailedToRequestBids) Severity() Severity {
 	return SeverityFatal
 }
 
+// AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
+type AdpodPrefiltering struct {
+	Message string
+}
+
+func (err *AdpodPrefiltering) Error() string {
+	return err.Message
+}
+
+func (err *AdpodPrefiltering) Code() int {
+	return AdpodPrefilteringErrorCode
+}
+
+func (err *AdpodPrefiltering) Severity() Severity {
+	return SeverityFatal
+}
+
 // BidderTemporarilyDisabled is used at the request validation step, where we want to continue processing as best we
 // can rather than returning a 4xx, and still return an error message.
 // The initial usecase is to flag deprecated bidders.
@@ -246,7 +263,7 @@ func (err *InvalidSource) Error() string {
 }
 
 func (err *InvalidSource) Code() int {
-	return InvalidSourceWarningCode
+	return InvalidSourceErrorCode
 }
 
 func (err *InvalidSource) Severity() Severity {
@@ -263,7 +280,7 @@ func (err *InvalidCatalog) Error() string {
 }
 
 func (err *InvalidCatalog) Code() int {
-	return InvalidCatalogWarningCode
+	return InvalidCatalogErrorCode
 }
 
 func (err *InvalidCatalog) Severity() Severity {
@@ -280,28 +297,11 @@ func (err *UnknownError) Error() string {
 }
 
 func (err *UnknownError) Code() int {
-	return UnknownWarningCode
+	return UnknownErrorCode
 }
 
 func (err *UnknownError) Severity() Severity {
 	return SeverityWarning
-}
-
-// AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
-type AdpodPrefiltering struct {
-	Message string
-}
-
-func (err *AdpodPrefiltering) Error() string {
-	return err.Message
-}
-
-func (err *AdpodPrefiltering) Code() int {
-	return AdpodPrefilteringErrorCode
-}
-
-func (err *AdpodPrefiltering) Severity() Severity {
-	return SeverityFatal
 }
 
 // AdpodPostFiltering should be used when vast response doesn't contain any price value
