@@ -252,15 +252,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 i
 }
 
 // RecordGetProfileDataTime mocks base method.
-func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0, arg1 string, arg2 time.Duration) {
+func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordGetProfileDataTime", arg0, arg1, arg2)
+	m.ctrl.Call(m, "RecordGetProfileDataTime", arg0)
 }
 
 // RecordGetProfileDataTime indicates an expected call of RecordGetProfileDataTime.
-func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0)
 }
 
 // RecordHTTPCounter mocks base method.
@@ -660,15 +660,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordSSTimeoutRequests(arg0, arg1 inte
 }
 
 // RecordSendLoggerDataTime mocks base method.
-func (m *MockMetricsEngine) RecordSendLoggerDataTime(arg0, arg1 string, arg2 time.Duration) {
+func (m *MockMetricsEngine) RecordSendLoggerDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordSendLoggerDataTime", arg0, arg1, arg2)
+	m.ctrl.Call(m, "RecordSendLoggerDataTime", arg0)
 }
 
 // RecordSendLoggerDataTime indicates an expected call of RecordSendLoggerDataTime.
-func (mr *MockMetricsEngineMockRecorder) RecordSendLoggerDataTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordSendLoggerDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSendLoggerDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSendLoggerDataTime), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSendLoggerDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSendLoggerDataTime), arg0)
 }
 
 // RecordStatsKeyCTVPrebidFailedImpression mocks base method.

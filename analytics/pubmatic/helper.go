@@ -2,12 +2,15 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
@@ -69,6 +72,34 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
 		return
 	}
-	rCtx.MetricsEngine.RecordSendLoggerDataTime(rCtx.Endpoint, rCtx.ProfileIDStr, time.Since(startTime))
+	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))
 	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
+}
+
+// RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
+func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
+
+	if ao.Response.NBR != nil {
+		return nil
+	}
+
+	signalData := map[string]string{}
+	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
+		return err
+	}
+
+	if val, ok := signalData[models.SignalData]; !ok || val == "" {
+		return errors.New("signal data not found in the response")
+	}
+
+	orignalResponse := &openrtb2.BidResponse{}
+	if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
+		return err
+	}
+
+	*ao.Response = *orignalResponse
+	return nil
 }

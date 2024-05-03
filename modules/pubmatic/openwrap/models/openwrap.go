@@ -101,6 +101,7 @@ type RequestCtx struct {
 	IsTBFFeatureEnabled    bool
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
+	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
 }
@@ -197,4 +198,8 @@ type CustomDimension struct {
 type FeatureData struct {
 	Enabled int    // feature enabled/disabled
 	Value   string // feature value if any
+}
+
+type AppLovinMax struct {
+	Reject bool
 }

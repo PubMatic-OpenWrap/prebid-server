@@ -57,7 +57,7 @@ type MetricsEngine interface {
 	RecordBidResponseByDealCountInPBS(publisher, profile, aliasBidder, dealId string)
 	RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId string)
 
-	RecordGetProfileDataTime(endpoint, profile string, getTime time.Duration)
+	RecordGetProfileDataTime(getTime time.Duration)
 	RecordDBQueryFailure(queryType, publisher, profile string)
 
 	Shutdown()
@@ -70,7 +70,7 @@ type MetricsEngine interface {
 	RecordPrebidTimeoutRequests(pubid, profileid string)
 	RecordPartnerTimeoutRequests(pubid, profileid, bidder string)
 	RecordCtvUaAccuracy(pubId, status string)
-	RecordSendLoggerDataTime(requestType, profileid string, sendTime time.Duration)
+	RecordSendLoggerDataTime(sendTime time.Duration)
 	RecordRequestTime(requestType string, requestTime time.Duration)
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
 	RecordAmpVideoRequests(pubid, profileid string)

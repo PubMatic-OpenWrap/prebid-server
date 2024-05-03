@@ -59,6 +59,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	err := RestoreBidResponse(rCtx, *ao)
+	if err != nil {
+		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
+	}
+
 	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 	if url == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
