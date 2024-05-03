@@ -65,15 +65,15 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 	//fmt.Println(string(u))
 
 	if adButlerResp.Status == RESPONSE_NOADS {
-		if adButlerResp.Code == RESPONSE_CODE_INVALID_REQUEST {
+		if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_REQUEST {
 			return nil, []error{&errortypes.BidderFailedSchemaValidation{
 				Message: fmt.Sprintf("Invalid Request Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
-		} else if adButlerResp.Code == RESPONSE_CODE_INVALID_SOURCE {
+		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_SOURCE {
 			return nil, []error{&errortypes.InvalidSource{
 				Message: fmt.Sprintf("Invalid Source Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
-		} else if adButlerResp.Code == RESPONSE_CODE_INVALID_CATALOG {
+		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_CATALOG {
 			return nil, []error{&errortypes.InvalidCatalog{
 				Message: fmt.Sprintf("Invalid Catalog Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
