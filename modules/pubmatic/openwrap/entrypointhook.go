@@ -142,6 +142,19 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.PubID = pubid
 	}
 
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
+	if rCtx.WakandaDebug.Enabled {
+		rCtx.WakandaDebug.DebugData.HTTPRequest = payload.Request
+		rCtx.WakandaDebug.DebugData.HTTPRequestBody = payload.Body
+		defer rCtx.WakandaDebug.WriteLogToFiles()
+	}
+
 	result.Reject = false
 	return result, nil
 }

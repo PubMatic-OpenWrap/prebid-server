@@ -1,12 +1,16 @@
 package openwrap
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -34,6 +38,19 @@ var (
 const (
 	test = "_test"
 )
+
+var accountIdSearchPath = [...]struct {
+	isApp  bool
+	isDOOH bool
+	key    []string
+}{
+	{true, false, []string{"app", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+	{true, false, []string{"app", "publisher", "id"}},
+	{false, false, []string{"site", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+	{false, false, []string{"site", "publisher", "id"}},
+	{false, true, []string{"dooh", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+	{false, true, []string{"dooh", "publisher", "id"}},
+}
 
 func init() {
 	widthRegEx = regexp.MustCompile(models.MACRO_WIDTH)
@@ -209,26 +226,30 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 
 // getHostName Generates server name from node and pod name in K8S  environment
 func GetHostName() string {
-	var (
-		nodeName string
-		podName  string
-	)
 
+	var nodeName string
 	if nodeName, _ = os.LookupEnv(models.ENV_VAR_NODE_NAME); nodeName == "" {
 		nodeName = models.DEFAULT_NODENAME
 	} else {
 		nodeName = strings.Split(nodeName, ".")[0]
 	}
 
+	podName := GetPodName()
+
+	serverName := nodeName + ":" + podName
+
+	return serverName
+}
+
+func GetPodName() string {
+
+	var podName string
 	if podName, _ = os.LookupEnv(models.ENV_VAR_POD_NAME); podName == "" {
 		podName = models.DEFAULT_PODNAME
 	} else {
 		podName = strings.TrimPrefix(podName, "ssheaderbidding-")
 	}
-
-	serverName := nodeName + ":" + podName
-
-	return serverName
+	return podName
 }
 
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
@@ -341,4 +362,57 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 		return string(uaBytes)
 	}
 	return request.Header.Get("User-Agent")
+}
+
+func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest json.RawMessage, originalRequest []byte) (string, bool, bool, []error) {
+	request := originalRequest
+	if hasStoredRequest {
+		request = storedRequest
+	}
+
+	accountId, isAppReq, isDOOHReq, err := searchAccountId(request)
+	if err != nil {
+		return "", isAppReq, isDOOHReq, []error{err}
+	}
+
+	// In case the stored request did not have account data we specifically search it in the original request
+	if accountId == "" && hasStoredRequest {
+		accountId, _, _, err = searchAccountId(originalRequest)
+		if err != nil {
+			return "", isAppReq, isDOOHReq, []error{err}
+		}
+	}
+
+	if accountId == "" {
+		return metrics.PublisherUnknown, isAppReq, isDOOHReq, nil
+	}
+
+	return accountId, isAppReq, isDOOHReq, nil
+}
+
+func searchAccountId(request []byte) (string, bool, bool, error) {
+	for _, path := range accountIdSearchPath {
+		accountId, exists, err := getStringValueFromRequest(request, path.key)
+		if err != nil {
+			return "", path.isApp, path.isDOOH, err
+		}
+		if exists {
+			return accountId, path.isApp, path.isDOOH, nil
+		}
+	}
+	return "", false, false, nil
+}
+
+func getStringValueFromRequest(request []byte, key []string) (string, bool, error) {
+	val, dataType, _, err := jsonparser.Get(request, key...)
+	if dataType == jsonparser.NotExist {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	if dataType != jsonparser.String {
+		return "", true, fmt.Errorf("%s must be a string", strings.Join(key, "."))
+	}
+	return string(val), true, nil
 }

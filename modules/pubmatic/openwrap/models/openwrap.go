@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
@@ -104,6 +105,7 @@ type RequestCtx struct {
 	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
+	WakandaDebug           wakanda.Debug
 }
 
 type OwBid struct {
