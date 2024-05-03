@@ -9,13 +9,13 @@ import (
 )
 
 func initOpenWrapServer(cfg config.Config) {
+	cfg.Wakanda.HostName = cfg.Server.HostName
+	cfg.Wakanda.DCName = cfg.Server.DCName
+	wakanda.InitWakanda(cfg.Wakanda)
 	hbMux := http.NewServeMux()
 	hbMux.HandleFunc("/wakanda", wakanda.Handler(cfg.Wakanda))
 	srvInterface := ":" + cfg.Server.Port
 	go startServer(srvInterface, hbMux)
-	cfg.Wakanda.HostName = cfg.Server.HostName
-	cfg.Wakanda.DCName = cfg.Server.DCName
-	wakanda.InitWakanda(cfg.Wakanda)
 }
 
 var startServer = func(srvInterface string, hbMux *http.ServeMux) error {

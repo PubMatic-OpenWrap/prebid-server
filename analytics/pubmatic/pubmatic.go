@@ -78,6 +78,8 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	if rCtx.WakandaDebug.Enabled {
 		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
 		rCtx.WakandaDebug.DebugData.Logger, _ = json.Marshal(wlog)
+		bytes, _ := json.Marshal(ao.Response)
+		rCtx.WakandaDebug.DebugData.HTTPResponseBody = string(bytes)
 		rCtx.WakandaDebug.DebugData.OpenRTB = ao.RequestWrapper.BidRequest
 		defer rCtx.WakandaDebug.WriteLogToFiles()
 	}
