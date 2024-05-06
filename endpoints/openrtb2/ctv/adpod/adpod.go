@@ -21,7 +21,7 @@ type Adpod interface {
 	AddImpressions(imp openrtb2.Imp)
 	Validate() []error
 	GetImpressions() []openrtb2.Imp
-	CollectBid(bid openrtb2.Bid, seat string)
+	CollectBid(bid *openrtb2.Bid, seat string)
 	HoldAuction()
 	GetAdpodSeatBids() []openrtb2.SeatBid
 	GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData

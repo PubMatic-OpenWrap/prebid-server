@@ -50,14 +50,14 @@ func (sa *structuredAdpod) GetImpressions() []openrtb2.Imp {
 	return sa.Imps
 }
 
-func (sa *structuredAdpod) CollectBid(bid openrtb2.Bid, seat string) {
+func (sa *structuredAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
 	ext := openrtb_ext.ExtBid{}
 	if bid.Ext != nil {
 		json.Unmarshal(bid.Ext, &ext)
 	}
 
 	adpodBid := types.Bid{
-		Bid:               &bid,
+		Bid:               bid,
 		ExtBid:            ext,
 		DealTierSatisfied: util.GetDealTierSatisfied(&ext),
 		Seat:              seat,

@@ -34,6 +34,7 @@ type dynamicAdpod struct {
 	VideoExt       *openrtb_ext.ExtVideoAdPod    `json:"vidext,omitempty"`
 	ImpConfigs     []*types.ImpAdPodConfig       `json:"imp,omitempty"`
 	AdpodBid       *types.AdPodBid               `json:"-"`
+	WinningBids    *types.AdPodBid               `json:"-"`
 	Error          *openrtb_ext.ExtBidderMessage `json:"ec,omitempty"`
 }
 
@@ -92,7 +93,7 @@ func (da *dynamicAdpod) GetImpressions() []openrtb2.Imp {
 	return da.Imps
 }
 
-func (da *dynamicAdpod) CollectBid(bid openrtb2.Bid, seat string) {
+func (da *dynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
 	originalImpId, sequence := util.DecodeImpressionID(bid.ImpID)
 
 	if da.AdpodBid == nil {
@@ -109,10 +110,10 @@ func (da *dynamicAdpod) CollectBid(bid openrtb2.Bid, seat string) {
 	}
 
 	//get duration of creative
-	duration, status := getBidDuration(&bid, da.ReqAdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
+	duration, status := getBidDuration(bid, da.ReqAdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
 
 	da.AdpodBid.Bids = append(da.AdpodBid.Bids, &types.Bid{
-		Bid:               &bid,
+		Bid:               bid,
 		ExtBid:            ext,
 		Status:            status,
 		Duration:          int(duration),
@@ -149,8 +150,7 @@ func (da *dynamicAdpod) HoldAuction() {
 	adpodBid.OriginalImpID = da.AdpodBid.OriginalImpID
 	adpodBid.SeatName = da.AdpodBid.SeatName
 
-	// Update the original adpodBid
-	da.AdpodBid = adpodBid
+	da.WinningBids = adpodBid
 
 }
 
@@ -240,11 +240,15 @@ func newImpression(imp openrtb2.Imp, config *types.ImpAdPodConfig) openrtb2.Imp 
 	video.MaxDuration = config.MaxDuration
 	video.Sequence = config.SequenceNumber
 	video.MaxExtended = 0
-	//TODO: remove video adpod extension if not required
+
+	video.Ext = jsonparser.Delete(video.Ext, "adpod")
+	video.Ext = jsonparser.Delete(video.Ext, "offset")
+	if string(video.Ext) == "{}" {
+		video.Ext = nil
+	}
 
 	newImp := imp
 	newImp.ID = config.ImpID
-	//newImp.BidFloor = 0
 	newImp.Video = &video
 	return newImp
 }
@@ -299,11 +303,11 @@ func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext
 /***************************Bid Response Processing************************/
 
 func (da *dynamicAdpod) getBidResponseSeatBids() []openrtb2.SeatBid {
-	if da.AdpodBid == nil || len(da.AdpodBid.Bids) == 0 {
+	if da.WinningBids == nil || len(da.WinningBids.Bids) == 0 {
 		return nil
 	}
 
-	bid := da.getAdPodBid(da.AdpodBid)
+	bid := da.getAdPodBid(da.WinningBids)
 	if bid == nil {
 		return nil
 	}

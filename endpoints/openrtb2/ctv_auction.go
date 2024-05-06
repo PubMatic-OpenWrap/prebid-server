@@ -632,7 +632,7 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 				continue
 			}
 
-			adpodCtx.CollectBid(*bid, seat.Seat)
+			adpodCtx.CollectBid(bid, seat.Seat)
 		}
 	}
 }
