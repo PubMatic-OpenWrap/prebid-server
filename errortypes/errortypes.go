@@ -146,6 +146,23 @@ func (err *FailedToRequestBids) Severity() Severity {
 	return SeverityFatal
 }
 
+// AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
+type AdpodPrefiltering struct {
+	Message string
+}
+
+func (err *AdpodPrefiltering) Error() string {
+	return err.Message
+}
+
+func (err *AdpodPrefiltering) Code() int {
+	return AdpodPrefilteringErrorCode
+}
+
+func (err *AdpodPrefiltering) Severity() Severity {
+	return SeverityFatal
+}
+
 // BidderTemporarilyDisabled is used at the request validation step, where we want to continue processing as best we
 // can rather than returning a 4xx, and still return an error message.
 // The initial usecase is to flag deprecated bidders.
@@ -236,21 +253,55 @@ func (err *NoValidBid) Severity() Severity {
 	return SeverityWarning
 }
 
-// AdpodPrefiltering should be used when ctv impression algorithm not able to generate impressions
-type AdpodPrefiltering struct {
+// InvalidSource should be used when responded with invalid source error code
+type InvalidSource struct {
 	Message string
 }
 
-func (err *AdpodPrefiltering) Error() string {
+func (err *InvalidSource) Error() string {
 	return err.Message
 }
 
-func (err *AdpodPrefiltering) Code() int {
-	return AdpodPrefilteringErrorCode
+func (err *InvalidSource) Code() int {
+	return InvalidSourceErrorCode
 }
 
-func (err *AdpodPrefiltering) Severity() Severity {
-	return SeverityFatal
+func (err *InvalidSource) Severity() Severity {
+	return SeverityWarning
+}
+
+// InvalidCatalog should be used when responded with invalid catalog error code
+type InvalidCatalog struct {
+	Message string
+}
+
+func (err *InvalidCatalog) Error() string {
+	return err.Message
+}
+
+func (err *InvalidCatalog) Code() int {
+	return InvalidCatalogErrorCode
+}
+
+func (err *InvalidCatalog) Severity() Severity {
+	return SeverityWarning
+}
+
+// UnknownError should be used when responded with unknown error code
+type UnknownError struct {
+	Message string
+}
+
+func (err *UnknownError) Error() string {
+	return err.Message
+}
+
+func (err *UnknownError) Code() int {
+	return UnknownErrorCode
+}
+
+func (err *UnknownError) Severity() Severity {
+	return SeverityWarning
 }
 
 // AdpodPostFiltering should be used when vast response doesn't contain any price value
