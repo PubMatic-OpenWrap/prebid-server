@@ -40,6 +40,8 @@ const (
 	skipRateFailure  = "4"
 	zeroFloorValue   = "5"
 	highFloorValue   = "6"
+	ZERO_FLOOR_VALUE = 0
+	HIGH_FLOOR_VALUE = 200
 )
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
@@ -105,10 +107,10 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				if floorMinVal > 0.0 && floorVal < floorMinVal {
 					bidFloor = floorMinVal
 				}
-				if bidFloor < 0 {
+				if bidFloor < ZERO_FLOOR_VALUE {
 					metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, zeroFloorValue)
 				}
-				if bidFloor > 200 {
+				if bidFloor > HIGH_FLOOR_VALUE {
 					metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, highFloorValue)
 				}
 				imp.BidFloor = bidFloor

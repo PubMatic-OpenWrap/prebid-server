@@ -519,7 +519,7 @@ type MetricsEngine interface {
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 
-	//RecordFloorStatus records the fetch status labeled by pubid, source and reason code
+	//RecordFloorStatus records the floor validation status labeled by pubid, source and reason code
 	RecordFloorStatus(pubId, source, code string)
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code

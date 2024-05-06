@@ -203,7 +203,7 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 
 	m.dynamicFetchFailure = newCounter(cfg, reg,
 		"floors_account_status",
-		"Count of failures in case of dynamic fetch labeled by account",
+		"Count of floor validation status labeled by account, source and reason code",
 		[]string{accountLabel, codeLabel, sourceLabel})
 
 	m.adapterDuplicateBidIDCounter = newCounter(cfg, reg,

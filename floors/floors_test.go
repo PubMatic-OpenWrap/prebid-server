@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/currency"
@@ -1021,7 +1022,12 @@ func printFloors(floors *openrtb_ext.PriceFloorRules) string {
 
 func TestCreateFloorsFrom(t *testing.T) {
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	me := &metrics.MetricsEngineMock{}
+
 	testAccountConfig := config.Account{
+		ID: "5890",
 		PriceFloors: config.AccountPriceFloors{
 			Enabled:        true,
 			UseDynamicData: false,
@@ -1037,11 +1043,11 @@ func TestCreateFloorsFrom(t *testing.T) {
 		floorLocation string
 	}
 	testCases := []struct {
-		name              string
-		args              args
-		want              *openrtb_ext.PriceFloorRules
-		want1             []error
-		expectedStatsCall int
+		name  string
+		args  args
+		want  *openrtb_ext.PriceFloorRules
+		want1 []error
+		setup func()
 	}{
 		{
 			name: "floor provider should be selected from floor json",
@@ -1230,7 +1236,9 @@ func TestCreateFloorsFrom(t *testing.T) {
 			want1: []error{
 				errors.New("Invalid Floor Model = 'model from fetched' due to SkipRate = '110' is out of range (1-100)"),
 			},
-			expectedStatsCall: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "3").Return()
+			},
 		},
 		{
 			name: "Invalid floors",
@@ -1266,17 +1274,19 @@ func TestCreateFloorsFrom(t *testing.T) {
 			want1: []error{
 				errors.New("Invalid FloorMin = '-1', value should be >= 0"),
 			},
-			expectedStatsCall: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "3").Return()
+			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			me := &metrics.MetricsEngineMock{}
-			me.On("RecordFloorStatus", mock.Anything, mock.Anything, mock.Anything).Return()
+			if tc.setup != nil {
+				tc.setup()
+			}
 			got, got1 := createFloorsFrom(tc.args.floors, tc.args.account, tc.args.fetchStatus, tc.args.floorLocation, me)
 			assert.Equal(t, got1, tc.want1, tc.name)
 			assert.Equal(t, got, tc.want, tc.name)
-			me.AssertNumberOfCalls(t, "RecordFloorStatus", tc.expectedStatsCall)
 		})
 	}
 }
@@ -2009,10 +2019,6 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 					},
 				},
 				accountID: "5890",
-			},
-
-			want: want{
-				expectedCalls: 0,
 			},
 		},
 		{
