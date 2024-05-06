@@ -58,10 +58,6 @@ func getCurrencyRates(rates map[string]map[string]float64) currency.Conversions 
 
 type mockPriceFloorFetcher struct{}
 
-func (m *mockPriceFloorFetcher) GetMetricsEngine() metrics.MetricsEngine {
-	return &metricsConf.NilMetricsEngine{}
-}
-
 func (mpf *mockPriceFloorFetcher) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 	return nil, openrtb_ext.FetchNone
 }
@@ -383,7 +379,7 @@ func TestEnrichWithPriceFloors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates), &mockPriceFloorFetcher{})
+			ErrList := EnrichWithPriceFloors(tc.bidRequestWrapper, tc.account, getCurrencyRates(rates), &mockPriceFloorFetcher{}, &metricsConf.NilMetricsEngine{})
 			if tc.bidRequestWrapper != nil {
 				assert.Equal(t, tc.bidRequestWrapper.Imp[0].BidFloor, tc.expFloorVal, tc.name)
 				assert.Equal(t, tc.bidRequestWrapper.Imp[0].BidFloorCur, tc.expFloorCur, tc.name)
@@ -421,10 +417,6 @@ type MockFetch struct {
 }
 
 func (m *MockFetch) Stop() {}
-
-func (m *MockFetch) GetMetricsEngine() metrics.MetricsEngine {
-	return &metricsConf.NilMetricsEngine{}
-}
 
 func (m *MockFetch) Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string) {
 
@@ -928,12 +920,6 @@ func (m *MockFetchDataRate0) Fetch(configs config.AccountPriceFloors) (*openrtb_
 
 func (m *MockFetchDataRate0) Stop() {
 
-}
-func (m *MockFetchDataRate0) GetMetricsEngine() metrics.MetricsEngine {
-	return &metricsConf.NilMetricsEngine{}
-}
-func (m *MockFetchDataRate100) GetMetricsEngine() metrics.MetricsEngine {
-	return &metricsConf.NilMetricsEngine{}
 }
 
 type MockFetchDataRate100 struct{}

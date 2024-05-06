@@ -38,7 +38,6 @@ type WorkerPool interface {
 type FloorFetcher interface {
 	Fetch(configs config.AccountPriceFloors) (*openrtb_ext.PriceFloorRules, string)
 	Stop()
-	GetMetricsEngine() metrics.MetricsEngine
 }
 
 type PriceFloorFetcher struct {
@@ -115,10 +114,6 @@ func NewPriceFloorFetcher(config config.PriceFloors, httpClient *http.Client, me
 	go floorFetcher.Fetcher()
 
 	return &floorFetcher
-}
-
-func (f *PriceFloorFetcher) GetMetricsEngine() metrics.MetricsEngine {
-	return f.metricEngine
 }
 
 func (f *PriceFloorFetcher) SetWithExpiry(key string, value json.RawMessage, cacheExpiry int) {

@@ -46,7 +46,7 @@ const (
 
 // EnrichWithPriceFloors checks for floors enabled in account and request and selects floors data from dynamic fetched if present
 // else selects floors data from req.ext.prebid.floors and update request with selected floors details
-func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions, priceFloorFetcher FloorFetcher) []error {
+func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, account config.Account, conversions currency.Conversions, priceFloorFetcher FloorFetcher, metricsEngine metrics.MetricsEngine) []error {
 	if bidRequestWrapper == nil || bidRequestWrapper.BidRequest == nil {
 		return []error{errors.New("Empty bidrequest")}
 	}
@@ -54,10 +54,9 @@ func EnrichWithPriceFloors(bidRequestWrapper *openrtb_ext.RequestWrapper, accoun
 	if !isPriceFloorsEnabled(account, bidRequestWrapper) {
 		return []error{errors.New("Floors feature is disabled at account or in the request")}
 	}
-	metricEngine := priceFloorFetcher.GetMetricsEngine()
-	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher, metricEngine)
+	floors, err := resolveFloors(account, bidRequestWrapper, conversions, priceFloorFetcher, metricsEngine)
 
-	updateReqErrs := updateBidRequestWithFloors(floors, bidRequestWrapper, conversions, metricEngine, account.ID)
+	updateReqErrs := updateBidRequestWithFloors(floors, bidRequestWrapper, conversions, metricsEngine, account.ID)
 	updateFloorsInRequest(bidRequestWrapper, floors)
 	return append(err, updateReqErrs...)
 }
