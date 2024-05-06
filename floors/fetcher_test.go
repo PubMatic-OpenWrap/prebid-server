@@ -778,10 +778,11 @@ func TestFetchAndValidate(t *testing.T) {
 			mockHttpServer := httptest.NewServer(mockHandler(tt.response, tt.responseStatus))
 			defer mockHttpServer.Close()
 			ppf := PriceFloorFetcher{
-				httpClient: mockHttpServer.Client(),
+				httpClient:   mockHttpServer.Client(),
+				metricEngine: &metricsConf.NilMetricsEngine{},
 			}
 			tt.args.configs.URL = mockHttpServer.URL
-			got, got1 := ppf.fetchAndValidate(tt.args.configs, me)
+			got, got1 := ppf.fetchAndValidate(tt.args.configs)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("fetchAndValidate() got = %v, want %v", got, tt.want)
 			}

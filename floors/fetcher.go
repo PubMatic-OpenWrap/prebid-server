@@ -153,7 +153,7 @@ func (f *PriceFloorFetcher) Fetch(config config.AccountPriceFloors) (*openrtb_ex
 }
 
 func (f *PriceFloorFetcher) worker(fetchConfig fetchInfo) {
-	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch, f.metricEngine)
+	floorData, fetchedMaxAge := f.fetchAndValidate(fetchConfig.AccountFloorFetch)
 	if floorData != nil {
 		// Reset retry count when data is successfully fetched
 		fetchConfig.retryCount = 0
@@ -230,10 +230,10 @@ func (f *PriceFloorFetcher) Fetcher() {
 	}
 }
 
-func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch, metricEngine metrics.MetricsEngine) (*openrtb_ext.PriceFloorRules, int) {
+func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch) (*openrtb_ext.PriceFloorRules, int) {
 	floorResp, maxAge, err := f.fetchFloorRulesFromURL(config)
 	if floorResp == nil || err != nil {
-		metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, fetchFailure)
+		f.metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, fetchFailure)
 		glog.Errorf("Error while fetching floor data from URL: %s, reason : %s", config.URL, err.Error())
 		return nil, 0
 	}
@@ -245,13 +245,13 @@ func (f *PriceFloorFetcher) fetchAndValidate(config config.AccountFloorFetch, me
 
 	var priceFloors openrtb_ext.PriceFloorRules
 	if err = json.Unmarshal(floorResp, &priceFloors.Data); err != nil {
-		metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, unmarshalFailure)
+		f.metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, unmarshalFailure)
 		glog.Errorf("Recieved invalid price floor json from URL: %s", config.URL)
 		return nil, 0
 	}
 
 	if err := validateRules(config, &priceFloors); err != nil {
-		metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, invalidFloors)
+		f.metricEngine.RecordFloorStatus(config.AccountID, openrtb_ext.FetchLocation, invalidFloors)
 		glog.Errorf("Validation failed for floor JSON from URL: %s, reason: %s", config.URL, err.Error())
 		return nil, 0
 	}
