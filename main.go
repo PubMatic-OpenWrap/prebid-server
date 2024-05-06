@@ -25,7 +25,7 @@ func init() {
 }
 
 // TODO: revert this after PBS-OpenWrap module
-func main() {
+func Main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)

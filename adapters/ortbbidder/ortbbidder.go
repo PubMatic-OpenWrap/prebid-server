@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -42,14 +41,12 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
 
-	glog.V(3).Infof("requestBody before mapping bidder-params [%s]", string(body))
-	fmt.Printf("requestBody before mapping bidder-params [%s]", string(body))
+	// fmt.Printf("requestBody before mapping bidder-params [%s]", string(body))
 	body, err = mapBidderParamsInRequest(body, mapper)
 	if err != nil {
 		return nil, err
 	}
-	glog.V(3).Infof("requestBody after mapping bidder-params [%s]", string(body))
-	fmt.Printf("requestBody after mapping bidder-params [%s]", string(body))
+	// fmt.Printf("requestBody after mapping bidder-params [%s]", string(body))
 
 	bidreq := &openrtb2.BidRequest{}
 	err = json.Unmarshal(body, bidreq)
