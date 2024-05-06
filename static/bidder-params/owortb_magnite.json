@@ -1,69 +1,14 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "magnite (oRTB Integration) Adapter Params",
-    "description": "A schema which validates params accepted by the magnite (oRTB Integration) adapter",
-    "type": "object",
-    "properties": {
-      "imp_adunit": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.imp.adunit.xyz.id"
-      },
-      "imp_video_ext_key": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.imp.video.ext.key"
-      },
-      "imp_video_key": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.imp.video.key"
-      },
-      "req_device_sua": {
-        "type": "object",
-        "description": "adunitID param",
-        "location": "req.device.sua.browsers"
-      },
-      "req_user_sua": {
-        "type": "object",
-        "description": "adunitID param",
-        "location": "req.device.sua.browsers"
-      },
-      "req_app_key": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.app.key"
-      },
-      "req_app_ext_key": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.app.ext.key"
-      },
-      "req_app_publisher_id": {
-        "type": "string",
-        "description": "adunitID param",
-        "location": "req.app.publisher.id"
-      },
-      "req_bcat": {
-        "type": "string",
-        "description": "bcat param",
-        "location": "req.bcat"
-      },
-      "imp_wrapper": {
-        "type": "object",
-        "description": "Specifies pubmatic openwrap configuration for a publisher",
-        "properties": {
-          "profile": {
-            "type": "integer",
-            "description": "An ID which identifies the openwrap profile of publisher"
-          },
-          "version": {
-            "type": "integer",
-            "description": "An ID which identifies version of the openwrap profile"
-          }
-        },
-        "location": "imp.wrapper"
-      }
-    },
-    "required": ["adunitID"]
-  }
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "magnite (oRTB Integration) Adapter Params",
+  "description": "A schema which validates params accepted by the magnite (oRTB Integration) adapter",
+  "type": "object",
+  "properties": {
+    "adunitID": {
+      "type": "string",
+      "description": "adunitID param",
+      "location": "req.ext.adunit.id"
+    }
+  },
+  "required": ["adunitID"]
+}

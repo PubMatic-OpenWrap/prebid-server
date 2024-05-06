@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v19/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -33,218 +33,33 @@ type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
-// prepareRequestData generates the RequestData by marshalling the request and returns it
-// func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]paramDetails) (*adapters.RequestData, error) {
-// 	if request == nil {
-// 		return nil, fmt.Errorf("found nil request")
-// 	}
-// 	body, err := json.Marshal(request)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-// 	}
-// 	// add bidder-params inside the reqData
-// 	fmt.Println("body without -[%s]", string(body))
-// 	// single impression in request
-// 	bidderParamsExt, _, _, err := jsonparser.Get(request.Imp[0].Ext, "bidder")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	bidderParams := JSONNode{}
-// 	err = json.Unmarshal(bidderParamsExt, &bidderParams)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	requestJsonNode := JSONNode{}
-// 	err = json.Unmarshal(body, &requestJsonNode)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	for bidderParamName, bidderParamValue := range bidderParams {
-// 		details, ok := mapper[bidderParamName]
-// 		if !ok {
-// 			continue
-// 		}
-// 		loc := details.location
-// 		loc, _ = strings.CutPrefix(loc, "req.")
-// 		if strings.HasPrefix(loc, "imp.") {
-// 			loc, _ = strings.CutPrefix(loc, "imp.")
-// 			imps, ok := requestJsonNode["imp"].([]interface{})
-// 			if !ok {
-// 				return nil, err
-// 			}
-// 			imp, ok := imps[0].(JSONNode)
-// 			if !ok {
-// 				return nil, err
-// 			}
-// 			SetValue(imp, loc, bidderParamValue)
-// 		} else {
-// 			SetValue(requestJsonNode, loc, bidderParamValue)
-// 		}
-// 	}
-
-// 	body, err = json.Marshal(requestJsonNode)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-// 	}
-// 	fmt.Println("body with -[%s]", string(body))
-
-// 	return &adapters.RequestData{
-// 		Method: http.MethodPost,
-// 		Uri:    o.Endpoint,
-// 		Body:   body,
-// 	}, nil
-// }
-
-// multi-imp calls using map[string]interface{}
-// func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]paramDetails) (*adapters.RequestData, error) {
-// 	if request == nil {
-// 		return nil, fmt.Errorf("found nil request")
-// 	}
-// 	body, err := json.Marshal(request)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-// 	}
-// 	// add bidder-params inside the reqData
-// 	fmt.Println("body without -[%s]", string(body))
-// 	requestJsonNode := JSONNode{}
-// 	err = json.Unmarshal(body, &requestJsonNode)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	impList, ok := requestJsonNode["imp"].([]interface{})
-// 	if !ok {
-// 		return nil, nil
-// 	}
-// 	for ind, eachImp := range impList {
-// 		requestJsonNode["imp"] = eachImp
-// 		imp, ok := eachImp.(map[string]interface{})
-// 		if !ok {
-// 			return nil, nil
-// 		}
-// 		ext, ok := imp["ext"].(map[string]interface{})
-// 		if !ok {
-// 			return nil, nil
-// 		}
-// 		bidderParams, ok := ext["bidder"].(map[string]interface{})
-// 		if !ok {
-// 			return nil, nil
-// 		}
-// 		for bidderParamName, bidderParamValue := range bidderParams {
-// 			details, ok := mapper[bidderParamName]
-// 			if !ok {
-// 				continue
-// 			}
-// 			loc := details.location
-// 			loc, _ = strings.CutPrefix(loc, "req.")
-// 			if SetValue(requestJsonNode, loc, bidderParamValue) {
-// 				delete(bidderParams, bidderParamName)
-// 			}
-// 		}
-// 		impList[ind] = requestJsonNode["imp"]
-// 	}
-// 	requestJsonNode["imp"] = impList
-// 	body, err = json.Marshal(requestJsonNode)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-// 	}
-// 	fmt.Println("body with -[%s]", string(body))
-// 	bidreq := &openrtb2.BidRequest{}
-// 	err = json.Unmarshal(body, bidreq)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-// 	}
-// 	return &adapters.RequestData{
-// 		Method: http.MethodPost,
-// 		Uri:    o.Endpoint,
-// 		Body:   body,
-// 	}, nil
-// }
-
-// multi-imp calls using jsonparser
 func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]paramDetails) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
-	requestBody, err := json.Marshal(request)
+	body, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
-	// add bidder-params inside the reqData
-	fmt.Println("body without -[%s]", string(requestBody))
 
-	updatedImp := make([][]byte, 0)
-	impIndex := 0
-	_, err = jsonparser.ArrayEach(requestBody, func(imp []byte, dataType jsonparser.ValueType, offset int, _ error) {
-		impIndex++
-
-		impBody := imp
-		bidderParamsBytes, _, _, err := jsonparser.Get(imp, "ext", "bidder")
-		if err != nil {
-			return
-		}
-		bidderParams := make(map[string]interface{})
-		err = json.Unmarshal(bidderParamsBytes, &bidderParams)
-		if err != nil {
-			return
-		}
-
-		for bidderParamName, bidderParamValue := range bidderParams {
-			paramDetails, ok := mapper[bidderParamName]
-			if !ok {
-				continue
-			}
-			loc := paramDetails.location
-			loc, _ = strings.CutPrefix(loc, "req.")
-			if strings.HasPrefix(loc, "imp.") {
-				loc, _ = strings.CutPrefix(loc, "imp.")
-				locs := strings.Split(loc, ".")
-				// TODO - this will not handle the complex object (it will set it as '"wrapper": "map[profile:300 version:100]"')
-				// need to handle the %d/%f for numeric values
-				impBody, err = jsonparser.Set(impBody, []byte(fmt.Sprintf("\"%v\"", bidderParamValue)), locs...)
-				if err != nil {
-					return
-				}
-
-			} else {
-				locs := strings.Split(loc, ".")
-				// requestBody, err = jsonparser.Set(requestBody, []byte(fmt.Sprintf("\"%v\"", bidderParamValue)), locs...)
-				requestBody, err = jsonparser.Set(requestBody, []byte(fmt.Sprintf("\"%s\"", bidderParamValue)), locs...)
-				if err != nil {
-					return
-				}
-			}
-			// TODO - remove the bidder-params once successfully updated the bidRequest
-		}
-		updatedImp = append(updatedImp, impBody)
-	}, "imp")
-
-	finalImps := []byte{}
-	for i, v := range updatedImp {
-		finalImps = append(finalImps, v...)
-		if i != len(updatedImp)-1 {
-			finalImps = append(finalImps, []byte(",")...)
-		}
-	}
-	requestBody, err = jsonparser.Set(requestBody, finalImps, "imp")
+	glog.V(3).Infof("requestBody before mapping bidder-params [%s]", string(body))
+	fmt.Printf("requestBody before mapping bidder-params [%s]", string(body))
+	body, err = mapBidderParamsInRequest(body, mapper)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set imps %s", err.Error())
+		return nil, err
 	}
-
-	fmt.Println("body with -[%s]", string(requestBody))
+	glog.V(3).Infof("requestBody after mapping bidder-params [%s]", string(body))
+	fmt.Printf("requestBody after mapping bidder-params [%s]", string(body))
 
 	bidreq := &openrtb2.BidRequest{}
-	err = json.Unmarshal(requestBody, bidreq)
+	err = json.Unmarshal(body, bidreq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
-
 	return &adapters.RequestData{
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
-		Body:   requestBody,
+		Body:   body,
 	}, nil
 }
 
@@ -257,10 +72,6 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 			return nil, fmt.Errorf("Failed to parse extra_info for bidder:[%s] err:[%s]", bidderName, err.Error())
 		}
 	}
-	mapper, err := NewMapper("./static/bidder-params")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to prepare bidder-param mapper for bidder:[%s] err:[%s]", bidderName, err.Error())
-	}
 	return &adapter{
 		adapterInfo: adapterInfo{config, extraAdapterInfo, bidderName},
 		mapper:      mapper,
@@ -271,6 +82,9 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
+	}
+	if o.mapper == nil || o.mapper.bidderParamMapper == nil {
+		return nil, []error{fmt.Errorf("Found nil bidderParamMapper")}
 	}
 	var errs []error
 	adapterInfo := o.adapterInfo

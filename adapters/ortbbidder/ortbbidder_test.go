@@ -20,6 +20,7 @@ func TestMakeRequests(t *testing.T) {
 		request     *openrtb2.BidRequest
 		requestInfo *adapters.ExtraRequestInfo
 		adapterInfo adapterInfo
+		mapper      *Mapper
 	}
 	type want struct {
 		requestData []*adapters.RequestData
@@ -32,14 +33,18 @@ func TestMakeRequests(t *testing.T) {
 	}{
 		{
 			name: "request_is_nil",
-			args: args{},
+			args: args{
+				mapper: &Mapper{bidderParamMapper: make(bidderParamMapper)},
+			},
 			want: want{
 				errors: []error{fmt.Errorf("Found either nil request or nil requestInfo")},
 			},
 		},
 		{
 			name: "requestInfo_is_nil",
-			args: args{},
+			args: args{
+				mapper: &Mapper{bidderParamMapper: make(bidderParamMapper)},
+			},
 			want: want{
 				errors: []error{fmt.Errorf("Found either nil request or nil requestInfo")},
 			},
@@ -57,7 +62,8 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_multi_requestmode"),
 				},
-				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: ""}},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: ""}, "testbidder"},
+				mapper:      &Mapper{bidderParamMapper: make(bidderParamMapper)},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -82,7 +88,8 @@ func TestMakeRequests(t *testing.T) {
 				requestInfo: &adapters.ExtraRequestInfo{
 					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
 				},
-				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
+				mapper:      &Mapper{bidderParamMapper: make(bidderParamMapper)},
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -99,10 +106,96 @@ func TestMakeRequests(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "mapper_is_nil",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID:  "reqid",
+					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
+				},
+				requestInfo: &adapters.ExtraRequestInfo{
+					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
+				},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
+				mapper:      nil,
+			},
+			want: want{
+				errors: []error{fmt.Errorf("Found nil bidderParamMapper")},
+			},
+		},
+		{
+			name: "bidderparam_mapper_is_nil",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID:  "reqid",
+					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
+				},
+				requestInfo: &adapters.ExtraRequestInfo{
+					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
+				},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
+				mapper:      &Mapper{bidderParamMapper: nil},
+			},
+			want: want{
+				errors: []error{fmt.Errorf("Found nil bidderParamMapper")},
+			},
+		},
+		{
+			name: "prepareRequestData_fails_for_single_request_mode",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder":{"adunit":123}}`)},
+					},
+				},
+				requestInfo: &adapters.ExtraRequestInfo{
+					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
+				},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
+				mapper: &Mapper{bidderParamMapper: bidderParamMapper{
+					"testbidder": map[string]paramDetails{
+						"adunit": {
+							location: "invalid-location",
+						},
+					},
+				}},
+			},
+			want: want{
+				requestData: make([]*adapters.RequestData, 0),
+				errors:      []error{fmt.Errorf("error:[invalid_bidder_param_location] param:[adunit] location:[invalid-location]")},
+			},
+		},
+		{
+			name: "prepareRequestData_fails_for_multi_request_mode",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder":{"adunit":123}}`)},
+					},
+				},
+				requestInfo: &adapters.ExtraRequestInfo{
+					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
+				},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "multi"}, "testbidder"},
+				mapper: &Mapper{bidderParamMapper: bidderParamMapper{
+					"testbidder": map[string]paramDetails{
+						"adunit": {
+							location: "invalid-location",
+						},
+					},
+				}},
+			},
+			want: want{
+				requestData: nil,
+				errors:      []error{fmt.Errorf("error:[invalid_bidder_param_location] param:[adunit] location:[invalid-location]")},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &adapter{adapterInfo: tt.args.adapterInfo}
+			adapter := &adapter{adapterInfo: tt.args.adapterInfo, mapper: tt.args.mapper}
 			requestData, errors := adapter.MakeRequests(tt.args.request, tt.args.requestInfo)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errors, errors, "mismatched errors")
@@ -293,6 +386,11 @@ func TestGetMediaTypeForBid(t *testing.T) {
 }
 
 func TestJsonSamplesForSingleRequestMode(t *testing.T) {
+	oldMapper := mapper
+	defer func() {
+		mapper = oldMapper
+	}()
+	mapper = &Mapper{bidderParamMapper: bidderParamMapper{}}
 	bidder, buildErr := Builder("owgeneric_single_requestmode",
 		config.Adapter{
 			Endpoint:         "http://test_bidder.com",
@@ -305,6 +403,11 @@ func TestJsonSamplesForSingleRequestMode(t *testing.T) {
 }
 
 func TestJsonSamplesForMultiRequestMode(t *testing.T) {
+	oldMapper := mapper
+	defer func() {
+		mapper = oldMapper
+	}()
+	mapper = &Mapper{bidderParamMapper: bidderParamMapper{}}
 	bidder, buildErr := Builder("owgeneric_multi_requestmode",
 		config.Adapter{
 			Endpoint:         "http://test_bidder.com",
@@ -316,12 +419,13 @@ func TestJsonSamplesForMultiRequestMode(t *testing.T) {
 	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_multi_requestmode", bidder)
 }
 
-func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
+func Test_prepareRequestData(t *testing.T) {
 	type fields struct {
 		Adapter config.Adapter
 	}
 	type args struct {
 		request *openrtb2.BidRequest
+		mapper  map[string]paramDetails
 	}
 	type want struct {
 		requestData *adapters.RequestData
@@ -343,6 +447,7 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 					ID:  "123",
 					Imp: []openrtb2.Imp{{ID: "imp1"}},
 				},
+				mapper: make(map[string]paramDetails),
 			},
 			want: want{
 				requestData: &adapters.RequestData{
@@ -360,10 +465,32 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 			},
 			args: args{
 				request: nil,
+				mapper:  make(map[string]paramDetails),
 			},
 			want: want{
 				requestData: nil,
 				err:         fmt.Errorf("found nil request"),
+			},
+		},
+		{
+			name: "fail_to_map_bidder_param_in_request",
+			fields: fields{
+				Adapter: config.Adapter{Endpoint: "https://example.com"},
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID:  "123",
+					Imp: []openrtb2.Imp{{ID: "imp1", Ext: json.RawMessage(`{"bidder":{"adunit":123}}`)}},
+				},
+				mapper: map[string]paramDetails{
+					"adunit": {
+						location: "invalid-location",
+					},
+				},
+			},
+			want: want{
+				requestData: nil,
+				err:         fmt.Errorf("error:[invalid_bidder_param_location] param:[adunit] location:[invalid-location]"),
 			},
 		},
 	}
@@ -372,7 +499,7 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 			o := adapterInfo{
 				Adapter: tt.fields.Adapter,
 			}
-			got, err := o.prepareRequestData(tt.args.request)
+			got, err := o.prepareRequestData(tt.args.request, tt.args.mapper)
 			assert.Equal(t, tt.want.requestData, got, "mismatched requestData")
 			assert.Equal(t, tt.want.err, err, "mismatched error")
 		})
@@ -380,6 +507,7 @@ func Test_oRTBAdapterInfo_prepareRequestData(t *testing.T) {
 }
 
 func TestBuilder(t *testing.T) {
+	InitMapper("../../static/bidder-params")
 	type args struct {
 		bidderName openrtb_ext.BidderName
 		config     config.Adapter
@@ -426,6 +554,16 @@ func TestBuilder(t *testing.T) {
 						Adapter: config.Adapter{
 							ExtraAdapterInfo: `{"requestMode":"single"}`,
 						},
+						bidderName: "ortbbidder",
+					},
+					mapper: &Mapper{
+						bidderParamMapper: bidderParamMapper{
+							"owortb_magnite": map[string]paramDetails{
+								"adunitID": {
+									location: "req.ext.adunit.id",
+								},
+							},
+						},
 					},
 				},
 				err: nil,
@@ -445,6 +583,16 @@ func TestBuilder(t *testing.T) {
 					adapterInfo: adapterInfo{
 						Adapter: config.Adapter{
 							ExtraAdapterInfo: ``,
+						},
+						bidderName: "ortbbidder",
+					},
+					mapper: &Mapper{
+						bidderParamMapper: bidderParamMapper{
+							"owortb_magnite": map[string]paramDetails{
+								"adunitID": {
+									location: "req.ext.adunit.id",
+								},
+							},
 						},
 					},
 				},
