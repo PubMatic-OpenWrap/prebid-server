@@ -154,10 +154,8 @@ func TestMakeRequests(t *testing.T) {
 				},
 				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
 				mapper: &Mapper{bidderParamMapper: bidderParamMapper{
-					"testbidder": map[string]paramDetails{
-						"adunit": {
-							location: "invalid-location",
-						},
+					"testbidder": map[string]string{
+						"adunit": "invalid-location",
 					},
 				}},
 			},
@@ -180,10 +178,8 @@ func TestMakeRequests(t *testing.T) {
 				},
 				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "multi"}, "testbidder"},
 				mapper: &Mapper{bidderParamMapper: bidderParamMapper{
-					"testbidder": map[string]paramDetails{
-						"adunit": {
-							location: "invalid-location",
-						},
+					"testbidder": map[string]string{
+						"adunit": "invalid-location",
 					},
 				}},
 			},
@@ -425,7 +421,7 @@ func Test_prepareRequestData(t *testing.T) {
 	}
 	type args struct {
 		request *openrtb2.BidRequest
-		mapper  map[string]paramDetails
+		mapper  map[string]string
 	}
 	type want struct {
 		requestData *adapters.RequestData
@@ -447,7 +443,7 @@ func Test_prepareRequestData(t *testing.T) {
 					ID:  "123",
 					Imp: []openrtb2.Imp{{ID: "imp1"}},
 				},
-				mapper: make(map[string]paramDetails),
+				mapper: make(map[string]string),
 			},
 			want: want{
 				requestData: &adapters.RequestData{
@@ -465,7 +461,7 @@ func Test_prepareRequestData(t *testing.T) {
 			},
 			args: args{
 				request: nil,
-				mapper:  make(map[string]paramDetails),
+				mapper:  make(map[string]string),
 			},
 			want: want{
 				requestData: nil,
@@ -482,10 +478,8 @@ func Test_prepareRequestData(t *testing.T) {
 					ID:  "123",
 					Imp: []openrtb2.Imp{{ID: "imp1", Ext: json.RawMessage(`{"bidder":{"adunit":123}}`)}},
 				},
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "invalid-location",
-					},
+				mapper: map[string]string{
+					"adunit": "invalid-location",
 				},
 			},
 			want: want{
@@ -558,10 +552,8 @@ func TestBuilder(t *testing.T) {
 					},
 					mapper: &Mapper{
 						bidderParamMapper: bidderParamMapper{
-							"owortb_magnite": map[string]paramDetails{
-								"adunitID": {
-									location: "req.ext.adunit.id",
-								},
+							"owortb_magnite": map[string]string{
+								"adunitID": "req.ext.adunit.id",
 							},
 						},
 					},
@@ -588,10 +580,8 @@ func TestBuilder(t *testing.T) {
 					},
 					mapper: &Mapper{
 						bidderParamMapper: bidderParamMapper{
-							"owortb_magnite": map[string]paramDetails{
-								"adunitID": {
-									location: "req.ext.adunit.id",
-								},
+							"owortb_magnite": map[string]string{
+								"adunitID": "req.ext.adunit.id",
 							},
 						},
 					},

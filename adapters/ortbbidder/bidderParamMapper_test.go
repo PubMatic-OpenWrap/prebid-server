@@ -313,10 +313,8 @@ func Test_updateBidderParamsMapper(t *testing.T) {
 			},
 			want: want{
 				mapper: bidderParamMapper{
-					"testbidder": map[string]paramDetails{
-						"adunitid": {
-							location: "req.app.adunitid",
-						},
+					"testbidder": map[string]string{
+						"adunitid": "req.app.adunitid",
 					},
 				},
 				err: nil,
@@ -343,13 +341,9 @@ func Test_updateBidderParamsMapper(t *testing.T) {
 			},
 			want: want{
 				mapper: bidderParamMapper{
-					"testbidder": map[string]paramDetails{
-						"adunitid": {
-							location: "req.app.adunitid",
-						},
-						"slotname": {
-							location: "req.ext.slot",
-						},
+					"testbidder": map[string]string{
+						"adunitid": "req.app.adunitid",
+						"slotname": "req.ext.slot",
 					},
 				},
 				err: nil,
@@ -496,13 +490,9 @@ func Test_prepareMapperFromFiles(t *testing.T) {
 			dirPath: "test",
 			want: want{
 				mapper: &Mapper{bidderParamMapper: bidderParamMapper{
-					"owortb_test": map[string]paramDetails{
-						"adunitid": {
-							location: "req.app.adunit.id",
-						},
-						"slotname": {
-							location: "req.ext.slotname",
-						},
+					"owortb_test": map[string]string{
+						"adunitid": "req.app.adunit.id",
+						"slotname": "req.ext.slotname",
 					},
 				}},
 				err: "",
@@ -558,7 +548,7 @@ func Test_prepareMapperFromFiles(t *testing.T) {
 func Test_mapBidderParamsInRequest(t *testing.T) {
 	type args struct {
 		requestBody []byte
-		mapper      map[string]paramDetails
+		mapper      map[string]string
 	}
 	type want struct {
 		err         string
@@ -583,10 +573,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "nil_requestbody",
 			args: args{
 				requestBody: nil,
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -597,10 +585,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "requestbody_has_invalid_imps",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":{"id":"1"}}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -611,10 +597,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "missing_imp_ext",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -626,10 +610,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "missing_bidder_in_imp_ext",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -641,10 +623,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "missing_bidderparams_in_imp_ext",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -656,10 +636,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "mapper_not_contains_bidder_param_location",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: map[string]paramDetails{
-					"slot": {
-						location: "req.ext.slot",
-					},
+				mapper: map[string]string{
+					"slot": "req.ext.slot",
 				},
 			},
 			want: want{
@@ -671,10 +649,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "mapper_contains_bidder_param_location",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "req.ext.adunit",
 				},
 			},
 			want: want{
@@ -686,10 +662,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "mapper_contains_bidder_param_invalid_location",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "imp.ext.adunit",
-					},
+				mapper: map[string]string{
+					"adunit": "imp.ext.adunit",
 				},
 			},
 			want: want{
@@ -701,10 +675,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "do_not_delete_bidder_param_if_failed_to_set_value",
 			args: args{
 				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req....",
-					},
+				mapper: map[string]string{
+					"adunit": "req....",
 				},
 			},
 			want: want{
@@ -716,16 +688,10 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "set_multiple_bidder_params",
 			args: args{
 				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.adunit.id",
-					},
-					"slot": {
-						location: "req.imp.tagid",
-					},
-					"wrapper": {
-						location: "req.app.ext",
-					},
+				mapper: map[string]string{
+					"adunit":  "req.adunit.id",
+					"slot":    "req.imp.tagid",
+					"wrapper": "req.app.ext",
 				},
 			},
 			want: want{
@@ -737,16 +703,10 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "multi_imps_bidder_params_mapping",
 			args: args{
 				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"tagid_1","ext":{"bidder":{"paramWithoutLocation":"value","adunit":111,"slot":"test_slot_1","wrapper":{"pubid":5890,"profile":1}}}},{"tagid":"tagid_2","ext":{"bidder":{"slot":"test_slot_2","adunit":222}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.adunit.id",
-					},
-					"slot": {
-						location: "req.imp.tagid",
-					},
-					"wrapper": {
-						location: "req.app.ext",
-					},
+				mapper: map[string]string{
+					"adunit":  "req.adunit.id",
+					"slot":    "req.imp.tagid",
+					"wrapper": "req.app.ext",
 				},
 			},
 			want: want{
@@ -758,10 +718,8 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			name: "multi_imps_bidder_params_mapping_override_if_same_param_present",
 			args: args{
 				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"tagid_1","ext":{"bidder":{"paramWithoutLocation":"value","adunit":111}}},{"tagid":"tagid_2","ext":{"bidder":{"adunit":222}}}]}`),
-				mapper: map[string]paramDetails{
-					"adunit": {
-						location: "req.adunit.id",
-					},
+				mapper: map[string]string{
+					"adunit": "req.adunit.id",
 				},
 			},
 			want: want{

@@ -32,7 +32,7 @@ type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
-func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]paramDetails) (*adapters.RequestData, error) {
+func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]string) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}

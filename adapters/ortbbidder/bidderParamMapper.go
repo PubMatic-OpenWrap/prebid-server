@@ -13,6 +13,10 @@ const (
 	properties = "properties"
 	dataType   = "type"
 	location   = "location"
+	impKey     = "imp"
+	extKey     = "ext"
+	bidderKey  = "bidder"
+	reqExtPath = "req."
 )
 
 // JSONNode alias for Generic datatype of json object represented by map
@@ -25,12 +29,9 @@ type Mapper struct {
 }
 
 // bidderParamMapper maps bidder-names to their bidder-params and its details like location, type etc
-type bidderParamMapper map[string]map[string]paramDetails
+type bidderParamMapper map[string]map[string]string
 
-type paramDetails struct {
-	location string
-}
-
+// singleton instance of mapper
 var mapper *Mapper
 var once sync.Once
 var mapperErr error
@@ -44,10 +45,10 @@ func InitMapper(dirPath string) (*Mapper, error) {
 }
 
 // setBidderParam adds or updates a bidder parameter in the mapper for given bidderName.
-func (b bidderParamMapper) setBidderParam(bidderName string, paramName string, paramValue paramDetails) {
+func (b bidderParamMapper) setBidderParam(bidderName string, paramName string, paramValue string) {
 	params, ok := b[bidderName]
 	if !ok {
-		params = make(map[string]paramDetails)
+		params = make(map[string]string)
 	}
 	params[paramName] = paramValue
 	b[bidderName] = params
@@ -112,10 +113,10 @@ func updateBidderParamsMapper(mapper bidderParamMapper, fileContentsMap JSONNode
 		if !ok {
 			return mapper, fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[%s] bidderParam:[%s]", bidderName, bidderParamName)
 		}
-		if !strings.HasPrefix(locationStr, "req.") {
+		if !strings.HasPrefix(locationStr, reqExtPath) {
 			return mapper, fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[%s] bidderParam:[%s]", bidderName, bidderParamName)
 		}
-		mapper.setBidderParam(bidderName, bidderParamName, paramDetails{location: locationStr})
+		mapper.setBidderParam(bidderName, bidderParamName, locationStr)
 	}
 	return mapper, nil
 }
@@ -170,7 +171,7 @@ func setValueAtLocation(node JSONNode, location string, value any) bool {
 	return true
 }
 
-func mapBidderParamsInRequest(requestBody []byte, mapper map[string]paramDetails) ([]byte, error) {
+func mapBidderParamsInRequest(requestBody []byte, mapper map[string]string) ([]byte, error) {
 	if len(mapper) == 0 {
 		// mapper would be empty if oRTB bidder does not contain any bidder-params
 		return requestBody, nil
@@ -180,33 +181,33 @@ func mapBidderParamsInRequest(requestBody []byte, mapper map[string]paramDetails
 	if err != nil {
 		return nil, err
 	}
-	impList, ok := requestBodyMap["imp"].([]interface{})
+	impList, ok := requestBodyMap[impKey].([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("error:[invalid_imp_found_in_requestbody], imp:[%v]", requestBodyMap["imp"])
+		return nil, fmt.Errorf("error:[invalid_imp_found_in_requestbody], imp:[%v]", requestBodyMap[impKey])
 	}
 	updatedRequestBody := false
 	for ind, eachImp := range impList {
-		requestBodyMap["imp"] = eachImp
+		requestBodyMap[impKey] = eachImp
 		imp, ok := eachImp.(JSONNode)
 		if !ok {
-			return nil, fmt.Errorf("error:[invalid_imp_found_in_implist], imp:[%v]", requestBodyMap["imp"])
+			return nil, fmt.Errorf("error:[invalid_imp_found_in_implist], imp:[%v]", requestBodyMap[impKey])
 		}
-		ext, ok := imp["ext"].(JSONNode)
+		ext, ok := imp[extKey].(JSONNode)
 		if !ok {
 			continue
 		}
-		bidderParams, ok := ext["bidder"].(JSONNode)
+		bidderParams, ok := ext[bidderKey].(JSONNode)
 		if !ok {
 			continue
 		}
 		for paramName, paramValue := range bidderParams {
-			details, ok := mapper[paramName]
+			location, ok := mapper[paramName]
 			if !ok {
 				continue
 			}
-			location, found := strings.CutPrefix(details.location, "req.")
+			location, found := strings.CutPrefix(location, reqExtPath)
 			if !found {
-				return nil, fmt.Errorf("error:[invalid_bidder_param_location] param:[%s] location:[%s]", paramName, details.location)
+				return nil, fmt.Errorf("error:[invalid_bidder_param_location] param:[%s] location:[%s]", paramName, location)
 			}
 			// TODO: handle app/site
 			// TODO: delete request level bidder-param
@@ -215,9 +216,9 @@ func mapBidderParamsInRequest(requestBody []byte, mapper map[string]paramDetails
 				updatedRequestBody = true
 			}
 		}
-		impList[ind] = requestBodyMap["imp"]
+		impList[ind] = requestBodyMap[impKey]
 	}
-	requestBodyMap["imp"] = impList
+	requestBodyMap[impKey] = impList
 	if updatedRequestBody {
 		requestBody, err = json.Marshal(requestBodyMap)
 		if err != nil {
