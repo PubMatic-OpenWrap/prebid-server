@@ -37,7 +37,7 @@ const (
 	fetchFailure     = "1"
 	unmarshalFailure = "2"
 	invalidFloors    = "3"
-	skipRateFailure  = "4"
+	floorsSkipped    = "4"
 	zeroFloorValue   = "5"
 	highFloorValue   = "6"
 	ZERO_FLOOR_VALUE = 0
@@ -81,7 +81,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 	extFloorRules.Skipped = new(bool)
 	if shouldSkipFloors(modelGroup.SkipRate, extFloorRules.Data.SkipRate, extFloorRules.SkipRate, rand.Intn) {
 		*extFloorRules.Skipped = true
-		metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, skipRateFailure)
+		metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, floorsSkipped)
 		return []error{}
 	}
 

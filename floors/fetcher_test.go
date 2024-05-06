@@ -647,14 +647,13 @@ func TestFetchAndValidate(t *testing.T) {
 		configs config.AccountFloorFetch
 	}
 	tests := []struct {
-		name              string
-		args              args
-		response          []byte
-		responseStatus    int
-		want              *openrtb_ext.PriceFloorRules
-		want1             int
-		expectedStatsCall int
-		setup             func()
+		name           string
+		args           args
+		response       []byte
+		responseStatus int
+		want           *openrtb_ext.PriceFloorRules
+		want1          int
+		setup          func()
 	}{
 		{
 			name: "Recieved valid price floor rules response",
@@ -679,8 +678,7 @@ func TestFetchAndValidate(t *testing.T) {
 				_ = json.Unmarshal([]byte(data), &res.Data)
 				return &res
 			}(),
-			want1:             30,
-			expectedStatsCall: 0,
+			want1: 30,
 		},
 		{
 			name: "No response from server",
@@ -695,11 +693,10 @@ func TestFetchAndValidate(t *testing.T) {
 					Period:        40,
 				},
 			},
-			response:          []byte{},
-			responseStatus:    500,
-			want:              nil,
-			want1:             0,
-			expectedStatsCall: 1,
+			response:       []byte{},
+			responseStatus: 500,
+			want:           nil,
+			want1:          0,
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "fetch", "1").Return()
 			},
@@ -741,10 +738,9 @@ func TestFetchAndValidate(t *testing.T) {
 				data := `{"data":nil?}`
 				return []byte(data)
 			}(),
-			responseStatus:    200,
-			want:              nil,
-			want1:             0,
-			expectedStatsCall: 1,
+			responseStatus: 200,
+			want:           nil,
+			want1:          0,
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "fetch", "2").Return()
 			},
@@ -766,10 +762,9 @@ func TestFetchAndValidate(t *testing.T) {
 				data := `{"data":{"currency":"USD","modelgroups":[]},"enabled":true,"floormin":1,"enforcement":{"enforcepbs":false,"floordeals":true}}`
 				return []byte(data)
 			}(),
-			responseStatus:    200,
-			want:              nil,
-			want1:             0,
-			expectedStatsCall: 1,
+			responseStatus: 200,
+			want:           nil,
+			want1:          0,
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "fetch", "3").Return()
 			},
