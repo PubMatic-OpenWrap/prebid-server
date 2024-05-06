@@ -3369,6 +3369,28 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 		want want
 	}{
 		{
+			name: "logger_disabled",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint:       models.EndpointV25,
+					LoggerDisabled: true,
+					PubID:          5890,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: "",
+				header: nil,
+			},
+		},
+		{
 			name: "do not prepare owlogger if pubid is missing",
 			args: args{
 				ao: analytics.AuctionObject{
@@ -3989,13 +4011,13 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 }
 func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string { return "uuid" }
+	GetUUID = func() string { return "uuid" }
 	ow.cfg.Endpoint = "http://10.172.141.11/wl"
 	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
 
@@ -4182,13 +4204,13 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 }
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string {
+	GetUUID = func() string {
 		return "sid"
 	}
 

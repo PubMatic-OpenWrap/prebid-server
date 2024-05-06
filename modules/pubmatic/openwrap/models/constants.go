@@ -437,6 +437,11 @@ const (
 )
 
 const (
+	AnanlyticsThrottlingLoggerType  = "wl"
+	AnanlyticsThrottlingTrackerType = "wt"
+)
+
+const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
 )
@@ -475,16 +480,17 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetPartnerConfig"
-	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
-	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
-	AdunitConfigQuery              = "GetAdunitConfigQuery"
-	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
-	SlotNameHash                   = "GetSlotNameHash"
-	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
-	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
-	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
-	PublisherFeatureMapQuery       = "GetPublisherFeatureMapQuery"
+	PartnerConfigQuery                 = "GetPartnerConfig"
+	WrapperSlotMappingsQuery           = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings     = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery                  = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                       = "GetSlotNameHash"
+	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
+	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
+	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
+	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
@@ -521,9 +527,10 @@ const (
 // constants for feature id
 
 const (
-	FeatureFSC            = 1
-	FeatureTBF            = 2
-	FeatureAMPMultiFormat = 3
+	FeatureFSC               = 1
+	FeatureTBF               = 2
+	FeatureAMPMultiFormat    = 3
+	FeatureAnalyticsThrottle = 4
 )
 
 // constants for applovinmax requests
@@ -531,4 +538,6 @@ const (
 	Agent            = "agent"
 	AppLovinMaxAgent = "max"
 	TypeRewarded     = "rewarded"
+	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
 )

@@ -107,7 +107,7 @@ func (m OpenWrap) addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *ope
 				if rctx.SendAllBids {
 					bidCtx.Winner = 1
 				}
-				if m.featureConfig.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
+				if m.pubFeatures.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
 					bidCtx.Fsc = 1
 				}
 			} else if !rctx.SendAllBids {

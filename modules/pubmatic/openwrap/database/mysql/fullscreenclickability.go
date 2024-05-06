@@ -1,13 +1,18 @@
 package mysql
 
 import (
+	"context"
 	"strconv"
+	"time"
 
 	"github.com/golang/glog"
 )
 
 func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
-	rows, err := db.conn.Query(db.cfg.Queries.GetAllDspFscPcntQuery)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
+	defer cancel()
+
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAllDspFscPcntQuery)
 	if err != nil {
 		return nil, err
 	}

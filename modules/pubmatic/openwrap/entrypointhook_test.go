@@ -20,6 +20,7 @@ import (
 func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
 	defer ctrl.Finish()
 
 	type fields struct {
@@ -565,7 +566,6 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			tt.args.setup(mockEngine)
 			m := OpenWrap{
 				cfg:          tt.fields.cfg,
