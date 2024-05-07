@@ -75,6 +75,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}
 
 	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
+
 	if rCtx.WakandaDebug.Enabled {
 		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
 		rCtx.WakandaDebug.DebugData.Logger, _ = json.Marshal(wlog)

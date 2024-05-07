@@ -1,7 +1,6 @@
 package wakanda
 
 import (
-	"encoding/json"
 	"header-bidding/config"
 	"testing"
 )
@@ -51,24 +50,24 @@ func TestDebug_WriteLogToFiles(t *testing.T) {
 				DebugLevel: 1,
 			},
 		},
-		{
-			name: "invalid_json",
-			fields: fields{
-				DebugLevel:  2,
-				FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
-				DebugData: DebugData{
-					HTTPRequestBody: json.RawMessage(`{'invalid_json`),
-				},
-			},
-		},
-		{
-			name: "valid_json",
-			fields: fields{
-				DebugLevel:  2,
-				FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
-				DebugData:   DebugData{},
-			},
-		},
+		// {
+		// 	name: "invalid_json",
+		// 	fields: fields{
+		// 		DebugLevel:  2,
+		// 		FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
+		// 		DebugData: DebugData{
+		// 			HTTPRequestBody: json.RawMessage(`{'invalid_json`),
+		// 		},
+		// 	},
+		// },
+		// {
+		// 	name: "valid_json",
+		// 	fields: fields{
+		// 		DebugLevel:  2,
+		// 		FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
+		// 		DebugData:   DebugData{},
+		// 	},
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

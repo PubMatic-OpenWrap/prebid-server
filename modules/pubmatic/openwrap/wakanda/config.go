@@ -5,7 +5,7 @@ type Wakanda struct {
 	HostName         string
 	DCName           string
 	PodName          string
-	MaxDuration      int
+	MaxDurationInMin int
 	CleanupFrequency int
 }
 type SFTP struct {
@@ -13,5 +13,4 @@ type SFTP struct {
 	Password    string
 	ServerIP    string
 	Destination string
-	Command     string
 }
