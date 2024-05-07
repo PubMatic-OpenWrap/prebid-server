@@ -460,12 +460,6 @@ func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordHTTPCounter() {
-	for _, thisME := range *me {
-		thisME.RecordHTTPCounter()
-	}
-}
-
 // RecordUnwrapRequestStatus record VAST unwrap status
 func (me *MultiMetricsEngine) RecordUnwrapRequestStatus(accountId, bidder, status string) {
 	for _, thisME := range *me {
