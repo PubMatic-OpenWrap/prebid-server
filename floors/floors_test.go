@@ -16,7 +16,6 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestIsRequestEnabledWithFloor(t *testing.T) {
@@ -1946,6 +1945,10 @@ func TestMergeFloors(t *testing.T) {
 }
 
 func TestUpdateBidRequestWithFloors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	me := &metrics.MetricsEngineMock{}
+
 	type args struct {
 		extFloorRules *openrtb_ext.PriceFloorRules
 		request       *openrtb_ext.RequestWrapper
@@ -1954,14 +1957,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 		accountID     string
 	}
 
-	type want struct {
-		expectedCalls int
-	}
-
 	tests := []struct {
-		name string
-		args args
-		want want
+		name  string
+		args  args
+		setup func()
 	}{
 
 		{
@@ -2050,9 +2049,8 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				},
 				accountID: "5890",
 			},
-
-			want: want{
-				expectedCalls: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "4").Return()
 			},
 		},
 		{
@@ -2097,8 +2095,8 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				accountID: "5890",
 			},
 
-			want: want{
-				expectedCalls: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "5").Return()
 			},
 		},
 		{
@@ -2143,8 +2141,8 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				accountID: "5890",
 			},
 
-			want: want{
-				expectedCalls: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "6").Return()
 			},
 		},
 		{
@@ -2189,16 +2187,15 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				},
 				accountID: "5890",
 			},
-
-			want: want{
-				expectedCalls: 1,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "6").Return()
 			},
 		},
 	}
 	for _, test := range tests {
-		me := &metrics.MetricsEngineMock{}
-		me.On("RecordFloorStatus", mock.Anything, mock.Anything, mock.Anything).Return()
+		if test.setup != nil {
+			test.setup()
+		}
 		updateBidRequestWithFloors(test.args.extFloorRules, test.args.request, test.args.conversions, me, test.args.accountID)
-		me.AssertNumberOfCalls(t, "RecordFloorStatus", test.want.expectedCalls)
 	}
 }
