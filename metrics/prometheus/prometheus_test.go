@@ -65,7 +65,7 @@ func TestMetricCountGatekeeping(t *testing.T) {
 	// Verify Per-Adapter Cardinality
 	// - This assertion provides a warning for newly added adapter metrics. Threre are 40+ adapters which makes the
 	//   cost of new per-adapter metrics rather expensive. Thought should be given when adding new per-adapter metrics.
-	assert.True(t, perAdapterCardinalityCount <= 30, "Per-Adapter Cardinality count equals %d \n", perAdapterCardinalityCount)
+	assert.True(t, perAdapterCardinalityCount <= 31, "Per-Adapter Cardinality count equals %d \n", perAdapterCardinalityCount)
 }
 
 func TestConnectionMetrics(t *testing.T) {
@@ -1660,6 +1660,7 @@ func TestDisabledMetrics(t *testing.T) {
 	},
 		prometheus.NewRegistry(),
 		config.DisabledMetrics{
+			AdapterBuyerUIDScrubbed:   true,
 			AdapterConnectionMetrics:  true,
 			AdapterGDPRRequestBlocked: true,
 		},
@@ -1668,6 +1669,7 @@ func TestDisabledMetrics(t *testing.T) {
 
 	// Assert counter vector was not initialized
 	assert.Nil(t, prometheusMetrics.adapterReusedConnections, "Counter Vector adapterReusedConnections should be nil")
+	assert.Nil(t, prometheusMetrics.adapterScrubbedBuyerUIDs, "Counter Vector adapterScrubbedBuyerUIDs should be nil")
 	assert.Nil(t, prometheusMetrics.adapterCreatedConnections, "Counter Vector adapterCreatedConnections should be nil")
 	assert.Nil(t, prometheusMetrics.adapterConnectionWaitTime, "Counter Vector adapterConnectionWaitTime should be nil")
 	assert.Nil(t, prometheusMetrics.tlsHandhakeTimer, "Counter Vector tlsHandhakeTimer should be nil")
@@ -1995,6 +1997,45 @@ func processMetrics(collector prometheus.Collector, handler func(m dto.Metric)) 
 func assertHistogram(t *testing.T, name string, histogram dto.Histogram, expectedCount uint64, expectedSum float64) {
 	assert.Equal(t, expectedCount, histogram.GetSampleCount(), name+":count")
 	assert.Equal(t, expectedSum, histogram.GetSampleSum(), name+":sum")
+}
+
+func TestRecordAdapterBuyerUIDScrubbed(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		disabled      bool
+		expectedCount float64
+	}{
+		{
+			name:          "enabled",
+			disabled:      false,
+			expectedCount: 1,
+		},
+		{
+			name:          "disabled",
+			disabled:      true,
+			expectedCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := createMetricsForTesting()
+			m.metricsDisabled.AdapterBuyerUIDScrubbed = tt.disabled
+			adapterName := openrtb_ext.BidderName("AnyName")
+			lowerCasedAdapterName := "anyname"
+			m.RecordAdapterBuyerUIDScrubbed(adapterName)
+
+			assertCounterVecValue(t,
+				"Increment adapter buyeruid scrubbed counter",
+				"adapter_buyeruids_scrubbed",
+				m.adapterScrubbedBuyerUIDs,
+				tt.expectedCount,
+				prometheus.Labels{
+					adapterLabel: lowerCasedAdapterName,
+				})
+		})
+	}
 }
 
 func TestRecordAdapterGDPRRequestBlocked(t *testing.T) {

@@ -160,7 +160,8 @@
                 },
                 "acat": ["drg","dlu","ssr"]
             }
-          }
+          },
+          "impIDs":["test-imp-id"]
         },
         "mockResponse": {
           "status": 200,

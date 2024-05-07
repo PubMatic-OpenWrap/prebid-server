@@ -41,7 +41,7 @@
               "tagid": "mytag",
               "secure": 1,
               "bidfloor": 0.01,
-              "displaymanager": "pubmatic-openwrap",
+              "displaymanager": "prebid-s2s",
               "displaymanagerver": "2.0.0",
               "banner": {
                 "format": [{"w": 300, "h": 250}]
@@ -61,7 +61,8 @@
             "ip": "192.168.1.1",
             "dnt": 1
           }
-        }
+        },
+        "impIDs":["1"]
       },
       "mockResponse": {
         "status": 200,

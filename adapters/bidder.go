@@ -128,6 +128,7 @@ type RequestData struct {
 	Uri     string
 	Body    []byte
 	Headers http.Header
+	ImpIDs  []string
 
 	BidderName openrtb_ext.BidderName `json:"-"`
 }

@@ -980,6 +980,7 @@ func TestFloorsSignalling(t *testing.T) {
 			Account:           config.Account{DebugAllow: true, PriceFloors: config.AccountPriceFloors{Enabled: test.floorsEnable, MaxRule: 100, MaxSchemaDims: 5}},
 			UserSyncs:         &emptyUsersync{},
 			HookExecutor:      &hookexecution.EmptyHookExecutor{},
+			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
 		}
 		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 
@@ -2108,8 +2109,8 @@ func loadFile(filename string) (*exchangeSpec, error) {
 }
 
 func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
-	aliases, errs := parseAliases(&spec.IncomingRequest.OrtbRequest)
-	if len(errs) != 0 {
+	aliases, err := parseRequestAliases(spec.IncomingRequest.OrtbRequest)
+	if err != nil {
 		t.Fatalf("%s: Failed to parse aliases", filename)
 	}
 
@@ -2173,7 +2174,13 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		impExtInfoMap[impID] = ImpExtInfo{}
 	}
 
-	activityControl := privacy.NewActivityControl(spec.AccountPrivacy)
+	if spec.AccountPrivacy.DSA != nil && len(spec.AccountPrivacy.DSA.Default) > 0 {
+		if err := jsonutil.Unmarshal([]byte(spec.AccountPrivacy.DSA.Default), &spec.AccountPrivacy.DSA.DefaultUnpacked); err != nil {
+			t.Errorf("%s: Exchange returned an unexpected error. Got %s", filename, err.Error())
+		}
+	}
+
+	activityControl := privacy.NewActivityControl(&spec.AccountPrivacy)
 
 	auctionRequest := &AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: &spec.IncomingRequest.OrtbRequest},
@@ -2184,6 +2191,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 			},
 			DebugAllow:  true,
 			PriceFloors: config.AccountPriceFloors{Enabled: spec.AccountFloorsEnabled},
+			Privacy:     spec.AccountPrivacy,
 			Validations: spec.AccountConfigBidValidation,
 		},
 		UserSyncs:     mockIdFetcher(spec.IncomingRequest.Usersyncs),
@@ -5762,7 +5770,7 @@ type exchangeSpec struct {
 	FledgeEnabled              bool                   `json:"fledge_enabled,omitempty"`
 	MultiBid                   *multiBidSpec          `json:"multiBid,omitempty"`
 	Server                     exchangeServer         `json:"server,omitempty"`
-	AccountPrivacy             *config.AccountPrivacy `json:"accountPrivacy,omitempty"`
+	AccountPrivacy             config.AccountPrivacy  `json:"accountPrivacy,omitempty"`
 }
 
 type multiBidSpec struct {
@@ -6046,6 +6054,24 @@ func (m *mockBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapter
 func (m *mockBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	args := m.Called(internalRequest, externalRequest, response)
 	return args.Get(0).(*adapters.BidderResponse), args.Get(1).([]error)
+}
+
+func parseRequestAliases(r openrtb2.BidRequest) (map[string]string, error) {
+	if len(r.Ext) == 0 {
+		return nil, nil
+	}
+
+	ext := struct {
+		Prebid struct {
+			Aliases map[string]string `json:"aliases"`
+		} `json:"prebid"`
+	}{}
+
+	if err := jsonutil.Unmarshal(r.Ext, &ext); err != nil {
+		return nil, err
+	}
+
+	return ext.Prebid.Aliases, nil
 }
 
 func getInfoFromImp(req *openrtb_ext.RequestWrapper) (json.RawMessage, string, error) {

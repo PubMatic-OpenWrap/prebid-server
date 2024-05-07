@@ -34,6 +34,7 @@
         {
           "expectedRequest": {
             "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+            "impIDs":["multiple-media-imp"],
             "body": {
               "id": "multiple-media-request",
               "imp": [

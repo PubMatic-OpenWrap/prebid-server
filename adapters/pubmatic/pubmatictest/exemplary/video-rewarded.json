@@ -53,6 +53,7 @@
       {
         "expectedRequest": {
           "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "impIDs":["test-video-imp"],
           "body": {
             "id": "test-video-request",
             "imp": [

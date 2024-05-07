@@ -324,6 +324,13 @@ func (me *MultiMetricsEngine) RecordAdapterVideoBidDuration(labels metrics.Adapt
 	}
 }
 
+// RecordAdapterBuyerUIDScrubbed across all engines
+func (me *MultiMetricsEngine) RecordAdapterBuyerUIDScrubbed(adapter openrtb_ext.BidderName) {
+	for _, thisME := range *me {
+		thisME.RecordAdapterBuyerUIDScrubbed(adapter)
+	}
+}
+
 // RecordAdapterGDPRRequestBlocked across all engines
 func (me *MultiMetricsEngine) RecordAdapterGDPRRequestBlocked(adapter openrtb_ext.BidderName) {
 	for _, thisME := range *me {
@@ -570,6 +577,10 @@ func (me *NilMetricsEngine) RecordTimeoutNotice(success bool) {
 
 // RecordRequestPrivacy as a noop
 func (me *NilMetricsEngine) RecordRequestPrivacy(privacy metrics.PrivacyLabels) {
+}
+
+// RecordAdapterBuyerUIDScrubbed as a noop
+func (me *NilMetricsEngine) RecordAdapterBuyerUIDScrubbed(adapter openrtb_ext.BidderName) {
 }
 
 // RecordAdapterGDPRRequestBlocked as a noop
