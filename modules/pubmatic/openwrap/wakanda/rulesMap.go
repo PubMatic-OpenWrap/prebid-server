@@ -7,11 +7,6 @@ import (
 	"git.pubmatic.com/PubMatic/go-common/logger"
 )
 
-const (
-	maxDuration      = 10 * time.Minute
-	cleanupFrequency = 5 * time.Minute
-)
-
 type wakandaRule struct {
 	TraceCount int // how many request are logged
 	FolderPath string
@@ -82,21 +77,21 @@ func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) b
 	return true
 }
 
-func (rm *rulesMap) clean() {
-	c := time.Tick(cleanupFrequency)
+func (rm *rulesMap) clean(cleanupFrequency int, maxDuration int) {
+	c := time.Tick(time.Duration(cleanupFrequency) * time.Minute)
 	for range c {
 		if !rm.IsEmpty() {
-			rm.cleanRules()
+			rm.cleanRules(maxDuration)
 		}
 	}
 }
 
-func (rm *rulesMap) cleanRules() {
+func (rm *rulesMap) cleanRules(maxDuration int) {
 	rm.lock.Lock()
 	defer rm.lock.Unlock()
 	now := time.Now()
 	for key, rule := range rm.rules {
-		if now.Sub(rule.StartTime) > maxDuration {
+		if now.Sub(rule.StartTime) > (time.Duration(maxDuration) * time.Minute) {
 			logger.Debug("[Wakanda] Status:Cleanup Message:DeleteStale Key:%v KeyTime:%v CurrentTime:%v\n", key, rule.StartTime, now)
 			delete(rm.rules, key)
 		}
@@ -108,6 +103,6 @@ func getNewRulesMap(config Wakanda) *rulesMap {
 	obj := &rulesMap{
 		rules: make(map[string]*wakandaRule),
 	}
-	go obj.clean()
+	go obj.clean(config.CleanupFrequency, config.MaxDuration)
 	return obj
 }

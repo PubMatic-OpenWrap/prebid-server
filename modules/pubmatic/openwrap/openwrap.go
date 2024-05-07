@@ -90,6 +90,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
+	initOpenWrapServer(&cfg)
+
 	once.Do(func() {
 		ow = &OpenWrap{
 			cfg:                cfg,
@@ -100,7 +102,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			unwrap:             uw,
 		}
 	})
-	initOpenWrapServer(cfg)
+
 	return *ow, nil
 }
 
