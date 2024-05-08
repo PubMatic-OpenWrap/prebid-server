@@ -390,6 +390,7 @@ const (
 	MACRO_VASTTAG       = "_VASTTAG_"
 
 	ADUNIT_SIZE_KGP           = "_AU_@_W_x_H_"
+	ADUNIT_SIZE_REGEX_KGP     = "_RE_@_W_x_H_"
 	REGEX_KGP                 = "_AU_@_DIV_@_W_x_H_"
 	DIV_SIZE_KGP              = "_DIV_@_W_x_H_"
 	ADUNIT_SOURCE_VASTTAG_KGP = "_AU_@_SRC_@_VASTTAG_"
