@@ -287,6 +287,23 @@ func (err *InvalidCatalog) Severity() Severity {
 	return SeverityWarning
 }
 
+// InvalidProductFiltering should be used when request is having invalid Filtering
+type InvalidProductFiltering struct {
+	Message string
+}
+
+func (err *InvalidProductFiltering) Error() string {
+	return err.Message
+}
+
+func (err *InvalidProductFiltering) Code() int {
+	return InvalidProductFilteringErrorCode
+}
+
+func (err *InvalidProductFiltering) Severity() Severity {
+	return SeverityWarning
+}
+
 // UnknownError should be used when responded with unknown error code
 type UnknownError struct {
 	Message string
