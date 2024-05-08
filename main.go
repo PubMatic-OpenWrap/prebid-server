@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/prebid/prebid-server/adapters/ortbbidder"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/openrtb_ext"
@@ -25,7 +24,7 @@ func init() {
 }
 
 // TODO: revert this after PBS-OpenWrap module
-func Main() {
+func main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
@@ -41,10 +40,7 @@ func Main() {
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
-	mapper, err := ortbbidder.InitMapper(paramsDirectory)
-	if err != nil || mapper == nil {
-		glog.Exitf("Unable to initialise bidder-param mapper for oRTB bidders: %v", err)
-	}
+	main_ow()
 
 	// Create a soft memory limit on the total amount of memory that PBS uses to tune the behavior
 	// of the Go garbage collector. In summary, `cfg.GarbageCollectorThreshold` serves as a fixed cost
@@ -62,7 +58,6 @@ func Main() {
 
 const configFileName = "pbs.yaml"
 const infoDirectory = "./static/bidder-info"
-const paramsDirectory = "./static/bidder-params"
 
 func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {
 	v := viper.New()

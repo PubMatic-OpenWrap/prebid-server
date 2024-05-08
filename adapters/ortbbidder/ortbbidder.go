@@ -15,7 +15,7 @@ import (
 // adapter implements adapters.Bidder interface
 type adapter struct {
 	adapterInfo
-	mapper *Mapper
+	mapper *mapper
 }
 
 const (
@@ -32,7 +32,7 @@ type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
-func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map[string]string) (*adapters.RequestData, error) {
+func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, paramDetails map[string]paramDetails) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
@@ -41,12 +41,10 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, mapper map
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
 
-	// fmt.Printf("requestBody before mapping bidder-params [%s]", string(body))
-	body, err = mapBidderParamsInRequest(body, mapper)
+	body, err = mapBidderParamsInRequest(body, paramDetails)
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Printf("requestBody after mapping bidder-params [%s]", string(body))
 
 	bidreq := &openrtb2.BidRequest{}
 	err = json.Unmarshal(body, bidreq)
@@ -71,7 +69,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	}
 	return &adapter{
 		adapterInfo: adapterInfo{config, extraAdapterInfo, bidderName},
-		mapper:      mapper,
+		mapper:      g_mapper,
 	}, nil
 }
 
@@ -91,7 +89,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		requestCopy := *request
 		for _, imp := range request.Imp {
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := adapterInfo.prepareRequestData(&requestCopy, o.mapper.bidderParamMapper[o.adapterInfo.bidderName.String()])
+			reqData, err := adapterInfo.prepareRequestData(&requestCopy, o.mapper.bidderParamMapper[o.bidderName.String()])
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -101,7 +99,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		return requestData, errs
 	}
 	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := adapterInfo.prepareRequestData(request, o.mapper.bidderParamMapper[o.adapterInfo.bidderName.String()])
+	requestData, err := adapterInfo.prepareRequestData(request, o.mapper.bidderParamMapper[o.bidderName.String()])
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -129,8 +127,9 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	for _, seatBid := range response.SeatBid {
 		for bidInd, bid := range seatBid.Bid {
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:     &seatBid.Bid[bidInd],
-				BidType: getMediaTypeForBid(bid),
+				Bid:          &seatBid.Bid[bidInd],
+				BidType:      getMediaTypeForBid(bid),
+				DealPriority: 1, //????
 			})
 		}
 	}
