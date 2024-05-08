@@ -35,6 +35,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
+	// Get Updated Floor values using floor rules from updated request
+	getFloorValueFromUpdatedRequest(ao.RequestWrapper, rCtx)
 
 	wlog := WloggerRecord{
 		record: record{
@@ -189,6 +191,19 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 		}
 	}
 	return nil
+}
+
+// getFloorValueFromUpdatedRequest gets updated floor values by floor module
+func getFloorValueFromUpdatedRequest(reqWrapper *openrtb_ext.RequestWrapper, rCtx *models.RequestCtx) {
+	for _, imp := range reqWrapper.BidRequest.Imp {
+		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+			if imp.BidFloor > 0 && impCtx.BidFloor != imp.BidFloor {
+				impCtx.BidFloor = imp.BidFloor
+				impCtx.BidFloorCur = imp.BidFloorCur
+				rCtx.ImpBidCtx[imp.ID] = impCtx
+			}
+		}
+	}
 }
 
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
