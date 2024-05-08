@@ -19,6 +19,7 @@ const (
 	NoValidBidErrorCode
 	InvalidSourceErrorCode
 	InvalidCatalogErrorCode
+	InvalidProductFilteringErrorCode
 )
 
 // Defines numeric codes for well-known warnings.
