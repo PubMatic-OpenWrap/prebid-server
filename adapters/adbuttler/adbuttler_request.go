@@ -148,7 +148,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 			for _, category := range commerceExt.ComParams.Filtering {
 				key := category.Name
 				if _, ok := subcategoryMap[key]; !ok {
-					errors = append(errors, &errortypes.BadInput{
+					errors = append(errors, &errortypes.InvalidProductFiltering{
 						Message: "Invalid Subcategory : " + key,
 					})
 					return nil, errors
