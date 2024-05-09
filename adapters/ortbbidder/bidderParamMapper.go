@@ -16,6 +16,9 @@ const (
 	extKey     = "ext"
 	bidderKey  = "bidder"
 	reqExtPath = "req."
+	appsiteKey = "appsite"
+	siteKey    = "site"
+	appKey     = "app"
 )
 
 // mapper struct holds mappings for bidder parameters and bid responses.
@@ -196,7 +199,7 @@ func mapBidderParamsInRequest(requestBody []byte, bidderParamDetails map[string]
 			if !ok {
 				continue
 			}
-			// TODO: handle app/site
+			details = applyConditionalMapping(requestBodyMap, details)
 			// set the value in the requestBody according to the mapping details and remove the parameter if successful.
 			if setValue(requestBodyMap, details.location, paramValue) {
 				delete(bidderParams, paramName)
@@ -216,4 +219,20 @@ func mapBidderParamsInRequest(requestBody []byte, bidderParamDetails map[string]
 		}
 	}
 	return requestBody, nil
+}
+
+// applyConditionalMapping applies the custom rules and updates the location of bidder-param
+func applyConditionalMapping(requestBodyMap map[string]any, details paramDetails) paramDetails {
+	if len(details.location) == 0 || len(requestBodyMap) == 0 {
+		return details
+	}
+	// if location is "appsite" and if request contains "app" object then set location to "app" else set location to "site"
+	// example - if req.site is present and location is {"appsite","publisher","id"} then update location to {"site","publisher","id"}
+	if details.location[0] == appsiteKey {
+		details.location[0] = siteKey
+		if _, found := requestBodyMap[appKey]; found {
+			details.location[0] = appKey
+		}
+	}
+	return details
 }

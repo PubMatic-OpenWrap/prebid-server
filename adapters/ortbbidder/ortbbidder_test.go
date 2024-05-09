@@ -420,25 +420,6 @@ func Test_prepareRequestData(t *testing.T) {
 				err:         fmt.Errorf("found nil request"),
 			},
 		},
-		// {
-		// 	name: "fail_to_map_bidder_param_in_request",
-		// 	fields: fields{
-		// 		Adapter: config.Adapter{Endpoint: "https://example.com"},
-		// 	},
-		// 	args: args{
-		// 		request: &openrtb2.BidRequest{
-		// 			ID:  "123",
-		// 			Imp: []openrtb2.Imp{{ID: "imp1", Ext: json.RawMessage(`{"bidder":{"adunit":{{}}}}}}}`)}},
-		// 		},
-		// 		mapper: map[string]paramDetails{
-		// 			"adunit": {location: []string{"invalid-location"}},
-		// 		},
-		// 	},
-		// 	want: want{
-		// 		requestData: nil,
-		// 		err:         fmt.Errorf("error:[invalid_bidder_param_location] param:[adunit] location:[invalid-location]"),
-		// 	},
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

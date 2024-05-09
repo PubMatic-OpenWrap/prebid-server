@@ -657,6 +657,32 @@ func Test_mapBidderParamsInRequest(t *testing.T) {
 			},
 		},
 		{
+			name: "conditional_mapping_set_app_object",
+			args: args{
+				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
+				mapper: map[string]paramDetails{
+					"wrapper": {location: []string{"appsite", "wrapper"}},
+				},
+			},
+			want: want{
+				err:         "",
+				requestBody: json.RawMessage(`{"app":{"name":"sampleapp","wrapper":{"profile":1,"pubid":5890}},"imp":[{"ext":{"bidder":{"adunit":123,"paramWithoutLocation":"value","slot":"test_slot"}},"tagid":"oldtagid"}]}`),
+			},
+		},
+		{
+			name: "conditional_mapping_set_site_object",
+			args: args{
+				requestBody: json.RawMessage(`{"site":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
+				mapper: map[string]paramDetails{
+					"wrapper": {location: []string{"appsite", "wrapper"}},
+				},
+			},
+			want: want{
+				err:         "",
+				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123,"paramWithoutLocation":"value","slot":"test_slot"}},"tagid":"oldtagid"}],"site":{"name":"sampleapp","wrapper":{"profile":1,"pubid":5890}}}`),
+			},
+		},
+		{
 			name: "multi_imps_bidder_params_mapping",
 			args: args{
 				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"tagid_1","ext":{"bidder":{"paramWithoutLocation":"value","adunit":111,"slot":"test_slot_1","wrapper":{"pubid":5890,"profile":1}}}},{"tagid":"tagid_2","ext":{"bidder":{"slot":"test_slot_2","adunit":222}}}]}`),
@@ -811,6 +837,95 @@ func Test_readFile(t *testing.T) {
 			got, err := readFile(tt.args.dirPath, tt.args.file)
 			assert.Equal(t, tt.want.err, err != nil, "mismatched error")
 			assert.Equal(t, tt.want.node, got, "mismatched map[string]any")
+		})
+	}
+}
+
+func Test_applyConditionalMapping(t *testing.T) {
+	type args struct {
+		requestBodyMap map[string]any
+		details        paramDetails
+	}
+	tests := []struct {
+		name string
+		args args
+		want paramDetails
+	}{
+		{
+			name: "empty_location_for_bidder_param",
+			args: args{
+				requestBodyMap: map[string]any{
+					"app": map[string]any{},
+				},
+				details: paramDetails{},
+			},
+			want: paramDetails{},
+		},
+		{
+			name: "empty_request_body",
+			args: args{
+				requestBodyMap: map[string]any{},
+				details: paramDetails{
+					location: []string{"appsite", "publisher", "id"},
+				},
+			},
+			want: paramDetails{
+				location: []string{"appsite", "publisher", "id"},
+			},
+		},
+		{
+			name: "app_object_present_in_request_body",
+			args: args{
+				requestBodyMap: map[string]any{
+					"app": map[string]any{
+						"name": "sample_app",
+					},
+				},
+				details: paramDetails{
+					location: []string{"appsite", "publisher", "id"},
+				},
+			},
+			want: paramDetails{
+				location: []string{"app", "publisher", "id"},
+			},
+		},
+		{
+			name: "app_object_absent_in_request_body",
+			args: args{
+				requestBodyMap: map[string]any{
+					"device": map[string]any{
+						"name": "sample_app",
+					},
+				},
+				details: paramDetails{
+					location: []string{"appsite", "publisher", "id"},
+				},
+			},
+			want: paramDetails{
+				location: []string{"site", "publisher", "id"},
+			},
+		},
+		{
+			name: "site_object_present_in_request_body",
+			args: args{
+				requestBodyMap: map[string]any{
+					"site": map[string]any{
+						"name": "sample_app",
+					},
+				},
+				details: paramDetails{
+					location: []string{"appsite", "publisher", "id"},
+				},
+			},
+			want: paramDetails{
+				location: []string{"site", "publisher", "id"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := applyConditionalMapping(tt.args.requestBodyMap, tt.args.details)
+			assert.Equal(t, tt.want, got, "mismatched paramDetails")
 		})
 	}
 }
