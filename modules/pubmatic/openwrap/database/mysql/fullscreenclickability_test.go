@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,6 +40,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 					Queries: config.Queries{
 						GetAllDspFscPcntQuery: "^SELECT (.+) FROM wrapper_feature_dsp_mapping (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			want:    map[int]int{},
@@ -61,6 +62,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 					Queries: config.Queries{
 						GetAllDspFscPcntQuery: "^SELECT (.+) FROM wrapper_feature_dsp_mapping (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			want: map[int]int{

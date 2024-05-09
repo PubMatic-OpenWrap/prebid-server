@@ -10,19 +10,21 @@ import (
 
 	"sync"
 
+	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/modules/moduledeps"
-	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/publisherfeature"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
+	ow_adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
 )
 
 const (
@@ -34,7 +36,8 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
-	featureConfig      publisherfeature.Feature
+	pubFeatures        publisherfeature.Feature
+	unwrap             unwrap.Unwrap
 }
 
 var ow *OpenWrap
@@ -75,8 +78,17 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
 	// Init Feature reloader service
-	featureConfig := publisherfeature.New(owCache, cfg.Cache.CacheDefaultExpiry)
-	featureConfig.Start()
+	pubFeatures := publisherfeature.New(publisherfeature.Config{
+		Cache:                 owCache,
+		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
+		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
+	})
+	pubFeatures.Start()
+
+	// Init VAST Unwrap
+	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
+	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
+		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
 	once.Do(func() {
 		ow = &OpenWrap{
@@ -84,7 +96,8 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
-			featureConfig:      featureConfig,
+			pubFeatures:        pubFeatures,
+			unwrap:             uw,
 		}
 	})
 	return *ow, nil

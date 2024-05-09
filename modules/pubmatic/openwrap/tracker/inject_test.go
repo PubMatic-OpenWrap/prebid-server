@@ -1,15 +1,14 @@
 package tracker
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/magiconair/properties/assert"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	mock_metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInjectTrackers(t *testing.T) {
@@ -35,6 +34,40 @@ func TestInjectTrackers(t *testing.T) {
 				bidResponse: &openrtb2.BidResponse{},
 			},
 			want:    &openrtb2.BidResponse{},
+			wantErr: false,
+		},
+		{
+			name: "tracker_disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:        "video",
+					TrackerDisabled: true,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `creative`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `creative`,
+							},
+						},
+					},
+				},
+			},
 			wantErr: false,
 		},
 		{
@@ -482,6 +515,143 @@ func TestInjectTrackers(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "adformat_is_banner_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: "",
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:   "12345",
+									BURL: `http://burl.com`,
+									AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:   "12345",
+								BURL: `Tracking URL&owsspburl=http://burl.com`,
+								AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "adformat_is_video_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: "",
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "video",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:   "12345",
+									BURL: `http://burl.com`,
+									AdM:  `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:   "12345",
+								BURL: `Tracking URL&owsspburl=http://burl.com`,
+								AdM:  `<VAST version="3.0"><Ad><Wrapper><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "adformat_is_native_and_AppLovinMax_request",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "native",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp123": {
+							Native: &openrtb2.Native{
+								Request: "{\"context\":1,\"plcmttype\":1,\"eventtrackers\":[{\"event\":1,\"methods\":[1]}],\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":0,\"img\":{\"type\":3,\"w\":300,\"h\":250}},{\"id\":1,\"required\":0,\"data\":{\"type\":1,\"len\":2}},{\"id\":2,\"required\":0,\"img\":{\"type\":1,\"w\":50,\"h\":50}},{\"id\":3,\"required\":0,\"title\":{\"len\":80}},{\"id\":4,\"required\":0,\"data\":{\"type\":2,\"len\":2}}]}",
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "12345",
+									ImpID: "imp123",
+									BURL:  `http://burl.com`,
+									AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "12345",
+								ImpID: "imp123",
+								BURL:  `Tracking URL&owsspburl=http://burl.com`,
+								AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -493,9 +663,7 @@ func TestInjectTrackers(t *testing.T) {
 				t.Errorf("InjectTrackers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InjectTrackers() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, got, tt.want, tt.name)
 		})
 	}
 }
@@ -677,6 +845,49 @@ func Test_getUniversalPixels(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getUniversalPixels(tt.args.rctx, tt.args.adFormat, tt.args.bidderCode)
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func Test_getBurlAppLovinMax(t *testing.T) {
+	type args struct {
+		burl       string
+		TrackerURL string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "empty_burl",
+			args: args{
+				burl:       "",
+				TrackerURL: `sample.com`,
+			},
+			want: `sample.com`,
+		},
+		{
+			name: "empty_tracker_url",
+			args: args{
+				burl:       `sample.com`,
+				TrackerURL: "",
+			},
+			want: `sample.com`,
+		},
+		{
+			name: "valid_burl_and_tracker_url",
+			args: args{
+				burl:       `sampleBurl.com`,
+				TrackerURL: `sampleTracker.com?id=123`,
+			},
+			want: `sampleTracker.com?id=123&owsspburl=sampleBurl.com`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getBURL(tt.args.burl, tt.args.TrackerURL)
 			assert.Equal(t, got, tt.want)
 		})
 	}

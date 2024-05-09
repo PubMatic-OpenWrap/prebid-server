@@ -1,7 +1,6 @@
 package metrics
 
 type OWMetricsEngine interface {
-	RecordHttpCounter()
 	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
 	RecordBids(pubid, profileid, bidder, deal string)
 	//RecordVastVersion record the count of vast version labelled by bidder and vast version

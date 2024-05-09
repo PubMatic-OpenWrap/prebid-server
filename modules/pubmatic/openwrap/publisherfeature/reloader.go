@@ -5,9 +5,15 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
+
+type Config struct {
+	Cache                 cache.Cache
+	DefaultExpiry         int
+	AnalyticsThrottleList string
+}
 
 type feature struct {
 	cache       cache.Cache
@@ -17,18 +23,19 @@ type feature struct {
 	publisherFeature map[int]map[int]models.FeatureData
 	fsc              fsc
 	tbf              tbf
+	ant              analyticsThrottle
 	ampMultiformat   ampMultiformat
 }
 
 var fe *feature
 var fOnce sync.Once
 
-func New(c cache.Cache, defaultExpiry int) *feature {
+func New(config Config) *feature {
 	fOnce.Do(func() {
 		fe = &feature{
-			cache:            c,
+			cache:            config.Cache,
 			serviceStop:      make(chan struct{}),
-			defaultExpiry:    defaultExpiry,
+			defaultExpiry:    config.DefaultExpiry,
 			publisherFeature: make(map[int]map[int]models.FeatureData),
 			fsc: fsc{
 				disabledPublishers: make(map[int]struct{}),
@@ -39,6 +46,10 @@ func New(c cache.Cache, defaultExpiry int) *feature {
 			},
 			ampMultiformat: ampMultiformat{
 				enabledPublishers: make(map[int]struct{}),
+			},
+			ant: analyticsThrottle{
+				vault: newPubThrottling(config.AnalyticsThrottleList),
+				db:    newPubThrottling(config.AnalyticsThrottleList),
 			},
 		}
 	})
@@ -93,6 +104,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 
 	fe.updateTBFConfigMap()
 	fe.updateAmpMutiformatEnabledPublishers()
+	fe.updateAnalyticsThrottling()
 
 	if err != nil {
 		glog.Error(err.Error())

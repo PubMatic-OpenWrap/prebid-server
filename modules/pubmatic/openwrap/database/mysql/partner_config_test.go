@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,6 +35,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: models.TestQuery,
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -64,6 +65,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: models.TestQuery,
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{

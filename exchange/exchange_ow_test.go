@@ -10,15 +10,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/adapters/vastbidder"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/metrics"
-	metricsConf "github.com/prebid/prebid-server/metrics/config"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/vastbidder"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/exchange/entities"
+	"github.com/prebid/prebid-server/v2/metrics"
+	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,6 +99,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 										Bid: openrtb_ext.NonBidObject{
 											ID:      "reject_b.a.com.a.com.b.c.d.a.com",
 											ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
+											Meta:    &openrtb_ext.ExtBidPrebidMeta{},
 										},
 									},
 								},
@@ -110,6 +111,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 										Bid: openrtb_ext.NonBidObject{
 											ID:      "a.com_bid",
 											ADomain: []string{"a.com"},
+											Meta:    &openrtb_ext.ExtBidPrebidMeta{},
 										},
 									},
 								},
@@ -561,6 +563,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			seatNonBids := nonBids{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
+
 			seatBids, rejections := applyAdvertiserBlocking(tt.args.advBlockReq, seatBids, &seatNonBids)
 			re := regexp.MustCompile("bid rejected \\[bid ID:(.*?)\\] reason")
 			for bidder, sBid := range seatBids {
@@ -758,7 +761,7 @@ func TestMakeBidExtJSONOW(t *testing.T) {
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`), json.RawMessage(`{"imp_passthrough_val": 1}`)}},
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
-			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
+			expectedBidExt:     `{"prebid":{"meta": {"adaptercode": "adapter","brandName": "foo"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD"}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -769,13 +772,14 @@ func TestMakeBidExtJSONOW(t *testing.T) {
 			origbidcpm:         10.0000,
 			origbidcur:         "USD",
 			origbidcpmusd:      10.0000,
-			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD", "origbidcpmusd": 10}`,
+			expectedBidExt:     `{"prebid":{"meta": {"adaptercode": "adapter", "brandName": "foo"}, "passthrough":{"imp_passthrough_val":1}, "type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}, "origbidcpm": 10, "origbidcur": "USD", "origbidcpmusd": 10}`,
 			expectedErrMessage: "",
 		},
 	}
 
 	for _, test := range testCases {
-		result, err := makeBidExtJSON(test.ext, &test.extBidPrebid, test.impExtInfo, "test_imp_id", test.origbidcpm, test.origbidcur, test.origbidcpmusd)
+		var adapter openrtb_ext.BidderName = "adapter"
+		result, err := makeBidExtJSON(test.ext, &test.extBidPrebid, test.impExtInfo, "test_imp_id", test.origbidcpm, test.origbidcur, test.origbidcpmusd, adapter)
 
 		if test.expectedErrMessage == "" {
 			assert.JSONEq(t, test.expectedBidExt, string(result), "Incorrect result")
@@ -1496,7 +1500,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1508,6 +1513,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1563,7 +1569,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1575,6 +1582,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
 									},
 								},
 							},
@@ -1586,7 +1594,8 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							Ext: openrtb_ext.NonBidExt{
 								Prebid: openrtb_ext.ExtResponseNonBidPrebid{
 									Bid: openrtb_ext.NonBidObject{
-										ID: "bid1",
+										ID:   "bid1",
+										Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
 									},
 								},
 							},
@@ -1598,6 +1607,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 									Bid: openrtb_ext.NonBidObject{
 										ID:     "bid2",
 										DealID: "deal1",
+										Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
 									},
 								},
 							},

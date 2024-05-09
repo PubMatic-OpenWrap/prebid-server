@@ -6,32 +6,29 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	type args struct {
-		c             cache.Cache
-		defaultExpiry int
-	}
 	tests := []struct {
 		name string
-		args args
+		args Config
 	}{
 		{
 			name: "test",
-			args: args{
-				c:             nil,
-				defaultExpiry: 0,
+			args: Config{
+				Cache:                 nil,
+				DefaultExpiry:         0,
+				AnalyticsThrottleList: "",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.c, tt.args.defaultExpiry)
+			got := New(tt.args)
 			assert.Equal(t, fe, got)
 		})
 	}

@@ -1,7 +1,7 @@
 package publisherfeature
 
 import (
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 type ampMultiformat struct {
@@ -16,7 +16,7 @@ func (fe *feature) updateAmpMutiformatEnabledPublishers() {
 
 	enabledPublishers := make(map[int]struct{})
 	for pubID, feature := range fe.publisherFeature {
-		if feature[models.FeatureAMPMultiFormat].Enabled == 1 {
+		if val, ok := feature[models.FeatureAMPMultiFormat]; ok && val.Enabled == 1 {
 			enabledPublishers[pubID] = struct{}{}
 		}
 	}
