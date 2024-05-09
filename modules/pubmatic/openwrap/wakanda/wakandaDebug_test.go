@@ -1,19 +1,21 @@
 package wakanda
 
 import (
-	"header-bidding/config"
+	"encoding/json"
 	"testing"
 )
 
-func init() {
-	config.ServerConfig = &config.DMHBConfig{}
-	config.ServerConfig.OpenWrap.Server.DCName = "local"
-}
+// func init() {
+// 	config.ServerConfig = &config.DMHBConfig{}
+// 	config.ServerConfig.OpenWrap.Server.DCName = "local"
+// }
 
 func TestEnable(t *testing.T) {
 	pubID := "31445"
 	profID := "55"
-	_ = wakandaRulesMap.AddIfNotPresent(generateKeyFromWakandaRequest(pubID, profID), 2)
+	config := Wakanda{HostName: "", DCName: "DC1"}
+	InitWakanda(config)
+	_ = wakandaRulesMap.AddIfNotPresent(generateKeyFromWakandaRequest(pubID, profID), 2, "local")
 
 	wd := &Debug{
 		Enabled: false,
@@ -50,24 +52,24 @@ func TestDebug_WriteLogToFiles(t *testing.T) {
 				DebugLevel: 1,
 			},
 		},
-		// {
-		// 	name: "invalid_json",
-		// 	fields: fields{
-		// 		DebugLevel:  2,
-		// 		FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
-		// 		DebugData: DebugData{
-		// 			HTTPRequestBody: json.RawMessage(`{'invalid_json`),
-		// 		},
-		// 	},
-		// },
-		// {
-		// 	name: "valid_json",
-		// 	fields: fields{
-		// 		DebugLevel:  2,
-		// 		FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
-		// 		DebugData:   DebugData{},
-		// 	},
-		// },
+		{
+			name: "invalid_json",
+			fields: fields{
+				DebugLevel:  2,
+				FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
+				DebugData: DebugData{
+					HTTPRequestBody: json.RawMessage(`{'invalid_json`),
+				},
+			},
+		},
+		{
+			name: "valid_json",
+			fields: fields{
+				DebugLevel:  2,
+				FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
+				DebugData:   DebugData{},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

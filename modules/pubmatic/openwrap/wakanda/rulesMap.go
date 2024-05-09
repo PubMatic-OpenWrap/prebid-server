@@ -77,7 +77,7 @@ func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) b
 	return true
 }
 
-func (rm *rulesMap) clean(cleanupFrequencyInMin int, MaxDurationInMin int) {
+func (rm *rulesMap) clean(cleanupFrequencyInMin, MaxDurationInMin time.Duration) {
 	c := time.Tick(time.Duration(cleanupFrequencyInMin) * time.Minute)
 	for range c {
 		if !rm.IsEmpty() {
@@ -86,12 +86,12 @@ func (rm *rulesMap) clean(cleanupFrequencyInMin int, MaxDurationInMin int) {
 	}
 }
 
-func (rm *rulesMap) cleanRules(MaxDurationInMin int) {
+func (rm *rulesMap) cleanRules(MaxDurationInMin time.Duration) {
 	rm.lock.Lock()
 	defer rm.lock.Unlock()
 	now := time.Now()
 	for key, rule := range rm.rules {
-		if now.Sub(rule.StartTime) > (time.Duration(MaxDurationInMin) * time.Minute) {
+		if now.Sub(rule.StartTime) > MaxDurationInMin {
 			logger.Debug("[Wakanda] Status:Cleanup Message:DeleteStale Key:%v KeyTime:%v CurrentTime:%v\n", key, rule.StartTime, now)
 			delete(rm.rules, key)
 		}
@@ -103,6 +103,8 @@ func getNewRulesMap(config Wakanda) *rulesMap {
 	obj := &rulesMap{
 		rules: make(map[string]*wakandaRule),
 	}
-	go obj.clean(config.CleanupFrequency, config.MaxDurationInMin)
+	cleanup := time.Duration(config.CleanupFrequency) * time.Minute
+	maxDur := time.Duration(config.CleanupFrequency) * time.Minute
+	go obj.clean(cleanup, maxDur)
 	return obj
 }

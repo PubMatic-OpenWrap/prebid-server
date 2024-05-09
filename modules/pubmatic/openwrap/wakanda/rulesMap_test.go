@@ -1,7 +1,6 @@
 package wakanda
 
 import (
-	"header-bidding/config"
 	"sync"
 	"testing"
 	"time"
@@ -10,13 +9,13 @@ import (
 )
 
 func TestAddRule(t *testing.T) {
-	rm := getNewRulesMap()
+	rm := getNewRulesMap(Wakanda{})
 
-	if rm.AddIfNotPresent("FIRST_RULE", 2) == false {
+	if rm.AddIfNotPresent("FIRST_RULE", 2, "local") == false {
 		t.Error("A non-existing rule should be added. Failed to add a non-existing rule.")
 	}
 
-	if rm.AddIfNotPresent("FIRST_RULE", 2) == true {
+	if rm.AddIfNotPresent("FIRST_RULE", 2, "local") == true {
 		t.Error("An existing rule should not be added.")
 	}
 
@@ -36,19 +35,20 @@ func TestAddRule(t *testing.T) {
 		t.Error("DebugLevel should have been 2")
 	}
 
-	if wr.FolderPath != config.ServerConfig.OpenWrap.Server.DCName+"__FIRST_RULE" {
+	if wr.FolderPath != "local"+"__FIRST_RULE" {
 		t.Error("FolderPath formation is not as expected")
 	}
 }
 
-func init() {
-	config.ServerConfig = &config.DMHBConfig{}
-	config.ServerConfig.OpenWrap.Server.DCName = "local"
-}
+// func init() {
+// 	config.ServerConfig = &config.DMHBConfig{}
+// 	config.ServerConfig.OpenWrap.Server.DCName = "local"
+// }
 
 func Test_rulesMap_cleanRules(t *testing.T) {
 	now := time.Now()
 
+	maxDuration := time.Minute * 10
 	tests := []struct {
 		name string
 		args map[string]*wakandaRule
@@ -102,7 +102,7 @@ func Test_rulesMap_cleanRules(t *testing.T) {
 			rm := &rulesMap{
 				rules: tt.args,
 			}
-			rm.cleanRules()
+			rm.cleanRules(maxDuration)
 			assert.Equal(t, tt.want, rm.rules)
 		})
 	}
