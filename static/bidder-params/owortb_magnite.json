@@ -7,7 +7,7 @@
     "adunitID": {
       "type": "string",
       "description": "adunitID param",
-      "location": "req.ext.adunit.id"
+      "location": "ext.adunit.id"
     }
   },
   "required": ["adunitID"]

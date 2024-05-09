@@ -18,9 +18,6 @@ const (
 	reqExtPath = "req."
 )
 
-// jsonNode alias for Generic datatype of json object represented by map
-type jsonNode map[string]any
-
 // mapper struct holds mappings for bidder parameters and bid responses.
 type mapper struct {
 	bidderParamMapper bidderParamMapper
@@ -62,7 +59,7 @@ func prepareMapperFromFiles(dirPath string) (*mapper, error) {
 		}
 		fileContents, err := readFile(dirPath, file.Name())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", dirPath, file.Name(), err.Error())
 		}
 		err = mapper.bidderParamMapper.setBidderParamsDetails(bidderName, fileContents)
 		if err != nil {
@@ -73,31 +70,31 @@ func prepareMapperFromFiles(dirPath string) (*mapper, error) {
 	return mapper, nil
 }
 
-// readFile reads the file from directory and unmarshals it into the jsonNode
-func readFile(dirPath, file string) (jsonNode, error) {
+// readFile reads the file from directory and unmarshals it into the map[string]any
+func readFile(dirPath, file string) (map[string]any, error) {
 	filePath := filepath.Join(dirPath, file)
 	fileContents, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
-	var fileContentsNode jsonNode
+	var fileContentsNode map[string]any
 	err = json.Unmarshal(fileContents, &fileContentsNode)
 	return fileContentsNode, err
 }
 
 // setBidderParamsDetails sets the bidder-param details in bidderParamMapper based on file-content passed as map[string]any
-func (bpm bidderParamMapper) setBidderParamsDetails(bidderName string, params jsonNode) error {
+func (bpm bidderParamMapper) setBidderParamsDetails(bidderName string, params map[string]any) error {
 	properties, found := params[properties]
 	if !found {
 		return nil
 	}
-	propertiesMap, ok := properties.(jsonNode)
+	propertiesMap, ok := properties.(map[string]any)
 	if !ok {
 		return fmt.Errorf("error:[invalid_json_file_content_malformed_properties] bidderName:[%s]", bidderName)
 	}
-	paramsDetails := make(map[string]paramDetails)
+	paramsDetails := make(map[string]paramDetails, len(propertiesMap))
 	for bidderParamName, bidderParamProperty := range propertiesMap {
-		property, ok := bidderParamProperty.(jsonNode)
+		property, ok := bidderParamProperty.(map[string]any)
 		if !ok {
 			return fmt.Errorf("error:[invalid_json_file_content] bidder:[%s] bidderParam:[%s]", bidderName, bidderParamName)
 		}
@@ -118,7 +115,7 @@ func (bpm bidderParamMapper) setBidderParamsDetails(bidderName string, params js
 }
 
 /*
-setValue updates or creates a value in a JSONNode based on a specified location.
+setValue updates or creates a value in a node based on a specified location.
 The location is a string that specifies a path through the node hierarchy,
 separated by dots ('.'). The value can be any type, and the function will
 create intermediate nodes as necessary if they do not exist.
@@ -130,7 +127,7 @@ Arguments:
 Example:
   - location = imp.ext.adunitid; value = 123  ==> {"imp": {"ext" : {"adunitid":123}}}
 */
-func (node jsonNode) setValue(locations []string, value any) bool {
+func setValue(node map[string]any, locations []string, value any) bool {
 	if value == nil || len(locations) == 0 {
 		return false
 	}
@@ -150,13 +147,13 @@ func (node jsonNode) setValue(locations []string, value any) bool {
 		nextNode, found := currentNode[loc]
 		if !found {
 			// loc does not exist, set currentNode to a new node
-			newNode := make(jsonNode)
+			newNode := make(map[string]any)
 			currentNode[loc] = newNode
 			currentNode = newNode
 			continue
 		}
 		// loc exists, set currentNode to nextNode
-		nextNodeTyped, ok := nextNode.(jsonNode)
+		nextNodeTyped, ok := nextNode.(map[string]any)
 		if !ok {
 			return false
 		}
@@ -170,27 +167,27 @@ func mapBidderParamsInRequest(requestBody []byte, bidderParamDetails map[string]
 	if len(bidderParamDetails) == 0 {
 		return requestBody, nil // mapper would be empty if oRTB bidder does not contain any bidder-params
 	}
-	requestBodyNode := jsonNode{}
-	err := json.Unmarshal(requestBody, &requestBodyNode)
+	requestBodyMap := map[string]any{}
+	err := json.Unmarshal(requestBody, &requestBodyMap)
 	if err != nil {
 		return nil, err
 	}
-	impList, ok := requestBodyNode[impKey].([]any)
+	impList, ok := requestBodyMap[impKey].([]any)
 	if !ok {
-		return nil, fmt.Errorf("error:[invalid_imp_found_in_requestbody], imp:[%v]", requestBodyNode[impKey])
+		return nil, fmt.Errorf("error:[invalid_imp_found_in_requestbody], imp:[%v]", requestBodyMap[impKey])
 	}
 	updatedRequestBody := false
 	for ind, eachImp := range impList {
-		requestBodyNode[impKey] = eachImp
-		imp, ok := eachImp.(jsonNode)
+		requestBodyMap[impKey] = eachImp
+		imp, ok := eachImp.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("error:[invalid_imp_found_in_implist], imp:[%v]", requestBodyNode[impKey])
+			return nil, fmt.Errorf("error:[invalid_imp_found_in_implist], imp:[%v]", requestBodyMap[impKey])
 		}
-		ext, ok := imp[extKey].(jsonNode)
+		ext, ok := imp[extKey].(map[string]any)
 		if !ok {
 			continue
 		}
-		bidderParams, ok := ext[bidderKey].(jsonNode)
+		bidderParams, ok := ext[bidderKey].(map[string]any)
 		if !ok {
 			continue
 		}
@@ -201,20 +198,21 @@ func mapBidderParamsInRequest(requestBody []byte, bidderParamDetails map[string]
 			}
 			// TODO: handle app/site
 			// set the value in the requestBody according to the mapping details and remove the parameter if successful.
-			if requestBodyNode.setValue(details.location, paramValue) {
+			if setValue(requestBodyMap, details.location, paramValue) {
 				delete(bidderParams, paramName)
 				updatedRequestBody = true
 			}
+			// TODO - what if failed to set the bidder-param
 		}
-		impList[ind] = requestBodyNode[impKey]
+		impList[ind] = requestBodyMap[impKey]
 	}
 	// update the impression list in the requestBody
-	requestBodyNode[impKey] = impList
+	requestBodyMap[impKey] = impList
 	// if the requestBody was modified, marshal it back to JSON.
 	if updatedRequestBody {
-		requestBody, err = json.Marshal(requestBodyNode)
+		requestBody, err = json.Marshal(requestBodyMap)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request %s", err.Error())
+			return nil, fmt.Errorf("error:[fail_to_update_request_body] msg:[%s]", err.Error())
 		}
 	}
 	return requestBody, nil
