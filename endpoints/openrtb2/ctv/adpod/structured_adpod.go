@@ -12,9 +12,10 @@ import (
 
 type structuredAdpod struct {
 	AdpodCtx
-	ImpBidMap         map[string][]*types.Bid
-	WinningBid        map[string]types.Bid
-	CategoryExclusion bool
+	ImpBidMap          map[string][]*types.Bid
+	WinningBid         map[string]types.Bid
+	SelectedCategories map[string]bool
+	SelectedDomains    map[string]bool
 }
 
 type Slot struct {
@@ -126,6 +127,64 @@ func (sa *structuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[str
 	return nil
 }
 
+/****************************Exclusion*******************************/
+
+func (sa *structuredAdpod) addCategories(categories []string) {
+	if sa.SelectedCategories == nil {
+		sa.SelectedCategories = make(map[string]bool)
+	}
+
+	for _, cat := range categories {
+		sa.SelectedCategories[cat] = true
+	}
+}
+
+func (sa *structuredAdpod) addDomains(domains []string) {
+	if sa.SelectedDomains == nil {
+		sa.SelectedDomains = make(map[string]bool)
+	}
+
+	for _, domain := range domains {
+		sa.SelectedDomains[domain] = true
+	}
+}
+
+func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
+	if bid == nil || bid.Cat == nil {
+		return false
+	}
+
+	if sa.SelectedCategories == nil {
+		return false
+	}
+
+	for i := range bid.Cat {
+		if _, ok := sa.SelectedCategories[bid.Cat[i]]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
+	if bid == nil || bid.ADomain == nil {
+		return false
+	}
+
+	if sa.SelectedDomains == nil {
+		return false
+	}
+
+	for i := range bid.ADomain {
+		if _, ok := sa.SelectedDomains[bid.ADomain[i]]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
 /************Structured Adpod Auction Methods***********************/
 
 func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
@@ -140,14 +199,14 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 	slotBids := sa.ImpBidMap[selectedSlot.ImpId]
 	selectedBid := slotBids[selectedSlot.Index]
 
-	if sa.shouldApplyExclusion() {
+	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
-		} else if sa.isCategoryOverlapping(selectedBid) {
+		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
-				if !sa.isCategoryOverlapping(slotBids[i]) {
+				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {
 					selectedSlot.Index = i
 					break
 				}
@@ -160,6 +219,7 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 
 	// Add bid categories to selected categories
 	sa.addCategories(slotBids[selectedSlot.Index].Cat)
+	sa.addDomains(slotBids[selectedSlot.Index].ADomain)
 
 	// Swap selected slot at initial position
 	slots[0], slots[slotIndex] = slots[slotIndex], slots[0]
@@ -193,41 +253,6 @@ func (sa *structuredAdpod) getSlotIndexWithHighestBid(slots []Slot) int {
 
 func isDealBid(bid *types.Bid) bool {
 	return bid.DealTierSatisfied
-}
-
-func (sa *structuredAdpod) shouldApplyExclusion() bool {
-	return sa.CategoryExclusion
-}
-
-func (sa *structuredAdpod) isCategoryOverlapping(bid *types.Bid) bool {
-	if bid == nil || bid.Cat == nil {
-		return false
-	}
-
-	if sa.Exclusion.SelectedCategories == nil {
-		return false
-	}
-
-	var doesOverlap bool
-	for i := range bid.Cat {
-		_, ok := sa.Exclusion.SelectedCategories[bid.Cat[i]]
-		if ok {
-			doesOverlap = true
-			break
-		}
-	}
-
-	return doesOverlap
-}
-
-func (sa *structuredAdpod) addCategories(categories []string) {
-	if sa.Exclusion.SelectedCategories == nil {
-		sa.Exclusion.SelectedCategories = make(map[string]bool)
-	}
-
-	for _, cat := range categories {
-		sa.Exclusion.SelectedCategories[cat] = true
-	}
 }
 
 func (sa *structuredAdpod) isDealBidCatOverlapWithAnotherDealBid(slots []Slot, selectedSlotIndex int, selectedBid *types.Bid) bool {

@@ -834,10 +834,9 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sa := &structuredAdpod{
-				AdpodCtx:          tt.fields.AdpodCtx,
-				ImpBidMap:         tt.fields.ImpBidMap,
-				WinningBid:        tt.fields.WinningBid,
-				CategoryExclusion: tt.fields.CategoryExclusion,
+				AdpodCtx:   tt.fields.AdpodCtx,
+				ImpBidMap:  tt.fields.ImpBidMap,
+				WinningBid: tt.fields.WinningBid,
 			}
 			sa.HoldAuction()
 
