@@ -81,18 +81,10 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 				}
 
 				if videoParams[i].Price != 0 {
-					if isWrapper {
-						if models.VideoVASTVersion2_0 == version || models.VideoVASTVersion3_0 == version {
-							injectPricingNodeInExtension(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-						} else {
-							injectPricingNodeInVAST(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-						}
+					if models.VideoVASTVersion2_0 == version || isWrapper && models.VideoVASTVersion3_0 == version {
+						injectPricingNodeInExtension(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					} else {
-						if models.VideoVASTVersion2_0 == version {
-							injectPricingNodeInExtension(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-						} else {
-							injectPricingNodeInVAST(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
-						}
+						injectPricingNodeInVAST(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					}
 				}
 			}
