@@ -56,13 +56,6 @@ func TestVideoAdPod_Validate(t *testing.T) {
 			wantErr: []error{errInvalidMinDuration},
 		},
 		{
-			name: "ZeroMinDuration",
-			fields: fields{
-				MinDuration: getIntPtr(0),
-			},
-			wantErr: []error{errInvalidMinDuration},
-		},
-		{
 			name: "ErrInvalidMaxDuration",
 			fields: fields{
 				MaxDuration: getIntPtr(-1),

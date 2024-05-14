@@ -116,35 +116,35 @@ func (pod *VideoAdPod) Validate() (err []error) {
 		return
 	}
 
-	if nil != pod.MinAds && *pod.MinAds <= 0 {
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
 		err = append(err, errInvalidMinAds)
 	}
 
-	if nil != pod.MaxAds && *pod.MaxAds <= 0 {
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
 		err = append(err, errInvalidMaxAds)
 	}
 
-	if nil != pod.MinDuration && *pod.MinDuration <= 0 {
+	if pod.MinDuration != nil && *pod.MinDuration < 0 {
 		err = append(err, errInvalidMinDuration)
 	}
 
-	if nil != pod.MaxDuration && *pod.MaxDuration <= 0 {
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
 		err = append(err, errInvalidMaxDuration)
 	}
 
-	if nil != pod.AdvertiserExclusionPercent && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
 		err = append(err, errInvalidAdvertiserExclusionPercent)
 	}
 
-	if nil != pod.IABCategoryExclusionPercent && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
 		err = append(err, errInvalidIABCategoryExclusionPercent)
 	}
 
-	if nil != pod.MinAds && nil != pod.MaxAds && *pod.MinAds > *pod.MaxAds {
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
 		err = append(err, errInvalidMinMaxAds)
 	}
 
-	if nil != pod.MinDuration && nil != pod.MaxDuration && *pod.MinDuration > *pod.MaxDuration {
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
 		err = append(err, errInvalidMinMaxDuration)
 	}
 
