@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,6 +23,16 @@ func TestGetTrackerInfo(t *testing.T) {
 		args args
 		want string
 	}{
+		{
+			name: "tracker_disabled",
+			args: args{
+				rCtx: models.RequestCtx{
+					TrackerDisabled: true,
+				},
+				responseExt: openrtb_ext.ExtBidResponse{},
+			},
+			want: "",
+		},
 		{
 			name: "all_tracker_info_without_floors",
 			args: args{

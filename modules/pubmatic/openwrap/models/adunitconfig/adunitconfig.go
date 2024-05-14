@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 var ErrAdUnitUnmarshal = errors.New("unmarshal error adunitconfig")
@@ -53,8 +53,9 @@ type NativeConfig struct {
 }
 
 type Video struct {
-	Enabled *bool        `json:"enabled,omitempty"`
-	Config  *VideoConfig `json:"config,omitempty"`
+	Enabled              *bool        `json:"enabled,omitempty"`
+	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
+	Config               *VideoConfig `json:"config,omitempty"`
 }
 
 // Struct for UniversalPixel

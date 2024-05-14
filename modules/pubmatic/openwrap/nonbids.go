@@ -1,12 +1,11 @@
 package openwrap
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
@@ -19,7 +18,7 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 	for impID, impCtx := range rctx.ImpBidCtx {
 		// seat-non-bid for partner-throttled error
 		for bidder := range rctx.AdapterThrottleMap {
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(exchange.RequestBlockedPartnerThrottle)})
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(nbr.RequestBlockedPartnerThrottle)})
 			seatNonBid.AddBid(nonBid, bidder)
 
 		}
@@ -27,7 +26,7 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 		// seat-non-bid for slot-not-mapped error
 		// Note : Throttled partner will not be a part of impCtx.NonMapped
 		for bidder := range impCtx.NonMapped {
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(exchange.RequestBlockedSlotNotMapped)})
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(nbr.RequestBlockedSlotNotMapped)})
 			seatNonBid.AddBid(nonBid, bidder)
 		}
 	}
@@ -94,7 +93,7 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 			if bidDealTierSatisfied {
 				continue
 			}
-			bidCtx.BidExt.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bidCtx.BidExt.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
 		}
 	}
@@ -106,7 +105,7 @@ func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidati
 		for _, imp := range payload.BidRequest.Imp {
 			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 				Bid:          &openrtb2.Bid{ImpID: imp.ID},
-				NonBidReason: int(exchange.RequestBlockedPartnerFiltered),
+				NonBidReason: int(nbr.RequestBlockedPartnerFiltered),
 			})
 			seatNonBids.AddBid(nonBid, bidderName)
 		}

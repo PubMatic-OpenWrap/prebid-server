@@ -3,10 +3,10 @@ package pubmatic
 import (
 	"encoding/json"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // WloggerRecord structure for wrapper analytics logger object
@@ -137,9 +137,9 @@ type PartnerRecord struct {
 	OriginalCur string    `json:"ocry"`
 	MetaData    *MetaData `json:"md,omitempty"`
 
-	FloorValue     float64                    `json:"fv,omitempty"`
-	FloorRuleValue float64                    `json:"frv,omitempty"`
-	Nbr            *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
+	FloorValue     float64               `json:"fv,omitempty"`
+	FloorRuleValue float64               `json:"frv,omitempty"`
+	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
 
 }
 
@@ -178,7 +178,7 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 	switch endpoint {
 	case models.EndpointAMP:
 		wlog.IntegrationType = models.TypeAmp
-	case models.EndpointV25:
+	case models.EndpointV25, models.EndpointAppLovinMax:
 		wlog.IntegrationType = models.TypeSDK
 	case models.EndpointVAST:
 		wlog.IntegrationType = models.TypeTag

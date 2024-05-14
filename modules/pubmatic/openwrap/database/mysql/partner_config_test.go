@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,6 +34,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -63,6 +64,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					Queries: config.Queries{
 						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -227,7 +229,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"serverSideEnabled": "1",
 					"isAlias":           "0",
 					"partnerId":         "234",
-					"vendorId":          "999",
+					"vendorId":          "546",
 				},
 				101: {
 					"bidderCode":        "pubmatic",
@@ -266,8 +268,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1").
-					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "serverSideEnabled", "1").
-					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "vendorId", "999")
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, 546, "vendorId", "999").
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, 546, "serverSideEnabled", "1")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
 				return db
 			},

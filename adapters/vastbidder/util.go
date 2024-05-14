@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func ObjectArrayToString(len int, separator string, cb func(i int) string) string {

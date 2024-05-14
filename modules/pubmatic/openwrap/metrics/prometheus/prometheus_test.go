@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
@@ -111,14 +111,14 @@ func TestRecordPublisherInvalidProfileImpressions(t *testing.T) {
 func TestRecordNobidErrPrebidServerRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordNobidErrPrebidServerRequests("5890", nbr.AllPartnerThrottled)
+	m.RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 
 	expectedCount := float64(1)
 	assertCounterVecValue(t, "", "request_validation_errors", m.pubRequestValidationErrors,
 		expectedCount,
 		prometheus.Labels{
 			pubIDLabel: "5890",
-			nbrLabel:   strconv.Itoa(nbr.AllPartnerThrottled),
+			nbrLabel:   strconv.Itoa(int(nbr.AllPartnerThrottled)),
 		})
 }
 
@@ -183,14 +183,14 @@ func TestRecordPublisherInvalidProfileRequests(t *testing.T) {
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordBadRequests(models.EndpointV25, nbr.AllPartnerThrottled)
+	m.RecordBadRequests(models.EndpointV25, int(nbr.AllPartnerThrottled))
 
 	expectedCount := float64(1)
 	assertCounterVecValue(t, "", "bad_requests", m.endpointBadRequest,
 		expectedCount,
 		prometheus.Labels{
 			endpointLabel: models.EndpointV25,
-			nbrLabel:      strconv.Itoa(nbr.AllPartnerThrottled),
+			nbrLabel:      strconv.Itoa(int(nbr.AllPartnerThrottled)),
 		})
 }
 
@@ -304,9 +304,8 @@ func TestRecordPublisherResponseTimeStats(t *testing.T) {
 func TestRecordGetProfileDataTime(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordGetProfileDataTime("v25", "59201", 300*time.Millisecond)
-	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.getProfileData,
-		endpointLabel, "v25", profileIDLabel, "59201")
+	m.RecordGetProfileDataTime(300 * time.Millisecond)
+	resultingHistogram := getHistogramFromHistogram(m.getProfileData)
 
 	assertHistogram(t, "sshb_profile_data_get_time", resultingHistogram, 1, 0.3)
 }
@@ -345,6 +344,14 @@ func TestRecordGeoDBInitStatus(t *testing.T) {
 			podNameLabel:  podName,
 			dcNameLabel:   dcName,
 		})
+}
+
+func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
+	var result dto.Histogram
+	processMetrics(histogram, func(m dto.Metric) {
+		result = *m.GetHistogram()
+	})
+	return result
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {

@@ -41,5 +41,5 @@ fi
 
 if $VET; then
   echo "Running go vet check"
-  go vet -composites=false ./...
+  go vet ./...
 fi

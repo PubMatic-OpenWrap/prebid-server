@@ -3,14 +3,17 @@ package tracker
 import (
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) string {
+func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
+	}
+
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
 	if trackerWithOM(tracker, rctx.Platform, seat) {
@@ -18,7 +21,7 @@ func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid o
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
 	adm := applyTBFFeature(rctx, bid, replacedTrackerStr)
-	return appendUPixelinBanner(adm, pixels)
+	return appendUPixelinBanner(adm, pixels), bid.BURL
 }
 
 // append universal pixels in creative based on conditions
@@ -52,7 +55,7 @@ func trackerWithOM(tracker models.OWTracker, platform, bidderCode string) bool {
 // given pub-prof combination then injects the tracker before adm
 // else injects the tracker after adm.
 func applyTBFFeature(rctx models.RequestCtx, bid openrtb2.Bid, tracker string) string {
-	if tbf.IsEnabledTBFFeature(rctx.PubID, rctx.ProfileID) {
+	if rctx.IsTBFFeatureEnabled {
 		return tracker + bid.AdM
 	}
 	return bid.AdM + tracker

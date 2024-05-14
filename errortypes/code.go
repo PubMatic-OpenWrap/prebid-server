@@ -9,11 +9,14 @@ const (
 	BadServerResponseErrorCode
 	FailedToRequestBidsErrorCode
 	BidderTemporarilyDisabledErrorCode
-	BlacklistedAcctErrorCode
+	AccountDisabledErrorCode
 	AcctRequiredErrorCode
 	NoConversionRateErrorCode
 	MalformedAcctErrorCode
 	ModuleRejectionErrorCode
+	TmaxTimeoutErrorCode
+	FailedToMarshalErrorCode
+	FailedToUnmarshalErrorCode
 
 	// NYC: shall we have different range for OW error codes to avoid change in codes with introduction of new PBS error codes.
 	NoBidPriceErrorCode
@@ -34,6 +37,8 @@ const (
 	AdServerTargetingWarningCode
 	BidAdjustmentWarningCode
 	FloorBidRejectionWarningCode
+	InvalidBidResponseDSAWarningCode
+	SecCookieDeprecationLenWarningCode
 	AdpodPostFilteringWarningCode
 )
 

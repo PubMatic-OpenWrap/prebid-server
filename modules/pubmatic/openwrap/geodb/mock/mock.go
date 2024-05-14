@@ -6,7 +6,7 @@ package mock_geodb
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	geodb "github.com/prebid/prebid-server/modules/pubmatic/openwrap/geodb"
+	geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
 	reflect "reflect"
 )
 

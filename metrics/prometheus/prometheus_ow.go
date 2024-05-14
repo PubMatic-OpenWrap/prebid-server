@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -45,16 +45,6 @@ type OWMetrics struct {
 	// podCompExclTimer indicates time taken by compititve exclusion
 	// algorithm to generate final pod response based on bid response and ad pod request
 	podCompExclTimer *prometheus.HistogramVec
-	httpCounter      prometheus.Counter
-}
-
-func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
-	httpCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "Number of http requests.",
-	})
-	registry.MustRegister(httpCounter)
-	return httpCounter
 }
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
@@ -170,21 +160,17 @@ func (m *Metrics) RecordFloorsRequestForAccount(pubId string) {
 		}).Inc()
 	}
 }
-func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
+func (m *Metrics) RecordFloorStatus(pubId, source, code string) {
 	if pubId != metrics.PublisherUnknown {
 		m.dynamicFetchFailure.With(prometheus.Labels{
 			accountLabel: pubId,
+			sourceLabel:  source,
 			codeLabel:    code,
 		}).Inc()
 	}
 }
 
-func (m *Metrics) RecordHttpCounter() {
-	m.httpCounter.Inc()
-}
-
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
-	m.httpCounter = newHttpCounter(cfg, reg)
 	m.rejectedBids = newCounter(cfg, reg,
 		"rejected_bids",
 		"Count of rejected bids by publisher id, bidder and rejection reason code",
@@ -201,9 +187,9 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		[]string{bidderLabel, vastTagTypeLabel})
 
 	m.dynamicFetchFailure = newCounter(cfg, reg,
-		"floors_account_fetch_err",
-		"Count of failures in case of dynamic fetch labeled by account",
-		[]string{codeLabel, accountLabel})
+		"floors_account_status",
+		"Count of floor validation status labeled by account, source and reason code",
+		[]string{accountLabel, codeLabel, sourceLabel})
 
 	m.adapterDuplicateBidIDCounter = newCounter(cfg, reg,
 		"duplicate_bid_ids",

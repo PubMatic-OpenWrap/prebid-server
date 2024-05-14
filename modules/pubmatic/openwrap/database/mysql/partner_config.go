@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // return the list of active server side header bidding partners
@@ -65,9 +65,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[st
 			partnerConfigMap[partnerID][models.PREBID_PARTNER_NAME] = prebidPartnerName
 			partnerConfigMap[partnerID][models.BidderCode] = bidderCode
 			partnerConfigMap[partnerID][models.IsAlias] = strconv.Itoa(isAlias)
-			if prebidPartnerName != models.BidderVASTBidder {
-				partnerConfigMap[partnerID][models.VENDORID] = strconv.Itoa(vendorID)
-			}
+			partnerConfigMap[partnerID][models.VENDORID] = strconv.Itoa(vendorID)
 		}
 	}
 
