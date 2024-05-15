@@ -267,7 +267,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.signalStatus = newCounter(cfg, promRegistry,
 		"signal_status",
 		"Count signal status for applovinmax requests",
-		[]string{pubIDLabel, profileIDLabel, signalTypeLabel})
+		[]string{pubIDLabel, signalTypeLabel})
 
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
