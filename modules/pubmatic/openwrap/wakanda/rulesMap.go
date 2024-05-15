@@ -103,8 +103,8 @@ func getNewRulesMap(config Wakanda) *rulesMap {
 	obj := &rulesMap{
 		rules: make(map[string]*wakandaRule),
 	}
-	cleanup := time.Duration(config.CleanupFrequency) * time.Minute
-	maxDur := time.Duration(config.CleanupFrequency) * time.Minute
+	cleanup := time.Duration(config.CleanupFrequencyInMin) * time.Minute
+	maxDur := time.Duration(config.MaxDurationInMin) * time.Minute
 	go obj.clean(cleanup, maxDur)
 	return obj
 }

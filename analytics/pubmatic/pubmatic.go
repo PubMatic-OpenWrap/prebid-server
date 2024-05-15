@@ -75,7 +75,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
-	wakandaDebugSetter(rCtx, ao, loggerURL)
+	setWakandaObject(rCtx, ao, loggerURL)
 }
 
 // setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response

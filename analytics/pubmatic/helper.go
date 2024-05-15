@@ -104,14 +104,12 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	return nil
 }
 
-func wakandaDebugSetter(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
+func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
 	if rCtx.WakandaDebug.Enabled {
 		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
 		parseURL, _ := url.Parse(loggerURL)
 		if parseURL != nil {
 			jsonParam := parseURL.Query().Get("json")
-			// record := &WloggerRecord{}
-			// json.Unmarshal([]byte(jsonParam), record)
 			rCtx.WakandaDebug.DebugData.Logger = json.RawMessage(jsonParam)
 		}
 		bytes, _ := json.Marshal(ao.Response)
