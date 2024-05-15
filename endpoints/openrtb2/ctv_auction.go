@@ -286,8 +286,17 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
 	}
+
+	// append seatNonBids available in hook-stage-outcomes
+	seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+	ao.SeatNonBid = seatNonBid.Get()
+
+	// adding seatNonBids in response.Ext based on 'returnallbidstatus' flag
+	err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+	if err != nil {
+		util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
+	}
 	ao.Response = response
-	// TODO - add seatNonBids in response.Ext
 
 	// Response Generation
 	enc := json.NewEncoder(w)

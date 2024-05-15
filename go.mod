@@ -53,7 +53,6 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
 	github.com/modern-go/reflect2 v1.0.2
-	github.com/prebid/openrtb/v19 v19.0.0
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
