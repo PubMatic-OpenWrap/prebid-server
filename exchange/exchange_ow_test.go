@@ -98,6 +98,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 									ID:      "reject_b.a.com.a.com.b.c.d.a.com",
 									ADomain: []string{"b.a.com.a.com.b.c.d.a.com"},
 								},
+								BidMeta: &openrtb_ext.ExtBidPrebidMeta{},
 							},
 							{
 								NonBidReason: int(ResponseRejectedCreativeAdvertiserBlocking),
@@ -105,6 +106,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 									ID:      "a.com_bid",
 									ADomain: []string{"a.com"},
 								},
+								BidMeta: &openrtb_ext.ExtBidPrebidMeta{},
 							},
 						},
 					},
@@ -1493,6 +1495,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							ID: "bid1",
 						},
 						NonBidReason: 301,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
 					},
 					{
 						Bid: &openrtb2.Bid{
@@ -1500,6 +1505,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							DealID: "deal1",
 						},
 						NonBidReason: 304,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
 					},
 				},
 			}),
@@ -1550,6 +1558,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							ID: "bid1",
 						},
 						NonBidReason: 301,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
 					},
 					{
 						Bid: &openrtb2.Bid{
@@ -1557,6 +1568,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							DealID: "deal1",
 						},
 						NonBidReason: 304,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
 					},
 				},
 				"appnexus": {
@@ -1565,6 +1579,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							ID: "bid1",
 						},
 						NonBidReason: 301,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "appnexus",
+						},
 					},
 					{
 						Bid: &openrtb2.Bid{
@@ -1572,6 +1589,9 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 							DealID: "deal1",
 						},
 						NonBidReason: 304,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "appnexus",
+						},
 					},
 				},
 			}),

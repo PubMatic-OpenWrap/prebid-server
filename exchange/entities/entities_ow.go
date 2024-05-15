@@ -2,7 +2,16 @@ package entities
 
 import "github.com/prebid/prebid-server/v2/openrtb_ext"
 
-func GetNonBidParamsFromPbsOrtbBid(bid *PbsOrtbBid) openrtb_ext.NonBidParams {
+// GetNonBidParamsFromPbsOrtbBid function returns NonBidParams from PbsOrtbBid
+func GetNonBidParamsFromPbsOrtbBid(bid *PbsOrtbBid, seat string) openrtb_ext.NonBidParams {
+	adapterCode := seat
+	if bid.AlternateBidderCode != "" {
+		adapterCode = string(openrtb_ext.BidderName(bid.AlternateBidderCode))
+	}
+	if bid.BidMeta == nil {
+		bid.BidMeta = &openrtb_ext.ExtBidPrebidMeta{}
+	}
+	bid.BidMeta.AdapterCode = adapterCode
 	return openrtb_ext.NonBidParams{
 		Bid:               bid.Bid,
 		OriginalBidCPM:    bid.OriginalBidCPM,
