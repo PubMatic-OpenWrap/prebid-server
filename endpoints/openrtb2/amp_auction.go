@@ -287,7 +287,6 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
 		seatNonBid.Append(auctionResponse.SeatNonBid)
-
 	}
 	ao.AuctionResponse = response
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)

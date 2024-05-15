@@ -18,7 +18,6 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-
 	uuid "github.com/satori/go.uuid"
 )
 
