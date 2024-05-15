@@ -26,6 +26,7 @@ const (
 	ResponseRejectedGeneral                      openrtb3.NoBidReason = 300 // Response Rejected - General
 	ResponseRejectedBelowFloor                   openrtb3.NoBidReason = 301 // Response Rejected - Below Floor
 	ResponseRejectedDuplicateBid                 openrtb3.NoBidReason = 302 // Response Rejected - Duplicate
+	ResponseRejectedInvalidCategoryMapping       openrtb3.NoBidReason = 303 // Response Rejected - Category Mapping Invalid
 	ResponseRejectedBelowDealFloor               openrtb3.NoBidReason = 304 // Bid was Below Deal Floor
 	ResponseRejectedInvalidCreative              openrtb3.NoBidReason = 350 // Response Rejected - Invalid Creative
 	ResponseRejectedCreativeSizeNotAllowed       openrtb3.NoBidReason = 351 // Response Rejected - Invalid Creative (Size Not Allowed)

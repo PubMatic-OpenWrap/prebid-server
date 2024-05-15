@@ -1084,23 +1084,8 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				duration = bid.BidVideo.Duration
 				category = bid.BidVideo.PrimaryCategory
 			}
-			nonBidParams := openrtb_ext.NonBidParams{
-				Bid:               bid.Bid,
-				NonBidReason:      int(ResponseRejectedCategoryMappingInvalid),
-				OriginalBidCPM:    bid.OriginalBidCPM,
-				OriginalBidCur:    bid.OriginalBidCur,
-				DealPriority:      bid.DealPriority,
-				DealTierSatisfied: bid.DealTierSatisfied,
-				GeneratedBidID:    bid.GeneratedBidID,
-				TargetBidderCode:  bid.TargetBidderCode,
-				OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
-				BidMeta:           bid.BidMeta,
-				BidType:           bid.BidType,
-				BidTargets:        bid.BidTargets,
-				BidVideo:          bid.BidVideo,
-				BidEvents:         bid.BidEvents,
-				BidFloors:         bid.BidFloors,
-			}
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+			nonBidParams.NonBidReason = int(ResponseRejectedCategoryMappingInvalid)
 
 			if brandCatExt.WithCategory && category == "" {
 				bidIabCat := bid.Bid.Cat
@@ -1396,46 +1381,16 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 				Message: fmt.Sprintf("bid rejected: %s", err.Error()),
 			}
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-				Bid:               bid.Bid,
-				NonBidReason:      int(ResponseRejectedGeneral),
-				OriginalBidCPM:    bid.OriginalBidCPM,
-				OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
-				OriginalBidCur:    bid.OriginalBidCur,
-				DealPriority:      bid.DealPriority,
-				DealTierSatisfied: bid.DealTierSatisfied,
-				GeneratedBidID:    bid.GeneratedBidID,
-				TargetBidderCode:  bid.TargetBidderCode,
-				BidMeta:           bid.BidMeta,
-				BidType:           bid.BidType,
-				BidTargets:        bid.BidTargets,
-				BidVideo:          bid.BidVideo,
-				BidEvents:         bid.BidEvents,
-				BidFloors:         bid.BidFloors,
-			})
-			seatNonBids.AddBid(nonBid, adapter.String())
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+			nonBidParams.NonBidReason = int(ResponseRejectedGeneral)
+			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}
 		if e.bidValidationEnforcement.BannerCreativeMaxSize == config.ValidationEnforce && bid.BidType == openrtb_ext.BidTypeBanner {
 			if !e.validateBannerCreativeSize(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.BannerCreativeMaxSize) {
-				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:               bid.Bid,
-					NonBidReason:      int(ResponseRejectedCreativeSizeNotAllowed),
-					OriginalBidCPM:    bid.OriginalBidCPM,
-					OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
-					OriginalBidCur:    bid.OriginalBidCur,
-					DealPriority:      bid.DealPriority,
-					DealTierSatisfied: bid.DealTierSatisfied,
-					GeneratedBidID:    bid.GeneratedBidID,
-					TargetBidderCode:  bid.TargetBidderCode,
-					BidMeta:           bid.BidMeta,
-					BidType:           bid.BidType,
-					BidTargets:        bid.BidTargets,
-					BidVideo:          bid.BidVideo,
-					BidEvents:         bid.BidEvents,
-					BidFloors:         bid.BidFloors,
-				})
-				seatNonBids.AddBid(nonBid, adapter.String())
+				nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+				nonBidParams.NonBidReason = int(ResponseRejectedCreativeSizeNotAllowed)
+				seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 				continue // Don't add bid to result
 			}
 		} else if e.bidValidationEnforcement.BannerCreativeMaxSize == config.ValidationWarn && bid.BidType == openrtb_ext.BidTypeBanner {
@@ -1444,24 +1399,9 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 		if _, ok := impExtInfoMap[bid.Bid.ImpID]; ok {
 			if e.bidValidationEnforcement.SecureMarkup == config.ValidationEnforce && (bid.BidType == openrtb_ext.BidTypeBanner || bid.BidType == openrtb_ext.BidTypeVideo) {
 				if !e.validateBidAdM(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.SecureMarkup) {
-					nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-						Bid:               bid.Bid,
-						NonBidReason:      int(ResponseRejectedCreativeNotSecure),
-						OriginalBidCPM:    bid.OriginalBidCPM,
-						OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
-						OriginalBidCur:    bid.OriginalBidCur,
-						DealPriority:      bid.DealPriority,
-						DealTierSatisfied: bid.DealTierSatisfied,
-						GeneratedBidID:    bid.GeneratedBidID,
-						TargetBidderCode:  bid.TargetBidderCode,
-						BidMeta:           bid.BidMeta,
-						BidType:           bid.BidType,
-						BidTargets:        bid.BidTargets,
-						BidVideo:          bid.BidVideo,
-						BidEvents:         bid.BidEvents,
-						BidFloors:         bid.BidFloors,
-					})
-					seatNonBids.AddBid(nonBid, adapter.String())
+					nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+					nonBidParams.NonBidReason = int(ResponseRejectedCreativeNotSecure)
+					seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 					continue // Don't add bid to result
 				}
 			} else if e.bidValidationEnforcement.SecureMarkup == config.ValidationWarn && (bid.BidType == openrtb_ext.BidTypeBanner || bid.BidType == openrtb_ext.BidTypeVideo) {

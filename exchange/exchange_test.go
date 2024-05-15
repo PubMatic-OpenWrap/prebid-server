@@ -2223,10 +2223,10 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 
 	aucResponse, err := ex.HoldAuction(ctx, auctionRequest, debugLog)
 	var bid *openrtb2.BidResponse
-	var bidExt *openrtb_ext.ExtBidResponse
+	var seatnonbid *openrtb_ext.NonBidCollection
 	if aucResponse != nil {
 		bid = aucResponse.BidResponse
-		bidExt = aucResponse.ExtBidResponse
+		seatnonbid = &aucResponse.SeatNonBid
 	}
 	if len(spec.Response.Error) > 0 && spec.Response.Bids == nil {
 		if err.Error() != spec.Response.Error {
@@ -2324,8 +2324,8 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		}
 		assert.Equal(t, expectedBidRespExt.Errors, actualBidRespExt.Errors, "Expected errors from response ext do not match")
 	}
-	if expectedBidRespExt.Prebid != nil {
-		assert.ElementsMatch(t, expectedBidRespExt.Prebid.SeatNonBid, bidExt.Prebid.SeatNonBid, "Expected seatNonBids from response ext do not match")
+	if len(spec.Response.SeatNonBids) > 0 {
+		assert.ElementsMatch(t, seatnonbid.Get(), spec.Response.SeatNonBids, "Expected seatNonBids from response ext do not match")
 	}
 }
 
@@ -5687,9 +5687,10 @@ type exchangeRequest struct {
 }
 
 type exchangeResponse struct {
-	Bids  *openrtb2.BidResponse `json:"bids"`
-	Error string                `json:"error,omitempty"`
-	Ext   json.RawMessage       `json:"ext,omitempty"`
+	Bids        *openrtb2.BidResponse    `json:"bids"`
+	Error       string                   `json:"error,omitempty"`
+	Ext         json.RawMessage          `json:"ext,omitempty"`
+	SeatNonBids []openrtb_ext.SeatNonBid `json:"seatnonbids,omitempty"`
 }
 
 type exchangeServer struct {

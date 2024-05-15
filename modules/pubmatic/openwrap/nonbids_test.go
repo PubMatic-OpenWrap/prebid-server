@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -140,9 +139,8 @@ func TestPrepareSeatNonBids(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := prepareSeatNonBids(tt.args.rctx); !reflect.DeepEqual(got, tt.seatNonBids) {
-				t.Errorf("prepareSeatNonBids() = %v, want %v", got, tt.seatNonBids)
-			}
+			got := prepareSeatNonBids(tt.args.rctx)
+			assert.Equal(t, tt.seatNonBids, got, "mismatched seatnonbids")
 		})
 	}
 }

@@ -1453,7 +1453,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 	tests := []struct {
 		name                string
 		args                args
-		expectedseatNonBids *openrtb_ext.NonBidCollection
+		expectedseatNonBids openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "nil rejectedBids",
@@ -1461,160 +1461,126 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 				rejectedBids: nil,
 				seatNonBids:  &openrtb_ext.NonBidCollection{},
 			},
-			expectedseatNonBids: &openrtb_ext.NonBidCollection{},
+			expectedseatNonBids: openrtb_ext.NonBidCollection{},
 		},
-		// {
-		// 	name: "floors one rejectedBids in seatnonbid",
-		// 	args: args{
-		// 		rejectedBids: []*entities.PbsOrtbSeatBid{
-		// 			{
-		// 				Bids: []*entities.PbsOrtbBid{
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID: "bid1",
-		// 						},
-		// 					},
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID:     "bid2",
-		// 							DealID: "deal1",
-		// 						},
-		// 					},
-		// 				},
-		// 				Seat: "pubmatic",
-		// 			},
-		// 		},
-		// 		seatNonBids: &openrtb_ext.NonBidCollection{},
-		// 	},
-		// 	expectedseatNonBids: &nonBids{
-		// 		seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-		// 			"pubmatic": {
-		// 				{
-		// 					StatusCode: 301,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:   "bid1",
-		// 								Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 				{
-		// 					StatusCode: 304,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:     "bid2",
-		// 								DealID: "deal1",
-		// 								Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
-		// {
-		// 	name: "floors two rejectedBids in seatnonbid",
-		// 	args: args{
-		// 		rejectedBids: []*entities.PbsOrtbSeatBid{
-		// 			{
-		// 				Bids: []*entities.PbsOrtbBid{
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID: "bid1",
-		// 						},
-		// 					},
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID:     "bid2",
-		// 							DealID: "deal1",
-		// 						},
-		// 					},
-		// 				},
-		// 				Seat: "pubmatic",
-		// 			},
-		// 			{
-		// 				Bids: []*entities.PbsOrtbBid{
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID: "bid1",
-		// 						},
-		// 					},
-		// 					{
-		// 						Bid: &openrtb2.Bid{
-		// 							ID:     "bid2",
-		// 							DealID: "deal1",
-		// 						},
-		// 					},
-		// 				},
-		// 				Seat: "appnexus",
-		// 			},
-		// 		},
-		// 		seatNonBids: &nonBids{},
-		// 	},
-		// 	expectedseatNonBids: &nonBids{
-		// 		seatNonBidsMap: map[string][]openrtb_ext.NonBid{
-		// 			"pubmatic": {
-		// 				{
-		// 					StatusCode: 301,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:   "bid1",
-		// 								Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 				{
-		// 					StatusCode: 304,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:     "bid2",
-		// 								DealID: "deal1",
-		// 								Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "pubmatic"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 			"appnexus": {
-		// 				{
-		// 					StatusCode: 301,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:   "bid1",
-		// 								Meta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 				{
-		// 					StatusCode: 304,
-		// 					Ext: openrtb_ext.NonBidExt{
-		// 						Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-		// 							Bid: openrtb_ext.NonBidObject{
-		// 								ID:     "bid2",
-		// 								DealID: "deal1",
-		// 								Meta:   &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
-		// 							},
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			name: "floors one rejectedBids in seatnonbid",
+			args: args{
+				rejectedBids: []*entities.PbsOrtbSeatBid{
+					{
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid1",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid2",
+									DealID: "deal1",
+								},
+							},
+						},
+						Seat: "pubmatic",
+					},
+				},
+				seatNonBids: &openrtb_ext.NonBidCollection{},
+			},
+			expectedseatNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid: &openrtb2.Bid{
+							ID: "bid1",
+						},
+						NonBidReason: 301,
+					},
+					{
+						Bid: &openrtb2.Bid{
+							ID:     "bid2",
+							DealID: "deal1",
+						},
+						NonBidReason: 304,
+					},
+				},
+			}),
+		},
+		{
+			name: "floors two rejectedBids in seatnonbid",
+			args: args{
+				rejectedBids: []*entities.PbsOrtbSeatBid{
+					{
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid1",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid2",
+									DealID: "deal1",
+								},
+							},
+						},
+						Seat: "pubmatic",
+					},
+					{
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID: "bid1",
+								},
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:     "bid2",
+									DealID: "deal1",
+								},
+							},
+						},
+						Seat: "appnexus",
+					},
+				},
+				seatNonBids: &openrtb_ext.NonBidCollection{},
+			},
+			expectedseatNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid: &openrtb2.Bid{
+							ID: "bid1",
+						},
+						NonBidReason: 301,
+					},
+					{
+						Bid: &openrtb2.Bid{
+							ID:     "bid2",
+							DealID: "deal1",
+						},
+						NonBidReason: 304,
+					},
+				},
+				"appnexus": {
+					{
+						Bid: &openrtb2.Bid{
+							ID: "bid1",
+						},
+						NonBidReason: 301,
+					},
+					{
+						Bid: &openrtb2.Bid{
+							ID:     "bid2",
+							DealID: "deal1",
+						},
+						NonBidReason: 304,
+					},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateSeatNonBidsFloors(tt.args.seatNonBids, tt.args.rejectedBids)
-			assert.Equal(t, tt.expectedseatNonBids, tt.args.seatNonBids)
+			assert.Equal(t, tt.expectedseatNonBids, *tt.args.seatNonBids)
 		})
 	}
 }

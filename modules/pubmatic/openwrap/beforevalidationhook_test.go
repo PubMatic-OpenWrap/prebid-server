@@ -2146,305 +2146,305 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 		wantBidRequest json.RawMessage
 		doMutate       bool
 	}{
-		// {
-		// 	name: "request_with_sshb=1",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": models.RequestCtx{
-		// 					Sshb: "1",
-		// 				},
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject: false,
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "empty_module_context",
-		// 	args: args{
-		// 		ctx:        context.Background(),
-		// 		moduleCtx:  hookstage.ModuleInvocationContext{},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:        true,
-		// 		DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "rctx_is_not_present",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"test_rctx": "test",
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:        true,
-		// 		DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": models.RequestCtx{
-		// 					Endpoint: models.EndpointHybrid,
-		// 				},
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject: false,
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "Invalid_PubID_in_request",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"test"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPublisherID))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("", int(nbr.InvalidPublisherID))
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:        true,
-		// 		NbrCode:       int(nbr.InvalidPublisherID),
-		// 		Errors:        []string{"ErrInvalidPublisherID"},
-		// 		DebugMessages: nil,
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "Invalid_request_ext",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
-		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:  true,
-		// 		NbrCode: int(nbr.InvalidRequestExt),
-		// 		Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "Error_in_getting_profile_data",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-		// 			2: {
-		// 				models.PARTNER_ID:          "2",
-		// 				models.PREBID_PARTNER_NAME: "appnexus",
-		// 				models.BidderCode:          "appnexus",
-		// 				models.SERVER_SIDE_FLAG:    "1",
-		// 				models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-		// 				models.TIMEOUT:             "200",
-		// 			},
-		// 			-1: {
-		// 				models.PLATFORM_KEY:     models.PLATFORM_APP,
-		// 				models.DisplayVersionID: "1",
-		// 			},
-		// 		}, errors.New("test"))
-		// 		//prometheus metrics
-		// 		mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
-		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-		// 		mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:  true,
-		// 		NbrCode: int(nbr.InvalidProfileConfiguration),
-		// 		Errors:  []string{"failed to get profile data: test"},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "got_empty_profileData_from_DB",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
-		// 		//prometheus metrics
-		// 		mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
-		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-		// 		mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:  true,
-		// 		NbrCode: int(nbr.InvalidProfileConfiguration),
-		// 		Errors:  []string{"failed to get profile data: received empty data"},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "platform_is_not_present_in_request_then_reject_the_request",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-		// 			2: {
-		// 				models.PARTNER_ID:          "2",
-		// 				models.PREBID_PARTNER_NAME: "appnexus",
-		// 				models.BidderCode:          "appnexus",
-		// 				models.SERVER_SIDE_FLAG:    "1",
-		// 				models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-		// 				models.TIMEOUT:             "200",
-		// 			},
-		// 			-1: {
-		// 				models.DisplayVersionID: "1",
-		// 			},
-		// 		}, nil)
-		// 		//prometheus metrics
-		// 		mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-		// 		mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
-		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-		// 		mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:  true,
-		// 		NbrCode: int(nbr.InvalidPlatform),
-		// 		Errors:  []string{"failed to get platform data"},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "All_partners_throttled",
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		moduleCtx: hookstage.ModuleInvocationContext{
-		// 			ModuleContext: hookstage.ModuleContext{
-		// 				"rctx": rctx,
-		// 			},
-		// 		},
-		// 		bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-		// 	},
-		// 	fields: fields{
-		// 		cache:        mockCache,
-		// 		metricEngine: mockEngine,
-		// 	},
-		// 	setup: func() {
-		// 		mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-		// 			2: {
-		// 				models.PARTNER_ID:          "2",
-		// 				models.PREBID_PARTNER_NAME: "appnexus",
-		// 				models.BidderCode:          "appnexus",
-		// 				models.SERVER_SIDE_FLAG:    "1",
-		// 				models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-		// 				models.TIMEOUT:             "200",
-		// 				models.THROTTLE:            "0",
-		// 			},
-		// 			-1: {
-		// 				models.DisplayVersionID: "1",
-		// 				models.PLATFORM_KEY:     models.PLATFORM_APP,
-		// 			},
-		// 		}, nil)
-		// 		//prometheus metrics
-		// 		mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-		// 		mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
-		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
-		// 		mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
-		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-		// 		mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-		// 	},
-		// 	want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		// 		Reject:  true,
-		// 		NbrCode: int(nbr.AllPartnerThrottled),
-		// 		Errors:  []string{"All adapters throttled"},
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "request_with_sshb=1",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Sshb: "1",
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty_module_context",
+			args: args{
+				ctx:        context.Background(),
+				moduleCtx:  hookstage.ModuleInvocationContext{},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        true,
+				DebugMessages: []string{"error: module-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "rctx_is_not_present",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"test_rctx": "test",
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        true,
+				DebugMessages: []string{"error: request-ctx not found in handleBeforeValidationHook()"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "hybrid_request_module_should_not_reject_request_and_return_without_executing_module",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							Endpoint: models.EndpointHybrid,
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid_PubID_in_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"test"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPublisherID))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("", int(nbr.InvalidPublisherID))
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:        true,
+				NbrCode:       int(nbr.InvalidPublisherID),
+				Errors:        []string{"ErrInvalidPublisherID"},
+				DebugMessages: nil,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid_request_ext",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: int(nbr.InvalidRequestExt),
+				Errors:  []string{"failed to get request ext: failed to decode request.ext : json: cannot unmarshal number into Go value of type models.RequestExt"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error_in_getting_profile_data",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+						models.DisplayVersionID: "1",
+					},
+				}, errors.New("test"))
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: int(nbr.InvalidProfileConfiguration),
+				Errors:  []string{"failed to get profile data: test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "got_empty_profileData_from_DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: int(nbr.InvalidProfileConfiguration),
+				Errors:  []string{"failed to get profile data: received empty data"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "platform_is_not_present_in_request_then_reject_the_request",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
+				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
+				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: int(nbr.InvalidPlatform),
+				Errors:  []string{"failed to get platform data"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "All_partners_throttled",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": rctx,
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+						models.THROTTLE:            "0",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_APP,
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+			},
+			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+				Reject:  true,
+				NbrCode: int(nbr.AllPartnerThrottled),
+				Errors:  []string{"All adapters throttled"},
+			},
+			wantErr: false,
+		},
 		{
 			name: "Some_partners_filtered",
 			args: args{

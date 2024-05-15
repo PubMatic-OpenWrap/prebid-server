@@ -7,7 +7,7 @@ all: deps test build-modules build
 # deps will clean out the vendor directory and use go mod for a fresh install
 deps:
 	GOPROXY="https://proxy.golang.org" go mod vendor -v && go mod tidy -v
-	
+
 # test will ensure that all of our dependencies are available and run validate.sh
 test: deps
 # If there is no indentation, Make will treat it as a directive for itself; otherwise, it's regarded as a shell script.
@@ -37,10 +37,10 @@ format:
 # formatcheck runs format for diagnostics, without modifying the code
 formatcheck:
 	./scripts/format.sh -f false
-	
+
 mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature
 
-# export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN   
+# export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN
 mockgeninstall:
 	go install github.com/golang/mock/mockgen@v1.6.0
 
@@ -59,7 +59,7 @@ mockgenmetrics:
 
 mockgengeodb:
 	mkdir -p modules/pubmatic/openwrap/geodb/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
 
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock

@@ -141,25 +141,10 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						nonBidParams := openrtb_ext.NonBidParams{
-							Bid:               bid.Bid,
-							NonBidReason:      int(ResponseRejectedCreativeAdvertiserBlocking),
-							OriginalBidCPM:    bid.OriginalBidCPM,
-							OriginalBidCur:    bid.OriginalBidCur,
-							DealPriority:      bid.DealPriority,
-							DealTierSatisfied: bid.DealTierSatisfied,
-							GeneratedBidID:    bid.GeneratedBidID,
-							TargetBidderCode:  bid.TargetBidderCode,
-							OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
-							BidMeta:           bid.BidMeta,
-							BidType:           bid.BidType,
-							BidTargets:        bid.BidTargets,
-							BidVideo:          bid.BidVideo,
-							BidEvents:         bid.BidEvents,
-							BidFloors:         bid.BidFloors,
-						}
-						nonBid := openrtb_ext.NewNonBid(nonBidParams)
-						seatNonBids.AddBid(nonBid, seatBid.Seat)
+						nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+						nonBidParams.NonBidReason = int(ResponseRejectedCreativeAdvertiserBlocking)
+						seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seatBid.Seat)
+
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -248,25 +233,9 @@ func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejected
 			if pbsRejBid.Bid.DealID != "" {
 				rejectionReason = ResponseRejectedBelowDealFloor
 			}
-			nonBidParams := openrtb_ext.NonBidParams{
-				Bid:               pbsRejBid.Bid,
-				NonBidReason:      int(rejectionReason),
-				OriginalBidCPM:    pbsRejBid.OriginalBidCPM,
-				OriginalBidCur:    pbsRejBid.OriginalBidCur,
-				DealPriority:      pbsRejBid.DealPriority,
-				DealTierSatisfied: pbsRejBid.DealTierSatisfied,
-				GeneratedBidID:    pbsRejBid.GeneratedBidID,
-				TargetBidderCode:  pbsRejBid.TargetBidderCode,
-				OriginalBidCPMUSD: pbsRejBid.OriginalBidCPMUSD,
-				BidMeta:           pbsRejBid.BidMeta,
-				BidType:           pbsRejBid.BidType,
-				BidTargets:        pbsRejBid.BidTargets,
-				BidVideo:          pbsRejBid.BidVideo,
-				BidEvents:         pbsRejBid.BidEvents,
-				BidFloors:         pbsRejBid.BidFloors,
-			}
-			nonBid := openrtb_ext.NewNonBid(nonBidParams)
-			seatNonBids.AddBid(nonBid, pbsRejSeatBid.Seat)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid)
+			nonBidParams.NonBidReason = int(rejectionReason)
+			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }
@@ -381,22 +350,9 @@ func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-				Bid:               pbsRejBid.Bid,
-				NonBidReason:      int(ResponseRejectedBidPriceTooHigh),
-				OriginalBidCPM:    pbsRejBid.OriginalBidCPM,
-				OriginalBidCur:    pbsRejBid.OriginalBidCur,
-				DealPriority:      pbsRejBid.DealPriority,
-				DealTierSatisfied: pbsRejBid.DealTierSatisfied,
-				OriginalBidCPMUSD: pbsRejBid.OriginalBidCPMUSD,
-				BidMeta:           pbsRejBid.BidMeta,
-				BidType:           pbsRejBid.BidType,
-				BidTargets:        pbsRejBid.BidTargets,
-				BidVideo:          pbsRejBid.BidVideo,
-				BidEvents:         pbsRejBid.BidEvents,
-				BidFloors:         pbsRejBid.BidFloors,
-			})
-			seatNonBids.AddBid(nonBid, pbsRejSeatBid.Seat)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid)
+			nonBidParams.NonBidReason = int(ResponseRejectedBidPriceTooHigh)
+			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }
