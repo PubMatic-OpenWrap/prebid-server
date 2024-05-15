@@ -1,7 +1,6 @@
 package pubmatic
 
 import (
-	"encoding/json"
 	"runtime/debug"
 	"sync"
 
@@ -67,22 +66,16 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
 	}
 
-	url, headers, wlog := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
-	if url == "" {
+	loggerURL, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
+	if loggerURL == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 		return
 	}
 
-	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
-	if rCtx.WakandaDebug.Enabled {
-		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
-		rCtx.WakandaDebug.DebugData.Logger, _ = json.Marshal(wlog)
-		bytes, _ := json.Marshal(ao.Response)
-		rCtx.WakandaDebug.DebugData.HTTPResponseBody = string(bytes)
-		rCtx.WakandaDebug.DebugData.OpenRTB = ao.RequestWrapper.BidRequest
-		rCtx.WakandaDebug.WriteLogToFiles()
-	}
+	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
+
+	wakandaDebugSetter(rCtx, ao, loggerURL)
 }
 
 // setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response

@@ -66,7 +66,7 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		}
 
 		if !rCtx.LoggerDisabled {
-			owlogger, _, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
+			owlogger, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
 			if rCtx.Endpoint == models.EndpointAppLovinMax {
 				*bidResponse = *orignalMaxBidResponse
 			}
