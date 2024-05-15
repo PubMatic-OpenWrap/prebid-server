@@ -325,6 +325,20 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
+func TestRecordSignalDataStatus(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordSignalDataStatus("5890", models.MissingSignal)
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "signal_status", m.signalStatus,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:      "5890",
+			signalTypeLabel: models.MissingSignal,
+		})
+}
+
 func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {

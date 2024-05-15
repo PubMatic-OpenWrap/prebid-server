@@ -540,4 +540,6 @@ const (
 	TypeRewarded     = "rewarded"
 	SignalData       = "signaldata"
 	OwSspBurl        = "owsspburl"
+	MissingSignal    = "missing"
+	InvalidSignal    = "invalid"
 )

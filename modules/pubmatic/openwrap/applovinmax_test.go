@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -554,32 +556,55 @@ func TestAddSignalDataInRequest(t *testing.T) {
 }
 
 func TestGetSignalData(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type args struct {
 		requestBody []byte
+		rctx        models.RequestCtx
 	}
 	tests := []struct {
-		name string
-		args args
-		want *openrtb2.BidRequest
+		name  string
+		args  args
+		setup func()
+		want  *openrtb2.BidRequest
 	}{
 		{
 			name: "incorrect body",
 			args: args{
 				requestBody: []byte(`{"id":"123","user":Passed","segment":[{"signal":{BIDDING_SIGNA}]}],"ext":{"gdpr":0}}}`),
+				rctx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+				},
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("", models.MissingSignal)
 			},
 			want: nil,
 		},
 		{
 			name: "signal parsing fail",
 			args: args{
-				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{BIDDING_SIGNA}"]}],"ext":{"gdpr":0}}}`),
+				requestBody: []byte(`{"id":"123","app":{"publisher":{"id":"5890"}},"user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{BIDDING_SIGNAL}"]}],"ext":{"gdpr":0}}}`),
+				rctx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+				},
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", models.InvalidSignal)
 			},
 			want: nil,
 		},
 		{
 			name: "single user.data with signal with incorrect signal",
 			args: args{
-				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":{BIDDING_SIGNA}]}],"ext":{"gdpr":0}}}`),
+				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":{BIDDING_SIGNAL}]}],"ext":{"gdpr":0}}}`),
+				rctx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+				},
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("", models.MissingSignal)
 			},
 			want: nil,
 		},
@@ -587,6 +612,9 @@ func TestGetSignalData(t *testing.T) {
 			name: "single user.data with signal",
 			args: args{
 				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{\"device\":{\"devicetype\":4,\"w\":393,\"h\":852}}"}]}],"ext":{"gdpr":0}}}`),
+				rctx: models.RequestCtx{
+					MetricsEngine: mockEngine,
+				},
 			},
 			want: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
@@ -599,27 +627,42 @@ func TestGetSignalData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getSignalData(tt.args.requestBody)
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getSignalData(tt.args.requestBody, tt.args.rctx)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
 func TestUpdateMaxAppLovinRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	type args struct {
 		requestBody []byte
+		rctx        models.RequestCtx
 	}
 	tests := []struct {
-		name string
-		args args
-		want []byte
+		name  string
+		args  args
+		setup func()
+		want  []byte
 	}{
 		{
 			name: "signal not present",
 			args: args{
-				requestBody: []byte(``),
+				requestBody: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"applovin_mediation","displaymanagerver":"2.3"}]}`),
+				rctx: models.RequestCtx{
+					ProfileIDStr:  "1234",
+					MetricsEngine: mockEngine,
+				},
 			},
-			want: []byte(``),
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", models.MissingSignal)
+			},
+			want: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"PubMatic_OpenWrap_SDK"}]}`),
 		},
 		{
 			name: "invalid request body",
@@ -638,7 +681,10 @@ func TestUpdateMaxAppLovinRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateAppLovinMaxRequest(tt.args.requestBody)
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := updateAppLovinMaxRequest(tt.args.requestBody, tt.args.rctx)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -957,6 +1003,45 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := applyAppLovinMaxResponse(tt.args.rctx, tt.args.bidResponse)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestModifyRequestBody(t *testing.T) {
+	type args struct {
+		requestBody []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want []byte
+	}{
+		{
+			name: "empty requestbody",
+			args: args{
+				requestBody: []byte(``),
+			},
+			want: []byte(``),
+		},
+		{
+			name: "applovinmax displaymanager",
+			args: args{
+				requestBody: []byte(`{"imp":[{"displaymanager":"applovin_mediation","displaymanagerver":"91.1"}]}`),
+			},
+			want: []byte(`{"imp":[{"displaymanager":"PubMatic_OpenWrap_SDK"}]}`),
+		},
+		{
+			name: "applovinmax displaymanager and bannertype rewarded",
+			args: args{
+				requestBody: []byte(`{"imp":[{"displaymanager":"applovin_mediation","displaymanagerver":"91.1","banner":{"ext":{"bannertype":"rewarded"},"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900,"api":[5,6,7]}}]}`),
+			},
+			want: []byte(`{"imp":[{"displaymanager":"PubMatic_OpenWrap_SDK"}]}`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := modifyRequestBody(tt.args.requestBody)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

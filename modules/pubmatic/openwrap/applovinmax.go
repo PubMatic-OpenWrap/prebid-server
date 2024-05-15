@@ -9,14 +9,16 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func getSignalData(requestBody []byte) *openrtb2.BidRequest {
+func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), models.MissingSignal)
 		return nil
 	}
 
 	signalData := &openrtb2.BidRequest{}
 	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), models.InvalidSignal)
 		return nil
 	}
 	return signalData
@@ -218,10 +220,10 @@ func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidReq
 	}
 }
 
-func updateAppLovinMaxRequest(requestBody []byte) []byte {
-	signalData := getSignalData(requestBody)
+func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
+	signalData := getSignalData(requestBody, rctx)
 	if signalData == nil {
-		return requestBody
+		return modifyRequestBody(requestBody)
 	}
 
 	maxRequest := &openrtb2.BidRequest{}
@@ -284,4 +286,23 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 		},
 	}
 	return bidResponse
+}
+
+func getAppPublisherID(requestBody []byte) string {
+	if pubId, err := jsonparser.GetString(requestBody, "app", "publisher", "id"); err == nil && len(pubId) > 0 {
+		return pubId
+	}
+	return ""
+}
+
+// modifyRequestBody modifies displaymanger and banner object in req if signal is missing/invalid
+func modifyRequestBody(requestBody []byte) []byte {
+	if body, err := jsonparser.Set(requestBody, []byte(strconv.Quote("PubMatic_OpenWrap_SDK")), "imp", "[0]", "displaymanager"); err == nil {
+		requestBody = jsonparser.Delete(body, "imp", "[0]", "displaymanagerver")
+	}
+
+	if bannertype, err := jsonparser.GetString(requestBody, "imp", "[0]", "banner", "ext", "bannertype"); err == nil && bannertype == models.TypeRewarded {
+		requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "banner")
+	}
+	return requestBody
 }
