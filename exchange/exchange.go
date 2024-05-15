@@ -1084,7 +1084,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				duration = bid.BidVideo.Duration
 				category = bid.BidVideo.PrimaryCategory
 			}
-			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, seatBid.Seat)
 			nonBidParams.NonBidReason = int(ResponseRejectedCategoryMappingInvalid)
 
 			if brandCatExt.WithCategory && category == "" {
@@ -1381,14 +1381,14 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 				Message: fmt.Sprintf("bid rejected: %s", err.Error()),
 			}
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
-			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 			nonBidParams.NonBidReason = int(ResponseRejectedGeneral)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}
 		if e.bidValidationEnforcement.BannerCreativeMaxSize == config.ValidationEnforce && bid.BidType == openrtb_ext.BidTypeBanner {
 			if !e.validateBannerCreativeSize(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.BannerCreativeMaxSize) {
-				nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+				nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 				nonBidParams.NonBidReason = int(ResponseRejectedCreativeSizeNotAllowed)
 				seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 				continue // Don't add bid to result
@@ -1399,7 +1399,7 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 		if _, ok := impExtInfoMap[bid.Bid.ImpID]; ok {
 			if e.bidValidationEnforcement.SecureMarkup == config.ValidationEnforce && (bid.BidType == openrtb_ext.BidTypeBanner || bid.BidType == openrtb_ext.BidTypeVideo) {
 				if !e.validateBidAdM(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.SecureMarkup) {
-					nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+					nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 					nonBidParams.NonBidReason = int(ResponseRejectedCreativeNotSecure)
 					seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 					continue // Don't add bid to result

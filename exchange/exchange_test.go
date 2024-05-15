@@ -2610,6 +2610,7 @@ func TestCategoryMapping(t *testing.T) {
 				BidType:           "video",
 				BidVideo:          &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "", VASTTagID: ""},
 				OriginalBidCPMUSD: 40,
+				BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 			},
 		},
 	})
@@ -2752,6 +2753,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 				BidType:           "video",
 				BidVideo:          &openrtb_ext.ExtBidPrebidVideo{Duration: 30, PrimaryCategory: "", VASTTagID: ""},
 				OriginalBidCPMUSD: 30,
+				BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 			},
 		},
 	})
@@ -3206,6 +3208,7 @@ func TestBidRejectionErrors(t *testing.T) {
 						VASTTagID:       "",
 					},
 					OriginalBidCPMUSD: 10,
+					BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 				})
 				seatNonBid.AddBid(nonBid, "appnexus")
 				return seatNonBid
@@ -3235,6 +3238,7 @@ func TestBidRejectionErrors(t *testing.T) {
 						VASTTagID:       "",
 					},
 					OriginalBidCPMUSD: 10,
+					BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid
@@ -3264,6 +3268,7 @@ func TestBidRejectionErrors(t *testing.T) {
 						VASTTagID:       "",
 					},
 					OriginalBidCPMUSD: 10,
+					BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid
@@ -3295,6 +3300,7 @@ func TestBidRejectionErrors(t *testing.T) {
 						VASTTagID:       "",
 					},
 					OriginalBidCPMUSD: 10,
+					BidMeta:           &openrtb_ext.ExtBidPrebidMeta{},
 				})
 				seatNonBid.AddBid(nonBid, "")
 				return seatNonBid
@@ -4959,6 +4965,9 @@ func TestMakeBidWithValidation(t *testing.T) {
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:          &openrtb2.Bid{},
 					NonBidReason: 300,
+					BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+						AdapterCode: "pubmatic",
+					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
 				return &seatNonBid
@@ -4977,6 +4986,9 @@ func TestMakeBidWithValidation(t *testing.T) {
 					Bid:          &openrtb2.Bid{W: 200, H: 200},
 					NonBidReason: 351,
 					BidType:      openrtb_ext.BidTypeBanner,
+					BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+						AdapterCode: "pubmatic",
+					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
 				return &seatNonBid
@@ -5004,6 +5016,9 @@ func TestMakeBidWithValidation(t *testing.T) {
 					Bid:          &openrtb2.Bid{ImpID: "1"},
 					NonBidReason: 352,
 					BidType:      openrtb_ext.BidTypeBanner,
+					BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+						AdapterCode: "pubmatic",
+					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
 				return &seatNonBid

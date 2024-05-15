@@ -141,7 +141,7 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid)
+						nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, seatBid.Seat)
 						nonBidParams.NonBidReason = int(ResponseRejectedCreativeAdvertiserBlocking)
 						seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seatBid.Seat)
 
@@ -233,7 +233,7 @@ func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejected
 			if pbsRejBid.Bid.DealID != "" {
 				rejectionReason = ResponseRejectedBelowDealFloor
 			}
-			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
 			nonBidParams.NonBidReason = int(rejectionReason)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
@@ -350,7 +350,7 @@ func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
 			nonBidParams.NonBidReason = int(ResponseRejectedBidPriceTooHigh)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
