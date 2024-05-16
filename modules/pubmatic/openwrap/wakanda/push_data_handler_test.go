@@ -12,6 +12,7 @@ import (
 )
 
 func Test_send(t *testing.T) {
+	setCommandHandler()
 	type args struct {
 		mockSFTPfunc        func(*mock_wakanda.MockCommands)
 		destinationFileName string

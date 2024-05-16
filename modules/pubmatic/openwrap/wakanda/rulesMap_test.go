@@ -62,21 +62,21 @@ func Test_rulesMap_cleanRules(t *testing.T) {
 		{
 			name: "Mixed",
 			args: map[string]*wakandaRule{
-				"just_added": &wakandaRule{
+				"just_added": {
 					StartTime: now,
 				},
-				"in_between": &wakandaRule{
+				"in_between": {
 					StartTime: now.Add(-maxDuration + maxDuration/2),
 				},
-				"stale": &wakandaRule{
+				"stale": {
 					StartTime: now.Add(-maxDuration - 1),
 				},
 			},
 			want: map[string]*wakandaRule{
-				"just_added": &wakandaRule{
+				"just_added": {
 					StartTime: now,
 				},
-				"in_between": &wakandaRule{
+				"in_between": {
 					StartTime: now.Add(-maxDuration + maxDuration/2),
 				},
 			},
@@ -84,13 +84,13 @@ func Test_rulesMap_cleanRules(t *testing.T) {
 		{
 			name: "AllStale",
 			args: map[string]*wakandaRule{
-				"stale1": &wakandaRule{
+				"stale1": {
 					StartTime: now.Add(-maxDuration - 1),
 				},
-				"stale2": &wakandaRule{
+				"stale2": {
 					StartTime: now.Add(-maxDuration - 2),
 				},
-				"stale3": &wakandaRule{
+				"stale3": {
 					StartTime: now.Add(-maxDuration - 3),
 				},
 			},
@@ -138,7 +138,7 @@ func Test_rulesMap_Incr(t *testing.T) {
 			name: "key_present",
 			fields: fields{
 				rules: map[string]*wakandaRule{
-					`key1`: &wakandaRule{
+					`key1`: {
 						TraceCount: 1,
 					},
 				},
@@ -148,7 +148,7 @@ func Test_rulesMap_Incr(t *testing.T) {
 			},
 			want: want{
 				rules: map[string]*wakandaRule{
-					`key1`: &wakandaRule{
+					`key1`: {
 						TraceCount: 2,
 					},
 				},
@@ -161,7 +161,7 @@ func Test_rulesMap_Incr(t *testing.T) {
 			name: "key_expired",
 			fields: fields{
 				rules: map[string]*wakandaRule{
-					`key1`: &wakandaRule{
+					`key1`: {
 						TraceCount: CMaxTraceCount,
 					},
 				},
