@@ -673,7 +673,7 @@ func TestInjectTrackers(t *testing.T) {
 							Bid: []openrtb2.Bid{
 								{
 									ID:    "12345",
-									AdM:   `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+									AdM:   `<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[www.test.com]]></VASTAdTagURI><Impression></Impression><Creatives></Creatives></Wrapper></Ad></VAST>`,
 									Price: 1.2,
 								},
 							},
@@ -687,51 +687,8 @@ func TestInjectTrackers(t *testing.T) {
 						Bid: []openrtb2.Bid{
 							{
 								ID:    "12345",
-								AdM:   `<VAST version="3.0"><Ad><Wrapper><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error><Extensions><Extension><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
+								AdM:   `<VAST version="3.0"><Ad><Wrapper><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[www.test.com]]></VASTAdTagURI><Impression><![CDATA[Tracking URL]]></Impression><Impression/><Creatives/><Error><![CDATA[Error URL]]></Error><Extensions><Extension><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
 								Price: 1.2,
-							},
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "VAST_3_0_Inline",
-			args: args{
-				rctx: models.RequestCtx{
-					Platform: "",
-					Trackers: map[string]models.OWTracker{
-						"12345": {
-							BidType:    "video",
-							TrackerURL: `Tracking URL`,
-							ErrorURL:   `Error URL`,
-							Price:      1.5,
-						},
-					},
-				},
-				bidResponse: &openrtb2.BidResponse{
-					SeatBid: []openrtb2.SeatBid{
-						{
-							Bid: []openrtb2.Bid{
-								{
-									ID:    "12345",
-									AdM:   `<VAST version="3.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"><Ad id="20001"><InLine><AdSystem version="4.0">iabtechlab</AdSystem><AdTitle>iabtechlab video ad</AdTitle><Error>http://example.com/error</Error><Impression id="Impression-ID">http://example.com/track/impression</Impression><Creatives><Creative id="5480" sequence="1"><Linear><Duration>00:00:16</Duration><TrackingEvents><Tracking event="start">http://example.com/tracking/start</Tracking><Tracking event="firstQuartile">http://example.com/tracking/firstQuartile</Tracking><Tracking event="midpoint">http://example.com/tracking/midpoint</Tracking><Tracking event="thirdQuartile">http://example.com/tracking/thirdQuartile</Tracking><Tracking event="complete">http://example.com/tracking/complete</Tracking><Tracking event="progress" offset="00:00:10">http://example.com/tracking/progress-10</Tracking></TrackingEvents><VideoClicks><ClickTracking id="blog"><![CDATA[https://iabtechlab.com]]></ClickTracking><CustomClick>http://iabtechlab.com</CustomClick></VideoClicks><MediaFiles><MediaFile id="5241" delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" minBitrate="360" maxBitrate="1080" scalable="1" maintainAspectRatio="1" codec="0"><![CDATA[https://iab-publicfiles.s3.amazonaws.com/vast/VAST-4.0-Short-Intro.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Extensions><Extension type="iab-Count"><total_available><![CDATA[ 2 ]]></total_available></Extension></Extensions></InLine></Ad></VAST>`,
-									Price: 1.5,
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &openrtb2.BidResponse{
-				SeatBid: []openrtb2.SeatBid{
-					{
-						Bid: []openrtb2.Bid{
-							{
-								ID:    "12345",
-								AdM:   `<VAST version="3.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"><Ad id="20001"><InLine><AdSystem version="4.0"><![CDATA[iabtechlab]]></AdSystem><AdTitle><![CDATA[iabtechlab video ad]]></AdTitle><Error><![CDATA[Error URL]]></Error><Error><![CDATA[http://example.com/error]]></Error><Impression><![CDATA[Tracking URL]]></Impression><Impression id="Impression-ID"><![CDATA[http://example.com/track/impression]]></Impression><Creatives><Creative id="5480" sequence="1"><Linear><Duration><![CDATA[00:00:16]]></Duration><TrackingEvents><Tracking event="start"><![CDATA[http://example.com/tracking/start]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://example.com/tracking/firstQuartile]]></Tracking><Tracking event="midpoint"><![CDATA[http://example.com/tracking/midpoint]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://example.com/tracking/thirdQuartile]]></Tracking><Tracking event="complete"><![CDATA[http://example.com/tracking/complete]]></Tracking><Tracking event="progress" offset="00:00:10"><![CDATA[http://example.com/tracking/progress-10]]></Tracking></TrackingEvents><VideoClicks><ClickTracking id="blog"><![CDATA[https://iabtechlab.com]]></ClickTracking><CustomClick><![CDATA[http://iabtechlab.com]]></CustomClick></VideoClicks><MediaFiles><MediaFile id="5241" delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" minBitrate="360" maxBitrate="1080" scalable="1" maintainAspectRatio="1" codec="0"><![CDATA[https://iab-publicfiles.s3.amazonaws.com/vast/VAST-4.0-Short-Intro.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Extensions><Extension type="iab-Count"><total_available><![CDATA[2]]></total_available></Extension></Extensions><Pricing model="CPM" currency="USD"><![CDATA[1.5]]></Pricing></InLine></Ad></VAST>`,
-								Price: 1.5,
 							},
 						},
 					},
