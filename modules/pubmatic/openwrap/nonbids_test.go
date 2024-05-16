@@ -109,7 +109,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 								"pubmatic": {},
 							},
 						},
-						"imp2": {},
 					},
 					AdapterThrottleMap: map[string]struct{}{
 						"appnexus": {},
@@ -124,10 +123,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 					},
 				},
 				"appnexus": {
-					{
-						Bid:          &openrtb2.Bid{ImpID: "imp2"},
-						NonBidReason: int(nbr.RequestBlockedPartnerThrottle),
-					},
 					{
 						Bid:          &openrtb2.Bid{ImpID: "imp1"},
 						NonBidReason: int(nbr.RequestBlockedPartnerThrottle),
