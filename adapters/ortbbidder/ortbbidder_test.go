@@ -495,7 +495,7 @@ func TestBuilder(t *testing.T) {
 					},
 					biddersConfigMap: &biddersConfigMap{
 						biddersConfig: map[string]*bidderConfig{
-							"owortb_magnite": &bidderConfig{
+							"owortb_magnite": {
 								requestProperties: map[string]bidderProperty{
 									"adunitID": {location: []string{"ext", "adunit", "id"}},
 								},
@@ -525,7 +525,7 @@ func TestBuilder(t *testing.T) {
 					},
 					biddersConfigMap: &biddersConfigMap{
 						biddersConfig: map[string]*bidderConfig{
-							"owortb_magnite": &bidderConfig{
+							"owortb_magnite": {
 								requestProperties: map[string]bidderProperty{
 									"adunitID": {location: []string{"ext", "adunit", "id"}},
 								},

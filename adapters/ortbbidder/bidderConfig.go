@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -95,18 +94,6 @@ func prepareBiddersConfigMap(dirPath string) (*biddersConfigMap, error) {
 		biddersConfigMap.setBidderRequestProperties(bidderName, requestProperties)
 	}
 	return &biddersConfigMap, nil
-}
-
-// readFile reads the file from directory and unmarshals it into the map[string]any
-func readFile(dirPath, file string) (map[string]any, error) {
-	filePath := filepath.Join(dirPath, file)
-	fileContents, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-	var fileContentsNode map[string]any
-	err = json.Unmarshal(fileContents, &fileContentsNode)
-	return fileContentsNode, err
 }
 
 // prepareBidderRequestProperties prepares the request properties based on file-content passed as map[string]any

@@ -160,95 +160,62 @@ func TestPrepareBidderRequestProperties(t *testing.T) {
 	}
 }
 
-func Test_prepareMapperFromFiles(t *testing.T) {
-	var cleanup = func() error {
-		err := os.RemoveAll("test")
-		return err
-	}
+func TestPrepareBiddersConfigMap(t *testing.T) {
 	type want struct {
 		biddersConfigMap *biddersConfigMap
 		err              string
 	}
 	tests := []struct {
-		name    string
-		dirPath string
-		want    want
-		setup   func() error
-		cleanup func() error
+		name  string
+		want  want
+		setup func() (string, error)
 	}{
 		{
-			name:    "read_directory_fail",
-			dirPath: "invalid-directory",
+			name: "read_directory_fail",
 			want: want{
 				biddersConfigMap: nil,
-				err:              "error:[open invalid-directory: no such file or directory] dirPath:[invalid-directory]",
+				err:              "error:[open invalid-path: no such file or directory] dirPath:[invalid-path]",
 			},
-			setup:   func() error { return nil },
-			cleanup: func() error { return nil },
+			setup: func() (string, error) { return "invalid-path", nil },
 		},
 		{
-			name:    "found_file_without_.json_extension",
-			dirPath: "test",
+			name: "found_file_without_.json_extension",
 			want: want{
 				biddersConfigMap: nil,
 				err:              "error:[invalid_json_file_name] filename:[example.txt]",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/example.txt", []byte("anything"), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/example.txt", []byte("anything"), 0644)
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 		{
-			name:    "oRTB_bidder_not_found",
-			dirPath: "test",
+			name: "oRTB_bidder_not_found",
 			want: want{
 				biddersConfigMap: &biddersConfigMap{biddersConfig: make(map[string]*bidderConfig)},
 				err:              "",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/example.json", []byte("anything"), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/example.json", []byte("anything"), 0644)
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 		{
-			name:    "oRTB_bidder_found_but_invalid_json_present",
-			dirPath: "test",
+			name: "oRTB_bidder_found_but_invalid_json_present",
 			want: want{
 				biddersConfigMap: nil,
-				err:              "error:[fail_to_read_file] dir:[test] filename:[owortb_test.json] err:[invalid character 'a' looking for beginning of value]",
+				err:              "error:[fail_to_read_file]",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/owortb_test.json", []byte("any-invalid-json-data"), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/owortb_test.json", []byte("anything"), 0644)
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 		{
-			name:    "oRTB_bidder_found_but_bidder-params_are_absent",
-			dirPath: "test",
+			name: "oRTB_bidder_found_but_bidder-params_are_absent",
 			want: want{
 				biddersConfigMap: &biddersConfigMap{biddersConfig: map[string]*bidderConfig{
 					"owortb_test": {
@@ -257,42 +224,26 @@ func Test_prepareMapperFromFiles(t *testing.T) {
 				}},
 				err: "",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/owortb_test.json", []byte("{}"), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/owortb_test.json", []byte("{}"), 0644)
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 		{
-			name:    "oRTB_bidder_found_but_updateBidderParamsMapper_returns_error",
-			dirPath: "test",
+			name: "oRTB_bidder_found_but_prepareBidderRequestProperties_returns_error",
 			want: want{
 				biddersConfigMap: nil,
 				err:              "error:[invalid_json_file_content_malformed_properties] bidderName:[owortb_test]",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/owortb_test.json", []byte(`{"properties":"invalid-properties"}`), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/owortb_test.json", []byte(`{"properties":"invalid-properties"}`), 0644)
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 		{
-			name:    "oRTB_bidder_found_and_valid_json_contents_present",
-			dirPath: "test",
+			name: "oRTB_bidder_found_and_valid_json_contents_present",
 			want: want{
 				biddersConfigMap: &biddersConfigMap{
 					biddersConfig: map[string]*bidderConfig{
@@ -305,12 +256,9 @@ func Test_prepareMapperFromFiles(t *testing.T) {
 					}},
 				err: "",
 			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/owortb_test.json", []byte(`
+			setup: func() (string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/owortb_test.json", []byte(`
 				{
 					"title":"ortb bidder",
 					"properties": {
@@ -325,35 +273,25 @@ func Test_prepareMapperFromFiles(t *testing.T) {
 					}
 				}
 				`), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
+				return dirPath, err
 			},
-			cleanup: cleanup,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				err := tt.cleanup()
-				if err != nil {
-					fmt.Printf("cleanup returned error for test:%s, err:%v , remove 'test' directory manually", tt.name, err)
-				}
-			}()
-			err := tt.setup()
+			dirPath, err := tt.setup()
 			assert.NoError(t, err, "setup returned unexpected error")
-			got, err := prepareBiddersConfigMap(tt.dirPath)
+			got, err := prepareBiddersConfigMap(dirPath)
 			assert.Equal(t, tt.want.biddersConfigMap, got, "found incorrect mapper")
 			assert.Equal(t, len(tt.want.err) == 0, err == nil, "mismatched error")
 			if err != nil {
-				assert.Equal(t, tt.want.err, err.Error(), "found incorrect error message")
+				assert.ErrorContains(t, err, tt.want.err, "found incorrect error message")
 			}
 		})
 	}
 }
 
-func Test_mapBidderParamsInRequest(t *testing.T) {
+func TestMapBidderParamsInRequest(t *testing.T) {
 	type args struct {
 		requestBody []byte
 		mapper      map[string]bidderProperty
@@ -565,116 +503,23 @@ func TestInitBiddersConfigMap(t *testing.T) {
 	tests := []struct {
 		name    string
 		dirPath string
-		want    *biddersConfigMap
 		wantErr bool
 	}{
 		{
-			name:    "test_InitBiddersConfigMap",
+			name:    "test_InitBiddersConfigMap_success",
 			dirPath: "../../static/bidder-params/",
+			wantErr: false,
+		},
+		{
+			name:    "test_InitBiddersConfigMap_failure",
+			dirPath: "/invalid_directory/",
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := InitBiddersConfigMap(tt.dirPath)
-			assert.Nil(t, err, "error should be nil")
-		})
-	}
-}
-
-func Test_readFile(t *testing.T) {
-	var cleanup = func() error {
-		err := os.RemoveAll("test")
-		return err
-	}
-	type args struct {
-		dirPath string
-		file    string
-	}
-	type want struct {
-		err  bool
-		node map[string]any
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    want
-		setup   func() error
-		cleanup func() error
-	}{
-		{
-			name: "successful_readfile",
-			args: args{
-				dirPath: "test",
-				file:    "owortb.json",
-			},
-			want: want{
-				err: false,
-				node: map[string]any{
-					"title": "ortb bidder",
-					"properties": map[string]any{
-						"adunitid": map[string]any{
-							"type":     "string",
-							"location": "req.app.adunit.id",
-						},
-					},
-				},
-			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile("test/owortb.json", []byte(`
-				{
-					"title":"ortb bidder",
-					"properties": {
-						"adunitid": {
-							"type": "string",
-							"location": "req.app.adunit.id"
-						}
-					}
-				}
-				`), 0644)
-				if err != nil {
-					return err
-				}
-				return nil
-			},
-			cleanup: cleanup,
-		},
-		{
-			name: "fail_readfile",
-			args: args{
-				dirPath: "test",
-				file:    "owortb.json",
-			},
-			want: want{
-				err:  true,
-				node: nil,
-			},
-			setup: func() error {
-				err := os.MkdirAll("test", 0755)
-				if err != nil {
-					return err
-				}
-				return nil
-			},
-			cleanup: cleanup,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				err := tt.cleanup()
-				if err != nil {
-					fmt.Printf("cleanup returned error for test:%s, err:%v , remove 'test' directory manually", tt.name, err)
-				}
-			}()
-			err := tt.setup()
-			assert.NoError(t, err, "setup returned unexpected error")
-			got, err := readFile(tt.args.dirPath, tt.args.file)
-			assert.Equal(t, tt.want.err, err != nil, "mismatched error")
-			assert.Equal(t, tt.want.node, got, "mismatched map[string]any")
+			assert.Equal(t, err != nil, tt.wantErr, "mismatched error")
 		})
 	}
 }
@@ -758,7 +603,7 @@ func TestGetBidderRequestProperties(t *testing.T) {
 	}
 }
 
-func Test_biddersConfigMap_setBidderRequestProperties(t *testing.T) {
+func TestSetBidderRequestProperties(t *testing.T) {
 	type fields struct {
 		biddersConfig map[string]*bidderConfig
 	}
@@ -775,6 +620,9 @@ func Test_biddersConfigMap_setBidderRequestProperties(t *testing.T) {
 	}{
 		{
 			name: "bidderName_not_found",
+			fields: fields{
+				biddersConfig: map[string]*bidderConfig{},
+			},
 			args: args{
 				bidderName: "test",
 				properties: map[string]bidderProperty{
@@ -789,6 +637,39 @@ func Test_biddersConfigMap_setBidderRequestProperties(t *testing.T) {
 						requestProperties: map[string]bidderProperty{
 							"param-1": {
 								location: []string{"path"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "bidderName_found",
+			fields: fields{
+				biddersConfig: map[string]*bidderConfig{
+					"test": {
+						requestProperties: map[string]bidderProperty{
+							"param-1": {
+								location: []string{"path-1"},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				bidderName: "test",
+				properties: map[string]bidderProperty{
+					"param-2": {
+						location: []string{"path-2"},
+					},
+				},
+			},
+			want: &biddersConfigMap{
+				biddersConfig: map[string]*bidderConfig{
+					"test": {
+						requestProperties: map[string]bidderProperty{
+							"param-2": {
+								location: []string{"path-2"},
 							},
 						},
 					},

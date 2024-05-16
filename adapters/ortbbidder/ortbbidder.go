@@ -36,18 +36,14 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, requestPro
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
-
 	body, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
-	fmt.Println("body before", string(body))
 	body, err = mapBidderParamsInRequest(body, requestProperties)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("body after", string(body))
-
 	bidreq := &openrtb2.BidRequest{}
 	err = json.Unmarshal(body, bidreq)
 	if err != nil {
