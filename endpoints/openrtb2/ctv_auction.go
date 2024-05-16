@@ -253,11 +253,16 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
-	if auctionResponse != nil {
-		response = auctionResponse.BidResponse
-		seatNonBid.Append(auctionResponse.SeatNonBid)
-	}
+
+	response = auctionResponse.BidResponse
+	seatNonBid.Append(auctionResponse.SeatNonBid)
+	seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes())) // append seatNonBids available in hook-stage-outcomes
 	ao.SeatNonBid = seatNonBid.Get()
+	// add seatNonBids in response.Ext based on 'returnallbidstatus' flag
+	err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+	if err != nil {
+		util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
+	}
 	util.JLogf("BidResponse", response) //TODO: REMOVE LOG
 
 	if deps.isAdPodRequest {
@@ -285,16 +290,6 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		response = adPodBidResponse
 
 		util.JLogf("CTV BidResponse", response) //TODO: REMOVE LOG
-	}
-
-	// append seatNonBids available in hook-stage-outcomes
-	seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
-	ao.SeatNonBid = seatNonBid.Get()
-
-	// adding seatNonBids in response.Ext based on 'returnallbidstatus' flag
-	err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
-	if err != nil {
-		util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
 	}
 	ao.Response = response
 
