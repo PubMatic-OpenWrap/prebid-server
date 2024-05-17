@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate test coverage statistics for Go packages.
-# 
+#
 # Works around the fact that `go test -coverprofile` currently does not work
 # with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
 #
@@ -71,7 +71,7 @@ generate_cover_data() {
             cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
         fi
 
-        go test -tags=ignoreNetacuity ${cover} "$pkg"
+        go test ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"

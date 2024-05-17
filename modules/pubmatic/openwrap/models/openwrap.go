@@ -6,7 +6,6 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -74,7 +73,6 @@ type RequestCtx struct {
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
-	AdapterFilteredMap map[string]struct{}
 
 	AdUnitConfig *adunitconfig.AdUnitConfig
 
@@ -106,7 +104,6 @@ type RequestCtx struct {
 	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
-	GeoInfoFetcher         geodb.Geography
 }
 
 type OwBid struct {

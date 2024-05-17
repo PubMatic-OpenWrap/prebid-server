@@ -1,0 +1,2753 @@
+diff --git a/Makefile b/Makefile
+index cf48daa16..1019e9e97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -57,10 +57,6 @@ mockgenmetrics:
+ 	mkdir -p modules/pubmatic/openwrap/metrics/mock
+ 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
+ 
+-mockgengeodb:
+-	mkdir -p modules/pubmatic/openwrap/geodb/mock
+-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
+-
+ mockgenlogger:
+ 	mkdir -p analytics/pubmatic/mhttp/mock
+ 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
+diff --git a/analytics/pubmatic/logger.go b/analytics/pubmatic/logger.go
+index e340cefd8..c0a1f577c 100644
+--- a/analytics/pubmatic/logger.go
++++ b/analytics/pubmatic/logger.go
+@@ -15,7 +15,6 @@ import (
+ 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+ 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+ 	uuid "github.com/satori/go.uuid"
+@@ -31,11 +30,6 @@ var GetUUID = func() string {
+ 	return uuid.NewV4().String()
+ }
+ 
+-var blockListedNBR = map[openrtb3.NoBidReason]struct{}{
+-	nbr.RequestBlockedPartnerThrottle: {},
+-	nbr.RequestBlockedPartnerFiltered: {},
+-}
+-
+ // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
+ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
+ 	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
+@@ -401,12 +395,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
+ 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
+ 			}
+ 
+-			if nbr != nil {
+-				if _, ok := blockListedNBR[*nbr]; ok {
+-					continue
+-				}
+-			}
+-
+ 			pr := PartnerRecord{
+ 				PartnerID:         partnerID,                           // prebid biddercode
+ 				BidderCode:        seat,                                // pubmatic biddercode: pubmatic2
+diff --git a/go.mod b/go.mod
+index 2245ee232..1d04b994a 100644
+--- a/go.mod
++++ b/go.mod
+@@ -47,9 +47,7 @@ require (
+ )
+ 
+ require (
+-	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
+ 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
+-	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
+ 	github.com/go-sql-driver/mysql v1.7.1
+ 	github.com/golang/mock v1.6.0
+ 	github.com/modern-go/reflect2 v1.0.2
+@@ -59,7 +57,6 @@ require (
+ 
+ require (
+ 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 // indirect
+-	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
+ 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
+ 	github.com/beorn7/perks v1.0.1 // indirect
+ 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+diff --git a/go.sum b/go.sum
+index 35fa78b5a..b0558e61c 100644
+--- a/go.sum
++++ b/go.sum
+@@ -51,8 +51,6 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
+ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+ git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 h1:Ea8zwi1eeX4kqvi9RyyXrizIIRcstM0XBwf8U7NHrno=
+ git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3/go.mod h1:c/I6IcDn4Mtq4mmw8wGJN3v0o10nIMX7VTuQnsalUw0=
+-git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
+-git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
+ git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d h1:BgLUpJQ9Z89eDGz//voK74G/8FgjgVg2PWVbjgCJ4+A=
+ git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
+ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+@@ -85,8 +83,6 @@ github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgI
+ github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d h1:Byv0BzEl3/e6D5CLfI0j/7hiIEtvGVFPCZ7Ei2oq8iQ=
+ github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
+ github.com/aws/aws-sdk-go v1.36.29/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
+-github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df h1:GSoSVRLoBaFpOOds6QyY1L8AX7uoY+Ln3BHc22W40X0=
+-github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df/go.mod h1:hiVxq5OP2bUGBRNS3Z/bt/reCLFNbdcST6gISi1fiOM=
+ github.com/beevik/etree v1.1.0 h1:T0xke/WvNtMoCqgzPhkX2r4rjY3GDZFi+FjpRZY2Jbs=
+ github.com/beevik/etree v1.1.0/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
+ github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
+@@ -131,8 +127,6 @@ github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
+ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+-github.com/diegoholiveira/jsonlogic/v3 v3.5.3 h1:CPyZQ3fOgiIDZ1yWzPGUpyht5tYTOnRoN913c0mkXZw=
+-github.com/diegoholiveira/jsonlogic/v3 v3.5.3/go.mod h1:3nnfWovrlZq2rTpucrJ2KMIS8TMf6IoFneofmeqk/qk=
+ github.com/docker/go-units v0.4.0 h1:3uh0PgVws3nIA0Q+MwDC8yjEPf9zjRfZZWXZYDct3Tw=
+ github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
+ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
+diff --git a/modules/pubmatic/openwrap/beforevalidationhook.go b/modules/pubmatic/openwrap/beforevalidationhook.go
+index bd02f3d23..50d8c4573 100644
+--- a/modules/pubmatic/openwrap/beforevalidationhook.go
++++ b/modules/pubmatic/openwrap/beforevalidationhook.go
+@@ -173,17 +173,6 @@ func (m OpenWrap) handleBeforeValidationHook(
+ 		return result, err
+ 	}
+ 
+-	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+-
+-	result.SeatNonBid = getSeatNonBid(filteredBidders, payload)
+-
+-	if allPartnersFilteredFlag {
+-		result.NbrCode = int(nbr.AllPartnersFiltered)
+-		result.Errors = append(result.Errors, "All partners filtered")
+-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+-		return result, err
+-	}
+-
+ 	priceGranularity, err := computePriceGranularity(rCtx)
+ 	if err != nil {
+ 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
+@@ -339,11 +328,6 @@ func (m OpenWrap) handleBeforeValidationHook(
+ 			//
+ 			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+ 
+-			if _, ok := filteredBidders[bidderCode]; ok {
+-				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
+-				continue
+-			}
+-
+ 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
+ 				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
+ 				continue
+diff --git a/modules/pubmatic/openwrap/beforevalidationhook_test.go b/modules/pubmatic/openwrap/beforevalidationhook_test.go
+index f4557aa09..3671c92de 100644
+--- a/modules/pubmatic/openwrap/beforevalidationhook_test.go
++++ b/modules/pubmatic/openwrap/beforevalidationhook_test.go
+@@ -2445,147 +2445,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 			},
+ 			wantErr: false,
+ 		},
+-		{
+-			name: "Some_partners_filtered",
+-			args: args{
+-				ctx: context.Background(),
+-				moduleCtx: hookstage.ModuleInvocationContext{
+-					ModuleContext: hookstage.ModuleContext{
+-						"rctx": rctx,
+-					},
+-				},
+-				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"IN"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+-			},
+-			fields: fields{
+-				cache:        mockCache,
+-				metricEngine: mockEngine,
+-			},
+-			setup: func() {
+-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+-					2: {
+-						models.PARTNER_ID:          "2",
+-						models.PREBID_PARTNER_NAME: "appnexus",
+-						models.BidderCode:          "appnexus",
+-						models.SERVER_SIDE_FLAG:    "1",
+-						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+-						models.TIMEOUT:             "200",
+-						models.THROTTLE:            "100",
+-					},
+-					3: {
+-						models.PARTNER_ID:          "3",
+-						models.PREBID_PARTNER_NAME: "pubmatic",
+-						models.BidderCode:          "pubmatic",
+-						models.SERVER_SIDE_FLAG:    "1",
+-						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+-						models.TIMEOUT:             "200",
+-						models.THROTTLE:            "100",
+-					},
+-					-1: {
+-						models.DisplayVersionID: "1",
+-						models.PLATFORM_KEY:     models.PLATFORM_APP,
+-					},
+-				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
+-					"appnexus": map[string]interface{}{
+-						"in": []interface{}{
+-							map[string]interface{}{
+-								"var": "country",
+-							},
+-							[]interface{}{
+-								"JP",
+-								"KR",
+-							},
+-						},
+-					},
+-					"pubmatic": map[string]interface{}{
+-						"in": []interface{}{
+-							map[string]interface{}{
+-								"var": "country",
+-							},
+-							[]interface{}{
+-								"IN",
+-							},
+-						},
+-					},
+-				}, true)
+-				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+-
+-				//prometheus metrics
+-				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
+-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+-				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+-				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+-			},
+-			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+-				Reject:     true,
+-				NbrCode:    int(nbr.InvalidImpressionTagID),
+-				Errors:     []string{"tagid missing for imp: 123"},
+-				SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "123"}, NonBidReason: int(nbr.RequestBlockedPartnerFiltered)}}}),
+-			},
+-			wantErr: true,
+-		},
+-		{
+-			name: "All_partners_filtered",
+-			args: args{
+-				ctx: context.Background(),
+-				moduleCtx: hookstage.ModuleInvocationContext{
+-					ModuleContext: hookstage.ModuleContext{
+-						"rctx": rctx,
+-					},
+-				},
+-				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"in"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+-			},
+-			fields: fields{
+-				cache:        mockCache,
+-				metricEngine: mockEngine,
+-			},
+-			setup: func() {
+-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+-					2: {
+-						models.PARTNER_ID:          "2",
+-						models.PREBID_PARTNER_NAME: "appnexus",
+-						models.BidderCode:          "appnexus",
+-						models.SERVER_SIDE_FLAG:    "1",
+-						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+-						models.TIMEOUT:             "200",
+-						models.THROTTLE:            "100",
+-					},
+-					-1: {
+-						models.DisplayVersionID: "1",
+-						models.PLATFORM_KEY:     models.PLATFORM_APP,
+-					},
+-				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
+-					"appnexus": map[string]interface{}{
+-						"in": []interface{}{
+-							map[string]interface{}{
+-								"var": "country",
+-							},
+-							[]interface{}{
+-								"JP",
+-								"KR",
+-							},
+-						},
+-					},
+-				}, true)
+-				//prometheus metrics
+-				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnersFiltered))
+-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnersFiltered))
+-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+-				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+-				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+-			},
+-			want: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+-				Reject:     true,
+-				NbrCode:    int(nbr.AllPartnersFiltered),
+-				Errors:     []string{"All partners filtered"},
+-				SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "123"}, NonBidReason: int(nbr.RequestBlockedPartnerFiltered)}}}),
+-			},
+-			wantErr: false,
+-		},
+ 		{
+ 			name: "TagID_not_present_in_imp",
+ 			args: args{
+@@ -2616,7 +2475,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						models.PLATFORM_KEY:     models.PLATFORM_APP,
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+@@ -2667,7 +2525,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						models.PLATFORM_KEY:     models.PLATFORM_APP,
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+@@ -2714,7 +2571,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						models.PLATFORM_KEY:     models.PLATFORM_APP,
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+@@ -2804,7 +2660,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						},
+ 					},
+ 				})
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+ 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllSlotsDisabled))
+@@ -2910,7 +2765,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						"adunit@700x900": "1232433543534543",
+ 					},
+ 				})
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -2989,7 +2843,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						models.PLATFORM_KEY:     models.PLATFORM_APP,
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+@@ -3050,7 +2903,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 				metricEngine: mockEngine,
+ 			},
+ 			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+ 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+ 					"adunit@700x900": {
+ 						SlotName: "adunit@700x900",
+@@ -3166,7 +3018,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 				metricEngine: mockEngine,
+ 			},
+ 			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+ 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+ 					"adunit@700x900": {
+ 						SlotName: "adunit@700x900",
+@@ -3357,7 +3208,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
+ 						},
+ 					},
+ 				})
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+ 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
+@@ -3618,7 +3468,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+ 						models.VastUnwrapperEnableKey: "0",
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -3680,7 +3529,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+ 						models.VastUnwrapperEnableKey: "1",
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -3747,7 +3595,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+ 						models.VastUnwrapperEnableKey: "1",
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -3815,7 +3662,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+ 						models.VastUnwrapTrafficPercentKey: "50",
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -3878,7 +3724,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
+ 						models.VastUnwrapTrafficPercentKey: "100",
+ 					},
+ 				}, nil)
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+ 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+ 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+@@ -4141,7 +3986,6 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
+ 					},
+ 				}, nil)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+ 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+@@ -4188,7 +4032,6 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
+ 					},
+ 				}, nil)
+ 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+ 
+ 				//prometheus metrics
+ 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+diff --git a/modules/pubmatic/openwrap/cache/gocache/adunit_config.go b/modules/pubmatic/openwrap/cache/gocache/adunit_config.go
+index 1d08d7588..07bbd5450 100644
+--- a/modules/pubmatic/openwrap/cache/gocache/adunit_config.go
++++ b/modules/pubmatic/openwrap/cache/gocache/adunit_config.go
+@@ -19,20 +19,7 @@ func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersi
+ 			v.UniversalPixel = validUPixels(v.UniversalPixel)
+ 			caseFoldConfigMap[strings.ToLower(k)] = v
+ 		}
+-
+-		defaultAdUnitConfig := adunitConfig.Config["default"]
+-		if defaultAdUnitConfig.BidderFilter != nil {
+-			bidderfilter := map[string]interface{}{}
+-			for _, filter := range defaultAdUnitConfig.BidderFilter.Filters {
+-				for _, bidder := range filter.Bidders {
+-					bidderfilter[bidder] = filter.BiddingConditions
+-				}
+-			}
+-			if len(bidderfilter) > 0 {
+-				cacheKey := key(BidderFilter, pubID, profileID, displayVersion)
+-				c.Set(cacheKey, bidderfilter)
+-			}
+-		}
++		adunitConfig.Config = caseFoldConfigMap
+ 	}
+ 
+ 	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
+diff --git a/modules/pubmatic/openwrap/cache/gocache/adunit_config_test.go b/modules/pubmatic/openwrap/cache/gocache/adunit_config_test.go
+index 5a60dde91..e04f3bd07 100644
+--- a/modules/pubmatic/openwrap/cache/gocache/adunit_config_test.go
++++ b/modules/pubmatic/openwrap/cache/gocache/adunit_config_test.go
+@@ -25,24 +25,6 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
+ 	Regex:         true,
+ 	Config: map[string]*adunitconfig.AdConfig{
+ 		"default": {
+-			BidderFilter: &adunitconfig.BidderFilter{
+-				Filters: []adunitconfig.Filter{
+-					{
+-						Bidders: []string{"bidderA"},
+-						BiddingConditions: map[string]interface{}{
+-							"in": []interface{}{
+-								map[string]interface{}{
+-									"var": "country",
+-								},
+-								[]interface{}{
+-									"JPN",
+-									"KOR",
+-								},
+-							},
+-						},
+-					},
+-				},
+-			},
+ 			Floors: &openrtb_ext.PriceFloorRules{
+ 				FloorMin: 15,
+ 				Data: &openrtb_ext.PriceFloorData{
+@@ -179,11 +161,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+ 		displayVersion int
+ 	}
+ 	type want struct {
+-		err                    error
+-		adunitConfig           *adunitconfig.AdUnitConfig
+-		cacheEntry             bool
+-		bidderFilterCacheEntry bool
+-		bidderFilter           map[string]interface{}
++		err          error
++		adunitConfig *adunitconfig.AdUnitConfig
++		cacheEntry   bool
+ 	}
+ 	tests := []struct {
+ 		name   string
+@@ -233,23 +213,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+ 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(testAdunitConfig, nil)
+ 			},
+ 			want: want{
+-				err:                    nil,
+-				adunitConfig:           testAdunitConfig,
+-				cacheEntry:             true,
+-				bidderFilterCacheEntry: true,
+-				bidderFilter: map[string]interface{}{
+-					"bidderA": map[string]interface{}{
+-						"in": []interface{}{
+-							map[string]interface{}{
+-								"var": "country",
+-							},
+-							[]interface{}{
+-								"JPN",
+-								"KOR",
+-							},
+-						},
+-					},
+-				},
++				err:          nil,
++				adunitConfig: testAdunitConfig,
++				cacheEntry:   true,
+ 			},
+ 		},
+ 		{
+@@ -290,12 +256,6 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+ 			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+ 			assert.Equal(t, tt.want.err, err)
+ 			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+-			if tt.want.bidderFilterCacheEntry {
+-				cacheKey := key(BidderFilter, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+-				bf, found := c.Get(cacheKey)
+-				assert.True(t, found)
+-				assert.Equal(t, tt.want.bidderFilter, bf)
+-			}
+ 			adunitconfig, found := c.Get(cacheKey)
+ 			if tt.want.cacheEntry {
+ 				assert.True(t, found)
+diff --git a/modules/pubmatic/openwrap/cache/gocache/gocache.go b/modules/pubmatic/openwrap/cache/gocache/gocache.go
+index 2d80d3d36..b327d0fcd 100644
+--- a/modules/pubmatic/openwrap/cache/gocache/gocache.go
++++ b/modules/pubmatic/openwrap/cache/gocache/gocache.go
+@@ -21,7 +21,6 @@ const (
+ 	PubSlotRegex    = "psregex_%d_%d_%d_%d_%s" // slot and its matching regex info at publisher, profile, display version and adapter level
+ 	PubSlotNameHash = "pslotnamehash_%d"       //publisher slotname hash mapping cache key
+ 	PubVASTTags     = "pvasttags_%d"           //publisher level vasttags
+-	BidderFilter    = "bidderfilter_%d_%d_%d"
+ )
+ 
+ func key(format string, v ...interface{}) string {
+diff --git a/modules/pubmatic/openwrap/cache/mock/mock.go b/modules/pubmatic/openwrap/cache/mock/mock.go
+index 8c52cddf0..8679e1f57 100644
+--- a/modules/pubmatic/openwrap/cache/mock/mock.go
++++ b/modules/pubmatic/openwrap/cache/mock/mock.go
+@@ -5,67 +5,66 @@
+ package mock_cache
+ 
+ import (
+-	reflect "reflect"
+-
+ 	gomock "github.com/golang/mock/gomock"
+ 	openrtb2 "github.com/prebid/openrtb/v20/openrtb2"
+ 	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+ 	adunitconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
++	reflect "reflect"
+ )
+ 
+-// MockCache is a mock of Cache interface.
++// MockCache is a mock of Cache interface
+ type MockCache struct {
+ 	ctrl     *gomock.Controller
+ 	recorder *MockCacheMockRecorder
+ }
+ 
+-// MockCacheMockRecorder is the mock recorder for MockCache.
++// MockCacheMockRecorder is the mock recorder for MockCache
+ type MockCacheMockRecorder struct {
+ 	mock *MockCache
+ }
+ 
+-// NewMockCache creates a new mock instance.
++// NewMockCache creates a new mock instance
+ func NewMockCache(ctrl *gomock.Controller) *MockCache {
+ 	mock := &MockCache{ctrl: ctrl}
+ 	mock.recorder = &MockCacheMockRecorder{mock}
+ 	return mock
+ }
+ 
+-// EXPECT returns an object that allows the caller to indicate expected use.
++// EXPECT returns an object that allows the caller to indicate expected use
+ func (m *MockCache) EXPECT() *MockCacheMockRecorder {
+ 	return m.recorder
+ }
+ 
+-// Get mocks base method.
+-func (m *MockCache) Get(key string) (interface{}, bool) {
++// Get mocks base method
++func (m *MockCache) Get(arg0 string) (interface{}, bool) {
+ 	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "Get", key)
++	ret := m.ctrl.Call(m, "Get", arg0)
+ 	ret0, _ := ret[0].(interface{})
+ 	ret1, _ := ret[1].(bool)
+ 	return ret0, ret1
+ }
+ 
+-// Get indicates an expected call of Get.
+-func (mr *MockCacheMockRecorder) Get(key interface{}) *gomock.Call {
++// Get indicates an expected call of Get
++func (mr *MockCacheMockRecorder) Get(arg0 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), key)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), arg0)
+ }
+ 
+-// GetAdunitConfigFromCache mocks base method.
+-func (m *MockCache) GetAdunitConfigFromCache(request *openrtb2.BidRequest, pubID, profileID, displayVersion int) *adunitconfig.AdUnitConfig {
++// GetAdunitConfigFromCache mocks base method
++func (m *MockCache) GetAdunitConfigFromCache(arg0 *openrtb2.BidRequest, arg1, arg2, arg3 int) *adunitconfig.AdUnitConfig {
+ 	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "GetAdunitConfigFromCache", request, pubID, profileID, displayVersion)
++	ret := m.ctrl.Call(m, "GetAdunitConfigFromCache", arg0, arg1, arg2, arg3)
+ 	ret0, _ := ret[0].(*adunitconfig.AdUnitConfig)
+ 	return ret0
+ }
+ 
+-// GetAdunitConfigFromCache indicates an expected call of GetAdunitConfigFromCache.
+-func (mr *MockCacheMockRecorder) GetAdunitConfigFromCache(request, pubID, profileID, displayVersion interface{}) *gomock.Call {
++// GetAdunitConfigFromCache indicates an expected call of GetAdunitConfigFromCache
++func (mr *MockCacheMockRecorder) GetAdunitConfigFromCache(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfigFromCache", reflect.TypeOf((*MockCache)(nil).GetAdunitConfigFromCache), request, pubID, profileID, displayVersion)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfigFromCache", reflect.TypeOf((*MockCache)(nil).GetAdunitConfigFromCache), arg0, arg1, arg2, arg3)
+ }
+ 
+-// GetFSCThresholdPerDSP mocks base method.
++// GetFSCThresholdPerDSP mocks base method
+ func (m *MockCache) GetFSCThresholdPerDSP() (map[int]int, error) {
+ 	m.ctrl.T.Helper()
+ 	ret := m.ctrl.Call(m, "GetFSCThresholdPerDSP")
+@@ -74,27 +73,27 @@ func (m *MockCache) GetFSCThresholdPerDSP() (map[int]int, error) {
+ 	return ret0, ret1
+ }
+ 
+-// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP.
++// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP
+ func (mr *MockCacheMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+ 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockCache)(nil).GetFSCThresholdPerDSP))
+ }
+ 
+-// GetMappingsFromCacheV25 mocks base method.
+-func (m *MockCache) GetMappingsFromCacheV25(rctx models.RequestCtx, partnerID int) map[string]models.SlotMapping {
++// GetMappingsFromCacheV25 mocks base method
++func (m *MockCache) GetMappingsFromCacheV25(arg0 models.RequestCtx, arg1 int) map[string]models.SlotMapping {
+ 	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "GetMappingsFromCacheV25", rctx, partnerID)
++	ret := m.ctrl.Call(m, "GetMappingsFromCacheV25", arg0, arg1)
+ 	ret0, _ := ret[0].(map[string]models.SlotMapping)
+ 	return ret0
+ }
+ 
+-// GetMappingsFromCacheV25 indicates an expected call of GetMappingsFromCacheV25.
+-func (mr *MockCacheMockRecorder) GetMappingsFromCacheV25(rctx, partnerID interface{}) *gomock.Call {
++// GetMappingsFromCacheV25 indicates an expected call of GetMappingsFromCacheV25
++func (mr *MockCacheMockRecorder) GetMappingsFromCacheV25(arg0, arg1 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappingsFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetMappingsFromCacheV25), rctx, partnerID)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappingsFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetMappingsFromCacheV25), arg0, arg1)
+ }
+ 
+-// GetPartnerConfigMap mocks base method.
++// GetPartnerConfigMap mocks base method
+ func (m *MockCache) GetPartnerConfigMap(arg0, arg1, arg2 int) (map[int]map[string]string, error) {
+ 	m.ctrl.T.Helper()
+ 	ret := m.ctrl.Call(m, "GetPartnerConfigMap", arg0, arg1, arg2)
+@@ -103,13 +102,13 @@ func (m *MockCache) GetPartnerConfigMap(arg0, arg1, arg2 int) (map[int]map[strin
+ 	return ret0, ret1
+ }
+ 
+-// GetPartnerConfigMap indicates an expected call of GetPartnerConfigMap.
++// GetPartnerConfigMap indicates an expected call of GetPartnerConfigMap
+ func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+ 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2)
+ }
+ 
+-// GetPublisherFeatureMap mocks base method.
++// GetPublisherFeatureMap mocks base method
+ func (m *MockCache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error) {
+ 	m.ctrl.T.Helper()
+ 	ret := m.ctrl.Call(m, "GetPublisherFeatureMap")
+@@ -118,48 +117,48 @@ func (m *MockCache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData
+ 	return ret0, ret1
+ }
+ 
+-// GetPublisherFeatureMap indicates an expected call of GetPublisherFeatureMap.
++// GetPublisherFeatureMap indicates an expected call of GetPublisherFeatureMap
+ func (mr *MockCacheMockRecorder) GetPublisherFeatureMap() *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+ 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherFeatureMap", reflect.TypeOf((*MockCache)(nil).GetPublisherFeatureMap))
+ }
+ 
+-// GetPublisherVASTTagsFromCache mocks base method.
+-func (m *MockCache) GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags {
++// GetPublisherVASTTagsFromCache mocks base method
++func (m *MockCache) GetPublisherVASTTagsFromCache(arg0 int) map[int]*models.VASTTag {
+ 	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "GetPublisherVASTTagsFromCache", pubID)
+-	ret0, _ := ret[0].(models.PublisherVASTTags)
++	ret := m.ctrl.Call(m, "GetPublisherVASTTagsFromCache", arg0)
++	ret0, _ := ret[0].(map[int]*models.VASTTag)
+ 	return ret0
+ }
+ 
+-// GetPublisherVASTTagsFromCache indicates an expected call of GetPublisherVASTTagsFromCache.
+-func (mr *MockCacheMockRecorder) GetPublisherVASTTagsFromCache(pubID interface{}) *gomock.Call {
++// GetPublisherVASTTagsFromCache indicates an expected call of GetPublisherVASTTagsFromCache
++func (mr *MockCacheMockRecorder) GetPublisherVASTTagsFromCache(arg0 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTagsFromCache", reflect.TypeOf((*MockCache)(nil).GetPublisherVASTTagsFromCache), pubID)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublisherVASTTagsFromCache", reflect.TypeOf((*MockCache)(nil).GetPublisherVASTTagsFromCache), arg0)
+ }
+ 
+-// GetSlotToHashValueMapFromCacheV25 mocks base method.
+-func (m *MockCache) GetSlotToHashValueMapFromCacheV25(rctx models.RequestCtx, partnerID int) models.SlotMappingInfo {
++// GetSlotToHashValueMapFromCacheV25 mocks base method
++func (m *MockCache) GetSlotToHashValueMapFromCacheV25(arg0 models.RequestCtx, arg1 int) models.SlotMappingInfo {
+ 	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "GetSlotToHashValueMapFromCacheV25", rctx, partnerID)
++	ret := m.ctrl.Call(m, "GetSlotToHashValueMapFromCacheV25", arg0, arg1)
+ 	ret0, _ := ret[0].(models.SlotMappingInfo)
+ 	return ret0
+ }
+ 
+-// GetSlotToHashValueMapFromCacheV25 indicates an expected call of GetSlotToHashValueMapFromCacheV25.
+-func (mr *MockCacheMockRecorder) GetSlotToHashValueMapFromCacheV25(rctx, partnerID interface{}) *gomock.Call {
++// GetSlotToHashValueMapFromCacheV25 indicates an expected call of GetSlotToHashValueMapFromCacheV25
++func (mr *MockCacheMockRecorder) GetSlotToHashValueMapFromCacheV25(arg0, arg1 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotToHashValueMapFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetSlotToHashValueMapFromCacheV25), rctx, partnerID)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotToHashValueMapFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetSlotToHashValueMapFromCacheV25), arg0, arg1)
+ }
+ 
+-// Set mocks base method.
+-func (m *MockCache) Set(key string, value interface{}) {
++// Set mocks base method
++func (m *MockCache) Set(arg0 string, arg1 interface{}) {
+ 	m.ctrl.T.Helper()
+-	m.ctrl.Call(m, "Set", key, value)
++	m.ctrl.Call(m, "Set", arg0, arg1)
+ }
+ 
+-// Set indicates an expected call of Set.
+-func (mr *MockCacheMockRecorder) Set(key, value interface{}) *gomock.Call {
++// Set indicates an expected call of Set
++func (mr *MockCacheMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
+ 	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), key, value)
++	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), arg0, arg1)
+ }
+diff --git a/modules/pubmatic/openwrap/entrypointhook.go b/modules/pubmatic/openwrap/entrypointhook.go
+index 9c7572f7b..215289f69 100644
+--- a/modules/pubmatic/openwrap/entrypointhook.go
++++ b/modules/pubmatic/openwrap/entrypointhook.go
+@@ -124,7 +124,6 @@ func (m OpenWrap) handleEntrypointHook(
+ 			}
+ 			return 0, err
+ 		},
+-		GeoInfoFetcher: m.geoInfoFetcher,
+ 	}
+ 
+ 	// only http.ErrNoCookie is returned, we can ignore it
+diff --git a/modules/pubmatic/openwrap/geodb/geodb.go b/modules/pubmatic/openwrap/geodb/geodb.go
+deleted file mode 100644
+index c4102673f..000000000
+--- a/modules/pubmatic/openwrap/geodb/geodb.go
++++ /dev/null
+@@ -1,22 +0,0 @@
+-// Package geodb provides an interface for performing IP-to-geography lookups using a GeoIP database
+-package geodb
+-
+-type GeoInfo struct {
+-	CountryCode           string
+-	ISOCountryCode        string
+-	RegionCode            string
+-	City                  string
+-	PostalCode            string
+-	DmaCode               int
+-	Latitude              float64
+-	Longitude             float64
+-	AreaCode              string
+-	AlphaThreeCountryCode string
+-}
+-
+-// Geography interface defines methods for initializing a GeoIP database client and performing
+-// IP-to-geography lookups. Implement this interface to create custom GeoIP database clients.
+-type Geography interface {
+-	LookUp(ip string) (*GeoInfo, error)
+-	InitGeoDBClient(dbPath string) error
+-}
+diff --git a/modules/pubmatic/openwrap/geodb/mock/mock.go b/modules/pubmatic/openwrap/geodb/mock/mock.go
+deleted file mode 100644
+index 7761a7c8b..000000000
+--- a/modules/pubmatic/openwrap/geodb/mock/mock.go
++++ /dev/null
+@@ -1,63 +0,0 @@
+-// Code generated by MockGen. DO NOT EDIT.
+-// Source: github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/geodb (interfaces: Geography)
+-
+-// Package mock_geodb is a generated GoMock package.
+-package mock_geodb
+-
+-import (
+-	gomock "github.com/golang/mock/gomock"
+-	geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-	reflect "reflect"
+-)
+-
+-// MockGeography is a mock of Geography interface
+-type MockGeography struct {
+-	ctrl     *gomock.Controller
+-	recorder *MockGeographyMockRecorder
+-}
+-
+-// MockGeographyMockRecorder is the mock recorder for MockGeography
+-type MockGeographyMockRecorder struct {
+-	mock *MockGeography
+-}
+-
+-// NewMockGeography creates a new mock instance
+-func NewMockGeography(ctrl *gomock.Controller) *MockGeography {
+-	mock := &MockGeography{ctrl: ctrl}
+-	mock.recorder = &MockGeographyMockRecorder{mock}
+-	return mock
+-}
+-
+-// EXPECT returns an object that allows the caller to indicate expected use
+-func (m *MockGeography) EXPECT() *MockGeographyMockRecorder {
+-	return m.recorder
+-}
+-
+-// InitGeoDBClient mocks base method
+-func (m *MockGeography) InitGeoDBClient(arg0 string) error {
+-	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "InitGeoDBClient", arg0)
+-	ret0, _ := ret[0].(error)
+-	return ret0
+-}
+-
+-// InitGeoDBClient indicates an expected call of InitGeoDBClient
+-func (mr *MockGeographyMockRecorder) InitGeoDBClient(arg0 interface{}) *gomock.Call {
+-	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGeoDBClient", reflect.TypeOf((*MockGeography)(nil).InitGeoDBClient), arg0)
+-}
+-
+-// LookUp mocks base method
+-func (m *MockGeography) LookUp(arg0 string) (*geodb.GeoInfo, error) {
+-	m.ctrl.T.Helper()
+-	ret := m.ctrl.Call(m, "LookUp", arg0)
+-	ret0, _ := ret[0].(*geodb.GeoInfo)
+-	ret1, _ := ret[1].(error)
+-	return ret0, ret1
+-}
+-
+-// LookUp indicates an expected call of LookUp
+-func (mr *MockGeographyMockRecorder) LookUp(arg0 interface{}) *gomock.Call {
+-	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookUp", reflect.TypeOf((*MockGeography)(nil).LookUp), arg0)
+-}
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbBaseAccessor.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbBaseAccessor.h
+deleted file mode 100644
+index dd5cca718..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbBaseAccessor.h
++++ /dev/null
+@@ -1,148 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_BASE_ACCESSOR_H_
+-#define NA_DB_BASE_ACCESSOR_H_
+-
+-#include <stdexcept>
+-#include "NaDbDef.h"
+-#include "NaDbUtil.h"
+-
+-namespace netacuity {
+-
+-class NaDbBaseAccessor {
+-
+-public:
+-	NaDbBaseAccessor( int featureCode, std::string directory );
+-	virtual ~NaDbBaseAccessor();
+-
+-	//--------------- Public MetaData Getters ----------------
+-	int getFeatureCode() const;
+-	std::string getDirectory() const;
+-	std::string getResponseFilePath() const;
+-	std::string getRangeIpv4FilePath() const;
+-	std::string getSchemaFilePath() const;
+-	std::string getRangeIpv6FilePath() const;
+-	std::string getExtendedRangeIpv4FilePath() const;
+-	std::string getExtendedRangeIpv6FilePath() const;
+-
+-	RangeRecordIpv6Type getRangeRecordIpv6Type() const;
+-	bool supportsIpv6() const;
+-	unsigned long getRangeCountIpv4() const;
+-	unsigned long getRangeCountIpv6() const;
+-	unsigned long getExtendedRangeCountIpv4() const;
+-	unsigned long getExtendedRangeCountIpv6() const;
+-	int getDbVersion() const;
+-	std::string getBuildDateString() const;
+-	StringList getFieldNameList() const;
+-	StringList getDefaultResponseList() const;
+-	std::string getDefaultRawResponse() const;
+-
+-
+-	//--------------- Public Raw Query Functions ----------------
+-
+-	/// Retrieve the raw response for the specified IPv4 number.
+-	std::string queryRawResponseIpv4( unsigned long ipNum ) const;
+-
+-	/// Retrieve the raw response for the specified IPv6 network number.
+-	/// The network number is the half of the IPv6 address which contains the most significant-bits.
+-	std::string queryRawResponseIpv6( unsigned long long numNetwork ) const;
+-
+-	/// Retrieve the raw response for the specified IPv6 full network and interface numbers.
+-	/// The network number is the half of the IPv6 address which contains the most significant bits.
+-	/// The interface number is the half of the IPv6 address which contains the least significant bits.
+-	std::string queryRawResponseIpv6( unsigned long long numNetwork, unsigned long long numInterface ) const;
+-
+-	/// Retrieve the raw response for the specified IPv4 address.
+-	std::string queryRawResponseIpv4( in_addr ipv4 ) const;
+-
+-	/// Retrieve the raw response for the specified IPv6 address.
+-	std::string queryRawResponseIpv6( in6_addr ipv6 ) const;
+-
+-	/// Retrieve the raw response for the specified IP "dotted" presentation address, IPv4 or IPv6.
+-	std::string queryRawResponse( const char* ipAddress ) const;
+-
+-
+-	/// Prints some interesting meta-data to the specified output stream.  Useful for testing or debugging.
+-	void printMetaData( std::ostream &out );
+-
+-protected:
+-	int featureCode;
+-	std::string directory;
+-
+-	std::string responseFilename;
+-	std::string rangeIpv4Filename;
+-	std::string schemaFilename;
+-	std::string rangeIpv6Filename;
+-	std::string extendedRangeIpv4Filename;
+-	std::string extendedRangeIpv6Filename;
+-
+-	std::string responseFilepath;
+-	std::string rangeIpv4Filepath;
+-	std::string schemaFilepath;
+-	std::string rangeIpv6Filepath;
+-	std::string extendedRangeIpv4Filepath;
+-	std::string extendedRangeIpv6Filepath;
+-
+-	RangeRecordIpv6Type rangeRecordIpv6Type;
+-
+-	size_t responseFileSize;
+-	size_t rangeIpv4FileSize;
+-	size_t rangeIpv6FileSize;
+-	size_t extendedRangeIpv4FileSize;
+-	size_t extendedRangeIpv6FileSize;
+-
+-	unsigned long recordCountIpv4;
+-	unsigned long recordCountIpv6;
+-	unsigned long extendedRecordCountIpv4;
+-	unsigned long extendedRecordCountIpv6;
+-
+-	unsigned long ipNumStandardCutoffIpv4;  // the inclusive cutoff ipNum for accessing the standard IPv4 range-file, beyond which the extended IPv4 range-file should be accessed
+-	unsigned long long numNetworkStandardCutoffIpv6;   // the inclusive cutoff  networkNum  for accessing the standard IPv6 range-file, beyond which the extended IPv6 range-file should be accessed
+-	unsigned long long numInterfaceStandardCutoffIpv6; // the inclusive cutoff interfaceNum for accessing the standard IPv6 range-file, beyond which the extended IPv6 range-file should be accessed
+-
+-	int dbVersion;
+-	std::string buildDateString;
+-	std::string defaultResponse;
+-	StringList fieldNameList;
+-	StringList defaultResponseList;
+-
+-
+-	//--------------- Protected Query Helper Functions ----------------
+-
+-	virtual std::string getRawResponse( unsigned long offset) const = 0;
+-	virtual RangeRecordIpv4 getRangeRecordIpv4( unsigned int index ) const = 0;
+-	virtual RangeRecordIpv6 getRangeRecordIpv6( unsigned int index ) const = 0;
+-	virtual RangeRecordIpv6NetworkOnly getRangeRecordIpv6NetworkOnly( unsigned int index ) const = 0;
+-	virtual ExtendedRangeRecordIpv4 getExtendedRangeRecordIpv4( unsigned int index ) const = 0;
+-	virtual ExtendedRangeRecordIpv6 getExtendedRangeRecordIpv6( unsigned int index ) const = 0;
+-	virtual ExtendedRangeRecordIpv6NetworkOnly getExtendedRangeRecordIpv6NetworkOnly( unsigned int index ) const = 0;
+-
+-	unsigned long getOffset( unsigned long ip ) const;
+-	unsigned long getOffset( unsigned long long numNetwork, unsigned long long numInterface ) const;
+-	unsigned long getOffset( unsigned long long numNetwork ) const;
+-	unsigned long getStandardOffset( unsigned long ip ) const;
+-	unsigned long getStandardOffset( unsigned long long numNetwork, unsigned long long numInterface ) const;
+-	unsigned long getStandardOffset( unsigned long long numNetwork ) const;
+-	unsigned long getExtendedOffset( unsigned long ip ) const;
+-	unsigned long getExtendedOffset( unsigned long long numNetwork, unsigned long long numInterface ) const;
+-	unsigned long getExtendedOffset( unsigned long long numNetwork ) const;
+-
+-	void parseMetaData( std::string defaultResponse, std::string metaData );
+-	void prepareStandardCutoffs();
+-
+-
+-private:
+-	static RangeRecordIpv6Type processSchemaFile( std::string schemaFilepath );
+-	void setFilePaths();
+-	void setFileSizes();
+-};
+-
+-}
+-#endif /* NA_DB_BASE_ACCESSOR_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbDef.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbDef.h
+deleted file mode 100644
+index e64a6bfc8..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbDef.h
++++ /dev/null
+@@ -1,109 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_DEF_H_
+-#define NA_DB_DEF_H_
+-
+-#include <string>
+-#include <list>
+-#include <map>
+-#include <stdlib.h>
+-#include <stdint.h>
+-
+-namespace netacuity {
+-
+-	typedef std::list<std::string> StringList;
+-	typedef std::map<std::string, std::string> ResponseMap;
+-
+-	static const unsigned      long MAX_IPV4_NUM = 0xFFffFFffUL;
+-	static const unsigned long long MAX_IPV6_NETWORK_NUM = 0xFFFFffffFFFFffffULL;
+-	static const unsigned long long MAX_IPV6_INTERFACE_NUM = MAX_IPV6_NETWORK_NUM;
+-
+-	typedef enum RangeRecordIpv6Type_enum {
+-		RANGE_RECORD_IPV6_NONE = 0,
+-		RANGE_RECORD_IPV6_NETWORK_ONLY = 20,
+-		RANGE_RECORD_IPV6_NETWORK_AND_INTERFACE = 36
+-	}
+-	RangeRecordIpv6Type;
+-
+-
+-	typedef struct RangeRecordIpv4_struct {
+-		RangeRecordIpv4_struct() : startNum(0), endNum(0), offset(0) {}
+-		//all these byte-orders are little-endian
+-		uint32_t startNum;
+-		uint32_t endNum;
+-		uint32_t offset;
+-	}
+-	__attribute__((__packed__))
+-	RangeRecordIpv4;
+-
+-
+-	typedef struct RangeRecordIpv6_struct {
+-		RangeRecordIpv6_struct() : startNetwork(0), startInterface(0), endNetwork(0), endInterface(0), offset(0) {}
+-		//all these byte-orders are little-endian
+-		uint64_t startNetwork;
+-		uint64_t startInterface;
+-		uint64_t endNetwork;
+-		uint64_t endInterface;
+-		uint32_t offset;
+-	}
+-	__attribute__((__packed__))
+-	RangeRecordIpv6;
+-
+-
+-	typedef struct RangeRecordIpv6NetworkOnly_struct {
+-		RangeRecordIpv6NetworkOnly_struct() : startNetwork(0), endNetwork(0), offset(0) {}
+-		//all these byte-orders are little-endian
+-		uint64_t startNetwork;
+-		uint64_t endNetwork;
+-		uint32_t offset;
+-	}
+-	__attribute__((__packed__))
+-	RangeRecordIpv6NetworkOnly;
+-
+-
+-	typedef struct ExtendedRangeRecordIpv4_struct {
+-		ExtendedRangeRecordIpv4_struct() : startNum(0), endNum(0), offset(0), offsetExtended(0) {}
+-		//all these byte-orders are little-endian
+-		uint32_t startNum;
+-		uint32_t endNum;
+-		uint32_t offset;
+-		uint8_t  offsetExtended;  //most-significant byte of offset occurs last in little-endian order
+-	}
+-	__attribute__((__packed__))
+-	ExtendedRangeRecordIpv4;
+-
+-
+-	typedef struct ExtendedRangeRecordIpv6_struct {
+-		ExtendedRangeRecordIpv6_struct() : startNetwork(0), startInterface(0), endNetwork(0), endInterface(0), offset(0), offsetExtended(0) {}
+-		//all these byte-orders are little-endian
+-		uint64_t startNetwork;
+-		uint64_t startInterface;
+-		uint64_t endNetwork;
+-		uint64_t endInterface;
+-		uint32_t offset;
+-		uint8_t  offsetExtended;  //most-significant byte of offset occurs last in little-endian order
+-	}
+-	__attribute__((__packed__))
+-	ExtendedRangeRecordIpv6;
+-
+-
+-	typedef struct ExtendedRangeRecordIpv6NetworkOnly_struct {
+-		ExtendedRangeRecordIpv6NetworkOnly_struct() : startNetwork(0), endNetwork(0), offset(0), offsetExtended(0) {}
+-		//all these byte-orders are little-endian
+-		uint64_t startNetwork;
+-		uint64_t endNetwork;
+-		uint32_t offset;
+-		uint8_t  offsetExtended;  //most-significant byte of offset occurs last in little-endian order
+-	}
+-	__attribute__((__packed__))
+-	ExtendedRangeRecordIpv6NetworkOnly;
+-
+-}
+-#endif /* NA_DB_DEF_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbFileAccessor.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbFileAccessor.h
+deleted file mode 100644
+index 887d0e1e2..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbFileAccessor.h
++++ /dev/null
+@@ -1,62 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_FILE_ACCESSOR_H_
+-#define NA_DB_FILE_ACCESSOR_H_
+-
+-#include "NaDbBaseAccessor.h"
+-
+-namespace netacuity {
+-
+-class NaDbFileAccessor : public NaDbBaseAccessor {
+-
+-#ifdef _WIN32
+-#define FileRef HANDLE
+-#else
+-#define FileRef int
+-#endif
+-
+-public:
+-	NaDbFileAccessor( int featureCode, std::string directory );
+-	virtual ~NaDbFileAccessor();
+-
+-protected:
+-	// override
+-	std::string getRawResponse( unsigned long offset) const;
+-	// override
+-	RangeRecordIpv4 getRangeRecordIpv4( unsigned int index ) const;
+-	// override
+-	RangeRecordIpv6 getRangeRecordIpv6( unsigned int index ) const;
+-	// override
+-	RangeRecordIpv6NetworkOnly getRangeRecordIpv6NetworkOnly( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv4 getExtendedRangeRecordIpv4( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv6 getExtendedRangeRecordIpv6( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv6NetworkOnly getExtendedRangeRecordIpv6NetworkOnly( unsigned int index ) const;
+-
+-private:
+-	FileRef responseFileDescriptor;
+-	FileRef rangeIpv4FileDescriptor;
+-	FileRef rangeIpv6FileDescriptor;
+-	FileRef extendedRangeIpv4FileDescriptor;
+-	FileRef extendedRangeIpv6FileDescriptor;
+-
+-	static FileRef openFile( std::string fileName, size_t fileSize );
+-
+-	void loadResponses();
+-	void loadRangesIpv4();
+-	void loadRangesIpv6();
+-	void loadExtendedRangesIpv4();
+-	void loadExtendedRangesIpv6();
+-};
+-
+-}
+-#endif /* NA_DB_FILE_ACCESSOR_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbMemMapAccessor.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbMemMapAccessor.h
+deleted file mode 100644
+index 23e465f06..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbMemMapAccessor.h
++++ /dev/null
+@@ -1,65 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_MEM_MAP_ACCESSOR_H_
+-#define NA_DB_MEM_MAP_ACCESSOR_H_
+-
+-#include "NaDbBaseAccessor.h"
+-
+-
+-namespace netacuity {
+-
+-class NaDbMemMapAccessor : public NaDbBaseAccessor {
+-
+-public:
+-	NaDbMemMapAccessor( int featureCode, std::string directory );
+-	virtual ~NaDbMemMapAccessor();
+-
+-protected:
+-	// override
+-	std::string getRawResponse( unsigned long offset) const;
+-	// override
+-	RangeRecordIpv4 getRangeRecordIpv4( unsigned int index ) const;
+-	// override
+-	RangeRecordIpv6 getRangeRecordIpv6( unsigned int index ) const;
+-	// override
+-	RangeRecordIpv6NetworkOnly getRangeRecordIpv6NetworkOnly( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv4 getExtendedRangeRecordIpv4( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv6 getExtendedRangeRecordIpv6( unsigned int index ) const;
+-	// override
+-	ExtendedRangeRecordIpv6NetworkOnly getExtendedRangeRecordIpv6NetworkOnly( unsigned int index ) const;
+-
+-private:
+-	// the memory-mapped data for the responses
+-	char* responseData;
+-
+-	// the memory-mapped data for the IPv4 ranges
+-	RangeRecordIpv4* rangeDataIpv4;
+-	ExtendedRangeRecordIpv4* extendedRangeDataIpv4;
+-
+-	// the memory-mapped data for the IPv6 ranges
+-	RangeRecordIpv6* rangeDataIpv6;
+-	RangeRecordIpv6NetworkOnly* rangeDataIpv6NetworkOnly;
+-	ExtendedRangeRecordIpv6* extendedRangeDataIpv6;
+-	ExtendedRangeRecordIpv6NetworkOnly* extendedRangeDataIpv6NetworkOnly;
+-
+-	static void* loadMemoryMappedFile( std::string fileName, size_t fileSize );
+-	static void unloadMemoryMappedFile( std::string fileName, void* memMappedData, size_t fileSize );
+-
+-	void loadResponses();
+-	void loadRangesIpv4();
+-	void loadRangesIpv6();
+-	void loadExtendedRangesIpv4();
+-	void loadExtendedRangesIpv6();
+-};
+-
+-}
+-#endif /* NA_DB_MEM_MAP_ACCESSOR_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbParser.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbParser.h
+deleted file mode 100644
+index 31bfce9ac..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbParser.h
++++ /dev/null
+@@ -1,73 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_PARSER_H_
+-#define NA_DB_PARSER_H_
+-
+-#include "NaDbBaseAccessor.h"
+-
+-namespace netacuity {
+-
+-typedef struct AccessorInfo_struct {
+-	AccessorInfo_struct() : accessor(), fieldNameList() {}
+-	NaDbBaseAccessor* accessor;
+-	StringList fieldNameList;
+-} AccessorInfo;
+-
+-typedef std::map<int, AccessorInfo> AccessorInfoMap;
+-
+-class NaDbParser {
+-
+-public:
+-	NaDbParser(  );
+-	virtual ~NaDbParser();
+-
+-	/// Load the specified accessor.
+-	void loadAccessor( NaDbBaseAccessor &accessor );
+-
+-	/// Return the accessor loaded for the specified featureCode.
+-	const NaDbBaseAccessor* getAccessor( int featureCode ) const;
+-
+-	/// Retrieve the mapped response for the specified IPv4 number.
+-	ResponseMap queryMappedResponseIpv4( unsigned long ipNum ) const;
+-
+-	/// Retrieve the mapped response for the specified IPv6 network number.
+-	/// The network number is the half of the IPv6 address which contains the most significant-bits.
+-	ResponseMap queryMappedResponseIpv6( unsigned long long numNetwork ) const;
+-
+-	/// Retrieve the mapped response for the specified IPv6 full network and interface numbers.
+-	/// The network number is the half of the IPv6 address which contains the most significant bits.
+-	/// The interface number is the half of the IPv6 address which contains the least significant bits.
+-	ResponseMap queryMappedResponseIpv6( unsigned long long numNetwork, unsigned long long numInterface ) const;
+-
+-	/// Retrieve the mapped response for the specified IPv4 address.
+-	ResponseMap queryMappedResponseIpv4( in_addr ipv4 ) const;
+-
+-	/// Retrieve the mapped response for the specified IPv6 address.
+-	ResponseMap queryMappedResponseIpv6( in6_addr ipv6 ) const;
+-
+-	/// Retrieve the mapped response for the specified IP "dotted" presentation address, IPv4 or IPv6.
+-	ResponseMap queryMappedResponse( const char* ipAddress ) const;
+-
+-	/// Retrieve the mapped response for the specified IP "dotted" presentation address, IPv4 or IPv6.
+-	ResponseMap queryMappedResponse( std::string ipAddress ) const;
+-
+-
+-private:
+-	static const int MAX_FEATURE_CODE_COUNT = 100;
+-
+-	AccessorInfoMap accessorInfoMap;
+-
+-	ResponseMap getDefaultMappedResponse() const;
+-	static void addMappedResponse( ResponseMap &destMap, const StringList &fieldList, const std::string &rawResponse );
+-
+-};
+-
+-}
+-#endif /* NA_DB_PARSER_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbResponseIterator.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbResponseIterator.h
+deleted file mode 100644
+index c548f65d2..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbResponseIterator.h
++++ /dev/null
+@@ -1,41 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_RESPONSE_ITERATOR_H_
+-#define NA_DB_RESPONSE_ITERATOR_H_
+-
+-#include "NaDbUtil.h"
+-
+-namespace netacuity {
+-
+-typedef struct FieldInfo_struct {
+-	FieldInfo_struct() : fieldName(), fieldValue() {}
+-	std::string fieldName;
+-	std::string fieldValue;
+-} FieldInfo;
+-
+-
+-class NaDbResponseIterator {
+-
+-public:
+-	NaDbResponseIterator( const ResponseMap &responseMap );
+-	virtual ~NaDbResponseIterator();
+-
+-	bool hasNext();
+-	FieldInfo next();
+-
+-private:
+-	ResponseMap::const_iterator iter;
+-	ResponseMap::const_iterator end;
+-};
+-
+-NaDbResponseIterator getIterator( const ResponseMap &responseMap );
+-
+-}
+-#endif /* NA_DB_RESPONSE_ITERATOR_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbUtil.h b/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbUtil.h
+deleted file mode 100644
+index 632e99c7a..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/NaDbUtil.h
++++ /dev/null
+@@ -1,42 +0,0 @@
+-//============================================================================
+-// Program     : NetAcuity C++ Embedded API
+-// Author      : Digital Envoy
+-// Version     : 6.4.1.3
+-// Date        : 25-Jun-2019
+-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+-//============================================================================
+-
+-
+-#ifndef NA_DB_UTIL_H_
+-#define NA_DB_UTIL_H_
+-
+-#ifdef _WIN32
+-#include <winsock2.h>
+-#include <windows.h>
+-#include <Inaddr.h>
+-#include <In6addr.h>
+-#else
+-#include <arpa/inet.h>
+-#endif
+-
+-#include "NaDbDef.h"
+-
+-namespace netacuity {
+-
+-
+-	unsigned long getIpv4Num( in_addr ipv4 );
+-
+-	unsigned long long getIpv6NetworkNum( in6_addr ipv6 );
+-
+-	unsigned long long getIpv6InterfaceNum( in6_addr ipv6 );
+-
+-	std::string toString( StringList list );
+-
+-	std::string toString( ResponseMap map );
+-
+-	std::string getString( const char* message, long long value );
+-
+-	std::string getFieldValue( const ResponseMap &responseMap, const std::string &fieldName );
+-
+-}
+-#endif /* NA_DB_UTIL_H_ */
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/inet_pton_windows_def.h b/modules/pubmatic/openwrap/geodb/netacuity/include/inet_pton_windows_def.h
+deleted file mode 100644
+index ebfc4c433..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/inet_pton_windows_def.h
++++ /dev/null
+@@ -1,8 +0,0 @@
+-#ifndef INET_PTON_WINDOWS_DEF_H_
+-#define INET_PTON_WINDOWS_DEF_H_
+-
+-#ifdef _WIN32
+-int inet_pton(int af, const char *src, void *dst);
+-#endif /* _WIN32 */
+-
+-#endif /* INET_PTON_WINDOWS_DEF_H_*/
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/include/na_db_wrapper.h b/modules/pubmatic/openwrap/geodb/netacuity/include/na_db_wrapper.h
+deleted file mode 100644
+index 9366d5a77..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/include/na_db_wrapper.h
++++ /dev/null
+@@ -1,67 +0,0 @@
+-#ifndef NA_DB_WRAPPER_H
+-#define NA_DB_WRAPPER_H
+-
+-#define THREE_COUNTRY_LEN	3
+-#define TWO_COUNTRY_LEN	2
+-#define ONE_CHAR_LEN		1
+-#define CONN_SPEED_LEN		100
+-#define POSTAL_CODE_LEN	50
+-#define GENERAL_STRING_LEN	255
+-#define IP_STRING_LEN		49
+-#define AREA_CODE_LEN		255
+-#define MCC_MNC_LEN		9
+-#ifdef __cplusplus
+-	extern "C" {
+-#endif
+-	/* Feature - 4 - Edge response structure */
+-	typedef struct na_edge_data {
+-		char  edge_country[THREE_COUNTRY_LEN +1];
+-		char  edge_region[GENERAL_STRING_LEN +1];
+-		char  edge_city[GENERAL_STRING_LEN +1];
+-		char  edge_conn_speed[CONN_SPEED_LEN +1];
+-		int   edge_metro_code;
+-		float edge_latitude;
+-		float edge_longitude;
+-		char  edge_postal_code[POSTAL_CODE_LEN +1];
+-		int   edge_country_code;
+-		int   edge_region_code;
+-		int   edge_city_code;
+-		int   edge_continent_code;
+-		char  edge_two_letter_country[TWO_COUNTRY_LEN +1];
+-		int   edge_internal_code;
+-		char  edge_area_codes[AREA_CODE_LEN +1];
+-		int   edge_country_conf;
+-		int   edge_region_conf;
+-		int   edge_city_conf;
+-		int   edge_postal_conf;
+-		int   edge_gmt_offset;
+-		char  edge_in_dst[ONE_CHAR_LEN +1];
+-	}na_edge_data_t;
+-
+-	/* Feature - 24 - Mobile Carrier response structure*/
+-	typedef struct na_mobile_carrier {
+-		char mobile_carrier[GENERAL_STRING_LEN +1];
+-		char mcc[MCC_MNC_LEN +1];
+-		char mnc[MCC_MNC_LEN +1];
+-	}na_mobile_carrier_data_t;
+-
+-	typedef struct {
+-		void *parser;
+-	}NetAcuityClient;
+-
+-	/* Return NaDbParser object pointer*/
+-	extern NetAcuityClient* init_netacuity_client(const char* na_db_data_dir, int feature_code, int use_memory_mapped_file);
+-	/* Free NaDbParser object*/
+-	extern void free_netacuity_client(NetAcuityClient* na_client, int feature_code);
+-	/* Initialize na_edge_data_t object*/
+-	extern void init_na_edge_data(na_edge_data_t* edge_data);
+-	/* Initialize na_mobile_carrier_t object*/
+-	extern void init_na_mobile_carrier_data(na_mobile_carrier_data_t* edge_data);
+-	/* Fetch Geo details for given ip_addr and save these details into na_edge_data_t object*/
+-	extern int get_geo_detail_from_edge_db(NetAcuityClient* na_client, const char* ip_addr, na_edge_data_t* edge_data);
+-	/* Fetch Mobile Carrier details for given ip_addr and save these details into na_mobile_carrier_t object*/
+-	extern int get_mobile_carrier_detail(NetAcuityClient* na_client, const char* ip_addr, na_mobile_carrier_data_t* mc_data);
+-#ifdef __cplusplus
+-	}
+-#endif
+-#endif
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/netacuity.go b/modules/pubmatic/openwrap/geodb/netacuity/netacuity.go
+deleted file mode 100644
+index bb1d9dcff..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/netacuity.go
++++ /dev/null
+@@ -1,41 +0,0 @@
+-//go:build linux && !ignoreNetacuity
+-// +build linux,!ignoreNetacuity
+-
+-// Package netacuity offers methods for initializing a GeoIP database client and
+-// to perform the ip-to-geo lookup functionality.
+-// Build constraint flag makes sure that this file compiles only for linux platform
+-package netacuity
+-
+-import (
+-	"strings"
+-
+-	"git.pubmatic.com/PubMatic/go-netacuity-client"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-)
+-
+-type NetAcuity struct{}
+-
+-// LookUp function performs the ip-to-geo lookup
+-func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
+-	geoInfo, err := netacuity.LookUp(ip)
+-	if err != nil {
+-		return nil, err
+-	}
+-	return &geodb.GeoInfo{
+-		CountryCode:           geoInfo.CountryCode,
+-		ISOCountryCode:        geoInfo.ISOCountryCode,
+-		RegionCode:            geoInfo.RegionCode,
+-		City:                  geoInfo.City,
+-		PostalCode:            geoInfo.PostalCode,
+-		DmaCode:               geoInfo.DmaCode,
+-		Latitude:              geoInfo.Latitude,
+-		Longitude:             geoInfo.Longitude,
+-		AreaCode:              geoInfo.AreaCode,
+-		AlphaThreeCountryCode: strings.ToUpper(geoInfo.AlphaThreeCountryCode),
+-	}, nil
+-}
+-
+-// InitGeoDBClient initialises the NetAcuity client
+-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
+-	return netacuity.InitNetacuityClient(dbPath)
+-}
+diff --git a/modules/pubmatic/openwrap/geodb/netacuity/netacuity_nonlinux.go b/modules/pubmatic/openwrap/geodb/netacuity/netacuity_nonlinux.go
+deleted file mode 100644
+index 4bddae154..000000000
+--- a/modules/pubmatic/openwrap/geodb/netacuity/netacuity_nonlinux.go
++++ /dev/null
+@@ -1,24 +0,0 @@
+-//go:build !linux || ignoreNetacuity
+-// +build !linux ignoreNetacuity
+-
+-// Package netacuity offers methods for initializing a GeoIP database client and
+-// to perform the ip-to-geo lookup functionality.
+-// This file removes the compile time dependency of go-netacuity-client library to makes sure
+-// that the application compiles and run successfully on non-linux platforms (including macOS).
+-package netacuity
+-
+-import (
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-)
+-
+-type NetAcuity struct{}
+-
+-// LookUp function returns empty values for GeoInfo for non-linux platform
+-func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
+-	return &geodb.GeoInfo{}, nil
+-}
+-
+-// InitGeoDBClient do nothing for non-linux platform
+-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
+-	return nil
+-}
+diff --git a/modules/pubmatic/openwrap/metrics/config/multimetrics.go b/modules/pubmatic/openwrap/metrics/config/multimetrics.go
+index 8f7248cd6..fe6788e28 100644
+--- a/modules/pubmatic/openwrap/metrics/config/multimetrics.go
++++ b/modules/pubmatic/openwrap/metrics/config/multimetrics.go
+@@ -446,13 +446,6 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
+ 	}
+ }
+ 
+-// RecordGeoDBInitStatus record geodb failures
+-func (me *MultiMetricsEngine) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
+-	for _, thisME := range *me {
+-		thisME.RecordGeoDBInitStatus(dcName, nodeName, podName, value)
+-	}
+-}
+-
+ // RecordAmpVideoRequests across all engines
+ func (me *MultiMetricsEngine) RecordAmpVideoRequests(pubid, profileid string) {
+ 	for _, thisME := range *me {
+diff --git a/modules/pubmatic/openwrap/metrics/metrics.go b/modules/pubmatic/openwrap/metrics/metrics.go
+index e76415ad8..24c751368 100644
+--- a/modules/pubmatic/openwrap/metrics/metrics.go
++++ b/modules/pubmatic/openwrap/metrics/metrics.go
+@@ -25,7 +25,6 @@ type MetricsEngine interface {
+ 	RecordPublisherRequests(endpoint string, publisher string, platform string)
+ 	RecordReqImpsWithContentCount(publisher, contentType string)
+ 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
+-	RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64)
+ 
+ 	// not-captured in openwrap module, dont provide enough insights
+ 	RecordPBSAuctionRequestsStats()
+diff --git a/modules/pubmatic/openwrap/metrics/mock/mock.go b/modules/pubmatic/openwrap/metrics/mock/mock.go
+index 0c2861a1b..1d600c020 100644
+--- a/modules/pubmatic/openwrap/metrics/mock/mock.go
++++ b/modules/pubmatic/openwrap/metrics/mock/mock.go
+@@ -250,18 +250,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 i
+ 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDBQueryFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordDBQueryFailure), arg0, arg1, arg2)
+ }
+ 
+-// RecordGeoDBInitStatus mocks base method
+-func (m *MockMetricsEngine) RecordGeoDBInitStatus(arg0, arg1, arg2 string, arg3 float64) {
+-	m.ctrl.T.Helper()
+-	m.ctrl.Call(m, "RecordGeoDBInitStatus", arg0, arg1, arg2, arg3)
+-}
+-
+-// RecordGeoDBInitStatus indicates an expected call of RecordGeoDBInitStatus
+-func (mr *MockMetricsEngineMockRecorder) RecordGeoDBInitStatus(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+-	mr.mock.ctrl.T.Helper()
+-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoDBInitStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoDBInitStatus), arg0, arg1, arg2, arg3)
+-}
+-
+ // RecordGetProfileDataTime mocks base method.
+ func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
+ 	m.ctrl.T.Helper()
+diff --git a/modules/pubmatic/openwrap/metrics/prometheus/prometheus.go b/modules/pubmatic/openwrap/metrics/prometheus/prometheus.go
+index 4bdd399f3..4e68a0710 100644
+--- a/modules/pubmatic/openwrap/metrics/prometheus/prometheus.go
++++ b/modules/pubmatic/openwrap/metrics/prometheus/prometheus.go
+@@ -53,8 +53,7 @@ type Metrics struct {
+ 
+ 	dbQueryError *prometheus.CounterVec
+ 
+-	loggerFailure   *prometheus.CounterVec
+-	geoDBInitStatus *prometheus.GaugeVec
++	loggerFailure *prometheus.CounterVec
+ 
+ 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
+ 
+@@ -280,28 +279,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
+ 		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
+ 		[]float64{50, 100, 150, 200})
+ 
+-	metrics.geoDBInitStatus = newGauge(cfg, promRegistry,
+-		"geodb_status",
+-		"An indicator to identify the GeoDB database's state of failure. 1 indicates failure and 0 indicates healthy.",
+-		[]string{dcNameLabel, nodeNameLabel, podNameLabel})
+-
+ 	newSSHBMetrics(&metrics, cfg, promRegistry)
+ 
+ 	return &metrics
+ }
+ 
+-func newGauge(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string) *prometheus.GaugeVec {
+-	opts := prometheus.GaugeOpts{
+-		Namespace: cfg.Namespace,
+-		Subsystem: cfg.Subsystem,
+-		Name:      name,
+-		Help:      help,
+-	}
+-	gauge := prometheus.NewGaugeVec(opts, labels)
+-	registry.MustRegister(gauge)
+-	return gauge
+-}
+-
+ func newCounter(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string) *prometheus.CounterVec {
+ 	opts := prometheus.CounterOpts{
+ 		Namespace: cfg.Namespace,
+@@ -509,15 +491,6 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
+ 	}).Inc()
+ }
+ 
+-// RecordGeoDBInitStatus to record status of geodb initialisation status
+-func (m *Metrics) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
+-	m.geoDBInitStatus.With(prometheus.Labels{
+-		dcNameLabel:   dcName,
+-		nodeNameLabel: nodeName,
+-		podNameLabel:  podName,
+-	}).Set(value)
+-}
+-
+ // RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+ func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+ 	m.analyticsThrottle.With(prometheus.Labels{
+diff --git a/modules/pubmatic/openwrap/metrics/prometheus/prometheus_sshb.go b/modules/pubmatic/openwrap/metrics/prometheus/prometheus_sshb.go
+index 9c640b784..d8b9e7506 100644
+--- a/modules/pubmatic/openwrap/metrics/prometheus/prometheus_sshb.go
++++ b/modules/pubmatic/openwrap/metrics/prometheus/prometheus_sshb.go
+@@ -24,7 +24,6 @@ const (
+ 	pubIdLabel         = "pub_id"
+ 	partnerLable       = "partner"
+ 	statusLabel        = "status"
+-	dcNameLabel        = "dc_name"
+ 	nodeNameLabel      = "node_name"
+ 	podNameLabel       = "pod_name"
+ 	methodNameLabel    = "method_name"
+diff --git a/modules/pubmatic/openwrap/metrics/prometheus/prometheus_test.go b/modules/pubmatic/openwrap/metrics/prometheus/prometheus_test.go
+index 4dad083e0..59e81b9c0 100644
+--- a/modules/pubmatic/openwrap/metrics/prometheus/prometheus_test.go
++++ b/modules/pubmatic/openwrap/metrics/prometheus/prometheus_test.go
+@@ -325,27 +325,6 @@ func TestRecordDBQueryFailure(t *testing.T) {
+ 		})
+ }
+ 
+-func TestRecordGeoDBInitStatus(t *testing.T) {
+-
+-	m := createMetricsForTesting()
+-
+-	nodeName := "sfo1hyp265"
+-	podName := "5cfcdc97fc-j5dlw"
+-	dcName := "k8s-sfo"
+-	value := float64(1)
+-
+-	m.RecordGeoDBInitStatus(dcName, nodeName, podName, value)
+-
+-	expectedCount := float64(1)
+-	assertGaugeVecValue(t, "", "geodb_status", m.geoDBInitStatus,
+-		expectedCount,
+-		prometheus.Labels{
+-			nodeNameLabel: nodeName,
+-			podNameLabel:  podName,
+-			dcNameLabel:   dcName,
+-		})
+-}
+-
+ func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
+ 	var result dto.Histogram
+ 	processMetrics(histogram, func(m dto.Metric) {
+@@ -417,16 +396,3 @@ func assertCounterVecValue(t *testing.T, description, name string, counterVec *p
+ 	counter := counterVec.With(labels)
+ 	assertCounterValue(t, description, name, counter, expected)
+ }
+-
+-func assertGaugeValue(t *testing.T, description, name string, gauge prometheus.Gauge, expected float64) {
+-	m := dto.Metric{}
+-	gauge.Write(&m)
+-	actual := *m.GetGauge().Value
+-
+-	assert.Equal(t, expected, actual, description)
+-}
+-
+-func assertGaugeVecValue(t *testing.T, description, name string, gaugeVec *prometheus.GaugeVec, expected float64, labels prometheus.Labels) {
+-	gauge := gaugeVec.With(labels)
+-	assertGaugeValue(t, description, name, gauge, expected)
+-}
+diff --git a/modules/pubmatic/openwrap/metrics/stats/tcp_stats.go b/modules/pubmatic/openwrap/metrics/stats/tcp_stats.go
+index 742a14f12..0003f7f8c 100644
+--- a/modules/pubmatic/openwrap/metrics/stats/tcp_stats.go
++++ b/modules/pubmatic/openwrap/metrics/stats/tcp_stats.go
+@@ -346,4 +346,3 @@ func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count st
+ func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {}
+ func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {}
+ func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)  {}
+-func (st *StatsTCP) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64)    {}
+diff --git a/modules/pubmatic/openwrap/models/adunitconfig/adunitconfig.go b/modules/pubmatic/openwrap/models/adunitconfig/adunitconfig.go
+index 7fb8923c5..9a6ef9c05 100644
+--- a/modules/pubmatic/openwrap/models/adunitconfig/adunitconfig.go
++++ b/modules/pubmatic/openwrap/models/adunitconfig/adunitconfig.go
+@@ -83,14 +83,4 @@ type AdConfig struct {
+ 	Regex              *bool            `json:"regex,omitempty"`
+ 	UniversalPixel     []UniversalPixel `json:"universalpixel,omitempty"`
+ 	EnableGAMUrlLookup bool             `json:"enablegamurllookup,omitempty"`
+-	BidderFilter       *BidderFilter    `json:"bidder-filter,omitempty"`
+-}
+-
+-type BidderFilter struct {
+-	Filters []Filter `json:"filter-config,omitempty"`
+-}
+-
+-type Filter struct {
+-	Bidders           []string    `json:"bidders,omitempty"`
+-	BiddingConditions interface{} `json:"bidding-conditions,omitempty"`
+ }
+diff --git a/modules/pubmatic/openwrap/models/constants.go b/modules/pubmatic/openwrap/models/constants.go
+index b56feec3c..c6261bdac 100755
+--- a/modules/pubmatic/openwrap/models/constants.go
++++ b/modules/pubmatic/openwrap/models/constants.go
+@@ -358,10 +358,6 @@ const (
+ 	SoftFloor = 0
+ 	HardFloor = 1
+ 
+-	//GeoDB status
+-	GeoDBFail    = 1
+-	GeoDBSuccess = 0
+-
+ 	CustomDimensions = "cds"
+ 	Enabled          = "1"
+ 
+diff --git a/modules/pubmatic/openwrap/models/nbr/codes.go b/modules/pubmatic/openwrap/models/nbr/codes.go
+index 1a92533ae..7b9aa7d23 100644
+--- a/modules/pubmatic/openwrap/models/nbr/codes.go
++++ b/modules/pubmatic/openwrap/models/nbr/codes.go
+@@ -8,7 +8,6 @@ const (
+ 	LossBidLostToDealBid          openrtb3.NoBidReason = 502 // Response Rejected - Lost to a Bid for a Deal
+ 	RequestBlockedSlotNotMapped   openrtb3.NoBidReason = 503
+ 	RequestBlockedPartnerThrottle openrtb3.NoBidReason = 504
+-	RequestBlockedPartnerFiltered openrtb3.NoBidReason = 505
+ )
+ 
+ // Openwrap module specific codes
+@@ -25,5 +24,4 @@ const (
+ 	InternalError                  openrtb3.NoBidReason = 610
+ 	AllSlotsDisabled               openrtb3.NoBidReason = 611
+ 	ServerSidePartnerNotConfigured openrtb3.NoBidReason = 612
+-	AllPartnersFiltered            openrtb3.NoBidReason = 613
+ )
+diff --git a/modules/pubmatic/openwrap/models/openwrap.go b/modules/pubmatic/openwrap/models/openwrap.go
+index 119755235..9467c8cdd 100644
+--- a/modules/pubmatic/openwrap/models/openwrap.go
++++ b/modules/pubmatic/openwrap/models/openwrap.go
+@@ -6,7 +6,6 @@ import (
+ 
+ 	"github.com/prebid/openrtb/v20/openrtb2"
+ 	"github.com/prebid/openrtb/v20/openrtb3"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+ 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+@@ -74,7 +73,6 @@ type RequestCtx struct {
+ 	MarketPlaceBidders map[string]struct{}
+ 
+ 	AdapterThrottleMap map[string]struct{}
+-	AdapterFilteredMap map[string]struct{}
+ 
+ 	AdUnitConfig *adunitconfig.AdUnitConfig
+ 
+@@ -106,7 +104,6 @@ type RequestCtx struct {
+ 	AppLovinMax            AppLovinMax
+ 	LoggerDisabled         bool
+ 	TrackerDisabled        bool
+-	GeoInfoFetcher         geodb.Geography
+ }
+ 
+ type OwBid struct {
+diff --git a/modules/pubmatic/openwrap/nonbids.go b/modules/pubmatic/openwrap/nonbids.go
+index d4094dbcd..0c44e54a8 100644
+--- a/modules/pubmatic/openwrap/nonbids.go
++++ b/modules/pubmatic/openwrap/nonbids.go
+@@ -2,7 +2,6 @@ package openwrap
+ 
+ import (
+ 	"github.com/prebid/openrtb/v20/openrtb2"
+-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+ 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+@@ -98,17 +97,3 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
+ 		}
+ 	}
+ }
+-
+-func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidationRequestPayload) openrtb_ext.NonBidCollection {
+-	var seatNonBids openrtb_ext.NonBidCollection
+-	for bidderName := range Bidders {
+-		for _, imp := range payload.BidRequest.Imp {
+-			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+-				Bid:          &openrtb2.Bid{ImpID: imp.ID},
+-				NonBidReason: int(nbr.RequestBlockedPartnerFiltered),
+-			})
+-			seatNonBids.AddBid(nonBid, bidderName)
+-		}
+-	}
+-	return seatNonBids
+-}
+diff --git a/modules/pubmatic/openwrap/openwrap.go b/modules/pubmatic/openwrap/openwrap.go
+index 2b7b1709d..4da375400 100644
+--- a/modules/pubmatic/openwrap/openwrap.go
++++ b/modules/pubmatic/openwrap/openwrap.go
+@@ -20,8 +20,6 @@ import (
+ 	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
+ 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+ 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
+ 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+@@ -38,7 +36,6 @@ type OpenWrap struct {
+ 	cache              cache.Cache
+ 	metricEngine       metrics.MetricsEngine
+ 	currencyConversion currency.Conversions
+-	geoInfoFetcher     geodb.Geography
+ 	pubFeatures        publisherfeature.Feature
+ 	unwrap             unwrap.Unwrap
+ }
+@@ -99,7 +96,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
+ 			cache:              owCache,
+ 			metricEngine:       &metricEngine,
+ 			currencyConversion: moduleDeps.CurrencyConversion,
+-			geoInfoFetcher:     netacuity.NetAcuity{},
+ 			pubFeatures:        pubFeatures,
+ 			unwrap:             uw,
+ 		}
+diff --git a/modules/pubmatic/openwrap/traffic_shapping.go b/modules/pubmatic/openwrap/traffic_shapping.go
+deleted file mode 100644
+index 9cef24c0c..000000000
+--- a/modules/pubmatic/openwrap/traffic_shapping.go
++++ /dev/null
+@@ -1,108 +0,0 @@
+-package openwrap
+-
+-import (
+-	"errors"
+-	"fmt"
+-
+-	"github.com/diegoholiveira/jsonlogic/v3"
+-	"github.com/golang/glog"
+-	"github.com/prebid/openrtb/v20/openrtb2"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+-)
+-
+-const (
+-	keycountry = "country"
+-)
+-
+-func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, c cache.Cache) (map[string]struct{}, bool) {
+-	filteredBidders := map[string]struct{}{}
+-	key := fmt.Sprintf("bidderfilter_%d_%d_%d", rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
+-	bf, ok := c.Get(key)
+-	if !ok {
+-		return filteredBidders, false
+-	}
+-	bidderFilter, ok := bf.(map[string]interface{})
+-	if !ok {
+-		return filteredBidders, false
+-	}
+-	data := generateEvaluationData(rCtx, bidRequest)
+-	allPartnersFilteredFlag := true
+-	for _, partnerConfig := range rCtx.PartnerConfigMap {
+-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+-			continue
+-		}
+-
+-		if _, ok := rCtx.AdapterThrottleMap[partnerConfig[models.BidderCode]]; ok {
+-			continue
+-		}
+-
+-		biddingCondition, ok := bidderFilter[partnerConfig[models.BidderCode]]
+-		if ok && !evaluateBiddingCondition(data, biddingCondition) {
+-			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
+-			continue
+-		}
+-		allPartnersFilteredFlag = false
+-	}
+-
+-	return filteredBidders, allPartnersFilteredFlag
+-}
+-
+-func generateEvaluationData(rCtx models.RequestCtx, BidRequest *openrtb2.BidRequest) map[string]interface{} {
+-	data := map[string]interface{}{}
+-	data[keycountry] = getCountryFromRequest(rCtx, BidRequest)
+-	return data
+-}
+-
+-func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
+-	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
+-		return bidRequest.Device.Geo.Country
+-	}
+-	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
+-		return bidRequest.User.Geo.Country
+-	}
+-
+-	ip := ""
+-	if bidRequest.Device != nil {
+-		if bidRequest.Device.IP != "" {
+-			ip = bidRequest.Device.IP
+-		} else {
+-			ip = bidRequest.Device.IPv6
+-		}
+-	}
+-
+-	if ip == "" {
+-		ip = rCtx.IP
+-	}
+-
+-	if ip != "" {
+-		country, err := getCountryFromIP(rCtx.GeoInfoFetcher, ip)
+-		if err != nil {
+-			glog.Errorf("type:[geo_fetch_failed] ip:[%v] error:[%v]", ip, err)
+-			return ""
+-		}
+-		return country
+-	}
+-	return ""
+-}
+-
+-func evaluateBiddingCondition(data, rules interface{}) bool {
+-	output, err := jsonlogic.ApplyInterface(rules, data)
+-	if err != nil {
+-		glog.Errorf("Error evaluating bidding condition for rules: %v | data: %v | Error: %v", rules, data, err)
+-		return false
+-	}
+-	return output == true
+-}
+-
+-func getCountryFromIP(geoInfoFetcher geodb.Geography, ip string) (string, error) {
+-	if geoInfoFetcher == nil {
+-		return "", errors.New("geoDB instance is missing")
+-	}
+-	geoData, err := geoInfoFetcher.LookUp(ip)
+-	if err != nil {
+-		return "", err
+-	}
+-	return geoData.AlphaThreeCountryCode, nil
+-}
+diff --git a/modules/pubmatic/openwrap/traffic_shapping_test.go b/modules/pubmatic/openwrap/traffic_shapping_test.go
+deleted file mode 100644
+index af8c3b9ac..000000000
+--- a/modules/pubmatic/openwrap/traffic_shapping_test.go
++++ /dev/null
+@@ -1,638 +0,0 @@
+-package openwrap
+-
+-import (
+-	"errors"
+-	"testing"
+-
+-	"github.com/golang/mock/gomock"
+-	"github.com/magiconair/properties/assert"
+-	"github.com/prebid/openrtb/v20/openrtb2"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+-	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+-	mock_geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/mock"
+-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+-)
+-
+-func TestEvaluateBiddingCondition(t *testing.T) {
+-	type args struct {
+-		data  interface{}
+-		logic interface{}
+-	}
+-	tests := []struct {
+-		name       string
+-		args       args
+-		wantResult bool
+-	}{
+-		{
+-			name: "No data present",
+-			args: args{
+-				data: nil,
+-				logic: map[string]interface{}{
+-					"or": []interface{}{
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "buyeruidAvailable",
+-										},
+-										true,
+-									},
+-								},
+-							},
+-						},
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "testScenario",
+-										},
+-										"a-jpn-kor-no-uid",
+-									},
+-								},
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-							},
+-						},
+-					},
+-				},
+-			},
+-		},
+-		{
+-			name: "No logic present",
+-			args: args{
+-				data: map[string]interface{}{
+-					"country":           "IND",
+-					"buyeruidAvailable": true,
+-				},
+-				logic: nil,
+-			},
+-		},
+-		{
+-			name: "Logic data present and evaluation returns true",
+-			args: args{
+-				data: map[string]interface{}{
+-					"country":           "JPN",
+-					"buyeruidAvailable": true,
+-				},
+-				logic: map[string]interface{}{
+-					"or": []interface{}{
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "buyeruidAvailable",
+-										},
+-										true,
+-									},
+-								},
+-							},
+-						},
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "testScenario",
+-										},
+-										"a-jpn-kor-no-uid",
+-									},
+-								},
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-							},
+-						},
+-					},
+-				},
+-			},
+-			wantResult: true,
+-		},
+-		{
+-			name: "Logic data present and evaluation returns false",
+-			args: args{
+-				data: map[string]interface{}{
+-					"country":           "IND",
+-					"buyeruidAvailable": true,
+-				},
+-				logic: map[string]interface{}{
+-					"or": []interface{}{
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "buyeruidAvailable",
+-										},
+-										true,
+-									},
+-								},
+-							},
+-						},
+-						map[string]interface{}{
+-							"and": []interface{}{
+-								map[string]interface{}{
+-									"==": []interface{}{
+-										map[string]interface{}{
+-											"var": "testScenario",
+-										},
+-										"a-jpn-kor-no-uid",
+-									},
+-								},
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"JPN",
+-											"KOR",
+-										},
+-									},
+-								},
+-							},
+-						},
+-					},
+-				},
+-			},
+-			wantResult: false,
+-		},
+-	}
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			gotResult := evaluateBiddingCondition(tt.args.data, tt.args.logic)
+-			assert.Equal(t, gotResult, tt.wantResult, tt.name)
+-		})
+-	}
+-}
+-
+-func TestGetFilteredBidders(t *testing.T) {
+-
+-	ctrl := gomock.NewController(t)
+-	defer ctrl.Finish()
+-	mockCache := mock_cache.NewMockCache(ctrl)
+-
+-	testCases := []struct {
+-		name           string
+-		requestCtx     models.RequestCtx
+-		bidRequest     *openrtb2.BidRequest
+-		cache          cache.Cache
+-		expectedResult map[string]struct{}
+-		expectedFlag   bool
+-		setup          func()
+-	}{
+-		{
+-			name: "Bidder filter not found in cache",
+-			requestCtx: models.RequestCtx{
+-				PubID:     1,
+-				ProfileID: 2,
+-				DisplayID: 3,
+-			},
+-			bidRequest: &openrtb2.BidRequest{},
+-			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
+-			},
+-			expectedResult: map[string]struct{}{},
+-			expectedFlag:   false,
+-		},
+-		{
+-			name: "Invalid data in cache",
+-			requestCtx: models.RequestCtx{
+-				PubID:     1,
+-				ProfileID: 2,
+-				DisplayID: 3,
+-			},
+-			bidRequest: &openrtb2.BidRequest{},
+-			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return("abc", false)
+-			},
+-			expectedResult: map[string]struct{}{},
+-			expectedFlag:   false,
+-		},
+-		{
+-			name: "Bidder filter found in cache - All partners filtered",
+-			requestCtx: models.RequestCtx{
+-				PubID:     1,
+-				ProfileID: 2,
+-				DisplayID: 3,
+-				AdapterThrottleMap: map[string]struct{}{
+-					"partner3": {},
+-				},
+-				PartnerConfigMap: map[int]map[string]string{
+-					1: {
+-						models.SERVER_SIDE_FLAG: "1",
+-						models.BidderCode:       "partner1",
+-					},
+-					2: {
+-						models.SERVER_SIDE_FLAG: "1",
+-						models.BidderCode:       "partner2",
+-					},
+-					3: {
+-						models.SERVER_SIDE_FLAG: "1",
+-						models.BidderCode:       "partner3",
+-					},
+-				},
+-			},
+-			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
+-					"partner1": map[string]interface{}{
+-						"or": []interface{}{
+-							map[string]interface{}{
+-								"and": []interface{}{
+-									map[string]interface{}{
+-										"in": []interface{}{
+-											map[string]interface{}{
+-												"var": "country",
+-											},
+-											[]interface{}{
+-												"JPN",
+-												"KOR",
+-											},
+-										},
+-									},
+-									map[string]interface{}{
+-										"==": []interface{}{
+-											map[string]interface{}{
+-												"var": "buyeruidAvailable",
+-											},
+-											true,
+-										},
+-									},
+-								},
+-							},
+-							map[string]interface{}{
+-								"and": []interface{}{
+-									map[string]interface{}{
+-										"==": []interface{}{
+-											map[string]interface{}{
+-												"var": "testScenario",
+-											},
+-											"a-jpn-kor-no-uid",
+-										},
+-									},
+-									map[string]interface{}{
+-										"in": []interface{}{
+-											map[string]interface{}{
+-												"var": "country",
+-											},
+-											[]interface{}{
+-												"JPN",
+-												"KOR",
+-											},
+-										},
+-									},
+-								},
+-							},
+-						},
+-					},
+-				}, true)
+-			},
+-			bidRequest: &openrtb2.BidRequest{
+-				Device: &openrtb2.Device{
+-					Geo: &openrtb2.Geo{
+-						Country: "IND",
+-					},
+-				},
+-			},
+-			expectedResult: map[string]struct{}{
+-				"partner1": {},
+-			},
+-			expectedFlag: false,
+-		},
+-		{
+-			name: "Bidder filter found in cache - No partner filtered",
+-			requestCtx: models.RequestCtx{
+-				PubID:     1,
+-				ProfileID: 2,
+-				DisplayID: 3,
+-				PartnerConfigMap: map[int]map[string]string{
+-					1: {
+-						models.SERVER_SIDE_FLAG: "1",
+-						models.BidderCode:       "partner1",
+-					},
+-					2: {
+-						models.SERVER_SIDE_FLAG: "1",
+-						models.BidderCode:       "partner2",
+-					},
+-				},
+-			},
+-			setup: func() {
+-				mockCache.EXPECT().Get(gomock.Any()).Return(
+-					map[string]interface{}{
+-						"partner1": map[string]interface{}{
+-							"or": []interface{}{
+-								map[string]interface{}{
+-									"in": []interface{}{
+-										map[string]interface{}{
+-											"var": "country",
+-										},
+-										[]interface{}{
+-											"IND",
+-											"KOR",
+-										},
+-									},
+-								},
+-								map[string]interface{}{
+-									"and": []interface{}{
+-										map[string]interface{}{
+-											"==": []interface{}{
+-												map[string]interface{}{
+-													"var": "testScenario",
+-												},
+-												"a-jpn-kor-no-uid",
+-											},
+-										},
+-										map[string]interface{}{
+-											"in": []interface{}{
+-												map[string]interface{}{
+-													"var": "country",
+-												},
+-												[]interface{}{
+-													"JPN",
+-													"KOR",
+-												},
+-											},
+-										},
+-									},
+-								},
+-							},
+-						},
+-					}, true)
+-			},
+-			bidRequest: &openrtb2.BidRequest{
+-				Device: &openrtb2.Device{
+-					Geo: &openrtb2.Geo{
+-						Country: "IND",
+-					},
+-				},
+-			},
+-			expectedResult: map[string]struct{}{},
+-			expectedFlag:   false,
+-		},
+-	}
+-	for _, tc := range testCases {
+-		t.Run(tc.name, func(t *testing.T) {
+-			tc.setup()
+-			result, flag := getFilteredBidders(tc.requestCtx, tc.bidRequest, mockCache)
+-			assert.Equal(t, tc.expectedResult, result)
+-			assert.Equal(t, tc.expectedFlag, flag)
+-		})
+-	}
+-}
+-
+-func TestGetCountryFromRequest(t *testing.T) {
+-
+-	ctrl := gomock.NewController(t)
+-	defer ctrl.Finish()
+-	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
+-
+-	type args struct {
+-		rCtx       models.RequestCtx
+-		bidRequest *openrtb2.BidRequest
+-	}
+-	tests := []struct {
+-		name  string
+-		args  args
+-		setup func()
+-		want  string
+-	}{
+-		{
+-			name: "country_present_in_device_object",
+-			args: args{
+-				rCtx: models.RequestCtx{},
+-				bidRequest: &openrtb2.BidRequest{
+-					Device: &openrtb2.Device{
+-						Geo: &openrtb2.Geo{Country: "IND"},
+-					},
+-				},
+-			},
+-			setup: func() {},
+-			want:  "IND",
+-		},
+-		{
+-			name: "contry_present_in_user_object",
+-			args: args{
+-				rCtx: models.RequestCtx{},
+-				bidRequest: &openrtb2.BidRequest{
+-					User: &openrtb2.User{
+-						Geo: &openrtb2.Geo{
+-							Country: "JPN",
+-						},
+-					},
+-				},
+-			},
+-			setup: func() {},
+-			want:  "JPN",
+-		},
+-		{
+-			name: "contry_present_in_both_device_and_user_object",
+-			args: args{
+-				rCtx: models.RequestCtx{},
+-				bidRequest: &openrtb2.BidRequest{
+-					Device: &openrtb2.Device{
+-						Geo: &openrtb2.Geo{Country: "IND"},
+-					},
+-					User: &openrtb2.User{
+-						Geo: &openrtb2.Geo{
+-							Country: "JPN",
+-						},
+-					},
+-				},
+-			},
+-			setup: func() {},
+-			want:  "IND",
+-		},
+-		{
+-			name: "detecting_country_from_device_ip",
+-			args: args{
+-				rCtx: models.RequestCtx{
+-					GeoInfoFetcher: mockGeoDb,
+-				},
+-				bidRequest: &openrtb2.BidRequest{
+-					Device: &openrtb2.Device{IP: "100.43.128.0"},
+-				},
+-			},
+-			setup: func() {
+-				mockGeoDb.EXPECT().LookUp("100.43.128.0").Return(&geodb.GeoInfo{
+-					CountryCode: "us", ISOCountryCode: "US", RegionCode: "13", City: "abc", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "USA",
+-				}, nil)
+-			},
+-			want: "USA",
+-		},
+-		{
+-			name: "detecting_country_from_device_ipv6",
+-			args: args{
+-				rCtx: models.RequestCtx{
+-					GeoInfoFetcher: mockGeoDb,
+-				},
+-				bidRequest: &openrtb2.BidRequest{
+-					Device: &openrtb2.Device{IPv6: "1.179.71.255"},
+-				},
+-			},
+-			setup: func() {
+-				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
+-					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
+-				}, nil)
+-			},
+-			want: "AUS",
+-		},
+-		{
+-			name: "detecting_country_from_request_ip",
+-			args: args{
+-				rCtx: models.RequestCtx{
+-					IP:             "101.143.255.255",
+-					GeoInfoFetcher: mockGeoDb,
+-				},
+-				bidRequest: &openrtb2.BidRequest{},
+-			},
+-			setup: func() {
+-				mockGeoDb.EXPECT().LookUp("101.143.255.255").Return(&geodb.GeoInfo{
+-					CountryCode: "jp", ISOCountryCode: "JP", RegionCode: "13", City: "tokyo", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "JPN",
+-				}, nil)
+-			},
+-			want: "JPN",
+-		},
+-		{
+-			name: "both_ip_and_country_are_missing_in_request",
+-			args: args{
+-				rCtx: models.RequestCtx{
+-					IP:             "",
+-					GeoInfoFetcher: mockGeoDb,
+-				},
+-				bidRequest: &openrtb2.BidRequest{},
+-			},
+-			setup: func() {
+-
+-			},
+-			want: "",
+-		},
+-	}
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			tt.setup()
+-			got := getCountryFromRequest(tt.args.rCtx, tt.args.bidRequest)
+-			assert.Equal(t, got, tt.want)
+-
+-		})
+-	}
+-}
+-
+-func TestGetCountryFromIP(t *testing.T) {
+-
+-	ctrl := gomock.NewController(t)
+-	defer ctrl.Finish()
+-	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
+-
+-	type args struct {
+-		ip             string
+-		geoInfoFetcher geodb.Geography
+-	}
+-	tests := []struct {
+-		name  string
+-		args  args
+-		setup func()
+-		want  string
+-		err   error
+-	}{
+-		{
+-			name: "valid_ip",
+-			args: args{
+-				ip:             "1.179.71.255",
+-				geoInfoFetcher: mockGeoDb,
+-			},
+-			setup: func() {
+-				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
+-					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
+-				}, nil)
+-			},
+-			want: "AUS",
+-			err:  nil,
+-		},
+-		{
+-			name: "geoDB_instance_missing",
+-			args: args{
+-				ip:             "1.179.71.255",
+-				geoInfoFetcher: nil,
+-			},
+-			setup: func() {},
+-			want:  "",
+-			err:   errors.New("geoDB instance is missing"),
+-		},
+-		{
+-			name: "invalid_ip",
+-			args: args{
+-				ip:             "1.179.71.255.123",
+-				geoInfoFetcher: mockGeoDb,
+-			},
+-			setup: func() {
+-				mockGeoDb.EXPECT().LookUp("1.179.71.255.123").Return(&geodb.GeoInfo{
+-					CountryCode: "", ISOCountryCode: "", RegionCode: "", City: "", PostalCode: "", DmaCode: 0, Latitude: 0, Longitude: 0, AreaCode: "", AlphaThreeCountryCode: "",
+-				}, nil)
+-			},
+-			want: "",
+-			err:  nil,
+-		},
+-	}
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			tt.setup()
+-			got, err := getCountryFromIP(tt.args.geoInfoFetcher, tt.args.ip)
+-			assert.Equal(t, got, tt.want)
+-			assert.Equal(t, err, tt.err)
+-
+-		})
+-	}
+-}
+diff --git a/modules/pubmatic/openwrap/util.go b/modules/pubmatic/openwrap/util.go
+index 4930ebe25..4e597e4b8 100644
+--- a/modules/pubmatic/openwrap/util.go
++++ b/modules/pubmatic/openwrap/util.go
+@@ -277,8 +277,6 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
+ 
+ 	case nbr.InternalError:
+ 		return 17 // ErrInvalidImpression
+-	case nbr.AllPartnersFiltered:
+-		return 26
+ 	}
+ 
+ 	return -1
+diff --git a/scripts/coverage.sh b/scripts/coverage.sh
+index edaa4c403..b6c8315e3 100755
+--- a/scripts/coverage.sh
++++ b/scripts/coverage.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ # Generate test coverage statistics for Go packages.
+-# 
++#
+ # Works around the fact that `go test -coverprofile` currently does not work
+ # with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
+ #
+@@ -71,7 +71,7 @@ generate_cover_data() {
+             cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+         fi
+ 
+-        go test -tags=ignoreNetacuity ${cover} "$pkg"
++        go test ${cover} "$pkg"
+     done
+ 
+     echo "mode: $mode" >"$profile"
+diff --git a/validate.sh b/validate.sh
+index 81b3433b1..1c44a26aa 100755
+--- a/validate.sh
++++ b/validate.sh
+@@ -17,10 +17,6 @@ while true; do
+   esac
+ done
+ 
+-# Locate netacuity directory and use the location to set the CGO_CFLAG
+-NETACUITY_DIR=`realpath ./modules/pubmatic/openwrap/geodb/netacuity/include`
+-export CGO_CFLAGS="-I $NETACUITY_DIR"
+-
+ ./scripts/format.sh -f $AUTOFMT
+ 
+ 
+@@ -28,7 +24,7 @@ export CGO_CFLAGS="-I $NETACUITY_DIR"
+ if $COVERAGE; then
+   ./scripts/check_coverage.sh
+ else
+-   go test -tags=ignoreNetacuity -timeout 120s $(go list ./... | grep -v /vendor/)
++   go test -timeout 120s $(go list ./... | grep -v /vendor/)
+ fi
+ 
+ # Then run the race condition tests. These only run on tests named TestRace.* for two reasons.
+@@ -36,7 +32,7 @@ fi
+ #   1. To speed things up (for large -count values)
+ #   2. Because some tests open up files on the filesystem, and some operating systems limit the number of open files for a single process.
+ if [ "$RACE" -ne "0" ]; then
+-  go test -tags=ignoreNetacuity -race $(go list ./... | grep -v /vendor/) -run ^TestRace.*$ -count $RACE
++  go test -race $(go list ./... | grep -v /vendor/) -run ^TestRace.*$ -count $RACE
+ fi
+ 
+ if $VET; then

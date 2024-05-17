@@ -57,10 +57,6 @@ mockgenmetrics:
 	mkdir -p modules/pubmatic/openwrap/metrics/mock
 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
 
-mockgengeodb:
-	mkdir -p modules/pubmatic/openwrap/geodb/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
-
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock
 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
