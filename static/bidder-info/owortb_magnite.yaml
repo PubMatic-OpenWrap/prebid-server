@@ -1,4 +1,0 @@
-# sample bidder-info yaml for testing purpose
-#endpoint: "https://hbopenbid.pubmatic.com/translator?source=prebid-server"
-maintainer:
-  email: "header-bidding@pubmatic.com"

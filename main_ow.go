@@ -2,7 +2,7 @@ package main_ow
 
 import (
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/adapters/ortbbidder"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder"
 )
 
 const paramsDirectory = "./static/bidder-params"

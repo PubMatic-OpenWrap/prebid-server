@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "magnite (oRTB Integration) Adapter Params",
-  "description": "A schema which validates params accepted by the magnite (oRTB Integration) adapter",
+  "title": "testbidder (oRTB Integration) Adapter Params",
+  "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
   "type": "object",
   "properties": {
     "adunitID": {
