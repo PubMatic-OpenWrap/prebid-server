@@ -494,6 +494,7 @@ const (
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+	TestQuery = "TestQuery"
 )
 
 // constants for owlogger Integration Type
