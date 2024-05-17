@@ -96,15 +96,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordAnalyticsTrackingThrottled(arg0, 
 }
 
 // RecordSignalDataStatus mocks base method.
-func (m *MockMetricsEngine) RecordSignalDataStatus(arg0, arg1 string) {
+func (m *MockMetricsEngine) RecordSignalDataStatus(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordSignalDataStatus", arg0, arg1)
+	m.ctrl.Call(m, "RecordSignalDataStatus", arg0, arg1, arg2)
 }
 
 // RecordSignalDataStatus indicates an expected call of RecordSignalDataStatus.
-func (mr *MockMetricsEngineMockRecorder) RecordSignalDataStatus(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordSignalDataStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSignalDataStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSignalDataStatus), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSignalDataStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSignalDataStatus), arg0, arg1, arg2)
 }
 
 // RecordBadRequests mocks base method.

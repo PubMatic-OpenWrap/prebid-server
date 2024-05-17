@@ -570,41 +570,41 @@ func TestGetSignalData(t *testing.T) {
 		want  *openrtb2.BidRequest
 	}{
 		{
-			name: "incorrect body",
+			name: "incorrect json body",
 			args: args{
-				requestBody: []byte(`{"id":"123","user":Passed","segment":[{"signal":{BIDDING_SIGNA}]}],"ext":{"gdpr":0}}}`),
+				requestBody: []byte(`{"id":"123","user":Passed","segment":[{"signal":{BIDDING_SIGNA}]}],"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":1234}}}}}}}`),
 				rctx: models.RequestCtx{
 					MetricsEngine: mockEngine,
 				},
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("", models.MissingSignal)
+				mockEngine.EXPECT().RecordSignalDataStatus("", "", models.MissingSignal)
 			},
 			want: nil,
 		},
 		{
 			name: "signal parsing fail",
 			args: args{
-				requestBody: []byte(`{"id":"123","app":{"publisher":{"id":"5890"}},"user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{BIDDING_SIGNAL}"]}],"ext":{"gdpr":0}}}`),
+				requestBody: []byte(`{"id":"123","app":{"publisher":{"id":"5890"}},"user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":"{BIDDING_SIGNAL}"}]}]},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":1234}}}}}}`),
 				rctx: models.RequestCtx{
 					MetricsEngine: mockEngine,
 				},
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", models.InvalidSignal)
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "1234", models.InvalidSignal)
 			},
 			want: nil,
 		},
 		{
 			name: "single user.data with signal with incorrect signal",
 			args: args{
-				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":{BIDDING_SIGNAL}]}],"ext":{"gdpr":0}}}`),
+				requestBody: []byte(`{"id":"123","user":{"data":[{"id":"1","name":"Publisher Passed","segment":[{"signal":{}}]}]},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":1234}}}}}}`),
 				rctx: models.RequestCtx{
 					MetricsEngine: mockEngine,
 				},
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("", models.MissingSignal)
+				mockEngine.EXPECT().RecordSignalDataStatus("", "1234", models.InvalidSignal)
 			},
 			want: nil,
 		},
@@ -653,16 +653,15 @@ func TestUpdateMaxAppLovinRequest(t *testing.T) {
 		{
 			name: "signal not present",
 			args: args{
-				requestBody: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"applovin_mediation","displaymanagerver":"2.3"}]}`),
+				requestBody: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"applovin_mediation","displaymanagerver":"2.3"}],"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":1234}}}}}}`),
 				rctx: models.RequestCtx{
-					ProfileIDStr:  "1234",
 					MetricsEngine: mockEngine,
 				},
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", models.MissingSignal)
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "1234", models.MissingSignal)
 			},
-			want: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"PubMatic_OpenWrap_SDK"}]}`),
+			want: []byte(`{"id":"1","app":{"publisher":{"id":"5890"}},"user":{"data":[{"segment":[{}]}]},"imp":[{"displaymanager":"PubMatic_OpenWrap_SDK"}],"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":1234}}}}}}`),
 		},
 		{
 			name: "invalid request body",

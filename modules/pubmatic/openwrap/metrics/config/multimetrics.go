@@ -496,8 +496,8 @@ func (me *MultiMetricsEngine) RecordAnalyticsTrackingThrottled(pubid, profileid,
 }
 
 // RecordSignalDataStatus record signaldata status(invalid,missing) at publisher level
-func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, signalType string) {
+func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalType string) {
 	for _, thisME := range *me {
-		thisME.RecordSignalDataStatus(pubid, signalType)
+		thisME.RecordSignalDataStatus(pubid, profileid, signalType)
 	}
 }

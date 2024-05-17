@@ -12,13 +12,17 @@ import (
 func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
-		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), models.MissingSignal)
+		signalType := models.InvalidSignal
+		if err == jsonparser.KeyPathNotFoundError {
+			signalType = models.MissingSignal
+		}
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), signalType)
 		return nil
 	}
 
 	signalData := &openrtb2.BidRequest{}
 	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
-		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), models.InvalidSignal)
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), models.InvalidSignal)
 		return nil
 	}
 	return signalData
@@ -291,6 +295,14 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 func getAppPublisherID(requestBody []byte) string {
 	if pubId, err := jsonparser.GetString(requestBody, "app", "publisher", "id"); err == nil && len(pubId) > 0 {
 		return pubId
+	}
+	return ""
+}
+
+func getProfileID(requestBody []byte) string {
+	if profileId, err := jsonparser.GetInt(requestBody, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
+		a := strconv.Itoa(int(profileId))
+		return a
 	}
 	return ""
 }

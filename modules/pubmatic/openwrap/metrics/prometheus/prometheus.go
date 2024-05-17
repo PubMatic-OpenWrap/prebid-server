@@ -267,7 +267,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.signalStatus = newCounter(cfg, promRegistry,
 		"signal_status",
 		"Count signal status for applovinmax requests",
-		[]string{pubIDLabel, signalTypeLabel})
+		[]string{pubIDLabel, profileIDLabel, signalTypeLabel})
 
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
@@ -508,9 +508,10 @@ func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsTy
 }
 
 // RecordSignalDataStatus record signaldata status(invalid,missing) at publisher level
-func (m *Metrics) RecordSignalDataStatus(pubid, signalType string) {
+func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
 	m.signalStatus.With(prometheus.Labels{
 		pubIDLabel:      pubid,
+		profileIDLabel:  profileid,
 		signalTypeLabel: signalType,
 	}).Inc()
 }
