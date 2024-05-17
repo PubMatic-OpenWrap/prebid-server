@@ -25,6 +25,24 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	Regex:         true,
 	Config: map[string]*adunitconfig.AdConfig{
 		"default": {
+			BidderFilter: &adunitconfig.BidderFilter{
+				Filters: []adunitconfig.Filter{
+					{
+						Bidders: []string{"bidderA"},
+						BiddingConditions: map[string]interface{}{
+							"in": []interface{}{
+								map[string]interface{}{
+									"var": "country",
+								},
+								[]interface{}{
+									"JPN",
+									"KOR",
+								},
+							},
+						},
+					},
+				},
+			},
 			Floors: &openrtb_ext.PriceFloorRules{
 				FloorMin: 15,
 				Data: &openrtb_ext.PriceFloorData{
@@ -161,9 +179,11 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		err          error
-		adunitConfig *adunitconfig.AdUnitConfig
-		cacheEntry   bool
+		err                    error
+		adunitConfig           *adunitconfig.AdUnitConfig
+		cacheEntry             bool
+		bidderFilterCacheEntry bool
+		bidderFilter           map[string]interface{}
 	}
 	tests := []struct {
 		name   string
@@ -213,9 +233,23 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(testAdunitConfig, nil)
 			},
 			want: want{
-				err:          nil,
-				adunitConfig: testAdunitConfig,
-				cacheEntry:   true,
+				err:                    nil,
+				adunitConfig:           testAdunitConfig,
+				cacheEntry:             true,
+				bidderFilterCacheEntry: true,
+				bidderFilter: map[string]interface{}{
+					"bidderA": map[string]interface{}{
+						"in": []interface{}{
+							map[string]interface{}{
+								"var": "country",
+							},
+							[]interface{}{
+								"JPN",
+								"KOR",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -256,6 +290,12 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			if tt.want.bidderFilterCacheEntry {
+				cacheKey := key(BidderFilter, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+				bf, found := c.Get(cacheKey)
+				assert.True(t, found)
+				assert.Equal(t, tt.want.bidderFilter, bf)
+			}
 			adunitconfig, found := c.Get(cacheKey)
 			if tt.want.cacheEntry {
 				assert.True(t, found)

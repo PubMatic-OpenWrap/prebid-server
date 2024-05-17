@@ -446,6 +446,13 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 	}
 }
 
+// RecordGeoDBInitStatus record geodb failures
+func (me *MultiMetricsEngine) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
+	for _, thisME := range *me {
+		thisME.RecordGeoDBInitStatus(dcName, nodeName, podName, value)
+	}
+}
+
 // RecordAmpVideoRequests across all engines
 func (me *MultiMetricsEngine) RecordAmpVideoRequests(pubid, profileid string) {
 	for _, thisME := range *me {

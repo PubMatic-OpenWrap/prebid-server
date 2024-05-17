@@ -21,6 +21,7 @@ const (
 	PubSlotRegex    = "psregex_%d_%d_%d_%d_%s" // slot and its matching regex info at publisher, profile, display version and adapter level
 	PubSlotNameHash = "pslotnamehash_%d"       //publisher slotname hash mapping cache key
 	PubVASTTags     = "pvasttags_%d"           //publisher level vasttags
+	BidderFilter    = "bidderfilter_%d_%d_%d"
 )
 
 func key(format string, v ...interface{}) string {

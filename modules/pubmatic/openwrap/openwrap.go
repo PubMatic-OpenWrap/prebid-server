@@ -20,6 +20,8 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -36,6 +38,7 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
+	geoInfoFetcher     geodb.Geography
 	pubFeatures        publisherfeature.Feature
 	unwrap             unwrap.Unwrap
 }
@@ -96,6 +99,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
+			geoInfoFetcher:     netacuity.NetAcuity{},
 			pubFeatures:        pubFeatures,
 			unwrap:             uw,
 		}

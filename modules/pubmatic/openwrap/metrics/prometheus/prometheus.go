@@ -53,7 +53,8 @@ type Metrics struct {
 
 	dbQueryError *prometheus.CounterVec
 
-	loggerFailure *prometheus.CounterVec
+	loggerFailure   *prometheus.CounterVec
+	geoDBInitStatus *prometheus.GaugeVec
 
 	//TODO -should we add "prefix" in metrics-name to differentiate it from prebid-core ?
 
@@ -279,9 +280,26 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
 		[]float64{50, 100, 150, 200})
 
+	metrics.geoDBInitStatus = newGauge(cfg, promRegistry,
+		"geodb_status",
+		"An indicator to identify the GeoDB database's state of failure. 1 indicates failure and 0 indicates healthy.",
+		[]string{dcNameLabel, nodeNameLabel, podNameLabel})
+
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics
+}
+
+func newGauge(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string) *prometheus.GaugeVec {
+	opts := prometheus.GaugeOpts{
+		Namespace: cfg.Namespace,
+		Subsystem: cfg.Subsystem,
+		Name:      name,
+		Help:      help,
+	}
+	gauge := prometheus.NewGaugeVec(opts, labels)
+	registry.MustRegister(gauge)
+	return gauge
 }
 
 func newCounter(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string) *prometheus.CounterVec {
@@ -489,6 +507,15 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 		pubIDLabel:     publisher,
 		profileIDLabel: profile,
 	}).Inc()
+}
+
+// RecordGeoDBInitStatus to record status of geodb initialisation status
+func (m *Metrics) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64) {
+	m.geoDBInitStatus.With(prometheus.Labels{
+		dcNameLabel:   dcName,
+		nodeNameLabel: nodeName,
+		podNameLabel:  podName,
+	}).Set(value)
 }
 
 // RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level

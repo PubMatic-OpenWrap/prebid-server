@@ -173,6 +173,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 
+	filteredBidders, allPartnersFilteredFlag := getFilteredBidders(rCtx, payload.BidRequest, m.cache)
+
+	result.SeatNonBid = getSeatNonBid(filteredBidders, payload)
+
+	if allPartnersFilteredFlag {
+		result.NbrCode = int(nbr.AllPartnersFiltered)
+		result.Errors = append(result.Errors, "All partners filtered")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		return result, err
+	}
+
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
@@ -327,6 +338,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
 			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+
+			if _, ok := filteredBidders[bidderCode]; ok {
+				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
+				continue
+			}
 
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)

@@ -24,6 +24,7 @@ const (
 	pubIdLabel         = "pub_id"
 	partnerLable       = "partner"
 	statusLabel        = "status"
+	dcNameLabel        = "dc_name"
 	nodeNameLabel      = "node_name"
 	podNameLabel       = "pod_name"
 	methodNameLabel    = "method_name"
