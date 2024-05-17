@@ -14,7 +14,6 @@ const (
 	impKey     = "imp"
 	extKey     = "ext"
 	bidderKey  = "bidder"
-	reqExtPath = "req."
 	appsiteKey = "appsite"
 	siteKey    = "site"
 	appKey     = "app"
@@ -58,7 +57,7 @@ func (bcm *biddersConfigMap) setBidderRequestProperties(bidderName string, prope
 	bcm.biddersConfig[bidderName].requestProperties = properties
 }
 
-// global instance of setBidderRequestProperties
+// global instance of biddersConfigMap
 var g_biddersConfigMap *biddersConfigMap
 
 // InitBiddersConfigMap initializes a g_biddersConfigMap instance using files in a given directory.

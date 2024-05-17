@@ -13,6 +13,7 @@ separated by dots ('.'). The value can be any type, and the function will
 create intermediate nodes as necessary if they do not exist.
 
 Arguments:
+- node: the root of the map in which to set the value
 - locations: slice of strings indicating the path to set the value.
 - value: The value to set at the specified location. Can be of any type.
 
@@ -54,12 +55,11 @@ func setValue(node map[string]any, locations []string, value any) bool {
 	return true
 }
 
-// getNode applies custom rules and returns the appropriate node based on key
+// getNode retrieves the value for a given key from a map with special handling for the "appsite" key
 func getNode(nodes map[string]any, key string) any {
 	switch key {
 	case appsiteKey:
-		// if location is "appsite" and if request contains "app" object then set location to "app" else set location to "site"
-		// example - if req.site is present and location is {"appsite","publisher","id"} then update location to {"site","publisher","id"}
+		// if key is "appsite" and if nodes contains "site" object then return nodes["site"] else return nodes["app"]
 		if value, ok := nodes[siteKey]; ok {
 			return value
 		}
