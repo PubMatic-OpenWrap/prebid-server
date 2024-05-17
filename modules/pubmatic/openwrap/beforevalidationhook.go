@@ -10,20 +10,20 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	modelsAdunitConfig "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/boolutil"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/boolutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -88,6 +88,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
+	rCtx.IsTBFFeatureEnabled = m.pubFeatures.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
+
 	if rCtx.UidCookie == nil {
 		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
 	}
@@ -103,6 +105,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
+	m.setAnanlyticsFlags(&rCtx)
 
 	// TODO: verify preference of request.test vs queryParam test ++ this check is only for the CTV requests
 	if payload.BidRequest.Test != 0 {
@@ -151,6 +154,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	// To check if VAST unwrap needs to be enabled for given request
+	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
+		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		rCtx.VastUnwrapEnabled = true
+	}
+
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
@@ -176,6 +185,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.Debug = rCtx.Debug
 	// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
+	requestExt.Prebid.ExtOWRequestPrebid.TrackerDisabled = rCtx.TrackerDisabled
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
 	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
 		PriceGranularity:  &priceGranularity,
@@ -247,7 +257,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
-			if rCtx.Endpoint == models.EndpointAMP && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
+			if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
 				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
 				rCtx.AmpVideoEnabled = true
 				imp.Video = &openrtb2.Video{}
@@ -667,6 +677,20 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 }
 
+// isVastUnwrapEnabled return whether to enable vastunwrap or not
+func isVastUnwrapEnabled(partnerConfigMap map[int]map[string]string, vastUnwrapTraffic int) bool {
+	trafficPercentage := vastUnwrapTraffic
+	unwrapEnabled := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapperEnableKey) == models.Enabled
+	if unwrapEnabled {
+		if value := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VastUnwrapTrafficPercentKey); len(value) > 0 {
+			if trafficPercentDB, err := strconv.Atoi(value); err == nil {
+				trafficPercentage = trafficPercentDB
+			}
+		}
+	}
+	return unwrapEnabled && GetRandomNumberIn1To100() <= trafficPercentage
+}
+
 /*
 getSlotName will return slot name according to below priority
  1. imp.ext.gpid
@@ -908,6 +932,18 @@ func getTagID(imp openrtb2.Imp, impExt *models.ImpExtension) string {
 	return impExt.Data.PbAdslot
 }
 
+func (m OpenWrap) setAnanlyticsFlags(rCtx *models.RequestCtx) {
+	rCtx.LoggerDisabled, rCtx.TrackerDisabled = m.pubFeatures.IsAnalyticsTrackingThrottled(rCtx.PubID, rCtx.ProfileID)
+
+	if rCtx.LoggerDisabled {
+		rCtx.MetricsEngine.RecordAnalyticsTrackingThrottled(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID), models.AnanlyticsThrottlingLoggerType)
+	}
+
+	if rCtx.TrackerDisabled {
+		rCtx.MetricsEngine.RecordAnalyticsTrackingThrottled(strconv.Itoa(rCtx.PubID), strconv.Itoa(rCtx.ProfileID), models.AnanlyticsThrottlingTrackerType)
+	}
+}
+
 func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {
 
 	if len(imp.Video.MIMEs) == 0 {
@@ -974,11 +1010,11 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 		imp.Video.Protocols = configObjInVideoConfig.Protocols
 	}
 
-	if imp.Video.W == 0 {
+	if imp.Video.W == nil {
 		imp.Video.W = configObjInVideoConfig.W
 	}
 
-	if imp.Video.H == 0 {
+	if imp.Video.H == nil {
 		imp.Video.H = configObjInVideoConfig.H
 	}
 
@@ -986,7 +1022,7 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 		imp.Video.Sequence = configObjInVideoConfig.Sequence
 	}
 
-	if imp.Video.BoxingAllowed == 0 {
+	if imp.Video.BoxingAllowed == nil {
 		imp.Video.BoxingAllowed = configObjInVideoConfig.BoxingAllowed
 	}
 
@@ -1021,10 +1057,10 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 
 func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
 
-	if imp.Video.W == 0 {
+	if imp.Video.W == nil {
 		imp.Video.W = getW(imp)
 	}
-	if imp.Video.H == 0 {
+	if imp.Video.H == nil {
 		imp.Video.H = getH(imp)
 	}
 	if imp.Video.MIMEs == nil {
@@ -1065,30 +1101,30 @@ func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
 	}
 }
 
-func getW(imp *openrtb2.Imp) int64 {
+func getW(imp *openrtb2.Imp) *int64 {
 	if imp.Banner != nil {
 		if imp.Banner.W != nil {
-			return *imp.Banner.W
+			return imp.Banner.W
 		}
 		for _, format := range imp.Banner.Format {
 			if format.W != 0 {
-				return format.W
+				return &format.W
 			}
 		}
 	}
-	return 0
+	return nil
 }
 
-func getH(imp *openrtb2.Imp) int64 {
+func getH(imp *openrtb2.Imp) *int64 {
 	if imp.Banner != nil {
 		if imp.Banner.H != nil {
-			return *imp.Banner.H
+			return imp.Banner.H
 		}
 		for _, format := range imp.Banner.Format {
 			if format.H != 0 {
-				return format.H
+				return &format.H
 			}
 		}
 	}
-	return 0
+	return nil
 }

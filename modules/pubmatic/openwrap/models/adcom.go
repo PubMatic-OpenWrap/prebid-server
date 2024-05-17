@@ -1,6 +1,6 @@
 package models
 
-import "github.com/prebid/openrtb/v19/adcom1"
+import "github.com/prebid/openrtb/v20/adcom1"
 
 func GetAPIFramework(api []int) []adcom1.APIFramework {
 	if api == nil {

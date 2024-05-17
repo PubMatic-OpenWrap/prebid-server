@@ -6,9 +6,9 @@ import (
 	"time"
 
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 )
 
 const (

@@ -1,6 +1,6 @@
 package nbr
 
-import "github.com/prebid/openrtb/v19/openrtb3"
+import "github.com/prebid/openrtb/v20/openrtb3"
 
 // vendor specific NoBidReasons (500+)
 const (

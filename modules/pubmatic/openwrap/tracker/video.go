@@ -6,33 +6,43 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // Inject Trackers in Video Creative
-func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracker) (string, error) {
+func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, videoParams []models.OWTracker) (string, string, error) {
 	if bid.AdM == "" || len(videoParams) == 0 {
-		return "", errors.New("bid is nil or tracker data is missing")
+		return "", bid.BURL, errors.New("bid is nil or tracker data is missing")
+	}
+
+	injectImpressionTracker := true
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		injectImpressionTracker = false
 	}
 
 	originalCreativeStr := bid.AdM
 	if strings.HasPrefix(originalCreativeStr, models.HTTPProtocol) {
 		originalCreativeStr = strings.Replace(models.VastWrapper, models.PartnerURLPlaceholder, originalCreativeStr, -1)
-		originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
+		if injectImpressionTracker {
+			originalCreativeStr = strings.Replace(originalCreativeStr, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
+		} else {
+			originalCreativeStr = strings.Replace(originalCreativeStr, models.VASTImpressionURLTemplate, "", -1)
+			bid.BURL = getBURL(bid.BURL, videoParams[0].TrackerURL)
+		}
 		originalCreativeStr = strings.Replace(originalCreativeStr, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		bid.AdM = originalCreativeStr
 	} else {
 		originalCreativeStr = strings.TrimSpace(originalCreativeStr)
 		doc := etree.NewDocument()
 		if err := doc.ReadFromString(originalCreativeStr); err != nil {
-			return bid.AdM, errors.New("invalid creative format")
+			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
 
 		//Check VAST Object
 		vast := doc.Element.FindElement(models.VideoVASTTag)
 		if vast == nil {
-			return bid.AdM, errors.New("VAST Tag Not Found")
+			return bid.AdM, bid.BURL, errors.New("VAST Tag Not Found")
 		}
 
 		//GetVersion
@@ -44,19 +54,23 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 				element := adElement.FindElement(models.AdWrapperElement)
 				isWrapper := (nil != element)
 
-				if nil == element {
+				if element == nil {
 					element = adElement.FindElement(models.AdInlineElement)
 				}
 
-				if nil == element {
-					return bid.AdM, errors.New("video creative not in required VAST format")
+				if element == nil {
+					return bid.AdM, bid.BURL, errors.New("video creative not in required VAST format")
 				}
 
 				if len(videoParams[i].TrackerURL) > 0 {
 					// set tracker URL
-					newElement := etree.NewElement(models.ImpressionElement)
-					newElement.SetText(videoParams[i].TrackerURL)
-					element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
+					if injectImpressionTracker {
+						newElement := etree.NewElement(models.ImpressionElement)
+						newElement.SetText(videoParams[i].TrackerURL)
+						element.InsertChild(element.SelectElement(models.ImpressionElement), newElement)
+					} else {
+						bid.BURL = getBURL(bid.BURL, videoParams[i].TrackerURL)
+					}
 				}
 
 				if len(videoParams[i].ErrorURL) > 0 {
@@ -66,7 +80,7 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 					element.InsertChild(element.SelectElement(models.ErrorElement), newElement)
 				}
 
-				if false == isWrapper && videoParams[i].Price != 0 {
+				if !isWrapper && videoParams[i].Price != 0 {
 					if models.VideoVASTVersion2_0 == version {
 						injectPricingNodeVAST20(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					} else {
@@ -78,11 +92,11 @@ func injectVideoCreativeTrackers(bid openrtb2.Bid, videoParams []models.OWTracke
 
 		updatedVastStr, err := doc.WriteToString()
 		if err != nil {
-			return bid.AdM, err
+			return bid.AdM, bid.BURL, err
 		}
-		return updatedVastStr, nil
+		return updatedVastStr, bid.BURL, nil
 	}
-	return bid.AdM, nil
+	return bid.AdM, bid.BURL, nil
 }
 
 func injectPricingNodeVAST20(parent *etree.Element, price float64, model string, currency string) {

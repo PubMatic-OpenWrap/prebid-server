@@ -3,8 +3,8 @@ package exchange
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -97,10 +97,12 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+									},
 								},
 							},
 						},
@@ -156,8 +158,10 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{},
+							},
 						},
 					},
 				},
@@ -210,15 +214,17 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{},
-								},
-								"appnexus": {
-									Include: false,
-									Keys:    []string{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{},
+									},
+									"appnexus": {
+										Include: false,
+										Keys:    []string{},
+									},
 								},
 							},
 						},
@@ -270,15 +276,17 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: false,
-									Keys:    []string{},
-								},
-								"appnexus": {
-									Include: true,
-									Keys:    []string{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: false,
+										Keys:    []string{},
+									},
+									"appnexus": {
+										Include: true,
+										Keys:    []string{},
+									},
 								},
 							},
 						},
@@ -331,15 +339,17 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{"title"},
-								},
-								"appnexus": {
-									Include: false,
-									Keys:    []string{"genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{"title"},
+									},
+									"appnexus": {
+										Include: false,
+										Keys:    []string{"genre"},
+									},
 								},
 							},
 						},
@@ -394,15 +404,17 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: false,
-									Keys:    []string{"title"},
-								},
-								"appnexus": {
-									Include: true,
-									Keys:    []string{"genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: false,
+										Keys:    []string{"title"},
+									},
+									"appnexus": {
+										Include: true,
+										Keys:    []string{"genre"},
+									},
 								},
 							},
 						},
@@ -463,16 +475,18 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"default": {
-									Include: true,
-									Keys: []string{
-										"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
-								},
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{"title", "genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"default": {
+										Include: true,
+										Keys: []string{
+											"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
+									},
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{"title", "genre"},
+									},
 								},
 							},
 						},
@@ -616,10 +630,12 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+									},
 								},
 							},
 						},
@@ -675,8 +691,10 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{},
+							},
 						},
 					},
 				},
@@ -729,15 +747,17 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{},
-								},
-								"appnexus": {
-									Include: false,
-									Keys:    []string{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{},
+									},
+									"appnexus": {
+										Include: false,
+										Keys:    []string{},
+									},
 								},
 							},
 						},
@@ -789,15 +809,17 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: false,
-									Keys:    []string{},
-								},
-								"appnexus": {
-									Include: true,
-									Keys:    []string{},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: false,
+										Keys:    []string{},
+									},
+									"appnexus": {
+										Include: true,
+										Keys:    []string{},
+									},
 								},
 							},
 						},
@@ -850,15 +872,17 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{"title"},
-								},
-								"appnexus": {
-									Include: false,
-									Keys:    []string{"genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{"title"},
+									},
+									"appnexus": {
+										Include: false,
+										Keys:    []string{"genre"},
+									},
 								},
 							},
 						},
@@ -913,15 +937,17 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"pubmatic": {
-									Include: false,
-									Keys:    []string{"title"},
-								},
-								"appnexus": {
-									Include: true,
-									Keys:    []string{"genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"pubmatic": {
+										Include: false,
+										Keys:    []string{"title"},
+									},
+									"appnexus": {
+										Include: true,
+										Keys:    []string{"genre"},
+									},
 								},
 							},
 						},
@@ -982,16 +1008,18 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				},
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
-						Transparency: &openrtb_ext.TransparencyExt{
-							Content: map[string]openrtb_ext.TransparencyRule{
-								"default": {
-									Include: true,
-									Keys: []string{
-										"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
-								},
-								"pubmatic": {
-									Include: true,
-									Keys:    []string{"title", "genre"},
+						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+							Transparency: &openrtb_ext.TransparencyExt{
+								Content: map[string]openrtb_ext.TransparencyRule{
+									"default": {
+										Include: true,
+										Keys: []string{
+											"id", "episode", "series", "season", "artist", "genre", "album", "isrc", "producer", "url", "cat", "prodq", "videoquality", "context", "contentrating", "userrating", "qagmediarating", "livestream", "sourcerelationship", "len", "language", "embeddable", "data", "ext"},
+									},
+									"pubmatic": {
+										Include: true,
+										Keys:    []string{"title", "genre"},
+									},
 								},
 							},
 						},
