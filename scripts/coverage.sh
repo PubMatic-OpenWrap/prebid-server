@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate test coverage statistics for Go packages.
-# 
+#
 # Works around the fact that `go test -coverprofile` currently does not work
 # with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
 #
