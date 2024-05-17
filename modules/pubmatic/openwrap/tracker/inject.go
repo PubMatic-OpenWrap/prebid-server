@@ -7,12 +7,16 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
+	if rctx.TrackerDisabled {
+		return bidResponse, nil
+	}
+
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
@@ -27,13 +31,13 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				bidResponse.SeatBid[i].Bid[j].AdM = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
+				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
-				bidResponse.SeatBid[i].Bid[j].AdM, err = injectVideoCreativeTrackers(bid, trackers)
+				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, err = injectVideoCreativeTrackers(rctx, bid, trackers)
 			case models.Native:
 				if impBidCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
-					bidResponse.SeatBid[i].Bid[j].AdM, err = injectNativeCreativeTrackers(impBidCtx.Native, bid.AdM, tracker)
+					bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, err = injectNativeCreativeTrackers(impBidCtx.Native, bid, tracker, rctx.Endpoint)
 				} else {
 					errMsg = fmt.Sprintf("native obj not found for impid %s", bid.ImpID)
 				}
@@ -76,4 +80,16 @@ func getUniversalPixels(rctx models.RequestCtx, adformat string, bidderCode stri
 		pixels = append(pixels, pixelVal)
 	}
 	return pixels
+}
+
+func getBURL(burl, trackerURL string) string {
+	if trackerURL == "" {
+		return burl
+	}
+
+	if burl == "" {
+		return trackerURL
+	}
+
+	return trackerURL + "&" + models.OwSspBurl + "=" + burl
 }

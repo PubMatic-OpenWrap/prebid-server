@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -832,5 +832,56 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 
 		deps.recordRejectedAdPodBids("pub_001")
 		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
+	}
+}
+
+func TestGetAdPodBidCreative(t *testing.T) {
+	type args struct {
+		adpod          *types.AdPodBid
+		generatedBidID bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "VAST_element_missing_in_adm",
+			args: args{
+				adpod: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "<xml>any_creative_without_vast</xml>",
+							},
+						},
+					},
+				},
+				generatedBidID: false,
+			},
+			want: "<VAST version=\"2.0\"/>",
+		},
+		{
+			name: "VAST_element_present_in_adm",
+			args: args{
+				adpod: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								AdM: "<VAST><Ad>url_creative</Ad></VAST>",
+							},
+						},
+					},
+				},
+				generatedBidID: false,
+			},
+			want: "<VAST version=\"2.0\"><Ad sequence=\"1\"><![CDATA[url_creative]]></Ad></VAST>",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAdPodBidCreative(tt.args.adpod, tt.args.generatedBidID)
+			assert.Equalf(t, tt.want, *got, "found incorrect creative")
+		})
 	}
 }

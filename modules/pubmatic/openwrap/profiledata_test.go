@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -130,7 +130,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1, models.PLATFORM_APP).Return(
+				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1).Return(
 					map[int]map[string]string{
 						1: {
 							models.PARTNER_ID:          "2",
@@ -185,7 +185,7 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1, models.PLATFORM_APP).Return(
+				mockCache.EXPECT().GetPartnerConfigMap(5890, 123, 1).Return(
 					nil, fmt.Errorf("error GetPartnerConfigMap"))
 			},
 			want:    nil,
