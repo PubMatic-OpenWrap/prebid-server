@@ -21,7 +21,6 @@ func RequestHasFloors(bidRequest *openrtb2.BidRequest) bool {
 func resolveFloorMinOW(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors *openrtb_ext.PriceFloorRules, conversions currency.Conversions) Price {
 	var requestFloorMinCur, providerFloorMinCur string
 	var requestFloorMin, providerFloorMin float64
-
 	if reqFloors != nil {
 		requestFloorMin = reqFloors.FloorMin
 		requestFloorMinCur = reqFloors.FloorMinCur
