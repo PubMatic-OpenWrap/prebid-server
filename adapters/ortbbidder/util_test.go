@@ -1,7 +1,6 @@
 package ortbbidder
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -239,74 +238,6 @@ func TestGetNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			node := getNode(tt.args.nodes, tt.args.key)
 			assert.Equal(t, tt.want, node)
-		})
-	}
-}
-
-func TestReadFile(t *testing.T) {
-	var setup = func() (string, error) {
-		dir := t.TempDir()
-		err := os.WriteFile(dir+"/owortb.json", []byte(`
-		{
-			"title":"ortb bidder",
-			"properties": {
-				"adunitid": {
-					"type": "string",
-					"location": "req.app.adunit.id"
-				}
-			}
-		}
-		`), 0644)
-		return dir, err
-	}
-	type args struct {
-		file string
-	}
-	type want struct {
-		err  bool
-		node map[string]any
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: "successful_readfile",
-			args: args{
-				file: "owortb.json",
-			},
-			want: want{
-				err: false,
-				node: map[string]any{
-					"title": "ortb bidder",
-					"properties": map[string]any{
-						"adunitid": map[string]any{
-							"type":     "string",
-							"location": "req.app.adunit.id",
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "fail_readfile",
-			args: args{
-				file: "invalid.json",
-			},
-			want: want{
-				err:  true,
-				node: nil,
-			},
-		},
-	}
-	path, err := setup()
-	assert.Nil(t, err)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := readFile(path, tt.args.file)
-			assert.Equal(t, tt.want.err, err != nil, "mismatched error")
-			assert.Equal(t, tt.want.node, got, "mismatched map[string]any")
 		})
 	}
 }

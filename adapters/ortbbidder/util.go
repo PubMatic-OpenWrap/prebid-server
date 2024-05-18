@@ -1,11 +1,5 @@
 package ortbbidder
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-)
-
 /*
 setValue updates or creates a value in a node based on a specified location.
 The location is a string that specifies a path through the node hierarchy,
@@ -66,16 +60,4 @@ func getNode(nodes map[string]any, key string) any {
 		return nodes[appKey]
 	}
 	return nodes[key]
-}
-
-// readFile reads the file from directory and unmarshals it into the map[string]any
-func readFile(dirPath, file string) (map[string]any, error) {
-	filePath := filepath.Join(dirPath, file)
-	fileContents, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-	var fileContentsNode map[string]any
-	err = json.Unmarshal(fileContents, &fileContentsNode)
-	return fileContentsNode, err
 }

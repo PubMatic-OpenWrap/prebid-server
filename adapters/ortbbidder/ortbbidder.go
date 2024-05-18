@@ -8,6 +8,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -15,7 +16,7 @@ import (
 // adapter implements adapters.Bidder interface
 type adapter struct {
 	adapterInfo
-	biddersConfigMap *biddersConfigMap
+	bidderParamsConfig *bidderparams.BidderConfig
 }
 
 const (
@@ -32,27 +33,37 @@ type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
-func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, requestProperties map[string]bidderProperty) (*adapters.RequestData, error) {
+// global instance to hold bidderParamsConfig
+var g_bidderParamsConfig *bidderparams.BidderConfig
+
+// InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
+func InitBidderParamsConfig(dirPath string) (err error) {
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+	return err
+}
+
+// prepareRequestData converts openrtb2.BidRequest to adapters.RequestData, sets requestParams in request if required
+func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, requestParams map[string]bidderparams.BidderParamMapper) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
-	body, err := json.Marshal(request)
+	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
-	body, err = mapBidderParamsInRequest(body, requestProperties)
+	requestBody, err = setRequestParams(requestBody, requestParams)
 	if err != nil {
 		return nil, err
 	}
 	bidreq := &openrtb2.BidRequest{}
-	err = json.Unmarshal(body, bidreq)
+	err = json.Unmarshal(requestBody, bidreq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
 	}
 	return &adapters.RequestData{
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
-		Body:   body,
+		Body:   requestBody,
 	}, nil
 }
 
@@ -66,8 +77,8 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		}
 	}
 	return &adapter{
-		adapterInfo:      adapterInfo{config, extraAdapterInfo, bidderName},
-		biddersConfigMap: g_biddersConfigMap,
+		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
+		bidderParamsConfig: g_bidderParamsConfig,
 	}, nil
 }
 
@@ -76,12 +87,12 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
 	}
-	if o.biddersConfigMap == nil || o.biddersConfigMap.biddersConfig == nil {
-		return nil, []error{fmt.Errorf("Found nil biddersConfigMap")}
+	if o.bidderParamsConfig == nil {
+		return nil, []error{fmt.Errorf("Found nil bidderParamsConfig")}
 	}
 	var errs []error
 	adapterInfo := o.adapterInfo
-	requestProperties, _ := o.biddersConfigMap.getBidderRequestProperties(o.bidderName.String())
+	requestParams, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
 
 	// bidder request supports single impression in single HTTP call.
 	if adapterInfo.extraInfo.RequestMode == RequestModeSingle {
@@ -89,7 +100,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		requestCopy := *request
 		for _, imp := range request.Imp {
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := adapterInfo.prepareRequestData(&requestCopy, requestProperties)
+			reqData, err := adapterInfo.prepareRequestData(&requestCopy, requestParams)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -99,7 +110,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		return requestData, errs
 	}
 	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := adapterInfo.prepareRequestData(request, requestProperties)
+	requestData, err := adapterInfo.prepareRequestData(request, requestParams)
 	if err != nil {
 		return nil, []error{err}
 	}
