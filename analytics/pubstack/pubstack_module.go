@@ -13,8 +13,8 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/analytics/pubmatic"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubstack/eventchannel"

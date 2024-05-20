@@ -8,16 +8,16 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/analytics/pubstack/eventchannel"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/analytics/pubstack/eventchannel"
 )
 
-func NewModulePubmatic(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+func NewModulePubmatic(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.Module, error) {
 
 	return NewModuleWithConfigTaskPubmatic(client, scope, endpoint, maxEventCount, maxByteSize, maxTime, clock)
 }
 
-func NewModuleWithConfigTaskPubmatic(client *http.Client, scope, endpoint string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+func NewModuleWithConfigTaskPubmatic(client *http.Client, scope, endpoint string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.Module, error) {
 	glog.Infof("[pubstack] Initializing module scope=%s endpoint=%s\n", scope, endpoint)
 
 	// parse args

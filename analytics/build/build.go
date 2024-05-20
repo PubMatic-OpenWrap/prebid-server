@@ -26,7 +26,7 @@ func New(analytics *config.Analytics) analytics.Runner {
 	}
 
 	if analytics.Pubstack.Enabled {
-		pubstackModule, err := pubstack.NewModule(
+		pubstackModule, err := pubstack.NewModulePubmatic(
 			clients.GetDefaultHttpInstance(),
 			analytics.Pubstack.ScopeId,
 			analytics.Pubstack.IntakeUrl,
