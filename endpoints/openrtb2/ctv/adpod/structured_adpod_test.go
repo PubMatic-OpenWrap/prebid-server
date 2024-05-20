@@ -10,10 +10,9 @@ import (
 
 func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 	type fields struct {
-		AdpodCtx          AdpodCtx
-		ImpBidMap         map[string][]*types.Bid
-		WinningBid        map[string]types.Bid
-		CategoryExclusion bool
+		AdpodCtx   AdpodCtx
+		ImpBidMap  map[string][]*types.Bid
+		WinningBid map[string]types.Bid
 	}
 	tests := []struct {
 		name           string
@@ -107,6 +106,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -169,8 +172,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -265,8 +267,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: false,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -299,6 +300,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -361,8 +366,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -395,6 +399,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -465,8 +473,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -499,6 +506,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -577,8 +588,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -611,6 +621,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -689,8 +703,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
@@ -723,6 +736,10 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 			fields: fields{
 				AdpodCtx: AdpodCtx{
 					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
 				},
 				ImpBidMap: map[string][]*types.Bid{
 					"imp1": {
@@ -801,8 +818,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 						},
 					},
 				},
-				WinningBid:        make(map[string]types.Bid),
-				CategoryExclusion: true,
+				WinningBid: make(map[string]types.Bid),
 			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
