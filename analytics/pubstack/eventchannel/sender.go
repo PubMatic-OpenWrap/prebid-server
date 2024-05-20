@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 
 	"github.com/golang/glog"
 )
@@ -42,6 +41,5 @@ func BuildEndpointSender(client *http.Client, baseUrl string, module string) Sen
 	if err != nil {
 		glog.Error(err)
 	}
-	endpoint.Path = path.Join(endpoint.Path)
 	return NewHttpSender(client, endpoint.String())
 }
