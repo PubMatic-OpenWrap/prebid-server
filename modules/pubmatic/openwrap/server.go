@@ -15,7 +15,7 @@ func initOpenWrapServer(cfg *config.Config) {
 	wakanda.InitWakanda(cfg.Wakanda)
 	hbMux := http.NewServeMux()
 	hbMux.HandleFunc("/wakanda", wakanda.Handler(cfg.Wakanda))
-	srvInterface := ":" + cfg.Server.Port
+	srvInterface := ":" + cfg.Server.WakandaPort
 	go startServer(srvInterface, hbMux)
 }
 

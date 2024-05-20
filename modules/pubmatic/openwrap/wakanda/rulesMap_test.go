@@ -174,11 +174,12 @@ func Test_rulesMap_Incr(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			rm := &rulesMap{
 				rules: tt.fields.rules,
-				lock:  tt.fields.lock,
+				lock:  sync.RWMutex{},
 			}
 			got := rm.Incr(tt.args.key)
 			assert.Equal(t, tt.want.wantRule, got)
