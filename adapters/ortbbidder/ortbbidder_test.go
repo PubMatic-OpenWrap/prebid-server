@@ -72,6 +72,10 @@ func TestMakeRequests(t *testing.T) {
 						Method: http.MethodPost,
 						Uri:    "http://test_bidder.com",
 						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"},{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
 					},
 				},
 			},
@@ -98,11 +102,19 @@ func TestMakeRequests(t *testing.T) {
 						Method: http.MethodPost,
 						Uri:    "http://test_bidder.com",
 						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
 					},
 					{
 						Method: http.MethodPost,
 						Uri:    "http://test_bidder.com",
 						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
 					},
 				},
 			},
@@ -386,6 +398,10 @@ func Test_makeRequest(t *testing.T) {
 					Method: http.MethodPost,
 					Uri:    "https://example.com",
 					Body:   []byte(`{"id":"123","imp":[{"id":"imp1"}]}`),
+					Headers: http.Header{
+						"Content-Type": {"application/json;charset=utf-8"},
+						"Accept":       {"application/json"},
+					},
 				},
 				err: nil,
 			},

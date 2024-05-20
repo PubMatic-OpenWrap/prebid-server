@@ -66,7 +66,8 @@ func (o adapterInfo) makeRequest(request *openrtb2.BidRequest, requestParams map
 		Body:   requestBody,
 		Headers: http.Header{
 			"Content-Type": {"application/json;charset=utf-8"},
-			"Accept":       {"application/json"}},
+			"Accept":       {"application/json"},
+		},
 	}, nil
 }
 
