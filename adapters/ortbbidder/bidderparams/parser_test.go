@@ -9,14 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadRequestParams(t *testing.T) {
+func TestPrepareRequestParams(t *testing.T) {
 	type args struct {
-		propertiesMap map[string]any
-		bidderName    string
+		requestParamCfg map[string]any
+		bidderName      string
 	}
 	type want struct {
-		requestProperties map[string]BidderParamMapper
-		err               error
+		requestParams map[string]BidderParamMapper
+		err           error
 	}
 	tests := []struct {
 		name string
@@ -26,34 +26,34 @@ func TestLoadRequestParams(t *testing.T) {
 		{
 			name: "properties_missing_from_fileContents",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 				},
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: nil,
-				err:               nil,
+				requestParams: nil,
+				err:           nil,
 			},
 		},
 		{
 			name: "properties_data_type_invalid",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title":      "test bidder parameters",
 					"properties": "type invalid",
 				},
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: nil,
-				err:               fmt.Errorf("error:[invalid_json_file_content_malformed_properties] bidderName:[testbidder]"),
+				requestParams: nil,
+				err:           fmt.Errorf("error:[invalid_json_file_content_malformed_properties] bidderName:[testbidder]"),
 			},
 		},
 		{
 			name: "bidder-params_data_type_invalid",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 					"properties": map[string]any{
 						"adunitid": "invalid-type",
@@ -62,14 +62,14 @@ func TestLoadRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: nil,
-				err:               fmt.Errorf("error:[invalid_json_file_content] bidder:[testbidder] bidderParam:[adunitid]"),
+				requestParams: nil,
+				err:           fmt.Errorf("error:[invalid_json_file_content] bidder:[testbidder] bidderParam:[adunitid]"),
 			},
 		},
 		{
 			name: "bidder-params_properties_is_not_provided",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 					"properties": map[string]any{
 						"adunitid": map[string]any{
@@ -80,14 +80,14 @@ func TestLoadRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: map[string]BidderParamMapper{},
-				err:               nil,
+				requestParams: map[string]BidderParamMapper{},
+				err:           nil,
 			},
 		},
 		{
 			name: "bidder-params_location_is_not_in_string",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 					"properties": map[string]any{
 						"adunitid": map[string]any{
@@ -99,14 +99,14 @@ func TestLoadRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: nil,
-				err:               fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[testbidder] bidderParam:[adunitid]"),
+				requestParams: nil,
+				err:           fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[testbidder] bidderParam:[adunitid]"),
 			},
 		},
 		{
 			name: "set_bidder-params_location_in_mapper",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 					"properties": map[string]any{
 						"adunitid": map[string]any{
@@ -118,7 +118,7 @@ func TestLoadRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: map[string]BidderParamMapper{
+				requestParams: map[string]BidderParamMapper{
 					"adunitid": {location: []string{"app", "adunitid"}},
 				},
 				err: nil,
@@ -127,7 +127,7 @@ func TestLoadRequestParams(t *testing.T) {
 		{
 			name: "set_multiple_bidder-params_and_locations_in_mapper",
 			args: args{
-				propertiesMap: map[string]any{
+				requestParamCfg: map[string]any{
 					"title": "test bidder parameters",
 					"properties": map[string]any{
 						"adunitid": map[string]any{
@@ -143,7 +143,7 @@ func TestLoadRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestProperties: map[string]BidderParamMapper{
+				requestParams: map[string]BidderParamMapper{
 					"adunitid": {location: []string{"app", "adunitid"}},
 					"slotname": {location: []string{"ext", "slot"}},
 				},
@@ -153,9 +153,9 @@ func TestLoadRequestParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			requestProperties, err := loadRequestParams(tt.args.bidderName, tt.args.propertiesMap)
+			requestParams, err := prepareRequestParams(tt.args.bidderName, tt.args.requestParamCfg)
 			assert.Equalf(t, tt.want.err, err, "updateBidderParamsMapper returned unexpected error")
-			assert.Equalf(t, tt.want.requestProperties, requestProperties, "updateBidderParamsMapper returned unexpected mapper")
+			assert.Equalf(t, tt.want.requestParams, requestParams, "updateBidderParamsMapper returned unexpected mapper")
 		})
 	}
 }

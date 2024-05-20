@@ -32,7 +32,7 @@ func LoadBidderConfig(dirPath string, isBidderAllowed func(string) bool) (*Bidde
 		if err != nil {
 			return nil, fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", dirPath, file.Name(), err.Error())
 		}
-		requestParams, err := loadRequestParams(bidderName, requestParamsConfig)
+		requestParams, err := prepareRequestParams(bidderName, requestParamsConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -53,8 +53,8 @@ func readFile(dirPath, file string) (map[string]any, error) {
 	return contentMap, err
 }
 
-// loadRequestParams parse the requestParamsConfig and returns the requestParams
-func loadRequestParams(bidderName string, requestParamsConfig map[string]any) (map[string]BidderParamMapper, error) {
+// prepareRequestParams parse the requestParamsConfig and returns the requestParams
+func prepareRequestParams(bidderName string, requestParamsConfig map[string]any) (map[string]BidderParamMapper, error) {
 	params, found := requestParamsConfig[propertiesKey]
 	if !found {
 		return nil, nil

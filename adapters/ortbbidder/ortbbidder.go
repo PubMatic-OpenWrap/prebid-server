@@ -42,8 +42,8 @@ func InitBidderParamsConfig(dirPath string) (err error) {
 	return err
 }
 
-// prepareRequestData converts openrtb2.BidRequest to adapters.RequestData, sets requestParams in request if required
-func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, requestParams map[string]bidderparams.BidderParamMapper) (*adapters.RequestData, error) {
+// makeRequest converts openrtb2.BidRequest to adapters.RequestData, sets requestParams in request if required
+func (o adapterInfo) makeRequest(request *openrtb2.BidRequest, requestParams map[string]bidderparams.BidderParamMapper) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
@@ -64,6 +64,9 @@ func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest, requestPar
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
 		Body:   requestBody,
+		Headers: http.Header{
+			"Content-Type": {"application/json;charset=utf-8"},
+			"Accept":       {"application/json"}},
 	}, nil
 }
 
@@ -100,7 +103,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		requestCopy := *request
 		for _, imp := range request.Imp {
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := adapterInfo.prepareRequestData(&requestCopy, requestParams)
+			reqData, err := adapterInfo.makeRequest(&requestCopy, requestParams)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -110,7 +113,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		return requestData, errs
 	}
 	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := adapterInfo.prepareRequestData(request, requestParams)
+	requestData, err := adapterInfo.makeRequest(request, requestParams)
 	if err != nil {
 		return nil, []error{err}
 	}

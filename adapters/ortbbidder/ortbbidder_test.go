@@ -351,7 +351,7 @@ func TestJsonSamplesForMultiRequestMode(t *testing.T) {
 	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_multi_requestmode", bidder)
 }
 
-func TestPrepareRequestData(t *testing.T) {
+func Test_makeRequest(t *testing.T) {
 	type fields struct {
 		Adapter config.Adapter
 	}
@@ -410,7 +410,7 @@ func TestPrepareRequestData(t *testing.T) {
 			o := adapterInfo{
 				Adapter: tt.fields.Adapter,
 			}
-			got, err := o.prepareRequestData(tt.args.request, tt.args.requestParams)
+			got, err := o.makeRequest(tt.args.request, tt.args.requestParams)
 			assert.Equal(t, tt.want.requestData, got, "mismatched requestData")
 			assert.Equal(t, tt.want.err, err, "mismatched error")
 		})
