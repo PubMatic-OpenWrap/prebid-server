@@ -1,33 +1,21 @@
 package openwrap
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-const (
-	keycountry = "country"
-)
-
-func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, c cache.Cache) (map[string]struct{}, bool) {
+func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) (map[string]struct{}, bool) {
 	filteredBidders := map[string]struct{}{}
-	key := fmt.Sprintf("bidderfilter_%d_%d_%d", rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
-	bf, ok := c.Get(key)
-	if !ok {
-		return filteredBidders, false
-	}
-	bidderFilter, ok := bf.(map[string]interface{})
-	if !ok {
-		return filteredBidders, false
-	}
-	data := generateEvaluationData(rCtx, bidRequest)
+	data := generateEvaluationData(rCtx, bidRequest, m.geoInfoFetcher)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
@@ -38,7 +26,7 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 			continue
 		}
 
-		biddingCondition, ok := bidderFilter[partnerConfig[models.BidderCode]]
+		biddingCondition, ok := partnerConfig[models.BiddingConditions]
 		if ok && !evaluateBiddingCondition(data, biddingCondition) {
 			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
 			continue
@@ -49,51 +37,37 @@ func getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest,
 	return filteredBidders, allPartnersFilteredFlag
 }
 
-func generateEvaluationData(rCtx models.RequestCtx, BidRequest *openrtb2.BidRequest) map[string]interface{} {
-	data := map[string]interface{}{}
-	data[keycountry] = getCountryFromRequest(rCtx, BidRequest)
-	return data
+func generateEvaluationData(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, gif geodb.Geography) string {
+	builder := &strings.Builder{}
+	builder.WriteString("{")
+	country := getCountryFromRequest(rCtx, gif, bidRequest)
+	builder.WriteString(fmt.Sprintf(`"country":"%s"`, country))
+	builder.WriteString("}")
+	return builder.String()
 }
 
-func getCountryFromRequest(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
-	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
-		return bidRequest.Device.Geo.Country
-	}
-	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
-		return bidRequest.User.Geo.Country
+func getCountryFromRequest(rctx models.RequestCtx, gif geodb.Geography, bidRequest *openrtb2.BidRequest) string {
+	if len(rctx.Country) > 0 {
+		return rctx.Country
 	}
 
-	ip := ""
-	if bidRequest.Device != nil {
-		if bidRequest.Device.IP != "" {
-			ip = bidRequest.Device.IP
-		} else {
-			ip = bidRequest.Device.IPv6
+	if rctx.IP != "" {
+		country, err := getCountryFromIP(gif, rctx.IP)
+		if err == nil {
+			return country
 		}
-	}
-
-	if ip == "" {
-		ip = rCtx.IP
-	}
-
-	if ip != "" {
-		country, err := getCountryFromIP(rCtx.GeoInfoFetcher, ip)
-		if err != nil {
-			glog.Errorf("type:[geo_fetch_failed] ip:[%v] error:[%v]", ip, err)
-			return ""
-		}
-		return country
 	}
 	return ""
 }
 
-func evaluateBiddingCondition(data, rules interface{}) bool {
-	output, err := jsonlogic.ApplyInterface(rules, data)
+func evaluateBiddingCondition(data, rules string) bool {
+	var result bytes.Buffer
+	err := jsonlogic.Apply(strings.NewReader(rules), strings.NewReader(data), &result)
 	if err != nil {
 		glog.Errorf("Error evaluating bidding condition for rules: %v | data: %v | Error: %v", rules, data, err)
 		return false
 	}
-	return output == true
+	return strings.TrimSpace(result.String()) == "true"
 }
 
 func getCountryFromIP(geoInfoFetcher geodb.Geography, ip string) (string, error) {

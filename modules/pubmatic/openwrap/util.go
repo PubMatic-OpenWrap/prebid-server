@@ -300,10 +300,24 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 
 func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
 	ip := defaultIP
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
-		ip = bidRequest.Device.IP
+	if bidRequest != nil && bidRequest.Device != nil {
+		if len(bidRequest.Device.IP) > 0 {
+			ip = bidRequest.Device.IP
+		} else if len(bidRequest.Device.IPv6) > 0 {
+			ip = bidRequest.Device.IPv6
+		}
 	}
 	return ip
+}
+
+func getCountry(bidRequest *openrtb2.BidRequest) string {
+	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
+		return bidRequest.Device.Geo.Country
+	}
+	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
+		return bidRequest.User.Geo.Country
+	}
+	return ""
 }
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {

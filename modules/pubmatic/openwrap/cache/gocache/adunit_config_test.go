@@ -28,18 +28,8 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 			BidderFilter: &adunitconfig.BidderFilter{
 				Filters: []adunitconfig.Filter{
 					{
-						Bidders: []string{"bidderA"},
-						BiddingConditions: map[string]interface{}{
-							"in": []interface{}{
-								map[string]interface{}{
-									"var": "country",
-								},
-								[]interface{}{
-									"JPN",
-									"KOR",
-								},
-							},
-						},
+						Bidders:           []string{"bidderA"},
+						BiddingConditions: `{ "in": [{ "var": "country"}, ["IND"]]}`,
 					},
 				},
 			},
@@ -162,7 +152,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	},
 }
 
-func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+func TestCachePopulateCacheWithAdunitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -179,11 +169,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 		displayVersion int
 	}
 	type want struct {
-		err                    error
-		adunitConfig           *adunitconfig.AdUnitConfig
-		cacheEntry             bool
-		bidderFilterCacheEntry bool
-		bidderFilter           map[string]interface{}
+		err          error
+		adunitConfig *adunitconfig.AdUnitConfig
+		cacheEntry   bool
 	}
 	tests := []struct {
 		name   string
@@ -233,23 +221,9 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(testAdunitConfig, nil)
 			},
 			want: want{
-				err:                    nil,
-				adunitConfig:           testAdunitConfig,
-				cacheEntry:             true,
-				bidderFilterCacheEntry: true,
-				bidderFilter: map[string]interface{}{
-					"bidderA": map[string]interface{}{
-						"in": []interface{}{
-							map[string]interface{}{
-								"var": "country",
-							},
-							[]interface{}{
-								"JPN",
-								"KOR",
-							},
-						},
-					},
-				},
+				err:          nil,
+				adunitConfig: testAdunitConfig,
+				cacheEntry:   true,
 			},
 		},
 		{
@@ -290,12 +264,6 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			err := c.populateCacheWithAdunitConfig(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PubAdunitConfig, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if tt.want.bidderFilterCacheEntry {
-				cacheKey := key(BidderFilter, tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-				bf, found := c.Get(cacheKey)
-				assert.True(t, found)
-				assert.Equal(t, tt.want.bidderFilter, bf)
-			}
 			adunitconfig, found := c.Get(cacheKey)
 			if tt.want.cacheEntry {
 				assert.True(t, found)
@@ -308,7 +276,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	}
 }
 
-func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
+func TestCacheGetAdunitConfigFromCache(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)

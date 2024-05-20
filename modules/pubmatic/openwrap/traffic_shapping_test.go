@@ -8,7 +8,6 @@ import (
 	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
 	mock_geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -16,8 +15,8 @@ import (
 
 func TestEvaluateBiddingCondition(t *testing.T) {
 	type args struct {
-		data  interface{}
-		logic interface{}
+		data  string
+		logic string
 	}
 	tests := []struct {
 		name       string
@@ -27,186 +26,40 @@ func TestEvaluateBiddingCondition(t *testing.T) {
 		{
 			name: "No data present",
 			args: args{
-				data: nil,
-				logic: map[string]interface{}{
-					"or": []interface{}{
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "buyeruidAvailable",
-										},
-										true,
-									},
-								},
-							},
-						},
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "testScenario",
-										},
-										"a-jpn-kor-no-uid",
-									},
-								},
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				data:  "{}",
+				logic: `{ "in": [{ "var": "country"}, ["IND"]]}`,
 			},
+			wantResult: false,
+		},
+		{
+			name: "Invalid data present",
+			args: args{
+				data:  `{"country":a}`,
+				logic: `{ "in": [{ "var": "country"}, ["IND"]]}`,
+			},
+			wantResult: false,
 		},
 		{
 			name: "No logic present",
 			args: args{
-				data: map[string]interface{}{
-					"country":           "IND",
-					"buyeruidAvailable": true,
-				},
-				logic: nil,
+				data:  `{"country": "IND"}`,
+				logic: "{}",
 			},
+			wantResult: false,
 		},
 		{
 			name: "Logic data present and evaluation returns true",
 			args: args{
-				data: map[string]interface{}{
-					"country":           "JPN",
-					"buyeruidAvailable": true,
-				},
-				logic: map[string]interface{}{
-					"or": []interface{}{
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "buyeruidAvailable",
-										},
-										true,
-									},
-								},
-							},
-						},
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "testScenario",
-										},
-										"a-jpn-kor-no-uid",
-									},
-								},
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				data:  `{"country": "IND"}`,
+				logic: `{ "in": [{ "var": "country"}, ["IND"]]}`,
 			},
 			wantResult: true,
 		},
 		{
 			name: "Logic data present and evaluation returns false",
 			args: args{
-				data: map[string]interface{}{
-					"country":           "IND",
-					"buyeruidAvailable": true,
-				},
-				logic: map[string]interface{}{
-					"or": []interface{}{
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "buyeruidAvailable",
-										},
-										true,
-									},
-								},
-							},
-						},
-						map[string]interface{}{
-							"and": []interface{}{
-								map[string]interface{}{
-									"==": []interface{}{
-										map[string]interface{}{
-											"var": "testScenario",
-										},
-										"a-jpn-kor-no-uid",
-									},
-								},
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"JPN",
-											"KOR",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				data:  `{"country": "IND"}`,
+				logic: `{ "in": [{ "var": "country"}, ["USA"]]}`,
 			},
 			wantResult: false,
 		},
@@ -220,11 +73,6 @@ func TestEvaluateBiddingCondition(t *testing.T) {
 }
 
 func TestGetFilteredBidders(t *testing.T) {
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockCache := mock_cache.NewMockCache(ctrl)
-
 	testCases := []struct {
 		name           string
 		requestCtx     models.RequestCtx
@@ -232,38 +80,9 @@ func TestGetFilteredBidders(t *testing.T) {
 		cache          cache.Cache
 		expectedResult map[string]struct{}
 		expectedFlag   bool
-		setup          func()
 	}{
 		{
-			name: "Bidder filter not found in cache",
-			requestCtx: models.RequestCtx{
-				PubID:     1,
-				ProfileID: 2,
-				DisplayID: 3,
-			},
-			bidRequest: &openrtb2.BidRequest{},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
-			},
-			expectedResult: map[string]struct{}{},
-			expectedFlag:   false,
-		},
-		{
-			name: "Invalid data in cache",
-			requestCtx: models.RequestCtx{
-				PubID:     1,
-				ProfileID: 2,
-				DisplayID: 3,
-			},
-			bidRequest: &openrtb2.BidRequest{},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return("abc", false)
-			},
-			expectedResult: map[string]struct{}{},
-			expectedFlag:   false,
-		},
-		{
-			name: "Bidder filter found in cache - All partners filtered",
+			name: "No bidder filter present",
 			requestCtx: models.RequestCtx{
 				PubID:     1,
 				ProfileID: 2,
@@ -286,59 +105,40 @@ func TestGetFilteredBidders(t *testing.T) {
 					},
 				},
 			},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
-					"partner1": map[string]interface{}{
-						"or": []interface{}{
-							map[string]interface{}{
-								"and": []interface{}{
-									map[string]interface{}{
-										"in": []interface{}{
-											map[string]interface{}{
-												"var": "country",
-											},
-											[]interface{}{
-												"JPN",
-												"KOR",
-											},
-										},
-									},
-									map[string]interface{}{
-										"==": []interface{}{
-											map[string]interface{}{
-												"var": "buyeruidAvailable",
-											},
-											true,
-										},
-									},
-								},
-							},
-							map[string]interface{}{
-								"and": []interface{}{
-									map[string]interface{}{
-										"==": []interface{}{
-											map[string]interface{}{
-												"var": "testScenario",
-											},
-											"a-jpn-kor-no-uid",
-										},
-									},
-									map[string]interface{}{
-										"in": []interface{}{
-											map[string]interface{}{
-												"var": "country",
-											},
-											[]interface{}{
-												"JPN",
-												"KOR",
-											},
-										},
-									},
-								},
-							},
-						},
+			bidRequest: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Country: "IND",
 					},
-				}, true)
+				},
+			},
+			expectedResult: map[string]struct{}{},
+			expectedFlag:   false,
+		},
+		{
+			name: "Bidder filter found in cache - All partners filtered",
+			requestCtx: models.RequestCtx{
+				PubID:     1,
+				ProfileID: 2,
+				DisplayID: 3,
+				AdapterThrottleMap: map[string]struct{}{
+					"partner3": {},
+				},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {
+						models.SERVER_SIDE_FLAG:  "1",
+						models.BidderCode:        "partner1",
+						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+					},
+					2: {
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner2",
+					},
+					3: {
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner3",
+					},
+				},
 			},
 			bidRequest: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
@@ -358,59 +158,18 @@ func TestGetFilteredBidders(t *testing.T) {
 				PubID:     1,
 				ProfileID: 2,
 				DisplayID: 3,
+				Country:   "IND",
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
-						models.SERVER_SIDE_FLAG: "1",
-						models.BidderCode:       "partner1",
+						models.SERVER_SIDE_FLAG:  "1",
+						models.BidderCode:        "partner1",
+						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["IND"]]}`,
 					},
 					2: {
 						models.SERVER_SIDE_FLAG: "1",
 						models.BidderCode:       "partner2",
 					},
 				},
-			},
-			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(
-					map[string]interface{}{
-						"partner1": map[string]interface{}{
-							"or": []interface{}{
-								map[string]interface{}{
-									"in": []interface{}{
-										map[string]interface{}{
-											"var": "country",
-										},
-										[]interface{}{
-											"IND",
-											"KOR",
-										},
-									},
-								},
-								map[string]interface{}{
-									"and": []interface{}{
-										map[string]interface{}{
-											"==": []interface{}{
-												map[string]interface{}{
-													"var": "testScenario",
-												},
-												"a-jpn-kor-no-uid",
-											},
-										},
-										map[string]interface{}{
-											"in": []interface{}{
-												map[string]interface{}{
-													"var": "country",
-												},
-												[]interface{}{
-													"JPN",
-													"KOR",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					}, true)
 			},
 			bidRequest: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
@@ -422,11 +181,44 @@ func TestGetFilteredBidders(t *testing.T) {
 			expectedResult: map[string]struct{}{},
 			expectedFlag:   false,
 		},
+		{
+			name: "Bidder filter found in cache - All partner filtered",
+			requestCtx: models.RequestCtx{
+				PubID:     1,
+				ProfileID: 2,
+				DisplayID: 3,
+				Country:   "IND",
+				PartnerConfigMap: map[int]map[string]string{
+					1: {
+						models.SERVER_SIDE_FLAG:  "1",
+						models.BidderCode:        "partner1",
+						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+					},
+					2: {
+						models.SERVER_SIDE_FLAG:  "1",
+						models.BidderCode:        "partner2",
+						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Country: "IND",
+					},
+				},
+			},
+			expectedResult: map[string]struct{}{
+				"partner1": {},
+				"partner2": {},
+			},
+			expectedFlag: true,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.setup()
-			result, flag := getFilteredBidders(tc.requestCtx, tc.bidRequest, mockCache)
+			m := OpenWrap{}
+			result, flag := m.getFilteredBidders(tc.requestCtx, tc.bidRequest)
 			assert.Equal(t, tc.expectedResult, result)
 			assert.Equal(t, tc.expectedFlag, flag)
 		})
@@ -434,7 +226,6 @@ func TestGetFilteredBidders(t *testing.T) {
 }
 
 func TestGetCountryFromRequest(t *testing.T) {
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
@@ -450,91 +241,22 @@ func TestGetCountryFromRequest(t *testing.T) {
 		want  string
 	}{
 		{
-			name: "country_present_in_device_object",
-			args: args{
-				rCtx: models.RequestCtx{},
-				bidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Geo: &openrtb2.Geo{Country: "IND"},
-					},
-				},
-			},
-			setup: func() {},
-			want:  "IND",
-		},
-		{
-			name: "contry_present_in_user_object",
-			args: args{
-				rCtx: models.RequestCtx{},
-				bidRequest: &openrtb2.BidRequest{
-					User: &openrtb2.User{
-						Geo: &openrtb2.Geo{
-							Country: "JPN",
-						},
-					},
-				},
-			},
-			setup: func() {},
-			want:  "JPN",
-		},
-		{
-			name: "contry_present_in_both_device_and_user_object",
-			args: args{
-				rCtx: models.RequestCtx{},
-				bidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Geo: &openrtb2.Geo{Country: "IND"},
-					},
-					User: &openrtb2.User{
-						Geo: &openrtb2.Geo{
-							Country: "JPN",
-						},
-					},
-				},
-			},
-			setup: func() {},
-			want:  "IND",
-		},
-		{
-			name: "detecting_country_from_device_ip",
+			name: "getting country from request ",
 			args: args{
 				rCtx: models.RequestCtx{
-					GeoInfoFetcher: mockGeoDb,
+					Country: "IND",
 				},
-				bidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{IP: "100.43.128.0"},
-				},
+				bidRequest: &openrtb2.BidRequest{},
 			},
 			setup: func() {
-				mockGeoDb.EXPECT().LookUp("100.43.128.0").Return(&geodb.GeoInfo{
-					CountryCode: "us", ISOCountryCode: "US", RegionCode: "13", City: "abc", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "USA",
-				}, nil)
 			},
-			want: "USA",
-		},
-		{
-			name: "detecting_country_from_device_ipv6",
-			args: args{
-				rCtx: models.RequestCtx{
-					GeoInfoFetcher: mockGeoDb,
-				},
-				bidRequest: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{IPv6: "1.179.71.255"},
-				},
-			},
-			setup: func() {
-				mockGeoDb.EXPECT().LookUp("1.179.71.255").Return(&geodb.GeoInfo{
-					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
-				}, nil)
-			},
-			want: "AUS",
+			want: "IND",
 		},
 		{
 			name: "detecting_country_from_request_ip",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP:             "101.143.255.255",
-					GeoInfoFetcher: mockGeoDb,
+					IP: "101.143.255.255",
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
@@ -549,13 +271,11 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "both_ip_and_country_are_missing_in_request",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP:             "",
-					GeoInfoFetcher: mockGeoDb,
+					IP: "",
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
 			setup: func() {
-
 			},
 			want: "",
 		},
@@ -563,9 +283,8 @@ func TestGetCountryFromRequest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			got := getCountryFromRequest(tt.args.rCtx, tt.args.bidRequest)
+			got := getCountryFromRequest(tt.args.rCtx, mockGeoDb, tt.args.bidRequest)
 			assert.Equal(t, got, tt.want)
-
 		})
 	}
 }

@@ -57,6 +57,7 @@ var rctx = models.RequestCtx{
 	ProfileIDStr:             "1234",
 	Endpoint:                 models.EndpointV25,
 	SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+	Country:                  "IND",
 }
 
 func getTestBidRequest(isSite bool) *openrtb2.BidRequest {
@@ -2470,6 +2471,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
 						models.THROTTLE:            "100",
+						models.BiddingConditions:   `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					3: {
 						models.PARTNER_ID:          "3",
@@ -2485,29 +2487,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
-					"appnexus": map[string]interface{}{
-						"in": []interface{}{
-							map[string]interface{}{
-								"var": "country",
-							},
-							[]interface{}{
-								"JP",
-								"KR",
-							},
-						},
-					},
-					"pubmatic": map[string]interface{}{
-						"in": []interface{}{
-							map[string]interface{}{
-								"var": "country",
-							},
-							[]interface{}{
-								"IN",
-							},
-						},
-					},
-				}, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 
 				//prometheus metrics
@@ -2551,25 +2530,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
 						models.THROTTLE:            "100",
+						models.BiddingConditions:   `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					-1: {
 						models.DisplayVersionID: "1",
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(map[string]interface{}{
-					"appnexus": map[string]interface{}{
-						"in": []interface{}{
-							map[string]interface{}{
-								"var": "country",
-							},
-							[]interface{}{
-								"JP",
-								"KR",
-							},
-						},
-					},
-				}, true)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnersFiltered))
@@ -2616,7 +2583,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
@@ -2667,7 +2633,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
@@ -2714,7 +2679,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
@@ -2804,7 +2768,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						},
 					},
 				})
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllSlotsDisabled))
@@ -2910,7 +2873,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"adunit@700x900": "1232433543534543",
 					},
 				})
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -2989,7 +2951,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
@@ -3050,7 +3011,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -3166,7 +3126,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -3357,7 +3316,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						},
 					},
 				})
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
@@ -3618,7 +3576,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						models.VastUnwrapperEnableKey: "0",
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -3680,7 +3637,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						models.VastUnwrapperEnableKey: "1",
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -3747,7 +3703,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						models.VastUnwrapperEnableKey: "1",
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -3815,7 +3770,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						models.VastUnwrapTrafficPercentKey: "50",
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -3878,7 +3832,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 						models.VastUnwrapTrafficPercentKey: "100",
 					},
 				}, nil)
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, true)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
@@ -4141,7 +4094,6 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
@@ -4188,8 +4140,6 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
-				mockCache.EXPECT().Get(gomock.Any()).Return(nil, false)
-
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
