@@ -3,9 +3,9 @@ package openwrap
 import (
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func (m OpenWrap) getProfileData(rCtx models.RequestCtx, bidRequest openrtb2.BidRequest) (map[int]map[string]string, error) {
@@ -19,7 +19,7 @@ func (m OpenWrap) getProfileData(rCtx models.RequestCtx, bidRequest openrtb2.Bid
 		return getTestModePartnerConfigMap(platform, m.cfg.Timeout.HBTimeout, rCtx.DisplayID), nil
 	}
 
-	return m.cache.GetPartnerConfigMap(rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID, rCtx.Endpoint)
+	return m.cache.GetPartnerConfigMap(rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 }
 
 func getTestModePartnerConfigMap(platform string, timeout int64, displayVersion int) map[int]map[string]string {

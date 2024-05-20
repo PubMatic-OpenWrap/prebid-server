@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
 )
 
 type RequestCtx struct {
@@ -92,11 +92,18 @@ type RequestCtx struct {
 	ReturnAllBidStatus     bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
 
-	DCName             string
-	CachePutMiss       int                                                          // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	CurrencyConversion func(from string, to string, value float64) (float64, error) `json:"-"`
-	MatchedImpression  map[string]int
-	CustomDimensions   map[string]CustomDimension
+	DCName                 string
+	CachePutMiss           int                                                          // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion     func(from string, to string, value float64) (float64, error) `json:"-"`
+	MatchedImpression      map[string]int
+	CustomDimensions       map[string]CustomDimension
+	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
+	IsTBFFeatureEnabled    bool
+	VastUnwrapEnabled      bool
+	VastUnwrapStatsEnabled bool
+	AppLovinMax            AppLovinMax
+	LoggerDisabled         bool
+	TrackerDisabled        bool
 }
 
 type OwBid struct {
@@ -185,4 +192,14 @@ type AdUnitCtx struct {
 type CustomDimension struct {
 	Value     string `json:"value,omitempty"`
 	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
+}
+
+// FeatureData struct to hold feature data from cache
+type FeatureData struct {
+	Enabled int    // feature enabled/disabled
+	Value   string // feature value if any
+}
+
+type AppLovinMax struct {
+	Reject bool
 }

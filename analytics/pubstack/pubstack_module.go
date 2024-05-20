@@ -16,9 +16,9 @@ import (
 	"github.com/prebid/prebid-server/analytics/pubmatic"
 	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
 
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/analytics/pubstack/eventchannel"
-	"github.com/prebid/prebid-server/analytics/pubstack/helpers"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/analytics/pubstack/eventchannel"
+	"github.com/prebid/prebid-server/v2/analytics/pubstack/helpers"
 )
 
 type Configuration struct {
@@ -54,7 +54,7 @@ type PubstackModule struct {
 	clock         clock.Clock
 }
 
-func NewModule(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+func NewModule(client *http.Client, scope, endpoint, configRefreshDelay string, maxEventCount int, maxByteSize, maxTime string, clock clock.Clock) (analytics.Module, error) {
 	configUpdateTask, err := NewConfigUpdateHttpTask(
 		client,
 		scope,
@@ -67,7 +67,7 @@ func NewModule(client *http.Client, scope, endpoint, configRefreshDelay string, 
 	return NewModuleWithConfigTask(client, scope, endpoint, maxEventCount, maxByteSize, maxTime, configUpdateTask, clock)
 }
 
-func NewModuleWithConfigTask(client *http.Client, scope, endpoint string, maxEventCount int, maxByteSize, maxTime string, configTask ConfigUpdateTask, clock clock.Clock) (analytics.PBSAnalyticsModule, error) {
+func NewModuleWithConfigTask(client *http.Client, scope, endpoint string, maxEventCount int, maxByteSize, maxTime string, configTask ConfigUpdateTask, clock clock.Clock) (analytics.Module, error) {
 	glog.Infof("[pubstack] Initializing module scope=%s endpoint=%s\n", scope, endpoint)
 
 	// parse args

@@ -1,9 +1,8 @@
 package modules
 
 import (
-	prebidOrtb2blocking "github.com/prebid/prebid-server/modules/prebid/ortb2blocking"
-	pubmaticOpenwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	vastunwrap "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap"
+	prebidOrtb2blocking "github.com/prebid/prebid-server/v2/modules/prebid/ortb2blocking"
+	pubmaticOpenwrap "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
 )
 
 // builders returns mapping between module name and its builder
@@ -14,8 +13,7 @@ func builders() ModuleBuilders {
 			"ortb2blocking": prebidOrtb2blocking.Builder,
 		},
 		"pubmatic": {
-			"vastunwrap": vastunwrap.Builder,
-			"openwrap":   pubmaticOpenwrap.Builder,
+			"openwrap": pubmaticOpenwrap.Builder,
 		},
 	}
 }
