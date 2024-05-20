@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -14,6 +16,7 @@ import (
 // adapter implements adapters.Bidder interface
 type adapter struct {
 	adapterInfo
+	bidderParamsConfig *bidderparams.BidderConfig
 }
 
 const (
@@ -23,25 +26,43 @@ const (
 // adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
 type adapterInfo struct {
 	config.Adapter
-	extraInfo extraAdapterInfo
+	extraInfo  extraAdapterInfo
+	bidderName openrtb_ext.BidderName
 }
 type extraAdapterInfo struct {
 	RequestMode string `json:"requestMode"`
 }
 
-// prepareRequestData generates the RequestData by marshalling the request and returns it
-func (o adapterInfo) prepareRequestData(request *openrtb2.BidRequest) (*adapters.RequestData, error) {
+// global instance to hold bidderParamsConfig
+var g_bidderParamsConfig *bidderparams.BidderConfig
+
+// InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
+func InitBidderParamsConfig(dirPath string) (err error) {
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+	return err
+}
+
+// makeRequest converts openrtb2.BidRequest to adapters.RequestData, sets requestParams in request if required
+func (o adapterInfo) makeRequest(request *openrtb2.BidRequest, requestParams map[string]bidderparams.BidderParamMapper) (*adapters.RequestData, error) {
 	if request == nil {
 		return nil, fmt.Errorf("found nil request")
 	}
-	body, err := json.Marshal(request)
+	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
+	}
+	requestBody, err = setRequestParams(requestBody, requestParams)
+	if err != nil {
+		return nil, err
 	}
 	return &adapters.RequestData{
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
-		Body:   body,
+		Body:   requestBody,
+		Headers: http.Header{
+			"Content-Type": {"application/json;charset=utf-8"},
+			"Accept":       {"application/json"},
+		},
 	}, nil
 }
 
@@ -55,7 +76,8 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		}
 	}
 	return &adapter{
-		adapterInfo: adapterInfo{config, extraAdapterInfo},
+		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
+		bidderParamsConfig: g_bidderParamsConfig,
 	}, nil
 }
 
@@ -64,15 +86,20 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	if request == nil || requestInfo == nil {
 		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
 	}
+	if o.bidderParamsConfig == nil {
+		return nil, []error{fmt.Errorf("Found nil bidderParamsConfig")}
+	}
 	var errs []error
 	adapterInfo := o.adapterInfo
+	requestParams, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
+
 	// bidder request supports single impression in single HTTP call.
 	if adapterInfo.extraInfo.RequestMode == RequestModeSingle {
 		requestData := make([]*adapters.RequestData, 0, len(request.Imp))
 		requestCopy := *request
 		for _, imp := range request.Imp {
 			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := adapterInfo.prepareRequestData(&requestCopy)
+			reqData, err := adapterInfo.makeRequest(&requestCopy, requestParams)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -82,7 +109,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		return requestData, errs
 	}
 	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := adapterInfo.prepareRequestData(request)
+	requestData, err := adapterInfo.makeRequest(request, requestParams)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -153,4 +180,9 @@ func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType 
 		bidType = openrtb_ext.BidTypeNative
 	}
 	return bidType
+}
+
+// isORTBBidder returns true if the bidder is an oRTB bidder
+func isORTBBidder(bidderName string) bool {
+	return strings.HasPrefix(bidderName, "owortb_")
 }
