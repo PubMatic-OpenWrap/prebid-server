@@ -298,7 +298,6 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 
 	case nbr.InternalError:
 		return 17 // ErrInvalidImpression
-
 	}
 
 	return -1

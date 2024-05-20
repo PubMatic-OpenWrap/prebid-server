@@ -269,11 +269,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
-	if rctx.ReturnAllBidStatus {
-		rctx.SeatNonBids = prepareSeatNonBids(rctx)
-		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
+	result.SeatNonBid = prepareSeatNonBids(rctx)
 
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
@@ -327,7 +323,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// TODO: move debug here
 	// result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
-
 	return result, nil
 }
 
