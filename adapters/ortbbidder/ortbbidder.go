@@ -55,11 +55,6 @@ func (o adapterInfo) makeRequest(request *openrtb2.BidRequest, requestParams map
 	if err != nil {
 		return nil, err
 	}
-	bidreq := &openrtb2.BidRequest{}
-	err = json.Unmarshal(requestBody, bidreq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-	}
 	return &adapters.RequestData{
 		Method: http.MethodPost,
 		Uri:    o.Endpoint,
