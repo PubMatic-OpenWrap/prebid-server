@@ -325,16 +325,6 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
-func TestRecordHTTPCounter(t *testing.T) {
-	m := createMetricsForTesting()
-
-	m.RecordHTTPCounter()
-
-	expectedCount := float64(1)
-	assertCounterVecValue(t, "", "httpCounter", m.httpCounter,
-		expectedCount, nil)
-}
-
 func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {

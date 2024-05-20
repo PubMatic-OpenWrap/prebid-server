@@ -25,7 +25,6 @@ type MetricsEngine interface {
 	RecordPublisherRequests(endpoint string, publisher string, platform string)
 	RecordReqImpsWithContentCount(publisher, contentType string)
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
-	RecordHTTPCounter()
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
