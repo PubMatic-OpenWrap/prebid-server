@@ -3247,6 +3247,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.Reject, got.Reject)
 			assert.Equal(t, tt.want.NbrCode, got.NbrCode)
+			assert.Equal(t, tt.want.SeatNonBid, got.SeatNonBid)
 			for i := 0; i < len(got.DebugMessages); i++ {
 				gotDebugMessage, _ := json.Marshal(got.DebugMessages[i])
 				wantDebugMessage, _ := json.Marshal(tt.want.DebugMessages[i])
@@ -4031,6 +4032,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InternalError))
