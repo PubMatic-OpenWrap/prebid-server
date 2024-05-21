@@ -336,6 +336,32 @@ func TestRecordHTTPCounter(t *testing.T) {
 		expectedCount, nil)
 }
 
+func TestRecordAdruleEnabled(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleEnabled("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleEnabled", m.pubProfAdruleEnabled,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
+}
+
+func TestRecordAdruleValidationFailure(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleValidationFailure("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleValidationfailure", m.pubProfAdruleValidationfailure,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
+}
+
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {

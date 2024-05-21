@@ -764,3 +764,25 @@ func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRespTime(arg0, arg1, arg2 i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRespTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRespTime), arg0, arg1, arg2)
 }
+// RecordAdruleEnabled mocks base method
+func (m *MockMetricsEngine) RecordAdruleEnabled(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAdruleEnabled", arg0, arg1)
+}
+
+// RecordAdruleEnabled indicates an expected call of RecordAdruleEnabled
+func (mr *MockMetricsEngineMockRecorder) RecordAdruleEnabled(arg0, arg1 string) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdruleEnabled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdruleEnabled), arg0, arg1)
+}
+// RecordAdruleValidationFailure mocks base method
+func (m *MockMetricsEngine) RecordAdruleValidationFailure(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAdruleValidationFailure", arg0, arg1)
+}
+
+// RecordAdruleValidationFailure indicates an expected call of RecordAdruleValidationFailure
+func (mr *MockMetricsEngineMockRecorder) RecordAdruleValidationFailure(arg0, arg1 string) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdruleValidationFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdruleValidationFailure), arg0, arg1)
+}

@@ -81,4 +81,8 @@ type MetricsEngine interface {
 	RecordUnwrapWrapperCount(accountId, bidder string, wrapper_count string)
 	RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)
 	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
+
+	//VMAP-adrule
+	RecordAdruleEnabled(pubId, profId string)
+	RecordAdruleValidationFailure(pubId, profId string)
 }

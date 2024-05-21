@@ -493,3 +493,17 @@ func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, 
 		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
 	}
 }
+
+// RecordAdruleEnabled across all engines
+func (me *MultiMetricsEngine) RecordAdruleEnabled(publisher, profile string) {
+	for _, thisME := range *me {
+		thisME.RecordAdruleEnabled(publisher, profile)
+	}
+}
+
+// RecordAdruleValidationFailure across all engines
+func (me *MultiMetricsEngine) RecordAdruleValidationFailure(publisher, profile string) {
+	for _, thisME := range *me {
+		thisME.RecordAdruleValidationFailure(publisher, profile)
+	}
+}
