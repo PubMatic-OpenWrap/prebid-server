@@ -7,6 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,8 +33,9 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						LiveVersionInnerQuery: models.TestQuery,
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -50,8 +52,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("25_1", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("25_1", "9", models.PLATFORM_DISPLAY)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -61,8 +63,9 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						LiveVersionInnerQuery: models.TestQuery,
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -79,8 +82,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -90,8 +93,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
-						GetParterConfig:       "^SELECT (.+) FROM wrapper_config_map (.+)",
+						LiveVersionInnerQuery: models.TestQuery,
+						GetParterConfig:       models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -131,8 +134,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
 					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
@@ -140,7 +143,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
 		},
@@ -149,8 +152,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
-						GetParterConfig:          "^SELECT (.+) FROM wrapper_config_map (.+)",
+						DisplayVersionInnerQuery: models.TestQuery,
+						GetParterConfig:          models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -190,8 +193,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
 					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
@@ -199,7 +202,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
 		},
@@ -208,8 +211,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
-						GetParterConfig:          "^SELECT (.+) FROM wrapper_config_map (.+)",
+						DisplayVersionInnerQuery: models.TestQuery,
+						GetParterConfig:          models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -257,8 +260,8 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
 					AddRow("-1", "ALL", "ALL", 0, -1, 0, -1, "platform", "display").
@@ -266,9 +269,9 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "kgp", "_AU_@_W_x_H_").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "timeout", "200").
 					AddRow("101", "pubmatic", "pubmatic", 0, 3, 0, 76, "serverSideEnabled", "1").
-					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, 546, "vendorId", "999").
-					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, 546, "serverSideEnabled", "1")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rowsPartnerConfig)
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "serverSideEnabled", "1").
+					AddRow("234", "vastbidder", "test-vastbidder", 0, 3, 0, -1, "vendorId", "546")
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rowsPartnerConfig)
 				return db
 			},
 		},
@@ -279,12 +282,12 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
+			gotPartnerConfigMap, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.GetActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
 	}
 }
@@ -321,7 +324,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -338,7 +341,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				}
 				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
 					AddRow("11_11", "openx", "openx", 0, -1, 0, -1, "k1", "v1")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -347,7 +350,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -384,7 +387,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k1", "v1").
 					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k2", "v2").
 					AddRow(102, "pubmatic", "pubmatic", 0, -1, 0, 76, "k1", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -393,7 +396,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -436,7 +439,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 152, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -445,7 +448,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -491,7 +494,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -500,7 +503,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -544,7 +547,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, 100, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 1, -1, 0, 100, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -553,7 +556,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						GetParterConfig: "^SELECT (.+) FROM wrapper_config_map (.+)",
+						GetParterConfig: models.TestQuery,
 					},
 					MaxDbContextTimeout: 1000,
 				},
@@ -597,7 +600,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
 					AddRow(102, "-", "-", 0, -1, 0, 100, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_config_map (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -608,12 +611,12 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.getActivePartnerConfigurations(tt.args.versionID)
+			gotPartnerConfigMap, err := db.getActivePartnerConfigurations(tt.args.versionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
 	}
 }
@@ -633,6 +636,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 		args                           args
 		expectedVersionID              int
 		expectedDisplayVersionIDFromDB int
+		expectedPlatform               string
 		wantErr                        bool
 		setup                          func() *sql.DB
 	}{
@@ -641,7 +645,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						LiveVersionInnerQuery: models.TestQuery,
 					},
 				},
 			},
@@ -652,6 +656,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			},
 			expectedVersionID:              0,
 			expectedDisplayVersionIDFromDB: 0,
+			expectedPlatform:               "",
 			wantErr:                        true,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
@@ -659,8 +664,8 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("25_1", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("25_1", "9", models.PLATFORM_APP)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -670,7 +675,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						LiveVersionInnerQuery: models.TestQuery,
 					},
 				},
 			},
@@ -682,6 +687,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 
 			expectedVersionID:              251,
 			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "in-app",
 			wantErr:                        false,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
@@ -689,8 +695,8 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_APP)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
 			},
@@ -700,7 +706,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 			fields: fields{
 				cfg: config.Database{
 					Queries: config.Queries{
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						DisplayVersionInnerQuery: models.TestQuery,
 					},
 				},
 			},
@@ -712,6 +718,7 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 
 			expectedVersionID:              251,
 			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "in-app",
 			wantErr:                        false,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
@@ -719,9 +726,93 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("251", "9")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_APP)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
+				return db
+			},
+		},
+		{
+			name: "Platform is null",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						DisplayVersionInnerQuery: models.TestQuery,
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 2,
+				pubID:          5890,
+			},
+			expectedVersionID:              123,
+			expectedDisplayVersionIDFromDB: 12,
+			expectedPlatform:               "",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("123", "12", nil)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 2, 5890).WillReturnRows(rowsWrapperVersion)
+				return db
+			},
+		},
+		{
+			name: "Platform is empty string",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						LiveVersionInnerQuery: models.TestQuery,
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
+			},
+			expectedVersionID:              251,
+			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", "")
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
+				return db
+			},
+		},
+		{
+			name: "Platform is not null",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						LiveVersionInnerQuery: models.TestQuery,
+					},
+				},
+			},
+			args: args{
+				profileID:      19109,
+				displayVersion: 0,
+				pubID:          5890,
+			},
+			expectedVersionID:              251,
+			expectedDisplayVersionIDFromDB: 9,
+			expectedPlatform:               "in-app",
+			wantErr:                        false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_APP)
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 				return db
 			},
 		},
@@ -732,17 +823,14 @@ func Test_mySqlDB_getVersionID(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, got1, err := db.getVersionID(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
+			gotVersionID, gotDisplayVersionID, gotPlatform, err := db.getVersionID(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getVersionID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.expectedVersionID {
-				t.Errorf("mySqlDB.getVersionID() got = %v, want %v", got, tt.expectedVersionID)
-			}
-			if got1 != tt.expectedDisplayVersionIDFromDB {
-				t.Errorf("mySqlDB.getVersionID() got1 = %v, want %v", got1, tt.expectedDisplayVersionIDFromDB)
-			}
+			assert.Equal(t, tt.expectedVersionID, gotVersionID)
+			assert.Equal(t, tt.expectedDisplayVersionIDFromDB, gotDisplayVersionID)
+			assert.Equal(t, tt.expectedPlatform, gotPlatform)
 		})
 	}
 }

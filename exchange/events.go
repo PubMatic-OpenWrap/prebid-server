@@ -19,6 +19,7 @@ type eventTracking struct {
 	accountID          string
 	enabledForAccount  bool
 	enabledForRequest  bool
+	enabledVideoEvents bool //TODO: OPENWRAP Video Events Flag
 	auctionTimestampMs int64
 	integrationType    string
 	bidderInfos        config.BidderInfos
@@ -31,6 +32,7 @@ func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Ti
 		accountID:          account.ID,
 		enabledForAccount:  account.Events.Enabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
+		enabledVideoEvents: requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    getIntegrationType(requestExtPrebid),
 		bidderInfos:        bidderInfos,
@@ -79,9 +81,11 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 		}
 	}
 
-	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
-		bid.AdM = string(newVastXML)
+	if ev.enabledVideoEvents {
+		// always inject event  trackers without checkign isModifyingVASTXMLAllowed
+		if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
+			bid.AdM = string(newVastXML)
+		}
 	}
 }
 

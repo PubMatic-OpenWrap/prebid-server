@@ -13,8 +13,7 @@ import (
 type Metrics struct {
 
 	// general metrics
-	panics      *prometheus.CounterVec
-	httpCounter *prometheus.CounterVec
+	panics *prometheus.CounterVec
 
 	// publisher-partner level metrics
 	pubPartnerNoCookie            *prometheus.CounterVec
@@ -70,6 +69,7 @@ type Metrics struct {
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
+	analyticsThrottle     *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
@@ -79,20 +79,21 @@ type Metrics struct {
 }
 
 const (
-	pubIDLabel     = "pub_id"
-	profileIDLabel = "profile_id"
-	partnerLabel   = "partner"
-	platformLabel  = "platform"
-	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
-	apiTypeLabel   = "api_type"
-	impFormatLabel = "imp_format" //TODO -confirm ?
-	adFormatLabel  = "ad_format"
-	sourceLabel    = "source" //TODO -confirm ?
-	nbrLabel       = "nbr"    // TODO - errcode ?
-	errorLabel     = "error"
-	hostLabel      = "host" // combination of node:pod
-	methodLabel    = "method"
-	queryTypeLabel = "query_type"
+	pubIDLabel         = "pub_id"
+	profileIDLabel     = "profile_id"
+	partnerLabel       = "partner"
+	platformLabel      = "platform"
+	endpointLabel      = "endpoint" // TODO- apiTypeLabel ?
+	apiTypeLabel       = "api_type"
+	impFormatLabel     = "imp_format" //TODO -confirm ?
+	adFormatLabel      = "ad_format"
+	sourceLabel        = "source" //TODO -confirm ?
+	nbrLabel           = "nbr"    // TODO - errcode ?
+	errorLabel         = "error"
+	hostLabel          = "host" // combination of node:pod
+	methodLabel        = "method"
+	queryTypeLabel     = "query_type"
+	analyticsTypeLabel = "an_type"
 )
 
 var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
@@ -115,12 +116,6 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"panics",
 		"Count of prebid server panics in openwrap module.",
 		[]string{hostLabel, methodLabel},
-	)
-
-	metrics.httpCounter = newCounter(cfg, promRegistry,
-		"total_http_request",
-		"Count of total http requests",
-		[]string{},
 	)
 
 	// publisher-partner level metrics
@@ -262,6 +257,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
+	metrics.analyticsThrottle = newCounter(cfg, promRegistry,
+		"analytics_throttle",
+		"Count of throttled analytics logger and tracker requestss",
+		[]string{pubIDLabel, profileIDLabel, analyticsTypeLabel})
+
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
@@ -491,8 +491,13 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 	}).Inc()
 }
 
-func (m *Metrics) RecordHTTPCounter() {
-	m.httpCounter.With(nil).Inc()
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	m.analyticsThrottle.With(prometheus.Labels{
+		pubIDLabel:         pubid,
+		profileIDLabel:     profileid,
+		analyticsTypeLabel: analyticsType,
+	}).Inc()
 }
 
 // TODO - really need ?

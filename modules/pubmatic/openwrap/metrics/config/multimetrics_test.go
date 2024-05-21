@@ -206,6 +206,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordGetProfileDataTime(getTime)
 	mockEngine.EXPECT().RecordSendLoggerDataTime(sendTime)
 	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
+	mockEngine.EXPECT().RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	mockEngine.EXPECT().Shutdown()
 
 	mockEngine.EXPECT().RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
@@ -219,7 +220,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	mockEngine.EXPECT().RecordAmpVideoRequests("pubid", "profileid")
 	mockEngine.EXPECT().RecordAmpVideoResponses("pubid", "profileid")
-	mockEngine.EXPECT().RecordHTTPCounter()
 
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
@@ -271,6 +271,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordGetProfileDataTime(getTime)
 	multiMetricEngine.RecordSendLoggerDataTime(sendTime)
 	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
+	multiMetricEngine.RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	multiMetricEngine.Shutdown()
 
 	multiMetricEngine.RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
@@ -284,5 +285,4 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	multiMetricEngine.RecordAmpVideoRequests("pubid", "profileid")
 	multiMetricEngine.RecordAmpVideoResponses("pubid", "profileid")
-	multiMetricEngine.RecordHTTPCounter()
 }

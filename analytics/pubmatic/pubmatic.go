@@ -54,6 +54,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	if rCtx.LoggerDisabled {
+		// logger disabled explicitly for publisher,profile request
+		return
+	}
+
 	err := RestoreBidResponse(rCtx, *ao)
 	if err != nil {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())

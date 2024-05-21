@@ -1,21 +1,78 @@
-package server
+package openwrap
 
 import (
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"github.com/magiconair/properties/assert"
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v2/config"
+	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/assert"
 )
 
+func TestPrometheusHandler(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+	ow = &OpenWrap{}
+	ow.metricEngine = mockMetrics
+	type args struct {
+		gatherer prometheus.Gatherer
+		duration time.Duration
+		setup    func()
+		endpoint string
+	}
+	type testCase struct {
+		name       string
+		args       args
+		expectCode int
+	}
+
+	tests := []testCase{
+		{
+			name: "valid test",
+			args: args{
+				gatherer: prometheus.Gatherers{},
+				duration: 10 * time.Second,
+				endpoint: "/abc",
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
+			},
+			expectCode: http.StatusOK,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.setup()
+			handler := PrometheusHandler(tt.args.gatherer, tt.args.duration, tt.args.endpoint)
+			server := &http.Server{
+				Addr:    ":" + "8991",
+				Handler: handler,
+			}
+			server.Shutdown(context.Background())
+			req := httptest.NewRequest("GET", tt.args.endpoint, nil)
+			rec := httptest.NewRecorder()
+			server.Handler.ServeHTTP(rec, req)
+			assert.Equal(t, rec.Code, tt.expectCode)
+
+		})
+	}
+}
+
 func TestInitPrometheusStatsEndpoint(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+	ow = &OpenWrap{}
+	ow.metricEngine = mockMetrics
 	type args struct {
 		endpoint string
 		cfg      *config.Configuration
 		gatherer *prometheus.Registry
+		setup    func()
 		promMux  *http.ServeMux
 	}
 	tests := []struct {
@@ -36,7 +93,10 @@ func TestInitPrometheusStatsEndpoint(t *testing.T) {
 					},
 				},
 				gatherer: &prometheus.Registry{},
-				promMux:  http.NewServeMux(),
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
+				promMux: http.NewServeMux(),
 			},
 
 			want: http.StatusOK,
@@ -54,7 +114,10 @@ func TestInitPrometheusStatsEndpoint(t *testing.T) {
 					},
 				},
 				gatherer: &prometheus.Registry{},
-				promMux:  http.NewServeMux(),
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
+				promMux: http.NewServeMux(),
 			},
 
 			want: http.StatusNotFound,
@@ -62,6 +125,7 @@ func TestInitPrometheusStatsEndpoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.args.setup()
 			initPrometheusStatsEndpoint(tt.args.cfg, tt.args.gatherer, tt.args.promMux)
 			req := httptest.NewRequest("GET", tt.args.endpoint, nil)
 			rec := httptest.NewRecorder()
@@ -72,9 +136,14 @@ func TestInitPrometheusStatsEndpoint(t *testing.T) {
 }
 
 func TestInitPrometheusMetricsEndpoint(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+	ow = &OpenWrap{}
+	ow.metricEngine = mockMetrics
 	type args struct {
 		endpoint string
 		cfg      *config.Configuration
+		setup    func()
 		promMux  *http.ServeMux
 	}
 	tests := []struct {
@@ -94,6 +163,9 @@ func TestInitPrometheusMetricsEndpoint(t *testing.T) {
 						},
 					},
 				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
 				promMux: http.NewServeMux(),
 			},
 			want: http.StatusOK,
@@ -110,6 +182,9 @@ func TestInitPrometheusMetricsEndpoint(t *testing.T) {
 						},
 					},
 				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
 				promMux: http.NewServeMux(),
 			},
 			want: http.StatusNotFound,
@@ -117,6 +192,7 @@ func TestInitPrometheusMetricsEndpoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.args.setup()
 			initPrometheusMetricsEndpoint(tt.args.cfg, tt.args.promMux)
 			req := httptest.NewRequest("GET", tt.args.endpoint, nil)
 			rec := httptest.NewRecorder()
@@ -127,9 +203,14 @@ func TestInitPrometheusMetricsEndpoint(t *testing.T) {
 }
 
 func TestGetOpenWrapPrometheusServer(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+	ow = &OpenWrap{}
+	ow.metricEngine = mockMetrics
 	type args struct {
 		endpoint string
 		cfg      *config.Configuration
+		setup    func()
 		gatherer *prometheus.Registry
 	}
 
@@ -153,6 +234,9 @@ func TestGetOpenWrapPrometheusServer(t *testing.T) {
 						},
 					},
 				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
 				gatherer: prometheus.NewRegistry(),
 			},
 			want: http.StatusOK,
@@ -168,6 +252,9 @@ func TestGetOpenWrapPrometheusServer(t *testing.T) {
 							TimeoutMillisRaw: 12,
 						},
 					},
+				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
 				},
 				gatherer: prometheus.NewRegistry(),
 			},
@@ -185,6 +272,9 @@ func TestGetOpenWrapPrometheusServer(t *testing.T) {
 						},
 					},
 				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
 				gatherer: prometheus.NewRegistry(),
 			},
 			want: http.StatusNotFound,
@@ -201,6 +291,9 @@ func TestGetOpenWrapPrometheusServer(t *testing.T) {
 						},
 					},
 				},
+				setup: func() {
+					mockMetrics.EXPECT().RecordRequest(gomock.Any()).AnyTimes()
+				},
 				gatherer: prometheus.NewRegistry(),
 			},
 			want: http.StatusNotFound,
@@ -208,7 +301,8 @@ func TestGetOpenWrapPrometheusServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			promServer := getOpenWrapPrometheusServer(tt.args.cfg, tt.args.gatherer, server)
+			tt.args.setup()
+			promServer := GetOpenWrapPrometheusServer(tt.args.cfg, tt.args.gatherer, server)
 			defer promServer.Shutdown(context.Background())
 			req := httptest.NewRequest("GET", tt.args.endpoint, nil)
 			rec := httptest.NewRecorder()

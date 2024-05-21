@@ -9,6 +9,10 @@ import (
 )
 
 func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
+	if rCtx.TrackerDisabled {
+		return ""
+	}
+
 	floorsDetails := models.GetFloorsDetails(responseExt)
 	tracker := models.Tracker{
 		PubID:             rCtx.PubID,

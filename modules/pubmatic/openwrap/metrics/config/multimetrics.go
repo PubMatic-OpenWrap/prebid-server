@@ -460,12 +460,6 @@ func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordHTTPCounter() {
-	for _, thisME := range *me {
-		thisME.RecordHTTPCounter()
-	}
-}
-
 // RecordUnwrapRequestStatus record VAST unwrap status
 func (me *MultiMetricsEngine) RecordUnwrapRequestStatus(accountId, bidder, status string) {
 	for _, thisME := range *me {
@@ -491,5 +485,12 @@ func (me *MultiMetricsEngine) RecordUnwrapRequestTime(accountId, bidder string, 
 func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
 	for _, thisME := range *me {
 		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
+	}
+}
+
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (me *MultiMetricsEngine) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	for _, thisME := range *me {
+		thisME.RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType)
 	}
 }
