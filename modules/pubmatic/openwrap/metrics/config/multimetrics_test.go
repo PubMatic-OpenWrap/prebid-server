@@ -203,9 +203,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId)
 	mockEngine.EXPECT().RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder)
 	mockEngine.EXPECT().RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
-	mockEngine.EXPECT().RecordGetProfileDataTime(endpoint, profile, getTime)
-	mockEngine.EXPECT().RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	mockEngine.EXPECT().RecordGetProfileDataTime(getTime)
+	mockEngine.EXPECT().RecordSendLoggerDataTime(sendTime)
 	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
+	mockEngine.EXPECT().RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	mockEngine.EXPECT().Shutdown()
 
 	mockEngine.EXPECT().RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
@@ -214,12 +215,11 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordBids("pubid", "profileid", "bidder", "deal")
 	mockEngine.EXPECT().RecordPartnerTimeoutRequests("pubid", "profileid", "bidder")
 	mockEngine.EXPECT().RecordCtvUaAccuracy("pubId", "status")
-	mockEngine.EXPECT().RecordSendLoggerDataTime("requestType", "profileid", time.Second)
+	mockEngine.EXPECT().RecordSendLoggerDataTime(time.Second)
 	mockEngine.EXPECT().RecordRequestTime("requestType", time.Second)
 	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	mockEngine.EXPECT().RecordAmpVideoRequests("pubid", "profileid")
 	mockEngine.EXPECT().RecordAmpVideoResponses("pubid", "profileid")
-	mockEngine.EXPECT().RecordHTTPCounter()
 
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
@@ -268,9 +268,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordBidResponseByDealCountInHB(publisher, profile, aliasBidder, dealId)
 	multiMetricEngine.RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder)
 	multiMetricEngine.RecordVideoImpDisabledViaConnTypeStats(publisher, profile)
-	multiMetricEngine.RecordGetProfileDataTime(endpoint, profile, getTime)
-	multiMetricEngine.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+	multiMetricEngine.RecordGetProfileDataTime(getTime)
+	multiMetricEngine.RecordSendLoggerDataTime(sendTime)
 	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
+	multiMetricEngine.RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	multiMetricEngine.Shutdown()
 
 	multiMetricEngine.RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
@@ -279,10 +280,9 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordBids("pubid", "profileid", "bidder", "deal")
 	multiMetricEngine.RecordPartnerTimeoutRequests("pubid", "profileid", "bidder")
 	multiMetricEngine.RecordCtvUaAccuracy("pubId", "status")
-	multiMetricEngine.RecordSendLoggerDataTime("requestType", "profileid", time.Second)
+	multiMetricEngine.RecordSendLoggerDataTime(time.Second)
 	multiMetricEngine.RecordRequestTime("requestType", time.Second)
 	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	multiMetricEngine.RecordAmpVideoRequests("pubid", "profileid")
 	multiMetricEngine.RecordAmpVideoResponses("pubid", "profileid")
-	multiMetricEngine.RecordHTTPCounter()
 }

@@ -39,10 +39,12 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	hash := ""
 	var err error
 	var matchedSlot, matchedPattern string
-	isRegexSlot := false
+	var isRegexSlot, isRegexKGP bool
 
 	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
-	isRegexKGP := kgp == models.REGEX_KGP
+	if kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
+		isRegexKGP = true
+	}
 
 	// simple+regex key match
 	for _, slot := range slots {

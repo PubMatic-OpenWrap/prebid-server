@@ -13,8 +13,7 @@ import (
 type Metrics struct {
 
 	// general metrics
-	panics      *prometheus.CounterVec
-	httpCounter *prometheus.CounterVec
+	panics *prometheus.CounterVec
 
 	// publisher-partner level metrics
 	pubPartnerNoCookie            *prometheus.CounterVec
@@ -49,7 +48,8 @@ type Metrics struct {
 	// publisher-platform-endpoint level metrics
 	pubPlatformEndpointRequests *prometheus.CounterVec
 
-	getProfileData *prometheus.HistogramVec
+	getProfileData prometheus.Histogram
+	sendLoggerData prometheus.Histogram
 
 	dbQueryError *prometheus.CounterVec
 
@@ -66,10 +66,10 @@ type Metrics struct {
 	prebidTimeoutRequests *prometheus.CounterVec
 	partnerTimeoutRequest *prometheus.CounterVec
 	panicCounts           *prometheus.CounterVec
-	sendLoggerData        *prometheus.HistogramVec
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
+	analyticsThrottle     *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
@@ -79,23 +79,24 @@ type Metrics struct {
 }
 
 const (
-	pubIDLabel     = "pub_id"
-	profileIDLabel = "profile_id"
-	partnerLabel   = "partner"
-	platformLabel  = "platform"
-	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
-	apiTypeLabel   = "api_type"
-	impFormatLabel = "imp_format" //TODO -confirm ?
-	adFormatLabel  = "ad_format"
-	sourceLabel    = "source" //TODO -confirm ?
-	nbrLabel       = "nbr"    // TODO - errcode ?
-	errorLabel     = "error"
-	hostLabel      = "host" // combination of node:pod
-	methodLabel    = "method"
-	queryTypeLabel = "query_type"
+	pubIDLabel         = "pub_id"
+	profileIDLabel     = "profile_id"
+	partnerLabel       = "partner"
+	platformLabel      = "platform"
+	endpointLabel      = "endpoint" // TODO- apiTypeLabel ?
+	apiTypeLabel       = "api_type"
+	impFormatLabel     = "imp_format" //TODO -confirm ?
+	adFormatLabel      = "ad_format"
+	sourceLabel        = "source" //TODO -confirm ?
+	nbrLabel           = "nbr"    // TODO - errcode ?
+	errorLabel         = "error"
+	hostLabel          = "host" // combination of node:pod
+	methodLabel        = "method"
+	queryTypeLabel     = "query_type"
+	analyticsTypeLabel = "an_type"
 )
 
-var standardTimeBuckets = []float64{0.05, 0.1, 0.15, 0.20, 0.25, 0.3, 0.4, 0.5, 0.75, 1}
+var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
 var once sync.Once
 var metric *Metrics
 
@@ -115,12 +116,6 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"panics",
 		"Count of prebid server panics in openwrap module.",
 		[]string{hostLabel, methodLabel},
-	)
-
-	metrics.httpCounter = newCounter(cfg, promRegistry,
-		"total_http_request",
-		"Count of total http requests",
-		[]string{},
 	)
 
 	// publisher-partner level metrics
@@ -247,10 +242,9 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIDLabel, platformLabel, endpointLabel},
 	)
 
-	metrics.getProfileData = newHistogramVec(cfg, promRegistry,
+	metrics.getProfileData = newHistogram(cfg, promRegistry,
 		"profile_data_get_time",
-		"Time taken to get the profile data in seconds", []string{endpointLabel, profileIDLabel},
-		standardTimeBuckets)
+		"Time taken to get the profile data in seconds", standardTimeBuckets)
 
 	metrics.dbQueryError = newCounter(cfg, promRegistry,
 		"db_query_failed",
@@ -263,6 +257,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
+	metrics.analyticsThrottle = newCounter(cfg, promRegistry,
+		"analytics_throttle",
+		"Count of throttled analytics logger and tracker requestss",
+		[]string{pubIDLabel, profileIDLabel, analyticsTypeLabel})
+
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
@@ -295,6 +294,19 @@ func newCounter(cfg *config.PrometheusMetrics, registry *prometheus.Registry, na
 	counter := prometheus.NewCounterVec(opts, labels)
 	registry.MustRegister(counter)
 	return counter
+}
+
+func newHistogram(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, buckets []float64) prometheus.Histogram {
+	opts := prometheus.HistogramOpts{
+		Namespace: cfg.Namespace,
+		Subsystem: cfg.Subsystem,
+		Name:      name,
+		Help:      help,
+		Buckets:   buckets,
+	}
+	histogram := prometheus.NewHistogram(opts)
+	registry.MustRegister(histogram)
+	return histogram
 }
 
 func newHistogramVec(cfg *config.PrometheusMetrics, registry *prometheus.Registry, name, help string, labels []string, buckets []float64) *prometheus.HistogramVec {
@@ -458,11 +470,8 @@ func (m *Metrics) RecordInjectTrackerErrorCount(adformat, publisherID, partner s
 }
 
 // RecordGetProfileDataTime as a noop
-func (m *Metrics) RecordGetProfileDataTime(endpoint, profileID string, getTime time.Duration) {
-	m.getProfileData.With(prometheus.Labels{
-		endpointLabel:  endpoint,
-		profileIDLabel: profileID,
-	}).Observe(float64(getTime.Seconds()))
+func (m *Metrics) RecordGetProfileDataTime(getTime time.Duration) {
+	m.getProfileData.Observe(float64(getTime.Seconds()))
 }
 
 // RecordDBQueryFailure as a noop
@@ -482,8 +491,13 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 	}).Inc()
 }
 
-func (m *Metrics) RecordHTTPCounter() {
-	m.httpCounter.With(nil).Inc()
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	m.analyticsThrottle.With(prometheus.Labels{
+		pubIDLabel:         pubid,
+		profileIDLabel:     profileid,
+		analyticsTypeLabel: analyticsType,
+	}).Inc()
 }
 
 // TODO - really need ?

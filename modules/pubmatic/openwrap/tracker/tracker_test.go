@@ -24,6 +24,16 @@ func TestGetTrackerInfo(t *testing.T) {
 		want string
 	}{
 		{
+			name: "tracker_disabled",
+			args: args{
+				rCtx: models.RequestCtx{
+					TrackerDisabled: true,
+				},
+				responseExt: openrtb_ext.ExtBidResponse{},
+			},
+			want: "",
+		},
+		{
 			name: "all_tracker_info_without_floors",
 			args: args{
 				rCtx: models.RequestCtx{
