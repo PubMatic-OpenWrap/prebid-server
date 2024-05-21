@@ -25,16 +25,18 @@ type bidWrapper struct {
 	Nbr *openrtb3.NoBidReason
 }
 
-// getUUID is a function variable which will return uuid
-var getUUID = func() string {
+// GetUUID is a function variable which will return uuid
+var GetUUID = func() string {
 	return uuid.NewV4().String()
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
-	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
+	// Get Updated Floor values using floor rules from updated request
+	getFloorValueFromUpdatedRequest(ao.RequestWrapper, rCtx)
 
 	wlog := WloggerRecord{
 		record: record{
@@ -103,7 +105,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(),
+			SlotId:            GetUUID(),
 			SlotName:          impCtx.SlotName,
 			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,
@@ -189,6 +191,19 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 		}
 	}
 	return nil
+}
+
+// getFloorValueFromUpdatedRequest gets updated floor values by floor module
+func getFloorValueFromUpdatedRequest(reqWrapper *openrtb_ext.RequestWrapper, rCtx *models.RequestCtx) {
+	for _, imp := range reqWrapper.BidRequest.Imp {
+		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+			if imp.BidFloor > 0 && impCtx.BidFloor != imp.BidFloor {
+				impCtx.BidFloor = imp.BidFloor
+				impCtx.BidFloorCur = imp.BidFloorCur
+				rCtx.ImpBidCtx[imp.ID] = impCtx
+			}
+		}
+	}
 }
 
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {

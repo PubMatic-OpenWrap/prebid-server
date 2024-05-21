@@ -45,6 +45,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 					Queries: config.Queries{
 						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -77,6 +78,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 					Queries: config.Queries{
 						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{

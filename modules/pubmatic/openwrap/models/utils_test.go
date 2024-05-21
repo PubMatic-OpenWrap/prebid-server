@@ -458,6 +458,18 @@ func TestGenerateSlotName(t *testing.T) {
 			want: "/15671365/Test_Adunit",
 		},
 		{
+			name: "_RE_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_RE_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit",
+		},
+		{
 			name: "_DIV_",
 			args: args{
 				h:     100,
@@ -487,6 +499,18 @@ func TestGenerateSlotName(t *testing.T) {
 				h:     100,
 				w:     200,
 				kgp:   "_AU_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit@200x100",
+		},
+		{
+			name: "_RE_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_RE_@_W_x_H_",
 				tagid: "/15671365/Test_Adunit",
 				div:   "Div1",
 				src:   "test.com",

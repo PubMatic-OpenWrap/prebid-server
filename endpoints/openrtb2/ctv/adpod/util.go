@@ -75,3 +75,11 @@ func ConvertToV25VideoRequest(request *openrtb2.BidRequest) {
 		imp.Video.MaxSeq = 0
 	}
 }
+
+func createMapFromSlice(slice []string) map[string]bool {
+	resultMap := make(map[string]bool)
+	for _, item := range slice {
+		resultMap[item] = true
+	}
+	return resultMap
+}

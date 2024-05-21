@@ -363,9 +363,9 @@ func (me *MultiMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(publisher, 
 }
 
 // RecordGetProfileDataTime across all engines
-func (me *MultiMetricsEngine) RecordGetProfileDataTime(requestType, profileid string, getTime time.Duration) {
+func (me *MultiMetricsEngine) RecordGetProfileDataTime(getTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordGetProfileDataTime(requestType, profileid, getTime)
+		thisME.RecordGetProfileDataTime(getTime)
 	}
 }
 
@@ -426,9 +426,9 @@ func (me *MultiMetricsEngine) RecordCtvUaAccuracy(pubId, status string) {
 }
 
 // RecordSendLoggerDataTime across all engines
-func (me *MultiMetricsEngine) RecordSendLoggerDataTime(endpoint, profile string, sendTime time.Duration) {
+func (me *MultiMetricsEngine) RecordSendLoggerDataTime(sendTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordSendLoggerDataTime(endpoint, profile, sendTime)
+		thisME.RecordSendLoggerDataTime(sendTime)
 	}
 }
 
@@ -460,12 +460,6 @@ func (me *MultiMetricsEngine) RecordAmpVideoResponses(pubid, profileid string) {
 	}
 }
 
-func (me *MultiMetricsEngine) RecordHTTPCounter() {
-	for _, thisME := range *me {
-		thisME.RecordHTTPCounter()
-	}
-}
-
 // RecordUnwrapRequestStatus record VAST unwrap status
 func (me *MultiMetricsEngine) RecordUnwrapRequestStatus(accountId, bidder, status string) {
 	for _, thisME := range *me {
@@ -491,6 +485,13 @@ func (me *MultiMetricsEngine) RecordUnwrapRequestTime(accountId, bidder string, 
 func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
 	for _, thisME := range *me {
 		thisME.RecordUnwrapRespTime(accountId, wraperCnt, respTime)
+	}
+}
+
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (me *MultiMetricsEngine) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	for _, thisME := range *me {
+		thisME.RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType)
 	}
 }
 

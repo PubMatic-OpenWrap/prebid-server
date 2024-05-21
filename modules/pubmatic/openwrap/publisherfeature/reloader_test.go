@@ -13,25 +13,22 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	type args struct {
-		c             cache.Cache
-		defaultExpiry int
-	}
 	tests := []struct {
 		name string
-		args args
+		args Config
 	}{
 		{
 			name: "test",
-			args: args{
-				c:             nil,
-				defaultExpiry: 0,
+			args: Config{
+				Cache:                 nil,
+				DefaultExpiry:         0,
+				AnalyticsThrottleList: "",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.c, tt.args.defaultExpiry)
+			got := New(tt.args)
 			assert.Equal(t, fe, got)
 		})
 	}

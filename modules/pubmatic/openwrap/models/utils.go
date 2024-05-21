@@ -314,11 +314,11 @@ func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId s
 func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
 	// func (H, W, Div), no need to validate, will always be non-nil
 	switch kgp {
-	case "_AU_": // adunitconfig
+	case "_AU_", "_RE_": // adunitconfig or defaultmappingKGP
 		return tagid
 	case "_DIV_":
 		return div
-	case "_AU_@_W_x_H_":
+	case "_AU_@_W_x_H_", "_RE_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
 	case "_DIV_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", div, w, h)

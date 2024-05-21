@@ -304,9 +304,8 @@ func TestRecordPublisherResponseTimeStats(t *testing.T) {
 func TestRecordGetProfileDataTime(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordGetProfileDataTime("v25", "59201", 300*time.Millisecond)
-	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.getProfileData,
-		endpointLabel, "v25", profileIDLabel, "59201")
+	m.RecordGetProfileDataTime(300 * time.Millisecond)
+	resultingHistogram := getHistogramFromHistogram(m.getProfileData)
 
 	assertHistogram(t, "sshb_profile_data_get_time", resultingHistogram, 1, 0.3)
 }
@@ -326,14 +325,12 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
-func TestRecordHTTPCounter(t *testing.T) {
-	m := createMetricsForTesting()
-
-	m.RecordHTTPCounter()
-
-	expectedCount := float64(1)
-	assertCounterVecValue(t, "", "httpCounter", m.httpCounter,
-		expectedCount, nil)
+func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
+	var result dto.Histogram
+	processMetrics(histogram, func(m dto.Metric) {
+		result = *m.GetHistogram()
+	})
+	return result
 }
 
 func TestRecordAdruleEnabled(t *testing.T) {

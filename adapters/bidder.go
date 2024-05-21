@@ -156,6 +156,8 @@ type ExtraRequestInfo struct {
 	PbsEntryPoint              metrics.RequestType
 	GlobalPrivacyControlHeader string
 	CurrencyConversions        currency.Conversions
+
+	BidderCoreName openrtb_ext.BidderName // OW specific: required for oRTB bidder
 }
 
 func NewExtraRequestInfo(c currency.Conversions) ExtraRequestInfo {

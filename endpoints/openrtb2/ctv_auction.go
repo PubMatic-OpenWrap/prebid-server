@@ -110,6 +110,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var response *openrtb2.BidResponse
 	var err error
 	var errL []error
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,
@@ -246,12 +247,16 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		ao.Errors = append(ao.Errors, err)
 		return
 	}
-	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
-	err = setSeatNonBidRaw(ao.RequestWrapper, auctionResponse)
-	if err != nil {
-		glog.Errorf("Error setting seat non-bid: %v", err)
-	}
+
 	response = auctionResponse.BidResponse
+	seatNonBid.Append(auctionResponse.SeatNonBid)
+	seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes())) // append seatNonBids available in hook-stage-outcomes
+	ao.SeatNonBid = seatNonBid.Get()
+	// add seatNonBids in response.Ext based on 'returnallbidstatus' flag
+	err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+	if err != nil {
+		util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
+	}
 
 	if len(deps.podCtx) > 0 {
 		//Create Impression Bids

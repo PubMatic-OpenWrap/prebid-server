@@ -269,16 +269,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
-	if rctx.ReturnAllBidStatus {
-		rctx.SeatNonBids = prepareSeatNonBids(rctx)
-		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
+	result.SeatNonBid = prepareSeatNonBids(rctx)
 
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
 	}
+
+	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -315,13 +313,16 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse.Ext = responseExtjson
 
 		resetBidIdtoOriginal(ap.BidResponse)
+
+		if rctx.Endpoint == models.EndpointAppLovinMax {
+			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
+		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
 	// TODO: move debug here
 	// result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
-
 	return result, nil
 }
 

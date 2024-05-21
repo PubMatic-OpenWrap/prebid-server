@@ -390,6 +390,7 @@ const (
 	MACRO_VASTTAG       = "_VASTTAG_"
 
 	ADUNIT_SIZE_KGP           = "_AU_@_W_x_H_"
+	ADUNIT_SIZE_REGEX_KGP     = "_RE_@_W_x_H_"
 	REGEX_KGP                 = "_AU_@_DIV_@_W_x_H_"
 	DIV_SIZE_KGP              = "_DIV_@_W_x_H_"
 	ADUNIT_SOURCE_VASTTAG_KGP = "_AU_@_SRC_@_VASTTAG_"
@@ -436,26 +437,33 @@ const (
 )
 
 const (
+	AnanlyticsThrottlingLoggerType  = "wl"
+	AnanlyticsThrottlingTrackerType = "wt"
+)
+
+const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
 )
 
 const (
-	EndpointV25       = "v25"
-	EndpointAMP       = "amp"
-	EndpintInappVideo = "inappvideo"
-	EndpointVideo     = "video"
-	EndpointJson      = "json"
-	EndpointORTB      = "ortb"
-	EndpointVAST      = "vast"
-	EndpointWebS2S    = "webs2s"
-	EndPointCTV       = "ctv"
-	EndpointHybrid    = "hybrid"
-	Openwrap          = "openwrap"
-	ImpTypeBanner     = "banner"
-	ImpTypeVideo      = "video"
-	ContentTypeSite   = "site"
-	ContentTypeApp    = "app"
+	EndpointV25         = "v25"
+	EndpointAMP         = "amp"
+	EndpintInappVideo   = "inappvideo"
+	EndpointVideo       = "video"
+	EndpointJson        = "json"
+	EndpointORTB        = "ortb"
+	EndpointVAST        = "vast"
+	EndpointWebS2S      = "webs2s"
+	EndPointCTV         = "ctv"
+	EndpointHybrid      = "hybrid"
+	EndpointAppLovinMax = "applovinmax"
+
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
 )
 
 const (
@@ -472,19 +480,21 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetPartnerConfig"
-	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
-	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
-	AdunitConfigQuery              = "GetAdunitConfigQuery"
-	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
-	SlotNameHash                   = "GetSlotNameHash"
-	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
-	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
-	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
-	PublisherFeatureMapQuery       = "GetPublisherFeatureMapQuery"
+	PartnerConfigQuery                 = "GetPartnerConfig"
+	WrapperSlotMappingsQuery           = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings     = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery                  = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                       = "GetSlotNameHash"
+	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
+	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
+	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
+	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+	TestQuery = "TestQuery"
 )
 
 // constants for owlogger Integration Type
@@ -518,7 +528,17 @@ const (
 // constants for feature id
 
 const (
-	FeatureFSC            = 1
-	FeatureTBF            = 2
-	FeatureAMPMultiFormat = 3
+	FeatureFSC               = 1
+	FeatureTBF               = 2
+	FeatureAMPMultiFormat    = 3
+	FeatureAnalyticsThrottle = 4
+)
+
+// constants for applovinmax requests
+const (
+	Agent            = "agent"
+	AppLovinMaxAgent = "max"
+	TypeRewarded     = "rewarded"
+	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
 )
