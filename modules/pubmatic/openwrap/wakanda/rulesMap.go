@@ -59,7 +59,7 @@ func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) b
 	rm.lock.Lock()
 	defer rm.lock.Unlock()
 	aWakandaRule := rm.rules[key]
-	if nil != aWakandaRule {
+	if aWakandaRule != nil {
 		//Already Present
 
 		//Resetting time for particular rule
@@ -78,7 +78,7 @@ func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) b
 }
 
 func (rm *rulesMap) clean(cleanupFrequencyInMin, MaxDurationInMin time.Duration) {
-	c := time.Tick(time.Duration(cleanupFrequencyInMin) * time.Minute)
+	c := time.Tick(cleanupFrequencyInMin)
 	for range c {
 		if !rm.IsEmpty() {
 			rm.cleanRules(MaxDurationInMin)

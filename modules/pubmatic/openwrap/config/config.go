@@ -24,9 +24,9 @@ type Config struct {
 }
 
 type Server struct {
-	HostName    string
-	DCName      string //Name of the data center
-	WakandaPort string
+	HostName string
+	DCName   string //Name of the data center
+	Port     string
 }
 
 type Database struct {

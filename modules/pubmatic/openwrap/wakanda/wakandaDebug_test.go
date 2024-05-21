@@ -5,11 +5,6 @@ import (
 	"testing"
 )
 
-// func init() {
-// 	config.ServerConfig = &config.DMHBConfig{}
-// 	config.ServerConfig.OpenWrap.Server.DCName = "local"
-// }
-
 func TestEnable(t *testing.T) {
 	pubID := "31445"
 	profID := "55"

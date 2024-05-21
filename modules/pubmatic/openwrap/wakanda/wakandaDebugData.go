@@ -38,7 +38,7 @@ type request struct {
 }
 
 func (r *request) set(request *http.Request, postData json.RawMessage) {
-	if nil != request {
+	if request != nil {
 		r.Method = request.Method
 		r.Protocol = request.Proto
 		r.Host = request.Host
