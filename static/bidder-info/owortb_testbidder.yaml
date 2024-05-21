@@ -1,0 +1,11 @@
+# sample bidder-info yaml for testbidder (oRTB Integration)
+maintainer:
+  email: "header-bidding@pubmatic.com"
+endpoint: "http://test.endpoint.com"
+capabilities:
+  app:
+    mediaTypes:
+      - video
+  site:
+    mediaTypes:
+      - video
