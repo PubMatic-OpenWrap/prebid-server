@@ -190,7 +190,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern":"_DIV_","config":{"default":{"bidfloor":3.1,"bidder-filter":{"filter-config":[{"bidders":["A"],"bidding-conditions":"{ \"in\": [{ \"var\": \"country\"}, [\"IND\"]]}"}]}}}}`)
+				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern":"_DIV_","config":{"default":{"bidfloor":3.1,"bidderFilter":{"filterConfig":[{"bidders":["A"],"biddingConditions":"{ \"in\": [{ \"var\": \"country\"}, [\"IND\"]]}"}]}}}}`)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
 				return db
 			},

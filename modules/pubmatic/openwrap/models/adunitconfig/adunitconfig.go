@@ -83,14 +83,14 @@ type AdConfig struct {
 	Regex              *bool            `json:"regex,omitempty"`
 	UniversalPixel     []UniversalPixel `json:"universalpixel,omitempty"`
 	EnableGAMUrlLookup bool             `json:"enablegamurllookup,omitempty"`
-	BidderFilter       *BidderFilter    `json:"bidder-filter,omitempty"`
+	BidderFilter       *BidderFilter    `json:"bidderFilter,omitempty"`
 }
 
 type BidderFilter struct {
-	Filters []Filter `json:"filter-config,omitempty"`
+	Filters []Filter `json:"filterConfig,omitempty"`
 }
 
 type Filter struct {
 	Bidders           []string `json:"bidders,omitempty"`
-	BiddingConditions string   `json:"bidding-conditions,omitempty"`
+	BiddingConditions string   `json:"biddingConditions,omitempty"`
 }
