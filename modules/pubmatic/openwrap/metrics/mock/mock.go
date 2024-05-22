@@ -777,6 +777,7 @@ func (mr *MockMetricsEngineMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockMetricsEngine)(nil).Shutdown))
 }
+
 // RecordAdruleEnabled mocks base method
 func (m *MockMetricsEngine) RecordAdruleEnabled(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -788,6 +789,7 @@ func (mr *MockMetricsEngineMockRecorder) RecordAdruleEnabled(arg0, arg1 string) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdruleEnabled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdruleEnabled), arg0, arg1)
 }
+
 // RecordAdruleValidationFailure mocks base method
 func (m *MockMetricsEngine) RecordAdruleValidationFailure(arg0, arg1 string) {
 	m.ctrl.T.Helper()
