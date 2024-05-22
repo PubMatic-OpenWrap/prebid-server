@@ -76,6 +76,10 @@ type Metrics struct {
 	wrapperCount   *prometheus.CounterVec
 	requestTime    *prometheus.HistogramVec
 	unwrapRespTime *prometheus.HistogramVec
+
+	//VMAP adrule
+	pubProfAdruleEnabled           *prometheus.CounterVec
+	pubProfAdruleValidationfailure *prometheus.CounterVec
 }
 
 const (

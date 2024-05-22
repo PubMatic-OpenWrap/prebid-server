@@ -208,6 +208,8 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordDBQueryFailure(queryType, publisher, profile)
 	mockEngine.EXPECT().RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	mockEngine.EXPECT().Shutdown()
+	mockEngine.EXPECT().RecordAdruleEnabled(publisher, profile)
+	mockEngine.EXPECT().RecordAdruleValidationFailure(publisher, profile)
 
 	mockEngine.EXPECT().RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
 	mockEngine.EXPECT().RecordLurlSent(metrics.LurlStatusLabels{PublisherID: "pubid", Partner: "p", Status: "success"})
@@ -273,6 +275,8 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordDBQueryFailure(queryType, publisher, profile)
 	multiMetricEngine.RecordAnalyticsTrackingThrottled(publisher, profile, "logger")
 	multiMetricEngine.Shutdown()
+	multiMetricEngine.RecordAdruleEnabled(publisher, profile)
+	multiMetricEngine.RecordAdruleValidationFailure(publisher, profile)
 
 	multiMetricEngine.RecordRequest(metrics.Labels{RType: "video", RequestStatus: "success"})
 	multiMetricEngine.RecordLurlSent(metrics.LurlStatusLabels{PublisherID: "pubid", Partner: "p", Status: "success"})

@@ -346,3 +346,5 @@ func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count st
 func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {}
 func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {}
 func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)  {}
+func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                                 {}
+func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                       {}
