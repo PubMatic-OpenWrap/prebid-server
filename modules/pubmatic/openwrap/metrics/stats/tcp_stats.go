@@ -348,3 +348,4 @@ func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime t
 func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)  {}
 func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                                 {}
 func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                       {}
+func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)               {}

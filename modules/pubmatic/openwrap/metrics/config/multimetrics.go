@@ -506,5 +506,12 @@ func (me *MultiMetricsEngine) RecordAdruleEnabled(publisher, profile string) {
 func (me *MultiMetricsEngine) RecordAdruleValidationFailure(publisher, profile string) {
 	for _, thisME := range *me {
 		thisME.RecordAdruleValidationFailure(publisher, profile)
+  }
+}
+
+// RecordSignalDataStatus record signaldata status(invalid,missing) at publisher level
+func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalType string) {
+	for _, thisME := range *me {
+		thisME.RecordSignalDataStatus(pubid, profileid, signalType)
 	}
 }

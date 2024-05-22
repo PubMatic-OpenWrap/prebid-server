@@ -70,6 +70,7 @@ type Metrics struct {
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
 	analyticsThrottle     *prometheus.CounterVec
+	signalStatus          *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
@@ -98,6 +99,7 @@ const (
 	methodLabel        = "method"
 	queryTypeLabel     = "query_type"
 	analyticsTypeLabel = "an_type"
+	signalTypeLabel    = "signal_status"
 )
 
 var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
@@ -265,6 +267,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"analytics_throttle",
 		"Count of throttled analytics logger and tracker requestss",
 		[]string{pubIDLabel, profileIDLabel, analyticsTypeLabel})
+
+	metrics.signalStatus = newCounter(cfg, promRegistry,
+		"signal_status",
+		"Count signal status for applovinmax requests",
+		[]string{pubIDLabel, profileIDLabel, signalTypeLabel})
 
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
@@ -501,6 +508,15 @@ func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsTy
 		pubIDLabel:         pubid,
 		profileIDLabel:     profileid,
 		analyticsTypeLabel: analyticsType,
+	}).Inc()
+}
+
+// RecordSignalDataStatus record signaldata status(invalid,missing) at publisher level
+func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
+	m.signalStatus.With(prometheus.Labels{
+		pubIDLabel:      pubid,
+		profileIDLabel:  profileid,
+		signalTypeLabel: signalType,
 	}).Inc()
 }
 
