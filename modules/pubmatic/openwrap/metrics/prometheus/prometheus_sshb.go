@@ -118,6 +118,16 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Counts the AMP video responses labeled by pub id and profile id.",
 		[]string{pubIDLabel, profileIDLabel})
 
+	metrics.pubProfAdruleEnabled = newCounter(cfg, promRegistry,
+		"sshb_adrule_enable",
+		"Count of request where adRule is present",
+		[]string{pubIdLabel, profileLabel})
+
+	metrics.pubProfAdruleValidationfailure = newCounter(cfg, promRegistry,
+		"sshb_invalid_adrule",
+		"Count of request where adRule is invalid",
+		[]string{pubIdLabel, profileLabel})
+
 	preloadLabelValues(metrics)
 }
 
@@ -250,6 +260,22 @@ func (m *Metrics) RecordUnwrapRespTime(accountId, wraperCnt string, respTime tim
 		pubIdLabel:        accountId,
 		wrapperCountLabel: wraperCnt,
 	}).Observe(float64(respTime.Milliseconds()))
+}
+
+// RecordAdruleEnabled records count of request in which adrule is present based on pubid and profileid
+func (m *Metrics) RecordAdruleEnabled(pubid, profileid string) {
+	m.pubProfAdruleEnabled.With(prometheus.Labels{
+		pubIdLabel:   pubid,
+		profileLabel: profileid,
+	}).Inc()
+}
+
+// RecordAdruleValidationFailure records count of request in which adrule validation fails based on pubid and profileid
+func (m *Metrics) RecordAdruleValidationFailure(pubid, profileid string) {
+	m.pubProfAdruleValidationfailure.With(prometheus.Labels{
+		pubIdLabel:   pubid,
+		profileLabel: profileid,
+	}).Inc()
 }
 
 func preloadLabelValues(m *Metrics) {
