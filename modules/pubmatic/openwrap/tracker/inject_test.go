@@ -28,7 +28,6 @@ func TestInjectTrackers(t *testing.T) {
 		want    *openrtb2.BidResponse
 		wantErr bool
 	}{
-
 		{
 			name: "no_bidresponse",
 			args: args{
