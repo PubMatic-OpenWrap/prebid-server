@@ -15,7 +15,7 @@ import (
 
 func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) (map[string]struct{}, bool) {
 	filteredBidders := map[string]struct{}{}
-	data := generateEvaluationData(rCtx, bidRequest, m.geoInfoFetcher)
+	data := m.generateEvaluationData(rCtx, bidRequest, m.geoInfoFetcher)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
@@ -37,22 +37,22 @@ func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb
 	return filteredBidders, allPartnersFilteredFlag
 }
 
-func generateEvaluationData(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, gif geodb.Geography) string {
+func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, gif geodb.Geography) string {
 	builder := &strings.Builder{}
 	builder.WriteString("{")
-	country := getCountryFromRequest(rCtx, gif, bidRequest)
+	country := m.getCountryFromRequest(rCtx, bidRequest)
 	builder.WriteString(fmt.Sprintf(`"country":"%s"`, country))
 	builder.WriteString("}")
 	return builder.String()
 }
 
-func getCountryFromRequest(rctx models.RequestCtx, gif geodb.Geography, bidRequest *openrtb2.BidRequest) string {
+func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
 	if len(rctx.Country) > 0 {
 		return rctx.Country
 	}
 
 	if rctx.IP != "" {
-		country, err := getCountryFromIP(gif, rctx.IP)
+		country, err := m.getCountryFromIP(rctx.IP)
 		if err == nil {
 			return country
 		}
@@ -70,11 +70,11 @@ func evaluateBiddingCondition(data, rules string) bool {
 	return strings.TrimSpace(result.String()) == "true"
 }
 
-func getCountryFromIP(geoInfoFetcher geodb.Geography, ip string) (string, error) {
-	if geoInfoFetcher == nil {
+func (m OpenWrap) getCountryFromIP(ip string) (string, error) {
+	if m.geoInfoFetcher == nil {
 		return "", errors.New("geoDB instance is missing")
 	}
-	geoData, err := geoInfoFetcher.LookUp(ip)
+	geoData, err := m.geoInfoFetcher.LookUp(ip)
 	if err != nil {
 		return "", err
 	}
