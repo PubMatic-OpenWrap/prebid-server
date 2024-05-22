@@ -325,27 +325,6 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
-func TestRecordGeoDBInitStatus(t *testing.T) {
-
-	m := createMetricsForTesting()
-
-	nodeName := "sfo1hyp265"
-	podName := "5cfcdc97fc-j5dlw"
-	dcName := "k8s-sfo"
-	value := float64(1)
-
-	m.RecordGeoDBInitStatus(dcName, nodeName, podName, value)
-
-	expectedCount := float64(1)
-	assertGaugeVecValue(t, "", "geodb_status", m.geoDBInitStatus,
-		expectedCount,
-		prometheus.Labels{
-			nodeNameLabel: nodeName,
-			podNameLabel:  podName,
-			dcNameLabel:   dcName,
-		})
-}
-
 func TestRecordSignalDataStatus(t *testing.T) {
 	m := createMetricsForTesting()
 
@@ -420,7 +399,7 @@ func assertHistogram(t *testing.T, name string, histogram dto.Histogram, expecte
 	assert.Equal(t, expectedSum, histogram.GetSampleSum(), name+":sum")
 }
 
-func assertCounterValue(t *testing.T, description, name string, counter prometheus.Counter, expected float64) {
+func assertCounterValue(t *testing.T, description string, counter prometheus.Counter, expected float64) {
 	m := dto.Metric{}
 	counter.Write(&m)
 	actual := *m.GetCounter().Value
@@ -430,18 +409,5 @@ func assertCounterValue(t *testing.T, description, name string, counter promethe
 
 func assertCounterVecValue(t *testing.T, description, name string, counterVec *prometheus.CounterVec, expected float64, labels prometheus.Labels) {
 	counter := counterVec.With(labels)
-	assertCounterValue(t, description, name, counter, expected)
-}
-
-func assertGaugeValue(t *testing.T, description, name string, gauge prometheus.Gauge, expected float64) {
-	m := dto.Metric{}
-	gauge.Write(&m)
-	actual := *m.GetGauge().Value
-
-	assert.Equal(t, expected, actual, description)
-}
-
-func assertGaugeVecValue(t *testing.T, description, name string, gaugeVec *prometheus.GaugeVec, expected float64, labels prometheus.Labels) {
-	gauge := gaugeVec.With(labels)
-	assertGaugeValue(t, description, name, gauge, expected)
+	assertCounterValue(t, description, counter, expected)
 }

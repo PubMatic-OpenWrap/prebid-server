@@ -58,55 +58,43 @@ func (mr *MockMetricsEngineMockRecorder) RecordAdPodImpressionYield(arg0, arg1, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdPodImpressionYield", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdPodImpressionYield), arg0, arg1, arg2)
 }
 
-// RecordAmpVideoRequests mocks base method.
+// RecordAmpVideoRequests mocks base method
 func (m *MockMetricsEngine) RecordAmpVideoRequests(arg0, arg1 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordAmpVideoRequests", arg0, arg1)
 }
 
-// RecordAmpVideoRequests indicates an expected call of RecordAmpVideoRequests.
+// RecordAmpVideoRequests indicates an expected call of RecordAmpVideoRequests
 func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoRequests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoRequests), arg0, arg1)
 }
 
-// RecordAmpVideoResponses mocks base method.
+// RecordAmpVideoResponses mocks base method
 func (m *MockMetricsEngine) RecordAmpVideoResponses(arg0, arg1 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordAmpVideoResponses", arg0, arg1)
 }
 
-// RecordAmpVideoResponses indicates an expected call of RecordAmpVideoResponses.
+// RecordAmpVideoResponses indicates an expected call of RecordAmpVideoResponses
 func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
 }
 
-// RecordAnalyticsTrackingThrottled mocks base method.
+// RecordAnalyticsTrackingThrottled mocks base method
 func (m *MockMetricsEngine) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordAnalyticsTrackingThrottled", arg0, arg1, arg2)
 }
 
-// RecordAnalyticsTrackingThrottled indicates an expected call of RecordAnalyticsTrackingThrottled.
+// RecordAnalyticsTrackingThrottled indicates an expected call of RecordAnalyticsTrackingThrottled
 func (mr *MockMetricsEngineMockRecorder) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAnalyticsTrackingThrottled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAnalyticsTrackingThrottled), arg0, arg1, arg2)
 }
 
-// RecordSignalDataStatus mocks base method.
-func (m *MockMetricsEngine) RecordSignalDataStatus(arg0, arg1, arg2 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordSignalDataStatus", arg0, arg1, arg2)
-}
-
-// RecordSignalDataStatus indicates an expected call of RecordSignalDataStatus.
-func (mr *MockMetricsEngineMockRecorder) RecordSignalDataStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSignalDataStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSignalDataStatus), arg0, arg1, arg2)
-}
-
-// RecordBadRequests mocks base method.
+// RecordBadRequests mocks base method
 func (m *MockMetricsEngine) RecordBadRequests(arg0 string, arg1 int) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordBadRequests", arg0, arg1)
@@ -262,25 +250,13 @@ func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDBQueryFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordDBQueryFailure), arg0, arg1, arg2)
 }
 
-// RecordGeoDBInitStatus mocks base method
-func (m *MockMetricsEngine) RecordGeoDBInitStatus(arg0, arg1, arg2 string, arg3 float64) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordGeoDBInitStatus", arg0, arg1, arg2, arg3)
-}
-
-// RecordGeoDBInitStatus indicates an expected call of RecordGeoDBInitStatus
-func (mr *MockMetricsEngineMockRecorder) RecordGeoDBInitStatus(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoDBInitStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoDBInitStatus), arg0, arg1, arg2, arg3)
-}
-
-// RecordGetProfileDataTime mocks base method.
+// RecordGetProfileDataTime mocks base method
 func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordGetProfileDataTime", arg0)
 }
 
-// RecordGetProfileDataTime indicates an expected call of RecordGetProfileDataTime.
+// RecordGetProfileDataTime indicates an expected call of RecordGetProfileDataTime
 func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0)
@@ -670,16 +646,28 @@ func (mr *MockMetricsEngineMockRecorder) RecordSSTimeoutRequests(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSSTimeoutRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSSTimeoutRequests), arg0, arg1)
 }
 
-// RecordSendLoggerDataTime mocks base method.
+// RecordSendLoggerDataTime mocks base method
 func (m *MockMetricsEngine) RecordSendLoggerDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordSendLoggerDataTime", arg0)
 }
 
-// RecordSendLoggerDataTime indicates an expected call of RecordSendLoggerDataTime.
+// RecordSendLoggerDataTime indicates an expected call of RecordSendLoggerDataTime
 func (mr *MockMetricsEngineMockRecorder) RecordSendLoggerDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSendLoggerDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSendLoggerDataTime), arg0)
+}
+
+// RecordSignalDataStatus mocks base method
+func (m *MockMetricsEngine) RecordSignalDataStatus(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordSignalDataStatus", arg0, arg1, arg2)
+}
+
+// RecordSignalDataStatus indicates an expected call of RecordSignalDataStatus
+func (mr *MockMetricsEngineMockRecorder) RecordSignalDataStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSignalDataStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSignalDataStatus), arg0, arg1, arg2)
 }
 
 // RecordStatsKeyCTVPrebidFailedImpression mocks base method
@@ -706,55 +694,55 @@ func (mr *MockMetricsEngineMockRecorder) RecordUidsCookieNotPresentErrorStats(ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUidsCookieNotPresentErrorStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUidsCookieNotPresentErrorStats), arg0, arg1)
 }
 
-// RecordUnwrapRequestStatus mocks base method.
+// RecordUnwrapRequestStatus mocks base method
 func (m *MockMetricsEngine) RecordUnwrapRequestStatus(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordUnwrapRequestStatus", arg0, arg1, arg2)
 }
 
-// RecordUnwrapRequestStatus indicates an expected call of RecordUnwrapRequestStatus.
+// RecordUnwrapRequestStatus indicates an expected call of RecordUnwrapRequestStatus
 func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRequestStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestStatus), arg0, arg1, arg2)
 }
 
-// RecordUnwrapRequestTime mocks base method.
+// RecordUnwrapRequestTime mocks base method
 func (m *MockMetricsEngine) RecordUnwrapRequestTime(arg0, arg1 string, arg2 time.Duration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordUnwrapRequestTime", arg0, arg1, arg2)
 }
 
-// RecordUnwrapRequestTime indicates an expected call of RecordUnwrapRequestTime.
+// RecordUnwrapRequestTime indicates an expected call of RecordUnwrapRequestTime
 func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRequestTime(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRequestTime), arg0, arg1, arg2)
 }
 
-// RecordUnwrapRespTime mocks base method.
+// RecordUnwrapRespTime mocks base method
 func (m *MockMetricsEngine) RecordUnwrapRespTime(arg0, arg1 string, arg2 time.Duration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordUnwrapRespTime", arg0, arg1, arg2)
 }
 
-// RecordUnwrapRespTime indicates an expected call of RecordUnwrapRespTime.
+// RecordUnwrapRespTime indicates an expected call of RecordUnwrapRespTime
 func (mr *MockMetricsEngineMockRecorder) RecordUnwrapRespTime(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapRespTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapRespTime), arg0, arg1, arg2)
 }
 
-// RecordUnwrapWrapperCount mocks base method.
+// RecordUnwrapWrapperCount mocks base method
 func (m *MockMetricsEngine) RecordUnwrapWrapperCount(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordUnwrapWrapperCount", arg0, arg1, arg2)
 }
 
-// RecordUnwrapWrapperCount indicates an expected call of RecordUnwrapWrapperCount.
+// RecordUnwrapWrapperCount indicates an expected call of RecordUnwrapWrapperCount
 func (mr *MockMetricsEngineMockRecorder) RecordUnwrapWrapperCount(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUnwrapWrapperCount", reflect.TypeOf((*MockMetricsEngine)(nil).RecordUnwrapWrapperCount), arg0, arg1, arg2)
 }
 
-// RecordVideoImpDisabledViaConnTypeStats mocks base method.
+// RecordVideoImpDisabledViaConnTypeStats mocks base method
 func (m *MockMetricsEngine) RecordVideoImpDisabledViaConnTypeStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RecordVideoImpDisabledViaConnTypeStats", arg0, arg1)

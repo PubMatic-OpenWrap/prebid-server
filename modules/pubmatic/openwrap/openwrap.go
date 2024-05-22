@@ -93,13 +93,20 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
+	// init geoDBClient
+	geoDBClient := netacuity.NetAcuity{}
+	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
+	if err != nil {
+		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
+	}
+
 	once.Do(func() {
 		ow = &OpenWrap{
 			cfg:                cfg,
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
-			geoInfoFetcher:     netacuity.NetAcuity{},
+			geoInfoFetcher:     geoDBClient,
 			pubFeatures:        pubFeatures,
 			unwrap:             uw,
 		}
