@@ -19,6 +19,7 @@ func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersi
 			v.UniversalPixel = validUPixels(v.UniversalPixel)
 			caseFoldConfigMap[strings.ToLower(k)] = v
 		}
+		adunitConfig.Config = caseFoldConfigMap
 	}
 
 	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
