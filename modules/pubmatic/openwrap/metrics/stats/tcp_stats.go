@@ -347,3 +347,4 @@ func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime t
 func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {}
 func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)  {}
 func (st *StatsTCP) RecordGeoDBInitStatus(dcName, nodeName, podName string, value float64)    {}
+func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)               {}

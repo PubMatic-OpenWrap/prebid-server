@@ -76,6 +76,7 @@ type MetricsEngine interface {
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
 	RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)
+	RecordSignalDataStatus(pubid, profileid, signalType string)
 
 	// VAST Unwrap metrics
 	RecordUnwrapRequestStatus(accountId, bidder, status string)
