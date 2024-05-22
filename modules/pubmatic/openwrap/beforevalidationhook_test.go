@@ -2471,7 +2471,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
 						models.THROTTLE:            "100",
-						models.BiddingConditions:   `{ "in": [{ "var": "country"}, ["USA"]]}`,
+						models.BidderFilters:       `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					3: {
 						models.PARTNER_ID:          "3",
@@ -2530,7 +2530,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.TIMEOUT:             "200",
 						models.THROTTLE:            "100",
-						models.BiddingConditions:   `{ "in": [{ "var": "country"}, ["USA"]]}`,
+						models.BidderFilters:       `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					-1: {
 						models.DisplayVersionID: "1",

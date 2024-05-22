@@ -132,7 +132,7 @@ func (c *cache) updatePartnerConfigWithBidderFilters(partnerConfigs map[int]map[
 
 	for id, cfg := range partnerConfigs {
 		if biddingCodition, ok := bidderfilter[cfg[models.BidderCode]]; ok {
-			partnerConfigs[id][models.BiddingConditions] = biddingCodition
+			partnerConfigs[id][models.BidderFilters] = biddingCodition
 		}
 	}
 }

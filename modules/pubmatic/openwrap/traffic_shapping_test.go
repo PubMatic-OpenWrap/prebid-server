@@ -126,9 +126,9 @@ func TestGetFilteredBidders(t *testing.T) {
 				},
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
-						models.SERVER_SIDE_FLAG:  "1",
-						models.BidderCode:        "partner1",
-						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner1",
+						models.BidderFilters:    `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					2: {
 						models.SERVER_SIDE_FLAG: "1",
@@ -161,9 +161,9 @@ func TestGetFilteredBidders(t *testing.T) {
 				Country:   "IND",
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
-						models.SERVER_SIDE_FLAG:  "1",
-						models.BidderCode:        "partner1",
-						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["IND"]]}`,
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner1",
+						models.BidderFilters:    `{ "in": [{ "var": "country"}, ["IND"]]}`,
 					},
 					2: {
 						models.SERVER_SIDE_FLAG: "1",
@@ -190,14 +190,14 @@ func TestGetFilteredBidders(t *testing.T) {
 				Country:   "IND",
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
-						models.SERVER_SIDE_FLAG:  "1",
-						models.BidderCode:        "partner1",
-						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner1",
+						models.BidderFilters:    `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 					2: {
-						models.SERVER_SIDE_FLAG:  "1",
-						models.BidderCode:        "partner2",
-						models.BiddingConditions: `{ "in": [{ "var": "country"}, ["USA"]]}`,
+						models.SERVER_SIDE_FLAG: "1",
+						models.BidderCode:       "partner2",
+						models.BidderFilters:    `{ "in": [{ "var": "country"}, ["USA"]]}`,
 					},
 				},
 			},

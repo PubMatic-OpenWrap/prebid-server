@@ -34,9 +34,9 @@ type RequestCtx struct {
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-
-	IP   string
-	TMax int64
+	Country            string
+	IP                 string
+	TMax               int64
 
 	//NYC_TODO: use enum?
 	IsTestRequest                     int8

@@ -26,7 +26,7 @@ func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb
 			continue
 		}
 
-		biddingCondition, ok := partnerConfig[models.BiddingConditions]
+		biddingCondition, ok := partnerConfig[models.BidderFilters]
 		if ok && !evaluateBiddingCondition(data, biddingCondition) {
 			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
 			continue
