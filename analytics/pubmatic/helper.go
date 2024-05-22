@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
 // PrepareLoggerURL returns the url for OW logger call
@@ -116,5 +117,16 @@ func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, logg
 		rCtx.WakandaDebug.DebugData.HTTPResponseBody = string(bytes)
 		rCtx.WakandaDebug.DebugData.OpenRTB = ao.RequestWrapper.BidRequest
 		rCtx.WakandaDebug.WriteLogToFiles()
+	}
+}
+
+// setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
+func setWakandaWinningBidFlag(debug *wakanda.Debug, response *openrtb2.BidResponse) {
+	if debug != nil && debug.Enabled && response != nil {
+		if len(response.SeatBid) > 0 &&
+			len(response.SeatBid[0].Bid) > 0 &&
+			response.SeatBid[0].Bid[0].Price > 0 {
+			debug.DebugData.WinningBid = true
+		}
 	}
 }

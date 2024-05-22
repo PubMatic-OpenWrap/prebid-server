@@ -5,10 +5,8 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
@@ -76,17 +74,6 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
 	setWakandaObject(rCtx, ao, loggerURL)
-}
-
-// setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
-func setWakandaWinningBidFlag(debug *wakanda.Debug, response *openrtb2.BidResponse) {
-	if debug != nil && debug.Enabled && response != nil {
-		if len(response.SeatBid) > 0 &&
-			len(response.SeatBid[0].Bid) > 0 &&
-			response.SeatBid[0].Bid[0].Price > 0 {
-			debug.DebugData.WinningBid = true
-		}
-	}
 }
 
 // Writes VideoObject to file
