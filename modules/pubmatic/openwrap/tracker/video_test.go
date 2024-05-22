@@ -560,7 +560,7 @@ func Test_injectPricingNodeInExtension0(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			injectPricingNodeInExtension(&tt.args.doc.Element, tt.args.price, tt.args.model, tt.args.currency)
+			InjectPricingNodeInExtension(&tt.args.doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := tt.args.doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
 		})
@@ -632,7 +632,7 @@ func Test_injectPricingNodeInVAST(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			injectPricingNodeInVAST(&tt.args.doc.Element, tt.args.price, tt.args.model, tt.args.currency)
+			InjectPricingNodeInVAST(&tt.args.doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := tt.args.doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
 		})
