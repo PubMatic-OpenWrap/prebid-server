@@ -282,8 +282,11 @@ func TestGetCountryFromRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			m := OpenWrap{
+				geoInfoFetcher: mockGeoDb,
+			}
 			tt.setup()
-			got := getCountryFromRequest(tt.args.rCtx, mockGeoDb, tt.args.bidRequest)
+			got := m.getCountryFromRequest(tt.args.rCtx, tt.args.bidRequest)
 			assert.Equal(t, got, tt.want)
 		})
 	}
@@ -348,7 +351,10 @@ func TestGetCountryFromIP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			got, err := getCountryFromIP(tt.args.geoInfoFetcher, tt.args.ip)
+			m := OpenWrap{
+				geoInfoFetcher: tt.args.geoInfoFetcher,
+			}
+			got, err := m.getCountryFromIP(tt.args.ip)
 			assert.Equal(t, got, tt.want)
 			assert.Equal(t, err, tt.err)
 
