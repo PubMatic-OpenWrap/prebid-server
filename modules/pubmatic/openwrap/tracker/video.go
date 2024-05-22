@@ -80,11 +80,11 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 					element.InsertChild(element.SelectElement(models.ErrorElement), newElement)
 				}
 
-				if !isWrapper && videoParams[i].Price != 0 {
-					if models.VideoVASTVersion2_0 == version {
-						injectPricingNodeVAST20(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
+				if videoParams[i].Price != 0 {
+					if (version == models.VideoVASTVersion2_0) || (isWrapper && version == models.VideoVASTVersion3_0) {
+						injectPricingNodeInExtension(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					} else {
-						injectPricingNodeVAST3x(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
+						injectPricingNodeInVAST(element, videoParams[i].Price, videoParams[i].PriceModel, videoParams[i].PriceCurrency)
 					}
 				}
 			}
@@ -99,7 +99,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 	return bid.AdM, bid.BURL, nil
 }
 
-func injectPricingNodeVAST20(parent *etree.Element, price float64, model string, currency string) {
+func injectPricingNodeInExtension(parent *etree.Element, price float64, model string, currency string) {
 	extensions := parent.FindElement(models.VideoTagLookupStart + models.VideoExtensionsTag)
 	if nil == extensions {
 		extensions = parent.CreateElement(models.VideoExtensionsTag)
@@ -115,7 +115,7 @@ func injectPricingNodeVAST20(parent *etree.Element, price float64, model string,
 	}
 }
 
-func injectPricingNodeVAST3x(parent *etree.Element, price float64, model string, currency string) {
+func injectPricingNodeInVAST(parent *etree.Element, price float64, model string, currency string) {
 	//Insert into Wrapper Elements
 	pricing := parent.FindElement(models.VideoTagLookupStart + models.VideoPricingTag)
 	if nil != pricing {
