@@ -2,8 +2,8 @@ package publisherfeature
 
 import (
 	"errors"
+	"sync"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
@@ -76,10 +76,15 @@ func TestInitiateReloader(t *testing.T) {
 			defaultExpiry: tt.args.defaultExpiry,
 			serviceStop:   make(chan struct{}),
 		}
-		go initReloader(feature)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			initReloader(feature)
+			wg.Done()
+		}()
 		//closing channel to avoid infinite loop
 		feature.Stop()
-		time.Sleep(1 * time.Millisecond)
+		wg.Wait() // wait for initReloader to finish
 	}
 }
 
