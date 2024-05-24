@@ -24,7 +24,7 @@ func Alias() map[string]string {
 
 func ResolveOWBidder(bidderName string) string {
 	var coreBidderName = bidderName
-	bidderName = strings.Replace(bidderName, "_deprecated", "", 1)
+	bidderName = strings.TrimSuffix(bidderName, "_deprecated")
 
 	switch bidderName {
 	case models.BidderAdGenerationAlias:
