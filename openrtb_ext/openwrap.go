@@ -72,7 +72,7 @@ type ExtVideoAdPod struct {
 
 // ExtRequestAdPod holds AdPod specific extension parameters at request level
 type ExtRequestAdPod struct {
-	VideoAdPod
+	*VideoAdPod
 	CrossPodAdvertiserExclusionPercent  *int                            `json:"crosspodexcladv,omitempty"`         //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
 	CrossPodIABCategoryExclusionPercent *int                            `json:"crosspodexcliabcat,omitempty"`      //Percent Value - Across multiple impression there will be no ads from same advertiser
 	IABCategoryExclusionWindow          *int                            `json:"excliabcatwindow,omitempty"`        //Duration in minute between pods where exclusive IAB rule needs to be applied
@@ -118,35 +118,39 @@ func getIntPtr(v int) *int {
 
 // Validate will validate AdPod object
 func (pod *VideoAdPod) Validate() (err []error) {
-	if nil != pod.MinAds && *pod.MinAds <= 0 {
+	if pod == nil {
+		return
+	}
+
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
 		err = append(err, errInvalidMinAds)
 	}
 
-	if nil != pod.MaxAds && *pod.MaxAds <= 0 {
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
 		err = append(err, errInvalidMaxAds)
 	}
 
-	if nil != pod.MinDuration && *pod.MinDuration <= 0 {
+	if pod.MinDuration != nil && *pod.MinDuration < 0 {
 		err = append(err, errInvalidMinDuration)
 	}
 
-	if nil != pod.MaxDuration && *pod.MaxDuration <= 0 {
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
 		err = append(err, errInvalidMaxDuration)
 	}
 
-	if nil != pod.AdvertiserExclusionPercent && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
 		err = append(err, errInvalidAdvertiserExclusionPercent)
 	}
 
-	if nil != pod.IABCategoryExclusionPercent && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
 		err = append(err, errInvalidIABCategoryExclusionPercent)
 	}
 
-	if nil != pod.MinAds && nil != pod.MaxAds && *pod.MinAds > *pod.MaxAds {
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
 		err = append(err, errInvalidMinMaxAds)
 	}
 
-	if nil != pod.MinDuration && nil != pod.MaxDuration && *pod.MinDuration > *pod.MaxDuration {
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
 		err = append(err, errInvalidMinMaxDuration)
 	}
 
@@ -192,6 +196,10 @@ func (ext *ExtRequestAdPod) Validate() (err []error) {
 
 // Validate will validate video extension object
 func (ext *ExtVideoAdPod) Validate() (err []error) {
+	if ext == nil {
+		return
+	}
+
 	if nil != ext.Offset && *ext.Offset < 0 {
 		err = append(err, errInvalidAdPodOffset)
 	}
@@ -209,6 +217,10 @@ func (ext *ExtVideoAdPod) Validate() (err []error) {
 
 // SetDefaultValue will set default values if not present
 func (pod *VideoAdPod) SetDefaultValue() {
+	if pod == nil {
+		return
+	}
+
 	//pod.MinAds setting default value
 	if nil == pod.MinAds {
 		pod.MinAds = getIntPtr(1)
@@ -272,6 +284,10 @@ func (ext *ExtVideoAdPod) SetDefaultValue() {
 
 // SetDefaultAdDuration will set default pod ad slot durations
 func (pod *VideoAdPod) SetDefaultAdDurations(podMinDuration, podMaxDuration int64) {
+	if pod == nil {
+		return
+	}
+
 	//pod.MinDuration setting default adminduration
 	if nil == pod.MinDuration {
 		duration := int(podMinDuration / 2)
@@ -287,6 +303,10 @@ func (pod *VideoAdPod) SetDefaultAdDurations(podMinDuration, podMaxDuration int6
 
 // Merge VideoAdPod Values
 func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
+	if pod == nil {
+		return
+	}
+
 	//pod.MinAds setting default value
 	if nil == pod.MinAds {
 		pod.MinAds = parent.MinAds
@@ -296,6 +316,8 @@ func (pod *VideoAdPod) Merge(parent *VideoAdPod) {
 	if nil == pod.MaxAds {
 		pod.MaxAds = parent.MaxAds
 	}
+
+	// Add Min and Max duration from request
 
 	//pod.AdvertiserExclusionPercent setting default value
 	if nil == pod.AdvertiserExclusionPercent {

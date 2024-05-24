@@ -73,17 +73,18 @@ type AdConfig struct {
 	BidFloorCur *string                      `json:"bidfloorcur,omitempty"`
 	Floors      *openrtb_ext.PriceFloorRules `json:"floors,omitempty"`
 
-	Exp                *int             `json:"exp,omitempty"`
-	Banner             *Banner          `json:"banner,omitempty"`
-	Native             *Native          `json:"native,omitempty"`
-	Video              *Video           `json:"video,omitempty"`
-	App                *openrtb2.App    `json:"app,omitempty"`
-	Device             *openrtb2.Device `json:"device,omitempty"`
-	Transparency       *Transparency    `json:"transparency,omitempty"`
-	Regex              *bool            `json:"regex,omitempty"`
-	UniversalPixel     []UniversalPixel `json:"universalpixel,omitempty"`
-	EnableGAMUrlLookup bool             `json:"enablegamurllookup,omitempty"`
-	BidderFilter       *BidderFilter    `json:"bidderFilter,omitempty"`
+	Exp                *int              `json:"exp,omitempty"`
+	Banner             *Banner           `json:"banner,omitempty"`
+	Native             *Native           `json:"native,omitempty"`
+	Video              *Video            `json:"video,omitempty"`
+	App                *openrtb2.App     `json:"app,omitempty"`
+	Device             *openrtb2.Device  `json:"device,omitempty"`
+	Transparency       *Transparency     `json:"transparency,omitempty"`
+	Regex              *bool             `json:"regex,omitempty"`
+	UniversalPixel     []UniversalPixel  `json:"universalpixel,omitempty"`
+	EnableGAMUrlLookup bool              `json:"enablegamurllookup,omitempty"`
+	Adrule             []*openrtb2.Video `json:"adrule,omitempty"`
+	BidderFilter       *BidderFilter     `json:"bidderFilter,omitempty"`
 }
 
 type BidderFilter struct {

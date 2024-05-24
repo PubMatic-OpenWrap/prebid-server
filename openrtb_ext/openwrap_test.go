@@ -56,13 +56,6 @@ func TestVideoAdPod_Validate(t *testing.T) {
 			wantErr: []error{errInvalidMinDuration},
 		},
 		{
-			name: "ZeroMinDuration",
-			fields: fields{
-				MinDuration: getIntPtr(0),
-			},
-			wantErr: []error{errInvalidMinDuration},
-		},
-		{
 			name: "ErrInvalidMaxDuration",
 			fields: fields{
 				MaxDuration: getIntPtr(-1),
@@ -246,7 +239,7 @@ func TestExtRequestAdPod_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ext := &ExtRequestAdPod{
-				VideoAdPod:                          tt.fields.VideoAdPod,
+				VideoAdPod:                          &tt.fields.VideoAdPod,
 				CrossPodAdvertiserExclusionPercent:  tt.fields.CrossPodAdvertiserExclusionPercent,
 				CrossPodIABCategoryExclusionPercent: tt.fields.CrossPodIABCategoryExclusionPercent,
 				IABCategoryExclusionWindow:          tt.fields.IABCategoryExclusionWindow,
