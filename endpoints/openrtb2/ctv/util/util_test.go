@@ -164,8 +164,8 @@ func TestSortByDealPriority(t *testing.T) {
 		for _, bid := range bids {
 			fmt.Println(bid.ID, ",", bid.Price, ",", bid.DealTierSatisfied)
 		}
-		sortBids(bids[:])
-		fmt.Println("After sort")
+		SortBids(bids[:])
+
 		actual := []string{}
 		for _, bid := range bids {
 			fmt.Println(bid.ID, ",", bid.Price, ", ", bid.DealTierSatisfied)

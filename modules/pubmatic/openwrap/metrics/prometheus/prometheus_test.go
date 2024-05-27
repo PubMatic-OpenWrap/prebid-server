@@ -325,12 +325,53 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
+func TestRecordSignalDataStatus(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordSignalDataStatus("5890", "1234", models.MissingSignal)
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "signal_status", m.signalStatus,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:      "5890",
+			profileIDLabel:  "1234",
+			signalTypeLabel: models.MissingSignal,
+		})
+}
+
 func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {
 		result = *m.GetHistogram()
 	})
 	return result
+}
+
+func TestRecordAdruleEnabled(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleEnabled("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleEnabled", m.pubProfAdruleEnabled,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
+}
+
+func TestRecordAdruleValidationFailure(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleValidationFailure("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleValidationfailure", m.pubProfAdruleValidationfailure,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {

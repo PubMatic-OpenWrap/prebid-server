@@ -75,10 +75,15 @@ type MetricsEngine interface {
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
 	RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)
+	RecordSignalDataStatus(pubid, profileid, signalType string)
 
 	// VAST Unwrap metrics
 	RecordUnwrapRequestStatus(accountId, bidder, status string)
 	RecordUnwrapWrapperCount(accountId, bidder string, wrapper_count string)
 	RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)
 	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
+
+	//VMAP-adrule
+	RecordAdruleEnabled(pubId, profId string)
+	RecordAdruleValidationFailure(pubId, profId string)
 }
