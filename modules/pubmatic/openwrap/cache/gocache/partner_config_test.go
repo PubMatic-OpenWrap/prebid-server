@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -65,7 +66,7 @@ func TestCacheGetPartnerConfigMap(t *testing.T) {
 										Bidders: []string{
 											"pubmatic",
 										},
-										BiddingConditions: `{"in":[{"var":"country"},["IND"]]}`,
+										BiddingConditions: json.RawMessage(`{"in":[{"var":"country"},["IND"]]}`),
 									},
 								},
 							},

@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -29,7 +30,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 				Filters: []adunitconfig.Filter{
 					{
 						Bidders:           []string{"bidderA"},
-						BiddingConditions: `{ "in": [{ "var": "country"}, ["IND"]]}`,
+						BiddingConditions: json.RawMessage(`{ "in": [{ "var": "country"}, ["IND"]]}`),
 					},
 				},
 			},

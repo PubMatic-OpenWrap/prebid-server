@@ -92,6 +92,6 @@ type BidderFilter struct {
 }
 
 type Filter struct {
-	Bidders           []string `json:"bidders,omitempty"`
-	BiddingConditions string   `json:"biddingConditions,omitempty"`
+	Bidders           []string        `json:"bidders,omitempty"`
+	BiddingConditions json.RawMessage `json:"biddingConditions,omitempty"`
 }

@@ -121,7 +121,7 @@ func (c *cache) updatePartnerConfigWithBidderFilters(partnerConfigs map[int]map[
 	if defaultAdUnitConfig.BidderFilter != nil {
 		for _, filter := range defaultAdUnitConfig.BidderFilter.Filters {
 			for _, bidder := range filter.Bidders {
-				bidderfilter[bidder] = filter.BiddingConditions
+				bidderfilter[bidder] = string(filter.BiddingConditions)
 			}
 		}
 	}

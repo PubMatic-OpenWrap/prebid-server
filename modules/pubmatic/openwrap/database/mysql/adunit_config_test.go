@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"regexp"
 	"testing"
 
@@ -177,7 +178,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 							Filters: []adunitconfig.Filter{
 								{
 									Bidders:           []string{"A"},
-									BiddingConditions: "{ \"in\": [{ \"var\": \"country\"}, [\"IND\"]]}",
+									BiddingConditions: json.RawMessage("\"{ \\\"in\\\": [{ \\\"var\\\": \\\"country\\\"}, [\\\"IND\\\"]]}\""),
 								},
 							},
 						},
