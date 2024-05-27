@@ -21,9 +21,6 @@ type DebugData struct {
 	PrebidHTTPResponse *httptest.ResponseRecorder
 	Logger             json.RawMessage
 	WinningBid         bool
-	// PartnerMapping
-	// AdUnitConfig
-	// Logger
 }
 
 type request struct {
@@ -63,7 +60,7 @@ type response struct {
 }
 
 func (r *response) setResponseRecorder(resp *httptest.ResponseRecorder) {
-	if nil != resp {
+	if resp != nil {
 		r.StatusCode = resp.Code
 		r.Headers = resp.HeaderMap
 		if r.Headers.Get(ContentType) == ContentTypeApplicationJSON {
@@ -75,7 +72,7 @@ func (r *response) setResponseRecorder(resp *httptest.ResponseRecorder) {
 }
 
 func (r *response) setResponseWriter(resp http.ResponseWriter, body string) {
-	if nil != resp {
+	if resp != nil {
 		r.Headers = resp.Header()
 	}
 	if r.Headers.Get(ContentType) == ContentTypeApplicationJSON {

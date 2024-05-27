@@ -33,24 +33,23 @@ var (
 	openRTBDeviceOsIosRegex     *regexp.Regexp
 	mobileDeviceUARegex         *regexp.Regexp
 	ctvRegex                    *regexp.Regexp
+	accountIdSearchPath         = [...]struct {
+		isApp  bool
+		isDOOH bool
+		key    []string
+	}{
+		{true, false, []string{"app", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{true, false, []string{"app", "publisher", "id"}},
+		{false, false, []string{"site", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, false, []string{"site", "publisher", "id"}},
+		{false, true, []string{"dooh", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, true, []string{"dooh", "publisher", "id"}},
+	}
 )
 
 const (
 	test = "_test"
 )
-
-var accountIdSearchPath = [...]struct {
-	isApp  bool
-	isDOOH bool
-	key    []string
-}{
-	{true, false, []string{"app", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
-	{true, false, []string{"app", "publisher", "id"}},
-	{false, false, []string{"site", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
-	{false, false, []string{"site", "publisher", "id"}},
-	{false, true, []string{"dooh", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
-	{false, true, []string{"dooh", "publisher", "id"}},
-}
 
 func init() {
 	widthRegEx = regexp.MustCompile(models.MACRO_WIDTH)
@@ -234,14 +233,12 @@ func GetHostName() string {
 		nodeName = strings.Split(nodeName, ".")[0]
 	}
 
-	podName := GetPodName()
+	podName := getPodName()
 
-	serverName := nodeName + ":" + podName
-
-	return serverName
+	return nodeName + ":" + podName
 }
 
-func GetPodName() string {
+func getPodName() string {
 
 	var podName string
 	if podName, _ = os.LookupEnv(models.ENV_VAR_POD_NAME); podName == "" {
@@ -363,7 +360,7 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 	return request.Header.Get("User-Agent")
 }
 
-func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest json.RawMessage, originalRequest []byte) (string, bool, bool, []error) {
+func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest, originalRequest json.RawMessage) (string, bool, bool, []error) {
 	request := originalRequest
 	if hasStoredRequest {
 		request = storedRequest

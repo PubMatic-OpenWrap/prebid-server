@@ -11,39 +11,16 @@ import (
 func TestAddRule(t *testing.T) {
 	rm := getNewRulesMap(Wakanda{})
 
-	if rm.AddIfNotPresent("FIRST_RULE", 2, "local") == false {
-		t.Error("A non-existing rule should be added. Failed to add a non-existing rule.")
-	}
-
-	if rm.AddIfNotPresent("FIRST_RULE", 2, "local") == true {
-		t.Error("An existing rule should not be added.")
-	}
-
-	if rm.IsRulePresent("FIRST_RULE") == false {
-		t.Error("Should have returned true as rule is present")
-	}
-
-	if rm.IsRulePresent("SECOND_RULE") == true {
-		t.Error("Should have returned false as rule is NOT present")
-	}
+	assert.Equal(t, true, rm.AddIfNotPresent("FIRST_RULE", 2, "local"), "A non-existing rule should be added. Failed to add a non-existing rule.")
+	assert.Equal(t, false, rm.AddIfNotPresent("FIRST_RULE", 2, "local"), "An existing rule should not be added.")
+	assert.Equal(t, true, rm.IsRulePresent("FIRST_RULE"), "Should have returned true as rule is present")
+	assert.Equal(t, false, rm.IsRulePresent("SECOND_RULE"), "Should have returned false as rule is NOT present")
 
 	wr := rm.Incr("FIRST_RULE")
-	if wr.TraceCount != 1 {
-		t.Errorf("TraceCount Should have been 0 TraceCount=%v", wr.TraceCount)
-	}
-	if wr.DebugLevel != 2 {
-		t.Error("DebugLevel should have been 2")
-	}
-
-	if wr.FolderPath != "local"+"__FIRST_RULE" {
-		t.Error("FolderPath formation is not as expected")
-	}
+	assert.Equal(t, 1, wr.TraceCount, "TraceCount Should have been 0 TraceCount=%v", wr.TraceCount)
+	assert.Equal(t, 1, wr.TraceCount, "DebugLevel should have been 2")
+	assert.Equal(t, "local"+"__FIRST_RULE", wr.FolderPath, "FolderPath formation is not as expected")
 }
-
-// func init() {
-// 	config.ServerConfig = &config.DMHBConfig{}
-// 	config.ServerConfig.OpenWrap.Server.DCName = "local"
-// }
 
 func Test_rulesMap_cleanRules(t *testing.T) {
 	now := time.Now()
@@ -108,7 +85,7 @@ func Test_rulesMap_cleanRules(t *testing.T) {
 	}
 }
 
-func Test_rulesMap_Incr(t *testing.T) {
+func TestRulesMapIncr(t *testing.T) {
 	type fields struct {
 		rules map[string]*wakandaRule
 		lock  sync.RWMutex

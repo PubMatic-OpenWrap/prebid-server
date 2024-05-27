@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_request_set(t *testing.T) {
+func TestRequestSet(t *testing.T) {
 	type args struct {
 		request  *http.Request
 		postData json.RawMessage
@@ -92,7 +92,7 @@ func Test_request_set(t *testing.T) {
 	}
 }
 
-func Test_response_setResponseRecorder(t *testing.T) {
+func TestResponseSetResponseRecorder(t *testing.T) {
 	type args struct {
 		resp *httptest.ResponseRecorder
 	}
@@ -158,7 +158,7 @@ func Test_response_setResponseRecorder(t *testing.T) {
 	}
 }
 
-func Test_response_setResponseWriter(t *testing.T) {
+func TestResponseSetResponseWriter(t *testing.T) {
 	type args struct {
 		resp http.ResponseWriter
 		body string

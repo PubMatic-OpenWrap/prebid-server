@@ -19,13 +19,13 @@ var (
 //	StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 //
 // So there is not strict host check and if a host key changes, then there is no problem
-func send(destFileName, pubProfDir string, data []byte, cfg SFTP) (bool, error) {
+func send(destFileName, pubProfDir string, data []byte, cfg SFTP) error {
 	if commandHandler == nil {
-		return false, errors.New("commandHandler is nil")
+		return errors.New("commandHandler is nil")
 	}
 	srcFile, err := os.CreateTemp("", destFileName)
 	if err != nil {
-		return false, err
+		return err
 	}
 	srcFile.Write(data)
 	user := cfg.User
@@ -36,11 +36,11 @@ func send(destFileName, pubProfDir string, data []byte, cfg SFTP) (bool, error) 
 	cmd := commandHandler.commandExecutor.Command()
 	cmdWriter, err := cmd.StdinPipe()
 	if err != nil {
-		return false, err
+		return err
 	}
 	err = cmd.Start()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	cmdString := fmt.Sprintf(`
@@ -73,7 +73,7 @@ func send(destFileName, pubProfDir string, data []byte, cfg SFTP) (bool, error) 
 		}
 	}()
 
-	return err == nil, err
+	return err
 }
 
 type CommandHandler struct {

@@ -3,6 +3,8 @@ package wakanda
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEnable(t *testing.T) {
@@ -17,20 +19,12 @@ func TestEnable(t *testing.T) {
 	}
 
 	wd.EnableIfRequired(pubID, profID)
-	if wd.Enabled != true {
-		t.Errorf("Enabled expected to be true found false")
-	}
-
-	if wd.DebugLevel != 2 {
-		t.Errorf("DebugLevel expected to be 2 found %d", wd.DebugLevel)
-	}
-
-	if wd.FolderPaths[0] != "local__PUB:31445__PROF:55" {
-		t.Errorf("FolderPath[0] expected to be local__PUB:31445__PROF:55 found %s", wd.FolderPaths[0])
-	}
+	assert.Equal(t, true, wd.Enabled, "Enabled expected to be true found false")
+	assert.Equal(t, 2, wd.DebugLevel, "DebugLevel expected to be 2 found %d", wd.DebugLevel)
+	assert.Equal(t, "local__PUB:31445__PROF:55", wd.FolderPaths[0], "FolderPath[0] expected to be local__PUB:31445__PROF:55 found %s", wd.FolderPaths[0])
 }
 
-func TestDebug_WriteLogToFiles(t *testing.T) {
+func TestDebugWriteLogToFiles(t *testing.T) {
 	type fields struct {
 		Enabled     bool
 		FolderPaths []string
@@ -62,7 +56,9 @@ func TestDebug_WriteLogToFiles(t *testing.T) {
 			fields: fields{
 				DebugLevel:  2,
 				FolderPaths: []string{`pub_1`, `pub_1_prof_1`},
-				DebugData:   DebugData{},
+				DebugData: DebugData{
+					HTTPRequestBody: json.RawMessage(`{key:"value"}`),
+				},
 			},
 		},
 	}

@@ -69,7 +69,7 @@ func (wD *Debug) WriteLogToFiles() {
 			} else {
 				sftpDestinationFile = fmt.Sprintf("%s-%d.json", wD.Config.PodName, time.Now().UnixNano())
 			}
-			if ok, err := send(sftpDestinationFile, logDir, recordBytes, wD.Config.SFTP); !ok {
+			if err := send(sftpDestinationFile, logDir, recordBytes, wD.Config.SFTP); err != nil {
 				logger.Error("Wakanda '%s' SFTP Error : %s", sftpDestinationFile, err.Error())
 			}
 		}
