@@ -38,14 +38,14 @@ func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
 
 	for k, v := range result {
 		//sort.Slice(v[:], func(i, j int) bool { return v[i].Price > v[j].Price })
-		sortBids(v[:])
+		SortBids(v[:])
 		result[k] = v
 	}
 
 	return result
 }
 
-func sortBids(bids []*types.Bid) {
+func SortBids(bids []*types.Bid) {
 	sort.Slice(bids, func(i, j int) bool {
 		if bids[i].DealTierSatisfied == bids[j].DealTierSatisfied {
 			return bids[i].Price > bids[j].Price
