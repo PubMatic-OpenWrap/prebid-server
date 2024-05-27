@@ -378,14 +378,10 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				Price:   10,
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &AdPodGenerator{
-				request:  tt.fields.request,
-				impIndex: tt.fields.impIndex,
-			}
+			o := &AdPodGenerator{}
 			got := o.getMaxAdPodBid(tt.args.results)
 			if nil != got {
 				sort.Strings(got.ADomain)

@@ -87,6 +87,10 @@ type Metrics struct {
 	adPodGeneratedImpressionsCount *prometheus.CounterVec
 	ctvReqCountWithAdPod           *prometheus.CounterVec
 	cacheWriteTime                 *prometheus.HistogramVec
+
+	//VMAP adrule
+	pubProfAdruleEnabled           *prometheus.CounterVec
+	pubProfAdruleValidationfailure *prometheus.CounterVec
 }
 
 const (
