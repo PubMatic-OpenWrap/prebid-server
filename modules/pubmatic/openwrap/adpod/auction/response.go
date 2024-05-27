@@ -1,6 +1,6 @@
 package auction
 
-import "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+import "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
 func GetWinningBidsIds(adpodBids []*AdPodBid, impCtxMap map[string]models.ImpCtx) (map[string][]string, error) {
 	var winningBidIds map[string][]string

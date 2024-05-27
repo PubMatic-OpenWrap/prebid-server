@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/util/ptrutil"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
-	v26 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	v26 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -192,7 +193,7 @@ func (o *OpenRTB) ORTBSourceFD() (err error) {
 	if o.ortb.Source == nil {
 		o.ortb.Source = &openrtb2.Source{}
 	}
-	o.ortb.Source.FD = int8(val)
+	o.ortb.Source.FD = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -339,7 +340,7 @@ func (o *OpenRTB) ORTBSiteMobile() (err error) {
 	if o.ortb.Site == nil {
 		o.ortb.Site = &openrtb2.Site{}
 	}
-	o.ortb.Site.Mobile = int8(val)
+	o.ortb.Site.Mobile = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -379,7 +380,7 @@ func (o *OpenRTB) ORTBSitePrivacyPolicy() (err error) {
 	if o.ortb.Site == nil {
 		o.ortb.Site = &openrtb2.Site{}
 	}
-	o.ortb.Site.PrivacyPolicy = int8(val)
+	o.ortb.Site.PrivacyPolicy = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -760,7 +761,7 @@ func (o *OpenRTB) ORTBSiteContentLiveStream() (err error) {
 	if o.ortb.Site.Content == nil {
 		o.ortb.Site.Content = &openrtb2.Content{}
 	}
-	o.ortb.Site.Content.LiveStream = int8(val)
+	o.ortb.Site.Content.LiveStream = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -776,7 +777,7 @@ func (o *OpenRTB) ORTBSiteContentSourceRelationship() (err error) {
 	if o.ortb.Site.Content == nil {
 		o.ortb.Site.Content = &openrtb2.Content{}
 	}
-	o.ortb.Site.Content.SourceRelationship = int8(val)
+	o.ortb.Site.Content.SourceRelationship = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -824,7 +825,7 @@ func (o *OpenRTB) ORTBSiteContentEmbeddable() (err error) {
 	if o.ortb.Site.Content == nil {
 		o.ortb.Site.Content = &openrtb2.Content{}
 	}
-	o.ortb.Site.Content.Embeddable = int8(val)
+	o.ortb.Site.Content.Embeddable = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -991,7 +992,7 @@ func (o *OpenRTB) ORTBAppPaid() (err error) {
 	if o.ortb.App == nil {
 		o.ortb.App = &openrtb2.App{}
 	}
-	o.ortb.App.Paid = int8(val)
+	o.ortb.App.Paid = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1031,7 +1032,7 @@ func (o *OpenRTB) ORTBAppPrivacyPolicy() (err error) {
 	if o.ortb.App == nil {
 		o.ortb.App = &openrtb2.App{}
 	}
-	o.ortb.App.PrivacyPolicy = int8(val)
+	o.ortb.App.PrivacyPolicy = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1415,7 +1416,7 @@ func (o *OpenRTB) ORTBAppContentLiveStream() (err error) {
 	if o.ortb.App.Content == nil {
 		o.ortb.App.Content = &openrtb2.Content{}
 	}
-	o.ortb.App.Content.LiveStream = int8(val)
+	o.ortb.App.Content.LiveStream = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1431,7 +1432,7 @@ func (o *OpenRTB) ORTBAppContentSourceRelationship() (err error) {
 	if o.ortb.App.Content == nil {
 		o.ortb.App.Content = &openrtb2.Content{}
 	}
-	o.ortb.App.Content.SourceRelationship = int8(val)
+	o.ortb.App.Content.SourceRelationship = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1481,7 +1482,7 @@ func (o *OpenRTB) ORTBAppContentEmbeddable() (err error) {
 	if o.ortb.App.Content == nil {
 		o.ortb.App.Content = &openrtb2.Content{}
 	}
-	o.ortb.App.Content.Embeddable = int8(val)
+	o.ortb.App.Content.Embeddable = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1621,7 +1622,7 @@ func (o *OpenRTB) ORTBImpVideoPlayerWidth() (err error) {
 	if !ok || err != nil {
 		return
 	}
-	o.ortb.Imp[0].Video.W = int64(val)
+	o.ortb.Imp[0].Video.W = ptrutil.ToPtr(int64(val))
 	return
 }
 
@@ -1634,7 +1635,7 @@ func (o *OpenRTB) ORTBImpVideoPlayerHeight() (err error) {
 	if !ok || err != nil {
 		return
 	}
-	o.ortb.Imp[0].Video.H = int64(val)
+	o.ortb.Imp[0].Video.H = ptrutil.ToPtr(int64(val))
 	return
 }
 
@@ -1808,7 +1809,7 @@ func (o *OpenRTB) ORTBImpVideoBoxingAllowed() (err error) {
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
 	}
-	o.ortb.Imp[0].Video.BoxingAllowed = int8(val)
+	o.ortb.Imp[0].Video.BoxingAllowed = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -1973,7 +1974,7 @@ func (o *OpenRTB) ORTBImpClickBrowser() (err error) {
 	if !ok || err != nil {
 		return
 	}
-	o.ortb.Imp[0].ClickBrowser = int8(val)
+	o.ortb.Imp[0].ClickBrowser = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -2292,7 +2293,7 @@ func (o *OpenRTB) ORTBDeviceJS() (err error) {
 	if o.ortb.Device == nil {
 		o.ortb.Device = &openrtb2.Device{}
 	}
-	o.ortb.Device.JS = int8(val)
+	o.ortb.Device.JS = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -2305,7 +2306,7 @@ func (o *OpenRTB) ORTBDeviceGeoFetch() (err error) {
 	if o.ortb.Device == nil {
 		o.ortb.Device = &openrtb2.Device{}
 	}
-	o.ortb.Device.GeoFetch = int8(val)
+	o.ortb.Device.GeoFetch = ptrutil.ToPtr(int8(val))
 	return
 }
 
@@ -2481,7 +2482,7 @@ func (o *OpenRTB) ORTBDeviceGeoLat() (err error) {
 	if o.ortb.Device.Geo == nil {
 		o.ortb.Device.Geo = &openrtb2.Geo{}
 	}
-	o.ortb.Device.Geo.Lat = val
+	o.ortb.Device.Geo.Lat = ptrutil.ToPtr(val)
 	return
 }
 
@@ -2497,7 +2498,7 @@ func (o *OpenRTB) ORTBDeviceGeoLon() (err error) {
 	if o.ortb.Device.Geo == nil {
 		o.ortb.Device.Geo = &openrtb2.Geo{}
 	}
-	o.ortb.Device.Geo.Lon = val
+	o.ortb.Device.Geo.Lon = ptrutil.ToPtr(val)
 	return
 }
 
@@ -2774,7 +2775,7 @@ func (o *OpenRTB) ORTBUserGeoLat() (err error) {
 	if o.ortb.User.Geo == nil {
 		o.ortb.User.Geo = &openrtb2.Geo{}
 	}
-	o.ortb.User.Geo.Lat = val
+	o.ortb.User.Geo.Lat = ptrutil.ToPtr(val)
 	return
 }
 
@@ -2790,7 +2791,7 @@ func (o *OpenRTB) ORTBUserGeoLon() (err error) {
 	if o.ortb.User.Geo == nil {
 		o.ortb.User.Geo = &openrtb2.Geo{}
 	}
-	o.ortb.User.Geo.Lon = val
+	o.ortb.User.Geo.Lon = ptrutil.ToPtr(val)
 	return
 }
 

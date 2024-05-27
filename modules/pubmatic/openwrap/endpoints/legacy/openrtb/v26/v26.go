@@ -1,6 +1,6 @@
 package v26
 
-import "github.com/prebid/openrtb/v19/adcom1"
+import "github.com/prebid/openrtb/v20/adcom1"
 
 func GetProtocol(protocols []int) []adcom1.MediaCreativeSubtype {
 	if protocols == nil {

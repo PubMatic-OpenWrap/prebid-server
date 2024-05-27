@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prebid/openrtb/v19/openrtb3"
+	"github.com/prebid/openrtb/v20/openrtb3"
 )
 
 // RecordAdapterDuplicateBidID as noop
@@ -40,9 +40,6 @@ func (me *Metrics) RecordBids(pubid, profileid, biddder, deal string) {
 
 // RecordVastVersion as a noop
 func (me *Metrics) RecordVastVersion(biddder, vastVersion string) {
-}
-
-func (me *Metrics) RecordHttpCounter() {
 }
 
 // RecordVASTTagType as a noop

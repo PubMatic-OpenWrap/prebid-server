@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,8 +26,8 @@ func formImp(isVideo bool) *openrtb2.Imp {
 
 	if isVideo {
 		imp.Video = new(openrtb2.Video)
-		imp.Video.W = 300
-		imp.Video.H = 250
+		imp.Video.W = ptrutil.ToPtr[int64](300)
+		imp.Video.H = ptrutil.ToPtr[int64](250)
 		imp.Video.MIMEs = []string{"video/mp4"}
 	}
 

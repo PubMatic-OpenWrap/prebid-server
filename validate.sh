@@ -19,11 +19,12 @@ done
 
 ./scripts/format.sh -f $AUTOFMT
 
+
 # Run the actual tests. Make sure there's enough coverage too, if the flags call for it.
 if $COVERAGE; then
   ./scripts/check_coverage.sh
 else
-  go test -timeout 120s $(go list ./... | grep -v /vendor/)
+   go test -timeout 120s $(go list ./... | grep -v /vendor/)
 fi
 
 # Then run the race condition tests. These only run on tests named TestRace.* for two reasons.
@@ -36,5 +37,5 @@ fi
 
 if $VET; then
   echo "Running go vet check"
-  go vet -composites=false ./...
+  go vet ./...
 fi

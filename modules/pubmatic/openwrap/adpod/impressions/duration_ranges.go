@@ -1,6 +1,6 @@
 package impressions
 
-import "github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+import "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
 // byDurRangeConfig struct will be used for creating impressions object based on list of duration ranges
 type DurRangeConfig struct { //IImpressions interface

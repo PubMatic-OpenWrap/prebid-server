@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {

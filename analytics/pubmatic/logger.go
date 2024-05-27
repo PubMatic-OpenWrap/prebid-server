@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -25,16 +25,18 @@ type bidWrapper struct {
 	Nbr *openrtb3.NoBidReason
 }
 
-// getUUID is a function variable which will return uuid
-var getUUID = func() string {
+// GetUUID is a function variable which will return uuid
+var GetUUID = func() string {
 	return uuid.NewV4().String()
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
-	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
+	// Get Updated Floor values using floor rules from updated request
+	getFloorValueFromUpdatedRequest(ao.RequestWrapper, rCtx)
 
 	wlog := WloggerRecord{
 		record: record{
@@ -99,7 +101,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(),
+			SlotId:            GetUUID(),
 			SlotName:          impCtx.SlotName,
 			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,
@@ -187,21 +189,17 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 	return nil
 }
 
-func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
-	if adPodConfig == nil {
-		return nil
+// getFloorValueFromUpdatedRequest gets updated floor values by floor module
+func getFloorValueFromUpdatedRequest(reqWrapper *openrtb_ext.RequestWrapper, rCtx *models.RequestCtx) {
+	for _, imp := range reqWrapper.BidRequest.Imp {
+		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+			if imp.BidFloor > 0 && impCtx.BidFloor != imp.BidFloor {
+				impCtx.BidFloor = imp.BidFloor
+				impCtx.BidFloorCur = imp.BidFloorCur
+				rCtx.ImpBidCtx[imp.ID] = impCtx
+			}
+		}
 	}
-
-	adPodSlot := AdPodSlot{
-		MinAds:                      adPodConfig.MinAds,
-		MaxAds:                      adPodConfig.MaxAds,
-		MinDuration:                 adPodConfig.MinDuration,
-		MaxDuration:                 adPodConfig.MaxDuration,
-		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
-		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
-	}
-
-	return &adPodSlot
 }
 
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
@@ -529,4 +527,21 @@ func getDefaultPartnerRecordsByImp(rCtx *models.RequestCtx) map[string][]Partner
 		}}
 	}
 	return ipr
+}
+
+func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
+	if adPodConfig == nil {
+		return nil
+	}
+
+	adPodSlot := AdPodSlot{
+		MinAds:                      adPodConfig.MinAds,
+		MaxAds:                      adPodConfig.MaxAds,
+		MinDuration:                 adPodConfig.MinDuration,
+		MaxDuration:                 adPodConfig.MaxDuration,
+		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
+		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
+	}
+
+	return &adPodSlot
 }

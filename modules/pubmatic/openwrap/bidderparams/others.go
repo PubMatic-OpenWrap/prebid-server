@@ -4,10 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
@@ -16,10 +16,12 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 		return "", "", false, nil, errors.New("ErrBidderParamsValidationError")
 	}
 
-	var isRegexSlot bool
+	var isRegexSlot, isRegexKGP bool
 	var matchedSlot, matchedPattern string
 
-	isRegexKGP := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN] == models.REGEX_KGP
+	if kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]; kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
+		isRegexKGP = true
+	}
 	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 
 	for i, slot := range slots {

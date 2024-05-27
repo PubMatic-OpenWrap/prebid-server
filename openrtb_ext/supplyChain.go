@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 const (

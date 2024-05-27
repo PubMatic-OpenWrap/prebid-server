@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
@@ -279,9 +279,8 @@ func TestRecordPartnerTimeoutRequests(t *testing.T) {
 func TestRecordSendLoggerDataTime(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordSendLoggerDataTime("v25", "59201", 300*time.Millisecond)
-	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.sendLoggerData,
-		endpointLabel, "v25", profileIDLabel, "59201")
+	m.RecordSendLoggerDataTime(300 * time.Millisecond)
+	resultingHistogram := getHistogramFromHistogram(m.sendLoggerData)
 
 	assertHistogram(t, "sshb_logger_data_send_time", resultingHistogram, 1, 0.3)
 }
@@ -385,5 +384,65 @@ func TestRegisterLabelPermutations(t *testing.T) {
 		})
 
 		assert.ElementsMatch(t, test.expectedLabels, resultLabels)
+	}
+}
+
+func TestMetrics_RecordAmpVideoRequets(t *testing.T) {
+	m := createMetricsForTesting()
+
+	type args struct {
+		pubid     string
+		profileid string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Record Amp Video Requests",
+			args: args{
+				pubid:     "1010",
+				profileid: "11",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m.RecordAmpVideoRequests(tt.args.pubid, tt.args.profileid)
+			assertCounterVecValue(t, "", "sshb_amp_video_requests", m.ampVideoRequests, float64(1), prometheus.Labels{
+				pubIDLabel:     tt.args.pubid,
+				profileIDLabel: tt.args.profileid,
+			})
+		})
+	}
+}
+
+func TestMetrics_RecordAmpVideoResponses(t *testing.T) {
+	m := createMetricsForTesting()
+
+	type args struct {
+		pubid     string
+		profileid string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Record Amp Video Requests",
+			args: args{
+				pubid:     "1010",
+				profileid: "11",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m.RecordAmpVideoResponses(tt.args.pubid, tt.args.profileid)
+			assertCounterVecValue(t, "", "sshb_amp_video_responses", m.ampVideoResponses, float64(1), prometheus.Labels{
+				pubIDLabel:     tt.args.pubid,
+				profileIDLabel: tt.args.profileid,
+			})
+		})
 	}
 }

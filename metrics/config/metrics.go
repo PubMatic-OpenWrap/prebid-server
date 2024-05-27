@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
-	prometheusmetrics "github.com/prebid/prebid-server/metrics/prometheus"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
+	prometheusmetrics "github.com/prebid/prebid-server/v2/metrics/prometheus"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
@@ -392,27 +392,6 @@ func (me *MultiMetricsEngine) RecordBidValidationSecureMarkupWarn(adapter openrt
 	}
 }
 
-func (me *MultiMetricsEngine) RecordAccountGDPRPurposeWarning(account string, purposeName string) {
-	for _, thisME := range *me {
-		thisME.RecordAccountGDPRPurposeWarning(account, purposeName)
-	}
-}
-func (me *MultiMetricsEngine) RecordAccountGDPRChannelEnabledWarning(account string) {
-	for _, thisME := range *me {
-		thisME.RecordAccountGDPRChannelEnabledWarning(account)
-	}
-}
-func (me *MultiMetricsEngine) RecordAccountCCPAChannelEnabledWarning(account string) {
-	for _, thisME := range *me {
-		thisME.RecordAccountCCPAChannelEnabledWarning(account)
-	}
-}
-func (me *MultiMetricsEngine) RecordAccountUpgradeStatus(account string) {
-	for _, thisME := range *me {
-		thisME.RecordAccountUpgradeStatus(account)
-	}
-}
-
 func (me *MultiMetricsEngine) RecordModuleCalled(labels metrics.ModuleLabels, duration time.Duration) {
 	for _, thisME := range *me {
 		thisME.RecordModuleCalled(labels, duration)
@@ -628,18 +607,6 @@ func (me *NilMetricsEngine) RecordBidValidationSecureMarkupError(adapter openrtb
 }
 
 func (me *NilMetricsEngine) RecordBidValidationSecureMarkupWarn(adapter openrtb_ext.BidderName, account string) {
-}
-
-func (me *NilMetricsEngine) RecordAccountGDPRPurposeWarning(account string, purposeName string) {
-}
-
-func (me *NilMetricsEngine) RecordAccountGDPRChannelEnabledWarning(account string) {
-}
-
-func (me *NilMetricsEngine) RecordAccountCCPAChannelEnabledWarning(account string) {
-}
-
-func (me *NilMetricsEngine) RecordAccountUpgradeStatus(account string) {
 }
 
 func (me *NilMetricsEngine) RecordModuleCalled(labels metrics.ModuleLabels, duration time.Duration) {

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	pbc "github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	pbc "github.com/prebid/prebid-server/v2/prebid_cache_client"
 )
 
 type CacheWrapperStruct struct {

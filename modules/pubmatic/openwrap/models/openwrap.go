@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
 )
 
 type RequestCtx struct {
@@ -96,16 +96,18 @@ type RequestCtx struct {
 	CachePutMiss           int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
 	CurrencyConversion     func(from string, to string, value float64) (float64, error)
 	MatchedImpression      map[string]int
+	CustomDimensions       map[string]CustomDimension
+	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
+	IsTBFFeatureEnabled    bool
+	VastUnwrapEnabled      bool
+	VastUnwrapStatsEnabled bool
+	AppLovinMax            AppLovinMax
+	LoggerDisabled         bool
+	TrackerDisabled        bool
 	Method                 string
 	Errors                 []error
-	CustomDimensions       map[string]CustomDimension
 	RedirectURL            string
 	ResponseFormat         string
-}
-
-type CustomDimension struct {
-	Value     string `json:"value,omitempty"`
-	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
 }
 
 type OwBid struct {
@@ -189,6 +191,21 @@ type AdUnitCtx struct {
 	AppliedSlotAdUnitConfig  *adunitconfig.AdConfig
 	UsingDefaultConfig       bool
 	AllowedConnectionTypes   []int
+}
+
+type CustomDimension struct {
+	Value     string `json:"value,omitempty"`
+	SendToGAM *bool  `json:"sendtoGAM,omitempty"`
+}
+
+// FeatureData struct to hold feature data from cache
+type FeatureData struct {
+	Enabled int    // feature enabled/disabled
+	Value   string // feature value if any
+}
+
+type AppLovinMax struct {
+	Reject bool
 }
 
 type WinningBids map[string][]*OwBid

@@ -3,10 +3,10 @@ package openwrap
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,8 +86,8 @@ func TestGetIncomingSlots(t *testing.T) {
 				imp: openrtb2.Imp{
 					ID: "1",
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 			},
@@ -112,8 +112,8 @@ func TestGetIncomingSlots(t *testing.T) {
 						},
 					},
 					Video: &openrtb2.Video{
-						W: 300,
-						H: 250,
+						W: ptrutil.ToPtr[int64](300),
+						H: ptrutil.ToPtr[int64](250),
 					},
 				},
 			},
@@ -151,8 +151,8 @@ func TestGetIncomingSlots(t *testing.T) {
 							Enabled: ptrutil.ToPtr(true),
 							Config: &adunitconfig.VideoConfig{
 								Video: openrtb2.Video{
-									W: 640,
-									H: 480,
+									W: ptrutil.ToPtr(int64(640)),
+									H: ptrutil.ToPtr(int64(480)),
 								},
 							},
 						},
@@ -167,8 +167,8 @@ func TestGetIncomingSlots(t *testing.T) {
 				imp: openrtb2.Imp{
 					ID: "1",
 					Video: &openrtb2.Video{
-						W: 380,
-						H: 120,
+						W: ptrutil.ToPtr(int64(380)),
+						H: ptrutil.ToPtr(int64(120)),
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
@@ -177,8 +177,8 @@ func TestGetIncomingSlots(t *testing.T) {
 							Enabled: ptrutil.ToPtr(true),
 							Config: &adunitconfig.VideoConfig{
 								Video: openrtb2.Video{
-									W: 640,
-									H: 480,
+									W: ptrutil.ToPtr(int64(640)),
+									H: ptrutil.ToPtr(int64(480)),
 								},
 							},
 						},
@@ -204,8 +204,8 @@ func TestGetIncomingSlots(t *testing.T) {
 				imp: openrtb2.Imp{
 					ID: "1",
 					Video: &openrtb2.Video{
-						W: 380,
-						H: 120,
+						W: ptrutil.ToPtr(int64(380)),
+						H: ptrutil.ToPtr(int64(120)),
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
@@ -214,8 +214,8 @@ func TestGetIncomingSlots(t *testing.T) {
 							Enabled: ptrutil.ToPtr(false),
 							Config: &adunitconfig.VideoConfig{
 								Video: openrtb2.Video{
-									W: 640,
-									H: 480,
+									W: ptrutil.ToPtr(int64(640)),
+									H: ptrutil.ToPtr(int64(480)),
 								},
 							},
 						},
@@ -230,8 +230,8 @@ func TestGetIncomingSlots(t *testing.T) {
 				imp: openrtb2.Imp{
 					ID: "1",
 					Video: &openrtb2.Video{
-						W: 0,
-						H: 0,
+						W: nil,
+						H: nil,
 					},
 				},
 				videoAdUnitCtx: models.AdUnitCtx{
@@ -239,8 +239,8 @@ func TestGetIncomingSlots(t *testing.T) {
 						Video: &adunitconfig.Video{
 							Config: &adunitconfig.VideoConfig{
 								Video: openrtb2.Video{
-									W: 640,
-									H: 480,
+									W: ptrutil.ToPtr(int64(640)),
+									H: ptrutil.ToPtr(int64(480)),
 								},
 							},
 						},

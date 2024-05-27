@@ -6,15 +6,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -114,9 +115,9 @@ func TestConvertNonBidToBid(t *testing.T) {
 			nonBid: openrtb_ext.NonBid{
 				StatusCode: int(exchange.ResponseRejectedBelowFloor),
 				ImpId:      "imp1",
-				Ext: openrtb_ext.NonBidExt{
-					Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-						Bid: openrtb_ext.NonBidObject{
+				Ext: openrtb_ext.ExtNonBid{
+					Prebid: openrtb_ext.ExtNonBidPrebid{
+						Bid: openrtb_ext.ExtNonBidPrebidBid{
 							Price:             10,
 							ADomain:           []string{"abc.com"},
 							DealID:            "d1",
@@ -1059,9 +1060,9 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												ID: "bid-id-2",
 											},
 										},
@@ -1141,9 +1142,9 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												ID: "bid-id-1",
 											},
 										},
@@ -1313,9 +1314,9 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowDealFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 											},
 										},
@@ -1343,9 +1344,9 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
 												ID:             "bid-id-1",
 												W:              10,
@@ -1444,9 +1445,9 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 												Floors: &openrtb_ext.ExtBidPrebidFloors{
@@ -1509,10 +1510,10 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int((exchange.ResponseRejectedBelowFloor)),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 												Floors: &openrtb_ext.ExtBidPrebidFloors{
@@ -1575,10 +1576,10 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int((exchange.ResponseRejectedBelowFloor)),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 												Floors: &openrtb_ext.ExtBidPrebidFloors{
@@ -1642,9 +1643,9 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 											},
@@ -1702,9 +1703,9 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 											},
@@ -1765,9 +1766,9 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(exchange.ResponseRejectedBelowFloor),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 												Floors: &openrtb_ext.ExtBidPrebidFloors{
@@ -2186,9 +2187,9 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: int(nbr.LossBidLostToDealBid),
-									Ext: openrtb_ext.NonBidExt{
-										Prebid: openrtb_ext.ExtResponseNonBidPrebid{
-											Bid: openrtb_ext.NonBidObject{
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price: 10,
 												ID:    "bid-id-1",
 												BidId: "uuid",
@@ -2487,8 +2488,8 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 							NonBid: []openrtb_ext.NonBid{
 								{
 									ImpId:      "imp1",
-									StatusCode: int(nbr.LossBidLostToDealBid),
-									Ext:        openrtb_ext.NonBidExt{},
+									StatusCode: int(exchange.ResponseRejectedBelowDealFloor),
+									Ext:        openrtb_ext.ExtNonBid{},
 								},
 							},
 						},
@@ -2513,7 +2514,10 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						NetECPM:     0,
 						GrossECPM:   0,
 						OriginalCur: models.USD,
-						Nbr:         nbr.LossBidLostToDealBid.Ptr(),
+						Nbr: func() *openrtb3.NoBidReason {
+							a := exchange.ResponseRejectedBelowDealFloor
+							return &a
+						}(),
 					},
 				},
 			},
@@ -3371,6 +3375,28 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 		want want
 	}{
 		{
+			name: "logger_disabled",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				rCtx: &models.RequestCtx{
+					Endpoint:       models.EndpointV25,
+					LoggerDisabled: true,
+					PubID:          5890,
+				},
+				logInfo:    true,
+				forRespExt: true,
+			},
+			want: want{
+				logger: "",
+				header: nil,
+			},
+		},
+		{
 			name: "do not prepare owlogger if pubid is missing",
 			args: args{
 				ao: analytics.AuctionObject{
@@ -3991,13 +4017,13 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 }
 func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string { return "uuid" }
+	GetUUID = func() string { return "uuid" }
 	ow.cfg.Endpoint = "http://10.172.141.11/wl"
 	ow.cfg.PublicEndpoint = "http://t.pubmatic.com/wl"
 
@@ -4172,6 +4198,79 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "set floor value from updated impression if tracker details are absent",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:          "imp-1",
+									BidFloor:    10.10,
+									BidFloorCur: "USD",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp-1",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							AdUnitName:  "au",
+							SlotName:    "sn",
+							BidFloor:    2.0,
+							BidFloorCur: "USD",
+						},
+					},
+					ResponseExt: openrtb_ext.ExtBidResponse{
+						Prebid: &openrtb_ext.ExtResponsePrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								FetchStatus: openrtb_ext.FetchError,
+								Data: &openrtb_ext.PriceFloorData{
+									ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+										{
+											ModelVersion: "model-version",
+										},
+									},
+									FloorProvider: "provider1",
+								},
+								PriceFloorLocation: openrtb_ext.FetchLocation,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									EnforcePBS: ptrutil.ToPtr(true),
+								},
+							},
+						},
+					},
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -4184,13 +4283,13 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 }
 func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 	cfg := ow.cfg
-	uuidFunc := getUUID
+	uuidFunc := GetUUID
 	defer func() {
 		ow.cfg = cfg
-		getUUID = uuidFunc
+		GetUUID = uuidFunc
 	}()
 
-	getUUID = func() string {
+	GetUUID = func() string {
 		return "sid"
 	}
 
@@ -4421,6 +4520,136 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 			// fmt.Println(actualJSON)
 			// fmt.Println(expectedJSON)
 			// assert.JSONEq(t, expectedJSON, actualJSON, tt.name)
+		})
+	}
+}
+
+func Test_getFloorValueFromUpdatedRequest(t *testing.T) {
+	type args struct {
+		reqWrapper *openrtb_ext.RequestWrapper
+		rCtx       *models.RequestCtx
+	}
+	tests := []struct {
+		name string
+		args args
+		want *models.RequestCtx
+	}{
+		{
+			name: "No floor present in request and in rctx",
+			args: args{
+				reqWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Imp: []openrtb2.Imp{
+							{
+								ID:    "imp_1",
+								TagID: "tagid_1",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID:    5890,
+					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							AdUnitName: "tagid_1",
+						},
+					},
+				},
+			},
+			want: &models.RequestCtx{
+				PubID:    5890,
+				Endpoint: models.EndpointV25,
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp_1": {
+						AdUnitName: "tagid_1",
+					},
+				},
+			},
+		},
+		{
+			name: "No floor change in request and in rctx",
+			args: args{
+				reqWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Imp: []openrtb2.Imp{
+							{
+								ID:          "imp_1",
+								TagID:       "tagid_1",
+								BidFloor:    10,
+								BidFloorCur: "USD",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID:    5890,
+					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							AdUnitName:  "tagid_1",
+							BidFloor:    10,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+			want: &models.RequestCtx{
+				PubID:    5890,
+				Endpoint: models.EndpointV25,
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp_1": {
+						AdUnitName:  "tagid_1",
+						BidFloor:    10,
+						BidFloorCur: "USD",
+					},
+				},
+			},
+		},
+		{
+			name: "floor updated in request",
+			args: args{
+				reqWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Imp: []openrtb2.Imp{
+							{
+								ID:          "imp_1",
+								TagID:       "tagid_1",
+								BidFloor:    20,
+								BidFloorCur: "EUR",
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID:    5890,
+					Endpoint: models.EndpointV25,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp_1": {
+							AdUnitName:  "tagid_1",
+							BidFloor:    10,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+			want: &models.RequestCtx{
+				PubID:    5890,
+				Endpoint: models.EndpointV25,
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp_1": {
+						AdUnitName:  "tagid_1",
+						BidFloor:    20,
+						BidFloorCur: "EUR",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			getFloorValueFromUpdatedRequest(tt.args.reqWrapper, tt.args.rCtx)
+			assert.Equal(t, tt.want, tt.args.rCtx, tt.name)
 		})
 	}
 }

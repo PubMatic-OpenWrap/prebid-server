@@ -3,18 +3,13 @@ package tracker
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	mock_cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_injectBannerTracker(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
-		5890: {1234: 100},
-	})
 	type args struct {
 		rctx    models.RequestCtx
 		tracker models.OWTracker
@@ -23,10 +18,30 @@ func Test_injectBannerTracker(t *testing.T) {
 		pixels  []adunitconfig.UniversalPixel
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name     string
+		args     args
+		wantAdm  string
+		wantBurl string
 	}{
+		{
+			name: "endpoint_applovinmax",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Endpoint: models.EndpointAppLovinMax,
+				},
+				tracker: models.OWTracker{
+					TrackerURL: `sample.com/track?tid=1234`,
+				},
+				bid: openrtb2.Bid{
+					AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+					BURL: `http://burl.com`,
+				},
+				seat: "pubmatic",
+			},
+			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+			wantBurl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
+		},
 		{
 			name: "app_platform",
 			args: args{
@@ -41,7 +56,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: "test",
 			},
-			want: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 		},
 		{
 			name: "app_platform_OM_Inactive_pubmatic",
@@ -58,7 +73,7 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: models.BidderPubMatic,
 			},
-			want: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 		},
 		{
 			name: "app_platform_OM_Active_pubmatic",
@@ -75,14 +90,15 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: models.BidderPubMatic,
 			},
-			want: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+			wantAdm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
 		},
 		{
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				tracker: models.OWTracker{
 					TrackerURL: `Tracking URL`,
@@ -91,14 +107,14 @@ func Test_injectBannerTracker(t *testing.T) {
 					AdM: `sample_creative`,
 				},
 			},
-			want: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
+			wantAdm: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels); got != tt.want {
-				t.Errorf("injectBannerTracker() = %v, want %v", got, tt.want)
-			}
+			gotAdm, gotBurl := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels)
+			assert.Equal(t, tt.wantAdm, gotAdm)
+			assert.Equal(t, tt.wantBurl, gotBurl)
 		})
 	}
 }
@@ -169,10 +185,6 @@ func Test_trackerWithOM(t *testing.T) {
 }
 
 func Test_applyTBFFeature(t *testing.T) {
-	tbf.SetAndResetTBFConfig(&mock_cache.MockCache{}, map[int]map[int]int{
-		5890: {1234: 100},
-	})
-
 	type args struct {
 		rctx    models.RequestCtx
 		bid     openrtb2.Bid
@@ -187,8 +199,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_disabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 100,
+					PubID:               5890,
+					ProfileID:           100,
+					IsTBFFeatureEnabled: false,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -201,8 +214,9 @@ func Test_applyTBFFeature(t *testing.T) {
 			name: "tbf_feature_enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					PubID:     5890,
-					ProfileID: 1234,
+					PubID:               5890,
+					ProfileID:           1234,
+					IsTBFFeatureEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: "<start>bid_AdM<end>",
@@ -210,20 +224,6 @@ func Test_applyTBFFeature(t *testing.T) {
 				tracker: "<start>tracker_url<end>",
 			},
 			want: "<start>tracker_url<end><start>bid_AdM<end>",
-		},
-		{
-			name: "invalid_pubid",
-			args: args{
-				rctx: models.RequestCtx{
-					PubID:     -1,
-					ProfileID: 1234,
-				},
-				bid: openrtb2.Bid{
-					AdM: "<start>bid_AdM<end>",
-				},
-				tracker: "<start>tracker_url<end>",
-			},
-			want: "<start>bid_AdM<end><start>tracker_url<end>",
 		},
 	}
 	for _, tt := range tests {

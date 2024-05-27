@@ -7,10 +7,10 @@ import (
 	"math"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
@@ -47,7 +47,7 @@ func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]
 		eachImpCtx.ImpAdPodCfg = impAdpodConfig
 		impCtx[impWrapper.ID] = eachImpCtx
 
-		err = impWrapper.RebuildImpressionExt()
+		err = impWrapper.RebuildImp()
 		if err != nil {
 			errs = append(errs, err)
 			continue

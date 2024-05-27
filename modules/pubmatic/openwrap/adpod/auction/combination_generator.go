@@ -3,7 +3,7 @@ package auction
 import (
 	"math/big"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // generator holds all the combinations based

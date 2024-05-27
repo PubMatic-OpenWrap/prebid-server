@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	middleware "github.com/prebid/prebid-server/modules/pubmatic/openwrap/middleware/adpod"
+	middleware "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/middleware/adpod"
 )
 
 const (

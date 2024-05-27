@@ -3,23 +3,24 @@ package config
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
 )
 
 // Config contains the values read from the config file at boot time
 type Config struct {
-	Enabled   bool
-	Server    Server
-	Database  Database
-	Cache     Cache
-	Timeout   Timeout
-	Tracker   Tracker
-	PixelView PixelView
-	Features  FeatureToggle
-	Log       Log
-	Stats     stats.Stats
-	BidCache  BidCache
+	Server        Server
+	Database      Database
+	Cache         Cache
+	Timeout       Timeout
+	Tracker       Tracker
+	PixelView     PixelView
+	Features      FeatureToggle
+	Log           Log
+	Stats         stats.Stats
+	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
+	BidCache      BidCache
 }
 
 type BidCache struct {
@@ -62,9 +63,9 @@ type Queries struct {
 	GetAdunitConfigForLiveVersion     string
 	GetSlotNameHash                   string
 	GetPublisherVASTTagsQuery         string
-	GetAllFscDisabledPublishersQuery  string
 	GetAllDspFscPcntQuery             string
-	GetTBFRateQuery                   string
+	GetPublisherFeatureMapQuery       string
+	GetAnalyticsThrottlingQuery       string
 }
 
 type Cache struct {
@@ -90,6 +91,9 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
+	VASTUnwrapPercent             int
+	VASTUnwrapStatsPercent        int
+	AnalyticsThrottlingPercentage string
 }
 
 type Log struct { //Log Details

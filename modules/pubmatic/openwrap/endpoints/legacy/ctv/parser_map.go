@@ -1,6 +1,6 @@
 package ctv
 
-import "github.com/prebid/openrtb/v19/openrtb2"
+import "github.com/prebid/openrtb/v20/openrtb2"
 
 // KeyParserMap map type which contains standard key parser functions
 type KeyParserMap map[string]func(Parser) error

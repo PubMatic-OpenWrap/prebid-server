@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
 )
@@ -40,8 +40,6 @@ func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string)
 		thisME.RecordBids(pubid, profileid, biddder, deal)
 	}
 }
-func (me *MultiMetricsEngine) RecordHttpCounter() {
-}
 
 func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 	for _, thisME := range *me {
@@ -56,10 +54,10 @@ func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.Bid
 	}
 }
 
-// RecordDynamicFetchFailure across all engines
-func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+// RecordFloorStatus across all engines
+func (me *MultiMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 	for _, thisME := range *me {
-		thisME.RecordDynamicFetchFailure(pubId, code)
+		thisME.RecordFloorStatus(pubId, source, code)
 	}
 }
 
@@ -81,8 +79,8 @@ func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nb
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
 
-// RecordDynamicFetchFailure as a noop
-func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+// RecordFloorStatus as a noop
+func (me *NilMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 }
 
 // RecordRejectedBids as a noop
@@ -95,9 +93,6 @@ func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 
 // RecordVastVersion as a noop
 func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
-}
-
-func (m *NilMetricsEngine) RecordHttpCounter() {
 }
 
 // RecordRejectedBidsForBidder as a noop

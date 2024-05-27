@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/metrics"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -180,10 +180,11 @@ func (m *Metrics) RecordFloorsRequestForAccount(pubId string) {
 		}).Inc()
 	}
 }
-func (m *Metrics) RecordDynamicFetchFailure(pubId, code string) {
+func (m *Metrics) RecordFloorStatus(pubId, source, code string) {
 	if pubId != metrics.PublisherUnknown {
 		m.dynamicFetchFailure.With(prometheus.Labels{
 			accountLabel: pubId,
+			sourceLabel:  source,
 			codeLabel:    code,
 		}).Inc()
 	}
@@ -211,7 +212,6 @@ func (m *Metrics) RecordHttpCounter() {
 }
 
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
-	m.httpCounter = newHttpCounter(cfg, reg)
 	m.rejectedBids = newCounter(cfg, reg,
 		"rejected_bids",
 		"Count of rejected bids by publisher id, bidder and rejection reason code",
@@ -228,9 +228,9 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		[]string{bidderLabel, vastTagTypeLabel})
 
 	m.dynamicFetchFailure = newCounter(cfg, reg,
-		"floors_account_fetch_err",
-		"Count of failures in case of dynamic fetch labeled by account",
-		[]string{codeLabel, accountLabel})
+		"floors_account_status",
+		"Count of floor validation status labeled by account, source and reason code",
+		[]string{accountLabel, codeLabel, sourceLabel})
 
 	m.adapterDuplicateBidIDCounter = newCounter(cfg, reg,
 		"duplicate_bid_ids",

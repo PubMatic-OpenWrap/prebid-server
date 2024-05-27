@@ -3,11 +3,11 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adpod/impressions"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(
@@ -39,7 +39,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.RequestWrapper, rctx.ImpBidCtx, rctx.PubIDStr, m.metricEngine)
+		imps, errs = impressions.GenerateImpressions(payload.Request, rctx.ImpBidCtx, rctx.PubIDStr, m.metricEngine)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Warnings = append(result.Warnings, errs[i].Error())
@@ -51,13 +51,13 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	ip := rctx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		if parp.RequestWrapper != nil && parp.RequestWrapper.BidRequest.Device != nil && (parp.RequestWrapper.BidRequest.Device.IP == "" && parp.RequestWrapper.BidRequest.Device.IPv6 == "") {
-			parp.RequestWrapper.BidRequest.Device.IP = ip
+		if parp.Request != nil && parp.Request.BidRequest.Device != nil && (parp.Request.BidRequest.Device.IP == "" && parp.Request.BidRequest.Device.IPv6 == "") {
+			parp.Request.BidRequest.Device.IP = ip
 		}
 
 		if rctx.IsCTVRequest {
 			if len(imps) > 0 {
-				parp.RequestWrapper.SetImp(imps)
+				parp.Request.SetImp(imps)
 			}
 		}
 		return parp, nil
