@@ -55,6 +55,12 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		},
 	}
 
+	wlog.logProfileType(rCtx.PartnerConfigMap)
+	wlog.logProfileTypePlatform(rCtx.PartnerConfigMap)
+	wlog.logAppPlatform(rCtx.PartnerConfigMap)
+	wlog.logAppIntegrationPath(rCtx.PartnerConfigMap)
+	wlog.logAppSubIntegrationPath(rCtx.PartnerConfigMap)
+
 	wlog.logIntegrationType(rCtx.Endpoint)
 
 	wlog.logDeviceObject(&rCtx.DeviceCtx)

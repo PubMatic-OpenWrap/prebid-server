@@ -103,3 +103,35 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	*ao.Response = *orignalResponse
 	return nil
 }
+
+func (wlog *WloggerRecord) logProfileType(partnerConfigMap map[int]map[string]string) {
+	if profileType, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
+		wlog.ProfileType, _ = strconv.Atoi(profileType)
+	}
+}
+
+func (wlog *WloggerRecord) logProfileTypePlatform(partnerConfigMap map[int]map[string]string) {
+	if platform, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
+		wlog.ProfileTypePlatform = profileTypePlatform[platform]
+	}
+}
+
+func (wlog *WloggerRecord) logAppPlatform(partnerConfigMap map[int]map[string]string) {
+	if app, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		wlog.AppPlatform = appPlatform[app]
+	}
+}
+
+func (wlog *WloggerRecord) logAppIntegrationPath(partnerConfigMap map[int]map[string]string) {
+	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
+		wlog.AppIntegrationPath = appIntegrationPath[appIntegrationPathStr]
+	}
+}
+
+func (wlog *WloggerRecord) logAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) {
+	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
+		wlog.AppSubIntegrationPath = appSubIntegrationPath[appSubIntegrationPathStr]
+	} else if adserver, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		wlog.AppSubIntegrationPath = appSubIntegrationPath[adserver]
+	}
+}
