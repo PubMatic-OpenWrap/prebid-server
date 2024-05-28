@@ -445,3 +445,438 @@ func TestRestoreBidResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestWloggerRecord_logProfileType(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "partnerConfigMap is empty",
+			args: args{
+				partnerConfigMap: make(map[int]map[string]string),
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "partnerConfigMap with ProfileTypeKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.ProfileTypeKey: "1"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:       5890,
+				ProfileType: 1,
+			},
+		},
+		{
+			name: "partnerConfigMap with invalid ProfileTypeKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.ProfileTypeKey: "invalid"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+		{
+			name: "partnerConfigMap with ProfileTypeKey is absent",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {"platform": "in-app"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logProfileType(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
+
+func TestWloggerRecord_logProfileTypePlatform(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "partnerConfigMap is empty",
+			args: args{
+				partnerConfigMap: make(map[int]map[string]string),
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "partnerConfigMap with PlatformKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.PLATFORM_KEY: "display"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:               5890,
+				ProfileTypePlatform: 1,
+			},
+		},
+		{
+			name: "partnerConfigMap with invalid PlatformKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.PLATFORM_KEY: "invalid"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+		{
+			name: "partnerConfigMap with PlatformKey is absent",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {"profileType": "1"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logProfileTypePlatform(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
+
+func TestWloggerRecord_logAppPlatform(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "partnerConfigMap is empty",
+			args: args{
+				partnerConfigMap: make(map[int]map[string]string),
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "partnerConfigMap with AppPlatformKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.AppPlatformKey: "5"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:       5890,
+				AppPlatform: 5,
+			},
+		},
+		{
+			name: "partnerConfigMap with invalid AppPlatformKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.AppPlatformKey: "invalid"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+		{
+			name: "partnerConfigMap with AppPlatformKey is absent",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {"profileType": "1"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logAppPlatform(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
+
+func TestWloggerRecord_logAppIntegrationPath(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "partnerConfigMap is empty",
+			args: args{
+				partnerConfigMap: make(map[int]map[string]string),
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "partnerConfigMap with valid AppIntegrationPathKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.IntegrationPathKey: "React Native Plugin"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:              5890,
+				AppIntegrationPath: 3,
+			},
+		},
+		{
+			name: "partnerConfigMap with invalid AppIntegrationPathKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.IntegrationPathKey: "test"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+		{
+			name: "partnerConfigMap with AppIntegrationPathKey is absent",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.ProfileTypeKey: "1"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logAppIntegrationPath(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
+
+func TestWloggerRecord_logAppSubIntegrationPath(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "partnerConfigMap is empty",
+			args: args{
+				partnerConfigMap: make(map[int]map[string]string),
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "partnerConfigMap with valid AppSubIntegrationPathKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.SubIntegrationPathKey: "AppLovin Max SDK Bidding"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:                 5890,
+				AppSubIntegrationPath: 8,
+			},
+		},
+		{
+			name: "partnerConfigMap with invalid AppSubIntegrationPathKey",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.SubIntegrationPathKey: "test"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+		{
+			name: "partnerConfigMap with AppSubIntegrationPathKey is absent but adserver is present",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {models.AdserverKey: "DFP"},
+				},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID:                 5890,
+				AppSubIntegrationPath: 1,
+			},
+		},
+		{
+			name: "partnerConfigMap with bot AppSubIntegrationPathKey and adserver is absent",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			fields: fields{
+				record: record{
+					PubID: 5890,
+				},
+			},
+			wantRecord: record{
+				PubID: 5890,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logAppSubIntegrationPath(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}

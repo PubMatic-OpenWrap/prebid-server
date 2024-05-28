@@ -52,7 +52,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("25_1", "9", models.PLATFORM_DISPLAY)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY, models.ProfileTypeKey}).AddRow("25_1", "9", models.PLATFORM_DISPLAY, "1")
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
@@ -82,7 +82,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY, models.ProfileTypeKey}).AddRow("251", "9", models.PLATFORM_DISPLAY, "1")
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				return db
@@ -125,6 +125,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"displayVersionId":  "9",
 					"platform":          "display",
 					"vendorId":          "-1",
+					"type":              "1",
 				},
 			},
 			wantErr: false,
@@ -134,7 +135,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY, models.ProfileTypeKey}).AddRow("251", "9", models.PLATFORM_DISPLAY, "1")
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
@@ -184,6 +185,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"displayVersionId":  "9",
 					"platform":          "display",
 					"vendorId":          "-1",
+					"type":              "1",
 				},
 			},
 			wantErr: false,
@@ -193,7 +195,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY, models.ProfileTypeKey}).AddRow("251", "9", models.PLATFORM_DISPLAY, "1")
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
@@ -251,6 +253,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					"displayVersionId":  "9",
 					"platform":          "display",
 					"vendorId":          "-1",
+					"type":              "1",
 				},
 			},
 			wantErr: false,
@@ -260,7 +263,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY}).AddRow("251", "9", models.PLATFORM_DISPLAY)
+				rowsWrapperVersion := sqlmock.NewRows([]string{models.VersionID, models.DisplayVersionID, models.PLATFORM_KEY, models.ProfileTypeKey}).AddRow("251", "9", models.PLATFORM_DISPLAY, "1")
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WithArgs(19109, 3, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rowsPartnerConfig := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).

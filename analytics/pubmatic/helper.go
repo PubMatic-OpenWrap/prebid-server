@@ -112,7 +112,7 @@ func (wlog *WloggerRecord) logProfileType(partnerConfigMap map[int]map[string]st
 
 func (wlog *WloggerRecord) logProfileTypePlatform(partnerConfigMap map[int]map[string]string) {
 	if platform, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
-		wlog.ProfileTypePlatform = profileTypePlatform[platform]
+		wlog.ProfileTypePlatform = models.ProfileTypePlatform[platform]
 	}
 }
 
@@ -124,14 +124,14 @@ func (wlog *WloggerRecord) logAppPlatform(partnerConfigMap map[int]map[string]st
 
 func (wlog *WloggerRecord) logAppIntegrationPath(partnerConfigMap map[int]map[string]string) {
 	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
-		wlog.AppIntegrationPath = appIntegrationPath[appIntegrationPathStr]
+		wlog.AppIntegrationPath = models.AppIntegrationPath[appIntegrationPathStr]
 	}
 }
 
 func (wlog *WloggerRecord) logAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) {
 	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
-		wlog.AppSubIntegrationPath = appSubIntegrationPath[appSubIntegrationPathStr]
+		wlog.AppSubIntegrationPath = models.AppSubIntegrationPath[appSubIntegrationPathStr]
 	} else if adserver, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
-		wlog.AppSubIntegrationPath = appSubIntegrationPath[adserver]
+		wlog.AppSubIntegrationPath = models.AppSubIntegrationPath[adserver]
 	}
 }

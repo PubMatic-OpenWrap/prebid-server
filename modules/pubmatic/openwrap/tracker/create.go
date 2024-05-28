@@ -274,6 +274,30 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.ATTS != nil {
 		v.Set(models.TRKATTS, strconv.Itoa(int(*tracker.ATTS)))
 	}
+
+	//ProfileMetadata parameters
+	if profileType, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
+		v.Set(models.TRAKProfileType, profileType)
+	}
+	if platform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
+		platformValueStr := strconv.Itoa(models.ProfileTypePlatform[platform])
+		v.Set(models.TRAKProfileTypePlatform, platformValueStr)
+	}
+	if appPlatform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		v.Set(models.TRAKAppPlatform, appPlatform)
+	}
+	if appIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
+		appIntegrationPathStr := strconv.Itoa(models.AppIntegrationPath[appIntegrationPath])
+		v.Set(models.TRAKAppIntegrationPath, appIntegrationPathStr)
+	}
+	if appSubIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
+		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[appSubIntegrationPath])
+		v.Set(models.TRAKAppSubIntegrationPath, appSubIntegrationPathStr)
+	} else if adserver, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[adserver])
+		v.Set(models.TRAKAppSubIntegrationPath, appSubIntegrationPathStr)
+	}
+
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform

@@ -1,7 +1,7 @@
-package pubmatic
+package models
 
 // Profile platform types
-var profileTypePlatform = map[string]int{
+var ProfileTypePlatform = map[string]int{
 	"display": 1,
 	"amp":     2,
 	"video":   3,
@@ -9,7 +9,7 @@ var profileTypePlatform = map[string]int{
 }
 
 // App integration path
-var appIntegrationPath map[string]int = map[string]int{
+var AppIntegrationPath map[string]int = map[string]int{
 	"Android":             2,
 	"React Native Plugin": 3,
 	"Flutter Plugin":      4,
@@ -18,7 +18,7 @@ var appIntegrationPath map[string]int = map[string]int{
 }
 
 // App sub integration path
-var appSubIntegrationPath map[string]int = map[string]int{
+var AppSubIntegrationPath map[string]int = map[string]int{
 	"DFP":                         1,
 	"MoPub":                       3,
 	"CUSTOM":                      4,
