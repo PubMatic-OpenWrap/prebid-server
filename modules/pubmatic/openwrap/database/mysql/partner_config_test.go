@@ -297,6 +297,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 		cfg config.Database
 	}
 	type args struct {
+		pubID     int
 		versionID int
 	}
 	tests := []struct {
@@ -611,7 +612,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			gotPartnerConfigMap, err := db.getActivePartnerConfigurations(tt.args.versionID)
+			gotPartnerConfigMap, err := db.getActivePartnerConfigurations(tt.args.pubID, tt.args.versionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -830,7 +831,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			gotVersionID, gotDisplayVersionID, gotPlatform, gotProfileType, err := db.getVersionIdAndProfileDeatails(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
+			gotVersionID, gotDisplayVersionID, gotPlatform, gotProfileType, err := db.getVersionIdAndProfileDetails(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySqlDB.getVersionID() error = %v, wantErr %v", err, tt.wantErr)
 				return
