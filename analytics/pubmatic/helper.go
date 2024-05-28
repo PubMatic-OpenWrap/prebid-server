@@ -117,8 +117,8 @@ func (wlog *WloggerRecord) logProfileTypePlatform(partnerConfigMap map[int]map[s
 }
 
 func (wlog *WloggerRecord) logAppPlatform(partnerConfigMap map[int]map[string]string) {
-	if app, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
-		wlog.AppPlatform = appPlatform[app]
+	if appPlatform, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		wlog.AppPlatform, _ = strconv.Atoi(appPlatform)
 	}
 }
 
