@@ -33,8 +33,9 @@ func getIncomingSlots(imp openrtb2.Imp, videoAdUnitCtx models.AdUnitCtx) []strin
 		if imp.Video.W != nil && imp.Video.H != nil {
 			sizes[fmt.Sprintf("%dx%d", *imp.Video.W, *imp.Video.H)] = struct{}{}
 		} else if videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
-			videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config != nil {
-			sizes[fmt.Sprintf("%dx%d", videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.W, videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.H)] = struct{}{}
+			videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config != nil &&
+			videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.W != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.H != nil {
+			sizes[fmt.Sprintf("%dx%d", *videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.W, *videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.H)] = struct{}{}
 		} else {
 			sizes[fmt.Sprintf("%dx%d", 0, 0)] = struct{}{}
 		}

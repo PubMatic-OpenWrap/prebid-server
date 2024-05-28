@@ -2,7 +2,6 @@ package ctv
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -427,6 +426,7 @@ func TestParseORTBRequest(t *testing.T) {
 			"tagid": "/15671365/DMDemo1",
 			"bidfloor": 1.1,
 			"bidfloorcur": "USD",
+			"clickbrowser": 0,
 			"secure": 0,
 			"iframebuster": [
 			  "1"
@@ -651,6 +651,7 @@ func TestParseORTBRequest(t *testing.T) {
 			  }
 			}
 		  },
+		  "geofetch": 0,
 		  "dnt": 1,
 		  "lmt": 1,
 		  "ua": "Mozilla%2F5.0%20},Windows%20NT%206.1%3B%20Win64%3B%20x64%3B%20rv%3A47.0)%20Gecko%2F20100101%20Firefox%2F47.0",
@@ -885,7 +886,6 @@ func TestParseORTBRequest(t *testing.T) {
 	ortb, err := parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
 		actualRequest, err := json.Marshal(ortb)
-		fmt.Println(string(actualRequest))
 		assert.NoError(t, err)
 		assert.JSONEq(t, expectedRequest, string(actualRequest))
 	}
@@ -930,7 +930,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser := NewOpenRTB(request)
 	ortb, err := parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Source.FD, int8(1))
+		assert.Equal(t, ortb.Source.FD, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"src.tid": []string{"1"}}, http.Header{})
@@ -979,7 +979,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Site.Mobile, int8(1))
+		assert.Equal(t, ortb.Site.Mobile, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"site.search": []string{"site.Search"}}, http.Header{})
@@ -1007,7 +1007,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Site.PrivacyPolicy, int8(1))
+		assert.Equal(t, ortb.Site.PrivacyPolicy, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"site.pagecat": []string{"site,pagecat"}}, http.Header{})
@@ -1182,14 +1182,14 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Site.Content.LiveStream, int8(1))
+		assert.Equal(t, ortb.Site.Content.LiveStream, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"site.cnt.sourcerelationship": []string{"1"}}, http.Header{})
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Site.Content.SourceRelationship, int8(1))
+		assert.Equal(t, ortb.Site.Content.SourceRelationship, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"site.cnt.len": []string{"1"}}, http.Header{})
@@ -1217,7 +1217,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Site.Content.Embeddable, int8(1))
+		assert.Equal(t, ortb.Site.Content.Embeddable, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"site.cnt.prod.id": []string{"site.cnt.prod.id"}}, http.Header{})
@@ -1294,7 +1294,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.App.Paid, int8(1))
+		assert.Equal(t, ortb.App.Paid, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"app.cat": []string{"app,cat"}}, http.Header{})
@@ -1322,7 +1322,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.App.PrivacyPolicy, int8(1))
+		assert.Equal(t, ortb.App.PrivacyPolicy, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"app.keywords": []string{"app.keywords"}}, http.Header{})
@@ -1490,14 +1490,14 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.App.Content.LiveStream, int8(1))
+		assert.Equal(t, ortb.App.Content.LiveStream, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"app.cnt.sourcerelationship": []string{"1"}}, http.Header{})
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.App.Content.SourceRelationship, int8(1))
+		assert.Equal(t, ortb.App.Content.SourceRelationship, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"app.cnt.len": []string{"1"}}, http.Header{})
@@ -1518,7 +1518,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.App.Content.Embeddable, int8(1))
+		assert.Equal(t, ortb.App.Content.Embeddable, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"app.cnt.prod.id": []string{"app.cnt.prod.id"}}, http.Header{})
@@ -1581,14 +1581,14 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Imp[0].Video.W, int64(1))
+		assert.Equal(t, ortb.Imp[0].Video.W, ptrutil.ToPtr(int64(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"imp.vid.h": []string{"1"}}, http.Header{})
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Imp[0].Video.H, int64(1))
+		assert.Equal(t, ortb.Imp[0].Video.H, ptrutil.ToPtr(int64(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"imp.vid.startdelay": []string{"1"}}, http.Header{})
@@ -1672,7 +1672,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Imp[0].Video.BoxingAllowed, int8(1))
+		assert.Equal(t, ortb.Imp[0].Video.BoxingAllowed, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"imp.vid.playbackmethod": []string{"1,2"}}, http.Header{})
@@ -1862,14 +1862,14 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Device.JS, int8(1))
+		assert.Equal(t, ortb.Device.JS, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"dev.geofetch": []string{"1"}}, http.Header{})
 	parser = NewOpenRTB(request)
 	ortb, err = parser.ParseORTBRequest(GetORTBParserMap())
 	if assert.NoError(t, err) {
-		assert.Equal(t, ortb.Device.GeoFetch, int8(1))
+		assert.Equal(t, ortb.Device.GeoFetch, ptrutil.ToPtr(int8(1)))
 	}
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"dev.flashver": []string{"dev.flashver"}}, http.Header{})

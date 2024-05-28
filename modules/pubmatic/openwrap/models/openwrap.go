@@ -154,12 +154,15 @@ type ImpCtx struct {
 	BidCtx            map[string]BidCtx
 	BannerAdUnitCtx   AdUnitCtx
 	VideoAdUnitCtx    AdUnitCtx
-	AdpodConfig       *AdPod
-	ImpAdPodCfg       []*ImpAdPodConfig
-	BidIDToAPRC       map[string]int64
-	AdserverURL       string
+
 	//temp
 	BidderError string
+
+	// CTV
+	AdpodConfig *AdPod
+	ImpAdPodCfg []*ImpAdPodConfig
+	BidIDToAPRC map[string]int64
+	AdserverURL string
 	BidIDToDur  map[string]int64
 }
 

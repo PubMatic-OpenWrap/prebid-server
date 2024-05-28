@@ -1050,7 +1050,6 @@ func (m OpenWrap) setAnanlyticsFlags(rCtx *models.RequestCtx) {
 }
 
 func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {
-
 	if len(imp.Video.MIMEs) == 0 {
 		imp.Video.MIMEs = configObjInVideoConfig.MIMEs
 	}

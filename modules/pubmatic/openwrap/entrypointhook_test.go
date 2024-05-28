@@ -561,6 +561,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Endpoint:                 models.EndpointAppLovinMax,
 						MetricsEngine:            mockEngine,
 						SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+						Method:                   "POST",
 					},
 				},
 			},
