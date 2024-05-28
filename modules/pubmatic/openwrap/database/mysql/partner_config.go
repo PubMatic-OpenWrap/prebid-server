@@ -19,7 +19,7 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 		return nil, err
 	}
 
-	partnerConfigMap, err := db.getActivePartnerConfigurations(pubID, versionID)
+	partnerConfigMap, err := db.getActivePartnerConfigurations(profileID, versionID)
 	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
 		// check for SDK new UI
@@ -34,8 +34,8 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 	return partnerConfigMap, err
 }
 
-func (db *mySqlDB) getActivePartnerConfigurations(pubID, versionID int) (map[int]map[string]string, error) {
-	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, pubID, versionID, versionID)
+func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map[int]map[string]string, error) {
+	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, profileID, versionID, versionID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
