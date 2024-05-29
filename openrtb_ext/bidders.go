@@ -244,7 +244,7 @@ const (
 	BidderYSSP              BidderName = "yssp"
 	BidderZeroClickFraud    BidderName = "zeroclickfraud"
 	BidderKoddi             BidderName = "koddi"
-	BidderAdButlerSponsored BidderName = "adbutler_sponosored"
+	BidderAdButlerSponsored BidderName = "adbutler_sponsored"
 	BidderCriteoRetail      BidderName = "criteoretail"
 	BidderCitrus            BidderName = "citrus"
 

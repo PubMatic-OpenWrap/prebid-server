@@ -1,4 +1,4 @@
-package adbutler_sponosored
+package adbutler_sponsored
 
 import (
 	"fmt"
