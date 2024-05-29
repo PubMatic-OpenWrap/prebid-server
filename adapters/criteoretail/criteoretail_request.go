@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-func getProductList(commerceExt *openrtb_ext.ExtImpCommerce) string {
+func getProductList(commerceExt *openrtb_ext.ExtImpCMSponsored) string {
 	// Check if there are preferred products
 	if commerceExt != nil && commerceExt.ComParams != nil && len(commerceExt.ComParams.Preferred) > 0 {
 		// Initialize a slice to hold the product IDs
@@ -91,4 +91,5 @@ func (a *CriteoRetailAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo
 	}
 
 }
+
 

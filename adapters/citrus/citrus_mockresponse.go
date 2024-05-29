@@ -47,7 +47,7 @@ func GetRequestSlotCount(internalRequest *openrtb2.BidRequest) int {
 	impArray := internalRequest.Imp
 	reqCount := 0
 	for _, eachImp := range impArray {
-		var commerceExt openrtb_ext.ExtImpCommerce
+		var commerceExt openrtb_ext.ExtImpCMSponsored
 		json.Unmarshal(eachImp.Ext, &commerceExt)
 		reqCount += commerceExt.ComParams.SlotsRequested
 	}
@@ -89,7 +89,7 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 		if bidderExtendedDetails {
 			mockProductDetails = MockProductDetails
 		}
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:  productid,
 			ClickUrl: clickURL,
 			ProductDetails: mockProductDetails,
@@ -120,4 +120,5 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 	}
 	return responseF
 }
+
 

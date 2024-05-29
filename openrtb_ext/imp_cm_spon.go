@@ -38,6 +38,7 @@ type CMSponsoredParams struct {
 // ImpExtensionCommerce - Impression Commerce Extension
 type ExtImpCMSponsored struct {
 	ComParams *CMSponsoredParams `json:"commerce,omitempty"`
+	Bidder *ExtBidderCommerce    `json:"bidder,omitempty"`
 }
 // UserExtensionCommerce - User Commerce Extension
 type ExtUserCMSponsored struct {
