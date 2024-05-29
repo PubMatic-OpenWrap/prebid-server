@@ -277,25 +277,25 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 
 	//ProfileMetadata parameters
 	if profileType, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
-		v.Set(models.TRAKProfileType, profileType)
+		v.Set(models.TRKProfileType, profileType)
 	}
 	if platform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
 		platformValueStr := strconv.Itoa(models.ProfileTypePlatform[platform])
-		v.Set(models.TRAKProfileTypePlatform, platformValueStr)
+		v.Set(models.TRKProfileTypePlatform, platformValueStr)
 	}
 	if appPlatform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
-		v.Set(models.TRAKAppPlatform, appPlatform)
+		v.Set(models.TRKAppPlatform, appPlatform)
 	}
 	if appIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
 		appIntegrationPathStr := strconv.Itoa(models.AppIntegrationPath[appIntegrationPath])
-		v.Set(models.TRAKAppIntegrationPath, appIntegrationPathStr)
+		v.Set(models.TRKAppIntegrationPath, appIntegrationPathStr)
 	}
 	if appSubIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
 		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[appSubIntegrationPath])
-		v.Set(models.TRAKAppSubIntegrationPath, appSubIntegrationPathStr)
+		v.Set(models.TRKAppSubIntegrationPath, appSubIntegrationPathStr)
 	} else if adserver, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
 		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[adserver])
-		v.Set(models.TRAKAppSubIntegrationPath, appSubIntegrationPathStr)
+		v.Set(models.TRKAppSubIntegrationPath, appSubIntegrationPathStr)
 	}
 
 	queryString := v.Encode()
