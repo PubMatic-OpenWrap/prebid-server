@@ -133,7 +133,7 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 							delete(productDetails, CLICK_BEACON)
 						}
 
-						bidExt := &openrtb_ext.ExtBidCommerce{
+						bidExt := &openrtb_ext.ExtBidCMSponsored{
 							ProductId:      productID,
 							ClickUrl:       clickURL,
 							ProductDetails: productDetails,
@@ -193,4 +193,5 @@ func (a *CriteoRetailAdapter) countSponsoredProducts(adResponse *CriteoResponse)
 
 	return count
 }
+
 
