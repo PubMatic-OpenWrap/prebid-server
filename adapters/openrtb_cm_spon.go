@@ -29,8 +29,8 @@ func EncodeURL(url string) string {
 	return str
 }
 
-func GetImpressionExtComm(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCommerce, error) {
-	var commerceExt openrtb_ext.ExtImpCommerce
+func GetImpressionExtComm(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMSponsored, error) {
+	var commerceExt openrtb_ext.ExtImpCMSponsored
 	if err := json.Unmarshal(imp.Ext, &commerceExt); err != nil {
 		return nil, &errortypes.BadInput{
 			Message: "Impression extension not provided or can't be unmarshalled",
@@ -84,9 +84,9 @@ func GetBidderParamsComm(prebidExt *openrtb_ext.ExtOWRequest) (map[string]interf
 	return bidderParams, nil
 }
 
-func ValidateCommRequest(request *openrtb2.BidRequest) (*openrtb_ext.ExtImpCommerce,
+func ValidateCommRequest(request *openrtb2.BidRequest) (*openrtb_ext.ExtImpCMSponsored,
 	*openrtb_ext.ExtSiteCommerce, map[string]interface{}, []error) {
-	var commerceExt *openrtb_ext.ExtImpCommerce
+	var commerceExt *openrtb_ext.ExtImpCMSponsored
 	var siteExt *openrtb_ext.ExtSiteCommerce
 	var requestExt *openrtb_ext.ExtOWRequest
 	var bidderParams map[string]interface{}
@@ -137,4 +137,5 @@ func GenerateUniqueBidIDComm() string {
 	id := uuid.New()
 	return id.String()
 }
+
 
