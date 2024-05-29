@@ -1,4 +1,4 @@
-package adbuttler
+package adbutler_sponosored
 
 import (
 	"encoding/json"
@@ -26,13 +26,13 @@ type AdButlerBid struct {
 	Beacons     []*AdButlerBeacon `json:"beacons,omitempty"`
 }
 
-type AdButlerResponse struct {
+type AdButlerSponsoredResponse struct {
 	Status string         `json:"status,omitempty"`
 	Code   int32          `json:"code,omitempty"`
 	Bids   []*AdButlerBid `json:"items,omitempty"`
 }
 
-func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *AdButlerSponsoredAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	var errors []error
 
 	if response.StatusCode == http.StatusNoContent {
@@ -53,7 +53,7 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 		return nil, []error{err}
 	}
 
-	var adButlerResp AdButlerResponse
+	var adButlerResp AdButlerSponsoredResponse
 	if err := json.Unmarshal(response.Body, &adButlerResp); err != nil {
 		return nil, []error{&errortypes.BadServerResponse{
 			Message: "Bad Server Response",
@@ -110,10 +110,10 @@ func (a *AdButtlerAdapter) MakeBids(internalRequest *openrtb2.BidRequest, extern
 
 }
 
-func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerResponse, requestImpID string) *adapters.BidderResponse {
+func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerSponsoredResponse, requestImpID string) *adapters.BidderResponse {
 
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(adButlerResp.Bids))
-	var commerceExt *openrtb_ext.ExtImpCommerce
+	var commerceExt *openrtb_ext.ExtImpCMSponsored
 	var adbutlerID, zoneID, adbUID, keyToRemove string
 	var configValueMap = make(map[string]string)
 
@@ -188,7 +188,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 		}
 
 		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:      productid,
 			ClickUrl:       clickUrl,
 			ClickPrice:     clickPrice,
@@ -225,7 +225,7 @@ func (a *AdButtlerAdapter) GetBidderResponse(request *openrtb2.BidRequest, adBut
 	return bidResponse
 }
 
-func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCommerce, bid *openrtb2.Bid) bool {
+func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCMSponsored, bid *openrtb2.Bid) bool {
 
 	if bid.Price == 0 || bid.IURL == "" {
 		return false

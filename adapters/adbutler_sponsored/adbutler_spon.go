@@ -1,4 +1,4 @@
-package adbuttler
+package adbutler_sponosored
 
 import (
 	"fmt"
@@ -10,11 +10,11 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-type AdButtlerAdapter struct {
+type AdButlerSponsoredAdapter struct {
 	endpoint *template.Template
 }
 
-// Builder builds a new instance of the AdButtler adapter for the given bidder with the given config.
+// Builder builds a new instance of the AdButler adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters.Bidder, error) {
 	
 	endpointtemplate, err := template.New("endpointTemplate").Parse(config.Endpoint)
@@ -22,13 +22,13 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter) (adapters
 		return nil, fmt.Errorf("unable to parse endpoint url template: %v", err)
 	}
 
-	bidder := &AdButtlerAdapter{
+	bidder := &AdButlerSponsoredAdapter{
 		endpoint: endpointtemplate,
 	}
 	return bidder, nil
 }
 
-func (a *AdButtlerAdapter) buildEndpointURL(accountID, zoneID string) (string, error) {
+func (a *AdButlerSponsoredAdapter) buildEndpointURL(accountID, zoneID string) (string, error) {
 	endpointParams := macros.EndpointTemplateParams{
 		AccountID: accountID,
 		ZoneID:    zoneID,

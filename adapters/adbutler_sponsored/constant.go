@@ -1,4 +1,4 @@
-package adbuttler
+package adbutler_sponosored
 
 const (
 	BD_ZONE_ID             = "catalogZone"
@@ -26,7 +26,7 @@ const (
 	DEFAULT_PRODUCTID = "Product Id"
 	RESPONSE_SUCCESS  = "success"
 	RESPONSE_NOADS    = "NO_ADS"
-	SEAT_ADBUTLER     = "adbuttler"
+	SEAT_ADBUTLER     = "adbutler_sponosored"
 	BEACONTYPE_IMP    = "impression"
 	BEACONTYPE_CLICK  = "click"
 	IMP_KEY           = "tps_impurl="

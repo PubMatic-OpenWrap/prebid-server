@@ -25,7 +25,7 @@ type ExtCustomConfig struct {
 }
 
 // ImpExtensionCommerce - Impression Commerce Extension
-type CommerceParams struct {
+type CMSponsoredParams struct {
 	SlotsRequested int                `json:"slots_requested,omitempty"`
 	TestRequest    bool               `json:"test_request,omitempty"`
 	SearchTerm     string             `json:"search_term,omitempty"`
@@ -36,12 +36,11 @@ type CommerceParams struct {
 }
 
 // ImpExtensionCommerce - Impression Commerce Extension
-type ExtImpCommerce struct {
-	ComParams *CommerceParams `json:"commerce,omitempty"`
-	Bidder *ExtBidderCommerce          `json:"bidder,omitempty"`
+type ExtImpCMSponsored struct {
+	ComParams *CMSponsoredParams `json:"commerce,omitempty"`
 }
 // UserExtensionCommerce - User Commerce Extension
-type ExtUserCommerce struct {
+type ExtUserCMSponsored struct {
 	IsAuthenticated bool    `json:"is_authenticated,omitempty"`
 	Consent         string `json:"consent,omitempty"`
 }
@@ -62,7 +61,7 @@ type ExtBidderCommerce struct {
 	CustomConfig     []*ExtCustomConfig `json:"config,omitempty"`
 }
 
-type ExtBidCommerce struct {
+type ExtBidCMSponsored struct {
 	ProductId        string               `json:"productid,omitempty"`
 	ClickUrl         string               `json:"curl,omitempty"`
 	ConversionUrl    string               `json:"purl,omitempty"`
@@ -70,4 +69,5 @@ type ExtBidCommerce struct {
 	Rate             float64              `json:"rate,omitempty"`
 	ProductDetails   map[string]interface{}  `json:"productdetails,omitempty"`
 }
+
 

@@ -1,4 +1,4 @@
-package adbuttler
+package adbutler_sponosored
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/prebid/prebid-server/errortypes"
 )
 
-type AdButlerRequest struct {
+type AdButlerSponsoredRequest struct {
 	SearchString  string                 `json:"search,omitempty"`
 	SearchType    string                 `json:"search_type,omitempty"`
 	Params        map[string][]string    `json:"params,omitempty"`
@@ -38,7 +38,7 @@ func isLowercaseNumbersDashes(s string) bool {
 	return re.MatchString(s)
 }
 
-func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 
 	commerceExt, siteExt, _, errors := adapters.ValidateCommRequest(request)
 	if len(errors) > 0 {
@@ -52,7 +52,7 @@ func (a *AdButtlerAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		configTypeMap[obj.Key] = obj.Type
 	}
 
-	var adButlerReq AdButlerRequest
+	var adButlerReq AdButlerSponsoredRequest
 	//Assign Page Source if Present
 	if siteExt != nil {
 		if isLowercaseNumbersDashes(siteExt.Page) {
