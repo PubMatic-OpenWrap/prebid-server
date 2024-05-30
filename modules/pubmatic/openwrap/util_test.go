@@ -1300,7 +1300,7 @@ func TestGetRequestUserAgent(t *testing.T) {
 	}
 }
 
-func Test_getProfileTypeFromPartnerConfig(t *testing.T) {
+func Test_getProfileType(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1341,13 +1341,13 @@ func Test_getProfileTypeFromPartnerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getProfileTypeFromPartnerConfig(tt.args.partnerConfigMap)
+			got := getProfileType(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getProfileTypePlatformFromPartnerConfig(t *testing.T) {
+func Test_getProfileTypePlatform(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1388,13 +1388,13 @@ func Test_getProfileTypePlatformFromPartnerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getProfileTypePlatformFromPartnerConfig(tt.args.partnerConfigMap)
+			got := getProfileTypePlatform(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getAppPlatformFromPartnerConfig(t *testing.T) {
+func Test_getAppPlatform(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1435,13 +1435,13 @@ func Test_getAppPlatformFromPartnerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAppPlatformFromPartnerConfig(tt.args.partnerConfigMap)
+			got := getAppPlatform(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getAppIntegrationPathFromPartnerConfig(t *testing.T) {
+func Test_getAppIntegrationPath(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1482,13 +1482,13 @@ func Test_getAppIntegrationPathFromPartnerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAppIntegrationPathFromPartnerConfig(tt.args.partnerConfigMap)
+			got := getAppIntegrationPath(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getAppSubIntegrationPathFromPartnerConfig(t *testing.T) {
+func Test_getAppSubIntegrationPath(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1541,7 +1541,7 @@ func Test_getAppSubIntegrationPathFromPartnerConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAppSubIntegrationPathFromPartnerConfig(tt.args.partnerConfigMap)
+			got := getAppSubIntegrationPath(tt.args.partnerConfigMap)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

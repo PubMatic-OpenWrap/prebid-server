@@ -155,11 +155,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	//set the profile MetaData for logging and tracking
-	rCtx.ProfileType = getProfileTypeFromPartnerConfig(partnerConfigMap)
-	rCtx.ProfileTypePlatform = getProfileTypePlatformFromPartnerConfig(partnerConfigMap)
-	rCtx.AppPlatform = getAppPlatformFromPartnerConfig(partnerConfigMap)
-	rCtx.AppIntegrationPath = getAppIntegrationPathFromPartnerConfig(partnerConfigMap)
-	rCtx.AppSubIntegrationPath = getAppSubIntegrationPathFromPartnerConfig(partnerConfigMap)
+	rCtx.ProfileType = getProfileType(partnerConfigMap)
+	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap)
+	rCtx.AppPlatform = getAppPlatform(partnerConfigMap)
+	rCtx.AppIntegrationPath = getAppIntegrationPath(partnerConfigMap)
+	rCtx.AppSubIntegrationPath = getAppSubIntegrationPath(partnerConfigMap)
 
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {

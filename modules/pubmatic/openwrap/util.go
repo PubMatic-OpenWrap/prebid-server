@@ -343,7 +343,7 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 	return request.Header.Get("User-Agent")
 }
 
-func getProfileTypeFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+func getProfileType(partnerConfigMap map[int]map[string]string) int {
 	if profileTypeStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
 		ProfileType, _ := strconv.Atoi(profileTypeStr)
 		return ProfileType
@@ -351,7 +351,7 @@ func getProfileTypeFromPartnerConfig(partnerConfigMap map[int]map[string]string)
 	return 0
 }
 
-func getProfileTypePlatformFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+func getProfileTypePlatform(partnerConfigMap map[int]map[string]string) int {
 	if profileTypePlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
 		if ProfileTypePlatform, ok := models.ProfileTypePlatform[profileTypePlatformStr]; ok {
 			return ProfileTypePlatform
@@ -360,7 +360,7 @@ func getProfileTypePlatformFromPartnerConfig(partnerConfigMap map[int]map[string
 	return 0
 }
 
-func getAppPlatformFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+func getAppPlatform(partnerConfigMap map[int]map[string]string) int {
 	if appPlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
 		AppPlatform, _ := strconv.Atoi(appPlatformStr)
 		return AppPlatform
@@ -368,7 +368,7 @@ func getAppPlatformFromPartnerConfig(partnerConfigMap map[int]map[string]string)
 	return 0
 }
 
-func getAppIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
 		if AppIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
 			return AppIntegrationPath
@@ -377,7 +377,7 @@ func getAppIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[string]
 	return 0
 }
 
-func getAppSubIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
 		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
 			return AppSubIntegrationPath
