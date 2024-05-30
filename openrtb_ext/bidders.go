@@ -417,6 +417,7 @@ func CoreBidderNames() []BidderName {
 		BidderZeroClickFraud,
 		BidderKoddi,
 		BidderAdButlerSponsored,
+		BidderAdButlerOnsite,
 		BidderCriteoRetail,
 		BidderCitrus,
 	}
@@ -540,6 +541,7 @@ func (validator *bidderParamValidator) Validate(name BidderName, ext json.RawMes
 func (validator *bidderParamValidator) Schema(name BidderName) string {
 	return validator.schemaContents[name]
 }
+
 
 
 
