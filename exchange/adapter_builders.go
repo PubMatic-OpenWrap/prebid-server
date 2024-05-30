@@ -7,6 +7,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/aceex"
 	"github.com/prebid/prebid-server/adapters/acuityads"
 	"github.com/prebid/prebid-server/adapters/adbutler_sponsored"
+	"github.com/prebid/prebid-server/adapters/adbutler_onsite"
 	"github.com/prebid/prebid-server/adapters/adf"
 	"github.com/prebid/prebid-server/adapters/adgeneration"
 	"github.com/prebid/prebid-server/adapters/adhese"
@@ -325,11 +326,13 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderZeroClickFraud:    zeroclickfraud.Builder,
 		openrtb_ext.BidderKoddi:             koddi.Builder,
 		openrtb_ext.BidderAdButlerSponsored: adbutler_sponsored.Builder,
+		openrtb_ext.BidderAdButlerOnsite:    adbutler_onsite.Builder,
 		openrtb_ext.BidderCriteoRetail:      criteoretail.Builder,
 		openrtb_ext.BidderCitrus:            citrus.Builder,
 
 	}
 }
+
 
 
 
