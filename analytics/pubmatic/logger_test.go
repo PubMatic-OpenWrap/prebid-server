@@ -4308,7 +4308,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 	}{
 
 		{
-			name: "all profile meta data is present in partnerConfigMap",
+			name: "all profile meta data is present in rctx",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
@@ -4354,6 +4354,11 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 							"subIntegrationPath": "AppLovin Max SDK Bidding",
 						},
 					},
+					ProfileType:           1,
+					ProfileTypePlatform:   4,
+					AppPlatform:           5,
+					AppIntegrationPath:    3,
+					AppSubIntegrationPath: 8,
 				},
 				logInfo:    false,
 				forRespExt: true,
@@ -4411,6 +4416,9 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 							models.AdserverKey: "DFP",
 						},
 					},
+					ProfileType:           1,
+					ProfileTypePlatform:   4,
+					AppSubIntegrationPath: 1,
 				},
 				logInfo:    false,
 				forRespExt: true,

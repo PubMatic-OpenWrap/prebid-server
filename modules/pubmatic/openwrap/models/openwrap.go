@@ -104,6 +104,11 @@ type RequestCtx struct {
 	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
+	ProfileType            int
+	ProfileTypePlatform    int
+	AppPlatform            int
+	AppIntegrationPath     int
+	AppSubIntegrationPath  int
 }
 
 type OwBid struct {

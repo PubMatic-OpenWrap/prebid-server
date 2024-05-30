@@ -276,26 +276,20 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 
 	//ProfileMetadata parameters
-	if profileType, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
-		v.Set(models.TRKProfileType, profileType)
+	if rctx.ProfileType > 0 {
+		v.Set(models.TRKProfileType, strconv.Itoa(rctx.ProfileType))
 	}
-	if platform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
-		platformValueStr := strconv.Itoa(models.ProfileTypePlatform[platform])
-		v.Set(models.TRKProfileTypePlatform, platformValueStr)
+	if rctx.ProfileTypePlatform > 0 {
+		v.Set(models.TRKProfileTypePlatform, strconv.Itoa(rctx.ProfileTypePlatform))
 	}
-	if appPlatform, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
-		v.Set(models.TRKAppPlatform, appPlatform)
+	if rctx.AppPlatform > 0 {
+		v.Set(models.TRKAppPlatform, strconv.Itoa(rctx.AppPlatform))
 	}
-	if appIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
-		appIntegrationPathStr := strconv.Itoa(models.AppIntegrationPath[appIntegrationPath])
-		v.Set(models.TRKAppIntegrationPath, appIntegrationPathStr)
+	if rctx.AppIntegrationPath > 0 {
+		v.Set(models.TRKAppIntegrationPath, strconv.Itoa(rctx.AppIntegrationPath))
 	}
-	if appSubIntegrationPath, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
-		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[appSubIntegrationPath])
-		v.Set(models.TRKAppSubIntegrationPath, appSubIntegrationPathStr)
-	} else if adserver, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
-		appSubIntegrationPathStr := strconv.Itoa(models.AppSubIntegrationPath[adserver])
-		v.Set(models.TRKAppSubIntegrationPath, appSubIntegrationPathStr)
+	if rctx.AppSubIntegrationPath > 0 {
+		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(rctx.AppSubIntegrationPath))
 	}
 
 	queryString := v.Encode()

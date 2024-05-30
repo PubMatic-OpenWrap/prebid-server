@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -340,4 +341,51 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 		return string(uaBytes)
 	}
 	return request.Header.Get("User-Agent")
+}
+
+func getProfileTypeFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+	if profileTypeStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
+		ProfileType, _ := strconv.Atoi(profileTypeStr)
+		return ProfileType
+	}
+	return 0
+}
+
+func getProfileTypePlatformFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+	if profileTypePlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
+		if ProfileTypePlatform, ok := models.ProfileTypePlatform[profileTypePlatformStr]; ok {
+			return ProfileTypePlatform
+		}
+	}
+	return 0
+}
+
+func getAppPlatformFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+	if appPlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		AppPlatform, _ := strconv.Atoi(appPlatformStr)
+		return AppPlatform
+	}
+	return 0
+}
+
+func getAppIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
+		if AppIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
+			return AppIntegrationPath
+		}
+	}
+	return 0
+}
+
+func getAppSubIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[string]string) int {
+	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
+		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
+			return AppSubIntegrationPath
+		}
+	} else if adserver, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[adserver]; ok {
+			return AppSubIntegrationPath
+		}
+	}
+	return 0
 }

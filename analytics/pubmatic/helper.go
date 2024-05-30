@@ -104,34 +104,20 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	return nil
 }
 
-func (wlog *WloggerRecord) logProfileType(partnerConfigMap map[int]map[string]string) {
-	if profileType, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
-		wlog.ProfileType, _ = strconv.Atoi(profileType)
+func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
+	if rctx.ProfileType > 0 {
+		wlog.ProfileType = rctx.ProfileType
 	}
-}
-
-func (wlog *WloggerRecord) logProfileTypePlatform(partnerConfigMap map[int]map[string]string) {
-	if platform, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
-		wlog.ProfileTypePlatform = models.ProfileTypePlatform[platform]
+	if rctx.ProfileTypePlatform > 0 {
+		wlog.ProfileTypePlatform = rctx.ProfileTypePlatform
 	}
-}
-
-func (wlog *WloggerRecord) logAppPlatform(partnerConfigMap map[int]map[string]string) {
-	if appPlatform, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
-		wlog.AppPlatform, _ = strconv.Atoi(appPlatform)
+	if rctx.AppPlatform > 0 {
+		wlog.AppPlatform = rctx.AppPlatform
 	}
-}
-
-func (wlog *WloggerRecord) logAppIntegrationPath(partnerConfigMap map[int]map[string]string) {
-	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
-		wlog.AppIntegrationPath = models.AppIntegrationPath[appIntegrationPathStr]
+	if rctx.AppIntegrationPath > 0 {
+		wlog.AppIntegrationPath = rctx.AppIntegrationPath
 	}
-}
-
-func (wlog *WloggerRecord) logAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) {
-	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
-		wlog.AppSubIntegrationPath = models.AppSubIntegrationPath[appSubIntegrationPathStr]
-	} else if adserver, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
-		wlog.AppSubIntegrationPath = models.AppSubIntegrationPath[adserver]
+	if rctx.AppSubIntegrationPath > 0 {
+		wlog.AppSubIntegrationPath = rctx.AppSubIntegrationPath
 	}
 }
