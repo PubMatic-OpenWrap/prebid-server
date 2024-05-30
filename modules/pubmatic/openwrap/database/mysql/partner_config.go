@@ -94,6 +94,7 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 
 	var platform sql.NullString
 	var versionID, displayVersionIDFromDB, profileType int
+	//AUK_TODO: use gorm UOE-10651
 	err := row.Scan(&versionID, &displayVersionIDFromDB, &platform, &profileType)
 	if err != nil {
 		return versionID, displayVersionIDFromDB, platform.String, profileType, err
