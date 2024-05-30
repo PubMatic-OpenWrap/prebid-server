@@ -382,9 +382,10 @@ func getAppSubIntegrationPathFromPartnerConfig(partnerConfigMap map[int]map[stri
 		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
 			return AppSubIntegrationPath
 		}
-	} else if adserver, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
-		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[adserver]; ok {
-			return AppSubIntegrationPath
+	}
+	if adserverStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		if adserver, ok := models.AppSubIntegrationPath[adserverStr]; ok {
+			return adserver
 		}
 	}
 	return 0
