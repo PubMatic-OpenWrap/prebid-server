@@ -107,8 +107,8 @@ type RequestCtx struct {
 	ProfileType            int
 	ProfileTypePlatform    int
 	AppPlatform            int
-	AppIntegrationPath     int
-	AppSubIntegrationPath  int
+	AppIntegrationPath     *int
+	AppSubIntegrationPath  *int
 }
 
 type OwBid struct {

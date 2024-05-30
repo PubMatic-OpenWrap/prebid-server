@@ -476,8 +476,8 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 					ProfileType:           1,
 					ProfileTypePlatform:   2,
 					AppPlatform:           3,
-					AppIntegrationPath:    4,
-					AppSubIntegrationPath: 5,
+					AppIntegrationPath:    ptrutil.ToPtr(4),
+					AppSubIntegrationPath: ptrutil.ToPtr(5),
 				},
 			},
 			fields: fields{
@@ -487,8 +487,52 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 				ProfileType:           1,
 				ProfileTypePlatform:   2,
 				AppPlatform:           3,
-				AppIntegrationPath:    4,
-				AppSubIntegrationPath: 5,
+				AppIntegrationPath:    ptrutil.ToPtr(4),
+				AppSubIntegrationPath: ptrutil.ToPtr(5),
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are nil",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    nil,
+					AppSubIntegrationPath: nil,
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are not nil but less than 0",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    ptrutil.ToPtr(-1),
+					AppSubIntegrationPath: ptrutil.ToPtr(-1),
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
 			},
 		},
 	}

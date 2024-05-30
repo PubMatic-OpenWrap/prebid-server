@@ -374,7 +374,7 @@ func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 			return AppIntegrationPath
 		}
 	}
-	return 0
+	return -1
 }
 
 func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
@@ -388,5 +388,5 @@ func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 			return adserver
 		}
 	}
-	return 0
+	return -1
 }

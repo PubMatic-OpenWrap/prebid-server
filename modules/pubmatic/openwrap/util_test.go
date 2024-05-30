@@ -1455,7 +1455,7 @@ func Test_getAppIntegrationPath(t *testing.T) {
 			args: args{
 				partnerConfigMap: map[int]map[string]string{},
 			},
-			want: 0,
+			want: -1,
 		},
 		{
 			name: "partnerConfigMap with valid AppIntegrationPath",
@@ -1472,12 +1472,12 @@ func Test_getAppIntegrationPath(t *testing.T) {
 			name: "partnerConfigMap with invalid AppIntegrationPath",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
-					-11: {
+					-1: {
 						models.IntegrationPathKey: "invalid",
 					},
 				},
 			},
-			want: 0,
+			want: -1,
 		},
 	}
 	for _, tt := range tests {
@@ -1502,7 +1502,7 @@ func Test_getAppSubIntegrationPath(t *testing.T) {
 			args: args{
 				partnerConfigMap: map[int]map[string]string{},
 			},
-			want: 0,
+			want: -1,
 		},
 		{
 			name: "partnerConfigMap with valid AppSubIntegrationPath",
@@ -1524,7 +1524,7 @@ func Test_getAppSubIntegrationPath(t *testing.T) {
 					},
 				},
 			},
-			want: 0,
+			want: -1,
 		},
 		{
 			name: "partnerConfigMap with inavalid AppSubIntegrationPath but valid adserver",

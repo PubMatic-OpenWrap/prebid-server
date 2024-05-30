@@ -285,11 +285,11 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if rctx.AppPlatform > 0 {
 		v.Set(models.TRKAppPlatform, strconv.Itoa(rctx.AppPlatform))
 	}
-	if rctx.AppIntegrationPath > 0 {
-		v.Set(models.TRKAppIntegrationPath, strconv.Itoa(rctx.AppIntegrationPath))
+	if rctx.AppIntegrationPath != nil && *rctx.AppIntegrationPath >= 0 {
+		v.Set(models.TRKAppIntegrationPath, strconv.Itoa(*rctx.AppIntegrationPath))
 	}
-	if rctx.AppSubIntegrationPath > 0 {
-		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(rctx.AppSubIntegrationPath))
+	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
+		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(*rctx.AppSubIntegrationPath))
 	}
 
 	queryString := v.Encode()

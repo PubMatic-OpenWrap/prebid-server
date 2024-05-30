@@ -158,8 +158,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.ProfileType = getProfileType(partnerConfigMap)
 	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap)
 	rCtx.AppPlatform = getAppPlatform(partnerConfigMap)
-	rCtx.AppIntegrationPath = getAppIntegrationPath(partnerConfigMap)
-	rCtx.AppSubIntegrationPath = getAppSubIntegrationPath(partnerConfigMap)
+	rCtx.AppIntegrationPath = ptrutil.ToPtr(getAppIntegrationPath(partnerConfigMap))
+	rCtx.AppSubIntegrationPath = ptrutil.ToPtr(getAppSubIntegrationPath(partnerConfigMap))
 
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {

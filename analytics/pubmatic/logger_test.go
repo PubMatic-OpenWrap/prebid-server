@@ -4357,8 +4357,8 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 					ProfileType:           1,
 					ProfileTypePlatform:   4,
 					AppPlatform:           5,
-					AppIntegrationPath:    3,
-					AppSubIntegrationPath: 8,
+					AppIntegrationPath:    ptrutil.ToPtr(3),
+					AppSubIntegrationPath: ptrutil.ToPtr(8),
 				},
 				logInfo:    false,
 				forRespExt: true,
@@ -4372,7 +4372,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 			},
 		},
 		{
-			name: "some profile meta data is not present in partnerConfigMap",
+			name: "some profile meta data is not present in rctx",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
@@ -4418,13 +4418,135 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 					},
 					ProfileType:           1,
 					ProfileTypePlatform:   4,
-					AppSubIntegrationPath: 1,
+					AppSubIntegrationPath: ptrutil.ToPtr(1),
 				},
 				logInfo:    false,
 				forRespExt: true,
 			},
 			want: want{
 				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4,"asip":1}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "appIntegratioPath and appSubIntegrationPath are nil so it should not be present in the logger",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:          "imp-1",
+									BidFloor:    10.10,
+									BidFloorCur: "USD",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp-1",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{},
+					ResponseExt: openrtb_ext.ExtBidResponse{
+						Prebid: &openrtb_ext.ExtResponsePrebid{},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"type":             "1",
+							"platform":         "in-app",
+							models.AdserverKey: "DFP",
+						},
+					},
+					ProfileType:           1,
+					ProfileTypePlatform:   4,
+					AppIntegrationPath:    nil,
+					AppSubIntegrationPath: nil,
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4}&pubid=5890`,
+				header: http.Header{
+					models.USER_AGENT_HEADER: []string{""},
+					models.IP_HEADER:         []string{""},
+				},
+			},
+		},
+		{
+			name: "appIntegratioPath and appSubIntegrationPath are -1 so it should not be present in the logger",
+			args: args{
+				ao: analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID:          "imp-1",
+									BidFloor:    10.10,
+									BidFloorCur: "USD",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp-1",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					PubID: 5890,
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{},
+					ResponseExt: openrtb_ext.ExtBidResponse{
+						Prebid: &openrtb_ext.ExtResponsePrebid{},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"type":             "1",
+							"platform":         "in-app",
+							models.AdserverKey: "DFP",
+						},
+					},
+					ProfileType:           1,
+					ProfileTypePlatform:   4,
+					AppIntegrationPath:    ptrutil.ToPtr(-1),
+					AppSubIntegrationPath: ptrutil.ToPtr(-1),
+				},
+				logInfo:    false,
+				forRespExt: true,
+			},
+			want: want{
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
