@@ -100,7 +100,6 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 	for i := 1; i <= requestCount; i++ {
 		productid := GetRandomProductID()
 		bidID := adapters.GenerateUniqueBidIDComm()
-		impID := ImpID + "_" + strconv.Itoa(i)
 
 		mockProductDetails := make(map[string]interface{})
 		if bidderExtendedDetails {
@@ -115,8 +114,7 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
-			ImpID: impID,
-			IURL: IMP_URL,
+			NURL: IMP_URL,
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -138,5 +136,6 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 	}
 	return responseF
 }
+
 
 

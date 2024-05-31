@@ -136,10 +136,9 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 	}
 
-	for index, adButlerBid := range adButlerResp.Bids {
+	for _, adButlerBid := range adButlerResp.Bids {
 
 		bidID := adapters.GenerateUniqueBidIDComm()
-		impID := requestImpID + "_" + strconv.Itoa(index+1)
 		bidPrice := adButlerBid.CPCBid
 		campaignID := strconv.FormatInt(adButlerBid.CampaignID, 10)
 		clickPrice := adButlerBid.CPCSpend
@@ -198,10 +197,9 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
-			ImpID: impID,
 			Price: bidPrice,
 			CID:   campaignID,
-			IURL:  impressionUrl,
+			NURL:  impressionUrl,
 		}
 
 		if !areMandatoryFieldsPresent(bidExt, bid) {
@@ -227,7 +225,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCMSponsored, bid *openrtb2.Bid) bool {
 
-	if bid.Price == 0 || bid.IURL == "" {
+	if bid.Price == 0 || bid.NURL == "" {
 		return false
 	}
 	if bidExt.ProductId == "" || bidExt.ClickUrl == "" || bidExt.ClickPrice == 0 {
@@ -254,4 +252,5 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
+
 

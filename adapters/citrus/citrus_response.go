@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -90,7 +89,6 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 	for _, ad := range citrusResponse.Ads {
 		bidID := adapters.GenerateUniqueBidIDComm()
-		impID := requestImpID + "_" + strconv.Itoa(index)
 		productID := ad[PRODUCT_ID].(string)
 		bidTrackingID := ad[TRACKING_ID].(string)
 
@@ -122,8 +120,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
-			ImpID: impID,
-			IURL:  impressionURL,
+			NURL:  impressionURL,
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -172,5 +169,6 @@ func countSponsoredProducts(adResponse *CitrusResponse) int {
 	}
 	return count
 }
+
 
 

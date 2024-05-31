@@ -110,9 +110,9 @@ func validateBid(bid *pbsOrtbBid) (bool, error) {
 	if bid.bid.ID == "" {
 		return false, errors.New("Bid missing required field 'id'")
 	}
-	if bid.bid.ImpID == "" {
+	/*if bid.bid.ImpID == "" {
 		return false, fmt.Errorf("Bid \"%s\" missing required field 'impid'", bid.bid.ID)
-	}
+	}*/
 	if bid.bid.Price < 0.0 {
 		return false, fmt.Errorf("Bid \"%s\" does not contain a positive (or zero if there is a deal) 'price'", bid.bid.ID)
 	}
@@ -126,4 +126,5 @@ func validateBid(bid *pbsOrtbBid) (bool, error) {
 
 	return true, nil
 }
+
 

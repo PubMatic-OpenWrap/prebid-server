@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -107,7 +106,6 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 				if placement.Format == FORMAT_SPONSORED {
 					for _, productMap := range placement.Products {
 						bidID := adapters.GenerateUniqueBidIDComm()
-						impID := requestImpID + "_" + strconv.Itoa(index)
 						productID := productMap[PRODUCT_ID].(string)
 
 						var impressionURL,clickURL string
@@ -141,8 +139,7 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 
 						bid := &openrtb2.Bid{
 							ID:    bidID,
-							ImpID: impID,
-							IURL:  impressionURL,
+							NURL:  impressionURL,
 						}
 
 						adapters.AddDefaultFieldsComm(bid)
@@ -193,5 +190,6 @@ func (a *CriteoRetailAdapter) countSponsoredProducts(adResponse *CriteoResponse)
 
 	return count
 }
+
 
 
