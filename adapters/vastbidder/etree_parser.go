@@ -6,7 +6,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type etreeXMLParser struct {

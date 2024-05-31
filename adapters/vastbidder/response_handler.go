@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/adapters"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type xmlParser interface {
@@ -60,7 +60,7 @@ func (handler *responseHandler) Validate() []error {
 	handler.vastTag = impExt.Tags[handler.externalRequest.Params.VASTTagIndex]
 
 	etreeParserFallback := false
-	
+
 	if !etreeParserFallback {
 		handler.parser = newFastXMLParser(handler.vastTag)
 		if err := handler.parser.Parse(handler.response.Body); err != nil {

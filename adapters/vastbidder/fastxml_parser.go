@@ -6,7 +6,7 @@ import (
 
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type fastXMLParser struct {
@@ -39,6 +39,8 @@ func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
 	}
 
 	//validate vast version
+	vast1 := p.reader.SelectAttrValue(vast, "version")
+	vast1 = vast1
 	versionStr := p.reader.SelectAttrValue(vast, "version")
 	p.vastVersion, err = parseVASTVersion(versionStr)
 	if err != nil {

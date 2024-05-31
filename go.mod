@@ -35,7 +35,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yudai/gojsondiff v1.0.0
@@ -48,16 +48,18 @@ require (
 
 require (
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20231129132054-db03580cfec3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
 	github.com/modern-go/reflect2 v1.0.2
+	github.com/prebid/openrtb/v19 v19.0.0
+	github.com/prebid/prebid-server v0.275.0
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 )
 
 require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 // indirect
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20231129132054-db03580cfec3 // indirect
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -83,7 +85,6 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
